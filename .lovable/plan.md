@@ -1,57 +1,84 @@
-# Hishabee-style ল্যান্ডিং পেজ ক্লোন
+# Plan: সহজ Signup/Login (OTP বাদ)
 
-আপনার দেওয়া https://www.hishabee.io পেজের কাঠামো অনুসরণ করে পুরো ল্যান্ডিং পেজ নতুন করে সাজানো হবে। আপনার আপলোড করা আইকন (Dokan_-_Hishabee.zip) থেকে আসল আইকনগুলো বের করে ফিচার গ্রিড ও দোকানের ধরনে ব্যবহার করা হবে। অপ্রয়োজনীয় বড় "৩০ সেকেন্ডে বিল" সেকশনটি বাদ যাবে।
+## লক্ষ্য
+ইউজার শুধু **৪টা ইনফরমেশন** দিয়ে account তৈরি করে সরাসরি dashboard-এ ঢুকে যাবে:
+1. নাম (Full Name)
+2. ফোন নাম্বার
+3. দোকানের নাম
+4. ৪-সংখ্যার PIN
 
-## যা যা হবে
+পরের বার একই ফোন নাম্বার + PIN দিলে auto login হবে। কোনো OTP নেই।
 
-### ১) আইকন সেট আপ
-- `Dokan_-_Hishabee.zip` আনজিপ করে সব PNG/SVG আইকন `src/assets/icons/` এ রাখা হবে।
-- প্রতিটি আইকনের জন্য একটা ম্যাপ (নাম → import path) তৈরি হবে যাতে ফিচার গ্রিড, ড্যাশবোর্ড টাইল ও সাইডবার সব জায়গায় একই আইকন ব্যবহার করা যায়।
+## নতুন Auth Flow
 
-### ২) হিরো সেকশন (অপরিবর্তিত — আপনি বলেছেন সুন্দর হয়েছে)
-- শুধু ছোট পরিমার্জন: হিশাবি স্টাইলের ছোট চিপ ("৫+ বছরের অভিজ্ঞতা · ২৪/৭ সাপোর্ট"), বড় হেডিং, "১০ লক্ষ+ ব্যবসায়ী" ও "৪.৪★ অ্যাপ রেটিং" — এই দুটি স্ট্যাট হিরোর নিচে।
-- প্রাথমিক CTA: "শুরু করুন" + WhatsApp আইকনসহ "এক্সপার্টের সাথে কথা বলুন"।
+### `/auth` পেজে দুটো Tab থাকবে:
 
-### ৩) "৩০ সেকেন্ডে বিল" সেকশন — সম্পূর্ণ মুছে দেওয়া হবে।
+**Tab 1: "নতুন একাউন্ট" (Sign Up)**
+- নাম
+- ফোন নাম্বার (01XXXXXXXXX)
+- দোকানের নাম
+- ৪-সংখ্যার PIN
+- "একাউন্ট তৈরি করুন" বাটন → সাথে সাথে login হয়ে dashboard-এ চলে যাবে
 
-### ৪) "Hishabee আপনার ব্যবসা কীভাবে বাড়াবে?" — ৫টি ফিচার ব্লক
-স্ক্রীনশটের আইকনসহ alternate (বাঁ-ডান) লেআউট, প্রতিটিতে বুলেট পয়েন্ট:
-1. **লাভ-ক্ষতির আসল ছবি** — daily/weekly/monthly রিপোর্ট
-2. **স্টক ও মেয়াদ অ্যালার্ট** — expired/stock-out warning
-3. **বাড়তি আয়ের সুযোগ** — referral/no-stock income
-4. **বাকির অটো রিমাইন্ডার** — SMS/WhatsApp reminder
-5. **স্টাফ অ্যাক্সেস কন্ট্রোল**
+**Tab 2: "লগইন" (Login)**
+- ফোন নাম্বার
+- ৪-সংখ্যার PIN
+- "লগইন" বাটন → dashboard
 
-### ৫) "এই চিন্তাগুলো কি আপনারও?" — Pain-point কার্ড (৩টি)
-- খাতায় লিখলে হিসাব হারায়
-- কে কত বাকি ভুলে যান
-- লাভ না ক্ষতি বুঝতে পারেন না
+## Backend পরিবর্তন
 
-### ৬) "Hishabee-তে সহজ সমাধান" — ৩টি সলিউশন কার্ড
-ক্লাউড সেভ · অটো রিমাইন্ডার · স্মার্ট রিপোর্ট
+### দুটো নতুন Edge Function:
 
-### ৭) তুলনামূলক টেবিল — Tally Plus vs খাতা-কলম vs অন্যান্য অ্যাপ
-ভাষা সাপোর্ট, বাড়তি আয়, ২৪/৭ সাপোর্ট, অফলাইন কাজ, কাস্টমাইজড ফিচার — এই ৫ সারি।
+**1. `signup-with-pin`** (নতুন)
+- Input: `{ phone, full_name, shop_name, pin }`
+- ফোন নাম্বার normalize (+880…)
+- ফোন already exists কিনা check — থাকলে error: "এই নাম্বার দিয়ে আগে একাউন্ট আছে, লগইন করুন"
+- `auth.admin.createUser` দিয়ে user তৈরি (synthetic email: `<digits>@tally.local`, deterministic password)
+- Trigger automatically `profiles` ও `user_roles(owner)` row বানাবে (already setup আছে)
+- Server-side bcrypt দিয়ে PIN hash করে `profiles.pin_hash`-এ সেভ + `full_name` update
+- ওই user-এর জন্য `shops` row insert (owner_id = new user)
+- Login করিয়ে `access_token` + `refresh_token` ফেরত দেবে
 
-### ৮) "আপনার ব্যবসার ধরন" — দোকান টাইপ গ্রিড
-আপলোডকৃত আইকন দিয়ে: ফার্মেসি, মুদি দোকান, ইলেকট্রনিক্স, ফ্যাশন, ডিলার, হার্ডওয়্যার (৬টা কার্ড)।
+**2. `login-with-pin`** (নতুন)
+- Input: `{ phone, pin }`
+- ফোন normalize → synthetic email বানিয়ে user lookup
+- `profiles.pin_hash` এর সাথে bcrypt compare
+- Match হলে session token issue করে ফেরত
+- Mismatch হলে: "ভুল PIN" error
 
-### ৯) Testimonial slider
-৩-৪টি রিভিউ কার্ড (নাম, দোকানের নাম, শহর) — embla carousel ব্যবহার করে।
+### পুরোনো `send-otp` ও `verify-otp`
+ফাইল রেখে দেব কিন্তু আর use হবে না (ভবিষ্যতের জন্য)।
 
-### ১০) Bottom stats strip
-১০ লক্ষ+ ব্যবসায়ী · ৪.৪★ রেটিং · ২৪/৭ সাপোর্ট
+## Frontend পরিবর্তন
 
-### ১১) চূড়ান্ত CTA + Footer
-"আজই শুরু করুন" — Download (Play Store placeholder) + ওয়েব ভার্সন বাটন। Footer পরিমার্জন করে hishabee স্টাইল (লিঙ্ক কলাম + কপিরাইট)।
+### `src/routes/auth.tsx` সম্পূর্ণ rewrite
+- shadcn `Tabs` component দিয়ে Signup/Login দুটো tab
+- Default tab: **Signup** (যেহেতু নতুন ইউজার বেশি)
+- Form validation:
+  - ফোন: `01XXXXXXXXX` (১১ ডিজিট, 01 দিয়ে শুরু)
+  - PIN: ঠিক ৪ ডিজিট
+  - নাম ও দোকানের নাম: খালি না
+- Success হলে `supabase.auth.setSession()` → `nav("/app")`
 
-## টেকনিক্যাল
+### `src/lib/i18n.tsx` এ নতুন strings যোগ
+`signup`, `createAccount`, `fullName`, `shopName`, `pin4Digit`, `loginWithPin`, `phoneExists`, `wrongPin` ইত্যাদি (Bangla + English)।
 
-- শুধু `src/routes/index.tsx` বড় আকারে পুনর্লিখিত হবে; ছোট ছোট প্রেজেন্টেশন কম্পোনেন্ট (`HeroSection`, `FeatureRow`, `PainCard`, `SolutionCard`, `CompareTable`, `BusinessTypeGrid`, `TestimonialCarousel`, `StatsStrip`, `FinalCTA`) `src/components/site/` এ রাখা হবে।
-- বাংলা/ইংরেজি দুই ভাষাতেই সব নতুন স্ট্রিং `src/lib/i18n.tsx`-এ যোগ হবে।
-- শ্যাডসিএন `Carousel` (ইতিমধ্যে আছে) testimonial-এ ব্যবহার হবে।
-- ব্র্যান্ড টোকেন (Amber/Navy) অপরিবর্তিত — Hishabee হলুদ/নেভি কম্বিনেশনের সাথে মিলে যাচ্ছে।
-- `SiteHeader` মেনুতে যোগ হবে: হোম, ফিচার (#features), অনলাইন শপ, যোগাযোগ — Hishabee-র মতো।
-- আইকন zip প্রজেক্টে কপি করে `src/assets/icons/`-এ extract করা হবে; build-time তে Vite এগুলো বান্ডল করবে।
+### `src/routes/app.tsx` (Dashboard)
+যেহেতু signup-এর সময়ই shop তৈরি হয়ে যাচ্ছে, "shop setup wizard" আর দেখাবে না। সরাসরি dashboard।
 
-কোনো ব্যাকএন্ড বা ডাটাবেস পরিবর্তন নেই — শুধু ল্যান্ডিং পেজের ভিজ্যুয়াল ক্লোন।
+## Database
+কোনো schema migration লাগবে না — সব column (`profiles.pin_hash`, `profiles.full_name`, `shops.name`, `shops.owner_id`) আগেই আছে।
+
+## Technical Notes (টেকনিক্যাল)
+- bcryptjs (already installed) edge function-এ esm.sh থেকে import হবে
+- Synthetic email pattern (`<digits>@tally.local`) আগের মতই থাকবে → ফোন নাম্বার deterministic identifier
+- PIN কখনো plaintext-এ store হবে না, bcrypt hash (10 rounds) ব্যবহার হবে
+- Service role key দিয়ে user creation, anon key দিয়ে signInWithPassword
+
+## ফাইল পরিবর্তনের সারাংশ
+- **নতুন:** `supabase/functions/signup-with-pin/index.ts`, `supabase/functions/login-with-pin/index.ts`
+- **Rewrite:** `src/routes/auth.tsx`
+- **Edit:** `src/lib/i18n.tsx` (strings), `src/routes/app.tsx` (shop wizard remove), `supabase/config.toml` (নতুন function register)
+- **অপরিবর্তিত:** `src/lib/auth.tsx` (already session-based), database schema
+
+Approve করলে implement শুরু করব।
