@@ -13,6 +13,28 @@ import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AppWarrantyRouteImport } from './routes/app.warranty'
+import { Route as AppTrainingRouteImport } from './routes/app.training'
+import { Route as AppSubscribeRouteImport } from './routes/app.subscribe'
+import { Route as AppStockRouteImport } from './routes/app.stock'
+import { Route as AppSellRouteImport } from './routes/app.sell'
+import { Route as AppSalesLedgerRouteImport } from './routes/app.sales-ledger'
+import { Route as AppReportsRouteImport } from './routes/app.reports'
+import { Route as AppRecycleBinRouteImport } from './routes/app.recycle-bin'
+import { Route as AppQuickSellRouteImport } from './routes/app.quick-sell'
+import { Route as AppPurchaseLedgerRouteImport } from './routes/app.purchase-ledger'
+import { Route as AppPurchaseRouteImport } from './routes/app.purchase'
+import { Route as AppProductsRouteImport } from './routes/app.products'
+import { Route as AppPrinterRouteImport } from './routes/app.printer'
+import { Route as AppOnlineShopRouteImport } from './routes/app.online-shop'
+import { Route as AppMarketingRouteImport } from './routes/app.marketing'
+import { Route as AppExpiringRouteImport } from './routes/app.expiring'
+import { Route as AppExpenseLedgerRouteImport } from './routes/app.expense-ledger'
+import { Route as AppDueLedgerRouteImport } from './routes/app.due-ledger'
+import { Route as AppDashboardRouteImport } from './routes/app.dashboard'
+import { Route as AppContactsRouteImport } from './routes/app.contacts'
+import { Route as AppCashboxRouteImport } from './routes/app.cashbox'
+import { Route as AppAccessRouteImport } from './routes/app.access'
 
 const PricingRoute = PricingRouteImport.update({
   id: '/pricing',
@@ -34,37 +56,292 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppWarrantyRoute = AppWarrantyRouteImport.update({
+  id: '/warranty',
+  path: '/warranty',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppTrainingRoute = AppTrainingRouteImport.update({
+  id: '/training',
+  path: '/training',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSubscribeRoute = AppSubscribeRouteImport.update({
+  id: '/subscribe',
+  path: '/subscribe',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppStockRoute = AppStockRouteImport.update({
+  id: '/stock',
+  path: '/stock',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSellRoute = AppSellRouteImport.update({
+  id: '/sell',
+  path: '/sell',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSalesLedgerRoute = AppSalesLedgerRouteImport.update({
+  id: '/sales-ledger',
+  path: '/sales-ledger',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppReportsRoute = AppReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppRecycleBinRoute = AppRecycleBinRouteImport.update({
+  id: '/recycle-bin',
+  path: '/recycle-bin',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppQuickSellRoute = AppQuickSellRouteImport.update({
+  id: '/quick-sell',
+  path: '/quick-sell',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppPurchaseLedgerRoute = AppPurchaseLedgerRouteImport.update({
+  id: '/purchase-ledger',
+  path: '/purchase-ledger',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppPurchaseRoute = AppPurchaseRouteImport.update({
+  id: '/purchase',
+  path: '/purchase',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppProductsRoute = AppProductsRouteImport.update({
+  id: '/products',
+  path: '/products',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppPrinterRoute = AppPrinterRouteImport.update({
+  id: '/printer',
+  path: '/printer',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppOnlineShopRoute = AppOnlineShopRouteImport.update({
+  id: '/online-shop',
+  path: '/online-shop',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppMarketingRoute = AppMarketingRouteImport.update({
+  id: '/marketing',
+  path: '/marketing',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppExpiringRoute = AppExpiringRouteImport.update({
+  id: '/expiring',
+  path: '/expiring',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppExpenseLedgerRoute = AppExpenseLedgerRouteImport.update({
+  id: '/expense-ledger',
+  path: '/expense-ledger',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppDueLedgerRoute = AppDueLedgerRouteImport.update({
+  id: '/due-ledger',
+  path: '/due-ledger',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppDashboardRoute = AppDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppContactsRoute = AppContactsRouteImport.update({
+  id: '/contacts',
+  path: '/contacts',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppCashboxRoute = AppCashboxRouteImport.update({
+  id: '/cashbox',
+  path: '/cashbox',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAccessRoute = AppAccessRouteImport.update({
+  id: '/access',
+  path: '/access',
+  getParentRoute: () => AppRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/app': typeof AppRoute
+  '/app': typeof AppRouteWithChildren
   '/auth': typeof AuthRoute
   '/pricing': typeof PricingRoute
+  '/app/access': typeof AppAccessRoute
+  '/app/cashbox': typeof AppCashboxRoute
+  '/app/contacts': typeof AppContactsRoute
+  '/app/dashboard': typeof AppDashboardRoute
+  '/app/due-ledger': typeof AppDueLedgerRoute
+  '/app/expense-ledger': typeof AppExpenseLedgerRoute
+  '/app/expiring': typeof AppExpiringRoute
+  '/app/marketing': typeof AppMarketingRoute
+  '/app/online-shop': typeof AppOnlineShopRoute
+  '/app/printer': typeof AppPrinterRoute
+  '/app/products': typeof AppProductsRoute
+  '/app/purchase': typeof AppPurchaseRoute
+  '/app/purchase-ledger': typeof AppPurchaseLedgerRoute
+  '/app/quick-sell': typeof AppQuickSellRoute
+  '/app/recycle-bin': typeof AppRecycleBinRoute
+  '/app/reports': typeof AppReportsRoute
+  '/app/sales-ledger': typeof AppSalesLedgerRoute
+  '/app/sell': typeof AppSellRoute
+  '/app/stock': typeof AppStockRoute
+  '/app/subscribe': typeof AppSubscribeRoute
+  '/app/training': typeof AppTrainingRoute
+  '/app/warranty': typeof AppWarrantyRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/app': typeof AppRoute
+  '/app': typeof AppRouteWithChildren
   '/auth': typeof AuthRoute
   '/pricing': typeof PricingRoute
+  '/app/access': typeof AppAccessRoute
+  '/app/cashbox': typeof AppCashboxRoute
+  '/app/contacts': typeof AppContactsRoute
+  '/app/dashboard': typeof AppDashboardRoute
+  '/app/due-ledger': typeof AppDueLedgerRoute
+  '/app/expense-ledger': typeof AppExpenseLedgerRoute
+  '/app/expiring': typeof AppExpiringRoute
+  '/app/marketing': typeof AppMarketingRoute
+  '/app/online-shop': typeof AppOnlineShopRoute
+  '/app/printer': typeof AppPrinterRoute
+  '/app/products': typeof AppProductsRoute
+  '/app/purchase': typeof AppPurchaseRoute
+  '/app/purchase-ledger': typeof AppPurchaseLedgerRoute
+  '/app/quick-sell': typeof AppQuickSellRoute
+  '/app/recycle-bin': typeof AppRecycleBinRoute
+  '/app/reports': typeof AppReportsRoute
+  '/app/sales-ledger': typeof AppSalesLedgerRoute
+  '/app/sell': typeof AppSellRoute
+  '/app/stock': typeof AppStockRoute
+  '/app/subscribe': typeof AppSubscribeRoute
+  '/app/training': typeof AppTrainingRoute
+  '/app/warranty': typeof AppWarrantyRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/app': typeof AppRoute
+  '/app': typeof AppRouteWithChildren
   '/auth': typeof AuthRoute
   '/pricing': typeof PricingRoute
+  '/app/access': typeof AppAccessRoute
+  '/app/cashbox': typeof AppCashboxRoute
+  '/app/contacts': typeof AppContactsRoute
+  '/app/dashboard': typeof AppDashboardRoute
+  '/app/due-ledger': typeof AppDueLedgerRoute
+  '/app/expense-ledger': typeof AppExpenseLedgerRoute
+  '/app/expiring': typeof AppExpiringRoute
+  '/app/marketing': typeof AppMarketingRoute
+  '/app/online-shop': typeof AppOnlineShopRoute
+  '/app/printer': typeof AppPrinterRoute
+  '/app/products': typeof AppProductsRoute
+  '/app/purchase': typeof AppPurchaseRoute
+  '/app/purchase-ledger': typeof AppPurchaseLedgerRoute
+  '/app/quick-sell': typeof AppQuickSellRoute
+  '/app/recycle-bin': typeof AppRecycleBinRoute
+  '/app/reports': typeof AppReportsRoute
+  '/app/sales-ledger': typeof AppSalesLedgerRoute
+  '/app/sell': typeof AppSellRoute
+  '/app/stock': typeof AppStockRoute
+  '/app/subscribe': typeof AppSubscribeRoute
+  '/app/training': typeof AppTrainingRoute
+  '/app/warranty': typeof AppWarrantyRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/app' | '/auth' | '/pricing'
+  fullPaths:
+    | '/'
+    | '/app'
+    | '/auth'
+    | '/pricing'
+    | '/app/access'
+    | '/app/cashbox'
+    | '/app/contacts'
+    | '/app/dashboard'
+    | '/app/due-ledger'
+    | '/app/expense-ledger'
+    | '/app/expiring'
+    | '/app/marketing'
+    | '/app/online-shop'
+    | '/app/printer'
+    | '/app/products'
+    | '/app/purchase'
+    | '/app/purchase-ledger'
+    | '/app/quick-sell'
+    | '/app/recycle-bin'
+    | '/app/reports'
+    | '/app/sales-ledger'
+    | '/app/sell'
+    | '/app/stock'
+    | '/app/subscribe'
+    | '/app/training'
+    | '/app/warranty'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/app' | '/auth' | '/pricing'
-  id: '__root__' | '/' | '/app' | '/auth' | '/pricing'
+  to:
+    | '/'
+    | '/app'
+    | '/auth'
+    | '/pricing'
+    | '/app/access'
+    | '/app/cashbox'
+    | '/app/contacts'
+    | '/app/dashboard'
+    | '/app/due-ledger'
+    | '/app/expense-ledger'
+    | '/app/expiring'
+    | '/app/marketing'
+    | '/app/online-shop'
+    | '/app/printer'
+    | '/app/products'
+    | '/app/purchase'
+    | '/app/purchase-ledger'
+    | '/app/quick-sell'
+    | '/app/recycle-bin'
+    | '/app/reports'
+    | '/app/sales-ledger'
+    | '/app/sell'
+    | '/app/stock'
+    | '/app/subscribe'
+    | '/app/training'
+    | '/app/warranty'
+  id:
+    | '__root__'
+    | '/'
+    | '/app'
+    | '/auth'
+    | '/pricing'
+    | '/app/access'
+    | '/app/cashbox'
+    | '/app/contacts'
+    | '/app/dashboard'
+    | '/app/due-ledger'
+    | '/app/expense-ledger'
+    | '/app/expiring'
+    | '/app/marketing'
+    | '/app/online-shop'
+    | '/app/printer'
+    | '/app/products'
+    | '/app/purchase'
+    | '/app/purchase-ledger'
+    | '/app/quick-sell'
+    | '/app/recycle-bin'
+    | '/app/reports'
+    | '/app/sales-ledger'
+    | '/app/sell'
+    | '/app/stock'
+    | '/app/subscribe'
+    | '/app/training'
+    | '/app/warranty'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AppRoute: typeof AppRoute
+  AppRoute: typeof AppRouteWithChildren
   AuthRoute: typeof AuthRoute
   PricingRoute: typeof PricingRoute
 }
@@ -99,12 +376,218 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/app/warranty': {
+      id: '/app/warranty'
+      path: '/warranty'
+      fullPath: '/app/warranty'
+      preLoaderRoute: typeof AppWarrantyRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/training': {
+      id: '/app/training'
+      path: '/training'
+      fullPath: '/app/training'
+      preLoaderRoute: typeof AppTrainingRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/subscribe': {
+      id: '/app/subscribe'
+      path: '/subscribe'
+      fullPath: '/app/subscribe'
+      preLoaderRoute: typeof AppSubscribeRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/stock': {
+      id: '/app/stock'
+      path: '/stock'
+      fullPath: '/app/stock'
+      preLoaderRoute: typeof AppStockRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/sell': {
+      id: '/app/sell'
+      path: '/sell'
+      fullPath: '/app/sell'
+      preLoaderRoute: typeof AppSellRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/sales-ledger': {
+      id: '/app/sales-ledger'
+      path: '/sales-ledger'
+      fullPath: '/app/sales-ledger'
+      preLoaderRoute: typeof AppSalesLedgerRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/reports': {
+      id: '/app/reports'
+      path: '/reports'
+      fullPath: '/app/reports'
+      preLoaderRoute: typeof AppReportsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/recycle-bin': {
+      id: '/app/recycle-bin'
+      path: '/recycle-bin'
+      fullPath: '/app/recycle-bin'
+      preLoaderRoute: typeof AppRecycleBinRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/quick-sell': {
+      id: '/app/quick-sell'
+      path: '/quick-sell'
+      fullPath: '/app/quick-sell'
+      preLoaderRoute: typeof AppQuickSellRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/purchase-ledger': {
+      id: '/app/purchase-ledger'
+      path: '/purchase-ledger'
+      fullPath: '/app/purchase-ledger'
+      preLoaderRoute: typeof AppPurchaseLedgerRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/purchase': {
+      id: '/app/purchase'
+      path: '/purchase'
+      fullPath: '/app/purchase'
+      preLoaderRoute: typeof AppPurchaseRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/products': {
+      id: '/app/products'
+      path: '/products'
+      fullPath: '/app/products'
+      preLoaderRoute: typeof AppProductsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/printer': {
+      id: '/app/printer'
+      path: '/printer'
+      fullPath: '/app/printer'
+      preLoaderRoute: typeof AppPrinterRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/online-shop': {
+      id: '/app/online-shop'
+      path: '/online-shop'
+      fullPath: '/app/online-shop'
+      preLoaderRoute: typeof AppOnlineShopRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/marketing': {
+      id: '/app/marketing'
+      path: '/marketing'
+      fullPath: '/app/marketing'
+      preLoaderRoute: typeof AppMarketingRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/expiring': {
+      id: '/app/expiring'
+      path: '/expiring'
+      fullPath: '/app/expiring'
+      preLoaderRoute: typeof AppExpiringRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/expense-ledger': {
+      id: '/app/expense-ledger'
+      path: '/expense-ledger'
+      fullPath: '/app/expense-ledger'
+      preLoaderRoute: typeof AppExpenseLedgerRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/due-ledger': {
+      id: '/app/due-ledger'
+      path: '/due-ledger'
+      fullPath: '/app/due-ledger'
+      preLoaderRoute: typeof AppDueLedgerRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/dashboard': {
+      id: '/app/dashboard'
+      path: '/dashboard'
+      fullPath: '/app/dashboard'
+      preLoaderRoute: typeof AppDashboardRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/contacts': {
+      id: '/app/contacts'
+      path: '/contacts'
+      fullPath: '/app/contacts'
+      preLoaderRoute: typeof AppContactsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/cashbox': {
+      id: '/app/cashbox'
+      path: '/cashbox'
+      fullPath: '/app/cashbox'
+      preLoaderRoute: typeof AppCashboxRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/access': {
+      id: '/app/access'
+      path: '/access'
+      fullPath: '/app/access'
+      preLoaderRoute: typeof AppAccessRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
+interface AppRouteChildren {
+  AppAccessRoute: typeof AppAccessRoute
+  AppCashboxRoute: typeof AppCashboxRoute
+  AppContactsRoute: typeof AppContactsRoute
+  AppDashboardRoute: typeof AppDashboardRoute
+  AppDueLedgerRoute: typeof AppDueLedgerRoute
+  AppExpenseLedgerRoute: typeof AppExpenseLedgerRoute
+  AppExpiringRoute: typeof AppExpiringRoute
+  AppMarketingRoute: typeof AppMarketingRoute
+  AppOnlineShopRoute: typeof AppOnlineShopRoute
+  AppPrinterRoute: typeof AppPrinterRoute
+  AppProductsRoute: typeof AppProductsRoute
+  AppPurchaseRoute: typeof AppPurchaseRoute
+  AppPurchaseLedgerRoute: typeof AppPurchaseLedgerRoute
+  AppQuickSellRoute: typeof AppQuickSellRoute
+  AppRecycleBinRoute: typeof AppRecycleBinRoute
+  AppReportsRoute: typeof AppReportsRoute
+  AppSalesLedgerRoute: typeof AppSalesLedgerRoute
+  AppSellRoute: typeof AppSellRoute
+  AppStockRoute: typeof AppStockRoute
+  AppSubscribeRoute: typeof AppSubscribeRoute
+  AppTrainingRoute: typeof AppTrainingRoute
+  AppWarrantyRoute: typeof AppWarrantyRoute
+}
+
+const AppRouteChildren: AppRouteChildren = {
+  AppAccessRoute: AppAccessRoute,
+  AppCashboxRoute: AppCashboxRoute,
+  AppContactsRoute: AppContactsRoute,
+  AppDashboardRoute: AppDashboardRoute,
+  AppDueLedgerRoute: AppDueLedgerRoute,
+  AppExpenseLedgerRoute: AppExpenseLedgerRoute,
+  AppExpiringRoute: AppExpiringRoute,
+  AppMarketingRoute: AppMarketingRoute,
+  AppOnlineShopRoute: AppOnlineShopRoute,
+  AppPrinterRoute: AppPrinterRoute,
+  AppProductsRoute: AppProductsRoute,
+  AppPurchaseRoute: AppPurchaseRoute,
+  AppPurchaseLedgerRoute: AppPurchaseLedgerRoute,
+  AppQuickSellRoute: AppQuickSellRoute,
+  AppRecycleBinRoute: AppRecycleBinRoute,
+  AppReportsRoute: AppReportsRoute,
+  AppSalesLedgerRoute: AppSalesLedgerRoute,
+  AppSellRoute: AppSellRoute,
+  AppStockRoute: AppStockRoute,
+  AppSubscribeRoute: AppSubscribeRoute,
+  AppTrainingRoute: AppTrainingRoute,
+  AppWarrantyRoute: AppWarrantyRoute,
+}
+
+const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AppRoute: AppRoute,
+  AppRoute: AppRouteWithChildren,
   AuthRoute: AuthRoute,
   PricingRoute: PricingRoute,
 }
