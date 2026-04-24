@@ -14,9 +14,11 @@ export function SiteHeader() {
           <img src={logo} alt="Tally Plus" width={32} height={32} className="h-8 w-8" />
           <span className="text-lg font-extrabold tracking-tight">{t("appName")}</span>
         </Link>
-        <nav className="hidden items-center gap-6 text-sm md:flex">
-          <Link to="/" className="hover:text-primary">{t("home")}</Link>
-          <Link to="/pricing" className="hover:text-primary">{t("pricing")}</Link>
+        <nav className="hidden items-center gap-6 text-sm font-medium md:flex">
+          <Link to="/" activeProps={{ className: "text-primary font-semibold" }} className="hover:text-primary">{t("home")}</Link>
+          <a href="/#features" className="hover:text-primary">{t("features")}</a>
+          <Link to="/pricing" activeProps={{ className: "text-primary font-semibold" }} className="hover:text-primary">{t("pricing")}</Link>
+          <a href="https://wa.me/8801841577944" target="_blank" rel="noopener noreferrer" className="hover:text-primary">{t("contact")}</a>
         </nav>
         <div className="flex items-center gap-2">
           <button
