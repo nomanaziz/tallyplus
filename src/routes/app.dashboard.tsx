@@ -1,8 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useShop } from "@/lib/shop";
 import { useI18n, fmtMoney } from "@/lib/i18n";
+import { dashboardSummaryQuery } from "@/lib/queries";
 import { icons } from "@/lib/icons";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -30,40 +31,12 @@ function Dashboard() {
   const { lang } = useI18n();
   const { current } = useShop();
   const [range, setRange] = useState<Range>("today");
-  const [stats, setStats] = useState({ sales: 0, purchases: 0, expenses: 0, receivable: 0, payable: 0, stockValue: 0, balance: 0 });
-  const [loading, setLoading] = useState(false);
-
-  const load = async () => {
-    if (!current) return;
-    setLoading(true);
-    const start = rangeStart(range);
-    const startIso = start ? start.toISOString() : "1970-01-01";
-    const [sales, purchases, expenses, customers, suppliers, products, cashIn, cashOut] = await Promise.all([
-      supabase.from("sales").select("total").eq("shop_id", current.id).gte("created_at", startIso).is("deleted_at", null),
-      supabase.from("purchases").select("total").eq("shop_id", current.id).gte("created_at", startIso).is("deleted_at", null),
-      supabase.from("expenses").select("amount").eq("shop_id", current.id).gte("created_at", startIso).is("deleted_at", null),
-      supabase.from("customers").select("due_balance").eq("shop_id", current.id).is("deleted_at", null),
-      supabase.from("suppliers").select("due_balance").eq("shop_id", current.id).is("deleted_at", null),
-      supabase.from("products").select("stock,cost_price").eq("shop_id", current.id).is("deleted_at", null),
-      supabase.from("cash_movements").select("amount").eq("shop_id", current.id).eq("direction", "in"),
-      supabase.from("cash_movements").select("amount").eq("shop_id", current.id).eq("direction", "out"),
-    ]);
-    const sum = <T,>(arr: T[] | null, k: keyof T) => (arr ?? []).reduce((a, b) => a + Number(b[k] ?? 0), 0);
-    const inAmt = sum(cashIn.data, "amount" as never);
-    const outAmt = sum(cashOut.data, "amount" as never);
-    setStats({
-      sales: sum(sales.data, "total" as never),
-      purchases: sum(purchases.data, "total" as never),
-      expenses: sum(expenses.data, "amount" as never),
-      receivable: sum(customers.data, "due_balance" as never),
-      payable: sum(suppliers.data, "due_balance" as never),
-      stockValue: (products.data ?? []).reduce((a, p: { stock: number; cost_price: number }) => a + Number(p.stock) * Number(p.cost_price), 0),
-      balance: inAmt - outAmt,
-    });
-    setLoading(false);
-  };
-
-  useEffect(() => { void load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [current?.id, range]);
+  const start = rangeStart(range);
+  const startIso = start ? start.toISOString() : "1970-01-01T00:00:00.000Z";
+  const { data, isFetching, refetch } = useQuery(dashboardSummaryQuery(current?.id ?? null, startIso));
+  const stats = data ?? { sales: 0, purchases: 0, expenses: 0, receivable: 0, payable: 0, stockValue: 0, balance: 0 };
+  const loading = isFetching;
+  const load = () => { void refetch(); };
 
   const tabs: { v: Range; bn: string; en: string }[] = [
     { v: "today", bn: "আজকের", en: "Today" },
