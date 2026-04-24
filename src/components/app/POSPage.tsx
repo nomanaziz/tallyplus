@@ -19,6 +19,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { toast } from "sonner";
+import { InvoiceDialog, type InvoiceData } from "@/components/app/InvoiceDialog";
 
 type Mode = "sell" | "purchase";
 
@@ -57,6 +58,7 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
   const [quickOpen, setQuickOpen] = useState(false);
   const [cashOpen, setCashOpen] = useState(false);
   const [dueOpen, setDueOpen] = useState(false);
+  const [invoice, setInvoice] = useState<InvoiceData | null>(null);
   useEffect(() => { if (autoOpenDue) setDueOpen(true); }, [autoOpenDue]);
   const [mobileTab, setMobileTab] = useState<"products" | "cart">("products");
 
@@ -316,7 +318,7 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
         discount={Number(discount) || 0}
         delivery={Number(delivery) || 0}
         grandTotal={grandTotal}
-        onSaved={() => { clearCart(); setCashOpen(false); void loadProducts(); }}
+        onSaved={(inv) => { clearCart(); setCashOpen(false); void loadProducts(); if (inv) setInvoice(inv); }}
       />
       <PaymentDialog
         open={dueOpen}
@@ -330,8 +332,9 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
         grandTotal={grandTotal}
         partyLabelBn={partyLabelBn}
         partyLabelEn={partyLabelEn}
-        onSaved={() => { clearCart(); setDueOpen(false); void loadProducts(); }}
+        onSaved={(inv) => { clearCart(); setDueOpen(false); void loadProducts(); if (inv) setInvoice(inv); }}
       />
+      <InvoiceDialog open={!!invoice} onClose={() => setInvoice(null)} data={invoice} />
     </div>
   );
 }
