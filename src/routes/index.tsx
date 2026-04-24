@@ -7,6 +7,8 @@ import { PainAndSolutions } from "@/components/site/PainAndSolutions";
 import { CompareTable } from "@/components/site/CompareTable";
 import { BusinessTypes } from "@/components/site/BusinessTypes";
 import { Testimonials } from "@/components/site/Testimonials";
+import { PricingSection } from "@/components/site/PricingSection";
+import { ContactSection } from "@/components/site/ContactSection";
 import { StatsStrip, FinalCta } from "@/components/site/StatsAndCta";
 import heroImg from "@/assets/hero-shop.jpg";
 
@@ -33,6 +35,8 @@ function Index() {
       <CompareTable />
       <BusinessTypes />
       <Testimonials />
+      <PricingSection />
+      <ContactSection />
       <StatsStrip />
       <FinalCta />
       <SiteFooter />

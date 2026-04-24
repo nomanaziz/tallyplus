@@ -17,8 +17,8 @@ export function SiteHeader() {
         <nav className="hidden items-center gap-6 text-sm font-medium md:flex">
           <Link to="/" activeProps={{ className: "text-primary font-semibold" }} className="hover:text-primary">{t("home")}</Link>
           <a href="/#features" className="hover:text-primary">{t("features")}</a>
-          <Link to="/pricing" activeProps={{ className: "text-primary font-semibold" }} className="hover:text-primary">{t("pricing")}</Link>
-          <a href="https://wa.me/8801841577944" target="_blank" rel="noopener noreferrer" className="hover:text-primary">{t("contact")}</a>
+          <a href="/#pricing" className="hover:text-primary">{t("pricing")}</a>
+          <a href="/#contact" className="hover:text-primary">{t("contact")}</a>
         </nav>
         <div className="flex items-center gap-2">
           <button
