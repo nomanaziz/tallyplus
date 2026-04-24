@@ -25,7 +25,8 @@ function escapeHtml(s: string) {
     .replace(/"/g, "&quot;");
 }
 
-function tone(t?: PrintRow extends { tone?: infer T } ? T : never) {
+type Tone = "success" | "danger" | "muted" | "default";
+function tone(t?: Tone) {
   switch (t) {
     case "success":
       return "color:#16a34a";
