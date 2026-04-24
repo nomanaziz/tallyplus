@@ -48,11 +48,11 @@ function AppLayout() {
     toast.success(lang === "bn" ? "দোকান তৈরি হয়েছে" : "Shop created");
   };
 
-  if (loading) {
+  if (loading && !user) {
     return <div className="flex min-h-screen items-center justify-center text-muted-foreground">...</div>;
   }
 
-  if (!shopsLoading && shops.length === 0) {
+  if (!shopsLoading && user && shops.length === 0) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-primary/30 to-background p-4">
         <div className="w-full max-w-sm rounded-3xl border bg-card p-6 shadow-xl">
@@ -84,7 +84,11 @@ function AppLayout() {
       <div className="flex min-w-0 flex-1 flex-col">
         <AppTopbar />
         <main className="flex-1 overflow-auto">
-          <Outlet />
+          {shopsLoading && user ? (
+            <div className="flex h-full items-center justify-center text-sm text-muted-foreground">{lang === "bn" ? "ডাটা লোড হচ্ছে..." : "Loading data..."}</div>
+          ) : (
+            <Outlet />
+          )}
         </main>
       </div>
     </div>

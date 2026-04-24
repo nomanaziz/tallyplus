@@ -7,7 +7,6 @@ import { useShop } from "@/lib/shop";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import logo from "@/assets/logo.png";
 
@@ -21,7 +20,7 @@ function AuthPage() {
   const { user, refresh } = useAuth();
   const { refresh: refreshShops } = useShop();
   const nav = useNavigate();
-  const [tab, setTab] = useState<"signup" | "login">("signup");
+  const [mode, setMode] = useState<"signup" | "login">("login");
 
   // signup state
   const [name, setName] = useState("");
@@ -68,7 +67,7 @@ function AuthPage() {
         const msg = (error as { context?: { error?: string } })?.context?.error ?? error.message;
         if (msg === "phone_exists" || /phone_exists/.test(msg)) {
           toast.error(lang === "bn" ? "এই নাম্বারে আগে একাউন্ট আছে — লগইন করুন" : "Account already exists — please log in");
-          setTab("login");
+          setMode("login");
           setLoginPhone(signupPhone);
           return;
         }
@@ -76,7 +75,7 @@ function AuthPage() {
       }
       if (data?.error === "phone_exists") {
         toast.error(lang === "bn" ? "এই নাম্বারে আগে একাউন্ট আছে — লগইন করুন" : "Account already exists — please log in");
-        setTab("login");
+        setMode("login");
         setLoginPhone(signupPhone);
         return;
       }
@@ -131,13 +130,30 @@ function AuthPage() {
       </header>
       <div className="flex flex-1 items-center justify-center px-4 pb-12">
         <div className="w-full max-w-md rounded-3xl border bg-card p-6 shadow-xl">
-          <Tabs value={tab} onValueChange={(v) => setTab(v as "signup" | "login")}>
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="signup">{lang === "bn" ? "নতুন একাউন্ট" : "Sign Up"}</TabsTrigger>
-              <TabsTrigger value="login">{lang === "bn" ? "লগইন" : "Log In"}</TabsTrigger>
-            </TabsList>
+          <div className="space-y-6">
+            <div className="space-y-1 text-center">
+              <h1 className="text-2xl font-bold text-foreground">
+                {mode === "login"
+                  ? lang === "bn"
+                    ? "লগইন করুন"
+                    : "Log in"
+                  : lang === "bn"
+                    ? "নতুন একাউন্ট তৈরি করুন"
+                    : "Create account"}
+              </h1>
+              <p className="text-sm text-muted-foreground">
+                {mode === "login"
+                  ? lang === "bn"
+                    ? "ফোন নাম্বার আর PIN দিয়ে ঢুকুন"
+                    : "Sign in with your phone number and PIN"
+                  : lang === "bn"
+                    ? "নতুন দোকানের জন্য একাউন্ট খুলুন"
+                    : "Create a new account for your shop"}
+              </p>
+            </div>
 
-            <TabsContent value="signup" className="mt-6 space-y-4">
+            {mode === "signup" ? (
+              <div className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="su-name">{lang === "bn" ? "আপনার নাম" : "Your name"}</Label>
                 <Input id="su-name" value={name} onChange={(e) => setName(e.target.value)} className="h-12 text-base" placeholder={lang === "bn" ? "যেমন: রহিম উদ্দিন" : "e.g. Rahim Uddin"} />
@@ -160,9 +176,16 @@ function AuthPage() {
               <p className="text-center text-xs text-muted-foreground">
                 {lang === "bn" ? "একাউন্ট তৈরি করলে আপনি সরাসরি লগইন হয়ে যাবেন।" : "Creating an account will log you in instantly."}
               </p>
-            </TabsContent>
-
-            <TabsContent value="login" className="mt-6 space-y-4">
+              <button
+                type="button"
+                onClick={() => setMode("login")}
+                className="w-full text-center text-sm font-medium text-primary"
+              >
+                {lang === "bn" ? "আগের একাউন্টে লগইন করুন" : "Back to login"}
+              </button>
+            </div>
+            ) : (
+              <div className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="li-phone">{lang === "bn" ? "ফোন নাম্বার" : "Phone number"}</Label>
                 <Input id="li-phone" inputMode="tel" maxLength={11} value={loginPhone} onChange={(e) => setLoginPhone(e.target.value.replace(/\D/g, ""))} className="h-12 text-base" placeholder="01XXXXXXXXX" />
@@ -174,8 +197,16 @@ function AuthPage() {
               <Button onClick={handleLogin} disabled={busy} className="h-12 w-full text-base font-bold">
                 {busy ? "..." : lang === "bn" ? "লগইন করুন" : "Log in"}
               </Button>
-            </TabsContent>
-          </Tabs>
+              <button
+                type="button"
+                onClick={() => setMode("signup")}
+                className="w-full text-center text-sm font-medium text-primary"
+              >
+                {lang === "bn" ? "নতুন একাউন্ট তৈরি করুন" : "Create a new account"}
+              </button>
+            </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

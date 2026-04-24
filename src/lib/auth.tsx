@@ -50,6 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   const loadProfile = async (uid: string) => {
+    const nowIso = new Date().toISOString();
     const [{ data: prof }, { data: roles }, { data: sub }] = await Promise.all([
       supabase.from("profiles").select("*").eq("id", uid).maybeSingle(),
       supabase.from("user_roles").select("role").eq("user_id", uid),
@@ -58,7 +59,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .select("id,status,expires_at,plan_id")
         .eq("user_id", uid)
         .eq("status", "active")
-        .gt("expires_at", new Date().toISOString())
+        .gt("expires_at", nowIso)
         .order("expires_at", { ascending: false })
         .limit(1)
         .maybeSingle(),
@@ -72,17 +73,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => {
       setSession(s);
       if (s?.user) {
-        setTimeout(() => loadProfile(s.user.id), 0);
+        setLoading(false);
+        void loadProfile(s.user.id);
       } else {
         setProfile(null);
         setIsAdmin(false);
         setSubscription(null);
+        setLoading(false);
       }
     });
     supabase.auth.getSession().then(({ data: { session: s } }) => {
       setSession(s);
-      if (s?.user) loadProfile(s.user.id).finally(() => setLoading(false));
-      else setLoading(false);
+      setLoading(false);
+      if (s?.user) void loadProfile(s.user.id);
     });
     return () => sub.subscription.unsubscribe();
   }, []);
