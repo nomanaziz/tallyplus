@@ -1,8 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, Download, MoreVertical, Package, Pencil, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useShop } from "@/lib/shop";
+import { productsListQuery } from "@/lib/queries";
 import { useI18n, fmtMoney, bnNum } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,27 +42,15 @@ export const Route = createFileRoute("/app/products")({
 function ProductsPage() {
   const { lang } = useI18n();
   const { current } = useShop();
-  const [items, setItems] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
+  const qc = useQueryClient();
+  const { data: items = [], isLoading: loading, refetch } = useQuery(productsListQuery(current?.id ?? null));
   const [search, setSearch] = useState("");
   const [openForm, setOpenForm] = useState(false);
   const [editing, setEditing] = useState<Product | null>(null);
-
   const load = async () => {
-    if (!current) return;
-    setLoading(true);
-    const { data, error } = await supabase
-      .from("products")
-      .select("id,name,sku,barcode,unit,cost_price,sale_price,stock,low_stock_alert,category_id,image_url")
-      .eq("shop_id", current.id)
-      .is("deleted_at", null)
-      .order("created_at", { ascending: false });
-    setLoading(false);
-    if (error) { toast.error(error.message); return; }
-    setItems((data as Product[]) ?? []);
+    await qc.invalidateQueries({ queryKey: ["products"] });
+    await refetch();
   };
-
-  useEffect(() => { void load(); /* eslint-disable-next-line */ }, [current?.id]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
