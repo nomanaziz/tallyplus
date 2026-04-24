@@ -668,13 +668,13 @@ function PaymentDialog(props: {
 
   const partyLabel = lang === "bn" ? (props.partyLabelBn ?? (isSell ? "কাস্টমার" : "সাপ্লায়ার")) : (props.partyLabelEn ?? (isSell ? "Customer" : "Supplier"));
   const titleBn = isCash ? "নগদ পেমেন্ট" : "বাকির এন্ট্রি";
-  const titleEn = isCash ? "Confirm Payment" : "Money Given Entry";
+  const titleEn = isCash ? "Confirm Payment" : (isSell ? "Money Received Entry" : "Money Given Entry");
 
   return (
     <Dialog open={props.open} onOpenChange={(o) => !o && props.onClose()}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>{lang === "bn" ? titleBn : titleEn}</DialogTitle>
+          <DialogTitle className="text-center text-lg font-bold">{lang === "bn" ? titleBn : titleEn}</DialogTitle>
         </DialogHeader>
 
         {!isCash && (
@@ -686,14 +686,27 @@ function PaymentDialog(props: {
           </Tabs>
         )}
 
+        {!isCash && (
+          <div className="rounded-md bg-muted/60 py-2.5 text-center text-base font-bold">
+            {lang === "bn" ? "মোট প্রদেয় : " : "Total payable: "}{fmtMoney(props.grandTotal, lang)}
+          </div>
+        )}
+
         <div className="grid gap-3">
           <div className="grid grid-cols-2 gap-3">
             <div className="grid gap-1.5">
-              <Label>{lang === "bn" ? "তারিখ" : "Date"}</Label>
+              <Label>{isSell ? (lang === "bn" ? "বিক্রির তারিখঃ" : "Sale date") : (lang === "bn" ? "কেনার তারিখঃ" : "Purchase date")}</Label>
               <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
             </div>
             <div className="grid gap-1.5">
-              <Label>{isCash ? (lang === "bn" ? "টাকার পরিমাণ" : "Amount") : (lang === "bn" ? "কাশ পেয়েছি/দিয়েছি" : "Cash received/given")}</Label>
+              <Label>
+                {isCash
+                  ? (lang === "bn" ? "টাকার পরিমাণ" : "Amount")
+                  : (isSell
+                      ? (lang === "bn" ? "ক্যাশ পেয়েছি " : "Cash received ")
+                      : (lang === "bn" ? "ক্যাশ দিয়েছি " : "Cash given "))}
+                <span className="text-rose-500">*</span>
+              </Label>
               <Input type="number" value={paid} onChange={(e) => setPaid(e.target.value)} disabled={isCash} />
             </div>
           </div>
