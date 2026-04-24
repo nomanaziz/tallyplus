@@ -302,7 +302,7 @@ export function POSPage({ mode }: { mode: Mode }) {
       <QuickAddProductDialog
         open={quickOpen}
         onClose={() => setQuickOpen(false)}
-        onAdded={(p) => { setProducts((prev) => [p, ...prev]); addToCart(p); }}
+        onAdded={(p) => { void loadProducts(); addToCart(p); }}
       />
 
       <PaymentDialog
