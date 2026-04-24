@@ -48,11 +48,11 @@ function AppLayout() {
     toast.success(lang === "bn" ? "দোকান তৈরি হয়েছে" : "Shop created");
   };
 
-  if (loading || shopsLoading) {
+  if (loading) {
     return <div className="flex min-h-screen items-center justify-center text-muted-foreground">...</div>;
   }
 
-  if (shops.length === 0) {
+  if (!shopsLoading && shops.length === 0) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-primary/30 to-background p-4">
         <div className="w-full max-w-sm rounded-3xl border bg-card p-6 shadow-xl">

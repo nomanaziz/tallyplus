@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useI18n } from "@/lib/i18n";
@@ -36,7 +36,7 @@ function AuthPage() {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    if (user) nav({ to: "/app" });
+    if (user) nav({ to: "/app/dashboard" });
   }, [user, nav]);
 
   const validPhone = (p: string) => /^01\d{9}$/.test(p.replace(/\D/g, ""));
@@ -47,9 +47,9 @@ function AuthPage() {
       refresh_token: data.refresh_token,
     });
     if (error) throw error;
-    await refresh();
-    await refreshShops();
-    nav({ to: "/app" });
+    // Navigate immediately; refresh providers in background.
+    nav({ to: "/app/dashboard" });
+    void Promise.all([refresh(), refreshShops()]).catch(() => {});
   };
 
   const handleSignup = async () => {
@@ -112,15 +112,23 @@ function AuthPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-gradient-to-br from-primary/30 via-primary/10 to-background">
-      <div className="container mx-auto flex items-center justify-between px-4 py-4">
-        <a href="/" className="flex items-center gap-2">
-          <img src={logo} alt="" className="h-8 w-8" />
-          <span className="font-extrabold">{t("appName")}</span>
-        </a>
-        <button onClick={() => setLang(lang === "bn" ? "en" : "bn")} className="rounded-md border bg-background px-2 py-1 text-xs font-semibold">
-          {lang === "bn" ? "EN" : "বাং"}
-        </button>
-      </div>
+      <header className="sticky top-0 z-40 w-full border-b bg-background/85 backdrop-blur">
+        <div className="container mx-auto flex h-14 items-center justify-between px-4">
+          <Link to="/" className="flex items-center gap-2">
+            <img src={logo} alt="" className="h-8 w-8" />
+            <span className="font-extrabold">{t("appName")}</span>
+          </Link>
+          <nav className="hidden items-center gap-5 text-sm font-medium md:flex">
+            <Link to="/" className="hover:text-primary">{t("home")}</Link>
+            <a href="/#features" className="hover:text-primary">{t("features")}</a>
+            <a href="/#pricing" className="hover:text-primary">{t("pricing")}</a>
+            <a href="/#contact" className="hover:text-primary">{t("contact")}</a>
+          </nav>
+          <button onClick={() => setLang(lang === "bn" ? "en" : "bn")} className="rounded-md border bg-background px-2 py-1 text-xs font-semibold">
+            {lang === "bn" ? "EN" : "বাং"}
+          </button>
+        </div>
+      </header>
       <div className="flex flex-1 items-center justify-center px-4 pb-12">
         <div className="w-full max-w-md rounded-3xl border bg-card p-6 shadow-xl">
           <Tabs value={tab} onValueChange={(v) => setTab(v as "signup" | "login")}>
