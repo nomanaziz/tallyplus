@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { TrendingUp, ShoppingCart, DollarSign, Package, Wallet, Receipt, RefreshCw } from "lucide-react";
 import heroBanner from "@/assets/hero-shop.jpg";
+import { QuickSellSheet } from "@/components/app/QuickSellSheet";
 
 export const Route = createFileRoute("/app/dashboard")({
   head: () => ({ meta: [{ title: "ড্যাশবোর্ড — Tally Plus" }] }),
@@ -31,6 +32,7 @@ function Dashboard() {
   const { lang } = useI18n();
   const { current } = useShop();
   const [range, setRange] = useState<Range>("today");
+  const [quickOpen, setQuickOpen] = useState(false);
   const start = rangeStart(range);
   const startIso = start ? start.toISOString() : "1970-01-01T00:00:00.000Z";
   const { data, isFetching, refetch } = useQuery(dashboardSummaryQuery(current?.id ?? null, startIso));
