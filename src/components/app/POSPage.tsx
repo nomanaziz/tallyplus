@@ -1,0 +1,769 @@
+import { useEffect, useMemo, useState } from "react";
+import { ArrowLeft, Plus, Minus, X, Package, ShoppingCart, ChevronDown, MessageSquare, RefreshCw, Search, ScanLine, UserRound } from "lucide-react";
+import { useNavigate } from "@tanstack/react-router";
+import { supabase } from "@/integrations/supabase/client";
+import { useShop } from "@/lib/shop";
+import { useAuth } from "@/lib/auth";
+import { useI18n, fmtMoney, bnNum } from "@/lib/i18n";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { EmptyState } from "@/components/app/EmptyState";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { toast } from "sonner";
+
+type Mode = "sell" | "purchase";
+
+type Product = {
+  id: string;
+  name: string;
+  unit: string | null;
+  cost_price: number;
+  sale_price: number;
+  stock: number;
+  image_url: string | null;
+};
+
+type CartItem = {
+  product_id: string;
+  name: string;
+  qty: number;
+  price: number;
+};
+
+type Contact = { id: string; name: string; phone: string | null; address: string | null };
+
+export function POSPage({ mode }: { mode: Mode }) {
+  const { lang } = useI18n();
+  const { current } = useShop();
+  const { user } = useAuth();
+  const nav = useNavigate();
+
+  const [products, setProducts] = useState<Product[]>([]);
+  const [search, setSearch] = useState("");
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [discount, setDiscount] = useState<string>("0");
+  const [delivery, setDelivery] = useState<string>("0");
+  const [quickOpen, setQuickOpen] = useState(false);
+  const [cashOpen, setCashOpen] = useState(false);
+  const [dueOpen, setDueOpen] = useState(false);
+  const [mobileTab, setMobileTab] = useState<"products" | "cart">("products");
+
+  const isSell = mode === "sell";
+  const titleBn = isSell ? "বেচা" : "কেনা";
+  const titleEn = isSell ? "Sell" : "Purchase";
+  const partyLabelBn = isSell ? "কাস্টমার" : "সাপ্লায়ার";
+  const partyLabelEn = isSell ? "Customer" : "Supplier";
+
+  const loadProducts = async () => {
+    if (!current) return;
+    const { data } = await supabase
+      .from("products")
+      .select("id,name,unit,cost_price,sale_price,stock,image_url")
+      .eq("shop_id", current.id)
+      .is("deleted_at", null)
+      .order("name");
+    setProducts((data as Product[]) ?? []);
+  };
+  useEffect(() => { void loadProducts(); /* eslint-disable-next-line */ }, [current?.id]);
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return q ? products.filter((p) => p.name.toLowerCase().includes(q)) : products;
+  }, [products, search]);
+
+  const addToCart = (p: Product) => {
+    setCart((prev) => {
+      const i = prev.findIndex((c) => c.product_id === p.id);
+      if (i >= 0) {
+        const copy = [...prev];
+        copy[i] = { ...copy[i], qty: copy[i].qty + 1 };
+        return copy;
+      }
+      return [...prev, { product_id: p.id, name: p.name, qty: 1, price: isSell ? Number(p.sale_price) : Number(p.cost_price) }];
+    });
+    setMobileTab("cart");
+  };
+
+  const updateCart = (idx: number, patch: Partial<CartItem>) => {
+    setCart((prev) => prev.map((it, i) => (i === idx ? { ...it, ...patch } : it)));
+  };
+  const removeCart = (idx: number) => setCart((prev) => prev.filter((_, i) => i !== idx));
+  const clearCart = () => { setCart([]); setDiscount("0"); setDelivery("0"); };
+
+  const subtotal = cart.reduce((s, it) => s + it.qty * it.price, 0);
+  const grandTotal = Math.max(0, subtotal - (Number(discount) || 0) + (Number(delivery) || 0));
+
+  return (
+    <div className="container px-4 py-4">
+      <div className="mb-1 text-xs text-muted-foreground">{titleEn}</div>
+      <div className="mb-3 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => nav({ to: "/app/dashboard" })}>
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <h1 className="text-xl font-extrabold md:text-2xl">{lang === "bn" ? titleBn : titleEn}</h1>
+        </div>
+      </div>
+
+      {/* Mobile tabs */}
+      <div className="mb-3 md:hidden">
+        <Tabs value={mobileTab} onValueChange={(v) => setMobileTab(v as "products" | "cart")}>
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="products">
+              {lang === "bn" ? "পণ্য" : "Products"}
+            </TabsTrigger>
+            <TabsTrigger value="cart">
+              {lang === "bn" ? "কার্ট" : "Cart"} ({lang === "bn" ? bnNum(cart.length) : cart.length})
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2">
+        {/* Product picker */}
+        <div className={`rounded-xl border bg-card ${mobileTab === "cart" ? "hidden md:block" : ""}`}>
+          <div className="flex items-center justify-between border-b p-3">
+            <div className="text-sm font-semibold">
+              {lang === "bn" ? "পণ্য নির্বাচন করুন" : "Select products"}
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-2 p-3">
+            <div className="relative min-w-0 flex-1">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder={lang === "bn" ? "পণ্য খোঁজ করুন" : "Search product"}
+                className="h-10 pl-9"
+              />
+            </div>
+            <Button variant="outline" size="icon" className="h-10 w-10 flex-none" aria-label="Barcode">
+              <ScanLine className="h-4 w-4" />
+            </Button>
+            <Button size="icon" className="h-10 w-10 flex-none" onClick={() => setQuickOpen(true)} aria-label="Quick add">
+              <Plus className="h-4 w-4" />
+            </Button>
+            <Button variant="outline" size="icon" className="h-10 w-10 flex-none" onClick={loadProducts} aria-label="Refresh">
+              <RefreshCw className="h-4 w-4" />
+            </Button>
+          </div>
+          <div className="max-h-[60vh] overflow-y-auto px-3 pb-3">
+            {filtered.length === 0 ? (
+              <EmptyState icon={<Package className="h-6 w-6" />} title={lang === "bn" ? "কোনো পণ্য নেই" : "No products"} />
+            ) : (
+              <ul className="divide-y">
+                {filtered.map((p) => (
+                  <li key={p.id} className="flex items-center gap-3 py-2">
+                    <div className="flex h-10 w-10 flex-none items-center justify-center rounded-md bg-muted">
+                      {p.image_url ? (
+                        <img src={p.image_url} alt={p.name} className="h-10 w-10 rounded-md object-cover" />
+                      ) : (
+                        <Package className="h-5 w-5 text-muted-foreground" />
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-sm font-medium">{p.name}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {lang === "bn" ? "মূল্য:" : "Price:"} {fmtMoney(isSell ? Number(p.sale_price) : Number(p.cost_price), lang)}
+                        <span className="mx-1">·</span>
+                        {lang === "bn" ? "স্টক:" : "Stock:"} {lang === "bn" ? bnNum(p.stock) : p.stock}
+                      </div>
+                    </div>
+                    <div className="flex">
+                      <Button size="sm" className="rounded-r-none" onClick={() => addToCart(p)}>
+                        {lang === "bn" ? "যোগ" : "Add"}
+                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button size="sm" className="rounded-l-none border-l border-primary-foreground/20 px-2">
+                            <ChevronDown className="h-3.5 w-3.5" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => addToCart(p)}>
+                            {lang === "bn" ? "১টি যোগ করুন" : "Add 1"}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => { addToCart(p); addToCart(p); }}>
+                            {lang === "bn" ? "২টি যোগ করুন" : "Add 2"}
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+
+        {/* Cart */}
+        <div className={`rounded-xl border bg-card ${mobileTab === "products" ? "hidden md:block" : ""}`}>
+          <div className="flex items-center justify-between border-b p-3">
+            <div className="text-sm font-semibold">
+              {lang === "bn" ? `পণ্য নির্বাচন করেছেন (${bnNum(cart.length)})` : `Selected items (${cart.length})`}
+            </div>
+            {cart.length > 0 && (
+              <Button variant="ghost" size="sm" onClick={clearCart}>
+                {lang === "bn" ? "কার্ট খালি" : "Clear cart"}
+              </Button>
+            )}
+          </div>
+          <div className="max-h-[50vh] overflow-y-auto p-3">
+            {cart.length === 0 ? (
+              <EmptyState icon={<ShoppingCart className="h-6 w-6" />} title={lang === "bn" ? "কার্ট খালি" : "Cart is empty"} />
+            ) : (
+              <ul className="space-y-2">
+                {cart.map((it, idx) => (
+                  <li key={idx} className="rounded-lg border p-3">
+                    <div className="mb-2 flex items-start justify-between gap-2">
+                      <div className="font-medium">{it.name}</div>
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => removeCart(idx)}>
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      <div>
+                        <Label className="text-[10px] uppercase text-muted-foreground">{lang === "bn" ? "পরিমাণ" : "Qty"}</Label>
+                        <div className="flex items-center">
+                          <Button variant="outline" size="icon" className="h-9 w-9 rounded-r-none"
+                            onClick={() => updateCart(idx, { qty: Math.max(1, it.qty - 1) })}>
+                            <Minus className="h-3 w-3" />
+                          </Button>
+                          <Input type="number" value={it.qty} className="h-9 rounded-none text-center"
+                            onChange={(e) => updateCart(idx, { qty: Math.max(1, Number(e.target.value) || 1) })} />
+                          <Button variant="outline" size="icon" className="h-9 w-9 rounded-l-none"
+                            onClick={() => updateCart(idx, { qty: it.qty + 1 })}>
+                            <Plus className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
+                      <div>
+                        <Label className="text-[10px] uppercase text-muted-foreground">{lang === "bn" ? "মূল্য" : "Price"}</Label>
+                        <Input type="number" value={it.price} className="h-9"
+                          onChange={(e) => updateCart(idx, { price: Number(e.target.value) || 0 })} />
+                      </div>
+                      <div>
+                        <Label className="text-[10px] uppercase text-muted-foreground">{lang === "bn" ? "মোট" : "Total"}</Label>
+                        <div className="flex h-9 items-center justify-end rounded-md border bg-muted/30 px-2 text-sm font-semibold">
+                          {fmtMoney(it.qty * it.price, lang)}
+                        </div>
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          {/* Totals */}
+          <div className="space-y-2 border-t p-3 text-sm">
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground">{lang === "bn" ? "মোট" : "Subtotal"}</span>
+              <span className="font-semibold">{fmtMoney(subtotal, lang)}</span>
+            </div>
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-muted-foreground">{lang === "bn" ? "ডিসকাউন্ট" : "Discount"}</span>
+              <Input type="number" value={discount} onChange={(e) => setDiscount(e.target.value)} className="h-8 w-28 text-right" />
+            </div>
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-muted-foreground">{lang === "bn" ? "ডেলিভারি" : "Delivery"}</span>
+              <Input type="number" value={delivery} onChange={(e) => setDelivery(e.target.value)} className="h-8 w-28 text-right" />
+            </div>
+            <div className="flex items-center justify-between border-t pt-2">
+              <span className="text-base font-semibold">{lang === "bn" ? "সর্বমোট" : "Grand total"}</span>
+              <span className="text-lg font-extrabold text-primary">{fmtMoney(grandTotal, lang)}</span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2 p-3">
+            <Button
+              variant="outline"
+              className="h-12 border-emerald-500 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800 dark:hover:bg-emerald-950"
+              disabled={cart.length === 0}
+              onClick={() => setCashOpen(true)}
+            >
+              {lang === "bn" ? "নগদ টাকা →" : "Cash →"}
+            </Button>
+            <Button
+              className="h-12 bg-amber-500 text-white hover:bg-amber-600"
+              disabled={cart.length === 0}
+              onClick={() => setDueOpen(true)}
+            >
+              {lang === "bn" ? "বাকি →" : "Due →"}
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      <QuickAddProductDialog
+        open={quickOpen}
+        onClose={() => setQuickOpen(false)}
+        onAdded={(p) => { setProducts((prev) => [p, ...prev]); addToCart(p); }}
+      />
+
+      <PaymentDialog
+        open={cashOpen}
+        onClose={() => setCashOpen(false)}
+        mode={mode}
+        kind="cash"
+        cart={cart}
+        subtotal={subtotal}
+        discount={Number(discount) || 0}
+        delivery={Number(delivery) || 0}
+        grandTotal={grandTotal}
+        onSaved={() => { clearCart(); setCashOpen(false); void loadProducts(); }}
+      />
+      <PaymentDialog
+        open={dueOpen}
+        onClose={() => setDueOpen(false)}
+        mode={mode}
+        kind="due"
+        cart={cart}
+        subtotal={subtotal}
+        discount={Number(discount) || 0}
+        delivery={Number(delivery) || 0}
+        grandTotal={grandTotal}
+        partyLabelBn={partyLabelBn}
+        partyLabelEn={partyLabelEn}
+        onSaved={() => { clearCart(); setDueOpen(false); void loadProducts(); }}
+      />
+    </div>
+  );
+}
+
+function QuickAddProductDialog({
+  open, onClose, onAdded,
+}: { open: boolean; onClose: () => void; onAdded: (p: Product) => void }) {
+  const { lang } = useI18n();
+  const { current } = useShop();
+  const [name, setName] = useState("");
+  const [salePrice, setSalePrice] = useState("0");
+  const [costPrice, setCostPrice] = useState("0");
+  const [stock, setStock] = useState("0");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => { if (!open) { setName(""); setSalePrice("0"); setCostPrice("0"); setStock("0"); } }, [open]);
+
+  const save = async () => {
+    if (!current || !name.trim()) { toast.error(lang === "bn" ? "নাম দিন" : "Enter a name"); return; }
+    setSaving(true);
+    const { data, error } = await supabase
+      .from("products")
+      .insert({
+        shop_id: current.id, name: name.trim(),
+        sale_price: Number(salePrice) || 0,
+        cost_price: Number(costPrice) || 0,
+        stock: Number(stock) || 0,
+        unit: "pcs",
+      })
+      .select("id,name,unit,cost_price,sale_price,stock,image_url")
+      .single();
+    setSaving(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success(lang === "bn" ? "যোগ হয়েছে" : "Added");
+    onAdded(data as Product);
+    onClose();
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>{lang === "bn" ? "দ্রুত পণ্য যোগ" : "Quick add product"}</DialogTitle>
+        </DialogHeader>
+        <div className="grid gap-3">
+          <div className="grid gap-1.5">
+            <Label>{lang === "bn" ? "পণ্যের নাম" : "Product name"}</Label>
+            <Input value={name} onChange={(e) => setName(e.target.value)} />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="grid gap-1.5">
+              <Label>{lang === "bn" ? "বিক্রয় মূল্য" : "Sale price"}</Label>
+              <Input type="number" value={salePrice} onChange={(e) => setSalePrice(e.target.value)} />
+            </div>
+            <div className="grid gap-1.5">
+              <Label>{lang === "bn" ? "ক্রয় মূল্য" : "Cost price"}</Label>
+              <Input type="number" value={costPrice} onChange={(e) => setCostPrice(e.target.value)} />
+            </div>
+          </div>
+          <div className="grid gap-1.5">
+            <Label>{lang === "bn" ? "মজুদ" : "Stock"}</Label>
+            <Input type="number" value={stock} onChange={(e) => setStock(e.target.value)} />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="ghost" onClick={onClose}>{lang === "bn" ? "বাতিল" : "Cancel"}</Button>
+          <Button onClick={save} disabled={saving}>{lang === "bn" ? "সেভ" : "Save"}</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function PaymentDialog(props: {
+  open: boolean; onClose: () => void;
+  mode: Mode; kind: "cash" | "due";
+  cart: CartItem[]; subtotal: number; discount: number; delivery: number; grandTotal: number;
+  partyLabelBn?: string; partyLabelEn?: string;
+  onSaved: () => void;
+}) {
+  const { lang } = useI18n();
+  const { current } = useShop();
+  const { user } = useAuth();
+  const isSell = props.mode === "sell";
+  const isCash = props.kind === "cash";
+
+  const [date, setDate] = useState<string>(new Date().toISOString().slice(0, 10));
+  const [paid, setPaid] = useState<string>(String(props.grandTotal));
+  const [comment, setComment] = useState("");
+  const [partyName, setPartyName] = useState("");
+  const [partyPhone, setPartyPhone] = useState("");
+  const [partyAddress, setPartyAddress] = useState("");
+  const [customInvoice, setCustomInvoice] = useState(false);
+  const [invoiceNo, setInvoiceNo] = useState("");
+  const [staffInfo, setStaffInfo] = useState(false);
+  const [staffNote, setStaffNote] = useState("");
+  const [sendMessage, setSendMessage] = useState(false);
+  const [partyTab, setPartyTab] = useState<"customer" | "supplier">(isSell ? "customer" : "supplier");
+  const [contacts, setContacts] = useState<Contact[]>([]);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (props.open) {
+      setDate(new Date().toISOString().slice(0, 10));
+      setPaid(String(props.grandTotal));
+      setComment(""); setPartyName(""); setPartyPhone(""); setPartyAddress("");
+      setCustomInvoice(false); setInvoiceNo(""); setStaffInfo(false); setStaffNote("");
+      setSendMessage(false);
+      setPartyTab(isSell ? "customer" : "supplier");
+    }
+  }, [props.open, props.grandTotal, isSell]);
+
+  // Load contacts when picker opens or party tab changes
+  useEffect(() => {
+    if (!props.open || !current) return;
+    const table = partyTab === "customer" ? "customers" : "suppliers";
+    void supabase
+      .from(table)
+      .select("id,name,phone,address")
+      .eq("shop_id", current.id)
+      .is("deleted_at", null)
+      .order("name")
+      .then(({ data }) => setContacts((data as Contact[]) ?? []));
+  }, [props.open, current, partyTab]);
+
+  const pickContact = (c: Contact) => {
+    setPartyName(c.name);
+    setPartyPhone(c.phone ?? "");
+    setPartyAddress(c.address ?? "");
+    setPickerOpen(false);
+  };
+
+  const save = async () => {
+    if (!current || !user) return;
+    if (props.cart.length === 0) { toast.error(lang === "bn" ? "কার্ট খালি" : "Cart is empty"); return; }
+    setSaving(true);
+
+    try {
+      const paidNum = isCash ? props.grandTotal : (Number(paid) || 0);
+      const dueNum = Math.max(0, props.grandTotal - paidNum);
+      const createdAt = new Date(date).toISOString();
+      const note = [comment, staffInfo ? staffNote : ""].filter(Boolean).join(" | ") || null;
+
+      // Find or create contact (only for due, or when name provided)
+      let contactId: string | null = null;
+      const partyTable = isSell ? "customers" : "suppliers";
+      if (!isCash || partyName.trim()) {
+        if (partyName.trim()) {
+          // try find by phone
+          if (partyPhone.trim()) {
+            const { data: found } = await supabase
+              .from(partyTable)
+              .select("id")
+              .eq("shop_id", current.id)
+              .eq("phone", partyPhone.trim())
+              .is("deleted_at", null)
+              .maybeSingle();
+            if (found) contactId = (found as { id: string }).id;
+          }
+          if (!contactId) {
+            const { data: created, error: e1 } = await supabase
+              .from(partyTable)
+              .insert({
+                shop_id: current.id,
+                name: partyName.trim(),
+                phone: partyPhone.trim() || null,
+                address: partyAddress.trim() || null,
+              })
+              .select("id")
+              .single();
+            if (e1) throw e1;
+            contactId = (created as { id: string }).id;
+          }
+        }
+      }
+
+      if (isSell) {
+        const { data: sale, error: eS } = await supabase
+          .from("sales")
+          .insert({
+            shop_id: current.id,
+            customer_id: contactId,
+            subtotal: props.subtotal,
+            discount: props.discount,
+            tax: 0,
+            total: props.grandTotal,
+            paid: paidNum,
+            due: dueNum,
+            payment_method: "cash",
+            status: "completed",
+            note,
+            invoice_no: customInvoice && invoiceNo.trim() ? invoiceNo.trim() : null,
+            created_by: user.id,
+            created_at: createdAt,
+          })
+          .select("id")
+          .single();
+        if (eS) throw eS;
+        const saleId = (sale as { id: string }).id;
+
+        const items = props.cart.map((c) => ({
+          sale_id: saleId, product_id: c.product_id, name: c.name,
+          qty: c.qty, price: c.price, total: c.qty * c.price,
+        }));
+        const { error: eI } = await supabase.from("sale_items").insert(items);
+        if (eI) throw eI;
+
+        // stock decrement + movements
+        for (const c of props.cart) {
+          await supabase.from("stock_movements").insert({
+            shop_id: current.id, product_id: c.product_id,
+            qty: c.qty, type: "out", ref_table: "sales", ref_id: saleId,
+            note: "sale", created_by: user.id,
+          });
+          const { data: prod } = await supabase
+            .from("products").select("stock").eq("id", c.product_id).single();
+          if (prod) {
+            await supabase.from("products")
+              .update({ stock: Math.max(0, Number((prod as { stock: number }).stock) - c.qty) })
+              .eq("id", c.product_id);
+          }
+        }
+
+        if (paidNum > 0) {
+          await supabase.from("cash_movements").insert({
+            shop_id: current.id, direction: "in", amount: paidNum,
+            note: `sale ${saleId}`, ref_table: "sales", ref_id: saleId, created_by: user.id,
+          });
+        }
+        if (dueNum > 0 && contactId) {
+          const { data: cur } = await supabase.from("customers").select("due_balance").eq("id", contactId).single();
+          await supabase.from("customers")
+            .update({ due_balance: Number((cur as { due_balance: number } | null)?.due_balance ?? 0) + dueNum })
+            .eq("id", contactId);
+        }
+      } else {
+        const { data: pur, error: eP } = await supabase
+          .from("purchases")
+          .insert({
+            shop_id: current.id,
+            supplier_id: contactId,
+            subtotal: props.subtotal,
+            discount: props.discount,
+            total: props.grandTotal,
+            paid: paidNum,
+            due: dueNum,
+            payment_method: "cash",
+            note,
+            invoice_no: customInvoice && invoiceNo.trim() ? invoiceNo.trim() : null,
+            created_by: user.id,
+            created_at: createdAt,
+          })
+          .select("id")
+          .single();
+        if (eP) throw eP;
+        const purId = (pur as { id: string }).id;
+
+        const items = props.cart.map((c) => ({
+          purchase_id: purId, product_id: c.product_id, name: c.name,
+          qty: c.qty, price: c.price, total: c.qty * c.price,
+        }));
+        const { error: eI } = await supabase.from("purchase_items").insert(items);
+        if (eI) throw eI;
+
+        for (const c of props.cart) {
+          await supabase.from("stock_movements").insert({
+            shop_id: current.id, product_id: c.product_id,
+            qty: c.qty, type: "in", ref_table: "purchases", ref_id: purId,
+            note: "purchase", created_by: user.id,
+          });
+          const { data: prod } = await supabase
+            .from("products").select("stock").eq("id", c.product_id).single();
+          if (prod) {
+            await supabase.from("products")
+              .update({ stock: Number((prod as { stock: number }).stock) + c.qty })
+              .eq("id", c.product_id);
+          }
+        }
+
+        if (paidNum > 0) {
+          await supabase.from("cash_movements").insert({
+            shop_id: current.id, direction: "out", amount: paidNum,
+            note: `purchase ${purId}`, ref_table: "purchases", ref_id: purId, created_by: user.id,
+          });
+        }
+        if (dueNum > 0 && contactId) {
+          const { data: cur } = await supabase.from("suppliers").select("due_balance").eq("id", contactId).single();
+          await supabase.from("suppliers")
+            .update({ due_balance: Number((cur as { due_balance: number } | null)?.due_balance ?? 0) + dueNum })
+            .eq("id", contactId);
+        }
+      }
+
+      toast.success(lang === "bn" ? "সংরক্ষিত হয়েছে" : "Saved successfully");
+      if (sendMessage) toast.message(lang === "bn" ? "মেসেজ পাঠানোর সুবিধা শীঘ্রই আসছে" : "SMS feature coming soon");
+      props.onSaved();
+    } catch (e) {
+      const err = e as { message?: string };
+      toast.error(err.message ?? "Failed to save");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const partyLabel = lang === "bn" ? (props.partyLabelBn ?? (isSell ? "কাস্টমার" : "সাপ্লায়ার")) : (props.partyLabelEn ?? (isSell ? "Customer" : "Supplier"));
+  const titleBn = isCash ? "নগদ পেমেন্ট" : "বাকির এন্ট্রি";
+  const titleEn = isCash ? "Confirm Payment" : "Money Given Entry";
+
+  return (
+    <Dialog open={props.open} onOpenChange={(o) => !o && props.onClose()}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>{lang === "bn" ? titleBn : titleEn}</DialogTitle>
+        </DialogHeader>
+
+        {!isCash && (
+          <Tabs value={partyTab} onValueChange={(v) => setPartyTab(v as "customer" | "supplier")}>
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="customer">{lang === "bn" ? "কাস্টমার" : "CUSTOMER"}</TabsTrigger>
+              <TabsTrigger value="supplier">{lang === "bn" ? "সাপ্লায়ার" : "SUPPLIER"}</TabsTrigger>
+            </TabsList>
+          </Tabs>
+        )}
+
+        <div className="grid gap-3">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="grid gap-1.5">
+              <Label>{lang === "bn" ? "তারিখ" : "Date"}</Label>
+              <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+            </div>
+            <div className="grid gap-1.5">
+              <Label>{isCash ? (lang === "bn" ? "টাকার পরিমাণ" : "Amount") : (lang === "bn" ? "কাশ পেয়েছি/দিয়েছি" : "Cash received/given")}</Label>
+              <Input type="number" value={paid} onChange={(e) => setPaid(e.target.value)} disabled={isCash} />
+            </div>
+          </div>
+
+          <div className="rounded-md bg-muted/40 p-2 text-sm">
+            <div className="flex justify-between">
+              <span>{lang === "bn" ? "মোট প্রদেয়" : "Total payable"}</span>
+              <span className="font-semibold">{fmtMoney(props.grandTotal, lang)}</span>
+            </div>
+            {!isCash && (
+              <div className="flex justify-between text-amber-600">
+                <span>{lang === "bn" ? "বাকি থাকবে" : "Will remain due"}</span>
+                <span className="font-semibold">{fmtMoney(Math.max(0, props.grandTotal - (Number(paid) || 0)), lang)}</span>
+              </div>
+            )}
+          </div>
+
+          <div className="grid gap-1.5">
+            <Label>{partyLabel} {lang === "bn" ? "নাম" : "name"}</Label>
+            <div className="flex gap-2">
+              <Input value={partyName} onChange={(e) => setPartyName(e.target.value)} placeholder={lang === "bn" ? "নাম লিখুন" : "Enter name"} />
+              <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="icon" className="flex-none" aria-label="Pick contact">
+                    <UserRound className="h-4 w-4" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-72 p-0" align="end">
+                  <Command>
+                    <CommandInput placeholder={lang === "bn" ? "খুঁজুন..." : "Search..."} />
+                    <CommandList>
+                      <CommandEmpty>{lang === "bn" ? "কেউ নেই" : "Nobody found"}</CommandEmpty>
+                      <CommandGroup>
+                        {contacts.map((c) => (
+                          <CommandItem key={c.id} value={c.name} onSelect={() => pickContact(c)}>
+                            <div>
+                              <div className="text-sm font-medium">{c.name}</div>
+                              {c.phone && <div className="text-xs text-muted-foreground">{c.phone}</div>}
+                            </div>
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="grid gap-1.5">
+              <Label>{lang === "bn" ? "মোবাইল" : "Mobile"}</Label>
+              <Input value={partyPhone} onChange={(e) => setPartyPhone(e.target.value)} />
+            </div>
+            <div className="grid gap-1.5">
+              <Label>{lang === "bn" ? "ঠিকানা" : "Address"}</Label>
+              <Input value={partyAddress} onChange={(e) => setPartyAddress(e.target.value)} />
+            </div>
+          </div>
+
+          <div className="grid gap-1.5">
+            <Label>{lang === "bn" ? "মন্তব্য" : "Comment"}</Label>
+            <Textarea rows={2} value={comment} onChange={(e) => setComment(e.target.value)} />
+          </div>
+
+          <div className="space-y-2 rounded-md border p-3">
+            <div className="flex items-center justify-between">
+              <Label className="text-sm">{lang === "bn" ? "কাস্টম ইনভয়েস নাম্বার" : "Custom invoice number"}</Label>
+              <Switch checked={customInvoice} onCheckedChange={setCustomInvoice} />
+            </div>
+            {customInvoice && (
+              <Input value={invoiceNo} onChange={(e) => setInvoiceNo(e.target.value)} placeholder="INV-001" />
+            )}
+            <div className="flex items-center justify-between">
+              <Label className="text-sm">{lang === "bn" ? "কর্মচারীর তথ্য" : "Staff info"}</Label>
+              <Switch checked={staffInfo} onCheckedChange={setStaffInfo} />
+            </div>
+            {staffInfo && (
+              <Input value={staffNote} onChange={(e) => setStaffNote(e.target.value)} placeholder={lang === "bn" ? "কর্মচারীর নাম" : "Staff name"} />
+            )}
+            <div className="flex items-center justify-between">
+              <Label className="flex items-center gap-2 text-sm">
+                <MessageSquare className="h-4 w-4" />
+                {lang === "bn" ? "মেসেজ পাঠান" : "Send message"}
+                <span className="text-xs text-muted-foreground">({lang === "bn" ? "SMS অবশিষ্ট: ৩০" : "SMS left: 30"})</span>
+              </Label>
+              <Switch checked={sendMessage} onCheckedChange={setSendMessage} />
+            </div>
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="ghost" onClick={props.onClose}>{lang === "bn" ? "বাতিল" : "Cancel"}</Button>
+          <Button onClick={save} disabled={saving}>
+            {saving ? (lang === "bn" ? "সংরক্ষণ হচ্ছে..." : "Saving...") : (isCash ? (lang === "bn" ? "টাকা পেয়েছেন" : "Confirm payment") : (isSell ? (lang === "bn" ? "বিক্রি করুন" : "Sell now") : (lang === "bn" ? "সেভ করুন" : "Save")))}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
