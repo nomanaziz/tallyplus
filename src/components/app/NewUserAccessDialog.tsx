@@ -396,7 +396,14 @@ export function NewUserAccessDialog({
           </div>
 
           <div className="border-t p-3">
-            {step === 1 ? (
+            {share ? (
+              <Button
+                className="h-11 w-full bg-foreground text-background hover:bg-foreground/90"
+                onClick={() => onOpenChange(false)}
+              >
+                {lang === "bn" ? "শেষ" : "Done"}
+              </Button>
+            ) : step === 1 ? (
               <Button
                 className="h-11 w-full bg-foreground text-background hover:bg-foreground/90"
                 onClick={() => {
