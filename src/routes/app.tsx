@@ -100,7 +100,7 @@ function AppHome() {
     { icon: Users, label: t("customers"), to: "/app" },
     { icon: Wallet, label: t("expenses"), to: "/app" },
     { icon: BarChart3, label: t("reports"), to: "/app" },
-    { icon: CreditCard, label: t("subscribe"), to: "/pricing" },
+    { icon: CreditCard, label: t("subscribe"), to: "/" },
   ];
 
   return (
