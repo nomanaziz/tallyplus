@@ -19,6 +19,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { toast } from "sonner";
+import { InvoiceDialog, type InvoiceData } from "@/components/app/InvoiceDialog";
 
 type Mode = "sell" | "purchase";
 
@@ -57,6 +58,7 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
   const [quickOpen, setQuickOpen] = useState(false);
   const [cashOpen, setCashOpen] = useState(false);
   const [dueOpen, setDueOpen] = useState(false);
+  const [invoice, setInvoice] = useState<InvoiceData | null>(null);
   useEffect(() => { if (autoOpenDue) setDueOpen(true); }, [autoOpenDue]);
   const [mobileTab, setMobileTab] = useState<"products" | "cart">("products");
 
@@ -316,7 +318,7 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
         discount={Number(discount) || 0}
         delivery={Number(delivery) || 0}
         grandTotal={grandTotal}
-        onSaved={() => { clearCart(); setCashOpen(false); void loadProducts(); }}
+        onSaved={(inv) => { clearCart(); setCashOpen(false); void loadProducts(); if (inv) setInvoice(inv); }}
       />
       <PaymentDialog
         open={dueOpen}
@@ -330,8 +332,9 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
         grandTotal={grandTotal}
         partyLabelBn={partyLabelBn}
         partyLabelEn={partyLabelEn}
-        onSaved={() => { clearCart(); setDueOpen(false); void loadProducts(); }}
+        onSaved={(inv) => { clearCart(); setDueOpen(false); void loadProducts(); if (inv) setInvoice(inv); }}
       />
+      <InvoiceDialog open={!!invoice} onClose={() => setInvoice(null)} data={invoice} />
     </div>
   );
 }
@@ -410,7 +413,7 @@ function PaymentDialog(props: {
   mode: Mode; kind: "cash" | "due";
   cart: CartItem[]; subtotal: number; discount: number; delivery: number; grandTotal: number;
   partyLabelBn?: string; partyLabelEn?: string;
-  onSaved: () => void;
+  onSaved: (invoice?: InvoiceData) => void;
 }) {
   const { lang } = useI18n();
   const { current } = useShop();
@@ -628,7 +631,33 @@ function PaymentDialog(props: {
 
       toast.success(lang === "bn" ? "সংরক্ষিত হয়েছে" : "Saved successfully");
       if (sendMessage) toast.message(lang === "bn" ? "মেসেজ পাঠানোর সুবিধা শীঘ্রই আসছে" : "SMS feature coming soon");
-      props.onSaved();
+      // Build invoice for printable popup
+      const finalInvoiceNo = (customInvoice && invoiceNo.trim())
+        ? invoiceNo.trim()
+        : (typeof crypto !== "undefined" && "randomUUID" in crypto
+            ? crypto.randomUUID().replace(/-/g, "").slice(0, 12).toUpperCase()
+            : Math.random().toString(36).slice(2, 14).toUpperCase());
+      const invoice: InvoiceData = {
+        mode: props.mode,
+        shop: {
+          name: current.name,
+          address: (current as { address?: string | null }).address ?? null,
+          phone: (current as { phone?: string | null }).phone ?? null,
+          logo_url: (current as { logo_url?: string | null }).logo_url ?? null,
+        },
+        party: { name: partyName.trim() || null, phone: partyPhone.trim() || null, address: partyAddress.trim() || null },
+        invoiceNo: finalInvoiceNo,
+        date: createdAt,
+        items: props.cart.map((c) => ({ name: c.name, qty: c.qty, price: c.price, total: c.qty * c.price })),
+        subtotal: props.subtotal,
+        discount: props.discount,
+        delivery: 0,
+        grandTotal: props.grandTotal,
+        paid: paidNum,
+        previousDue: 0,
+        currentDue: dueNum,
+      };
+      props.onSaved(invoice);
     } catch (e) {
       const err = e as { message?: string };
       toast.error(err.message ?? "Failed to save");

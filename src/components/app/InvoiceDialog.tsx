@@ -1,0 +1,267 @@
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { CheckCircle2, X, Printer, Store } from "lucide-react";
+import { useI18n, fmtMoney, bnNum } from "@/lib/i18n";
+
+export type InvoiceItem = {
+  name: string;
+  qty: number;
+  unit?: string | null;
+  price: number;
+  total: number;
+};
+
+export type InvoiceData = {
+  mode: "sell" | "purchase";
+  shop: { name: string; address?: string | null; phone?: string | null; logo_url?: string | null };
+  party: { name?: string | null; phone?: string | null; address?: string | null };
+  invoiceNo: string;
+  date: string; // ISO
+  items: InvoiceItem[];
+  subtotal: number;
+  discount: number;
+  delivery: number;
+  grandTotal: number;
+  paid: number;
+  previousDue?: number;
+  currentDue?: number;
+};
+
+export function InvoiceDialog({
+  open,
+  onClose,
+  data,
+}: {
+  open: boolean;
+  onClose: () => void;
+  data: InvoiceData | null;
+}) {
+  const { lang } = useI18n();
+  if (!data) return null;
+  const isSell = data.mode === "sell";
+
+  const dueRemain = Math.max(0, data.grandTotal - data.paid);
+  const prev = data.previousDue ?? 0;
+  const cur = dueRemain;
+  const tot = prev + cur;
+
+  const print = () => {
+    document.body.classList.add("invoice-printing");
+    window.print();
+    setTimeout(() => document.body.classList.remove("invoice-printing"), 500);
+  };
+
+  const dt = new Date(data.date);
+  const dtStr = lang === "bn"
+    ? `${bnNum(dt.toLocaleDateString("en-GB"))}, ${dt.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true })}`
+    : dt.toLocaleString();
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-2xl max-h-[92vh] overflow-y-auto p-0 gap-0 invoice-dialog-content">
+        {/* Header */}
+        <div className="flex items-center justify-between border-b px-5 py-3 print:hidden">
+          <div className="flex items-center gap-2 text-emerald-600 font-bold">
+            <CheckCircle2 className="h-5 w-5" />
+            <span>Successful</span>
+          </div>
+          <button onClick={onClose} className="rounded-md p-1 hover:bg-muted">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        {/* Invoice body */}
+        <div id="invoice-print-area" className="px-6 py-5 text-sm text-foreground">
+          {/* Shop block */}
+          <div className="flex items-start gap-3">
+            <div className="h-12 w-12 shrink-0 rounded-md border bg-muted flex items-center justify-center overflow-hidden">
+              {data.shop.logo_url
+                ? <img src={data.shop.logo_url} alt="" className="h-full w-full object-cover" />
+                : <Store className="h-6 w-6 text-muted-foreground" />}
+            </div>
+            <div className="flex-1">
+              <div className="font-bold">{data.shop.name}</div>
+              {data.shop.address && <div className="text-xs text-muted-foreground">{data.shop.address}</div>}
+              {data.shop.phone && <div className="text-xs text-muted-foreground">{data.shop.phone}</div>}
+            </div>
+          </div>
+
+          <div className="my-3 text-center text-lg font-bold">
+            {lang === "bn" ? "ইনভয়েস" : "Invoice"}
+          </div>
+
+          {/* Meta */}
+          <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs border-y py-2">
+            <div>
+              <span className="font-semibold">{lang === "bn" ? (isSell ? "ক্রেতা: " : "সাপ্লায়ার: ") : (isSell ? "Customer: " : "Supplier: ")}</span>
+              <span>{data.party.name || (lang === "bn" ? "[দেওয়া হয়নি]" : "[Not given]")}</span>
+            </div>
+            <div className="text-right">
+              <span className="font-semibold">{lang === "bn" ? (isSell ? "বিক্রেতা: " : "কিনেছেন: ") : "Issued by: "}</span>
+              <span>{data.shop.name}</span>
+            </div>
+            <div>
+              <span className="font-semibold">{lang === "bn" ? "মোবাইল: " : "Mobile: "}</span>
+              <span>{data.party.phone || (lang === "bn" ? "[দেওয়া হয়নি]" : "[Not given]")}</span>
+            </div>
+            <div className="text-right">
+              <span className="font-semibold">{lang === "bn" ? "ইনভয়েস নম্বর: " : "Invoice no: "}</span>
+              <span className="font-mono">{data.invoiceNo}</span>
+            </div>
+            <div>
+              <span className="font-semibold">{lang === "bn" ? "ঠিকানা: " : "Address: "}</span>
+              <span>{data.party.address || (lang === "bn" ? "[দেওয়া হয়নি]" : "[Not given]")}</span>
+            </div>
+            <div className="text-right">
+              <span className="font-semibold">{lang === "bn" ? "তারিখ: " : "Date: "}</span>
+              <span>{dtStr}</span>
+            </div>
+          </div>
+
+          {/* Items table */}
+          <table className="mt-3 w-full border-collapse text-xs">
+            <thead>
+              <tr className="bg-muted/50 [&>th]:border [&>th]:border-border [&>th]:px-2 [&>th]:py-1.5 [&>th]:text-left">
+                <th className="w-8 text-center">#</th>
+                <th>{lang === "bn" ? "পণ্যের নাম" : "Item"}</th>
+                <th className="w-16 text-center">{lang === "bn" ? "পরিমান" : "Qty"}</th>
+                <th className="w-16 text-center">{lang === "bn" ? "ইউনিট" : "Unit"}</th>
+                <th className="w-24 text-right">{lang === "bn" ? "ইউনিট মূল্য" : "Unit price"}</th>
+                <th className="w-24 text-right">{lang === "bn" ? "মোট" : "Total"}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.items.map((it, i) => (
+                <tr key={i} className="[&>td]:border [&>td]:border-border [&>td]:px-2 [&>td]:py-1.5">
+                  <td className="text-center">{lang === "bn" ? bnNum(i + 1) + "।" : i + 1}</td>
+                  <td>{it.name}</td>
+                  <td className="text-center">{lang === "bn" ? bnNum(it.qty) : it.qty}</td>
+                  <td className="text-center">{it.unit || "-"}</td>
+                  <td className="text-right">{fmtMoney(it.price, lang)}</td>
+                  <td className="text-right">{fmtMoney(it.total, lang)}</td>
+                </tr>
+              ))}
+              <tr className="font-bold [&>td]:border [&>td]:border-border [&>td]:px-2 [&>td]:py-1.5">
+                <td colSpan={2} className="text-center">{lang === "bn" ? "মোট" : "Total"}</td>
+                <td className="text-center">{lang === "bn" ? bnNum(data.items.reduce((a, b) => a + Number(b.qty), 0)) : data.items.reduce((a, b) => a + Number(b.qty), 0)}</td>
+                <td></td>
+                <td></td>
+                <td className="text-right">{fmtMoney(data.subtotal, lang)}</td>
+              </tr>
+            </tbody>
+          </table>
+
+          {/* Totals */}
+          <div className="mt-4 grid grid-cols-2 gap-6 text-xs">
+            <div className="space-y-1.5">
+              <Row label={lang === "bn" ? "পূর্বের বাকি:" : "Previous due:"} value={fmtMoney(prev, lang)} />
+              <Row label={lang === "bn" ? "বর্তমান বাকি:" : "Current due:"} value={fmtMoney(cur, lang)} />
+              <div className="border-t pt-1.5">
+                <Row label={lang === "bn" ? "টোটাল বাকি:" : "Total due:"} value={fmtMoney(tot, lang)} bold />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Row label={lang === "bn" ? "সাব টোটাল" : "Subtotal"} value={fmtMoney(data.subtotal, lang)} />
+              <Row label={lang === "bn" ? "(-) ছাড়" : "(-) Discount"} value={fmtMoney(data.discount, lang)} />
+              <Row label={lang === "bn" ? "ডেলিভারি" : "Delivery"} value={fmtMoney(data.delivery, lang)} />
+              <div className="border-t pt-1.5">
+                <Row label={lang === "bn" ? "মোট" : "Total"} value={fmtMoney(data.grandTotal, lang)} bold />
+              </div>
+              <Row label={lang === "bn" ? "পরিশোধিত" : "Paid"} value={fmtMoney(data.paid, lang)} />
+              <Row label={lang === "bn" ? "বাকি আছে" : "Due remaining"} value={fmtMoney(dueRemain, lang)} />
+            </div>
+          </div>
+
+          {/* Amount in words */}
+          <div className="mt-4 text-xs">
+            <div className="font-semibold">{lang === "bn" ? "এমাউন্ট (কথায়):" : "Amount (in words):"}</div>
+            <div className="mt-0.5">{lang === "bn" ? toBnWords(Math.round(data.grandTotal)) + " টাকা" : toEnWords(Math.round(data.grandTotal)) + " taka"}</div>
+          </div>
+
+          {/* Signatures */}
+          <div className="mt-8 grid grid-cols-2 gap-6 text-xs">
+            <div className="text-center">
+              <div className="border-t pt-1">{lang === "bn" ? "ক্রেতার স্বাক্ষর" : "Buyer signature"}</div>
+            </div>
+            <div className="text-center">
+              <div className="border-t pt-1">{lang === "bn" ? "বিক্রেতার স্বাক্ষর" : "Seller signature"}</div>
+            </div>
+          </div>
+
+          <div className="mt-4 text-[10px] text-muted-foreground">
+            {lang === "bn" ? "প্রিন্ট করার সময়: " : "Printed at: "}{dtStr}
+          </div>
+        </div>
+
+        {/* Print button */}
+        <div className="border-t p-3 print:hidden">
+          <Button onClick={print} className="w-full gap-2 h-11">
+            <Printer className="h-4 w-4" />
+            {lang === "bn" ? "প্রিন্ট" : "Print"}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function Row({ label, value, bold }: { label: string; value: string; bold?: boolean }) {
+  return (
+    <div className={`flex justify-between ${bold ? "font-bold" : ""}`}>
+      <span>{label}</span>
+      <span>{value}</span>
+    </div>
+  );
+}
+
+// Bangla number-to-words (integer)
+const bnUnits = ["", "এক", "দুই", "তিন", "চার", "পাঁচ", "ছয়", "সাত", "আট", "নয়",
+  "দশ", "এগারো", "বারো", "তেরো", "চৌদ্দ", "পনেরো", "ষোলো", "সতেরো", "আঠারো", "উনিশ",
+  "বিশ", "একুশ", "বাইশ", "তেইশ", "চব্বিশ", "পঁচিশ", "ছাব্বিশ", "সাতাশ", "আঠাশ", "ঊনত্রিশ",
+  "ত্রিশ", "একত্রিশ", "বত্রিশ", "তেত্রিশ", "চৌত্রিশ", "পঁইত্রিশ", "ছত্রিশ", "সাঁইত্রিশ", "আটত্রিশ", "ঊনচল্লিশ",
+  "চল্লিশ", "একচল্লিশ", "বিয়াল্লিশ", "তেতাল্লিশ", "চুয়াল্লিশ", "পঁইতাল্লিশ", "ছিচল্লিশ", "সাতচল্লিশ", "আটচল্লিশ", "ঊনপঞ্চাশ",
+  "পঞ্চাশ", "একান্ন", "বায়ান্ন", "তিপ্পান্ন", "চুয়ান্ন", "পঞ্চান্ন", "ছাপ্পান্ন", "সাতান্ন", "আটান্ন", "ঊনষাট",
+  "ষাট", "একষট্টি", "বাষট্টি", "তেষট্টি", "চৌষট্টি", "পঁইষট্টি", "ছিষট্টি", "সাতষট্টি", "আটষট্টি", "ঊনসত্তর",
+  "সত্তর", "একাত্তর", "বাহাত্তর", "তিয়াত্তর", "চুয়াত্তর", "পঁচাত্তর", "ছিয়াত্তর", "সাতাত্তর", "আটাত্তর", "ঊনআশি",
+  "আশি", "একাশি", "বিরাশি", "তিরাশি", "চুরাশি", "পঁচাশি", "ছিয়াশি", "সাতাশি", "আটাশি", "উননব্বই",
+  "নব্বই", "একানব্বই", "বিরানব্বই", "তিরানব্বই", "চুরানব্বই", "পঁচানব্বই", "ছিয়ানব্বই", "সাতানব্বই", "আটানব্বই", "নিরানব্বই"];
+
+function below100Bn(n: number): string {
+  return bnUnits[n] || "";
+}
+function toBnWords(n: number): string {
+  if (n === 0) return "শূন্য";
+  const parts: string[] = [];
+  const crore = Math.floor(n / 10000000); n %= 10000000;
+  const lakh = Math.floor(n / 100000); n %= 100000;
+  const thousand = Math.floor(n / 1000); n %= 1000;
+  const hundred = Math.floor(n / 100); n %= 100;
+  if (crore) parts.push(toBnWords(crore) + " কোটি");
+  if (lakh) parts.push(below100Bn(lakh) + " লক্ষ");
+  if (thousand) parts.push(below100Bn(thousand) + " হাজার");
+  if (hundred) parts.push(below100Bn(hundred) + " শত");
+  if (n) parts.push(below100Bn(n));
+  return parts.join(" ").trim();
+}
+
+const enOnes = ["", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten",
+  "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen"];
+const enTens = ["", "", "twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety"];
+function below100En(n: number): string {
+  if (n < 20) return enOnes[n];
+  return enTens[Math.floor(n / 10)] + (n % 10 ? "-" + enOnes[n % 10] : "");
+}
+function toEnWords(n: number): string {
+  if (n === 0) return "zero";
+  const crore = Math.floor(n / 10000000); n %= 10000000;
+  const lakh = Math.floor(n / 100000); n %= 100000;
+  const thousand = Math.floor(n / 1000); n %= 1000;
+  const hundred = Math.floor(n / 100); n %= 100;
+  const parts: string[] = [];
+  if (crore) parts.push(toEnWords(crore) + " crore");
+  if (lakh) parts.push(below100En(lakh) + " lakh");
+  if (thousand) parts.push(below100En(thousand) + " thousand");
+  if (hundred) parts.push(below100En(hundred) + " hundred");
+  if (n) parts.push(below100En(n));
+  return parts.join(" ").trim();
+}
