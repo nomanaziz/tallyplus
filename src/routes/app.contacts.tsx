@@ -41,8 +41,8 @@ function ContactsPage() {
   const employees: Contact[] = useMemo(() => {
     if (!membersRaw) return [];
     return membersRaw.rows
-      .filter((r) => r.user_id !== membersRaw.ownerId)
-      .map((r) => {
+      .filter((r: any) => r.user_id !== membersRaw.ownerId)
+      .map((r: any) => {
         const p = membersRaw.profiles[r.user_id];
         return {
           id: r.id,
@@ -137,7 +137,7 @@ function ContactsPage() {
   };
 
   const employeeRoleName = (id: string) => {
-    const row = membersRaw?.rows.find((r) => r.id === id) as any;
+    const row = membersRaw?.rows.find((r: any) => r.id === id) as any;
     if (!row) return "EMPLOYEE";
     if (row.custom_role_id) {
       const cr = customRoles.find((c) => c.id === row.custom_role_id);
