@@ -413,7 +413,7 @@ function PaymentDialog(props: {
   mode: Mode; kind: "cash" | "due";
   cart: CartItem[]; subtotal: number; discount: number; delivery: number; grandTotal: number;
   partyLabelBn?: string; partyLabelEn?: string;
-  onSaved: () => void;
+  onSaved: (invoice?: InvoiceData) => void;
 }) {
   const { lang } = useI18n();
   const { current } = useShop();
