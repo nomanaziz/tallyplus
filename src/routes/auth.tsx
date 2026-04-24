@@ -111,6 +111,7 @@ function AuthPage() {
       const errMsg = (error as { context?: { error?: string } } | null)?.context?.error ?? data?.error ?? error?.message;
       if (errMsg === "no_account") return toast.error(lang === "bn" ? "এই নাম্বারে কোনো একাউন্ট নেই — সাইন আপ করুন" : "No account — please sign up");
       if (errMsg === "wrong_pin") return toast.error(lang === "bn" ? "ভুল PIN" : "Wrong PIN");
+      if (errMsg === "no_pin") return toast.error(lang === "bn" ? "এই একাউন্টে এখনো PIN সেট করা হয়নি" : "This account does not have a PIN yet");
       if (errMsg) throw new Error(errMsg);
       await finishLogin(data);
       toast.success(lang === "bn" ? "স্বাগতম!" : "Welcome back!");
