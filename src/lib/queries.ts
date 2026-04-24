@@ -250,17 +250,90 @@ export const shopMembersQuery = (shopId: string | null | undefined) =>
     enabled: !!shopId,
     staleTime: 60_000,
     queryFn: async () => {
-      if (!shopId) return { ownerId: null as string | null, rows: [] as { id: string; user_id: string; role: string }[], profiles: {} as Record<string, { id: string; full_name: string | null; phone: string | null }> };
+      if (!shopId)
+        return {
+          ownerId: null as string | null,
+          rows: [] as {
+            id: string;
+            user_id: string;
+            role: string;
+            full_name: string | null;
+            email: string | null;
+            address: string | null;
+            avatar_url: string | null;
+            permissions: Record<string, string[]> | null;
+            custom_role_id: string | null;
+          }[],
+          profiles: {} as Record<string, { id: string; full_name: string | null; phone: string | null; avatar_url: string | null }>,
+        };
       const [{ data: shop }, { data: rows }] = await Promise.all([
         supabase.from("shops").select("owner_id").eq("id", shopId).maybeSingle(),
-        supabase.from("shop_members").select("id,user_id,role").eq("shop_id", shopId),
+        supabase
+          .from("shop_members")
+          .select("id,user_id,role,full_name,email,address,avatar_url,permissions,custom_role_id")
+          .eq("shop_id", shopId),
       ]);
       const ownerId = shop?.owner_id ?? null;
       const ids = Array.from(new Set([...(ownerId ? [ownerId] : []), ...((rows ?? []).map((r) => r.user_id))]));
       const { data: profs } = ids.length
-        ? await supabase.from("profiles").select("id,full_name,phone").in("id", ids)
-        : { data: [] as { id: string; full_name: string | null; phone: string | null }[] };
+        ? await supabase.from("profiles").select("id,full_name,phone,avatar_url").in("id", ids)
+        : { data: [] as { id: string; full_name: string | null; phone: string | null; avatar_url: string | null }[] };
       const profiles = Object.fromEntries((profs ?? []).map((p) => [p.id, p]));
-      return { ownerId, rows: rows ?? [], profiles };
+      return { ownerId, rows: (rows ?? []) as any, profiles };
+    },
+  });
+
+/* ---------- Custom roles (per shop) ---------- */
+export const customRolesQuery = (shopId: string | null | undefined) =>
+  queryOptions({
+    queryKey: ["shop", "custom_roles", shopId],
+    enabled: !!shopId,
+    staleTime: 60_000,
+    queryFn: async () => {
+      if (!shopId) return [] as { id: string; name: string; permissions: Record<string, string[]> }[];
+      const { data, error } = await supabase
+        .from("shop_custom_roles")
+        .select("id,name,permissions")
+        .eq("shop_id", shopId)
+        .order("created_at", { ascending: true });
+      if (error) throw error;
+      return (data ?? []) as { id: string; name: string; permissions: Record<string, string[]> }[];
+    },
+  });
+
+/* ---------- Contact transactions (sales/purchases for a contact) ---------- */
+export const contactTransactionsQuery = (
+  shopId: string | null | undefined,
+  type: "customers" | "suppliers",
+  contactId: string | null | undefined,
+) =>
+  queryOptions({
+    queryKey: ["contact-tx", type, shopId, contactId],
+    enabled: !!shopId && !!contactId,
+    staleTime: 30_000,
+    queryFn: async () => {
+      if (!shopId || !contactId) return [] as any[];
+      if (type === "customers") {
+        const { data, error } = await supabase
+          .from("sales")
+          .select("id,invoice_no,total,due,paid,created_at,payment_method")
+          .eq("shop_id", shopId)
+          .eq("customer_id", contactId)
+          .is("deleted_at", null)
+          .order("created_at", { ascending: false })
+          .limit(50);
+        if (error) throw error;
+        return data ?? [];
+      }
+      const { data, error } = await supabase
+        .from("purchases")
+        .select("id,invoice_no,total,due,paid,created_at,payment_method")
+        .eq("shop_id", shopId)
+        .eq("supplier_id", contactId)
+        .is("deleted_at", null)
+        .order("created_at", { ascending: false })
+        .limit(50);
+      if (error) throw error;
+      return data ?? [];
     },
   });
