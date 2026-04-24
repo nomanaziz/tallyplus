@@ -653,29 +653,89 @@ export type Database = {
           },
         ]
       }
-      shop_members: {
+      shop_custom_roles: {
         Row: {
           created_at: string
           id: string
+          name: string
+          permissions: Json
+          shop_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          permissions?: Json
+          shop_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          permissions?: Json
+          shop_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shop_custom_roles_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shop_members: {
+        Row: {
+          address: string | null
+          avatar_url: string | null
+          created_at: string
+          custom_role_id: string | null
+          email: string | null
+          full_name: string | null
+          id: string
+          permissions: Json
           role: Database["public"]["Enums"]["app_role"]
           shop_id: string
           user_id: string
         }
         Insert: {
+          address?: string | null
+          avatar_url?: string | null
           created_at?: string
+          custom_role_id?: string | null
+          email?: string | null
+          full_name?: string | null
           id?: string
+          permissions?: Json
           role?: Database["public"]["Enums"]["app_role"]
           shop_id: string
           user_id: string
         }
         Update: {
+          address?: string | null
+          avatar_url?: string | null
           created_at?: string
+          custom_role_id?: string | null
+          email?: string | null
+          full_name?: string | null
           id?: string
+          permissions?: Json
           role?: Database["public"]["Enums"]["app_role"]
           shop_id?: string
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "shop_members_custom_role_id_fkey"
+            columns: ["custom_role_id"]
+            isOneToOne: false
+            referencedRelation: "shop_custom_roles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "shop_members_shop_id_fkey"
             columns: ["shop_id"]
