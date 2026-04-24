@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@/lib/auth";
 import { useShop } from "@/lib/shop";
@@ -12,13 +13,15 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import { AppSidebar } from "./AppSidebar";
-import { Bell, Settings, MessageCircle, ChevronDown, Menu, LogOut, Languages } from "lucide-react";
+import { QuickSellSheet } from "./QuickSellSheet";
+import { Bell, Settings, MessageCircle, ChevronDown, Menu, LogOut, Languages, Zap } from "lucide-react";
 
 export function AppTopbar() {
   const { profile, signOut } = useAuth();
   const { current } = useShop();
   const { lang, setLang } = useI18n();
   const nav = useNavigate();
+  const [quickOpen, setQuickOpen] = useState(false);
 
   const initials = (profile?.full_name || current?.name || "FS")
     .split(" ")
@@ -45,6 +48,14 @@ export function AppTopbar() {
       </div>
 
       <div className="flex items-center gap-1.5">
+        <Button
+          onClick={() => setQuickOpen(true)}
+          size="sm"
+          className="h-9 gap-1.5 bg-emerald-600 px-3 font-semibold text-white shadow-sm hover:bg-emerald-700"
+        >
+          <Zap className="h-4 w-4" />
+          <span className="hidden sm:inline">{lang === "bn" ? "দ্রুত বেচা" : "Quick Sell"}</span>
+        </Button>
         <a
           href="https://wa.me/8801841577944"
           target="_blank"
@@ -100,6 +111,7 @@ export function AppTopbar() {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+      <QuickSellSheet open={quickOpen} onOpenChange={setQuickOpen} />
     </header>
   );
 }
