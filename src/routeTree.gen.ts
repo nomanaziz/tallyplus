@@ -16,6 +16,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppWarrantyRouteImport } from './routes/app.warranty'
 import { Route as AppTrainingRouteImport } from './routes/app.training'
 import { Route as AppSubscribeRouteImport } from './routes/app.subscribe'
+import { Route as AppStockEditRouteImport } from './routes/app.stock-edit'
 import { Route as AppStockRouteImport } from './routes/app.stock'
 import { Route as AppSellRouteImport } from './routes/app.sell'
 import { Route as AppSalesLedgerRouteImport } from './routes/app.sales-ledger'
@@ -68,6 +69,11 @@ const AppTrainingRoute = AppTrainingRouteImport.update({
 const AppSubscribeRoute = AppSubscribeRouteImport.update({
   id: '/subscribe',
   path: '/subscribe',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppStockEditRoute = AppStockEditRouteImport.update({
+  id: '/stock-edit',
+  path: '/stock-edit',
   getParentRoute: () => AppRoute,
 } as any)
 const AppStockRoute = AppStockRouteImport.update({
@@ -184,6 +190,7 @@ export interface FileRoutesByFullPath {
   '/app/sales-ledger': typeof AppSalesLedgerRoute
   '/app/sell': typeof AppSellRoute
   '/app/stock': typeof AppStockRoute
+  '/app/stock-edit': typeof AppStockEditRoute
   '/app/subscribe': typeof AppSubscribeRoute
   '/app/training': typeof AppTrainingRoute
   '/app/warranty': typeof AppWarrantyRoute
@@ -211,6 +218,7 @@ export interface FileRoutesByTo {
   '/app/sales-ledger': typeof AppSalesLedgerRoute
   '/app/sell': typeof AppSellRoute
   '/app/stock': typeof AppStockRoute
+  '/app/stock-edit': typeof AppStockEditRoute
   '/app/subscribe': typeof AppSubscribeRoute
   '/app/training': typeof AppTrainingRoute
   '/app/warranty': typeof AppWarrantyRoute
@@ -239,6 +247,7 @@ export interface FileRoutesById {
   '/app/sales-ledger': typeof AppSalesLedgerRoute
   '/app/sell': typeof AppSellRoute
   '/app/stock': typeof AppStockRoute
+  '/app/stock-edit': typeof AppStockEditRoute
   '/app/subscribe': typeof AppSubscribeRoute
   '/app/training': typeof AppTrainingRoute
   '/app/warranty': typeof AppWarrantyRoute
@@ -268,6 +277,7 @@ export interface FileRouteTypes {
     | '/app/sales-ledger'
     | '/app/sell'
     | '/app/stock'
+    | '/app/stock-edit'
     | '/app/subscribe'
     | '/app/training'
     | '/app/warranty'
@@ -295,6 +305,7 @@ export interface FileRouteTypes {
     | '/app/sales-ledger'
     | '/app/sell'
     | '/app/stock'
+    | '/app/stock-edit'
     | '/app/subscribe'
     | '/app/training'
     | '/app/warranty'
@@ -322,6 +333,7 @@ export interface FileRouteTypes {
     | '/app/sales-ledger'
     | '/app/sell'
     | '/app/stock'
+    | '/app/stock-edit'
     | '/app/subscribe'
     | '/app/training'
     | '/app/warranty'
@@ -383,6 +395,13 @@ declare module '@tanstack/react-router' {
       path: '/subscribe'
       fullPath: '/app/subscribe'
       preLoaderRoute: typeof AppSubscribeRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/stock-edit': {
+      id: '/app/stock-edit'
+      path: '/stock-edit'
+      fullPath: '/app/stock-edit'
+      preLoaderRoute: typeof AppStockEditRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/stock': {
@@ -533,6 +552,7 @@ interface AppRouteChildren {
   AppSalesLedgerRoute: typeof AppSalesLedgerRoute
   AppSellRoute: typeof AppSellRoute
   AppStockRoute: typeof AppStockRoute
+  AppStockEditRoute: typeof AppStockEditRoute
   AppSubscribeRoute: typeof AppSubscribeRoute
   AppTrainingRoute: typeof AppTrainingRoute
   AppWarrantyRoute: typeof AppWarrantyRoute
@@ -557,6 +577,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppSalesLedgerRoute: AppSalesLedgerRoute,
   AppSellRoute: AppSellRoute,
   AppStockRoute: AppStockRoute,
+  AppStockEditRoute: AppStockEditRoute,
   AppSubscribeRoute: AppSubscribeRoute,
   AppTrainingRoute: AppTrainingRoute,
   AppWarrantyRoute: AppWarrantyRoute,
@@ -573,3 +594,12 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}

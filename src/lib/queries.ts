@@ -111,6 +111,138 @@ export const stockHistoryQuery = (shopId: string | null | undefined) =>
     },
   });
 
+/* ---------- Cash movements ---------- */
+export const cashMovementsQuery = (shopId: string | null | undefined) =>
+  queryOptions({
+    queryKey: ["cash", "movements", shopId],
+    enabled: !!shopId,
+    staleTime: 30_000,
+    queryFn: async () => {
+      if (!shopId) return [];
+      const { data, error } = await supabase
+        .from("cash_movements")
+        .select("id,direction,amount,note,ref_table,ref_id,created_at")
+        .eq("shop_id", shopId)
+        .order("created_at", { ascending: false })
+        .limit(500);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+/* ---------- Sales list ---------- */
+export const salesListQuery = (shopId: string | null | undefined) =>
+  queryOptions({
+    queryKey: ["sales", "list", shopId],
+    enabled: !!shopId,
+    staleTime: 30_000,
+    queryFn: async () => {
+      if (!shopId) return [];
+      const { data, error } = await supabase
+        .from("sales")
+        .select("id,invoice_no,customer_id,subtotal,discount,total,paid,due,payment_method,note,created_at")
+        .eq("shop_id", shopId)
+        .is("deleted_at", null)
+        .order("created_at", { ascending: false })
+        .limit(500);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+/* ---------- Purchases list ---------- */
+export const purchasesListQuery = (shopId: string | null | undefined) =>
+  queryOptions({
+    queryKey: ["purchases", "list", shopId],
+    enabled: !!shopId,
+    staleTime: 30_000,
+    queryFn: async () => {
+      if (!shopId) return [];
+      const { data, error } = await supabase
+        .from("purchases")
+        .select("id,invoice_no,supplier_id,subtotal,discount,total,paid,due,payment_method,note,created_at")
+        .eq("shop_id", shopId)
+        .is("deleted_at", null)
+        .order("created_at", { ascending: false })
+        .limit(500);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+/* ---------- Expenses list ---------- */
+export const expensesListQuery = (shopId: string | null | undefined) =>
+  queryOptions({
+    queryKey: ["expenses", "list", shopId],
+    enabled: !!shopId,
+    staleTime: 30_000,
+    queryFn: async () => {
+      if (!shopId) return [];
+      const { data, error } = await supabase
+        .from("expenses")
+        .select("id,category,amount,note,paid_via,created_at")
+        .eq("shop_id", shopId)
+        .is("deleted_at", null)
+        .order("created_at", { ascending: false })
+        .limit(500);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+/* ---------- Contacts (customers / suppliers) ---------- */
+export const contactsQuery = (
+  shopId: string | null | undefined,
+  type: "customers" | "suppliers",
+) =>
+  queryOptions({
+    queryKey: ["contacts", type, shopId],
+    enabled: !!shopId,
+    staleTime: 30_000,
+    queryFn: async () => {
+      if (!shopId) return [];
+      const { data, error } = await supabase
+        .from(type)
+        .select("id,name,phone,address,due_balance,created_at")
+        .eq("shop_id", shopId)
+        .is("deleted_at", null)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+/* ---------- Recycle bin (soft-deleted) ---------- */
+export const recycleBinQuery = (
+  shopId: string | null | undefined,
+  table: "products" | "customers" | "suppliers" | "sales" | "purchases" | "expenses",
+) =>
+  queryOptions({
+    queryKey: ["recycle", table, shopId],
+    enabled: !!shopId,
+    staleTime: 30_000,
+    queryFn: async () => {
+      if (!shopId) return [];
+      const cols =
+        table === "products"
+          ? "id,name,stock,sale_price,deleted_at"
+          : table === "customers" || table === "suppliers"
+            ? "id,name,phone,deleted_at"
+            : table === "expenses"
+              ? "id,category,amount,note,deleted_at,created_at"
+              : "id,invoice_no,total,deleted_at,created_at";
+      const { data, error } = await supabase
+        .from(table)
+        .select(cols)
+        .eq("shop_id", shopId)
+        .not("deleted_at", "is", null)
+        .order("deleted_at", { ascending: false })
+        .limit(200);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
 /* ---------- Access page (members) ---------- */
 export const shopMembersQuery = (shopId: string | null | undefined) =>
   queryOptions({
