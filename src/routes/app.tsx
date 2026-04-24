@@ -128,7 +128,7 @@ function AppHome() {
               <p className="font-semibold">{t("subscriptionExpired")}</p>
               <p className="text-sm text-muted-foreground">{lang === "bn" ? "সব ফিচার আনলক করতে সাবস্ক্রাইব করুন।" : "Subscribe to unlock all features."}</p>
             </div>
-            <Button asChild><Link to="/pricing">{t("subscribe")}</Link></Button>
+            <Button asChild><a href="/#pricing">{t("subscribe")}</a></Button>
           </div>
         )}
 
