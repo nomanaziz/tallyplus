@@ -148,17 +148,20 @@ function Dashboard() {
 
       {/* 3 main action buttons */}
       <div className="mt-5 grid grid-cols-3 gap-3">
-        {[
-          { to: "/app/purchase", icon: icons.purchase, bn: "কেনা", en: "Purchase" },
-          { to: "/app/sell", icon: icons.sell, bn: "বেচা", en: "Sell" },
-          { to: "/app/quick-sell", icon: icons.quickSell, bn: "দ্রুত বেচা", en: "Quick Sell" },
-        ].map((a) => (
-          <Link key={a.to} to={a.to} className="flex flex-col items-center justify-center gap-2 rounded-2xl border bg-card p-6 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md">
-            <img src={a.icon} alt="" className="h-12 w-12" />
-            <span className="text-sm font-bold">{lang === "bn" ? a.bn : a.en}</span>
-          </Link>
-        ))}
+        <Link to="/app/purchase" search={{}} className="flex flex-col items-center justify-center gap-2 rounded-2xl border bg-card p-6 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md">
+          <img src={icons.purchase} alt="" className="h-12 w-12" />
+          <span className="text-sm font-bold">{lang === "bn" ? "কেনা" : "Purchase"}</span>
+        </Link>
+        <Link to="/app/sell" search={{}} className="flex flex-col items-center justify-center gap-2 rounded-2xl border bg-card p-6 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md">
+          <img src={icons.sell} alt="" className="h-12 w-12" />
+          <span className="text-sm font-bold">{lang === "bn" ? "বেচা" : "Sell"}</span>
+        </Link>
+        <button type="button" onClick={() => setQuickOpen(true)} className="flex flex-col items-center justify-center gap-2 rounded-2xl border bg-card p-6 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md">
+          <img src={icons.quickSell} alt="" className="h-12 w-12" />
+          <span className="text-sm font-bold">{lang === "bn" ? "দ্রুত বেচা" : "Quick Sell"}</span>
+        </button>
       </div>
+      <QuickSellSheet open={quickOpen} onOpenChange={setQuickOpen} />
 
       {/* Khata + Business + Others */}
       <div className="mt-5 grid gap-3 md:grid-cols-2">
