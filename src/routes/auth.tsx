@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import logo from "@/assets/logo.png";
+import { Loader2 } from "lucide-react";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({ meta: [{ title: "লগইন — Tally Plus" }] }),
@@ -171,7 +172,14 @@ function AuthPage() {
                 <Input id="su-pin" type="password" inputMode="numeric" maxLength={4} value={signupPin} onChange={(e) => setSignupPin(e.target.value.replace(/\D/g, ""))} className="h-12 text-center text-2xl tracking-[0.6em]" placeholder="● ● ● ●" />
               </div>
               <Button onClick={handleSignup} disabled={busy} className="h-12 w-full text-base font-bold">
-                {busy ? "..." : lang === "bn" ? "একাউন্ট তৈরি করুন" : "Create account"}
+                {busy ? (
+                  <span className="inline-flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    {lang === "bn" ? "তৈরি হচ্ছে..." : "Creating..."}
+                  </span>
+                ) : (
+                  lang === "bn" ? "একাউন্ট তৈরি করুন" : "Create account"
+                )}
               </Button>
               <p className="text-center text-xs text-muted-foreground">
                 {lang === "bn" ? "একাউন্ট তৈরি করলে আপনি সরাসরি লগইন হয়ে যাবেন।" : "Creating an account will log you in instantly."}
@@ -195,8 +203,20 @@ function AuthPage() {
                 <Input id="li-pin" type="password" inputMode="numeric" maxLength={4} value={loginPin} onChange={(e) => setLoginPin(e.target.value.replace(/\D/g, ""))} className="h-12 text-center text-2xl tracking-[0.6em]" placeholder="● ● ● ●" />
               </div>
               <Button onClick={handleLogin} disabled={busy} className="h-12 w-full text-base font-bold">
-                {busy ? "..." : lang === "bn" ? "লগইন করুন" : "Log in"}
+                {busy ? (
+                  <span className="inline-flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    {lang === "bn" ? "লগইন হচ্ছে..." : "Logging in..."}
+                  </span>
+                ) : (
+                  lang === "bn" ? "লগইন করুন" : "Log in"
+                )}
               </Button>
+              {busy && (
+                <p className="text-center text-xs text-muted-foreground">
+                  {lang === "bn" ? "একটু সময় লাগতে পারে, অপেক্ষা করুন..." : "This may take a moment, please wait..."}
+                </p>
+              )}
               <button
                 type="button"
                 onClick={() => setMode("signup")}
