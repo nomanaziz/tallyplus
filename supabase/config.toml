@@ -5,3 +5,9 @@ verify_jwt = false
 
 [functions.verify-otp]
 verify_jwt = false
+
+[functions.signup-with-pin]
+verify_jwt = false
+
+[functions.login-with-pin]
+verify_jwt = false
