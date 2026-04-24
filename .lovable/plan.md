@@ -1,135 +1,102 @@
-## লক্ষ্য
+# Purchase + Sell POS Pages — Plan
 
-একজন মালিকের একাধিক দোকান থাকতে পারবে। প্রতিটি দোকানের আলাদা হিসাব, আলাদা কর্মচারী access, আলাদা subscription। Subscription কয়টা দোকানের জন্য — তার উপর দাম নির্ভর করবে। Login-এর পর user দোকান select করবে; settings থেকে যেকোনো সময় দোকান পরিবর্তন করা যাবে।
-
----
-
-## Concept overview
-
-- **Primary দোকান** = signup-এ দেওয়া দোকান (user-এর প্রথম shop, `created_at` সবচেয়ে পুরানো)।
-- User চাইলে নতুন দোকান add করতে পারবে — কিন্তু **আলাদা subscription কিনতে হবে** সেই অতিরিক্ত দোকানের জন্য।
-- প্রতিটি দোকানে আলাদা `shop_members` (কর্মচারী) থাকবে — যা already DB-তে সাপোর্ট করা আছে।
-- Subscription এখন **per-shop** হবে (এখন user-level আছে, সেটা change হবে)।
+আপনার দেওয়া ৪টি ছবি অনুযায়ী **কেনা (Purchase)** এবং **বেচা (Sell)** পেজ একই layout-এ বানাবো। দুইটাই Two-column POS — বাঁ দিকে product picker, ডানে cart। নিচে total, discount, delivery + দুইটা বড় বোতাম: **নগদ টাকা** ও **বাকি**।
 
 ---
 
-## Batch 1 — Database changes (migration)
-
-### 1. `shop_subscriptions` নতুন table
-`subscriptions` table user-level আছে — এটা রেখেই **নতুন `shop_subscriptions`** table যোগ করব যাতে প্রতিটি দোকানের জন্য আলাদা subscription থাকে।
-
-```
-shop_subscriptions(
-  id, shop_id (FK shops, unique constraint),
-  plan_id (FK subscription_plans),
-  status, starts_at, expires_at,
-  created_at, updated_at
-)
-```
-RLS: shop owner বা admin read; admin write।
-
-### 2. `subscription_requests`-এ `shop_id` যোগ
-যাতে user যখন subscription কিনে, কোন দোকানের জন্য কিনছে সেটা বলা যায়।
-
-### 3. Helper function
-`public.shop_has_active_subscription(_shop_id uuid) returns boolean`
-
----
-
-## Batch 2 — Shop selector page (login-এর পরে)
-
-নতুন route: **`/app/select-shop`**
-
-হিসাবী-এর `/shop` page-এর মতো দেখতে হবে (uploaded reference image অনুসারে):
+## Layout (দুই পেজে একই কাঠামো)
 
 ```text
-        [Logo]   দোকান সিলেক্ট করুন
-
-   ┌──────────┐  ┌──────────┐  ┌──────────┐
-   │  🏪 icon │  │  🏪 icon │  │  ➕ icon │
-   │ Shop A   │  │ Shop B   │  │  নতুন    │
-   │ address  │  │ address  │  │  দোকান   │
-   │[সিলেক্ট] │  │[সিলেক্ট] │  │ যুক্ত    │
-   └──────────┘  └──────────┘  └──────────┘
+┌─ Breadcrumb: Purchase / Sell ───────────────────────────────────┐
+│                                                                  │
+│  ┌─ পণ্য নির্বাচন করুন ──────┐  ┌─ পণ্য নির্বাচন করেছেন (3) ────┐│
+│  │ [Search] [Barcode] [+] [↻]│  │ Clear cart                    ││
+│  │ ─────────────────────────│  │ ┌──────────────────────────┐  ││
+│  │ 📦 Product name           │  │ │ Item name                │  ││
+│  │    মূল্য:1400  স্টক:0 [Add▾]│  │ │ পরিমাণ মূল্য মোট  [✕]    │  ││
+│  │ 📦 Product 2  ...    [Add]│  │ └──────────────────────────┘  ││
+│  │  ⋮ scrollable list        │  │  (each row: qty, price, total)││
+│  └──────────────────────────┘  │                                ││
+│                                │  মোট ৩,১০০                    ││
+│                                │  ডিস্কাউন্ট  [0]                 ││
+│                                │  ডেলিভারি   [0]                  ││
+│                                │  সর্বমোট ৩,১০০                  ││
+│                                │  ┌─নগদ টাকা→─┐ ┌─বাকি→──────┐ ││
+│                                │  └───────────┘ └────────────┘ ││
+│                                └────────────────────────────────┘│
+└──────────────────────────────────────────────────────────────────┘
 ```
 
-- Top-right: **লগআউট** button
-- প্রতিটি card-এ: shop icon/logo, নাম, ঠিকানা, **সিলেক্ট করুন** button
-- শেষে **+ নতুন দোকান যুক্ত করুন** card → "Add shop" dialog খোলে
-- Active/current shop সবুজ border দিয়ে highlight হবে
-- Shop select করলে `localStorage.tp_shop_id` সেট করে `/app/dashboard`-এ যাবে
-
-### Login flow update
-`auth.tsx` finishLogin-এ:
-- যদি user-এর shop > 1 → `/app/select-shop`
-- যদি ঠিক 1 → সরাসরি `/app/dashboard`
-- যদি 0 → বর্তমান "Setup shop" prompt (`app.tsx`)
-
-Single-shop user-দের কোনো বাড়তি click লাগবে না।
+মোবাইলে দুই কলাম stack হবে — উপরে cart (collapsed), নিচে product list, অথবা ট্যাব দিয়ে toggle।
 
 ---
 
-## Batch 3 — "দোকান পরিবর্তন করুন" (Settings থেকে)
+## Components তৈরি হবে
 
-`AppTopbar` settings dropdown-এ একটা item যোগ করব: **↔ দোকান পরিবর্তন করুন** → `/app/select-shop`-এ নিয়ে যাবে।
-
-User profile dropdown-এও current shop name show করবে (image-12 reference)।
-
----
-
-## Batch 4 — Add shop dialog (subscription gate সহ)
-
-`/app/select-shop`-এর "+ নতুন দোকান" বা settings থেকে নতুন দোকান add করতে গেলে:
-
-1. Shop name + address + phone input
-2. Submit করলে → first check: এই user-এর কয়টা active shop subscription আছে?
-3. যদি নতুন দোকানের জন্য active subscription না থাকে → toast: *"নতুন দোকানের জন্য সাবস্ক্রিপশন কিনুন"* + redirect to `/app/subscribe?for=new-shop`
-4. Subscription থাকলে → `shops`-এ insert + `shop_subscriptions`-এ link
-
-Primary (প্রথম) দোকান free হিসেবে গণ্য হবে যদি default plan থাকে — না হলে signup-এর সময়ও plan select করতে হবে। **আমরা MVP-তে: প্রথম দোকান free trial (7 days), পরের প্রতিটি দোকান paid** — এই rule দিয়ে শুরু করব।
+1. **`src/components/app/POSPage.tsx`** — shared two-column POS shell। Props: `mode: "purchase" | "sell"`. দুই পেজ এই কম্পোনেন্ট ব্যবহার করবে যেন code duplication না হয়।
+2. **`src/components/app/ProductPickerList.tsx`** — search/barcode, প্রতিটা row-এ Add button + dropdown (qty +/−, "Add custom price", remove)। প্লাস (+) বোতাম দিয়ে নতুন product দ্রুত তৈরি করা যাবে ছোট dialog-এ।
+3. **`src/components/app/CartPanel.tsx`** — selected items list, প্রতিটায় qty/price input + delete; একটা collapse toggle (▾) যেটা ছবিতে আছে; নিচে discount, delivery, total summary।
+4. **`src/components/app/CashPaymentDialog.tsx`** — ছবি ১৬-এর "Confirm Payment" — তারিখ, টাকার পরিমাণ, মন্তব্য, supplier/customer নাম + মোবাইল + ঠিকানা, custom invoice toggle, কর্মচারীর তথ্য toggle, **মাসেজ পাঠান** toggle (SMS অবশিষ্ট: 30)। Submit → `টাকার মূল্য পেয়েছেন`.
+5. **`src/components/app/DueDialog.tsx`** — ছবি ১৭/১৮-এর "Money Given Entry" — উপরে **CUSTOMER / SUPPLIER** ট্যাব (Sell-এ default Customer, Purchase-এ default Supplier), মোট প্রদেয়, কাশ পেয়েছি/দিয়েছি, name+phone+address, comment, custom invoice toggle, কর্মচারীর তথ্য toggle, msg toggle। Submit → `সেভ করুন` / `বিক্রি করুন`.
+6. **`src/components/app/ContactPickerDialog.tsx`** — name input পাশে যে ছোট 👤 আইকন আছে সেটা চাপলে existing customers/suppliers থেকে বেছে নেওয়া যাবে।
 
 ---
 
-## Batch 5 — Subscribe page update
+## Routes
 
-`/app/subscribe`:
-- উপরে দেখাবে: **এই subscription কোন দোকানের জন্য?** — current shop dropdown/selector
-- প্রতিটি plan card-এ "এই দোকানের জন্য কিনুন" button
-- Submit → `subscription_requests`-এ insert with `shop_id` + `plan_id`
-- Admin approve করলে `shop_subscriptions`-এ row তৈরি হবে
+- **`src/routes/app.purchase.tsx`** — `<POSPage mode="purchase" />`
+- **`src/routes/app.sell.tsx`** — `<POSPage mode="sell" />`
 
----
-
-## Batch 6 — Per-shop access (already supported)
-
-`shop_members` table আগে থেকেই `shop_id`-based, তাই **App Access page (Batch A-তে already করা)** auto-correct — current selected shop-এর members দেখাবে।
+(দুটো ফাইলই আগের `PlaceholderPage` কোডকে replace করবে।)
 
 ---
 
-## Technical details
+## ব্যবসায়িক logic
 
-**Files to edit/create:**
-- `supabase/migrations/<new>.sql` — `shop_subscriptions` table + RLS + helper function + add `shop_id` to `subscription_requests`
-- `src/routes/app.select-shop.tsx` (new) — shop picker page
-- `src/routes/app.tsx` — login flow conditional redirect to select-shop
-- `src/lib/shop.tsx` — expose `addShop()` + subscription check helper
-- `src/lib/subscription.tsx` (new) — `useShopSubscription(shopId)` hook
-- `src/components/app/AppTopbar.tsx` — "দোকান পরিবর্তন করুন" link in dropdown, current shop label
-- `src/routes/app.subscribe.tsx` — shop selector + per-shop purchase flow
-- `src/routes/auth.tsx` — finishLogin redirects to `/app/select-shop` if shops > 1
+### Cart state
+লোকাল state-এ array of `{ product_id, name, qty, price, total }`। Live recompute: `subtotal = sum(total)`, `grandTotal = subtotal − discount + delivery`।
 
-**Backwards compatibility:** existing `subscriptions` (user-level) row থাকলে সেটা first/primary shop-এর জন্য valid ধরা হবে — migration-এ existing user subscriptions auto-link হবে user-এর oldest shop-এ।
+### "নগদ টাকা" ক্লিক
+1. CashPaymentDialog খুলবে, amount = grandTotal (editable)।
+2. Save করলে:
+   - **Sell mode**: `sales` table-এ row + `sale_items` rows; `payment_method='cash'`, `paid=amount`, `due=0`; প্রতিটা item-এর জন্য `stock_movements` (`type='sale'`, qty negative) এবং `products.stock` decrement; `cash_movements` (direction='in')।
+   - **Purchase mode**: `purchases` + `purchase_items`; stock increment; `cash_movements` (direction='out')।
+3. SMS toggle ON থাকলে এখন placeholder (later integrate)। Toast: ✅ সফল।
+
+### "বাকি" ক্লিক
+1. DueDialog খুলবে।
+2. CUSTOMER/SUPPLIER ট্যাব অনুযায়ী contact lookup/insert (`customers` বা `suppliers` table-এ phone দিয়ে find-or-create)।
+3. Save করলে:
+   - Sale/Purchase row insert হবে `paid = কাশ পেয়েছি/দিয়েছি field`, `due = grandTotal − paid`, `customer_id`/`supplier_id` link করে।
+   - `customers.due_balance` / `suppliers.due_balance` += due।
+   - Stock movements আগের মতই।
+   - যদি partial cash থাকে তবে `cash_movements` row।
+
+### Plus (+) দিয়ে quick product add
+`ProductFormDialog` (already exists in products page) reuse করে quick create — শুধু name, sale_price, cost_price, stock — save হলে cart-এ auto-add।
+
+### Add button dropdown (▾)
+ছবিতে প্রতিটা Add বোতামের পাশে ছোট ▾ আছে। সেটা চাপলে: "পরিমাণ বাড়ান", "কাস্টম মূল্য", "নোট যোগ করুন" — ছোট popover।
+
+### Class/category click → request
+ছবিতে যেটা "class এ click করে request" বললেন — এটা product list-এ category badge চাপলে ওই category-র product filter হবে। DataToolbar-এ ছোট category dropdown যোগ করবো।
 
 ---
 
-## Execution order
+## Bilingual strings (i18n.tsx-এ যোগ হবে)
 
-1. **Batch 1** — DB migration (shop_subscriptions + auto-link + helper)
-2. **Batch 2** — `/app/select-shop` page + login redirect
-3. **Batch 3** — Topbar "দোকান পরিবর্তন করুন" + current shop label
-4. **Batch 4** — Add-shop dialog with subscription gate
-5. **Batch 5** — Subscribe page per-shop flow
+`selectProduct`, `selectedItems`, `clearCart`, `discount`, `delivery`, `subtotal`, `grandTotal`, `cashPayment`, `dueEntry`, `confirmPayment`, `moneyGivenEntry`, `customer`, `supplier`, `customInvoice`, `staffInfo`, `sendMessage`, `smsRemaining`, `received`, `given`, `purchaseDate`, `saleDate`, `customerName`, `supplierName`, `customerMobile`, `supplierMobile`, `address`, `comment`, `gotMoney`, `sellNow`, `saveBtn` — দুই ভাষায়।
 
-প্রতি batch-এর পর build verify করব।
+---
 
-Approve করলে **Batch 1 (DB migration)** থেকে শুরু করব।
+## Order of work
+
+1. i18n strings + small shared sub-components (`CartPanel`, `ProductPickerList`)।
+2. `POSPage` shell + cart math।
+3. `CashPaymentDialog` + DB write for both modes।
+4. `DueDialog` (CUSTOMER/SUPPLIER tabs) + contact upsert + due balance update।
+5. Quick-add product flow + Add-button dropdown menu।
+6. Wire `app.purchase.tsx` ও `app.sell.tsx` রুট।
+7. Build verify।
+
+Approve করলে এই ক্রমে implement করব।

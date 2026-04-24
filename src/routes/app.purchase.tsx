@@ -1,11 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { PlaceholderPage } from "@/components/app/PlaceholderPage";
-import { icons } from "@/lib/icons";
-import { useI18n } from "@/lib/i18n";
+import { POSPage } from "@/components/app/POSPage";
 
 export const Route = createFileRoute("/app/purchase")({
-  component: () => {
-    const { lang } = useI18n();
-    return <PlaceholderPage breadcrumb="Purchase" title={lang === "bn" ? "কেনা" : "Purchase"} icon={icons.purchase} />;
-  },
+  component: () => <POSPage mode="purchase" />,
 });
