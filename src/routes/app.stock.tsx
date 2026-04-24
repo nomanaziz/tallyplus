@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, History, Pencil, Plus, Package } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -101,7 +101,7 @@ function StockPage() {
           <h1 className="text-xl font-extrabold md:text-2xl">{lang === "bn" ? "স্টক খাতা" : "Stock Ledger"}</h1>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Button variant="outline" className="h-10 gap-2" onClick={loadHistory}>
+          <Button variant="outline" className="h-10 gap-2" onClick={() => setHistoryOpen(true)}>
             <History className="h-4 w-4" />
             {lang === "bn" ? "স্টকের ইতিহাস" : "Stock history"}
           </Button>
@@ -168,7 +168,7 @@ function StockPage() {
 
       <StockEditDialog product={editing} onClose={() => setEditing(null)} onSave={adjust} />
 
-      <Dialog open={history !== null} onOpenChange={(o) => !o && setHistory(null)}>
+      <Dialog open={historyOpen} onOpenChange={setHistoryOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>{lang === "bn" ? "স্টকের ইতিহাস" : "Stock history"}</DialogTitle>
