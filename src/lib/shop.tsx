@@ -30,13 +30,15 @@ export function ShopProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const [shops, setShops] = useState<Shop[]>([]);
   const [current, setCurrentState] = useState<Shop | null>(null);
-  const [loading, setLoading] = useState(true);
+  // Never block the UI on shop fetching; refresh runs silently in the background.
+  const [loading, setLoading] = useState(false);
+  const [hasLoaded, setHasLoaded] = useState(false);
 
   const refresh = async () => {
     if (!user) {
       setShops([]);
       setCurrentState(null);
-      setLoading(false);
+      setHasLoaded(true);
       return;
     }
     const { data } = await supabase
@@ -49,7 +51,7 @@ export function ShopProvider({ children }: { children: ReactNode }) {
     const savedId = typeof window !== "undefined" ? localStorage.getItem("tp_shop_id") : null;
     const found = list.find((s) => s.id === savedId) ?? list[0] ?? null;
     setCurrentState((prev) => prev ?? found);
-    setLoading(false);
+    setHasLoaded(true);
   };
 
   useEffect(() => {
@@ -63,7 +65,7 @@ export function ShopProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <ShopCtx.Provider value={{ shops, current, setCurrent, refresh, loading }}>{children}</ShopCtx.Provider>
+    <ShopCtx.Provider value={{ shops, current, setCurrent, refresh, loading: loading || !hasLoaded }}>{children}</ShopCtx.Provider>
   );
 }
 
