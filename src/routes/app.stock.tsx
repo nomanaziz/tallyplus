@@ -1,10 +1,12 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, History, Pencil, Plus, Package } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useShop } from "@/lib/shop";
 import { useAuth } from "@/lib/auth";
 import { useI18n, fmtMoney, bnNum } from "@/lib/i18n";
+import { productsLiteQuery, stockHistoryQuery } from "@/lib/queries";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -40,22 +42,16 @@ function StockPage() {
   const { current } = useShop();
   const { user } = useAuth();
   const nav = useNavigate();
-  const [items, setItems] = useState<Product[]>([]);
+  const qc = useQueryClient();
+  const { data: itemsRaw = [], refetch } = useQuery(productsLiteQuery(current?.id ?? null));
+  const items = itemsRaw as unknown as Product[];
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<Product | null>(null);
-  const [history, setHistory] = useState<Movement[] | null>(null);
-
+  const [historyOpen, setHistoryOpen] = useState(false);
   const load = async () => {
-    if (!current) return;
-    const { data } = await supabase
-      .from("products")
-      .select("id,name,cost_price,stock,image_url")
-      .eq("shop_id", current.id)
-      .is("deleted_at", null)
-      .order("name");
-    setItems((data as Product[]) ?? []);
+    await qc.invalidateQueries({ queryKey: ["products"] });
+    await refetch();
   };
-  useEffect(() => { void load(); /* eslint-disable-next-line */ }, [current?.id]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -67,16 +63,10 @@ function StockPage() {
     [filtered],
   );
 
-  const loadHistory = async () => {
-    if (!current) return;
-    const { data } = await supabase
-      .from("stock_movements")
-      .select("id,product_id,qty,type,note,created_at")
-      .eq("shop_id", current.id)
-      .order("created_at", { ascending: false })
-      .limit(100);
-    setHistory((data as Movement[]) ?? []);
-  };
+  const { data: history } = useQuery({
+    ...stockHistoryQuery(current?.id ?? null),
+    enabled: !!current?.id && historyOpen,
+  });
 
   const adjust = async (p: Product, newStock: number, note: string) => {
     if (!current || !user) return;
@@ -95,6 +85,7 @@ function StockPage() {
     toast.success(lang === "bn" ? "আপডেট হয়েছে" : "Updated");
     setEditing(null);
     void load();
+    void qc.invalidateQueries({ queryKey: ["stock", "history"] });
   };
 
   const productMap = useMemo(() => Object.fromEntries(items.map((p) => [p.id, p.name])), [items]);
@@ -110,7 +101,7 @@ function StockPage() {
           <h1 className="text-xl font-extrabold md:text-2xl">{lang === "bn" ? "স্টক খাতা" : "Stock Ledger"}</h1>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Button variant="outline" className="h-10 gap-2" onClick={loadHistory}>
+          <Button variant="outline" className="h-10 gap-2" onClick={() => setHistoryOpen(true)}>
             <History className="h-4 w-4" />
             {lang === "bn" ? "স্টকের ইতিহাস" : "Stock history"}
           </Button>
@@ -177,7 +168,7 @@ function StockPage() {
 
       <StockEditDialog product={editing} onClose={() => setEditing(null)} onSave={adjust} />
 
-      <Dialog open={history !== null} onOpenChange={(o) => !o && setHistory(null)}>
+      <Dialog open={historyOpen} onOpenChange={setHistoryOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>{lang === "bn" ? "স্টকের ইতিহাস" : "Stock history"}</DialogTitle>

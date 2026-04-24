@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Plus, Minus, X, Package, ShoppingCart, ChevronDown, MessageSquare, RefreshCw, Search, ScanLine, UserRound } from "lucide-react";
 import { useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { useShop } from "@/lib/shop";
 import { useAuth } from "@/lib/auth";
 import { useI18n, fmtMoney, bnNum } from "@/lib/i18n";
+import { productsLiteQuery } from "@/lib/queries";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -45,7 +47,9 @@ export function POSPage({ mode }: { mode: Mode }) {
   const { user } = useAuth();
   const nav = useNavigate();
 
-  const [products, setProducts] = useState<Product[]>([]);
+  const qc = useQueryClient();
+  const { data: productsData = [], refetch } = useQuery(productsLiteQuery(current?.id ?? null));
+  const products = productsData as unknown as Product[];
   const [search, setSearch] = useState("");
   const [cart, setCart] = useState<CartItem[]>([]);
   const [discount, setDiscount] = useState<string>("0");
@@ -62,16 +66,9 @@ export function POSPage({ mode }: { mode: Mode }) {
   const partyLabelEn = isSell ? "Customer" : "Supplier";
 
   const loadProducts = async () => {
-    if (!current) return;
-    const { data } = await supabase
-      .from("products")
-      .select("id,name,unit,cost_price,sale_price,stock,image_url")
-      .eq("shop_id", current.id)
-      .is("deleted_at", null)
-      .order("name");
-    setProducts((data as Product[]) ?? []);
+    await qc.invalidateQueries({ queryKey: ["products"] });
+    await refetch();
   };
-  useEffect(() => { void loadProducts(); /* eslint-disable-next-line */ }, [current?.id]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -305,7 +302,7 @@ export function POSPage({ mode }: { mode: Mode }) {
       <QuickAddProductDialog
         open={quickOpen}
         onClose={() => setQuickOpen(false)}
-        onAdded={(p) => { setProducts((prev) => [p, ...prev]); addToCart(p); }}
+        onAdded={(p) => { void loadProducts(); addToCart(p); }}
       />
 
       <PaymentDialog

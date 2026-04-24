@@ -1,9 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronRight, Copy, Plus, RefreshCw, Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useShop } from "@/lib/shop";
 import { useI18n, bnNum } from "@/lib/i18n";
+import { shopMembersQuery } from "@/lib/queries";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -54,51 +56,25 @@ export const Route = createFileRoute("/app/access")({
 function AccessPage() {
   const { lang } = useI18n();
   const { current } = useShop();
-  const [members, setMembers] = useState<Member[]>([]);
-  const [selected, setSelected] = useState<Member | null>(null);
-  const [openAdd, setOpenAdd] = useState(false);
-  const [phone, setPhone] = useState("");
-  const [busy, setBusy] = useState(false);
-
-  const groups = lang === "bn" ? FEATURE_GROUPS_BN : FEATURE_GROUPS_EN;
-
-  const load = async () => {
-    if (!current) return;
-    // Owner from shops
-    const { data: shop } = await supabase
-      .from("shops")
-      .select("owner_id")
-      .eq("id", current.id)
-      .maybeSingle();
-    const ownerId = shop?.owner_id ?? null;
-
-    const { data: rows } = await supabase
-      .from("shop_members")
-      .select("id,user_id,role")
-      .eq("shop_id", current.id);
-
-    const ids = new Set<string>([...(ownerId ? [ownerId] : []), ...((rows ?? []).map((r) => r.user_id))]);
-    const idArr = Array.from(ids);
-    const { data: profs } = idArr.length
-      ? await supabase.from("profiles").select("id,full_name,phone").in("id", idArr)
-      : { data: [] as { id: string; full_name: string | null; phone: string | null }[] };
-
-    const profMap = Object.fromEntries((profs ?? []).map((p) => [p.id, p]));
+  const qc = useQueryClient();
+  const { data: raw } = useQuery(shopMembersQuery(current?.id ?? null));
+  const members: Member[] = useMemo(() => {
+    if (!raw) return [];
     const list: Member[] = [];
-    if (ownerId) {
-      const p = profMap[ownerId];
+    if (raw.ownerId) {
+      const p = raw.profiles[raw.ownerId];
       list.push({
         id: "owner",
-        user_id: ownerId,
+        user_id: raw.ownerId,
         role: "owner",
-        full_name: p?.full_name ?? current.name,
+        full_name: p?.full_name ?? current?.name ?? null,
         phone: p?.phone ?? null,
         is_owner: true,
       });
     }
-    for (const r of rows ?? []) {
-      if (r.user_id === ownerId) continue;
-      const p = profMap[r.user_id];
+    for (const r of raw.rows) {
+      if (r.user_id === raw.ownerId) continue;
+      const p = raw.profiles[r.user_id];
       list.push({
         id: r.id,
         user_id: r.user_id,
@@ -108,11 +84,22 @@ function AccessPage() {
         is_owner: false,
       });
     }
-    setMembers(list);
-    setSelected((prev) => prev ?? list[0] ?? null);
+    return list;
+  }, [raw, current?.name]);
+  const [selected, setSelected] = useState<Member | null>(null);
+  const [openAdd, setOpenAdd] = useState(false);
+  const [phone, setPhone] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const groups = lang === "bn" ? FEATURE_GROUPS_BN : FEATURE_GROUPS_EN;
+
+  const load = async () => {
+    await qc.invalidateQueries({ queryKey: ["shop", "members", current?.id] });
   };
 
-  useEffect(() => { void load(); /* eslint-disable-next-line */ }, [current?.id]);
+  useEffect(() => {
+    setSelected((prev) => prev ?? members[0] ?? null);
+  }, [members]);
 
   const initials = (name: string | null) =>
     (name || "U").split(" ").map((s) => s[0]).filter(Boolean).slice(0, 2).join("").toUpperCase();
