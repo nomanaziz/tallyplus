@@ -48,6 +48,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [subscription, setSubscription] = useState<Sub | null>(null);
   const [loading, setLoading] = useState(true);
+  const [profileLoaded, setProfileLoaded] = useState(false);
 
   const loadProfile = async (uid: string) => {
     const nowIso = new Date().toISOString();
@@ -67,31 +68,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setProfile(prof as Profile | null);
     setIsAdmin(!!roles?.some((r: { role: string }) => r.role === "admin"));
     setSubscription((sub as Sub) ?? null);
+    setProfileLoaded(true);
   };
 
   useEffect(() => {
     const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => {
       setSession(s);
-      if (s?.user) {
-        setLoading(false);
-        void loadProfile(s.user.id);
-      } else {
+      setLoading(false);
+      if (!s?.user) {
         setProfile(null);
         setIsAdmin(false);
         setSubscription(null);
-        setLoading(false);
+        setProfileLoaded(false);
       }
     });
     supabase.auth.getSession().then(({ data: { session: s } }) => {
       setSession(s);
       setLoading(false);
-      if (s?.user) void loadProfile(s.user.id);
     });
     return () => sub.subscription.unsubscribe();
   }, []);
 
   const refresh = async () => {
     if (session?.user) await loadProfile(session.user.id);
+  };
+
+  // Lazily load profile/roles/subscription only when something requests it
+  // (e.g. when entering the /app layout). Keeps public pages light.
+  const ensureProfile = async () => {
+    if (session?.user && !profileLoaded) await loadProfile(session.user.id);
   };
 
   const signOut = async () => {
@@ -112,6 +117,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         hasActiveSubscription: !!subscription,
         subscription,
         refresh,
+        ensureProfile,
         signOut,
       }}
     >
