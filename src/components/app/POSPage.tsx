@@ -631,7 +631,33 @@ function PaymentDialog(props: {
 
       toast.success(lang === "bn" ? "সংরক্ষিত হয়েছে" : "Saved successfully");
       if (sendMessage) toast.message(lang === "bn" ? "মেসেজ পাঠানোর সুবিধা শীঘ্রই আসছে" : "SMS feature coming soon");
-      props.onSaved();
+      // Build invoice for printable popup
+      const finalInvoiceNo = (customInvoice && invoiceNo.trim())
+        ? invoiceNo.trim()
+        : (typeof crypto !== "undefined" && "randomUUID" in crypto
+            ? crypto.randomUUID().replace(/-/g, "").slice(0, 12).toUpperCase()
+            : Math.random().toString(36).slice(2, 14).toUpperCase());
+      const invoice: InvoiceData = {
+        mode: props.mode,
+        shop: {
+          name: current.name,
+          address: (current as { address?: string | null }).address ?? null,
+          phone: (current as { phone?: string | null }).phone ?? null,
+          logo_url: (current as { logo_url?: string | null }).logo_url ?? null,
+        },
+        party: { name: partyName.trim() || null, phone: partyPhone.trim() || null, address: partyAddress.trim() || null },
+        invoiceNo: finalInvoiceNo,
+        date: createdAt,
+        items: props.cart.map((c) => ({ name: c.name, qty: c.qty, price: c.price, total: c.qty * c.price })),
+        subtotal: props.subtotal,
+        discount: props.discount,
+        delivery: 0,
+        grandTotal: props.grandTotal,
+        paid: paidNum,
+        previousDue: 0,
+        currentDue: dueNum,
+      };
+      props.onSaved(invoice);
     } catch (e) {
       const err = e as { message?: string };
       toast.error(err.message ?? "Failed to save");
