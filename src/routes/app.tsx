@@ -2,7 +2,7 @@ import { createFileRoute, Outlet, redirect, useNavigate } from "@tanstack/react-
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
-import { useShop } from "@/lib/shop";
+import { useShop, ShopProvider } from "@/lib/shop";
 import { useI18n } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,12 +19,20 @@ export const Route = createFileRoute("/app")({
       throw redirect({ to: "/app/dashboard" });
     }
   },
-  component: AppLayout,
+  component: AppLayoutWithShop,
 });
+
+function AppLayoutWithShop() {
+  return (
+    <ShopProvider>
+      <AppLayout />
+    </ShopProvider>
+  );
+}
 
 function AppLayout() {
   const { t, lang } = useI18n();
-  const { user, loading } = useAuth();
+  const { user, loading, ensureProfile } = useAuth();
   const { shops, refresh: refreshShops, loading: shopsLoading } = useShop();
   const nav = useNavigate();
   const [shopName, setShopName] = useState("");
@@ -33,6 +41,10 @@ function AppLayout() {
   useEffect(() => {
     if (!loading && !user) nav({ to: "/auth" });
   }, [loading, user, nav]);
+
+  useEffect(() => {
+    if (user) void ensureProfile();
+  }, [user, ensureProfile]);
 
   const createShop = async () => {
     if (!user || shopName.trim().length < 2) {
