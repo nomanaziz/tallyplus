@@ -2,16 +2,14 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronRight, Copy, Plus, RefreshCw, Users } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { useShop } from "@/lib/shop";
 import { useI18n, bnNum } from "@/lib/i18n";
-import { shopMembersQuery } from "@/lib/queries";
+import { shopMembersQuery, customRolesQuery } from "@/lib/queries";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { EmptyState } from "@/components/app/EmptyState";
+import { NewUserAccessDialog } from "@/components/app/NewUserAccessDialog";
+import { FEATURE_GROUPS, hasPerm, presetForDbRole, type PermissionMap } from "@/lib/permissions";
 import { toast } from "sonner";
 
 type Member = {
@@ -21,33 +19,9 @@ type Member = {
   full_name: string | null;
   phone: string | null;
   is_owner: boolean;
+  permissions: PermissionMap | null;
+  custom_role_id: string | null;
 };
-
-const FEATURE_GROUPS_BN: { title: string; items: string[] }[] = [
-  { title: "কেনা", items: ["কেনা", "কার্ট এডিট", "ডিসকাউন্ট", "ডেলিভারী চার্জ", "কেনার খাতা", "এডিট করুন", "মুছে ফেলুন"] },
-  { title: "বিক্রি", items: ["বিক্রি", "দ্রুত বিক্রি", "কার্ট এডিট", "ডিসকাউন্ট", "ডেলিভারী চার্জ", "বিক্রির খাতা", "এডিট করুন", "মুছে ফেলুন"] },
-  { title: "বাকি", items: ["বাকি", "বাকির ইতিহাস", "বাকির বিস্তারিত", "যোগ করুন", "এডিট করুন", "মুছে ফেলুন"] },
-  { title: "খরচ", items: ["খরচ", "খরচের তালিকা", "এডিট করুন", "মুছে ফেলুন", "যোগ করুন", "ক্যাটাগরি এডিট", "ক্যাটাগরি ডিলিট", "ক্যাটাগরি যোগ"] },
-  { title: "যোগাযোগ", items: ["যোগাযোগ", "কাস্টমার", "সাপ্লায়ার", "কাস্টমার যোগ করা", "সাপ্লায়ার যোগ করা", "কাস্টমার এডিট", "কাস্টমার ডিলিট", "সাপ্লায়ার এডিট", "সাপ্লায়ার ডিলিট"] },
-  { title: "প্রোডাক্ট লিস্ট", items: ["প্রোডাক্ট লিস্ট", "যোগ করুন", "বিস্তারিত", "এডিট করুন", "মুছে ফেলুন"] },
-  { title: "স্টকের হিসাব", items: ["ইতিহাস", "আপডেট", "স্টকের হিসাব"] },
-  { title: "ব্যবসার রিপোর্ট", items: ["ব্যবসার রিপোর্ট"] },
-  { title: "অনলাইন শপ", items: ["অনলাইন শপ", "ম্যাসেজ", "স্টোর সেটিংস", "অনলাইন প্রোডাক্ট", "অর্ডার লিস্ট", "অর্ডারের বিস্তারিত", "থিম সেটিংস", "ডেলিভারি মাধ্যম"] },
-  { title: "সেটিংস", items: ["বিকাশ/নগদ কিউআর", "রিসাইকেল বিন"] },
-];
-
-const FEATURE_GROUPS_EN: { title: string; items: string[] }[] = [
-  { title: "Purchase", items: ["Purchase", "Cart edit", "Discount", "Delivery", "Ledger", "Edit", "Delete"] },
-  { title: "Sell", items: ["Sell", "Quick sell", "Cart edit", "Discount", "Delivery", "Ledger", "Edit", "Delete"] },
-  { title: "Due", items: ["Due", "History", "Details", "Add", "Edit", "Delete"] },
-  { title: "Expense", items: ["Expense", "List", "Edit", "Delete", "Add", "Category edit", "Category delete", "Category add"] },
-  { title: "Contacts", items: ["Contacts", "Customers", "Suppliers", "Add customer", "Add supplier", "Edit customer", "Delete customer", "Edit supplier", "Delete supplier"] },
-  { title: "Products", items: ["Products", "Add", "Details", "Edit", "Delete"] },
-  { title: "Stock", items: ["History", "Update", "Stock"] },
-  { title: "Report", items: ["Business report"] },
-  { title: "Online shop", items: ["Online shop", "Messages", "Store settings", "Products", "Orders", "Order details", "Theme", "Delivery"] },
-  { title: "Settings", items: ["bKash/Nagad QR", "Recycle bin"] },
-];
 
 export const Route = createFileRoute("/app/access")({
   component: AccessPage,
@@ -58,6 +32,7 @@ function AccessPage() {
   const { current } = useShop();
   const qc = useQueryClient();
   const { data: raw } = useQuery(shopMembersQuery(current?.id ?? null));
+  const { data: customRoles = [] } = useQuery(customRolesQuery(current?.id ?? null));
   const members: Member[] = useMemo(() => {
     if (!raw) return [];
     const list: Member[] = [];
@@ -70,6 +45,8 @@ function AccessPage() {
         full_name: p?.full_name ?? current?.name ?? null,
         phone: p?.phone ?? null,
         is_owner: true,
+        permissions: null,
+        custom_role_id: null,
       });
     }
     for (const r of raw.rows) {
@@ -79,22 +56,21 @@ function AccessPage() {
         id: r.id,
         user_id: r.user_id,
         role: r.role,
-        full_name: p?.full_name ?? null,
+        full_name: (r as any).full_name ?? p?.full_name ?? null,
         phone: p?.phone ?? null,
         is_owner: false,
+        permissions: ((r as any).permissions ?? null) as PermissionMap | null,
+        custom_role_id: (r as any).custom_role_id ?? null,
       });
     }
     return list;
   }, [raw, current?.name]);
   const [selected, setSelected] = useState<Member | null>(null);
   const [openAdd, setOpenAdd] = useState(false);
-  const [phone, setPhone] = useState("");
-  const [busy, setBusy] = useState(false);
-
-  const groups = lang === "bn" ? FEATURE_GROUPS_BN : FEATURE_GROUPS_EN;
 
   const load = async () => {
     await qc.invalidateQueries({ queryKey: ["shop", "members", current?.id] });
+    await qc.invalidateQueries({ queryKey: ["shop", "custom_roles", current?.id] });
   };
 
   useEffect(() => {
@@ -106,29 +82,24 @@ function AccessPage() {
 
   const inviteLink = typeof window !== "undefined" ? `${window.location.origin}/auth` : "/auth";
 
-  const addMember = async () => {
-    if (!current || !phone.trim()) return;
-    setBusy(true);
-    // Look up profile by phone
-    const { data: prof } = await supabase
-      .from("profiles")
-      .select("id")
-      .eq("phone", phone.trim())
-      .maybeSingle();
-    if (!prof) {
-      setBusy(false);
-      toast.error(lang === "bn" ? "এই ফোনে কোনো ইউজার নেই" : "No user with this phone");
-      return;
+  const effectivePerms = useMemo<PermissionMap>(() => {
+    if (!selected) return {};
+    if (selected.is_owner) return presetForDbRole("owner");
+    if (selected.permissions && Object.keys(selected.permissions).length) return selected.permissions;
+    if (selected.custom_role_id) {
+      const cr = customRoles.find((c) => c.id === selected.custom_role_id);
+      if (cr) return cr.permissions || {};
     }
-    const { error } = await supabase
-      .from("shop_members")
-      .insert({ shop_id: current.id, user_id: prof.id, role: "cashier" });
-    setBusy(false);
-    if (error) { toast.error(error.message); return; }
-    toast.success(lang === "bn" ? "এক্সেস দেওয়া হয়েছে" : "Access granted");
-    setOpenAdd(false);
-    setPhone("");
-    void load();
+    return presetForDbRole(selected.role);
+  }, [selected, customRoles]);
+
+  const roleLabel = (m: Member) => {
+    if (m.is_owner) return "OWNER";
+    if (m.custom_role_id) {
+      const cr = customRoles.find((c) => c.id === m.custom_role_id);
+      if (cr) return cr.name.toUpperCase();
+    }
+    return m.role.toUpperCase();
   };
 
   return (
@@ -162,7 +133,7 @@ function AccessPage() {
                     <div className="flex items-center gap-2">
                       <span className="truncate text-sm font-semibold">{m.full_name ?? (lang === "bn" ? "অজানা" : "Unknown")}</span>
                       <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold uppercase text-amber-800">
-                        {m.is_owner ? "OWNER" : m.role}
+                        {roleLabel(m)}
                       </span>
                     </div>
                     <div className="truncate text-xs text-muted-foreground">{m.phone ?? "—"}</div>
@@ -192,7 +163,7 @@ function AccessPage() {
                     <div className="flex items-center gap-2">
                       <span className="font-semibold">{selected.full_name ?? "—"}</span>
                       <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold uppercase text-amber-800">
-                        {selected.is_owner ? "OWNER" : selected.role}
+                        {roleLabel(selected)}
                       </span>
                     </div>
                     <div className="text-xs text-muted-foreground">{selected.phone ?? "—"}</div>
@@ -222,19 +193,24 @@ function AccessPage() {
               <div className="mt-4">
                 <div className="mb-2 text-sm font-semibold">{lang === "bn" ? "যেসব ফিচারে এক্সেস পাবে" : "Feature access"}</div>
                 <div className="space-y-4">
-                  {groups.map((g) => (
-                    <div key={g.title}>
-                      <div className="mb-1.5 text-xs font-bold text-muted-foreground">{g.title}</div>
-                      <div className="flex flex-wrap gap-2">
-                        {g.items.map((it) => (
-                          <label
-                            key={it}
-                            className="inline-flex items-center gap-1.5 rounded border bg-emerald-50 px-2 py-1 text-xs text-emerald-900"
-                          >
-                            <Checkbox defaultChecked className="h-3.5 w-3.5" />
-                            <span>{it}</span>
-                          </label>
-                        ))}
+                  {FEATURE_GROUPS.filter((g) => (effectivePerms[g.key] ?? []).length > 0).map((g) => (
+                    <div key={g.key}>
+                      <div className="mb-1.5 flex items-center gap-1.5 text-xs font-bold">
+                        <span>{g.icon}</span>
+                        <span>{lang === "bn" ? g.title_bn : g.title_en}</span>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {g.items
+                          .filter((it) => hasPerm(effectivePerms, g.key, it.key))
+                          .map((it) => (
+                            <span
+                              key={it.key}
+                              className="inline-flex items-center gap-1 rounded border border-emerald-200 bg-emerald-50 px-2 py-1 text-[11px] text-emerald-800"
+                            >
+                              <Checkbox checked className="h-3 w-3 pointer-events-none" />
+                              <span>{lang === "bn" ? it.label_bn : it.label_en}</span>
+                            </span>
+                          ))}
                       </div>
                     </div>
                   ))}
@@ -247,26 +223,13 @@ function AccessPage() {
         </div>
       </div>
 
-      <Dialog open={openAdd} onOpenChange={setOpenAdd}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>{lang === "bn" ? "নতুন ইউজারকে এক্সেস দিন" : "Grant access"}</DialogTitle>
-          </DialogHeader>
-          <div className="grid gap-3">
-            <div className="grid gap-1.5">
-              <Label>{lang === "bn" ? "ফোন নাম্বার" : "Phone"}</Label>
-              <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="01XXXXXXXXX" />
-              <p className="text-xs text-muted-foreground">
-                {lang === "bn" ? "ইউজারটি আগে অ্যাপে রেজিস্টার করা থাকতে হবে।" : "User must already be registered."}
-              </p>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setOpenAdd(false)}>{lang === "bn" ? "বাতিল" : "Cancel"}</Button>
-            <Button onClick={addMember} disabled={busy || !phone.trim()}>{busy ? "..." : (lang === "bn" ? "এক্সেস দিন" : "Grant")}</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <NewUserAccessDialog
+        open={openAdd}
+        onOpenChange={setOpenAdd}
+        customRoles={customRoles}
+        onCustomRoleCreated={() => qc.invalidateQueries({ queryKey: ["shop", "custom_roles", current?.id] })}
+        onSaved={load}
+      />
     </div>
   );
 }
