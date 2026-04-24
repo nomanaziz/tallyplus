@@ -38,9 +38,10 @@ function SalesLedgerPage() {
   const { current } = useShop();
   const nav = useNavigate();
   const qc = useQueryClient();
-  const { data: rawSales = [], refetch } = useQuery(salesListQuery(current?.id ?? null));
-  const sales = rawSales as unknown as Sale[];
-  const { data: customers = [] } = useQuery(contactsQuery(current?.id ?? null, "customers"));
+  const { data: rawSales, refetch } = useQuery(salesListQuery(current?.id ?? null));
+  const sales = useMemo(() => (rawSales as unknown as Sale[] | undefined) ?? [], [rawSales]);
+  const { data: customersData } = useQuery(contactsQuery(current?.id ?? null, "customers"));
+  const customers = useMemo(() => customersData ?? [], [customersData]);
   const custMap = useMemo(
     () => Object.fromEntries(
       (customers as { id: string; name: string; phone: string | null }[])
@@ -56,12 +57,13 @@ function SalesLedgerPage() {
   const [from, setFrom] = useState(firstOfMonth.toISOString().slice(0, 10));
   const [to, setTo] = useState(today.toISOString().slice(0, 10));
 
+  const salesIdsKey = useMemo(() => sales.map((s) => s.id).join(","), [sales]);
   const [itemCounts, setItemCounts] = useState<Record<string, number>>({});
   useEffect(() => {
-    if (!sales.length) { setItemCounts({}); return; }
+    if (!salesIdsKey) { setItemCounts({}); return; }
     let cancel = false;
     (async () => {
-      const ids = sales.map((s) => s.id);
+      const ids = salesIdsKey.split(",");
       const { data } = await supabase
         .from("sale_items")
         .select("sale_id")
@@ -74,7 +76,7 @@ function SalesLedgerPage() {
       setItemCounts(counts);
     })();
     return () => { cancel = true; };
-  }, [sales]);
+  }, [salesIdsKey]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
