@@ -46,11 +46,11 @@ Deno.serve(async (req) => {
       console.error("profile lookup:", profErr);
       return json({ error: "Lookup failed" }, 500);
     }
-    if (!profile) return json({ error: "no_account" }, 404);
-    if (!profile.pin_hash) return json({ error: "no_pin" }, 400);
+    if (!profile) return json({ ok: false, error: "no_account" });
+    if (!profile.pin_hash) return json({ ok: false, error: "no_pin" });
 
     const ok = await bcrypt.compare(pinStr, profile.pin_hash);
-    if (!ok) return json({ error: "wrong_pin" }, 401);
+    if (!ok) return json({ ok: false, error: "wrong_pin" });
 
     const digits = normalized.replace(/\D/g, "");
     const email = `${digits}@tally.local`;
