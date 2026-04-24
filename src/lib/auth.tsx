@@ -73,7 +73,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => {
       setSession(s);
       if (s?.user) {
-        void loadProfile(s.user.id).finally(() => setLoading(false));
+        setLoading(false);
+        void loadProfile(s.user.id);
       } else {
         setProfile(null);
         setIsAdmin(false);
@@ -83,8 +84,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
     supabase.auth.getSession().then(({ data: { session: s } }) => {
       setSession(s);
-      if (s?.user) void loadProfile(s.user.id).finally(() => setLoading(false));
-      else setLoading(false);
+      setLoading(false);
+      if (s?.user) void loadProfile(s.user.id);
     });
     return () => sub.subscription.unsubscribe();
   }, []);
