@@ -1,9 +1,11 @@
 import { useI18n } from "@/lib/i18n";
 import { Check, X } from "lucide-react";
 
+type Row = { f: string; us: string; paper: string | false; other: string | false };
+
 export function CompareTable() {
   const { lang } = useI18n();
-  const rows = lang === "bn"
+  const rows: Row[] = lang === "bn"
     ? [
         { f: "ভাষা সাপোর্ট", us: "বাংলা ও ইংরেজি", paper: false, other: "সীমিত / নেই" },
         { f: "বাড়তি আয়ের সুযোগ", us: "স্টক/মূলধন ছাড়াই আয়", paper: false, other: "সীমিত" },
