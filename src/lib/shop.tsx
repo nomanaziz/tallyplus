@@ -32,6 +32,17 @@ export function ShopProvider({ children }: { children: ReactNode }) {
   const [current, setCurrentState] = useState<Shop | null>(null);
   const [hasLoaded, setHasLoaded] = useState(false);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const cachedCurrent = localStorage.getItem("tp_shop_current");
+    if (!cachedCurrent) return;
+    try {
+      setCurrentState(JSON.parse(cachedCurrent) as Shop);
+    } catch {
+      localStorage.removeItem("tp_shop_current");
+    }
+  }, []);
+
   const refresh = async () => {
     if (!user) {
       setShops([]);
@@ -48,7 +59,11 @@ export function ShopProvider({ children }: { children: ReactNode }) {
     setShops(list);
     const savedId = typeof window !== "undefined" ? localStorage.getItem("tp_shop_id") : null;
     const found = list.find((s) => s.id === savedId) ?? list[0] ?? null;
-    setCurrentState((prev) => prev ?? found);
+    setCurrentState(found);
+    if (typeof window !== "undefined") {
+      if (found) localStorage.setItem("tp_shop_current", JSON.stringify(found));
+      else localStorage.removeItem("tp_shop_current");
+    }
     setHasLoaded(true);
   };
 
@@ -59,7 +74,10 @@ export function ShopProvider({ children }: { children: ReactNode }) {
 
   const setCurrent = (s: Shop) => {
     setCurrentState(s);
-    if (typeof window !== "undefined") localStorage.setItem("tp_shop_id", s.id);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("tp_shop_id", s.id);
+      localStorage.setItem("tp_shop_current", JSON.stringify(s));
+    }
   };
 
   return (
