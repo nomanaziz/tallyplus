@@ -3,9 +3,11 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
+import { useShop } from "@/lib/shop";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import logo from "@/assets/logo.png";
 
@@ -17,29 +19,69 @@ export const Route = createFileRoute("/auth")({
 function AuthPage() {
   const { t, lang, setLang } = useI18n();
   const { user, refresh } = useAuth();
+  const { refresh: refreshShops } = useShop();
   const nav = useNavigate();
-  const [step, setStep] = useState<"phone" | "otp">("phone");
-  const [phone, setPhone] = useState("");
-  const [otp, setOtp] = useState("");
+  const [tab, setTab] = useState<"signup" | "login">("signup");
+
+  // signup state
+  const [name, setName] = useState("");
+  const [signupPhone, setSignupPhone] = useState("");
+  const [shopName, setShopName] = useState("");
+  const [signupPin, setSignupPin] = useState("");
+
+  // login state
+  const [loginPhone, setLoginPhone] = useState("");
+  const [loginPin, setLoginPin] = useState("");
+
   const [busy, setBusy] = useState(false);
-  const [devOtp, setDevOtp] = useState<string | null>(null);
 
   useEffect(() => {
     if (user) nav({ to: "/app" });
   }, [user, nav]);
 
-  const sendOtp = async () => {
-    if (!/^\+?\d{10,15}$/.test(phone.replace(/\s|-/g, ""))) {
-      toast.error(lang === "bn" ? "সঠিক মোবাইল নাম্বার দিন" : "Enter a valid mobile number");
-      return;
-    }
+  const validPhone = (p: string) => /^01\d{9}$/.test(p.replace(/\D/g, ""));
+
+  const finishLogin = async (data: { access_token: string; refresh_token: string }) => {
+    const { error } = await supabase.auth.setSession({
+      access_token: data.access_token,
+      refresh_token: data.refresh_token,
+    });
+    if (error) throw error;
+    await refresh();
+    await refreshShops();
+    nav({ to: "/app" });
+  };
+
+  const handleSignup = async () => {
+    if (name.trim().length < 2) return toast.error(lang === "bn" ? "নাম দিন" : "Enter your name");
+    if (!validPhone(signupPhone)) return toast.error(lang === "bn" ? "১১ সংখ্যার ফোন নাম্বার দিন (01...)" : "Enter 11-digit phone (01...)");
+    if (shopName.trim().length < 2) return toast.error(lang === "bn" ? "দোকানের নাম দিন" : "Enter shop name");
+    if (!/^\d{4}$/.test(signupPin)) return toast.error(lang === "bn" ? "৪ সংখ্যার PIN দিন" : "Enter 4-digit PIN");
+
     setBusy(true);
     try {
-      const { data, error } = await supabase.functions.invoke("send-otp", { body: { phone } });
-      if (error) throw error;
-      setDevOtp(data?.devOtp ?? "123456");
-      setStep("otp");
-      toast.success(lang === "bn" ? "OTP পাঠানো হয়েছে" : "OTP sent");
+      const { data, error } = await supabase.functions.invoke("signup-with-pin", {
+        body: { phone: signupPhone, full_name: name, shop_name: shopName, pin: signupPin },
+      });
+      if (error) {
+        // Surface phone_exists to user
+        const msg = (error as { context?: { error?: string } })?.context?.error ?? error.message;
+        if (msg === "phone_exists" || /phone_exists/.test(msg)) {
+          toast.error(lang === "bn" ? "এই নাম্বারে আগে একাউন্ট আছে — লগইন করুন" : "Account already exists — please log in");
+          setTab("login");
+          setLoginPhone(signupPhone);
+          return;
+        }
+        throw new Error(msg);
+      }
+      if (data?.error === "phone_exists") {
+        toast.error(lang === "bn" ? "এই নাম্বারে আগে একাউন্ট আছে — লগইন করুন" : "Account already exists — please log in");
+        setTab("login");
+        setLoginPhone(signupPhone);
+        return;
+      }
+      await finishLogin(data);
+      toast.success(lang === "bn" ? "স্বাগতম!" : "Welcome!");
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
@@ -47,23 +89,20 @@ function AuthPage() {
     }
   };
 
-  const verifyOtp = async () => {
-    if (!/^\d{6}$/.test(otp)) {
-      toast.error(lang === "bn" ? "৬ সংখ্যার OTP দিন" : "Enter 6-digit OTP");
-      return;
-    }
+  const handleLogin = async () => {
+    if (!validPhone(loginPhone)) return toast.error(lang === "bn" ? "১১ সংখ্যার ফোন নাম্বার দিন" : "Enter 11-digit phone");
+    if (!/^\d{4}$/.test(loginPin)) return toast.error(lang === "bn" ? "৪ সংখ্যার PIN দিন" : "Enter 4-digit PIN");
     setBusy(true);
     try {
-      const { data, error } = await supabase.functions.invoke("verify-otp", { body: { phone, otp } });
-      if (error) throw error;
-      const { error: setErr } = await supabase.auth.setSession({
-        access_token: data.access_token,
-        refresh_token: data.refresh_token,
+      const { data, error } = await supabase.functions.invoke("login-with-pin", {
+        body: { phone: loginPhone, pin: loginPin },
       });
-      if (setErr) throw setErr;
-      await refresh();
-      toast.success(t("welcome"));
-      nav({ to: "/app" });
+      const errMsg = (error as { context?: { error?: string } } | null)?.context?.error ?? data?.error ?? error?.message;
+      if (errMsg === "no_account") return toast.error(lang === "bn" ? "এই নাম্বারে কোনো একাউন্ট নেই — সাইন আপ করুন" : "No account — please sign up");
+      if (errMsg === "wrong_pin") return toast.error(lang === "bn" ? "ভুল PIN" : "Wrong PIN");
+      if (errMsg) throw new Error(errMsg);
+      await finishLogin(data);
+      toast.success(lang === "bn" ? "স্বাগতম!" : "Welcome back!");
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
@@ -74,36 +113,61 @@ function AuthPage() {
   return (
     <div className="flex min-h-screen flex-col bg-gradient-to-br from-primary/30 via-primary/10 to-background">
       <div className="container mx-auto flex items-center justify-between px-4 py-4">
-        <a href="/" className="flex items-center gap-2"><img src={logo} alt="" className="h-8 w-8" /><span className="font-extrabold">{t("appName")}</span></a>
-        <button onClick={() => setLang(lang === "bn" ? "en" : "bn")} className="rounded-md border bg-background px-2 py-1 text-xs font-semibold">{lang === "bn" ? "EN" : "বাং"}</button>
+        <a href="/" className="flex items-center gap-2">
+          <img src={logo} alt="" className="h-8 w-8" />
+          <span className="font-extrabold">{t("appName")}</span>
+        </a>
+        <button onClick={() => setLang(lang === "bn" ? "en" : "bn")} className="rounded-md border bg-background px-2 py-1 text-xs font-semibold">
+          {lang === "bn" ? "EN" : "বাং"}
+        </button>
       </div>
       <div className="flex flex-1 items-center justify-center px-4 pb-12">
-        <div className="w-full max-w-sm rounded-3xl border bg-card p-6 shadow-xl">
-          <h1 className="text-2xl font-bold">{step === "phone" ? t("login") : t("verify")}</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {step === "phone"
-              ? (lang === "bn" ? "আপনার মোবাইল নাম্বার দিয়ে শুরু করুন" : "Start with your mobile number")
-              : `${lang === "bn" ? "OTP পাঠানো হয়েছে" : "OTP sent to"} ${phone}`}
-          </p>
-          {step === "phone" ? (
-            <div className="mt-6 space-y-3">
-              <Label htmlFor="phone">{t("phone")}</Label>
-              <Input id="phone" inputMode="tel" placeholder="01XXXXXXXXX" value={phone} onChange={(e) => setPhone(e.target.value)} className="h-12 text-base" />
-              <Button onClick={sendOtp} disabled={busy} className="h-12 w-full text-base font-semibold">{busy ? "..." : t("sendOtp")}</Button>
-            </div>
-          ) : (
-            <div className="mt-6 space-y-3">
-              <Label htmlFor="otp">{t("enterOtp")}</Label>
-              <Input id="otp" inputMode="numeric" maxLength={6} placeholder="● ● ● ● ● ●" value={otp} onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))} className="h-12 text-center text-2xl tracking-[0.5em]" />
-              {devOtp && (
-                <p className="rounded-md bg-warning/10 p-2 text-xs text-foreground">
-                  {t("devOtpHint")} — <span className="font-mono font-bold">{devOtp}</span>
-                </p>
-              )}
-              <Button onClick={verifyOtp} disabled={busy} className="h-12 w-full text-base font-semibold">{busy ? "..." : t("verify")}</Button>
-              <button onClick={() => setStep("phone")} className="w-full text-sm text-muted-foreground hover:text-foreground">{lang === "bn" ? "নাম্বার বদলান" : "Change number"}</button>
-            </div>
-          )}
+        <div className="w-full max-w-md rounded-3xl border bg-card p-6 shadow-xl">
+          <Tabs value={tab} onValueChange={(v) => setTab(v as "signup" | "login")}>
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="signup">{lang === "bn" ? "নতুন একাউন্ট" : "Sign Up"}</TabsTrigger>
+              <TabsTrigger value="login">{lang === "bn" ? "লগইন" : "Log In"}</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="signup" className="mt-6 space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="su-name">{lang === "bn" ? "আপনার নাম" : "Your name"}</Label>
+                <Input id="su-name" value={name} onChange={(e) => setName(e.target.value)} className="h-12 text-base" placeholder={lang === "bn" ? "যেমন: রহিম উদ্দিন" : "e.g. Rahim Uddin"} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="su-phone">{lang === "bn" ? "ফোন নাম্বার" : "Phone number"}</Label>
+                <Input id="su-phone" inputMode="tel" maxLength={11} value={signupPhone} onChange={(e) => setSignupPhone(e.target.value.replace(/\D/g, ""))} className="h-12 text-base" placeholder="01XXXXXXXXX" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="su-shop">{lang === "bn" ? "দোকানের নাম" : "Shop name"}</Label>
+                <Input id="su-shop" value={shopName} onChange={(e) => setShopName(e.target.value)} className="h-12 text-base" placeholder={lang === "bn" ? "যেমন: আল্লাহর দান স্টোর" : "e.g. My Shop"} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="su-pin">{lang === "bn" ? "৪ সংখ্যার PIN" : "4-digit PIN"}</Label>
+                <Input id="su-pin" type="password" inputMode="numeric" maxLength={4} value={signupPin} onChange={(e) => setSignupPin(e.target.value.replace(/\D/g, ""))} className="h-12 text-center text-2xl tracking-[0.6em]" placeholder="● ● ● ●" />
+              </div>
+              <Button onClick={handleSignup} disabled={busy} className="h-12 w-full text-base font-bold">
+                {busy ? "..." : lang === "bn" ? "একাউন্ট তৈরি করুন" : "Create account"}
+              </Button>
+              <p className="text-center text-xs text-muted-foreground">
+                {lang === "bn" ? "একাউন্ট তৈরি করলে আপনি সরাসরি লগইন হয়ে যাবেন।" : "Creating an account will log you in instantly."}
+              </p>
+            </TabsContent>
+
+            <TabsContent value="login" className="mt-6 space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="li-phone">{lang === "bn" ? "ফোন নাম্বার" : "Phone number"}</Label>
+                <Input id="li-phone" inputMode="tel" maxLength={11} value={loginPhone} onChange={(e) => setLoginPhone(e.target.value.replace(/\D/g, ""))} className="h-12 text-base" placeholder="01XXXXXXXXX" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="li-pin">{lang === "bn" ? "৪ সংখ্যার PIN" : "4-digit PIN"}</Label>
+                <Input id="li-pin" type="password" inputMode="numeric" maxLength={4} value={loginPin} onChange={(e) => setLoginPin(e.target.value.replace(/\D/g, ""))} className="h-12 text-center text-2xl tracking-[0.6em]" placeholder="● ● ● ●" />
+              </div>
+              <Button onClick={handleLogin} disabled={busy} className="h-12 w-full text-base font-bold">
+                {busy ? "..." : lang === "bn" ? "লগইন করুন" : "Log in"}
+              </Button>
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
     </div>
