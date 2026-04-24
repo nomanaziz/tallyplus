@@ -1,102 +1,113 @@
-# Purchase + Sell POS Pages — Plan
+## Plan: App speed fix + Cloud/AI/API clarification
 
-আপনার দেওয়া ৪টি ছবি অনুযায়ী **কেনা (Purchase)** এবং **বেচা (Sell)** পেজ একই layout-এ বানাবো। দুইটাই Two-column POS — বাঁ দিকে product picker, ডানে cart। নিচে total, discount, delivery + দুইটা বড় বোতাম: **নগদ টাকা** ও **বাকি**।
+অ্যাপের slow হওয়াটা আমি গুরুত্ব দিয়ে দেখেছি। এখনকার codebase-এ মূল সমস্যা হলো page click করার পরে data fetch শুরু হয়, তাই route সঙ্গে সঙ্গে open হলেও content 3-10 second পরে আসে। আর `/app/dashboard`-এ একসাথে অনেকগুলো full-table query চলছে।
 
----
+### আমি কী build/fix করব
 
-## Layout (দুই পেজে একই কাঠামো)
+**1) Navigation instant-feel করব**
+- `TanStack Query` properly setup করব `src/router.tsx` + `src/routes/__root.tsx`-এ
+- route change-এর আগেই data prefetch/caching চালু করব
+- `useEffect + setState` ভিত্তিক page load pattern ধীরে ধীরে `queryOptions + ensureQueryData + useSuspenseQuery`-এ নেব
+- first load ছাড়া আগের loaded page data cache থেকে প্রায় instantly দেখাবে
 
+**2) Heavy pages optimize করব**
+নিচের pageগুলো আগে optimize করব, কারণ এগুলোতে mount হওয়ার পর আলাদা fetch চলছে:
+- `src/routes/app.dashboard.tsx`
+- `src/routes/app.products.tsx`
+- `src/routes/app.stock.tsx`
+- `src/routes/app.access.tsx`
+- `src/components/app/POSPage.tsx`
+- shared auth/shop loading in `src/lib/auth.tsx` and `src/lib/shop.tsx`
+
+**3) Dashboard queries কমাব**
+এখন dashboard একসাথে 8টা আলাদা query চালায় (`sales`, `purchases`, `expenses`, `customers`, `suppliers`, `products`, `cash_movements in/out`)। এটা replace করব:
+- এক বা অল্প কয়েকটা server-side aggregate query / RPC দিয়ে
+- client-এ full row এনে sum করার বদলে database-এই sum/calc করব
+- ফলে dashboard অনেক দ্রুত আসবে
+
+**4) Common data cache করব**
+বারবার load হওয়া জিনিস cache করব:
+- profile
+- roles/admin status
+- active subscription
+- shop list
+- current shop-specific lists
+
+এতে menu বদলালে same user/shop info আবার নতুন করে fetch হবে না।
+
+**5) Large list pages efficient করব**
+- products/stock/POS-এ full list load pattern refine করব
+- search server-side/filter-aware করব যেখানে দরকার
+- বড় data থাকলে pagination/limit বা incremental fetch দেব
+- POS page-এ product load ও render path হালকা করব
+
+**6) Database index add করব**
+বর্তমান filters দেখে targeted index migration দেব, যেমন:
+- `products(shop_id, deleted_at, created_at)`
+- `sales(shop_id, created_at, deleted_at)` refine if needed
+- `purchases(shop_id, created_at, deleted_at)`
+- `expenses(shop_id, created_at, deleted_at)`
+- `customers(shop_id, deleted_at)`
+- `suppliers(shop_id, deleted_at)`
+- `cash_movements(shop_id, direction, created_at)`
+- `shop_members(shop_id, user_id)`
+- `subscriptions(user_id, status, expires_at)`
+
+**7) Access page query chain simplify করব**
+`/app/access` এখন owner → members → profiles আলাদা করে fetch করে। এটা optimize করব:
+- single shaped query / RPC-তে নামাব
+- unnecessary re-fetch কমাব
+- same shop revisit করলে cached result দেখাব
+
+**8) UI warnings cleanup করব**
+console-এ `DialogContent` description warning আছে। এগুলোও fix করব যাতে needless render noise/debug clutter কমে।
+
+### Cloud / AI / API বিষয়টা
+এখানে গুরুত্বপূর্ণ clarification আছে:
+- আপনার app code-এর ভিতরে আলাদা AI/API menu আমি পাইনি
+- আপনি যে `Cloud` click করে `Supabase`, `AI`, `API` দেখছেন, সেটা Lovable editor/platform UI — app repo-এর অংশ না
+- তাই project code change করে ওই editor-level menu remove করা যাবে না
+- end-user app-এ এগুলো deploy হয় না
+
+তবে app-এর ভিতরে যদি কোথাও AI/API related button/text থাকে, সেটা আমি scan করে remove/clean করতে পারব। বর্তমানে codebase-এ এমন feature panel পাইনি।
+
+### Technical details
+
+**Observed bottlenecks**
+- `src/routes/app.dashboard.tsx`-এ 8 parallel table reads, তারপর client-side summation
+- `src/lib/auth.tsx`-এ profile/roles/subscription 3টি query per auth load
+- `src/lib/shop.tsx`-এ shop list load globally
+- `app.products`, `app.stock`, `app.access`, `POSPage` সবকিছু mount হওয়ার পরে fetch শুরু করছে
+- এই architecture-এ click-এর সাথে সাথে page skeleton নয়, data-ready হওয়ার জন্য wait feel হচ্ছে
+
+**Implementation approach**
 ```text
-┌─ Breadcrumb: Purchase / Sell ───────────────────────────────────┐
-│                                                                  │
-│  ┌─ পণ্য নির্বাচন করুন ──────┐  ┌─ পণ্য নির্বাচন করেছেন (3) ────┐│
-│  │ [Search] [Barcode] [+] [↻]│  │ Clear cart                    ││
-│  │ ─────────────────────────│  │ ┌──────────────────────────┐  ││
-│  │ 📦 Product name           │  │ │ Item name                │  ││
-│  │    মূল্য:1400  স্টক:0 [Add▾]│  │ │ পরিমাণ মূল্য মোট  [✕]    │  ││
-│  │ 📦 Product 2  ...    [Add]│  │ └──────────────────────────┘  ││
-│  │  ⋮ scrollable list        │  │  (each row: qty, price, total)││
-│  └──────────────────────────┘  │                                ││
-│                                │  মোট ৩,১০০                    ││
-│                                │  ডিস্কাউন্ট  [0]                 ││
-│                                │  ডেলিভারি   [0]                  ││
-│                                │  সর্বমোট ৩,১০০                  ││
-│                                │  ┌─নগদ টাকা→─┐ ┌─বাকি→──────┐ ││
-│                                │  └───────────┘ └────────────┘ ││
-│                                └────────────────────────────────┘│
-└──────────────────────────────────────────────────────────────────┘
+Current:
+click menu -> route mounts -> useEffect runs -> fetch starts -> data returns -> UI shows
+
+After fix:
+hover/click menu -> loader/query prefetch -> cached data available -> route opens immediately -> background refresh if needed
 ```
 
-মোবাইলে দুই কলাম stack হবে — উপরে cart (collapsed), নিচে product list, অথবা ট্যাব দিয়ে toggle।
+**Files likely to change**
+- `src/router.tsx`
+- `src/routes/__root.tsx`
+- `src/lib/auth.tsx`
+- `src/lib/shop.tsx`
+- `src/routes/app.dashboard.tsx`
+- `src/routes/app.products.tsx`
+- `src/routes/app.stock.tsx`
+- `src/routes/app.access.tsx`
+- `src/components/app/POSPage.tsx`
+- new query helper files under `src/lib/` or `src/hooks/`
+- Supabase migration for indexes / aggregate function
 
----
+### Execution order
+1. QueryClient + root integration
+2. Auth/shop caching refactor
+3. Dashboard aggregation + DB index migration
+4. Products/stock/access/POS caching & fetch optimization
+5. Dialog warning cleanup
+6. Final pass on perceived navigation speed
 
-## Components তৈরি হবে
-
-1. **`src/components/app/POSPage.tsx`** — shared two-column POS shell। Props: `mode: "purchase" | "sell"`. দুই পেজ এই কম্পোনেন্ট ব্যবহার করবে যেন code duplication না হয়।
-2. **`src/components/app/ProductPickerList.tsx`** — search/barcode, প্রতিটা row-এ Add button + dropdown (qty +/−, "Add custom price", remove)। প্লাস (+) বোতাম দিয়ে নতুন product দ্রুত তৈরি করা যাবে ছোট dialog-এ।
-3. **`src/components/app/CartPanel.tsx`** — selected items list, প্রতিটায় qty/price input + delete; একটা collapse toggle (▾) যেটা ছবিতে আছে; নিচে discount, delivery, total summary।
-4. **`src/components/app/CashPaymentDialog.tsx`** — ছবি ১৬-এর "Confirm Payment" — তারিখ, টাকার পরিমাণ, মন্তব্য, supplier/customer নাম + মোবাইল + ঠিকানা, custom invoice toggle, কর্মচারীর তথ্য toggle, **মাসেজ পাঠান** toggle (SMS অবশিষ্ট: 30)। Submit → `টাকার মূল্য পেয়েছেন`.
-5. **`src/components/app/DueDialog.tsx`** — ছবি ১৭/১৮-এর "Money Given Entry" — উপরে **CUSTOMER / SUPPLIER** ট্যাব (Sell-এ default Customer, Purchase-এ default Supplier), মোট প্রদেয়, কাশ পেয়েছি/দিয়েছি, name+phone+address, comment, custom invoice toggle, কর্মচারীর তথ্য toggle, msg toggle। Submit → `সেভ করুন` / `বিক্রি করুন`.
-6. **`src/components/app/ContactPickerDialog.tsx`** — name input পাশে যে ছোট 👤 আইকন আছে সেটা চাপলে existing customers/suppliers থেকে বেছে নেওয়া যাবে।
-
----
-
-## Routes
-
-- **`src/routes/app.purchase.tsx`** — `<POSPage mode="purchase" />`
-- **`src/routes/app.sell.tsx`** — `<POSPage mode="sell" />`
-
-(দুটো ফাইলই আগের `PlaceholderPage` কোডকে replace করবে।)
-
----
-
-## ব্যবসায়িক logic
-
-### Cart state
-লোকাল state-এ array of `{ product_id, name, qty, price, total }`। Live recompute: `subtotal = sum(total)`, `grandTotal = subtotal − discount + delivery`।
-
-### "নগদ টাকা" ক্লিক
-1. CashPaymentDialog খুলবে, amount = grandTotal (editable)।
-2. Save করলে:
-   - **Sell mode**: `sales` table-এ row + `sale_items` rows; `payment_method='cash'`, `paid=amount`, `due=0`; প্রতিটা item-এর জন্য `stock_movements` (`type='sale'`, qty negative) এবং `products.stock` decrement; `cash_movements` (direction='in')।
-   - **Purchase mode**: `purchases` + `purchase_items`; stock increment; `cash_movements` (direction='out')।
-3. SMS toggle ON থাকলে এখন placeholder (later integrate)। Toast: ✅ সফল।
-
-### "বাকি" ক্লিক
-1. DueDialog খুলবে।
-2. CUSTOMER/SUPPLIER ট্যাব অনুযায়ী contact lookup/insert (`customers` বা `suppliers` table-এ phone দিয়ে find-or-create)।
-3. Save করলে:
-   - Sale/Purchase row insert হবে `paid = কাশ পেয়েছি/দিয়েছি field`, `due = grandTotal − paid`, `customer_id`/`supplier_id` link করে।
-   - `customers.due_balance` / `suppliers.due_balance` += due।
-   - Stock movements আগের মতই।
-   - যদি partial cash থাকে তবে `cash_movements` row।
-
-### Plus (+) দিয়ে quick product add
-`ProductFormDialog` (already exists in products page) reuse করে quick create — শুধু name, sale_price, cost_price, stock — save হলে cart-এ auto-add।
-
-### Add button dropdown (▾)
-ছবিতে প্রতিটা Add বোতামের পাশে ছোট ▾ আছে। সেটা চাপলে: "পরিমাণ বাড়ান", "কাস্টম মূল্য", "নোট যোগ করুন" — ছোট popover।
-
-### Class/category click → request
-ছবিতে যেটা "class এ click করে request" বললেন — এটা product list-এ category badge চাপলে ওই category-র product filter হবে। DataToolbar-এ ছোট category dropdown যোগ করবো।
-
----
-
-## Bilingual strings (i18n.tsx-এ যোগ হবে)
-
-`selectProduct`, `selectedItems`, `clearCart`, `discount`, `delivery`, `subtotal`, `grandTotal`, `cashPayment`, `dueEntry`, `confirmPayment`, `moneyGivenEntry`, `customer`, `supplier`, `customInvoice`, `staffInfo`, `sendMessage`, `smsRemaining`, `received`, `given`, `purchaseDate`, `saleDate`, `customerName`, `supplierName`, `customerMobile`, `supplierMobile`, `address`, `comment`, `gotMoney`, `sellNow`, `saveBtn` — দুই ভাষায়।
-
----
-
-## Order of work
-
-1. i18n strings + small shared sub-components (`CartPanel`, `ProductPickerList`)।
-2. `POSPage` shell + cart math।
-3. `CashPaymentDialog` + DB write for both modes।
-4. `DueDialog` (CUSTOMER/SUPPLIER tabs) + contact upsert + due balance update।
-5. Quick-add product flow + Add-button dropdown menu।
-6. Wire `app.purchase.tsx` ও `app.sell.tsx` রুট।
-7. Build verify।
-
-Approve করলে এই ক্রমে implement করব।
+Approve করলে আমি এই optimization plan implement করব।
