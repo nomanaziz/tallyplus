@@ -241,6 +241,45 @@ export type Database = {
         }
         Relationships: []
       }
+      other_income: {
+        Row: {
+          amount: number
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          id: string
+          note: string | null
+          paid_via: Database["public"]["Enums"]["payment_method"]
+          shop_id: string
+          source: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          id?: string
+          note?: string | null
+          paid_via?: Database["public"]["Enums"]["payment_method"]
+          shop_id: string
+          source?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          id?: string
+          note?: string | null
+          paid_via?: Database["public"]["Enums"]["payment_method"]
+          shop_id?: string
+          source?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       payments: {
         Row: {
           amount: number
@@ -744,6 +783,60 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      shop_printer_settings: {
+        Row: {
+          created_at: string
+          font_size: number
+          footer_text: string | null
+          id: string
+          language: string
+          paper_size: string | null
+          print_delivery: boolean
+          print_discount: boolean
+          print_prev_due: boolean
+          print_qr: boolean
+          print_unit_column: boolean
+          print_vat: boolean
+          printer_type: string
+          shop_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          font_size?: number
+          footer_text?: string | null
+          id?: string
+          language?: string
+          paper_size?: string | null
+          print_delivery?: boolean
+          print_discount?: boolean
+          print_prev_due?: boolean
+          print_qr?: boolean
+          print_unit_column?: boolean
+          print_vat?: boolean
+          printer_type?: string
+          shop_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          font_size?: number
+          footer_text?: string | null
+          id?: string
+          language?: string
+          paper_size?: string | null
+          print_delivery?: boolean
+          print_discount?: boolean
+          print_prev_due?: boolean
+          print_qr?: boolean
+          print_unit_column?: boolean
+          print_vat?: boolean
+          printer_type?: string
+          shop_id?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       shops: {
         Row: {
