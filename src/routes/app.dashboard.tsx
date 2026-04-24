@@ -139,7 +139,7 @@ function Dashboard() {
               {lang === "bn" ? <>এক ক্লিকেই হিসাব পরিষ্কার <br /> সময় বাঁচে, ব্যবসাও বাড়ে</> : <>Accounts cleared in one click <br /> Save time, grow business</>}
             </h2>
             <Button asChild className="mt-5 rounded-full bg-foreground px-6 text-background hover:bg-foreground/90">
-              <Link to="/app/sell">{lang === "bn" ? "ট্যাপ করুন" : "Tap here"}</Link>
+              <Link to="/app/sell" search={{}}>{lang === "bn" ? "ট্যাপ করুন" : "Tap here"}</Link>
             </Button>
           </div>
           <img src={heroBanner} alt="" className="h-full w-full object-cover" loading="lazy" />
