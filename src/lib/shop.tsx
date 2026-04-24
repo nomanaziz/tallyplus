@@ -30,8 +30,6 @@ export function ShopProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const [shops, setShops] = useState<Shop[]>([]);
   const [current, setCurrentState] = useState<Shop | null>(null);
-  // Never block the UI on shop fetching; refresh runs silently in the background.
-  const [loading, setLoading] = useState(false);
   const [hasLoaded, setHasLoaded] = useState(false);
 
   const refresh = async () => {
@@ -65,7 +63,7 @@ export function ShopProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <ShopCtx.Provider value={{ shops, current, setCurrent, refresh, loading: loading || !hasLoaded }}>{children}</ShopCtx.Provider>
+    <ShopCtx.Provider value={{ shops, current, setCurrent, refresh, loading: !hasLoaded }}>{children}</ShopCtx.Provider>
   );
 }
 
