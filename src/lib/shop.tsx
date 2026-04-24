@@ -39,7 +39,6 @@ export function ShopProvider({ children }: { children: ReactNode }) {
       setLoading(false);
       return;
     }
-    setLoading(true);
     const { data } = await supabase
       .from("shops")
       .select("id,name,slug,logo_url,address,phone,currency")
@@ -49,7 +48,7 @@ export function ShopProvider({ children }: { children: ReactNode }) {
     setShops(list);
     const savedId = typeof window !== "undefined" ? localStorage.getItem("tp_shop_id") : null;
     const found = list.find((s) => s.id === savedId) ?? list[0] ?? null;
-    setCurrentState(found);
+    setCurrentState((prev) => prev ?? found);
     setLoading(false);
   };
 
