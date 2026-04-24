@@ -337,3 +337,382 @@ export const contactTransactionsQuery = (
       return data ?? [];
     },
   });
+/* ---------- Reports ---------- */
+export type ReportRange = { startIso: string; endIso: string };
+
+function endOfDayIso(yyyymmdd: string) {
+  const d = new Date(yyyymmdd + "T23:59:59.999");
+  return d.toISOString();
+}
+function startOfDayIso(yyyymmdd: string) {
+  const d = new Date(yyyymmdd + "T00:00:00.000");
+  return d.toISOString();
+}
+export function rangeToIso(start: string, end: string): ReportRange {
+  return { startIso: startOfDayIso(start), endIso: endOfDayIso(end) };
+}
+
+export type BusinessReportSummary = {
+  totalSales: number;
+  cashSales: number;
+  dueReceived: number;
+  cashPurchase: number;
+  duePaid: number;
+  otherIncome: number;
+  otherExpense: number;
+  receivable: number;
+  payable: number;
+  productProfit: number;
+};
+
+export const businessReportQuery = (shopId: string | null | undefined, range: ReportRange) =>
+  queryOptions({
+    queryKey: ["report", "summary", shopId, range.startIso, range.endIso],
+    enabled: !!shopId,
+    staleTime: 15_000,
+    queryFn: async (): Promise<BusinessReportSummary> => {
+      if (!shopId) {
+        return {
+          totalSales: 0, cashSales: 0, dueReceived: 0, cashPurchase: 0, duePaid: 0,
+          otherIncome: 0, otherExpense: 0, receivable: 0, payable: 0, productProfit: 0,
+        };
+      }
+      const inRange = (q: any) => q.eq("shop_id", shopId).gte("created_at", range.startIso).lte("created_at", range.endIso);
+
+      const [sales, purchases, expenses, income, custReceipts, supPayments, productLine, recv, pay] = await Promise.all([
+        inRange(supabase.from("sales").select("total,paid,due").is("deleted_at", null)),
+        inRange(supabase.from("purchases").select("total,paid,due").is("deleted_at", null)),
+        inRange(supabase.from("expenses").select("amount").is("deleted_at", null)),
+        inRange(supabase.from("other_income").select("amount").is("deleted_at", null)),
+        inRange(supabase.from("payments").select("amount").eq("direction", "in").not("customer_id", "is", null)),
+        inRange(supabase.from("payments").select("amount").eq("direction", "out").not("supplier_id", "is", null)),
+        // Profit = sum((sale_item.price - product.cost_price) * qty) for sales in range
+        supabase.from("sale_items").select("qty,price,product_id,products(cost_price),sales!inner(shop_id,created_at,deleted_at)")
+          .eq("sales.shop_id", shopId)
+          .gte("sales.created_at", range.startIso)
+          .lte("sales.created_at", range.endIso)
+          .is("sales.deleted_at", null),
+        supabase.from("customers").select("due_balance").eq("shop_id", shopId).is("deleted_at", null),
+        supabase.from("suppliers").select("due_balance").eq("shop_id", shopId).is("deleted_at", null),
+      ]);
+
+      const sum = (rows: any[] | null | undefined, key = "amount") =>
+        (rows ?? []).reduce((a, r) => a + Number(r?.[key] ?? 0), 0);
+
+      const totalSales = sum(sales.data ?? [], "total");
+      const totalPaidSales = sum(sales.data ?? [], "paid");
+      const totalDueSales = sum(sales.data ?? [], "due");
+      // "নগদ বেচা (কাস্টমার বাকি বাদে)" = paid amount on sales (cash portion received at sale time)
+      const cashSales = totalPaidSales;
+      const totalPurchases = sum(purchases.data ?? [], "total");
+      const totalPaidPurchases = sum(purchases.data ?? [], "paid");
+      const cashPurchase = totalPaidPurchases;
+
+      let productProfit = 0;
+      for (const r of (productLine.data ?? []) as any[]) {
+        const cost = Number(r?.products?.cost_price ?? 0);
+        const price = Number(r?.price ?? 0);
+        const qty = Number(r?.qty ?? 0);
+        productProfit += (price - cost) * qty;
+      }
+
+      // suppress unused warning
+      void totalDueSales; void totalSales; void totalPurchases;
+
+      return {
+        totalSales,
+        cashSales,
+        dueReceived: sum(custReceipts.data ?? []),
+        cashPurchase,
+        duePaid: sum(supPayments.data ?? []),
+        otherIncome: sum(income.data ?? []),
+        otherExpense: sum(expenses.data ?? []),
+        receivable: sum(recv.data ?? [], "due_balance"),
+        payable: sum(pay.data ?? [], "due_balance"),
+        productProfit,
+      };
+    },
+  });
+
+/* Sales report — invoices in range */
+export const salesReportQuery = (shopId: string | null | undefined, range: ReportRange) =>
+  queryOptions({
+    queryKey: ["report", "sales", shopId, range.startIso, range.endIso],
+    enabled: !!shopId,
+    queryFn: async () => {
+      if (!shopId) return [] as any[];
+      const { data, error } = await supabase
+        .from("sales")
+        .select("id,invoice_no,total,paid,due,payment_method,created_at,customer_id,customers(name)")
+        .eq("shop_id", shopId)
+        .gte("created_at", range.startIso)
+        .lte("created_at", range.endIso)
+        .is("deleted_at", null)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      // Also fetch item counts per sale
+      const ids = (data ?? []).map((s: any) => s.id);
+      const counts: Record<string, number> = {};
+      if (ids.length) {
+        const { data: items } = await supabase.from("sale_items").select("sale_id,qty").in("sale_id", ids);
+        for (const it of items ?? []) counts[(it as any).sale_id] = (counts[(it as any).sale_id] ?? 0) + Number((it as any).qty ?? 0);
+      }
+      return (data ?? []).map((s: any) => ({ ...s, item_count: counts[s.id] ?? 0 }));
+    },
+  });
+
+/* Purchase report */
+export const purchaseReportQuery = (shopId: string | null | undefined, range: ReportRange) =>
+  queryOptions({
+    queryKey: ["report", "purchase", shopId, range.startIso, range.endIso],
+    enabled: !!shopId,
+    queryFn: async () => {
+      if (!shopId) return [] as any[];
+      const { data, error } = await supabase
+        .from("purchases")
+        .select("id,invoice_no,total,paid,due,payment_method,created_at,supplier_id,suppliers(name)")
+        .eq("shop_id", shopId)
+        .gte("created_at", range.startIso)
+        .lte("created_at", range.endIso)
+        .is("deleted_at", null)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      const ids = (data ?? []).map((s: any) => s.id);
+      const counts: Record<string, number> = {};
+      if (ids.length) {
+        const { data: items } = await supabase.from("purchase_items").select("purchase_id,qty").in("purchase_id", ids);
+        for (const it of items ?? []) counts[(it as any).purchase_id] = (counts[(it as any).purchase_id] ?? 0) + Number((it as any).qty ?? 0);
+      }
+      return (data ?? []).map((s: any) => ({ ...s, item_count: counts[s.id] ?? 0 }));
+    },
+  });
+
+/* Stock report — stock movements aggregated per product within range */
+export const stockReportQuery = (shopId: string | null | undefined, range: ReportRange) =>
+  queryOptions({
+    queryKey: ["report", "stock", shopId, range.startIso, range.endIso],
+    enabled: !!shopId,
+    queryFn: async () => {
+      if (!shopId) return [] as any[];
+      const { data, error } = await supabase
+        .from("stock_movements")
+        .select("product_id,qty,type,products(name,cost_price,sale_price)")
+        .eq("shop_id", shopId)
+        .gte("created_at", range.startIso)
+        .lte("created_at", range.endIso);
+      if (error) throw error;
+      const map: Record<string, { name: string; in_qty: number; in_amt: number; out_qty: number; out_amt: number }> = {};
+      for (const m of (data ?? []) as any[]) {
+        const pid = m.product_id as string;
+        const name = m?.products?.name ?? "—";
+        const cost = Number(m?.products?.cost_price ?? 0);
+        const sale = Number(m?.products?.sale_price ?? 0);
+        const qty = Number(m?.qty ?? 0);
+        if (!map[pid]) map[pid] = { name, in_qty: 0, in_amt: 0, out_qty: 0, out_amt: 0 };
+        if (qty >= 0) {
+          map[pid].in_qty += qty;
+          map[pid].in_amt += qty * cost;
+        } else {
+          map[pid].out_qty += qty;
+          map[pid].out_amt += qty * sale;
+        }
+      }
+      return Object.entries(map).map(([id, v]) => ({ id, ...v }));
+    },
+  });
+
+/* Product report — sold qty / revenue / profit per product */
+export const productReportQuery = (shopId: string | null | undefined, range: ReportRange) =>
+  queryOptions({
+    queryKey: ["report", "product", shopId, range.startIso, range.endIso],
+    enabled: !!shopId,
+    queryFn: async () => {
+      if (!shopId) return [] as any[];
+      const { data, error } = await supabase
+        .from("sale_items")
+        .select("product_id,qty,price,products(name,cost_price),sales!inner(shop_id,created_at,deleted_at)")
+        .eq("sales.shop_id", shopId)
+        .gte("sales.created_at", range.startIso)
+        .lte("sales.created_at", range.endIso)
+        .is("sales.deleted_at", null);
+      if (error) throw error;
+      const map: Record<string, { name: string; qty: number; revenue: number; profit: number }> = {};
+      for (const r of (data ?? []) as any[]) {
+        const pid = (r.product_id ?? "_") as string;
+        const name = r?.products?.name ?? "—";
+        const cost = Number(r?.products?.cost_price ?? 0);
+        const price = Number(r?.price ?? 0);
+        const qty = Number(r?.qty ?? 0);
+        if (!map[pid]) map[pid] = { name, qty: 0, revenue: 0, profit: 0 };
+        map[pid].qty += qty;
+        map[pid].revenue += price * qty;
+        map[pid].profit += (price - cost) * qty;
+      }
+      return Object.entries(map)
+        .map(([id, v]) => ({ id, ...v }))
+        .sort((a, b) => b.revenue - a.revenue);
+    },
+  });
+
+/* Top customers */
+export const topCustomersQuery = (shopId: string | null | undefined, range: ReportRange) =>
+  queryOptions({
+    queryKey: ["report", "top-customers", shopId, range.startIso, range.endIso],
+    enabled: !!shopId,
+    queryFn: async () => {
+      if (!shopId) return [] as any[];
+      const { data, error } = await supabase
+        .from("sales")
+        .select("customer_id,total,due,customers(name,phone,due_balance)")
+        .eq("shop_id", shopId)
+        .gte("created_at", range.startIso)
+        .lte("created_at", range.endIso)
+        .is("deleted_at", null)
+        .not("customer_id", "is", null);
+      if (error) throw error;
+      const map: Record<string, { name: string; phone: string; orders: number; total: number; due: number }> = {};
+      for (const r of (data ?? []) as any[]) {
+        const cid = r.customer_id as string;
+        if (!map[cid])
+          map[cid] = { name: r?.customers?.name ?? "—", phone: r?.customers?.phone ?? "", orders: 0, total: 0, due: Number(r?.customers?.due_balance ?? 0) };
+        map[cid].orders += 1;
+        map[cid].total += Number(r?.total ?? 0);
+      }
+      return Object.entries(map)
+        .map(([id, v]) => ({ id, ...v }))
+        .sort((a, b) => b.total - a.total);
+    },
+  });
+
+/* Top employees (created_by) */
+export const topEmployeesQuery = (shopId: string | null | undefined, range: ReportRange) =>
+  queryOptions({
+    queryKey: ["report", "top-employees", shopId, range.startIso, range.endIso],
+    enabled: !!shopId,
+    queryFn: async () => {
+      if (!shopId) return [] as any[];
+      const { data, error } = await supabase
+        .from("sales")
+        .select("created_by,total")
+        .eq("shop_id", shopId)
+        .gte("created_at", range.startIso)
+        .lte("created_at", range.endIso)
+        .is("deleted_at", null)
+        .not("created_by", "is", null);
+      if (error) throw error;
+      const map: Record<string, { count: number; total: number }> = {};
+      for (const r of (data ?? []) as any[]) {
+        const id = r.created_by as string;
+        if (!map[id]) map[id] = { count: 0, total: 0 };
+        map[id].count += 1;
+        map[id].total += Number(r?.total ?? 0);
+      }
+      const ids = Object.keys(map);
+      let names: Record<string, string> = {};
+      if (ids.length) {
+        const { data: members } = await supabase.from("shop_members").select("user_id,full_name").eq("shop_id", shopId).in("user_id", ids);
+        for (const m of members ?? []) names[(m as any).user_id] = (m as any).full_name ?? "";
+        const { data: profs } = await supabase.from("profiles").select("id,full_name").in("id", ids);
+        for (const p of profs ?? []) if (!names[(p as any).id]) names[(p as any).id] = (p as any).full_name ?? "";
+      }
+      return Object.entries(map)
+        .map(([id, v]) => ({ id, name: names[id] || "—", ...v }))
+        .sort((a, b) => b.total - a.total);
+    },
+  });
+
+/* Expense report — aggregated by category */
+export const expenseReportQuery = (shopId: string | null | undefined, range: ReportRange) =>
+  queryOptions({
+    queryKey: ["report", "expense", shopId, range.startIso, range.endIso],
+    enabled: !!shopId,
+    queryFn: async () => {
+      if (!shopId) return [] as any[];
+      const { data, error } = await supabase
+        .from("expenses")
+        .select("category,amount")
+        .eq("shop_id", shopId)
+        .gte("created_at", range.startIso)
+        .lte("created_at", range.endIso)
+        .is("deleted_at", null);
+      if (error) throw error;
+      const map: Record<string, { count: number; amount: number }> = {};
+      for (const r of (data ?? []) as any[]) {
+        const cat = (r.category ?? "অন্যান্য") as string;
+        if (!map[cat]) map[cat] = { count: 0, amount: 0 };
+        map[cat].count += 1;
+        map[cat].amount += Number(r?.amount ?? 0);
+      }
+      return Object.entries(map)
+        .map(([category, v]) => ({ category, ...v }))
+        .sort((a, b) => b.amount - a.amount);
+    },
+  });
+
+/* Supplier report */
+export const supplierReportQuery = (shopId: string | null | undefined, range: ReportRange) =>
+  queryOptions({
+    queryKey: ["report", "supplier", shopId, range.startIso, range.endIso],
+    enabled: !!shopId,
+    queryFn: async () => {
+      if (!shopId) return [] as any[];
+      const { data, error } = await supabase
+        .from("purchases")
+        .select("supplier_id,total,paid,due,suppliers(name,phone,due_balance)")
+        .eq("shop_id", shopId)
+        .gte("created_at", range.startIso)
+        .lte("created_at", range.endIso)
+        .is("deleted_at", null)
+        .not("supplier_id", "is", null);
+      if (error) throw error;
+      const map: Record<string, { name: string; phone: string; total: number; paid: number; due: number }> = {};
+      for (const r of (data ?? []) as any[]) {
+        const sid = r.supplier_id as string;
+        if (!map[sid])
+          map[sid] = { name: r?.suppliers?.name ?? "—", phone: r?.suppliers?.phone ?? "", total: 0, paid: 0, due: Number(r?.suppliers?.due_balance ?? 0) };
+        map[sid].total += Number(r?.total ?? 0);
+        map[sid].paid += Number(r?.paid ?? 0);
+      }
+      return Object.entries(map)
+        .map(([id, v]) => ({ id, ...v }))
+        .sort((a, b) => b.total - a.total);
+    },
+  });
+
+/* Income report — other_income entries */
+export const incomeReportQuery = (shopId: string | null | undefined, range: ReportRange) =>
+  queryOptions({
+    queryKey: ["report", "income", shopId, range.startIso, range.endIso],
+    enabled: !!shopId,
+    queryFn: async () => {
+      if (!shopId) return [] as any[];
+      const { data, error } = await supabase
+        .from("other_income")
+        .select("id,source,amount,note,paid_via,created_at")
+        .eq("shop_id", shopId)
+        .gte("created_at", range.startIso)
+        .lte("created_at", range.endIso)
+        .is("deleted_at", null)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+/* Printer settings */
+export const printerSettingsQuery = (shopId: string | null | undefined) =>
+  queryOptions({
+    queryKey: ["printer-settings", shopId],
+    enabled: !!shopId,
+    staleTime: 60_000,
+    queryFn: async () => {
+      if (!shopId) return null;
+      const { data, error } = await supabase
+        .from("shop_printer_settings")
+        .select("*")
+        .eq("shop_id", shopId)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
