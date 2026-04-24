@@ -72,7 +72,9 @@ export const getRouter = () => {
     routeTree,
     context: { queryClient },
     scrollRestoration: true,
-    defaultPreload: "intent",
+    // Intent preloading triggered router-core "_nonReactive" errors and
+    // caused extra background work on every link hover. Disable for now.
+    defaultPreload: false,
     defaultPreloadStaleTime: 0,
     defaultErrorComponent: DefaultErrorComponent,
   });
