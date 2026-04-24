@@ -27,6 +27,7 @@ type Ctx = {
   hasActiveSubscription: boolean;
   subscription: Sub | null;
   refresh: () => Promise<void>;
+  ensureProfile: () => Promise<void>;
   signOut: () => Promise<void>;
 };
 
@@ -39,6 +40,7 @@ const AuthCtx = createContext<Ctx>({
   hasActiveSubscription: false,
   subscription: null,
   refresh: async () => {},
+  ensureProfile: async () => {},
   signOut: async () => {},
 });
 
