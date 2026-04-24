@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { UserRound, Plus } from "lucide-react";
+import { UserRound, Plus, Copy, MessageCircle, Phone, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useShop } from "@/lib/shop";
 import { useI18n } from "@/lib/i18n";
@@ -20,6 +20,8 @@ import { NewRoleDialog } from "./NewRoleDialog";
 import { toast } from "sonner";
 
 type CustomRole = { id: string; name: string; permissions: PermissionMap };
+
+type ShareInfo = { phone: string; pin: string; loginUrl: string };
 
 export function NewUserAccessDialog({
   open,
@@ -42,11 +44,14 @@ export function NewUserAccessDialog({
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
   const [email, setEmail] = useState("");
+  const [pin, setPin] = useState("");
 
   const [roleKey, setRoleKey] = useState<RoleKey | string>("EMPLOYEE");
   const [perms, setPerms] = useState<PermissionMap>(ROLE_PRESETS.EMPLOYEE);
   const [busy, setBusy] = useState(false);
   const [openNewRole, setOpenNewRole] = useState(false);
+  const [share, setShare] = useState<ShareInfo | null>(null);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     if (!open) {
@@ -55,8 +60,11 @@ export function NewUserAccessDialog({
       setPhone("");
       setAddress("");
       setEmail("");
+      setPin("");
       setRoleKey("EMPLOYEE");
       setPerms(ROLE_PRESETS.EMPLOYEE);
+      setShare(null);
+      setCopied(false);
     }
   }, [open]);
 
@@ -80,6 +88,10 @@ export function NewUserAccessDialog({
       toast.error(lang === "bn" ? "সঠিক ফোন নম্বর দিন" : "Valid phone required");
       return false;
     }
+    if (!/^\d{4}$/.test(pin)) {
+      toast.error(lang === "bn" ? "৪ সংখ্যার PIN দিন" : "Enter 4-digit PIN");
+      return false;
+    }
     return true;
   };
 
@@ -91,48 +103,80 @@ export function NewUserAccessDialog({
 
   const save = async () => {
     if (!current) return;
-    const digits = phone.replace(/\D/g, "");
-    const normalizedPhone = digits.startsWith("88") ? digits : "88" + digits;
-
     setBusy(true);
-    // Find existing profile by phone (preferred) — keep it nullable, employee may not be a registered user yet
-    const { data: prof } = await supabase
-      .from("profiles")
-      .select("id")
-      .eq("phone", normalizedPhone)
-      .maybeSingle();
-
-    if (!prof) {
-      setBusy(false);
-      toast.error(
-        lang === "bn"
-          ? "এই ফোনে রেজিস্টার্ড ইউজার নেই। আগে ইউজারকে রেজিস্টার করতে বলুন।"
-          : "No registered user with this phone. Ask them to register first.",
+    try {
+      // 1) Create the auth user with the PIN the owner chose
+      const { data: created, error: fnErr } = await supabase.functions.invoke(
+        "create-employee-user",
+        { body: { phone, full_name: fullName.trim(), pin, overwrite_pin: true } },
       );
-      return;
-    }
+      if (fnErr) {
+        const msg = (fnErr as { context?: { error?: string } })?.context?.error ?? fnErr.message;
+        throw new Error(msg);
+      }
+      if (created?.error) throw new Error(created.error);
+      const userId: string = created.user_id;
+      const normalizedPhone: string = created.phone;
 
-    const customRoleId =
-      roleKey === "EMPLOYEE" || roleKey === "MANAGER" || roleKey === "OWNER" ? null : roleKey;
+      // 2) Insert shop_member (or update if already a member of this shop)
+      const customRoleId =
+        roleKey === "EMPLOYEE" || roleKey === "MANAGER" || roleKey === "OWNER" ? null : roleKey;
+      const { error: memberErr } = await supabase
+        .from("shop_members")
+        .upsert(
+          {
+            shop_id: current.id,
+            user_id: userId,
+            role: dbRole,
+            full_name: fullName.trim(),
+            email: email.trim() || null,
+            address: address.trim() || null,
+            permissions: perms as any,
+            custom_role_id: customRoleId,
+          },
+          { onConflict: "shop_id,user_id" },
+        );
+      if (memberErr) throw memberErr;
 
-    const { error } = await supabase.from("shop_members").insert({
-      shop_id: current.id,
-      user_id: prof.id,
-      role: dbRole,
-      full_name: fullName.trim(),
-      email: email.trim() || null,
-      address: address.trim() || null,
-      permissions: perms as any,
-      custom_role_id: customRoleId,
-    });
-    setBusy(false);
-    if (error) {
-      toast.error(error.message);
-      return;
+      // 3) Build the shareable login link (phone digits, login screen)
+      const localPhone = normalizedPhone.replace(/^\+?880/, "0");
+      const loginUrl = `${window.location.origin}/auth?phone=${encodeURIComponent(localPhone)}`;
+      setShare({ phone: localPhone, pin, loginUrl });
+      onSaved();
+      toast.success(lang === "bn" ? "ইউজার তৈরি হয়েছে" : "User created");
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setBusy(false);
     }
-    toast.success(lang === "bn" ? "এক্সেস দেওয়া হয়েছে" : "Access granted");
-    onOpenChange(false);
-    onSaved();
+  };
+
+  const shareMessage = (s: ShareInfo) =>
+    lang === "bn"
+      ? `আসসালামু আলাইকুম ${fullName || ""}\n\nTally Plus-এ আপনার লগইন তথ্য:\nফোন: ${s.phone}\nPIN: ${s.pin}\n\nএখানে লগইন করুন: ${s.loginUrl}`
+      : `Hi ${fullName || ""},\n\nYour Tally Plus login:\nPhone: ${s.phone}\nPIN: ${s.pin}\n\nLog in here: ${s.loginUrl}`;
+
+  const onCopy = async (s: ShareInfo) => {
+    try {
+      await navigator.clipboard.writeText(shareMessage(s));
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+      toast.success(lang === "bn" ? "কপি হয়েছে" : "Copied");
+    } catch {
+      toast.error("Copy failed");
+    }
+  };
+
+  const onWhatsApp = (s: ShareInfo) => {
+    const digits = s.phone.replace(/\D/g, "");
+    const intl = digits.startsWith("0") ? "880" + digits.slice(1) : digits;
+    const url = `https://wa.me/${intl}?text=${encodeURIComponent(shareMessage(s))}`;
+    window.open(url, "_blank");
+  };
+
+  const onSms = (s: ShareInfo) => {
+    const url = `sms:${s.phone}?body=${encodeURIComponent(shareMessage(s))}`;
+    window.location.href = url;
   };
 
   return (
@@ -144,7 +188,50 @@ export function NewUserAccessDialog({
           </DialogHeader>
 
           <div className="max-h-[72vh] overflow-y-auto px-5 py-4">
-            {step === 1 ? (
+            {share ? (
+              <div className="grid gap-4">
+                <div className="rounded-lg border bg-emerald-50 p-4 text-sm text-emerald-900">
+                  <div className="mb-2 font-bold">
+                    {lang === "bn" ? "✅ ইউজার তৈরি হয়েছে" : "✅ User created"}
+                  </div>
+                  <div>
+                    {lang === "bn"
+                      ? "নিচের তথ্যগুলো কপি করে ইউজারকে পাঠান। এই PIN দিয়ে সে লগইন করতে পারবে।"
+                      : "Share the credentials below. The user can log in with this PIN."}
+                  </div>
+                </div>
+
+                <div className="grid gap-2 rounded-lg border p-3 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">{lang === "bn" ? "ফোন" : "Phone"}</span>
+                    <span className="font-mono font-bold">{share.phone}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">PIN</span>
+                    <span className="font-mono font-bold tracking-widest">{share.pin}</span>
+                  </div>
+                  <div className="break-all text-xs text-muted-foreground">{share.loginUrl}</div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-2">
+                  <Button variant="outline" onClick={() => onCopy(share)} className="h-11">
+                    {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                    <span className="ml-1 text-xs">{lang === "bn" ? "কপি" : "Copy"}</span>
+                  </Button>
+                  <Button
+                    onClick={() => onWhatsApp(share)}
+                    className="h-11 bg-emerald-600 text-white hover:bg-emerald-700"
+                  >
+                    <MessageCircle className="h-4 w-4" />
+                    <span className="ml-1 text-xs">WhatsApp</span>
+                  </Button>
+                  <Button variant="outline" onClick={() => onSms(share)} className="h-11">
+                    <Phone className="h-4 w-4" />
+                    <span className="ml-1 text-xs">SMS</span>
+                  </Button>
+                </div>
+              </div>
+            ) : step === 1 ? (
               <div className="grid gap-4">
                 <div className="flex flex-col items-center">
                   <div className="flex h-20 w-20 items-center justify-center rounded-full bg-muted">
@@ -180,6 +267,26 @@ export function NewUserAccessDialog({
                       inputMode="numeric"
                     />
                   </div>
+                </div>
+
+                <div className="grid gap-1.5">
+                  <Label className="text-sm">
+                    {lang === "bn" ? "৪ সংখ্যার লগইন PIN" : "4-digit login PIN"}{" "}
+                    <span className="text-rose-500">*</span>
+                  </Label>
+                  <Input
+                    inputMode="numeric"
+                    maxLength={4}
+                    value={pin}
+                    onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                    placeholder="● ● ● ●"
+                    className="text-center text-xl tracking-[0.5em]"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    {lang === "bn"
+                      ? "এই PIN দিয়ে কর্মচারী লগইন করবে — পরে শেয়ার করবেন"
+                      : "Employee will log in with this PIN — share it after creating"}
+                  </p>
                 </div>
 
                 <div className="grid gap-1.5">
@@ -289,7 +396,14 @@ export function NewUserAccessDialog({
           </div>
 
           <div className="border-t p-3">
-            {step === 1 ? (
+            {share ? (
+              <Button
+                className="h-11 w-full bg-foreground text-background hover:bg-foreground/90"
+                onClick={() => onOpenChange(false)}
+              >
+                {lang === "bn" ? "শেষ" : "Done"}
+              </Button>
+            ) : step === 1 ? (
               <Button
                 className="h-11 w-full bg-foreground text-background hover:bg-foreground/90"
                 onClick={() => {

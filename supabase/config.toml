@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.login-with-pin]
 verify_jwt = false
+
+[functions.create-employee-user]
+verify_jwt = true
