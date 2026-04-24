@@ -39,6 +39,17 @@ function AuthPage() {
     if (user) nav({ to: "/app/dashboard" });
   }, [user, nav]);
 
+  // Prefill phone (and switch to login mode) when arriving via shared link e.g. /auth?phone=01...
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const p = params.get("phone");
+    if (p) {
+      setLoginPhone(p.replace(/\D/g, "").slice(0, 11));
+      setMode("login");
+    }
+  }, []);
+
   const validPhone = (p: string) => /^01\d{9}$/.test(p.replace(/\D/g, ""));
 
   const finishLogin = async (data: { access_token: string; refresh_token: string }) => {
