@@ -21,7 +21,6 @@ import { Route as AppSellRouteImport } from './routes/app.sell'
 import { Route as AppSalesLedgerRouteImport } from './routes/app.sales-ledger'
 import { Route as AppReportsRouteImport } from './routes/app.reports'
 import { Route as AppRecycleBinRouteImport } from './routes/app.recycle-bin'
-import { Route as AppQuickSellRouteImport } from './routes/app.quick-sell'
 import { Route as AppPurchaseLedgerRouteImport } from './routes/app.purchase-ledger'
 import { Route as AppPurchaseRouteImport } from './routes/app.purchase'
 import { Route as AppProductsRouteImport } from './routes/app.products'
@@ -94,11 +93,6 @@ const AppReportsRoute = AppReportsRouteImport.update({
 const AppRecycleBinRoute = AppRecycleBinRouteImport.update({
   id: '/recycle-bin',
   path: '/recycle-bin',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppQuickSellRoute = AppQuickSellRouteImport.update({
-  id: '/quick-sell',
-  path: '/quick-sell',
   getParentRoute: () => AppRoute,
 } as any)
 const AppPurchaseLedgerRoute = AppPurchaseLedgerRouteImport.update({
@@ -185,7 +179,6 @@ export interface FileRoutesByFullPath {
   '/app/products': typeof AppProductsRoute
   '/app/purchase': typeof AppPurchaseRoute
   '/app/purchase-ledger': typeof AppPurchaseLedgerRoute
-  '/app/quick-sell': typeof AppQuickSellRoute
   '/app/recycle-bin': typeof AppRecycleBinRoute
   '/app/reports': typeof AppReportsRoute
   '/app/sales-ledger': typeof AppSalesLedgerRoute
@@ -213,7 +206,6 @@ export interface FileRoutesByTo {
   '/app/products': typeof AppProductsRoute
   '/app/purchase': typeof AppPurchaseRoute
   '/app/purchase-ledger': typeof AppPurchaseLedgerRoute
-  '/app/quick-sell': typeof AppQuickSellRoute
   '/app/recycle-bin': typeof AppRecycleBinRoute
   '/app/reports': typeof AppReportsRoute
   '/app/sales-ledger': typeof AppSalesLedgerRoute
@@ -242,7 +234,6 @@ export interface FileRoutesById {
   '/app/products': typeof AppProductsRoute
   '/app/purchase': typeof AppPurchaseRoute
   '/app/purchase-ledger': typeof AppPurchaseLedgerRoute
-  '/app/quick-sell': typeof AppQuickSellRoute
   '/app/recycle-bin': typeof AppRecycleBinRoute
   '/app/reports': typeof AppReportsRoute
   '/app/sales-ledger': typeof AppSalesLedgerRoute
@@ -272,7 +263,6 @@ export interface FileRouteTypes {
     | '/app/products'
     | '/app/purchase'
     | '/app/purchase-ledger'
-    | '/app/quick-sell'
     | '/app/recycle-bin'
     | '/app/reports'
     | '/app/sales-ledger'
@@ -300,7 +290,6 @@ export interface FileRouteTypes {
     | '/app/products'
     | '/app/purchase'
     | '/app/purchase-ledger'
-    | '/app/quick-sell'
     | '/app/recycle-bin'
     | '/app/reports'
     | '/app/sales-ledger'
@@ -328,7 +317,6 @@ export interface FileRouteTypes {
     | '/app/products'
     | '/app/purchase'
     | '/app/purchase-ledger'
-    | '/app/quick-sell'
     | '/app/recycle-bin'
     | '/app/reports'
     | '/app/sales-ledger'
@@ -430,13 +418,6 @@ declare module '@tanstack/react-router' {
       path: '/recycle-bin'
       fullPath: '/app/recycle-bin'
       preLoaderRoute: typeof AppRecycleBinRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/app/quick-sell': {
-      id: '/app/quick-sell'
-      path: '/quick-sell'
-      fullPath: '/app/quick-sell'
-      preLoaderRoute: typeof AppQuickSellRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/purchase-ledger': {
@@ -547,7 +528,6 @@ interface AppRouteChildren {
   AppProductsRoute: typeof AppProductsRoute
   AppPurchaseRoute: typeof AppPurchaseRoute
   AppPurchaseLedgerRoute: typeof AppPurchaseLedgerRoute
-  AppQuickSellRoute: typeof AppQuickSellRoute
   AppRecycleBinRoute: typeof AppRecycleBinRoute
   AppReportsRoute: typeof AppReportsRoute
   AppSalesLedgerRoute: typeof AppSalesLedgerRoute
@@ -572,7 +552,6 @@ const AppRouteChildren: AppRouteChildren = {
   AppProductsRoute: AppProductsRoute,
   AppPurchaseRoute: AppPurchaseRoute,
   AppPurchaseLedgerRoute: AppPurchaseLedgerRoute,
-  AppQuickSellRoute: AppQuickSellRoute,
   AppRecycleBinRoute: AppRecycleBinRoute,
   AppReportsRoute: AppReportsRoute,
   AppSalesLedgerRoute: AppSalesLedgerRoute,
@@ -594,12 +573,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}

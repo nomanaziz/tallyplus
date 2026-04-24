@@ -13,7 +13,6 @@ const ITEMS: Item[] = [
   { to: "/app/purchase", bn: "কেনা", en: "Purchase", icon: icons.purchase },
   { to: "/app/sell", bn: "বেচা", en: "Sell", icon: icons.sell },
   { to: "/app/cashbox", bn: "ক্যাশবক্স", en: "Cashbox", icon: icons.cashbox },
-  { to: "/app/quick-sell", bn: "দ্রুত বেচা", en: "Quick Sell", icon: icons.quickSell },
   // Ledgers group
   { to: "/app/purchase-ledger", bn: "কেনার খাতা", en: "Purchase Ledger", icon: icons.purchaseList },
   { to: "/app/sales-ledger", bn: "বেচার খাতা", en: "Sales Ledger", icon: icons.salesList },

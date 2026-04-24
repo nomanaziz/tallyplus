@@ -41,7 +41,7 @@ type CartItem = {
 
 type Contact = { id: string; name: string; phone: string | null; address: string | null };
 
-export function POSPage({ mode }: { mode: Mode }) {
+export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue?: boolean }) {
   const { lang } = useI18n();
   const { current } = useShop();
   const { user } = useAuth();
@@ -57,6 +57,7 @@ export function POSPage({ mode }: { mode: Mode }) {
   const [quickOpen, setQuickOpen] = useState(false);
   const [cashOpen, setCashOpen] = useState(false);
   const [dueOpen, setDueOpen] = useState(false);
+  useEffect(() => { if (autoOpenDue) setDueOpen(true); }, [autoOpenDue]);
   const [mobileTab, setMobileTab] = useState<"products" | "cart">("products");
 
   const isSell = mode === "sell";

@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { TrendingUp, ShoppingCart, DollarSign, Package, Wallet, Receipt, RefreshCw } from "lucide-react";
 import heroBanner from "@/assets/hero-shop.jpg";
+import { QuickSellSheet } from "@/components/app/QuickSellSheet";
 
 export const Route = createFileRoute("/app/dashboard")({
   head: () => ({ meta: [{ title: "ড্যাশবোর্ড — Tally Plus" }] }),
@@ -31,6 +32,7 @@ function Dashboard() {
   const { lang } = useI18n();
   const { current } = useShop();
   const [range, setRange] = useState<Range>("today");
+  const [quickOpen, setQuickOpen] = useState(false);
   const start = rangeStart(range);
   const startIso = start ? start.toISOString() : "1970-01-01T00:00:00.000Z";
   const { data, isFetching, refetch } = useQuery(dashboardSummaryQuery(current?.id ?? null, startIso));
@@ -139,7 +141,7 @@ function Dashboard() {
               {lang === "bn" ? <>এক ক্লিকেই হিসাব পরিষ্কার <br /> সময় বাঁচে, ব্যবসাও বাড়ে</> : <>Accounts cleared in one click <br /> Save time, grow business</>}
             </h2>
             <Button asChild className="mt-5 rounded-full bg-foreground px-6 text-background hover:bg-foreground/90">
-              <Link to="/app/sell">{lang === "bn" ? "ট্যাপ করুন" : "Tap here"}</Link>
+              <Link to="/app/sell" search={{}}>{lang === "bn" ? "ট্যাপ করুন" : "Tap here"}</Link>
             </Button>
           </div>
           <img src={heroBanner} alt="" className="h-full w-full object-cover" loading="lazy" />
@@ -148,17 +150,20 @@ function Dashboard() {
 
       {/* 3 main action buttons */}
       <div className="mt-5 grid grid-cols-3 gap-3">
-        {[
-          { to: "/app/purchase", icon: icons.purchase, bn: "কেনা", en: "Purchase" },
-          { to: "/app/sell", icon: icons.sell, bn: "বেচা", en: "Sell" },
-          { to: "/app/quick-sell", icon: icons.quickSell, bn: "দ্রুত বেচা", en: "Quick Sell" },
-        ].map((a) => (
-          <Link key={a.to} to={a.to} className="flex flex-col items-center justify-center gap-2 rounded-2xl border bg-card p-6 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md">
-            <img src={a.icon} alt="" className="h-12 w-12" />
-            <span className="text-sm font-bold">{lang === "bn" ? a.bn : a.en}</span>
-          </Link>
-        ))}
+        <Link to="/app/purchase" search={{}} className="flex flex-col items-center justify-center gap-2 rounded-2xl border bg-card p-6 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md">
+          <img src={icons.purchase} alt="" className="h-12 w-12" />
+          <span className="text-sm font-bold">{lang === "bn" ? "কেনা" : "Purchase"}</span>
+        </Link>
+        <Link to="/app/sell" search={{}} className="flex flex-col items-center justify-center gap-2 rounded-2xl border bg-card p-6 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md">
+          <img src={icons.sell} alt="" className="h-12 w-12" />
+          <span className="text-sm font-bold">{lang === "bn" ? "বেচা" : "Sell"}</span>
+        </Link>
+        <button type="button" onClick={() => setQuickOpen(true)} className="flex flex-col items-center justify-center gap-2 rounded-2xl border bg-card p-6 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md">
+          <img src={icons.quickSell} alt="" className="h-12 w-12" />
+          <span className="text-sm font-bold">{lang === "bn" ? "দ্রুত বেচা" : "Quick Sell"}</span>
+        </button>
       </div>
+      <QuickSellSheet open={quickOpen} onOpenChange={setQuickOpen} />
 
       {/* Khata + Business + Others */}
       <div className="mt-5 grid gap-3 md:grid-cols-2">
