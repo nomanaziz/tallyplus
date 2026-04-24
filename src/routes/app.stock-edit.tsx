@@ -74,81 +74,88 @@ function StockEditPage() {
 
   return (
     <div className="container px-4 py-4">
-      <div className="mb-1 text-xs text-muted-foreground">Stock Management / Stock Update</div>
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="mb-2 text-xs text-muted-foreground">Stock Management / Stock Update</div>
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b pb-3">
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => nav({ to: "/app/stock" })}>
-            <ArrowLeft className="h-4 w-4" />
+          <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => nav({ to: "/app/stock" })}>
+            <ArrowLeft className="h-5 w-5" />
           </Button>
-          <h1 className="text-xl font-extrabold md:text-2xl">{lang === "bn" ? "স্টক এডিট" : "Stock Edit"}</h1>
+          <h1 className="text-2xl font-extrabold tracking-tight md:text-3xl">
+            <span className="border-b-2 border-foreground/80 pb-0.5">{lang === "bn" ? "স্টক এডিট" : "Stock Edit"}</span>
+          </h1>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Button variant="outline" className="h-10 gap-2" onClick={() => { setUpdates({}); nav({ to: "/app/stock" }); }}>
             <X className="h-4 w-4" />
             {lang === "bn" ? "ক্যানসেল" : "Cancel"}
           </Button>
-          <Button className="h-10 gap-2 bg-foreground text-background hover:opacity-90" onClick={save} disabled={busy}>
+          <Button className="h-10 gap-2 bg-foreground text-background hover:opacity-90 disabled:opacity-50" onClick={save} disabled={busy || Object.keys(updates).length === 0}>
             <Save className="h-4 w-4" />
             {busy ? "..." : lang === "bn" ? "সংরক্ষণ করুন" : "Save"}
           </Button>
         </div>
       </div>
 
-      <div className="mt-4">
+      <div className="mt-3">
         <DataToolbar search={search} onSearch={setSearch} onRefresh={() => refetch()} />
       </div>
 
-      <div className="mt-4 rounded-xl border bg-card">
+      <div className="mt-4 overflow-hidden rounded-xl border bg-card shadow-sm">
         {filtered.length === 0 ? (
           <EmptyState icon={<Package className="h-6 w-6" />} title={lang === "bn" ? "কোনো পণ্য নেই" : "No products"} />
         ) : (
           <Table>
             <TableHeader>
-              <TableRow>
-                <TableHead>{lang === "bn" ? "পণ্যের নাম" : "Product"}</TableHead>
-                <TableHead className="text-right">{lang === "bn" ? "বর্তমান মজুদ" : "Stock"}</TableHead>
-                <TableHead className="text-right">{lang === "bn" ? "দর" : "Cost"}</TableHead>
-                <TableHead className="text-center w-[260px]">{lang === "bn" ? "আপডেটেড স্টক" : "Updated stock"}</TableHead>
+              <TableRow className="bg-muted/40 hover:bg-muted/40">
+                <TableHead className="py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{lang === "bn" ? "পণ্যের নাম" : "Product"}</TableHead>
+                <TableHead className="py-3 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground">{lang === "bn" ? "বর্তমান মজুদ" : "Stock"}</TableHead>
+                <TableHead className="py-3 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground">{lang === "bn" ? "দর" : "Cost"}</TableHead>
+                <TableHead className="py-3 text-center text-xs font-semibold uppercase tracking-wide text-muted-foreground w-[280px]">{lang === "bn" ? "আপডেটেড স্টক" : "Updated stock"}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filtered.map((p) => {
                 const cur = updates[p.id] ?? Number(p.stock);
+                const changed = updates[p.id] != null && updates[p.id] !== Number(p.stock);
                 return (
-                  <TableRow key={p.id}>
+                  <TableRow key={p.id} className={"transition " + (changed ? "bg-amber-50/60 hover:bg-amber-50" : "hover:bg-muted/30")}>
                     <TableCell>
-                      <div className="flex items-center gap-2">
-                        <div className="flex h-8 w-8 flex-none items-center justify-center rounded-md bg-muted">
-                          <Package className="h-4 w-4 text-muted-foreground" />
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-9 w-9 flex-none items-center justify-center rounded-md bg-muted">
+                          {p.image_url ? (
+                            <img src={p.image_url} alt="" className="h-9 w-9 rounded-md object-cover" />
+                          ) : (
+                            <Package className="h-4 w-4 text-muted-foreground" />
+                          )}
                         </div>
                         <span className="font-medium">{p.name}</span>
                       </div>
                     </TableCell>
-                    <TableCell className="text-right">{lang === "bn" ? bnNum(p.stock) : p.stock}</TableCell>
-                    <TableCell className="text-right">{fmtMoney(Number(p.cost_price), lang)}</TableCell>
+                    <TableCell className="text-right font-semibold tabular-nums">{lang === "bn" ? bnNum(p.stock) : p.stock}</TableCell>
+                    <TableCell className="text-right font-semibold tabular-nums">{fmtMoney(Number(p.cost_price), lang)}</TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-2">
+                      <div className="mx-auto flex w-[260px] items-center gap-2">
                         <Button
                           variant="outline"
                           size="icon"
-                          className="h-9 w-10 bg-rose-100 text-rose-600 hover:bg-rose-200 border-rose-200"
+                          className="h-10 w-12 rounded-md bg-rose-100 text-lg font-bold text-rose-600 hover:bg-rose-200 border-rose-200"
                           onClick={() => setQty(p.id, Math.max(0, cur - 1))}
                         >
-                          <Minus className="h-4 w-4" />
+                          <Minus className="h-5 w-5" />
                         </Button>
                         <Input
                           type="number"
                           value={cur}
                           onChange={(e) => setQty(p.id, Math.max(0, Number(e.target.value) || 0))}
-                          className="h-9 text-center font-semibold"
+                          className={"h-10 text-center text-base font-semibold tabular-nums " + (changed ? "border-b-2 border-b-blue-500 focus-visible:ring-blue-500" : "")}
                         />
                         <Button
                           variant="outline"
                           size="icon"
-                          className="h-9 w-10 bg-emerald-500 text-white hover:bg-emerald-600 border-emerald-500"
+                          className="h-10 w-12 rounded-md bg-emerald-500 text-white hover:bg-emerald-600 border-emerald-500"
                           onClick={() => setQty(p.id, cur + 1)}
                         >
-                          <Plus className="h-4 w-4" />
+                          <Plus className="h-5 w-5" />
                         </Button>
                       </div>
                     </TableCell>
@@ -158,9 +165,11 @@ function StockEditPage() {
             </TableBody>
           </Table>
         )}
-        <div className="border-t px-4 py-3 text-center text-xs text-muted-foreground">
-          Showing 1 to {filtered.length} of {filtered.length} Products
-        </div>
+        {filtered.length > 0 && (
+          <div className="border-t bg-muted/20 px-4 py-3 text-center text-xs text-muted-foreground">
+            Showing 1 to {filtered.length} of {filtered.length} Products
+          </div>
+        )}
       </div>
     </div>
   );
