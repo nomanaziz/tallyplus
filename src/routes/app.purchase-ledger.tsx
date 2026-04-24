@@ -37,9 +37,10 @@ function PurchaseLedgerPage() {
   const { current } = useShop();
   const nav = useNavigate();
   const qc = useQueryClient();
-  const { data: raw = [], refetch } = useQuery(purchasesListQuery(current?.id ?? null));
-  const list = raw as unknown as Purchase[];
-  const { data: suppliers = [] } = useQuery(contactsQuery(current?.id ?? null, "suppliers"));
+  const { data: raw, refetch } = useQuery(purchasesListQuery(current?.id ?? null));
+  const list = useMemo(() => (raw as unknown as Purchase[] | undefined) ?? [], [raw]);
+  const { data: suppliersData } = useQuery(contactsQuery(current?.id ?? null, "suppliers"));
+  const suppliers = useMemo(() => suppliersData ?? [], [suppliersData]);
   const supMap = useMemo(
     () => Object.fromEntries(
       (suppliers as { id: string; name: string; phone: string | null }[])
@@ -56,12 +57,13 @@ function PurchaseLedgerPage() {
   const [to, setTo] = useState(today.toISOString().slice(0, 10));
 
   // Item counts per purchase
+  const listIdsKey = useMemo(() => list.map((p) => p.id).join(","), [list]);
   const [itemCounts, setItemCounts] = useState<Record<string, number>>({});
   useEffect(() => {
-    if (!list.length) { setItemCounts({}); return; }
+    if (!listIdsKey) { setItemCounts({}); return; }
     let cancel = false;
     (async () => {
-      const ids = list.map((p) => p.id);
+      const ids = listIdsKey.split(",");
       const { data } = await supabase
         .from("purchase_items")
         .select("purchase_id")
@@ -74,7 +76,7 @@ function PurchaseLedgerPage() {
       setItemCounts(counts);
     })();
     return () => { cancel = true; };
-  }, [list]);
+  }, [listIdsKey]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
