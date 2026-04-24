@@ -975,6 +975,19 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      dashboard_summary: {
+        Args: { _shop_id: string; _since: string }
+        Returns: {
+          cash_in: number
+          cash_out: number
+          expenses: number
+          payable: number
+          purchases: number
+          receivable: number
+          sales: number
+          stock_value: number
+        }[]
+      }
       has_active_subscription: { Args: { _user_id: string }; Returns: boolean }
       has_role: {
         Args: {
