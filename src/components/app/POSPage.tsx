@@ -299,7 +299,14 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
                         </div>
                       </div>
                       <div>
-                        <Label className="text-[10px] uppercase text-muted-foreground">{lang === "bn" ? "মূল্য" : "Price"}</Label>
+                        <Label className="text-[10px] uppercase text-muted-foreground">
+                          {lang === "bn" ? "মূল্য" : "Price"}
+                          {it.is_bulk ? (
+                            <span className="ml-1 rounded bg-primary/10 px-1 py-0.5 text-[9px] font-semibold text-primary">
+                              [{lang === "bn" ? "বাল্ক রেট" : "Bulk Rate"}]
+                            </span>
+                          ) : null}
+                        </Label>
                         <Input type="number" value={it.price} className="h-9"
                           onChange={(e) => updateCart(idx, { price: Number(e.target.value) || 0 })} />
                       </div>
