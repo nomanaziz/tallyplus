@@ -93,6 +93,7 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 
 export function SettingsSheet({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
   const { lang, setLang } = useI18n();
+  const pwa = usePwaInstall();
   const { current } = useShop();
   const { signOut } = useAuth();
   const nav = useNavigate();
