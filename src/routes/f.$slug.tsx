@@ -18,7 +18,7 @@ export const Route = createFileRoute("/f/$slug")({
   component: PublicWishlistPage,
 });
 
-type Item = { id: string; name: string; qty: string; unit: string };
+type Item = { id: string; name: string; qty: string; unit: string; price: string };
 
 const PALETTE: { key: string; label: string; bg: string; ring: string }[] = [
   { key: "default", label: "Default", bg: "bg-card", ring: "ring-border" },
@@ -46,7 +46,7 @@ function PublicWishlistPage() {
   const [address, setAddress] = useState("");
   const [note, setNote] = useState("");
   const [color, setColor] = useState<string>("mint");
-  const [items, setItems] = useState<Item[]>([{ id: newId(), name: "", qty: "", unit: "" }]);
+  const [items, setItems] = useState<Item[]>([{ id: newId(), name: "", qty: "", unit: "", price: "" }]);
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
 
@@ -78,14 +78,14 @@ function PublicWishlistPage() {
     };
   }, [slug]);
 
-  const addItem = () => setItems((xs) => [...xs, { id: newId(), name: "", qty: "", unit: "" }]);
+  const addItem = () => setItems((xs) => [...xs, { id: newId(), name: "", qty: "", unit: "", price: "" }]);
   const removeItem = (id: string) => setItems((xs) => xs.filter((x) => x.id !== id));
   const updateItem = (id: string, patch: Partial<Item>) =>
     setItems((xs) => xs.map((x) => (x.id === id ? { ...x, ...patch } : x)));
 
   const submit = async () => {
     const cleanItems = items
-      .map((x) => ({ name: x.name.trim(), qty: x.qty.trim(), unit: x.unit.trim() }))
+      .map((x) => ({ name: x.name.trim(), qty: x.qty.trim(), unit: x.unit.trim(), price: x.price.trim() }))
       .filter((x) => x.name.length > 0);
     if (!name.trim()) {
       toast.error("আপনার নাম দিন");
@@ -112,6 +112,7 @@ function PublicWishlistPage() {
           items: cleanItems.map((it) => ({
             name: it.name,
             qty: it.qty ? Number(it.qty) : null,
+            price: it.price ? Number(it.price) : null,
             unit: it.unit || null,
           })),
         },
@@ -134,7 +135,7 @@ function PublicWishlistPage() {
     setPhone("");
     setAddress("");
     setNote("");
-    setItems([{ id: newId(), name: "", qty: "", unit: "" }]);
+    setItems([{ id: newId(), name: "", qty: "", unit: "", price: "" }]);
     setDone(false);
   };
 
