@@ -1,7 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { useI18n, fmtMoney } from "@/lib/i18n";
+import { useAuth } from "@/lib/auth";
+import { useReferral } from "@/lib/referral";
 import { Button } from "@/components/ui/button";
-import { Crown, ShieldCheck, HardDrive, Cloud, Headphones, Check } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
+import { Crown, ShieldCheck, HardDrive, Cloud, Headphones, Check, Tag, X } from "lucide-react";
 
 export const Route = createFileRoute("/app/subscribe")({
   head: () => ({ meta: [{ title: "সাবস্ক্রিপশন কিনুন — Tally Plus" }] }),
@@ -10,6 +16,74 @@ export const Route = createFileRoute("/app/subscribe")({
 
 function Subscribe() {
   const { lang } = useI18n();
+  const { user } = useAuth();
+  const { code, setCode, validate } = useReferral();
+  const [refInfo, setRefInfo] = useState<{ ok: boolean; affiliate_id?: string; full_name?: string } | null>(null);
+  const [discountPct, setDiscountPct] = useState<number>(0);
+  const [defaultPct, setDefaultPct] = useState<number>(15);
+  const [manualCode, setManualCode] = useState<string>("");
+
+  useEffect(() => {
+    void (async () => {
+      const { data: s } = await supabase
+        .from("affiliate_settings").select("referee_discount_pct,default_commission_pct").eq("id", true).maybeSingle();
+      if (s) {
+        setDiscountPct(Number(s.referee_discount_pct ?? 0));
+        setDefaultPct(Number(s.default_commission_pct ?? 15));
+      }
+    })();
+  }, []);
+
+  useEffect(() => {
+    if (!code) { setRefInfo(null); return; }
+    void (async () => {
+      const r = await validate(code);
+      setRefInfo(r);
+      if (!r.ok) setCode(null);
+    })();
+  }, [code]);
+
+  const applyManual = async () => {
+    const r = await validate(manualCode);
+    if (!r.ok) { toast.error(lang === "bn" ? "ভুল রেফারেল কোড" : "Invalid code"); return; }
+    setCode(manualCode);
+    setRefInfo(r);
+    toast.success(lang === "bn" ? "কোড অ্যাপ্লাই হয়েছে" : "Code applied");
+  };
+
+  const buy = async (price: number, planLabel: string) => {
+    if (!user) { toast.error(lang === "bn" ? "আগে লগইন করুন" : "Please log in"); return; }
+    const finalPrice = refInfo?.ok ? Math.round(price * (1 - discountPct / 100)) : price;
+    // Record a pending commission so the affiliate sees it; admin can approve/pay.
+    if (refInfo?.ok && refInfo.affiliate_id) {
+      const commissionAmount = Math.round((finalPrice * defaultPct) / 100);
+      const { data: refRow } = await supabase
+        .from("affiliate_referrals")
+        .insert({
+          affiliate_id: refInfo.affiliate_id,
+          referred_user_id: user.id,
+          referral_code: code ?? "",
+          status: "converted",
+          converted_at: new Date().toISOString(),
+        })
+        .select("id")
+        .maybeSingle();
+      await supabase.from("affiliate_commissions").insert({
+        affiliate_id: refInfo.affiliate_id,
+        referral_id: refRow?.id ?? null,
+        subscription_amount: finalPrice,
+        commission_pct: defaultPct,
+        commission_amount: commissionAmount,
+        status: "pending",
+      });
+    }
+    toast.success(
+      (lang === "bn" ? "অর্ডার পেয়েছি — " : "Order placed — ") +
+      planLabel + ` (৳${finalPrice})`,
+    );
+  };
+
+  const showPrice = (p: number) => refInfo?.ok ? Math.round(p * (1 - discountPct / 100)) : p;
 
   const advancedPerks = lang === "bn"
     ? [
@@ -34,6 +108,33 @@ function Subscribe() {
     <div className="container px-4 py-4">
       <div className="mb-2 text-xs text-muted-foreground">Settings</div>
       <h1 className="text-xl font-extrabold">{lang === "bn" ? "সাবস্ক্রিপশন কিনুন" : "Buy Subscription"}</h1>
+
+      {/* Referral banner */}
+      {refInfo?.ok ? (
+        <div className="mt-3 flex items-center justify-between rounded-xl border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm">
+          <div className="flex items-center gap-2 text-emerald-900">
+            <Tag className="h-4 w-4" />
+            <span>
+              {lang === "bn" ? "রেফারেল কোড অ্যাপ্লাইড: " : "Referral applied: "}
+              <strong>{code}</strong> — {discountPct}% {lang === "bn" ? "ছাড়" : "off"}
+            </span>
+          </div>
+          <button onClick={() => { setCode(null); setRefInfo(null); }} className="text-emerald-900 hover:opacity-70"><X className="h-4 w-4" /></button>
+        </div>
+      ) : (
+        <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl border bg-card px-3 py-2 text-sm">
+          <Tag className="h-4 w-4 text-muted-foreground" />
+          <span className="text-muted-foreground">{lang === "bn" ? "রেফারেল কোড আছে?" : "Have a referral code?"}</span>
+          <Input
+            value={manualCode}
+            onChange={(e) => setManualCode(e.target.value.toUpperCase())}
+            placeholder="CODE"
+            className="h-8 w-28 uppercase"
+            maxLength={20}
+          />
+          <Button size="sm" variant="outline" onClick={applyManual}>{lang === "bn" ? "অ্যাপ্লাই" : "Apply"}</Button>
+        </div>
+      )}
 
       {/* Advanced banner */}
       <div className="mt-4 grid items-stretch gap-3 rounded-2xl border bg-card p-4 shadow-sm md:grid-cols-[200px_1fr_auto]">
@@ -71,13 +172,13 @@ function Subscribe() {
       {/* Special offer */}
       <h2 className="mt-6 text-sm font-bold text-muted-foreground">{lang === "bn" ? "স্পেশাল অফার" : "Special Offer"}</h2>
       <div className="mt-2 grid items-center gap-4 rounded-2xl border bg-card p-4 shadow-sm md:grid-cols-[260px_1fr]">
-        <div className="relative rounded-xl border-2 border-dashed border-success/50 bg-success/5 p-5 text-center">
+          <div className="relative rounded-xl border-2 border-dashed border-success/50 bg-success/5 p-5 text-center">
           <span className="absolute right-2 top-2 rounded-md bg-success/20 px-2 py-0.5 text-[10px] font-bold text-success">
             35% {lang === "bn" ? "ছাড়" : "discount"}
           </span>
           <div className="text-xs text-muted-foreground">{lang === "bn" ? "আজীবন subscription" : "Lifetime subscription"}</div>
-          <div className="mt-2 text-2xl font-extrabold">{fmtMoney(5000, lang)}</div>
-          <div className="text-sm text-destructive line-through">{fmtMoney(10000, lang)}</div>
+            <div className="mt-2 text-2xl font-extrabold">{fmtMoney(showPrice(5000), lang)}</div>
+            <div className="text-sm text-destructive line-through">{fmtMoney(10000, lang)}</div>
         </div>
         <div>
           <div className="text-base font-bold">{lang === "bn" ? "স্পেশাল গিফট!" : "Special Gift!"}</div>
@@ -89,7 +190,7 @@ function Subscribe() {
               <li key={p} className="flex items-start gap-2"><Check className="mt-0.5 h-4 w-4 flex-none text-success" />{p}</li>
             ))}
           </ul>
-          <Button className="mt-4 h-11 w-full rounded-md bg-success font-bold text-success-foreground hover:bg-success/90">
+            <Button onClick={() => buy(5000, "Lifetime")} className="mt-4 h-11 w-full rounded-md bg-success font-bold text-success-foreground hover:bg-success/90">
             {lang === "bn" ? "অফারটি বুঝে নিন" : "Claim this offer"}
           </Button>
         </div>
@@ -116,7 +217,7 @@ function Subscribe() {
         ].map((p) => (
           <div key={p.price} className="rounded-2xl border bg-card p-5 shadow-sm">
             <div className="flex items-baseline gap-2">
-              <div className="text-2xl font-extrabold">{fmtMoney(p.price, lang)}</div>
+              <div className="text-2xl font-extrabold">{fmtMoney(showPrice(p.price), lang)}</div>
               {p.oldPrice && <div className="text-sm text-muted-foreground line-through">{fmtMoney(p.oldPrice, lang)}</div>}
             </div>
             <div className="mt-2 text-sm font-semibold">{lang === "bn" ? p.bnTitle : p.enTitle}</div>
@@ -126,7 +227,7 @@ function Subscribe() {
                 <li key={x} className="flex items-start gap-2"><span className="mt-0.5 flex h-5 w-5 flex-none items-center justify-center rounded-sm bg-success/20"><Check className="h-3 w-3 text-success" /></span>{x}</li>
               ))}
             </ul>
-            <Button className="mt-5 h-11 w-full rounded-md font-bold">{lang === "bn" ? "এখনই কিনুন" : "Buy now"}</Button>
+            <Button onClick={() => buy(p.price, lang === "bn" ? p.bnTitle : p.enTitle)} className="mt-5 h-11 w-full rounded-md font-bold">{lang === "bn" ? "এখনই কিনুন" : "Buy now"}</Button>
           </div>
         ))}
       </div>
