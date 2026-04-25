@@ -107,9 +107,11 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
   }, [products, search]);
 
   const addToCart = (p: Product) => {
+    let alreadyInCart = false;
     setCart((prev) => {
       const i = prev.findIndex((c) => c.product_id === p.id);
       if (i >= 0) {
+        alreadyInCart = true;
         const copy = [...prev];
         const next = { ...copy[i], qty: copy[i].qty + 1 };
         copy[i] = applyBulkPricing(next);
@@ -128,7 +130,14 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
       };
       return [...prev, applyBulkPricing(newItem)];
     });
-    setMobileTab("cart");
+    // Stay on the products tab so the user can keep adding more items.
+    // A toast confirms the add and a badge on the Cart tab shows the count.
+    toast.success(
+      lang === "bn"
+        ? `${p.name} ${alreadyInCart ? "এর পরিমাণ বাড়ানো হয়েছে" : "কার্টে যোগ হয়েছে"}`
+        : `${p.name} ${alreadyInCart ? "qty increased" : "added to cart"}`,
+      { duration: 1200 },
+    );
   };
 
   const updateCart = (idx: number, patch: Partial<CartItem>) => {
