@@ -1,105 +1,110 @@
-# Multi-Shop Selection Page + Combined Report Dashboard
+# Cashbox — Note (Denomination) Tracking
 
-Two missing features that the user has pointed out from the reference screenshots:
-
-1. **Shop Selection Page** (image-60) — a dedicated page where multi-shop owners pick which shop to enter, plus add a new shop.
-2. **Combined Report / "সমন্বিত রিপোর্ট"** (combained.png) — a cross-shop consolidated dashboard accessible from Settings → "Complete Dashboard / কমপ্লিট ড্যাশবোর্ড".
-
-No database changes are required — both features query existing `shops`, `sales`, `purchases`, `expenses`, `payments`, `other_income`, `customers`, `suppliers`, `products` tables.
+The user wants Cashbox to work like a real cash drawer: each entry is built up by **counting notes of each denomination** (BDT 1000, 500, 200, 100, 50, 20, 10, 5, 2, 1). The sum of all the notes becomes the entry amount automatically. A new ledger view shows, per note: how many came in, how many went out, current balance, and where they came from (manual / sale / purchase / expense / income / payment).
 
 ---
 
-## 1. Shop Selection Page — `/app/shops`
+## 1. Database — add denomination breakdown to cash_movements
 
-**File:** `src/routes/app.shops.tsx`
+One additive migration (no breaking change — old rows stay valid):
 
-Replicates the reference design:
-- Hishabee logo top-left, "লগআউট" button top-right.
-- Title: "দোকান সিলেক্ট করুন".
-- Grid of cards (3 per row on desktop, 1 on mobile):
-  - Each shop card: shop icon/logo, shop name, address (small), green outline if `current` shop, "সিলেক্ট করুন" button.
-  - Last card always: "+ নতুন দোকান যুক্ত করুন" → opens existing shop creation flow.
-- Click "সিলেক্ট করুন" → calls `setCurrent(shop)` from `useShop()`, then navigates to `/app/dashboard`.
+```sql
+ALTER TABLE public.cash_movements
+  ADD COLUMN IF NOT EXISTS denominations jsonb NOT NULL DEFAULT '{}'::jsonb;
+```
 
-**Wiring**
-- `SettingsSheet` "দোকান পরিবর্তন করুন / Switch Shop" button currently goes to `/app` → change to `/app/shops`.
-- `app.tsx` `beforeLoad` redirect from `/app` → keep going to `/app/dashboard` (no change needed).
-- The Topbar shop chip (showing current shop name + chevron) becomes clickable → also goes to `/app/shops`.
+Shape: `{ "1000": 3, "500": 2, "100": 5, ... }` — only non-zero denominations stored. Sum of `denom × count` must equal `amount`. Validation lives in the client (and a soft DB CHECK is intentionally avoided so manual-amount entries without a breakdown still work).
 
-**Add-shop dialog**: reuse the same `ShopTypePicker + name input + create` logic from `app.tsx`. Extract into `src/components/app/AddShopDialog.tsx` so both the empty-state in `app.tsx` and `app.shops.tsx` can call it.
+**Auto-fill for sales/purchases/expenses (best-effort)**: when a sale/purchase/expense/payment is paid in cash, the existing app code already inserts a `cash_movements` row. We extend those insert sites to also pass a denominations payload **only if the user opens the new "Note breakdown" panel during checkout**. Otherwise the field stays `{}` and the entry behaves exactly like today. (No backfill for existing rows.)
 
 ---
 
-## 2. Combined Report Page — `/app/combined-report`
+## 2. Cashbox UI — Note-based entry dialog
 
-**File:** `src/routes/app.combined-report.tsx`
+Replace the existing `CashEntryDialog` amount field with a denominations grid:
 
-Replicates the screenshot exactly:
+```
+┌─ জমা যোগ করুন ────────────────┐
+│ ৳ 1000  [  - ] 3 [ + ]  = 3000 │
+│ ৳  500  [  - ] 2 [ + ]  = 1000 │
+│ ৳  200  [  - ] 0 [ + ]  =    0 │
+│ ৳  100  [  - ] 5 [ + ]  =  500 │
+│ ৳   50  [  - ] 0 [ + ]  =    0 │
+│ ৳   20  [  - ] 1 [ + ]  =   20 │
+│ ৳   10  [  - ] 0 [ + ]  =    0 │
+│ ৳    5  [  - ] 0 [ + ]  =    0 │
+│ ৳    2  [  - ] 0 [ + ]  =    0 │
+│ ৳    1  [  - ] 0 [ + ]  =    0 │
+│────────────────────────────────│
+│ মোট                    ৳ 4,520 │
+│ [ Manual amount mode ]         │
+│ Note: ___________________      │
+│         [Cancel]  [Save]       │
+└────────────────────────────────┘
+```
 
-**Header**
-- Breadcrumb: "← সমন্বিত রিপোর্ট" (back arrow → `/app/dashboard`).
-- Right side actions: **ডাউনলোড/প্রিন্ট** (black button), **{N}টি দোকান** (shop multi-select dropdown — checkbox list, defaults to all shops), **DateRangePicker** (Apr 01 — Apr 30), **রিফ্রেশ**.
-- Tabs: **General Report** (active) / **Details Report**.
+- `+` / `-` steppers + direct number input per note.
+- Live total displayed at the bottom.
+- "Manual amount mode" toggle — falls back to the original single amount field for users who don't want to count notes.
+- Save writes `amount` (the sum) + `denominations` JSON.
+- For "Cash Out" (খরচ), the picker shows currently-available counts per note as a hint ("আছে: 3") and warns (but doesn't block) if the user tries to take out more of a denomination than the running balance.
 
-**Body — sectioned cards**, each section has: title row (with icon top-right), per-shop breakdown rows, then a bold "মোট" (Total) row coloured green/red:
-
-| Section | Source | Tone |
-|---|---|---|
-| মোট বিক্রি | sum(sales.total) per shop | green |
-| নগদ বেচা (কাস্টমার বাকি বাদে) | sum(sales.paid) per shop | green |
-| কাস্টমার থেকে বাকির টাকা পেয়েছেন | sum(payments where direction='in', customer_id not null) | green |
-| নগদ কেনা (সাপ্লায়ার বাকি বাদে) | sum(purchases.paid) | red |
-| সাপ্লায়ারকে বাকির টাকা দিয়েছেন | sum(payments where direction='out', supplier_id not null) | red |
-| সর্বমোট ব্যালেন্স | totalSales + receivedFromCust + otherIncome − cashPurchase − paidToSup − otherExpense | green/red |
-| পণ্য বিক্রি থেকে লাভ | sum(sale_items.total − qty*products.cost_price) | green |
-| অন্যান্য আয় | sum(other_income.amount) | green |
-| অন্যান্য খরচ | sum(expenses.amount) | red |
-| সাপ্লায়ারকে দিবো | sum(suppliers.due_balance) | red |
-| কাস্টমার থেকে পাবো | sum(customers.due_balance) | green |
-
-Each section has the original screenshot's layout: section title + amount on right (per shop rows + total row at bottom). Use the existing `Row` style from `app.reports.tsx`.
-
-**Details Report tab**: simple table — for each metric × each shop, show the per-shop value with grand total column. (Cross-tab table.)
-
-**Data fetching**
-- Add `combinedReportQuery(shopIds: string[], startIso, endIso)` in `src/lib/queries.ts`. It runs the existing `dashboard_summary` RPC for each shop in parallel via `Promise.all`, then merges into:
-  ```ts
-  { perShop: Record<shopId, Metrics>, totals: Metrics }
-  ```
-- Use TanStack Query, keyed on `[shopIds, startIso, endIso]`.
-
-**Print / Download**
-- Reuse `printReport()` from `src/lib/print-report.ts`. Build per-section rows with each shop sub-row + total row.
+Reusable component: `src/components/app/DenominationPicker.tsx` returning `{ counts, total }`.
 
 ---
 
-## 3. Settings & Sidebar Wiring
+## 3. Cashbox page — new "Note Ledger" tab
 
-- `SettingsSheet`: change "কমপ্লিট ড্যাশবোর্ড" target from `/app/dashboard` to `/app/combined-report`. Add another row "সমন্বিত রিপোর্ট" with `BarChart3` icon if the user prefers a separate label (we'll use one — "কমপ্লিট ড্যাশবোর্ড" → combined report — to match the screenshot Settings flow).
-- `SettingsSheet`: change "দোকান পরিবর্তন করুন / Switch Shop" from `/app` to `/app/shops`.
-- `AppTopbar`: make the shop chip (current shop name + chevron) clickable → goes to `/app/shops`.
-- Add a Combined Report icon-link in the dashboard's tile grid for quick access.
+The Cashbox page gets two tabs:
+
+- **এন্ট্রি লিস্ট / Entries** (current table, with a new "নোটের ভাঙতি / Notes" column showing chips like `1000×3, 500×2, 100×5`).
+- **নোটের হিসাব / Note Ledger** — a per-denomination summary table:
+
+| নোট | জমা সংখ্যা | খরচ সংখ্যা | বর্তমান সংখ্যা | বর্তমান টাকা |
+|---|---|---|---|---|
+| ৳1000 | 12 | 4 | 8 | 8,000 |
+| ৳500  | 20 | 6 | 14 | 7,000 |
+| …     |    |    |    |    |
+| **মোট** |  |  |  | **17,520** |
+
+Computed client-side from the `cash_movements` rows:
+- `inCount[d] = Σ denominations[d] for direction='in'`
+- `outCount[d] = Σ denominations[d] for direction='out'`
+- `balance[d]  = inCount[d] - outCount[d]`
+
+A date-range filter at the top (reuse `DateRangePicker`) re-computes for the selected window.
+
+Below the table, a small "Source breakdown" card listing how many notes came from each source (`ref_table` = `sales` / `purchases` / `expenses` / `payments` / `other_income` / NULL for manual).
 
 ---
 
-## 4. Files Summary
+## 4. Sales/Purchases/Expense — optional note breakdown
+
+In the existing Quick Sell, Sale form, Purchase form, Expense form, and Payment dialogs, when the payment method is **cash**, add a small "💵 নোটের ভাঙতি দিন" link. Clicking opens the same `DenominationPicker` modal pre-filled with the paid amount (the user just distributes the total across notes). On save, the resulting denominations are passed alongside the existing `cash_movements` insert.
+
+If the user skips it, behaviour is unchanged.
+
+---
+
+## 5. Files
 
 **Created**
-- `src/routes/app.shops.tsx` — shop selection page
-- `src/routes/app.combined-report.tsx` — combined report page
-- `src/components/app/AddShopDialog.tsx` — extracted add-shop flow
+- `src/components/app/DenominationPicker.tsx` — reusable note counter
+- `src/components/app/NoteLedger.tsx` — denomination-summary table
 
 **Modified**
-- `src/components/app/SettingsSheet.tsx` — repoint Complete Dashboard + Switch Shop
-- `src/components/app/AppTopbar.tsx` — make shop chip a Link to `/app/shops`
-- `src/routes/app.tsx` — use new `AddShopDialog` for empty-state
-- `src/lib/queries.ts` — add `combinedReportQuery`
-- `src/routes/app.dashboard.tsx` — small "Combined Report" tile in the Others grid
+- `src/routes/app.cashbox.tsx` — add tabs, denomination column, new dialog
+- `src/lib/queries.ts` — extend `cashMovementsQuery` to select `denominations`
+- `src/integrations/supabase/types.ts` — auto-regenerated after migration
+- Sales / Purchase / Expense / Payment forms — small optional "Note breakdown" link (Quick Sell, `app.pos.tsx`, `app.purchase-new.tsx`, `app.expense-ledger.tsx`, payment dialog)
 
-**Routes added**: `/app/shops`, `/app/combined-report`. The TanStack route tree regenerates automatically.
+**Migration**
+- One `ALTER TABLE cash_movements ADD COLUMN denominations jsonb DEFAULT '{}'`
 
 ---
 
 ## Out of scope
-- Server-side aggregation (we run the existing per-shop RPC in parallel — fast enough for typical 1–10 shops).
-- Excel export — only PDF/print for now (matches the reference's "ডাউনলোড/প্রিন্ট" button).
+- No coin/sub-1-taka denominations (BDT in practice uses notes; coins are rare).
+- No DB-level validation that `Σ(denom×count) = amount` — enforced in UI only, to keep manual entries painless.
+- No backfill of existing `cash_movements` (old entries show "—" in the Notes column).
+- Multi-currency note sets — current implementation hardcodes the BDT note set; trivial to extend later.
