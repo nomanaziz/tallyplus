@@ -18,7 +18,7 @@ export const Route = createFileRoute("/f/$slug")({
   component: PublicWishlistPage,
 });
 
-type Item = { id: string; name: string; qty: string; unit: string };
+type Item = { id: string; name: string; qty: string; unit: string; price: string };
 
 const PALETTE: { key: string; label: string; bg: string; ring: string }[] = [
   { key: "default", label: "Default", bg: "bg-card", ring: "ring-border" },
@@ -46,7 +46,7 @@ function PublicWishlistPage() {
   const [address, setAddress] = useState("");
   const [note, setNote] = useState("");
   const [color, setColor] = useState<string>("mint");
-  const [items, setItems] = useState<Item[]>([{ id: newId(), name: "", qty: "", unit: "" }]);
+  const [items, setItems] = useState<Item[]>([{ id: newId(), name: "", qty: "", unit: "", price: "" }]);
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
 
@@ -78,14 +78,14 @@ function PublicWishlistPage() {
     };
   }, [slug]);
 
-  const addItem = () => setItems((xs) => [...xs, { id: newId(), name: "", qty: "", unit: "" }]);
+  const addItem = () => setItems((xs) => [...xs, { id: newId(), name: "", qty: "", unit: "", price: "" }]);
   const removeItem = (id: string) => setItems((xs) => xs.filter((x) => x.id !== id));
   const updateItem = (id: string, patch: Partial<Item>) =>
     setItems((xs) => xs.map((x) => (x.id === id ? { ...x, ...patch } : x)));
 
   const submit = async () => {
     const cleanItems = items
-      .map((x) => ({ name: x.name.trim(), qty: x.qty.trim(), unit: x.unit.trim() }))
+      .map((x) => ({ name: x.name.trim(), qty: x.qty.trim(), unit: x.unit.trim(), price: x.price.trim() }))
       .filter((x) => x.name.length > 0);
     if (!name.trim()) {
       toast.error("আপনার নাম দিন");
@@ -112,6 +112,7 @@ function PublicWishlistPage() {
           items: cleanItems.map((it) => ({
             name: it.name,
             qty: it.qty ? Number(it.qty) : null,
+            price: it.price ? Number(it.price) : null,
             unit: it.unit || null,
           })),
         },
@@ -134,7 +135,7 @@ function PublicWishlistPage() {
     setPhone("");
     setAddress("");
     setNote("");
-    setItems([{ id: newId(), name: "", qty: "", unit: "" }]);
+    setItems([{ id: newId(), name: "", qty: "", unit: "", price: "" }]);
     setDone(false);
   };
 
@@ -220,7 +221,7 @@ function PublicWishlistPage() {
                 <div className="mt-2 w-5 select-none text-center text-xs font-semibold text-muted-foreground">{idx + 1}.</div>
                 <div className="grid flex-1 grid-cols-12 gap-1.5">
                   <CatalogProductPicker
-                    className="col-span-7"
+                    className="col-span-12"
                     inputClassName="h-10 bg-background/70"
                     value={it.name}
                     onChange={(v) => updateItem(it.id, { name: v })}
@@ -228,6 +229,7 @@ function PublicWishlistPage() {
                       updateItem(it.id, {
                         name: p.name_bn + (p.pack_size ? ` (${p.pack_size})` : ""),
                         unit: it.unit || p.base_unit || "",
+                        price: it.price || (p.default_price != null ? String(p.default_price) : ""),
                       });
                     }}
                     shopTypeCode={shopTypeCode}
@@ -238,7 +240,7 @@ function PublicWishlistPage() {
                     onChange={(e) => updateItem(it.id, { qty: e.target.value.replace(/[^0-9.]/g, "") })}
                     placeholder="পরিমাণ"
                     inputMode="decimal"
-                    className="col-span-2 h-10 bg-background/70"
+                    className="col-span-3 h-10 bg-background/70"
                   />
                   <Input
                     value={it.unit}
@@ -247,6 +249,16 @@ function PublicWishlistPage() {
                     className="col-span-3 h-10 bg-background/70"
                     maxLength={16}
                   />
+                  <Input
+                    value={it.price}
+                    onChange={(e) => updateItem(it.id, { price: e.target.value.replace(/[^0-9.]/g, "") })}
+                    placeholder="দাম ৳"
+                    inputMode="decimal"
+                    className="col-span-3 h-10 bg-background/70"
+                  />
+                  <div className="col-span-3 flex h-10 items-center justify-end rounded-md bg-background/40 px-2 text-xs font-semibold tabular-nums">
+                    ৳ {(() => { const q = Number(it.qty) || 0; const pr = Number(it.price) || 0; const t = q && pr ? q * pr : pr; return t ? t.toLocaleString("bn-BD", { maximumFractionDigits: 2 }) : "—"; })()}
+                  </div>
                 </div>
                 <button
                   type="button"
@@ -259,6 +271,17 @@ function PublicWishlistPage() {
                 </button>
               </div>
             ))}
+          </div>
+
+          <div className="mt-3 flex items-center justify-between rounded-xl border bg-background/70 px-3 py-2 text-sm">
+            <span className="font-semibold">মোট</span>
+            <span className="text-base font-extrabold tabular-nums text-primary">
+              ৳ {items.reduce((sum, it) => {
+                const q = Number(it.qty) || 0;
+                const pr = Number(it.price) || 0;
+                return sum + (q && pr ? q * pr : pr);
+              }, 0).toLocaleString("bn-BD", { maximumFractionDigits: 2 })}
+            </span>
           </div>
 
           <Button type="button" variant="outline" onClick={addItem} className="mt-3 w-full bg-background/70">

@@ -12,7 +12,7 @@ import { EmptyState } from "@/components/app/EmptyState";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
 
-type Tab = "products" | "customers" | "suppliers" | "sales" | "purchases" | "expenses";
+type Tab = "products" | "customers" | "suppliers" | "sales" | "purchases" | "expenses" | "customer_wishlists";
 
 const tabLabels: Record<Tab, { bn: string; en: string }> = {
   products: { bn: "প্রোডাক্ট", en: "Products" },
@@ -21,6 +21,7 @@ const tabLabels: Record<Tab, { bn: string; en: string }> = {
   sales: { bn: "বেচা", en: "Sales" },
   purchases: { bn: "কেনা", en: "Purchases" },
   expenses: { bn: "খরচ", en: "Expenses" },
+  customer_wishlists: { bn: "গ্রাহক ফর্দ", en: "Wishlists" },
 };
 
 export const Route = createFileRoute("/app/recycle-bin")({
@@ -38,7 +39,7 @@ function RecycleBinPage() {
   const refresh = async () => { await qc.invalidateQueries({ queryKey: ["recycle"] }); await refetch(); };
 
   const restore = async (id: string) => {
-    const { error } = await supabase.from(tab).update({ deleted_at: null }).eq("id", id);
+    const { error } = await supabase.from(tab).update({ deleted_at: null } as never).eq("id", id);
     if (error) { toast.error(error.message); return; }
     toast.success(lang === "bn" ? "পুনরুদ্ধার হয়েছে" : "Restored");
     void refresh();
@@ -56,6 +57,7 @@ function RecycleBinPage() {
     if (tab === "products") return [{ key: "name", label: lang === "bn" ? "নাম" : "Name" }, { key: "stock", label: lang === "bn" ? "মজুদ" : "Stock" }];
     if (tab === "customers" || tab === "suppliers") return [{ key: "name", label: lang === "bn" ? "নাম" : "Name" }, { key: "phone", label: lang === "bn" ? "ফোন" : "Phone" }];
     if (tab === "expenses") return [{ key: "category", label: lang === "bn" ? "ক্যাটাগরি" : "Category" }, { key: "amount", label: lang === "bn" ? "পরিমাণ" : "Amount", money: true }];
+    if (tab === "customer_wishlists") return [{ key: "customer_name", label: lang === "bn" ? "গ্রাহক" : "Customer" }, { key: "customer_phone", label: lang === "bn" ? "ফোন" : "Phone" }];
     return [{ key: "invoice_no", label: lang === "bn" ? "ইনভয়েস" : "Invoice" }, { key: "total", label: lang === "bn" ? "মোট" : "Total", money: true }];
   }, [tab, lang]);
 

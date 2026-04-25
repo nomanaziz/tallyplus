@@ -215,7 +215,14 @@ export const contactsQuery = (
 /* ---------- Recycle bin (soft-deleted) ---------- */
 export const recycleBinQuery = (
   shopId: string | null | undefined,
-  table: "products" | "customers" | "suppliers" | "sales" | "purchases" | "expenses",
+  table:
+    | "products"
+    | "customers"
+    | "suppliers"
+    | "sales"
+    | "purchases"
+    | "expenses"
+    | "customer_wishlists",
 ) =>
   queryOptions({
     queryKey: ["recycle", table, shopId],
@@ -230,7 +237,9 @@ export const recycleBinQuery = (
             ? "id,name,phone,deleted_at"
             : table === "expenses"
               ? "id,category,amount,note,deleted_at,created_at"
-              : "id,invoice_no,total,deleted_at,created_at";
+              : table === "customer_wishlists"
+                ? "id,customer_name,customer_phone,deleted_at,created_at"
+                : "id,invoice_no,total,deleted_at,created_at";
       const { data, error } = await supabase
         .from(table)
         .select(cols)
