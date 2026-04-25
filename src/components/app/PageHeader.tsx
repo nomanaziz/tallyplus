@@ -20,8 +20,8 @@ export function PageHeader({
       {breadcrumb && (
         <div className="container px-4 pt-3 text-xs text-muted-foreground">{breadcrumb}</div>
       )}
-      <div className="container flex items-center justify-between gap-3 px-4 py-3">
-        <div className="flex min-w-0 items-center gap-2">
+      <div className="container flex flex-wrap items-center justify-between gap-3 px-4 py-3">
+        <div className="flex min-w-0 flex-1 items-center gap-2">
           {back && (
             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => nav({ to: ".." as never })}>
               <ArrowLeft className="h-4 w-4" />
@@ -29,7 +29,7 @@ export function PageHeader({
           )}
           <h1 className="truncate text-lg font-extrabold md:text-xl">{title}</h1>
         </div>
-        {actions && <div className="flex flex-none items-center gap-2">{actions}</div>}
+        {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
       </div>
     </div>
   );
