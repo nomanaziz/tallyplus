@@ -1773,6 +1773,7 @@ export type Database = {
           duration_days: number
           id: string
           is_active: boolean
+          max_shops: number
           name_bn: string
           name_en: string
           price_bdt: number
@@ -1784,6 +1785,7 @@ export type Database = {
           duration_days: number
           id?: string
           is_active?: boolean
+          max_shops?: number
           name_bn: string
           name_en: string
           price_bdt: number
@@ -1795,6 +1797,7 @@ export type Database = {
           duration_days?: number
           id?: string
           is_active?: boolean
+          max_shops?: number
           name_bn?: string
           name_en?: string
           price_bdt?: number
@@ -2040,6 +2043,8 @@ export type Database = {
       }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
+      user_active_shop_count: { Args: { _user_id: string }; Returns: number }
+      user_shop_limit: { Args: { _user_id: string }; Returns: number }
     }
     Enums: {
       app_role: "admin" | "owner" | "manager" | "cashier" | "buyer"
