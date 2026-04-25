@@ -118,6 +118,19 @@ export const FEATURE_GROUPS: FeatureGroup[] = [
   },
   { key: "sms", title_bn: "এস এম এস", title_en: "SMS", icon: "💬", items: [{ key: "view", label_bn: "এস এম এস", label_en: "SMS" }] },
   { key: "report", title_bn: "ব্যবসার রিপোর্ট", title_en: "Report", icon: "📈", items: [{ key: "view", label_bn: "ব্যবসার রিপোর্ট", label_en: "Report" }] },
+  {
+    key: "returns",
+    title_bn: "প্রোডাক্ট রিটার্ন",
+    title_en: "Returns",
+    icon: "↩️",
+    items: [
+      { key: "view", label_bn: "রিটার্ন তালিকা", label_en: "View returns" },
+      { key: "add", label_bn: "নতুন রিটার্ন", label_en: "Add return" },
+      { key: "refund", label_bn: "টাকা ফেরত", label_en: "Refund" },
+      { key: "edit", label_bn: "এডিট করুন", label_en: "Edit" },
+      { key: "delete", label_bn: "মুছে ফেলুন", label_en: "Delete" },
+    ],
+  },
   { key: "topup", title_bn: "টপ আপ", title_en: "Top up", icon: "🔋", items: [{ key: "view", label_bn: "টপ আপ", label_en: "Top up" }] },
   {
     key: "online_shop",
@@ -154,6 +167,7 @@ export const ROLE_PRESETS: Record<RoleKey, PermissionMap> = {
     products: ["view"],
     stock: ["view", "history"],
     report: ["view"],
+    returns: ["view", "add", "refund"],
   },
   OWNER: Object.fromEntries(FEATURE_GROUPS.map((g) => [g.key, g.items.map((i) => i.key)])),
 };

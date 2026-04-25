@@ -27,6 +27,7 @@ import { Route as AppStockRouteImport } from './routes/app.stock'
 import { Route as AppShopsRouteImport } from './routes/app.shops'
 import { Route as AppSellRouteImport } from './routes/app.sell'
 import { Route as AppSalesLedgerRouteImport } from './routes/app.sales-ledger'
+import { Route as AppReturnsRouteImport } from './routes/app.returns'
 import { Route as AppReportsRouteImport } from './routes/app.reports'
 import { Route as AppRecycleBinRouteImport } from './routes/app.recycle-bin'
 import { Route as AppQuickOrderRouteImport } from './routes/app.quick-order'
@@ -66,6 +67,8 @@ import { Route as AppOnlineShopIndexRouteImport } from './routes/app.online-shop
 import { Route as ShopSSlugRouteImport } from './routes/shop.s.$slug'
 import { Route as ShopPIdRouteImport } from './routes/shop.p.$id'
 import { Route as FSlugMyRouteImport } from './routes/f.$slug.my'
+import { Route as AppReturnsNewRouteImport } from './routes/app.returns.new'
+import { Route as AppReturnsIdRouteImport } from './routes/app.returns.$id'
 import { Route as AppOnlineShopThemesRouteImport } from './routes/app.online-shop.themes'
 import { Route as AppOnlineShopSettingsRouteImport } from './routes/app.online-shop.settings'
 import { Route as AppOnlineShopPromoCodesRouteImport } from './routes/app.online-shop.promo-codes'
@@ -167,6 +170,11 @@ const AppSellRoute = AppSellRouteImport.update({
 const AppSalesLedgerRoute = AppSalesLedgerRouteImport.update({
   id: '/sales-ledger',
   path: '/sales-ledger',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppReturnsRoute = AppReturnsRouteImport.update({
+  id: '/returns',
+  path: '/returns',
   getParentRoute: () => AppRoute,
 } as any)
 const AppReportsRoute = AppReportsRouteImport.update({
@@ -365,6 +373,16 @@ const FSlugMyRoute = FSlugMyRouteImport.update({
   path: '/my',
   getParentRoute: () => FSlugRoute,
 } as any)
+const AppReturnsNewRoute = AppReturnsNewRouteImport.update({
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => AppReturnsRoute,
+} as any)
+const AppReturnsIdRoute = AppReturnsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AppReturnsRoute,
+} as any)
 const AppOnlineShopThemesRoute = AppOnlineShopThemesRouteImport.update({
   id: '/themes',
   path: '/themes',
@@ -468,6 +486,7 @@ export interface FileRoutesByFullPath {
   '/app/quick-order': typeof AppQuickOrderRoute
   '/app/recycle-bin': typeof AppRecycleBinRoute
   '/app/reports': typeof AppReportsRoute
+  '/app/returns': typeof AppReturnsRouteWithChildren
   '/app/sales-ledger': typeof AppSalesLedgerRoute
   '/app/sell': typeof AppSellRoute
   '/app/shops': typeof AppShopsRoute
@@ -492,6 +511,8 @@ export interface FileRoutesByFullPath {
   '/app/online-shop/promo-codes': typeof AppOnlineShopPromoCodesRoute
   '/app/online-shop/settings': typeof AppOnlineShopSettingsRoute
   '/app/online-shop/themes': typeof AppOnlineShopThemesRoute
+  '/app/returns/$id': typeof AppReturnsIdRoute
+  '/app/returns/new': typeof AppReturnsNewRoute
   '/f/$slug/my': typeof FSlugMyRoute
   '/shop/p/$id': typeof ShopPIdRoute
   '/shop/s/$slug': typeof ShopSSlugRoute
@@ -537,6 +558,7 @@ export interface FileRoutesByTo {
   '/app/quick-order': typeof AppQuickOrderRoute
   '/app/recycle-bin': typeof AppRecycleBinRoute
   '/app/reports': typeof AppReportsRoute
+  '/app/returns': typeof AppReturnsRouteWithChildren
   '/app/sales-ledger': typeof AppSalesLedgerRoute
   '/app/sell': typeof AppSellRoute
   '/app/shops': typeof AppShopsRoute
@@ -561,6 +583,8 @@ export interface FileRoutesByTo {
   '/app/online-shop/promo-codes': typeof AppOnlineShopPromoCodesRoute
   '/app/online-shop/settings': typeof AppOnlineShopSettingsRoute
   '/app/online-shop/themes': typeof AppOnlineShopThemesRoute
+  '/app/returns/$id': typeof AppReturnsIdRoute
+  '/app/returns/new': typeof AppReturnsNewRoute
   '/f/$slug/my': typeof FSlugMyRoute
   '/shop/p/$id': typeof ShopPIdRoute
   '/shop/s/$slug': typeof ShopSSlugRoute
@@ -609,6 +633,7 @@ export interface FileRoutesById {
   '/app/quick-order': typeof AppQuickOrderRoute
   '/app/recycle-bin': typeof AppRecycleBinRoute
   '/app/reports': typeof AppReportsRoute
+  '/app/returns': typeof AppReturnsRouteWithChildren
   '/app/sales-ledger': typeof AppSalesLedgerRoute
   '/app/sell': typeof AppSellRoute
   '/app/shops': typeof AppShopsRoute
@@ -633,6 +658,8 @@ export interface FileRoutesById {
   '/app/online-shop/promo-codes': typeof AppOnlineShopPromoCodesRoute
   '/app/online-shop/settings': typeof AppOnlineShopSettingsRoute
   '/app/online-shop/themes': typeof AppOnlineShopThemesRoute
+  '/app/returns/$id': typeof AppReturnsIdRoute
+  '/app/returns/new': typeof AppReturnsNewRoute
   '/f/$slug/my': typeof FSlugMyRoute
   '/shop/p/$id': typeof ShopPIdRoute
   '/shop/s/$slug': typeof ShopSSlugRoute
@@ -682,6 +709,7 @@ export interface FileRouteTypes {
     | '/app/quick-order'
     | '/app/recycle-bin'
     | '/app/reports'
+    | '/app/returns'
     | '/app/sales-ledger'
     | '/app/sell'
     | '/app/shops'
@@ -706,6 +734,8 @@ export interface FileRouteTypes {
     | '/app/online-shop/promo-codes'
     | '/app/online-shop/settings'
     | '/app/online-shop/themes'
+    | '/app/returns/$id'
+    | '/app/returns/new'
     | '/f/$slug/my'
     | '/shop/p/$id'
     | '/shop/s/$slug'
@@ -751,6 +781,7 @@ export interface FileRouteTypes {
     | '/app/quick-order'
     | '/app/recycle-bin'
     | '/app/reports'
+    | '/app/returns'
     | '/app/sales-ledger'
     | '/app/sell'
     | '/app/shops'
@@ -775,6 +806,8 @@ export interface FileRouteTypes {
     | '/app/online-shop/promo-codes'
     | '/app/online-shop/settings'
     | '/app/online-shop/themes'
+    | '/app/returns/$id'
+    | '/app/returns/new'
     | '/f/$slug/my'
     | '/shop/p/$id'
     | '/shop/s/$slug'
@@ -822,6 +855,7 @@ export interface FileRouteTypes {
     | '/app/quick-order'
     | '/app/recycle-bin'
     | '/app/reports'
+    | '/app/returns'
     | '/app/sales-ledger'
     | '/app/sell'
     | '/app/shops'
@@ -846,6 +880,8 @@ export interface FileRouteTypes {
     | '/app/online-shop/promo-codes'
     | '/app/online-shop/settings'
     | '/app/online-shop/themes'
+    | '/app/returns/$id'
+    | '/app/returns/new'
     | '/f/$slug/my'
     | '/shop/p/$id'
     | '/shop/s/$slug'
@@ -992,6 +1028,13 @@ declare module '@tanstack/react-router' {
       path: '/sales-ledger'
       fullPath: '/app/sales-ledger'
       preLoaderRoute: typeof AppSalesLedgerRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/returns': {
+      id: '/app/returns'
+      path: '/returns'
+      fullPath: '/app/returns'
+      preLoaderRoute: typeof AppReturnsRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/reports': {
@@ -1267,6 +1310,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FSlugMyRouteImport
       parentRoute: typeof FSlugRoute
     }
+    '/app/returns/new': {
+      id: '/app/returns/new'
+      path: '/new'
+      fullPath: '/app/returns/new'
+      preLoaderRoute: typeof AppReturnsNewRouteImport
+      parentRoute: typeof AppReturnsRoute
+    }
+    '/app/returns/$id': {
+      id: '/app/returns/$id'
+      path: '/$id'
+      fullPath: '/app/returns/$id'
+      preLoaderRoute: typeof AppReturnsIdRouteImport
+      parentRoute: typeof AppReturnsRoute
+    }
     '/app/online-shop/themes': {
       id: '/app/online-shop/themes'
       path: '/themes'
@@ -1436,6 +1493,20 @@ const AppOnlineShopRouteWithChildren = AppOnlineShopRoute._addFileChildren(
   AppOnlineShopRouteChildren,
 )
 
+interface AppReturnsRouteChildren {
+  AppReturnsIdRoute: typeof AppReturnsIdRoute
+  AppReturnsNewRoute: typeof AppReturnsNewRoute
+}
+
+const AppReturnsRouteChildren: AppReturnsRouteChildren = {
+  AppReturnsIdRoute: AppReturnsIdRoute,
+  AppReturnsNewRoute: AppReturnsNewRoute,
+}
+
+const AppReturnsRouteWithChildren = AppReturnsRoute._addFileChildren(
+  AppReturnsRouteChildren,
+)
+
 interface AppRouteChildren {
   AppAccessRoute: typeof AppAccessRoute
   AppAffiliateRoute: typeof AppAffiliateRoute
@@ -1459,6 +1530,7 @@ interface AppRouteChildren {
   AppQuickOrderRoute: typeof AppQuickOrderRoute
   AppRecycleBinRoute: typeof AppRecycleBinRoute
   AppReportsRoute: typeof AppReportsRoute
+  AppReturnsRoute: typeof AppReturnsRouteWithChildren
   AppSalesLedgerRoute: typeof AppSalesLedgerRoute
   AppSellRoute: typeof AppSellRoute
   AppShopsRoute: typeof AppShopsRoute
@@ -1492,6 +1564,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppQuickOrderRoute: AppQuickOrderRoute,
   AppRecycleBinRoute: AppRecycleBinRoute,
   AppReportsRoute: AppReportsRoute,
+  AppReturnsRoute: AppReturnsRouteWithChildren,
   AppSalesLedgerRoute: AppSalesLedgerRoute,
   AppSellRoute: AppSellRoute,
   AppShopsRoute: AppShopsRoute,

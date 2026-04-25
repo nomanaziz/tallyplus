@@ -37,6 +37,7 @@ const SECTIONS: Section[] = [
     items: [
       { to: "/app/purchase-ledger", bn: "কেনার খাতা", en: "Purchase Ledger", icon: icons.purchaseList, perm: "purchase" },
       { to: "/app/sales-ledger", bn: "বেচার খাতা", en: "Sales Ledger", icon: icons.salesList, perm: "sell" },
+      { to: "/app/returns", bn: "প্রোডাক্ট রিটার্ন", en: "Product Return", icon: icons.salesList, perm: "returns" },
       { to: "/app/due-ledger", bn: "বাকির খাতা", en: "Due Ledger", icon: icons.due, perm: "due" },
       { to: "/app/expense-ledger", bn: "খরচের খাতা", en: "Expense Ledger", icon: icons.expense, perm: "expense" },
       { to: "/app/owner-ledger", bn: "মালিকের লেনদেন", en: "Owner Ledger", icon: icons.cashbox, perm: "expense" },
