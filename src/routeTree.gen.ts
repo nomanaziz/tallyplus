@@ -68,6 +68,7 @@ import { Route as AppOnlineShopPromoCodesRouteImport } from './routes/app.online
 import { Route as AppOnlineShopProductsRouteImport } from './routes/app.online-shop.products'
 import { Route as AppOnlineShopOrdersRouteImport } from './routes/app.online-shop.orders'
 import { Route as AppOnlineShopFraudCheckRouteImport } from './routes/app.online-shop.fraud-check'
+import { Route as AppOnlineShopCustomizeRouteImport } from './routes/app.online-shop.customize'
 
 const PricingRoute = PricingRouteImport.update({
   id: '/pricing',
@@ -365,6 +366,11 @@ const AppOnlineShopFraudCheckRoute = AppOnlineShopFraudCheckRouteImport.update({
   path: '/fraud-check',
   getParentRoute: () => AppOnlineShopRoute,
 } as any)
+const AppOnlineShopCustomizeRoute = AppOnlineShopCustomizeRouteImport.update({
+  id: '/customize',
+  path: '/customize',
+  getParentRoute: () => AppOnlineShopRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -417,6 +423,7 @@ export interface FileRoutesByFullPath {
   '/f/$slug': typeof FSlugRouteWithChildren
   '/admin/': typeof AdminIndexRoute
   '/shop/': typeof ShopIndexRoute
+  '/app/online-shop/customize': typeof AppOnlineShopCustomizeRoute
   '/app/online-shop/fraud-check': typeof AppOnlineShopFraudCheckRoute
   '/app/online-shop/orders': typeof AppOnlineShopOrdersRoute
   '/app/online-shop/products': typeof AppOnlineShopProductsRoute
@@ -477,6 +484,7 @@ export interface FileRoutesByTo {
   '/f/$slug': typeof FSlugRouteWithChildren
   '/admin': typeof AdminIndexRoute
   '/shop': typeof ShopIndexRoute
+  '/app/online-shop/customize': typeof AppOnlineShopCustomizeRoute
   '/app/online-shop/fraud-check': typeof AppOnlineShopFraudCheckRoute
   '/app/online-shop/orders': typeof AppOnlineShopOrdersRoute
   '/app/online-shop/products': typeof AppOnlineShopProductsRoute
@@ -539,6 +547,7 @@ export interface FileRoutesById {
   '/f/$slug': typeof FSlugRouteWithChildren
   '/admin/': typeof AdminIndexRoute
   '/shop/': typeof ShopIndexRoute
+  '/app/online-shop/customize': typeof AppOnlineShopCustomizeRoute
   '/app/online-shop/fraud-check': typeof AppOnlineShopFraudCheckRoute
   '/app/online-shop/orders': typeof AppOnlineShopOrdersRoute
   '/app/online-shop/products': typeof AppOnlineShopProductsRoute
@@ -602,6 +611,7 @@ export interface FileRouteTypes {
     | '/f/$slug'
     | '/admin/'
     | '/shop/'
+    | '/app/online-shop/customize'
     | '/app/online-shop/fraud-check'
     | '/app/online-shop/orders'
     | '/app/online-shop/products'
@@ -662,6 +672,7 @@ export interface FileRouteTypes {
     | '/f/$slug'
     | '/admin'
     | '/shop'
+    | '/app/online-shop/customize'
     | '/app/online-shop/fraud-check'
     | '/app/online-shop/orders'
     | '/app/online-shop/products'
@@ -723,6 +734,7 @@ export interface FileRouteTypes {
     | '/f/$slug'
     | '/admin/'
     | '/shop/'
+    | '/app/online-shop/customize'
     | '/app/online-shop/fraud-check'
     | '/app/online-shop/orders'
     | '/app/online-shop/products'
@@ -1163,6 +1175,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppOnlineShopFraudCheckRouteImport
       parentRoute: typeof AppOnlineShopRoute
     }
+    '/app/online-shop/customize': {
+      id: '/app/online-shop/customize'
+      path: '/customize'
+      fullPath: '/app/online-shop/customize'
+      preLoaderRoute: typeof AppOnlineShopCustomizeRouteImport
+      parentRoute: typeof AppOnlineShopRoute
+    }
   }
 }
 
@@ -1213,6 +1232,7 @@ const AffiliateRouteWithChildren = AffiliateRoute._addFileChildren(
 )
 
 interface AppOnlineShopRouteChildren {
+  AppOnlineShopCustomizeRoute: typeof AppOnlineShopCustomizeRoute
   AppOnlineShopFraudCheckRoute: typeof AppOnlineShopFraudCheckRoute
   AppOnlineShopOrdersRoute: typeof AppOnlineShopOrdersRoute
   AppOnlineShopProductsRoute: typeof AppOnlineShopProductsRoute
@@ -1222,6 +1242,7 @@ interface AppOnlineShopRouteChildren {
 }
 
 const AppOnlineShopRouteChildren: AppOnlineShopRouteChildren = {
+  AppOnlineShopCustomizeRoute: AppOnlineShopCustomizeRoute,
   AppOnlineShopFraudCheckRoute: AppOnlineShopFraudCheckRoute,
   AppOnlineShopOrdersRoute: AppOnlineShopOrdersRoute,
   AppOnlineShopProductsRoute: AppOnlineShopProductsRoute,
