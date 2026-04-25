@@ -7,6 +7,8 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { usePwaInstall } from "@/hooks/use-pwa-install";
+import { toast } from "sonner";
 import {
   ArrowLeftRight,
   ChevronRight,
@@ -91,6 +93,7 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 
 export function SettingsSheet({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
   const { lang, setLang } = useI18n();
+  const pwa = usePwaInstall();
   const { current } = useShop();
   const { signOut } = useAuth();
   const nav = useNavigate();
@@ -237,8 +240,39 @@ export function SettingsSheet({ open, onOpenChange }: { open: boolean; onOpenCha
             />
             <Row
               icon={<Smartphone className="h-4 w-4" />}
-              label={lang === "bn" ? "হিসাবী মোবাইল অ্যাপ" : "Mobile App"}
-              onClick={() => window.open("https://play.google.com/store", "_blank")}
+              label={
+                pwa.installed
+                  ? (lang === "bn" ? "অ্যাপ ইনস্টল করা আছে" : "App Installed")
+                  : (lang === "bn" ? "মোবাইলে অ্যাপ ইনস্টল করুন" : "Install Mobile App")
+              }
+              onClick={async () => {
+                if (pwa.installed) {
+                  toast.info(lang === "bn" ? "অ্যাপ ইতিমধ্যে ইনস্টল করা আছে" : "App is already installed");
+                  return;
+                }
+                if (pwa.canInstall) {
+                  const outcome = await pwa.promptInstall();
+                  if (outcome === "accepted") {
+                    toast.success(lang === "bn" ? "অ্যাপ ইনস্টল হচ্ছে…" : "Installing app…");
+                  }
+                  return;
+                }
+                if (pwa.isIos) {
+                  toast.info(
+                    lang === "bn"
+                      ? "Safari-তে Share বাটনে ট্যাপ করুন → 'Add to Home Screen'"
+                      : "In Safari, tap Share → 'Add to Home Screen'",
+                    { duration: 6000 }
+                  );
+                  return;
+                }
+                toast.info(
+                  lang === "bn"
+                    ? "ব্রাউজার মেনু থেকে 'Install app' / 'Add to Home screen' সিলেক্ট করুন"
+                    : "Use your browser menu → 'Install app' / 'Add to Home screen'",
+                  { duration: 6000 }
+                );
+              }}
             />
             <Row
               icon={<GraduationCap className="h-4 w-4" />}
