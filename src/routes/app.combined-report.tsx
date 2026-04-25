@@ -28,6 +28,13 @@ function CombinedReportPage() {
   const { shops } = useShop();
   const nav = useNavigate();
   const { hasActiveSubscription, loading: authLoading } = useAuth();
+  const [range, setRange] = useState<DateRange>({ start: monthStartIso(), end: todayIso() });
+  const [selected, setSelected] = useState<string[]>([]);
+  const [tab, setTab] = useState<Tab>("general");
+
+  const shopIds = selected.length > 0 ? selected : shops.map((s) => s.id);
+  const iso = rangeToIso(range.start, range.end);
+  const { data } = useQuery(combinedReportQuery(shopIds, iso));
 
   if (authLoading) {
     return <div className="min-h-full bg-muted/30" />;
@@ -44,14 +51,6 @@ function CombinedReportPage() {
       </div>
     );
   }
-
-  const [range, setRange] = useState<DateRange>({ start: monthStartIso(), end: todayIso() });
-  const [selected, setSelected] = useState<string[]>([]);
-  const [tab, setTab] = useState<Tab>("general");
-
-  const shopIds = selected.length > 0 ? selected : shops.map((s) => s.id);
-  const iso = rangeToIso(range.start, range.end);
-  const { data } = useQuery(combinedReportQuery(shopIds, iso));
 
   const totals = data?.totals;
   const balance = totals
