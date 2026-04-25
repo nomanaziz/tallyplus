@@ -13,6 +13,7 @@ const ITEMS: Item[] = [
   { to: "/app/dashboard", bn: "হোম", en: "Home", icon: icons.home },
   { to: "/app/purchase", bn: "কেনা", en: "Purchase", icon: icons.purchase, perm: "purchase" },
   { to: "/app/sell", bn: "বেচা", en: "Sell", icon: icons.sell, perm: "sell" },
+  { to: "/app/quick-order", bn: "দ্রুত ফর্দ", en: "Quick Order", icon: icons.quickSell, perm: "sell" },
   { to: "/app/cashbox", bn: "ক্যাশবক্স", en: "Cashbox", icon: icons.cashbox },
   { to: "/app/purchase-ledger", bn: "কেনার খাতা", en: "Purchase Ledger", icon: icons.purchaseList, perm: "purchase" },
   { to: "/app/sales-ledger", bn: "বেচার খাতা", en: "Sales Ledger", icon: icons.salesList, perm: "sell" },

@@ -25,6 +25,7 @@ import { Route as AppSellRouteImport } from './routes/app.sell'
 import { Route as AppSalesLedgerRouteImport } from './routes/app.sales-ledger'
 import { Route as AppReportsRouteImport } from './routes/app.reports'
 import { Route as AppRecycleBinRouteImport } from './routes/app.recycle-bin'
+import { Route as AppQuickOrderRouteImport } from './routes/app.quick-order'
 import { Route as AppPurchaseLedgerRouteImport } from './routes/app.purchase-ledger'
 import { Route as AppPurchaseRouteImport } from './routes/app.purchase'
 import { Route as AppProductsRouteImport } from './routes/app.products'
@@ -128,6 +129,11 @@ const AppReportsRoute = AppReportsRouteImport.update({
 const AppRecycleBinRoute = AppRecycleBinRouteImport.update({
   id: '/recycle-bin',
   path: '/recycle-bin',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppQuickOrderRoute = AppQuickOrderRouteImport.update({
+  id: '/quick-order',
+  path: '/quick-order',
   getParentRoute: () => AppRoute,
 } as any)
 const AppPurchaseLedgerRoute = AppPurchaseLedgerRouteImport.update({
@@ -282,6 +288,7 @@ export interface FileRoutesByFullPath {
   '/app/products': typeof AppProductsRoute
   '/app/purchase': typeof AppPurchaseRoute
   '/app/purchase-ledger': typeof AppPurchaseLedgerRoute
+  '/app/quick-order': typeof AppQuickOrderRoute
   '/app/recycle-bin': typeof AppRecycleBinRoute
   '/app/reports': typeof AppReportsRoute
   '/app/sales-ledger': typeof AppSalesLedgerRoute
@@ -323,6 +330,7 @@ export interface FileRoutesByTo {
   '/app/products': typeof AppProductsRoute
   '/app/purchase': typeof AppPurchaseRoute
   '/app/purchase-ledger': typeof AppPurchaseLedgerRoute
+  '/app/quick-order': typeof AppQuickOrderRoute
   '/app/recycle-bin': typeof AppRecycleBinRoute
   '/app/reports': typeof AppReportsRoute
   '/app/sales-ledger': typeof AppSalesLedgerRoute
@@ -366,6 +374,7 @@ export interface FileRoutesById {
   '/app/products': typeof AppProductsRoute
   '/app/purchase': typeof AppPurchaseRoute
   '/app/purchase-ledger': typeof AppPurchaseLedgerRoute
+  '/app/quick-order': typeof AppQuickOrderRoute
   '/app/recycle-bin': typeof AppRecycleBinRoute
   '/app/reports': typeof AppReportsRoute
   '/app/sales-ledger': typeof AppSalesLedgerRoute
@@ -410,6 +419,7 @@ export interface FileRouteTypes {
     | '/app/products'
     | '/app/purchase'
     | '/app/purchase-ledger'
+    | '/app/quick-order'
     | '/app/recycle-bin'
     | '/app/reports'
     | '/app/sales-ledger'
@@ -451,6 +461,7 @@ export interface FileRouteTypes {
     | '/app/products'
     | '/app/purchase'
     | '/app/purchase-ledger'
+    | '/app/quick-order'
     | '/app/recycle-bin'
     | '/app/reports'
     | '/app/sales-ledger'
@@ -493,6 +504,7 @@ export interface FileRouteTypes {
     | '/app/products'
     | '/app/purchase'
     | '/app/purchase-ledger'
+    | '/app/quick-order'
     | '/app/recycle-bin'
     | '/app/reports'
     | '/app/sales-ledger'
@@ -627,6 +639,13 @@ declare module '@tanstack/react-router' {
       path: '/recycle-bin'
       fullPath: '/app/recycle-bin'
       preLoaderRoute: typeof AppRecycleBinRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/quick-order': {
+      id: '/app/quick-order'
+      path: '/quick-order'
+      fullPath: '/app/quick-order'
+      preLoaderRoute: typeof AppQuickOrderRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/purchase-ledger': {
@@ -845,6 +864,7 @@ interface AppRouteChildren {
   AppProductsRoute: typeof AppProductsRoute
   AppPurchaseRoute: typeof AppPurchaseRoute
   AppPurchaseLedgerRoute: typeof AppPurchaseLedgerRoute
+  AppQuickOrderRoute: typeof AppQuickOrderRoute
   AppRecycleBinRoute: typeof AppRecycleBinRoute
   AppReportsRoute: typeof AppReportsRoute
   AppSalesLedgerRoute: typeof AppSalesLedgerRoute
@@ -871,6 +891,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppProductsRoute: AppProductsRoute,
   AppPurchaseRoute: AppPurchaseRoute,
   AppPurchaseLedgerRoute: AppPurchaseLedgerRoute,
+  AppQuickOrderRoute: AppQuickOrderRoute,
   AppRecycleBinRoute: AppRecycleBinRoute,
   AppReportsRoute: AppReportsRoute,
   AppSalesLedgerRoute: AppSalesLedgerRoute,
