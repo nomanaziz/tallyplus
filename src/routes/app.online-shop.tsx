@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useI18n, bnNum } from "@/lib/i18n";
@@ -13,8 +13,6 @@ import {
   Palette, AtSign, Truck, Star, Megaphone, ShieldCheck, AlertTriangle,
   Tag, Package, TrendingUp, Eye, ExternalLink,
 } from "lucide-react";
-import { StoreSettingsDialog } from "@/components/app/online-shop/StoreSettingsDialog";
-import { ShopPolicyDialog } from "@/components/app/online-shop/ShopPolicyDialog";
 import { QrCodeDialog } from "@/components/app/online-shop/QrCodeDialog";
 
 export const Route = createFileRoute("/app/online-shop")({
@@ -44,13 +42,11 @@ type ShopRow = {
 function OnlineShopDashboard() {
   const { lang } = useI18n();
   const { current } = useShop();
-  const [settingsOpen, setSettingsOpen] = useState(false);
-  const [policyOpen, setPolicyOpen] = useState(false);
   const [qrOpen, setQrOpen] = useState(false);
 
   const shopId = current?.id ?? null;
 
-  const { data: shop, refetch } = useQuery<ShopRow | null>({
+  const { data: shop } = useQuery<ShopRow | null>({
     queryKey: ["shop-online", shopId],
     enabled: !!shopId,
     queryFn: async () => {
@@ -84,7 +80,6 @@ function OnlineShopDashboard() {
   const copyLink = async () => {
     if (!publicUrl) {
       toast.error(lang === "bn" ? "প্রথমে username সেট করুন" : "Set a username first");
-      setSettingsOpen(true);
       return;
     }
     try {
@@ -98,7 +93,6 @@ function OnlineShopDashboard() {
   const openWebsite = () => {
     if (!publicUrl) {
       toast.error(lang === "bn" ? "প্রথমে username সেট করুন" : "Set a username first");
-      setSettingsOpen(true);
       return;
     }
     window.open(publicUrl, "_blank", "noopener");
@@ -107,7 +101,6 @@ function OnlineShopDashboard() {
   const openQr = () => {
     if (!publicUrl) {
       toast.error(lang === "bn" ? "প্রথমে username সেট করুন" : "Set a username first");
-      setSettingsOpen(true);
       return;
     }
     setQrOpen(true);
@@ -179,8 +172,8 @@ function OnlineShopDashboard() {
               <span className="font-semibold text-destructive">{lang === "bn" ? "এখনো সেট করা হয়নি" : "Not set yet"}</span>
             )}
           </div>
-          <Button size="sm" variant="outline" onClick={() => setSettingsOpen(true)}>
-            {lang === "bn" ? "এডিট" : "Edit"}
+          <Button asChild size="sm" variant="outline">
+            <Link to="/app/online-shop/settings">{lang === "bn" ? "এডিট" : "Edit"}</Link>
           </Button>
         </div>
       )}
@@ -222,18 +215,6 @@ function OnlineShopDashboard() {
 
       {shop && (
         <>
-          <StoreSettingsDialog
-            open={settingsOpen}
-            onOpenChange={setSettingsOpen}
-            shop={shop}
-            onSaved={() => { void refetch(); }}
-          />
-          <ShopPolicyDialog
-            open={policyOpen}
-            onOpenChange={setPolicyOpen}
-            shop={shop}
-            onSaved={() => { void refetch(); }}
-          />
           {publicUrl && (
             <QrCodeDialog open={qrOpen} onOpenChange={setQrOpen} url={publicUrl} shopName={shop.name} />
           )}
