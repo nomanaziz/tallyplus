@@ -14,6 +14,16 @@ import {
   Tag, Package, TrendingUp, Eye, ExternalLink,
 } from "lucide-react";
 import { QrCodeDialog } from "@/components/app/online-shop/QrCodeDialog";
+import productListIcon from "@/assets/icons/product-list.svg?url";
+import salesListIcon from "@/assets/icons/sales-list.svg?url";
+import accessIcon from "@/assets/icons/access.svg?url";
+import marketingIcon from "@/assets/icons/marketing.svg?url";
+import quickSellIcon from "@/assets/icons/quick-sell.svg?url";
+import warrantyIcon from "@/assets/icons/warranty.png";
+import purchaseIcon from "@/assets/icons/purchase.svg?url";
+import contactIcon from "@/assets/icons/contact.svg?url";
+import onlineShopIcon from "@/assets/icons/online-shop.svg?url";
+import businessReportIcon from "@/assets/icons/business-report.svg?url";
 
 export const Route = createFileRoute("/app/online-shop")({
   head: () => ({ meta: [{ title: "অনলাইন শপ — Tally Plus" }] }),
@@ -110,24 +120,25 @@ function OnlineShopDashboard() {
     toast.info(lang === "bn" ? "শীঘ্রই আসছে" : "Coming soon");
 
   const tiles: Array<{
-    icon: typeof Settings;
+    icon?: typeof Settings;
+    img?: string;
     bn: string;
     en: string;
     onClick: () => void;
     color: string;
     to?: string;
   }> = [
-    { icon: MessageCircle, bn: "মেসেজ", en: "Message", color: "text-pink-500", onClick: comingSoon },
-    { icon: Settings, bn: "স্টোর সেটিংস", en: "Store Settings", color: "text-blue-500", onClick: () => undefined, to: "/app/online-shop/settings" },
-    { icon: ShoppingBag, bn: "অনলাইন প্রোডাক্ট", en: "Online Product", color: "text-emerald-500", onClick: () => undefined, to: "/app/online-shop/products" },
-    { icon: ClipboardList, bn: "অর্ডার লিস্ট", en: "Order List", color: "text-amber-500", onClick: () => undefined, to: "/app/online-shop/orders" },
+    { img: contactIcon, bn: "মেসেজ", en: "Message", color: "text-pink-500", onClick: comingSoon },
+    { img: accessIcon, bn: "স্টোর সেটিংস", en: "Store Settings", color: "text-blue-500", onClick: () => undefined, to: "/app/online-shop/settings" },
+    { img: productListIcon, bn: "অনলাইন প্রোডাক্ট", en: "Online Product", color: "text-emerald-500", onClick: () => undefined, to: "/app/online-shop/products" },
+    { img: salesListIcon, bn: "অর্ডার লিস্ট", en: "Order List", color: "text-amber-500", onClick: () => undefined, to: "/app/online-shop/orders" },
     { icon: Palette, bn: "থিম", en: "Themes", color: "text-purple-500", onClick: () => undefined, to: "/app/online-shop/themes" },
     { icon: Palette, bn: "কাস্টমাইজেশন", en: "Customization", color: "text-violet-500", onClick: () => undefined, to: "/app/online-shop/customize" },
     { icon: AtSign, bn: "Username পরিবর্তন", en: "Change Username", color: "text-cyan-500", onClick: () => undefined, to: "/app/online-shop/settings" },
-    { icon: Truck, bn: "ডেলিভারি", en: "Delivery", color: "text-orange-500", onClick: () => undefined, to: "/app/online-shop/delivery" },
-    { icon: Star, bn: "ফিচার্ড পণ্য", en: "Featured Products", color: "text-yellow-500", onClick: () => undefined, to: "/app/online-shop/featured" },
-    { icon: Megaphone, bn: "মার্কেটিং ও SEO", en: "Marketing & SEO", color: "text-fuchsia-500", onClick: () => undefined, to: "/app/online-shop/marketing" },
-    { icon: ShieldCheck, bn: "শপ পলিসি", en: "Shop Policy", color: "text-teal-500", onClick: () => undefined, to: "/app/online-shop/policy" },
+    { img: purchaseIcon, bn: "ডেলিভারি", en: "Delivery", color: "text-orange-500", onClick: () => undefined, to: "/app/online-shop/delivery" },
+    { img: quickSellIcon, bn: "ফিচার্ড পণ্য", en: "Featured Products", color: "text-yellow-500", onClick: () => undefined, to: "/app/online-shop/featured" },
+    { img: marketingIcon, bn: "মার্কেটিং ও SEO", en: "Marketing & SEO", color: "text-fuchsia-500", onClick: () => undefined, to: "/app/online-shop/marketing" },
+    { img: warrantyIcon, bn: "শপ পলিসি", en: "Shop Policy", color: "text-teal-500", onClick: () => undefined, to: "/app/online-shop/policy" },
     { icon: AlertTriangle, bn: "ফ্রড চেক", en: "Fraud Check", color: "text-red-500", onClick: () => undefined, to: "/app/online-shop/fraud-check" },
     { icon: Tag, bn: "প্রোমো কোড", en: "Promo Code", color: "text-rose-500", onClick: () => undefined, to: "/app/online-shop/promo-codes" },
   ];
@@ -148,14 +159,14 @@ function OnlineShopDashboard() {
       {/* Stats */}
       <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4">
         <StatCard icon={ClipboardList} label={lang === "bn" ? "অ্যাক্টিভ অর্ডার" : "Active Order"} value={bnNumIf(lang, stats?.activeOrders ?? 0)} accent="amber" />
-        <StatCard icon={Package} label={lang === "bn" ? "অনলাইন প্রোডাক্ট" : "Online Product"} value={bnNumIf(lang, stats?.products ?? 0)} accent="emerald" />
-        <StatCard icon={TrendingUp} label={lang === "bn" ? "মোট আয়" : "Total Earning"} value={`৳ ${bnNumIf(lang, stats?.earning ?? 0)}`} accent="blue" />
+        <StatCard img={productListIcon} label={lang === "bn" ? "অনলাইন প্রোডাক্ট" : "Online Product"} value={bnNumIf(lang, stats?.products ?? 0)} accent="emerald" />
+        <StatCard img={businessReportIcon} label={lang === "bn" ? "মোট আয়" : "Total Earning"} value={`৳ ${bnNumIf(lang, stats?.earning ?? 0)}`} accent="blue" />
         <StatCard icon={Eye} label={lang === "bn" ? "ওয়েবসাইট ভিজিট" : "Website Visit"} value={bnNumIf(lang, stats?.visits ?? 0)} accent="violet" />
       </div>
 
       {/* Quick actions */}
       <div className="mt-3 grid grid-cols-3 gap-3">
-        <ActionCard icon={Globe} label={lang === "bn" ? "ওয়েবসাইট" : "Website"} onClick={openWebsite} />
+        <ActionCard img={onlineShopIcon} label={lang === "bn" ? "ওয়েবসাইট" : "Website"} onClick={openWebsite} />
         <ActionCard icon={Copy} label={lang === "bn" ? "লিংক কপি" : "Copy Link"} onClick={copyLink} />
         <ActionCard icon={QrCode} label={lang === "bn" ? "QR কোড" : "QR Code"} onClick={openQr} />
       </div>
@@ -184,7 +195,11 @@ function OnlineShopDashboard() {
         {tiles.map((t, i) => {
           const inner = (
             <>
-              <t.icon className={`mb-2 h-7 w-7 ${t.color}`} />
+              {t.img ? (
+                <img src={t.img} alt="" className="mb-2 h-8 w-8 object-contain" />
+              ) : t.icon ? (
+                <t.icon className={`mb-2 h-7 w-7 ${t.color}`} />
+              ) : null}
               <span className="text-center text-[13px] font-semibold">
                 {lang === "bn" ? t.bn : t.en}
               </span>
@@ -229,14 +244,18 @@ function bnNumIf(lang: string, n: number) {
   return lang === "bn" ? bnNum(n) : String(n);
 }
 
-function StatCard({ icon: Icon, label, value, accent }: { icon: typeof Settings; label: string; value: string; accent: string }) {
+function StatCard({ icon: Icon, img, label, value, accent }: { icon?: typeof Settings; img?: string; label: string; value: string; accent: string }) {
   const accentMap: Record<string, string> = {
     amber: "text-amber-500", emerald: "text-emerald-500", blue: "text-blue-500", violet: "text-violet-500",
   };
   return (
     <div className="rounded-xl border bg-card p-3 shadow-sm">
       <div className="flex items-center gap-2 text-xs text-muted-foreground">
-        <Icon className={`h-4 w-4 ${accentMap[accent] ?? ""}`} />
+        {img ? (
+          <img src={img} alt="" className="h-4 w-4 object-contain" />
+        ) : Icon ? (
+          <Icon className={`h-4 w-4 ${accentMap[accent] ?? ""}`} />
+        ) : null}
         <span>{label}</span>
       </div>
       <div className="mt-1 text-xl font-extrabold">{value}</div>
@@ -244,14 +263,18 @@ function StatCard({ icon: Icon, label, value, accent }: { icon: typeof Settings;
   );
 }
 
-function ActionCard({ icon: Icon, label, onClick }: { icon: typeof Globe; label: string; onClick: () => void }) {
+function ActionCard({ icon: Icon, img, label, onClick }: { icon?: typeof Globe; img?: string; label: string; onClick: () => void }) {
   return (
     <button
       type="button"
       onClick={onClick}
       className="flex flex-col items-center justify-center gap-1.5 rounded-xl border bg-card p-4 shadow-sm transition-all hover:scale-[1.02] hover:shadow-md"
     >
-      <Icon className="h-5 w-5 text-primary" />
+      {img ? (
+        <img src={img} alt="" className="h-6 w-6 object-contain" />
+      ) : Icon ? (
+        <Icon className="h-5 w-5 text-primary" />
+      ) : null}
       <span className="text-sm font-semibold">{label}</span>
     </button>
   );
