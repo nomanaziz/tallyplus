@@ -148,7 +148,7 @@ function StoreSettingsPage() {
     void refetch();
   };
 
-  const publicUrl = username && typeof window !== "undefined" ? `${window.location.origin}/${username}` : "";
+  const publicUrl = username && typeof window !== "undefined" ? `${window.location.origin}/vendor/${username}` : "";
 
   const copyLink = async () => {
     if (!publicUrl) return;
