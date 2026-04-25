@@ -39,7 +39,7 @@ function RecycleBinPage() {
   const refresh = async () => { await qc.invalidateQueries({ queryKey: ["recycle"] }); await refetch(); };
 
   const restore = async (id: string) => {
-    const { error } = await supabase.from(tab).update({ deleted_at: null }).eq("id", id);
+    const { error } = await supabase.from(tab).update({ deleted_at: null } as never).eq("id", id);
     if (error) { toast.error(error.message); return; }
     toast.success(lang === "bn" ? "পুনরুদ্ধার হয়েছে" : "Restored");
     void refresh();

@@ -271,7 +271,7 @@ function WishlistDetailDialog({
         .order("position", { ascending: true });
       return {
         wishlist: wl as Wishlist | null,
-        items: (items as WishlistItem[]) ?? [],
+        items: ((items as unknown) as WishlistItem[]) ?? [],
       };
     },
     enabled: open,
@@ -303,7 +303,7 @@ function WishlistDetailDialog({
     if (!confirm(lang === "bn" ? "এই ফর্দটি রিসাইকেল বিনে পাঠাবেন?" : "Move this wishlist to recycle bin?")) return;
     await supabase
       .from("customer_wishlists")
-      .update({ deleted_at: new Date().toISOString() })
+      .update({ deleted_at: new Date().toISOString() } as never)
       .eq("id", wishlistId);
     onChange();
     onOpenChange(false);
@@ -311,7 +311,7 @@ function WishlistDetailDialog({
 
   const updateItemPrice = async (it: WishlistItem, value: string) => {
     const v = value.trim() === "" ? null : Number(value);
-    await supabase.from("customer_wishlist_items").update({ price: v }).eq("id", it.id);
+    await supabase.from("customer_wishlist_items").update({ price: v } as never).eq("id", it.id);
     void detailQ.refetch();
   };
 
