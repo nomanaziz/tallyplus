@@ -15,6 +15,7 @@ import { Route as AppRouteImport } from './routes/app'
 import { Route as AffiliateRouteImport } from './routes/affiliate'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ShopIndexRouteImport } from './routes/shop.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as FSlugRouteImport } from './routes/f.$slug'
 import { Route as AppWarrantyRouteImport } from './routes/app.warranty'
@@ -56,6 +57,8 @@ import { Route as AdminMarketplaceRouteImport } from './routes/admin.marketplace
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
 import { Route as AdminLandingRouteImport } from './routes/admin.landing'
 import { Route as AdminAffiliatesRouteImport } from './routes/admin.affiliates'
+import { Route as ShopSSlugRouteImport } from './routes/shop.s.$slug'
+import { Route as ShopPIdRouteImport } from './routes/shop.p.$id'
 import { Route as FSlugMyRouteImport } from './routes/f.$slug.my'
 
 const PricingRoute = PricingRouteImport.update({
@@ -86,6 +89,11 @@ const AdminRoute = AdminRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ShopIndexRoute = ShopIndexRouteImport.update({
+  id: '/shop/',
+  path: '/shop/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
@@ -294,6 +302,16 @@ const AdminAffiliatesRoute = AdminAffiliatesRouteImport.update({
   path: '/affiliates',
   getParentRoute: () => AdminRoute,
 } as any)
+const ShopSSlugRoute = ShopSSlugRouteImport.update({
+  id: '/shop/s/$slug',
+  path: '/shop/s/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ShopPIdRoute = ShopPIdRouteImport.update({
+  id: '/shop/p/$id',
+  path: '/shop/p/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const FSlugMyRoute = FSlugMyRouteImport.update({
   id: '/my',
   path: '/my',
@@ -348,7 +366,10 @@ export interface FileRoutesByFullPath {
   '/app/warranty': typeof AppWarrantyRoute
   '/f/$slug': typeof FSlugRouteWithChildren
   '/admin/': typeof AdminIndexRoute
+  '/shop/': typeof ShopIndexRoute
   '/f/$slug/my': typeof FSlugMyRoute
+  '/shop/p/$id': typeof ShopPIdRoute
+  '/shop/s/$slug': typeof ShopSSlugRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -397,7 +418,10 @@ export interface FileRoutesByTo {
   '/app/warranty': typeof AppWarrantyRoute
   '/f/$slug': typeof FSlugRouteWithChildren
   '/admin': typeof AdminIndexRoute
+  '/shop': typeof ShopIndexRoute
   '/f/$slug/my': typeof FSlugMyRoute
+  '/shop/p/$id': typeof ShopPIdRoute
+  '/shop/s/$slug': typeof ShopSSlugRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -448,7 +472,10 @@ export interface FileRoutesById {
   '/app/warranty': typeof AppWarrantyRoute
   '/f/$slug': typeof FSlugRouteWithChildren
   '/admin/': typeof AdminIndexRoute
+  '/shop/': typeof ShopIndexRoute
   '/f/$slug/my': typeof FSlugMyRoute
+  '/shop/p/$id': typeof ShopPIdRoute
+  '/shop/s/$slug': typeof ShopSSlugRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -500,7 +527,10 @@ export interface FileRouteTypes {
     | '/app/warranty'
     | '/f/$slug'
     | '/admin/'
+    | '/shop/'
     | '/f/$slug/my'
+    | '/shop/p/$id'
+    | '/shop/s/$slug'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -549,7 +579,10 @@ export interface FileRouteTypes {
     | '/app/warranty'
     | '/f/$slug'
     | '/admin'
+    | '/shop'
     | '/f/$slug/my'
+    | '/shop/p/$id'
+    | '/shop/s/$slug'
   id:
     | '__root__'
     | '/'
@@ -599,7 +632,10 @@ export interface FileRouteTypes {
     | '/app/warranty'
     | '/f/$slug'
     | '/admin/'
+    | '/shop/'
     | '/f/$slug/my'
+    | '/shop/p/$id'
+    | '/shop/s/$slug'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -610,6 +646,9 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   PricingRoute: typeof PricingRoute
   FSlugRoute: typeof FSlugRouteWithChildren
+  ShopIndexRoute: typeof ShopIndexRoute
+  ShopPIdRoute: typeof ShopPIdRoute
+  ShopSSlugRoute: typeof ShopSSlugRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -654,6 +693,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/shop/': {
+      id: '/shop/'
+      path: '/shop'
+      fullPath: '/shop/'
+      preLoaderRoute: typeof ShopIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/': {
@@ -943,6 +989,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminAffiliatesRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/shop/s/$slug': {
+      id: '/shop/s/$slug'
+      path: '/shop/s/$slug'
+      fullPath: '/shop/s/$slug'
+      preLoaderRoute: typeof ShopSSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/shop/p/$id': {
+      id: '/shop/p/$id'
+      path: '/shop/p/$id'
+      fullPath: '/shop/p/$id'
+      preLoaderRoute: typeof ShopPIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/f/$slug/my': {
       id: '/f/$slug/my'
       path: '/my'
@@ -1077,6 +1137,9 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   PricingRoute: PricingRoute,
   FSlugRoute: FSlugRouteWithChildren,
+  ShopIndexRoute: ShopIndexRoute,
+  ShopPIdRoute: ShopPIdRoute,
+  ShopSSlugRoute: ShopSSlugRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
