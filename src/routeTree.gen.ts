@@ -33,7 +33,6 @@ import { Route as AppPurchaseLedgerRouteImport } from './routes/app.purchase-led
 import { Route as AppPurchaseRouteImport } from './routes/app.purchase'
 import { Route as AppProductsRouteImport } from './routes/app.products'
 import { Route as AppPrinterRouteImport } from './routes/app.printer'
-import { Route as AppOnlineShopRouteImport } from './routes/app.online-shop'
 import { Route as AppMarketingRouteImport } from './routes/app.marketing'
 import { Route as AppExpiringRouteImport } from './routes/app.expiring'
 import { Route as AppExpenseLedgerRouteImport } from './routes/app.expense-ledger'
@@ -180,11 +179,6 @@ const AppProductsRoute = AppProductsRouteImport.update({
 const AppPrinterRoute = AppPrinterRouteImport.update({
   id: '/printer',
   path: '/printer',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppOnlineShopRoute = AppOnlineShopRouteImport.update({
-  id: '/online-shop',
-  path: '/online-shop',
   getParentRoute: () => AppRoute,
 } as any)
 const AppMarketingRoute = AppMarketingRouteImport.update({
@@ -355,7 +349,6 @@ export interface FileRoutesByFullPath {
   '/app/expense-ledger': typeof AppExpenseLedgerRoute
   '/app/expiring': typeof AppExpiringRoute
   '/app/marketing': typeof AppMarketingRoute
-  '/app/online-shop': typeof AppOnlineShopRoute
   '/app/printer': typeof AppPrinterRoute
   '/app/products': typeof AppProductsRoute
   '/app/purchase': typeof AppPurchaseRoute
@@ -408,7 +401,6 @@ export interface FileRoutesByTo {
   '/app/expense-ledger': typeof AppExpenseLedgerRoute
   '/app/expiring': typeof AppExpiringRoute
   '/app/marketing': typeof AppMarketingRoute
-  '/app/online-shop': typeof AppOnlineShopRoute
   '/app/printer': typeof AppPrinterRoute
   '/app/products': typeof AppProductsRoute
   '/app/purchase': typeof AppPurchaseRoute
@@ -463,7 +455,6 @@ export interface FileRoutesById {
   '/app/expense-ledger': typeof AppExpenseLedgerRoute
   '/app/expiring': typeof AppExpiringRoute
   '/app/marketing': typeof AppMarketingRoute
-  '/app/online-shop': typeof AppOnlineShopRoute
   '/app/printer': typeof AppPrinterRoute
   '/app/products': typeof AppProductsRoute
   '/app/purchase': typeof AppPurchaseRoute
@@ -519,7 +510,6 @@ export interface FileRouteTypes {
     | '/app/expense-ledger'
     | '/app/expiring'
     | '/app/marketing'
-    | '/app/online-shop'
     | '/app/printer'
     | '/app/products'
     | '/app/purchase'
@@ -572,7 +562,6 @@ export interface FileRouteTypes {
     | '/app/expense-ledger'
     | '/app/expiring'
     | '/app/marketing'
-    | '/app/online-shop'
     | '/app/printer'
     | '/app/products'
     | '/app/purchase'
@@ -626,7 +615,6 @@ export interface FileRouteTypes {
     | '/app/expense-ledger'
     | '/app/expiring'
     | '/app/marketing'
-    | '/app/online-shop'
     | '/app/printer'
     | '/app/products'
     | '/app/purchase'
@@ -831,13 +819,6 @@ declare module '@tanstack/react-router' {
       path: '/printer'
       fullPath: '/app/printer'
       preLoaderRoute: typeof AppPrinterRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/app/online-shop': {
-      id: '/app/online-shop'
-      path: '/online-shop'
-      fullPath: '/app/online-shop'
-      preLoaderRoute: typeof AppOnlineShopRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/marketing': {
@@ -1090,7 +1071,6 @@ interface AppRouteChildren {
   AppExpenseLedgerRoute: typeof AppExpenseLedgerRoute
   AppExpiringRoute: typeof AppExpiringRoute
   AppMarketingRoute: typeof AppMarketingRoute
-  AppOnlineShopRoute: typeof AppOnlineShopRoute
   AppPrinterRoute: typeof AppPrinterRoute
   AppProductsRoute: typeof AppProductsRoute
   AppPurchaseRoute: typeof AppPurchaseRoute
@@ -1120,7 +1100,6 @@ const AppRouteChildren: AppRouteChildren = {
   AppExpenseLedgerRoute: AppExpenseLedgerRoute,
   AppExpiringRoute: AppExpiringRoute,
   AppMarketingRoute: AppMarketingRoute,
-  AppOnlineShopRoute: AppOnlineShopRoute,
   AppPrinterRoute: AppPrinterRoute,
   AppProductsRoute: AppProductsRoute,
   AppPurchaseRoute: AppPurchaseRoute,
