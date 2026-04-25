@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import {
   Globe, Copy, QrCode, Settings, ClipboardList,
-  Palette, AtSign, AlertTriangle,
+  Palette, AlertTriangle,
   Tag, Eye, ExternalLink,
 } from "lucide-react";
 import { QrCodeDialog } from "@/components/app/online-shop/QrCodeDialog";
@@ -134,7 +134,6 @@ function OnlineShopDashboard() {
     { img: salesListIcon, bn: "অর্ডার লিস্ট", en: "Order List", color: "text-amber-500", onClick: () => undefined, to: "/app/online-shop/orders" },
     { icon: Palette, bn: "থিম", en: "Themes", color: "text-purple-500", onClick: () => undefined, to: "/app/online-shop/themes" },
     { icon: Palette, bn: "কাস্টমাইজেশন", en: "Customization", color: "text-violet-500", onClick: () => undefined, to: "/app/online-shop/customize" },
-    { icon: AtSign, bn: "Username পরিবর্তন", en: "Change Username", color: "text-cyan-500", onClick: () => undefined, to: "/app/online-shop/settings" },
     { img: purchaseIcon, bn: "ডেলিভারি", en: "Delivery", color: "text-orange-500", onClick: () => undefined, to: "/app/online-shop/delivery" },
     { img: quickSellIcon, bn: "ফিচার্ড পণ্য", en: "Featured Products", color: "text-yellow-500", onClick: () => undefined, to: "/app/online-shop/featured" },
     { img: marketingIcon, bn: "মার্কেটিং ও SEO", en: "Marketing & SEO", color: "text-fuchsia-500", onClick: () => undefined, to: "/app/online-shop/marketing" },
