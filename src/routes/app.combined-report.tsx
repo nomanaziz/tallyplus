@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DateRangePicker, monthStartIso, todayIso, type DateRange } from "@/components/app/DateRangePicker";
-import { RefreshCw, Printer, Store, ArrowLeft, ChevronDown } from "lucide-react";
+import { Printer, Store, ArrowLeft, ChevronDown } from "lucide-react";
 import { printReport, type PrintRow } from "@/lib/print-report";
 
 export const Route = createFileRoute("/app/combined-report")({
@@ -31,7 +31,7 @@ function CombinedReportPage() {
 
   const shopIds = selected.length > 0 ? selected : shops.map((s) => s.id);
   const iso = rangeToIso(range.start, range.end);
-  const { data, isFetching, refetch } = useQuery(combinedReportQuery(shopIds, iso));
+  const { data } = useQuery(combinedReportQuery(shopIds, iso));
 
   const totals = data?.totals;
   const balance = totals
@@ -127,18 +127,19 @@ function CombinedReportPage() {
           <>
             <Button size="sm" className="bg-foreground text-background hover:bg-foreground/90" onClick={onPrint}>
               <Printer className="h-4 w-4" />
-              <span className="ml-1 text-xs">{lang === "bn" ? "ডাউনলোড/প্রিন্ট" : "Download/Print"}</span>
+              <span className="ml-1 hidden text-xs sm:inline">{lang === "bn" ? "ডাউনলোড/প্রিন্ট" : "Download/Print"}</span>
             </Button>
 
             <Popover>
               <PopoverTrigger asChild>
                 <Button size="sm" variant="outline" className="h-9 gap-2">
                   <Store className="h-4 w-4" />
-                  <span className="text-xs">
+                  <span className="hidden text-xs sm:inline">
                     {lang === "bn"
                       ? `${shopIds.length}টি দোকান`
                       : `${shopIds.length} shop${shopIds.length === 1 ? "" : "s"}`}
                   </span>
+                  <span className="text-xs sm:hidden">{shopIds.length}</span>
                   <ChevronDown className="h-3 w-3 opacity-60" />
                 </Button>
               </PopoverTrigger>
@@ -172,15 +173,11 @@ function CombinedReportPage() {
             </Popover>
 
             <DateRangePicker value={range} onChange={setRange} />
-            <Button size="sm" variant="outline" onClick={() => refetch()} disabled={isFetching}>
-              <RefreshCw className={"h-4 w-4 " + (isFetching ? "animate-spin" : "")} />
-              <span className="ml-1 text-xs">{lang === "bn" ? "রিফ্রেশ" : "Refresh"}</span>
-            </Button>
           </>
         }
       />
 
-      <div className="container px-4 py-4">
+      <div className="container px-3 py-4 sm:px-4">
         {/* Tabs */}
         <div className="mb-4 inline-flex rounded-lg border bg-background p-1 text-sm">
           <button
