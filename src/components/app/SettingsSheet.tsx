@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { usePwaInstall } from "@/hooks/use-pwa-install";
+import { ColorThemeInline } from "./ColorThemePicker";
 import { toast } from "sonner";
 import {
   ArrowLeftRight,
@@ -114,15 +115,11 @@ export function SettingsSheet({ open, onOpenChange }: { open: boolean; onOpenCha
   });
 
   const [currency, setCurrency] = useState<string>("BDT");
-  const [theme, setTheme] = useState<"light" | "dark">("light");
   const [decimal, setDecimal] = useState<"0" | "2">("2");
 
   useEffect(() => {
     if (typeof window === "undefined") return;
     setCurrency(localStorage.getItem("tp_currency") || current?.currency || "BDT");
-    const t = (localStorage.getItem("tp_theme") as "light" | "dark") || "light";
-    setTheme(t);
-    document.documentElement.classList.toggle("dark", t === "dark");
     setDecimal((localStorage.getItem("tp_decimal") as "0" | "2") || "2");
   }, [current?.currency, open]);
 
