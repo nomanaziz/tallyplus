@@ -1,4 +1,4 @@
-import { createFileRoute, Outlet, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -14,11 +14,17 @@ export const Route = createFileRoute("/admin")({
 
 function AdminLayout() {
   const nav = useNavigate();
+  const loc = useLocation();
+  const isLogin = loc.pathname === "/admin/login";
   const [checking, setChecking] = useState(true);
   const [email, setEmail] = useState<string | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
+    if (isLogin) {
+      setChecking(false);
+      return;
+    }
     let cancelled = false;
     (async () => {
       const { data } = await supabase.auth.getUser();
@@ -46,7 +52,7 @@ function AdminLayout() {
     return () => {
       cancelled = true;
     };
-  }, [nav]);
+  }, [nav, isLogin]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -60,6 +66,9 @@ function AdminLayout() {
       </div>
     );
   }
+
+  // Login page renders outside the chrome
+  if (isLogin) return <Outlet />;
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
