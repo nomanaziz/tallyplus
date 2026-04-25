@@ -50,12 +50,20 @@ Deno.serve(async (req) => {
             : Number.isFinite(Number(qtyRaw))
               ? Number(qtyRaw)
               : null;
+        const priceRaw = o.price;
+        const price =
+          priceRaw == null || priceRaw === ""
+            ? null
+            : Number.isFinite(Number(priceRaw))
+              ? Number(priceRaw)
+              : null;
         const unit = o.unit != null ? String(o.unit).trim().slice(0, 16) : null;
-        return { name, qty, unit, position: idx, done: false };
+        return { name, qty, price, unit, position: idx, done: false };
       })
       .filter(Boolean) as Array<{
         name: string;
         qty: number | null;
+        price: number | null;
         unit: string | null;
         position: number;
         done: boolean;
