@@ -45,6 +45,7 @@ import { Route as AppCustomerWishlistRouteImport } from './routes/app.customer-w
 import { Route as AppContactsRouteImport } from './routes/app.contacts'
 import { Route as AppCombinedReportRouteImport } from './routes/app.combined-report'
 import { Route as AppCashboxRouteImport } from './routes/app.cashbox'
+import { Route as AppAssetsRouteImport } from './routes/app.assets'
 import { Route as AppAffiliateRouteImport } from './routes/app.affiliate'
 import { Route as AppAccessRouteImport } from './routes/app.access'
 import { Route as AffiliateRegisterRouteImport } from './routes/affiliate.register'
@@ -251,6 +252,11 @@ const AppCashboxRoute = AppCashboxRouteImport.update({
   path: '/cashbox',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAssetsRoute = AppAssetsRouteImport.update({
+  id: '/assets',
+  path: '/assets',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppAffiliateRoute = AppAffiliateRouteImport.update({
   id: '/affiliate',
   path: '/affiliate',
@@ -400,6 +406,7 @@ export interface FileRoutesByFullPath {
   '/affiliate/register': typeof AffiliateRegisterRoute
   '/app/access': typeof AppAccessRoute
   '/app/affiliate': typeof AppAffiliateRoute
+  '/app/assets': typeof AppAssetsRoute
   '/app/cashbox': typeof AppCashboxRoute
   '/app/combined-report': typeof AppCombinedReportRoute
   '/app/contacts': typeof AppContactsRoute
@@ -462,6 +469,7 @@ export interface FileRoutesByTo {
   '/affiliate/register': typeof AffiliateRegisterRoute
   '/app/access': typeof AppAccessRoute
   '/app/affiliate': typeof AppAffiliateRoute
+  '/app/assets': typeof AppAssetsRoute
   '/app/cashbox': typeof AppCashboxRoute
   '/app/combined-report': typeof AppCombinedReportRoute
   '/app/contacts': typeof AppContactsRoute
@@ -526,6 +534,7 @@ export interface FileRoutesById {
   '/affiliate/register': typeof AffiliateRegisterRoute
   '/app/access': typeof AppAccessRoute
   '/app/affiliate': typeof AppAffiliateRoute
+  '/app/assets': typeof AppAssetsRoute
   '/app/cashbox': typeof AppCashboxRoute
   '/app/combined-report': typeof AppCombinedReportRoute
   '/app/contacts': typeof AppContactsRoute
@@ -591,6 +600,7 @@ export interface FileRouteTypes {
     | '/affiliate/register'
     | '/app/access'
     | '/app/affiliate'
+    | '/app/assets'
     | '/app/cashbox'
     | '/app/combined-report'
     | '/app/contacts'
@@ -653,6 +663,7 @@ export interface FileRouteTypes {
     | '/affiliate/register'
     | '/app/access'
     | '/app/affiliate'
+    | '/app/assets'
     | '/app/cashbox'
     | '/app/combined-report'
     | '/app/contacts'
@@ -716,6 +727,7 @@ export interface FileRouteTypes {
     | '/affiliate/register'
     | '/app/access'
     | '/app/affiliate'
+    | '/app/assets'
     | '/app/cashbox'
     | '/app/combined-report'
     | '/app/contacts'
@@ -1026,6 +1038,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppCashboxRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/assets': {
+      id: '/app/assets'
+      path: '/assets'
+      fullPath: '/app/assets'
+      preLoaderRoute: typeof AppAssetsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/affiliate': {
       id: '/app/affiliate'
       path: '/affiliate'
@@ -1277,6 +1296,7 @@ const AppOnlineShopRouteWithChildren = AppOnlineShopRoute._addFileChildren(
 interface AppRouteChildren {
   AppAccessRoute: typeof AppAccessRoute
   AppAffiliateRoute: typeof AppAffiliateRoute
+  AppAssetsRoute: typeof AppAssetsRoute
   AppCashboxRoute: typeof AppCashboxRoute
   AppCombinedReportRoute: typeof AppCombinedReportRoute
   AppContactsRoute: typeof AppContactsRoute
@@ -1308,6 +1328,7 @@ interface AppRouteChildren {
 const AppRouteChildren: AppRouteChildren = {
   AppAccessRoute: AppAccessRoute,
   AppAffiliateRoute: AppAffiliateRoute,
+  AppAssetsRoute: AppAssetsRoute,
   AppCashboxRoute: AppCashboxRoute,
   AppCombinedReportRoute: AppCombinedReportRoute,
   AppContactsRoute: AppContactsRoute,
