@@ -1,6 +1,7 @@
 import { Outlet, Link, createRootRouteWithContext, HeadContent, Scripts } from "@tanstack/react-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { I18nProvider } from "@/lib/i18n";
+import { ThemeProvider } from "@/lib/theme";
 import { AuthProvider } from "@/lib/auth";
 import { RefCaptureProvider } from "@/lib/referral";
 import { Toaster } from "@/components/ui/sonner";
@@ -85,13 +86,15 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <I18nProvider>
-        <AuthProvider>
-          <RefCaptureProvider>
-            <Outlet />
-            <Toaster richColors position="top-center" />
-            <InstallAppPrompt />
-          </RefCaptureProvider>
-        </AuthProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            <RefCaptureProvider>
+              <Outlet />
+              <Toaster richColors position="top-center" />
+              <InstallAppPrompt />
+            </RefCaptureProvider>
+          </AuthProvider>
+        </ThemeProvider>
       </I18nProvider>
     </QueryClientProvider>
   );
