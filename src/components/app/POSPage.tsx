@@ -222,7 +222,9 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
               <EmptyState icon={<Package className="h-6 w-6" />} title={lang === "bn" ? "কোনো পণ্য নেই" : "No products"} />
             ) : (
               <ul className="divide-y">
-                {filtered.map((p) => (
+                {filtered.map((p) => {
+                  const inCart = cart.find((c) => c.product_id === p.id);
+                  return (
                   <li key={p.id} className="flex items-center gap-3 py-2">
                     <div className="flex h-10 w-10 flex-none items-center justify-center rounded-md bg-muted">
                       {p.image_url ? (
@@ -232,7 +234,14 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
                       )}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <div className="truncate text-sm font-medium">{p.name}</div>
+                      <div className="truncate text-sm font-medium">
+                        {p.name}
+                        {inCart && (
+                          <span className="ml-2 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-bold text-primary">
+                            × {lang === "bn" ? bnNum(inCart.qty) : inCart.qty}
+                          </span>
+                        )}
+                      </div>
                       <div className="text-xs text-muted-foreground">
                         {lang === "bn" ? "মূল্য:" : "Price:"} {fmtMoney(isSell ? Number(p.sale_price) : Number(p.cost_price), lang)}
                         <span className="mx-1">·</span>
@@ -240,8 +249,8 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
                       </div>
                     </div>
                     <div className="flex">
-                      <Button size="sm" className="rounded-r-none" onClick={() => addToCart(p)}>
-                        {lang === "bn" ? "যোগ" : "Add"}
+                      <Button size="sm" className="rounded-r-none px-3" onClick={() => addToCart(p)} aria-label={lang === "bn" ? "যোগ" : "Add"}>
+                        <Plus className="h-4 w-4" />
                       </Button>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -260,7 +269,8 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
                       </DropdownMenu>
                     </div>
                   </li>
-                ))}
+                  );
+                })}
               </ul>
             )}
           </div>
