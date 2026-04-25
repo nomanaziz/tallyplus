@@ -1,0 +1,1 @@
+INSERT INTO public.marketplace_products (name_bn,name_en,brand,pack_size,base_unit,default_price,default_cost,category,shop_types,slug,is_active) VALUES ('ল্যাপটপ ব্যাগ','Laptop Bag','15.6 inch','১ পিস','pcs',1285,1120,'একসেসরিজ',ARRAY['mobile','electronics']::text[],'mobile-laptop-bag-15-6-inch-১-পিস',true) ON CONFLICT (slug) DO NOTHING;
