@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Loader2, ShieldCheck, LogOut } from "lucide-react";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/admin")({
+export const Route = createFileRoute("/admin/")({
   head: () => ({ meta: [{ title: "Admin — Tally Plus" }] }),
   component: AdminHome,
 });
