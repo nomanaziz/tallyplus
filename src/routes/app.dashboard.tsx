@@ -76,6 +76,7 @@ function Dashboard() {
     { to: "/app/printer", icon: icons.printer, bn: "প্রিন্টার", en: "Printer" },
     { to: "/app/marketing", icon: icons.marketing, bn: "মার্কেটিং", en: "Marketing" },
     { to: "/app/online-shop", icon: icons.onlineShop, bn: "অনলাইন শপ", en: "Online Shop" },
+    { to: "/app/customer-wishlist", icon: icons.contact, bn: "গ্রাহক ফর্দ", en: "Customer Wishlist" },
     { to: "/app/expiring", icon: icons.expired, bn: "মেয়াদোত্তীর্ণ পণ্য", en: "Expiring" },
     { to: "/app/warranty", icon: icons.warranty, bn: "ওয়ারেন্টি পণ্য", en: "Warranty" },
     { to: "/app/recycle-bin", icon: icons.recycle, bn: "রিসাইকেল বিন", en: "Recycle Bin" },

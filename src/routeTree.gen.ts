@@ -14,6 +14,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as FSlugRouteImport } from './routes/f.$slug'
 import { Route as AppWarrantyRouteImport } from './routes/app.warranty'
 import { Route as AppTrainingRouteImport } from './routes/app.training'
 import { Route as AppSubscribeRouteImport } from './routes/app.subscribe'
@@ -33,6 +34,7 @@ import { Route as AppExpiringRouteImport } from './routes/app.expiring'
 import { Route as AppExpenseLedgerRouteImport } from './routes/app.expense-ledger'
 import { Route as AppDueLedgerRouteImport } from './routes/app.due-ledger'
 import { Route as AppDashboardRouteImport } from './routes/app.dashboard'
+import { Route as AppCustomerWishlistRouteImport } from './routes/app.customer-wishlist'
 import { Route as AppContactsRouteImport } from './routes/app.contacts'
 import { Route as AppCashboxRouteImport } from './routes/app.cashbox'
 import { Route as AppAccessRouteImport } from './routes/app.access'
@@ -61,6 +63,11 @@ const IndexRoute = IndexRouteImport.update({
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/admin/',
   path: '/admin/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FSlugRoute = FSlugRouteImport.update({
+  id: '/f/$slug',
+  path: '/f/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppWarrantyRoute = AppWarrantyRouteImport.update({
@@ -158,6 +165,11 @@ const AppDashboardRoute = AppDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AppRoute,
 } as any)
+const AppCustomerWishlistRoute = AppCustomerWishlistRouteImport.update({
+  id: '/customer-wishlist',
+  path: '/customer-wishlist',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppContactsRoute = AppContactsRouteImport.update({
   id: '/contacts',
   path: '/contacts',
@@ -188,6 +200,7 @@ export interface FileRoutesByFullPath {
   '/app/access': typeof AppAccessRoute
   '/app/cashbox': typeof AppCashboxRoute
   '/app/contacts': typeof AppContactsRoute
+  '/app/customer-wishlist': typeof AppCustomerWishlistRoute
   '/app/dashboard': typeof AppDashboardRoute
   '/app/due-ledger': typeof AppDueLedgerRoute
   '/app/expense-ledger': typeof AppExpenseLedgerRoute
@@ -207,6 +220,7 @@ export interface FileRoutesByFullPath {
   '/app/subscribe': typeof AppSubscribeRoute
   '/app/training': typeof AppTrainingRoute
   '/app/warranty': typeof AppWarrantyRoute
+  '/f/$slug': typeof FSlugRoute
   '/admin/': typeof AdminIndexRoute
 }
 export interface FileRoutesByTo {
@@ -218,6 +232,7 @@ export interface FileRoutesByTo {
   '/app/access': typeof AppAccessRoute
   '/app/cashbox': typeof AppCashboxRoute
   '/app/contacts': typeof AppContactsRoute
+  '/app/customer-wishlist': typeof AppCustomerWishlistRoute
   '/app/dashboard': typeof AppDashboardRoute
   '/app/due-ledger': typeof AppDueLedgerRoute
   '/app/expense-ledger': typeof AppExpenseLedgerRoute
@@ -237,6 +252,7 @@ export interface FileRoutesByTo {
   '/app/subscribe': typeof AppSubscribeRoute
   '/app/training': typeof AppTrainingRoute
   '/app/warranty': typeof AppWarrantyRoute
+  '/f/$slug': typeof FSlugRoute
   '/admin': typeof AdminIndexRoute
 }
 export interface FileRoutesById {
@@ -249,6 +265,7 @@ export interface FileRoutesById {
   '/app/access': typeof AppAccessRoute
   '/app/cashbox': typeof AppCashboxRoute
   '/app/contacts': typeof AppContactsRoute
+  '/app/customer-wishlist': typeof AppCustomerWishlistRoute
   '/app/dashboard': typeof AppDashboardRoute
   '/app/due-ledger': typeof AppDueLedgerRoute
   '/app/expense-ledger': typeof AppExpenseLedgerRoute
@@ -268,6 +285,7 @@ export interface FileRoutesById {
   '/app/subscribe': typeof AppSubscribeRoute
   '/app/training': typeof AppTrainingRoute
   '/app/warranty': typeof AppWarrantyRoute
+  '/f/$slug': typeof FSlugRoute
   '/admin/': typeof AdminIndexRoute
 }
 export interface FileRouteTypes {
@@ -281,6 +299,7 @@ export interface FileRouteTypes {
     | '/app/access'
     | '/app/cashbox'
     | '/app/contacts'
+    | '/app/customer-wishlist'
     | '/app/dashboard'
     | '/app/due-ledger'
     | '/app/expense-ledger'
@@ -300,6 +319,7 @@ export interface FileRouteTypes {
     | '/app/subscribe'
     | '/app/training'
     | '/app/warranty'
+    | '/f/$slug'
     | '/admin/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -311,6 +331,7 @@ export interface FileRouteTypes {
     | '/app/access'
     | '/app/cashbox'
     | '/app/contacts'
+    | '/app/customer-wishlist'
     | '/app/dashboard'
     | '/app/due-ledger'
     | '/app/expense-ledger'
@@ -330,6 +351,7 @@ export interface FileRouteTypes {
     | '/app/subscribe'
     | '/app/training'
     | '/app/warranty'
+    | '/f/$slug'
     | '/admin'
   id:
     | '__root__'
@@ -341,6 +363,7 @@ export interface FileRouteTypes {
     | '/app/access'
     | '/app/cashbox'
     | '/app/contacts'
+    | '/app/customer-wishlist'
     | '/app/dashboard'
     | '/app/due-ledger'
     | '/app/expense-ledger'
@@ -360,6 +383,7 @@ export interface FileRouteTypes {
     | '/app/subscribe'
     | '/app/training'
     | '/app/warranty'
+    | '/f/$slug'
     | '/admin/'
   fileRoutesById: FileRoutesById
 }
@@ -368,6 +392,7 @@ export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
   AuthRoute: typeof AuthRoute
   PricingRoute: typeof PricingRoute
+  FSlugRoute: typeof FSlugRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
 
@@ -406,6 +431,13 @@ declare module '@tanstack/react-router' {
       path: '/admin'
       fullPath: '/admin/'
       preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/f/$slug': {
+      id: '/f/$slug'
+      path: '/f/$slug'
+      fullPath: '/f/$slug'
+      preLoaderRoute: typeof FSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/app/warranty': {
@@ -541,6 +573,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppDashboardRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/customer-wishlist': {
+      id: '/app/customer-wishlist'
+      path: '/customer-wishlist'
+      fullPath: '/app/customer-wishlist'
+      preLoaderRoute: typeof AppCustomerWishlistRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/contacts': {
       id: '/app/contacts'
       path: '/contacts'
@@ -576,6 +615,7 @@ interface AppRouteChildren {
   AppAccessRoute: typeof AppAccessRoute
   AppCashboxRoute: typeof AppCashboxRoute
   AppContactsRoute: typeof AppContactsRoute
+  AppCustomerWishlistRoute: typeof AppCustomerWishlistRoute
   AppDashboardRoute: typeof AppDashboardRoute
   AppDueLedgerRoute: typeof AppDueLedgerRoute
   AppExpenseLedgerRoute: typeof AppExpenseLedgerRoute
@@ -601,6 +641,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppAccessRoute: AppAccessRoute,
   AppCashboxRoute: AppCashboxRoute,
   AppContactsRoute: AppContactsRoute,
+  AppCustomerWishlistRoute: AppCustomerWishlistRoute,
   AppDashboardRoute: AppDashboardRoute,
   AppDueLedgerRoute: AppDueLedgerRoute,
   AppExpenseLedgerRoute: AppExpenseLedgerRoute,
@@ -629,6 +670,7 @@ const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   AuthRoute: AuthRoute,
   PricingRoute: PricingRoute,
+  FSlugRoute: FSlugRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
 export const routeTree = rootRouteImport
