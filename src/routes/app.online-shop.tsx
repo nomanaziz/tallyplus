@@ -9,9 +9,9 @@ import { DashboardBannerCarousel } from "@/components/app/DashboardBannerCarouse
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import {
-  Globe, Copy, QrCode, MessageCircle, Settings, ShoppingBag, ClipboardList,
-  Palette, AtSign, Truck, Star, Megaphone, ShieldCheck, AlertTriangle,
-  Tag, Package, TrendingUp, Eye, ExternalLink,
+  Globe, Copy, QrCode, Settings, ClipboardList,
+  Palette, AtSign, AlertTriangle,
+  Tag, Eye, ExternalLink,
 } from "lucide-react";
 import { QrCodeDialog } from "@/components/app/online-shop/QrCodeDialog";
 import productListIcon from "@/assets/icons/product-list.svg?url";
