@@ -10,32 +10,90 @@ import { Download, Store } from "lucide-react";
 import { toast } from "sonner";
 
 type Item = { to: string; bn: string; en: string; icon: string; highlight?: boolean; perm?: string };
+type Section = { id: string; bn: string; en: string; items: Item[] };
 
-const ITEMS: Item[] = [
+const PINNED: Item[] = [
   { to: "/app/subscribe", bn: "সাবস্ক্রিপশন কিনুন", en: "Buy Subscription", icon: icons.buySubscription, highlight: true },
-  { to: "/app/dashboard", bn: "হোম", en: "Home", icon: icons.home },
-  { to: "/app/purchase", bn: "কেনা", en: "Purchase", icon: icons.purchase, perm: "purchase" },
-  { to: "/app/sell", bn: "বেচা", en: "Sell", icon: icons.sell, perm: "sell" },
-  { to: "/app/quick-order", bn: "দ্রুত ফর্দ", en: "Quick Order", icon: icons.quickSell, perm: "sell" },
-  { to: "/app/cashbox", bn: "ক্যাশবক্স", en: "Cashbox", icon: icons.cashbox },
-  { to: "/app/purchase-ledger", bn: "কেনার খাতা", en: "Purchase Ledger", icon: icons.purchaseList, perm: "purchase" },
-  { to: "/app/sales-ledger", bn: "বেচার খাতা", en: "Sales Ledger", icon: icons.salesList, perm: "sell" },
-  { to: "/app/due-ledger", bn: "বাকির খাতা", en: "Due Ledger", icon: icons.due, perm: "due" },
-  { to: "/app/expense-ledger", bn: "খরচের খাতা", en: "Expense Ledger", icon: icons.expense, perm: "expense" },
-  { to: "/app/contacts", bn: "যোগাযোগ", en: "Contacts", icon: icons.contact, perm: "contacts" },
-  { to: "/app/training", bn: "অ্যাপ ট্রেনিং", en: "App Training", icon: icons.training },
-  { to: "/app/affiliate", bn: "গ্রোথ পার্টনার", en: "Growth Partner", icon: icons.contact },
-  { to: "/app/products", bn: "প্রোডাক্ট লিস্ট", en: "Product List", icon: icons.productList, perm: "products" },
-  { to: "/app/stock", bn: "স্টকের হিসাব", en: "Stock", icon: icons.stock, perm: "stock" },
-  { to: "/app/access", bn: "অ্যাপ অ্যাক্সেস", en: "App Access", icon: icons.access, perm: "__owner__" },
-  { to: "/app/printer", bn: "প্রিন্টার", en: "Printer", icon: icons.printer, perm: "shop" },
-  { to: "/app/reports", bn: "ব্যবসার রিপোর্ট", en: "Business Report", icon: icons.businessReport, perm: "report" },
-  { to: "/app/marketing", bn: "মার্কেটিং", en: "Marketing", icon: icons.marketing, perm: "sms" },
-  { to: "/app/online-shop", bn: "অনলাইন শপ", en: "Online Shop", icon: icons.onlineShop, perm: "online_shop" },
-  { to: "/app/customer-wishlist", bn: "গ্রাহক ফর্দ", en: "Customer Wishlist", icon: icons.contact, perm: "contacts" },
-  { to: "/app/expiring", bn: "মেয়াদোত্তীর্ণ পণ্য", en: "Expiring Products", icon: icons.expired, perm: "products" },
-  { to: "/app/warranty", bn: "ওয়ারেন্টি পণ্য", en: "Warranty", icon: icons.warranty, perm: "products" },
-  { to: "/app/recycle-bin", bn: "রিসাইকেল বিন", en: "Recycle Bin", icon: icons.recycle, perm: "__owner__" },
+];
+
+const SECTIONS: Section[] = [
+  {
+    id: "main",
+    bn: "মূল",
+    en: "Main",
+    items: [{ to: "/app/dashboard", bn: "হোম", en: "Home", icon: icons.home }],
+  },
+  {
+    id: "transactions",
+    bn: "লেনদেন",
+    en: "Transactions",
+    items: [
+      { to: "/app/purchase", bn: "কেনা", en: "Purchase", icon: icons.purchase, perm: "purchase" },
+      { to: "/app/sell", bn: "বেচা", en: "Sell", icon: icons.sell, perm: "sell" },
+      { to: "/app/quick-order", bn: "দ্রুত ফর্দ", en: "Quick Order", icon: icons.quickSell, perm: "sell" },
+      { to: "/app/cashbox", bn: "ক্যাশবক্স", en: "Cashbox", icon: icons.cashbox },
+    ],
+  },
+  {
+    id: "ledgers",
+    bn: "হিসাবের খাতা",
+    en: "Ledgers",
+    items: [
+      { to: "/app/purchase-ledger", bn: "কেনার খাতা", en: "Purchase Ledger", icon: icons.purchaseList, perm: "purchase" },
+      { to: "/app/sales-ledger", bn: "বেচার খাতা", en: "Sales Ledger", icon: icons.salesList, perm: "sell" },
+      { to: "/app/due-ledger", bn: "বাকির খাতা", en: "Due Ledger", icon: icons.due, perm: "due" },
+      { to: "/app/expense-ledger", bn: "খরচের খাতা", en: "Expense Ledger", icon: icons.expense, perm: "expense" },
+    ],
+  },
+  {
+    id: "inventory",
+    bn: "পণ্য ও স্টক",
+    en: "Inventory",
+    items: [
+      { to: "/app/products", bn: "প্রোডাক্ট লিস্ট", en: "Product List", icon: icons.productList, perm: "products" },
+      { to: "/app/stock", bn: "স্টকের হিসাব", en: "Stock", icon: icons.stock, perm: "stock" },
+      { to: "/app/expiring", bn: "মেয়াদোত্তীর্ণ পণ্য", en: "Expiring Products", icon: icons.expired, perm: "products" },
+      { to: "/app/warranty", bn: "ওয়ারেন্টি পণ্য", en: "Warranty", icon: icons.warranty, perm: "products" },
+    ],
+  },
+  {
+    id: "customers",
+    bn: "গ্রাহক ও যোগাযোগ",
+    en: "Customers",
+    items: [
+      { to: "/app/contacts", bn: "যোগাযোগ", en: "Contacts", icon: icons.contact, perm: "contacts" },
+      { to: "/app/customer-wishlist", bn: "গ্রাহক ফর্দ", en: "Customer Wishlist", icon: icons.contact, perm: "contacts" },
+      { to: "/app/marketing", bn: "মার্কেটিং", en: "Marketing", icon: icons.marketing, perm: "sms" },
+    ],
+  },
+  {
+    id: "online",
+    bn: "অনলাইন বিক্রি",
+    en: "Online",
+    items: [
+      { to: "/app/online-shop", bn: "অনলাইন শপ", en: "Online Shop", icon: icons.onlineShop, perm: "online_shop" },
+    ],
+  },
+  {
+    id: "reports",
+    bn: "রিপোর্ট ও সেটিংস",
+    en: "Reports & Settings",
+    items: [
+      { to: "/app/reports", bn: "ব্যবসার রিপোর্ট", en: "Business Report", icon: icons.businessReport, perm: "report" },
+      { to: "/app/printer", bn: "প্রিন্টার", en: "Printer", icon: icons.printer, perm: "shop" },
+      { to: "/app/access", bn: "অ্যাপ অ্যাক্সেস", en: "App Access", icon: icons.access, perm: "__owner__" },
+      { to: "/app/recycle-bin", bn: "রিসাইকেল বিন", en: "Recycle Bin", icon: icons.recycle, perm: "__owner__" },
+    ],
+  },
+  {
+    id: "more",
+    bn: "অন্যান্য",
+    en: "More",
+    items: [
+      { to: "/app/training", bn: "অ্যাপ ট্রেনিং", en: "App Training", icon: icons.training },
+      { to: "/app/affiliate", bn: "গ্রোথ পার্টনার", en: "Growth Partner", icon: icons.contact },
+    ],
+  },
 ];
 
 export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
@@ -44,12 +102,32 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
   const { isOwner, isAdmin, canGroup, loading } = usePermissions();
   const pwa = usePwaInstall();
 
-  const visibleItems = ITEMS.filter((it) => {
+  const isVisible = (it: Item) => {
     if (!it.perm) return true;
     if (loading) return true; // avoid layout flash; route guard will redirect if needed
     if (it.perm === "__owner__") return isOwner || isAdmin;
     return canGroup(it.perm);
-  });
+  };
+
+  const renderItem = (it: Item) => {
+    const active = loc.pathname === it.to || loc.pathname.startsWith(it.to + "/");
+    return (
+      <Link
+        key={it.to}
+        to={it.to as never}
+        onClick={onNavigate}
+        className={cn(
+          "group flex items-center gap-2.5 rounded-md px-2 py-1.5 text-[13px] leading-tight transition-colors",
+          it.highlight && !active && "bg-primary/15 font-semibold hover:bg-primary/25",
+          active && "bg-primary/25 font-semibold text-foreground",
+          !active && !it.highlight && "hover:bg-sidebar-accent",
+        )}
+      >
+        <img src={it.icon} alt="" className="h-5 w-5 flex-none" />
+        <span className="truncate">{lang === "bn" ? it.bn : it.en}</span>
+      </Link>
+    );
+  };
 
   return (
     <aside className="flex h-full w-52 flex-col border-r bg-sidebar">
@@ -102,23 +180,19 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
             <Store className="h-5 w-5 flex-none" />
             <span className="truncate">{lang === "bn" ? "অনলাইন মার্কেটপ্লেস" : "Online Marketplace"}</span>
           </Link>
-          {visibleItems.map((it) => {
-            const active = loc.pathname === it.to || loc.pathname.startsWith(it.to + "/");
+          {PINNED.filter(isVisible).map(renderItem)}
+          {SECTIONS.map((section) => {
+            const items = section.items.filter(isVisible);
+            if (items.length === 0) return null;
             return (
-              <Link
-                key={it.to}
-                to={it.to as never}
-                onClick={onNavigate}
-                className={cn(
-                  "group flex items-center gap-2.5 rounded-md px-2 py-1.5 text-[13px] leading-tight transition-colors",
-                  it.highlight && !active && "bg-primary/15 font-semibold hover:bg-primary/25",
-                  active && "bg-primary/25 font-semibold text-foreground",
-                  !active && !it.highlight && "hover:bg-sidebar-accent",
-                )}
-              >
-                <img src={it.icon} alt="" className="h-5 w-5 flex-none" />
-                <span className="truncate">{lang === "bn" ? it.bn : it.en}</span>
-              </Link>
+              <div key={section.id} className="mt-2 flex flex-col gap-0.5 border-t border-border/60 pt-2 first:mt-1 first:border-t-0 first:pt-0">
+                <div className="px-2 pb-0.5">
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    {lang === "bn" ? section.bn : section.en}
+                  </span>
+                </div>
+                {items.map(renderItem)}
+              </div>
             );
           })}
         </nav>
