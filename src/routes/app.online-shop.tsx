@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useI18n, bnNum } from "@/lib/i18n";
@@ -10,11 +10,9 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import {
   Globe, Copy, QrCode, MessageCircle, Settings, ShoppingBag, ClipboardList,
-  Palette, AtSign, Truck, Smartphone, Star, Megaphone, ShieldCheck, AlertTriangle,
-  Tag, Wrench, Package, TrendingUp, Eye, ExternalLink,
+  Palette, AtSign, Truck, Star, Megaphone, ShieldCheck, AlertTriangle,
+  Tag, Package, TrendingUp, Eye, ExternalLink,
 } from "lucide-react";
-import { StoreSettingsDialog } from "@/components/app/online-shop/StoreSettingsDialog";
-import { ShopPolicyDialog } from "@/components/app/online-shop/ShopPolicyDialog";
 import { QrCodeDialog } from "@/components/app/online-shop/QrCodeDialog";
 
 export const Route = createFileRoute("/app/online-shop")({
@@ -44,13 +42,11 @@ type ShopRow = {
 function OnlineShopDashboard() {
   const { lang } = useI18n();
   const { current } = useShop();
-  const [settingsOpen, setSettingsOpen] = useState(false);
-  const [policyOpen, setPolicyOpen] = useState(false);
   const [qrOpen, setQrOpen] = useState(false);
 
   const shopId = current?.id ?? null;
 
-  const { data: shop, refetch } = useQuery<ShopRow | null>({
+  const { data: shop } = useQuery<ShopRow | null>({
     queryKey: ["shop-online", shopId],
     enabled: !!shopId,
     queryFn: async () => {
@@ -84,7 +80,6 @@ function OnlineShopDashboard() {
   const copyLink = async () => {
     if (!publicUrl) {
       toast.error(lang === "bn" ? "প্রথমে username সেট করুন" : "Set a username first");
-      setSettingsOpen(true);
       return;
     }
     try {
@@ -98,7 +93,6 @@ function OnlineShopDashboard() {
   const openWebsite = () => {
     if (!publicUrl) {
       toast.error(lang === "bn" ? "প্রথমে username সেট করুন" : "Set a username first");
-      setSettingsOpen(true);
       return;
     }
     window.open(publicUrl, "_blank", "noopener");
@@ -107,7 +101,6 @@ function OnlineShopDashboard() {
   const openQr = () => {
     if (!publicUrl) {
       toast.error(lang === "bn" ? "প্রথমে username সেট করুন" : "Set a username first");
-      setSettingsOpen(true);
       return;
     }
     setQrOpen(true);
@@ -125,28 +118,20 @@ function OnlineShopDashboard() {
     to?: string;
   }> = [
     { icon: MessageCircle, bn: "মেসেজ", en: "Message", color: "text-pink-500", onClick: comingSoon },
-    { icon: Settings, bn: "স্টোর সেটিংস", en: "Store Settings", color: "text-blue-500", onClick: () => setSettingsOpen(true) },
+    { icon: Settings, bn: "স্টোর সেটিংস", en: "Store Settings", color: "text-blue-500", onClick: () => undefined, to: "/app/online-shop/settings" },
     { icon: ShoppingBag, bn: "অনলাইন প্রোডাক্ট", en: "Online Product", color: "text-emerald-500", onClick: () => undefined, to: "/app/online-shop/products" },
-    { icon: ClipboardList, bn: "অর্ডার লিস্ট", en: "Order List", color: "text-amber-500", onClick: comingSoon },
-    { icon: Palette, bn: "থিম", en: "Themes", color: "text-purple-500", onClick: comingSoon },
-    { icon: AtSign, bn: "Username পরিবর্তন", en: "Change Username", color: "text-cyan-500", onClick: () => setSettingsOpen(true) },
-    { icon: Truck, bn: "ডেলিভারি", en: "Delivery", color: "text-orange-500", onClick: comingSoon },
-    { icon: Smartphone, bn: "অ্যাপ তৈরি", en: "Build App", color: "text-indigo-500", onClick: comingSoon },
-    { icon: Star, bn: "ফিচার্ড পণ্য", en: "Featured Products", color: "text-yellow-500", onClick: comingSoon },
-    { icon: Megaphone, bn: "মার্কেটিং ও SEO", en: "Marketing & SEO", color: "text-fuchsia-500", onClick: comingSoon },
-    { icon: ShieldCheck, bn: "শপ পলিসি", en: "Shop Policy", color: "text-teal-500", onClick: () => setPolicyOpen(true) },
-    { icon: AlertTriangle, bn: "ফ্রড চেক", en: "Fraud Check", color: "text-red-500", onClick: comingSoon },
-    { icon: Tag, bn: "প্রোমো কোড", en: "Promo Code", color: "text-rose-500", onClick: comingSoon },
-    { icon: Wrench, bn: "কাস্টমাইজেশন", en: "Customization", color: "text-slate-500", onClick: comingSoon },
+    { icon: ClipboardList, bn: "অর্ডার লিস্ট", en: "Order List", color: "text-amber-500", onClick: () => undefined, to: "/app/online-shop/orders" },
+    { icon: Palette, bn: "থিম", en: "Themes", color: "text-purple-500", onClick: () => undefined, to: "/app/online-shop/themes" },
+    { icon: AtSign, bn: "Username পরিবর্তন", en: "Change Username", color: "text-cyan-500", onClick: () => undefined, to: "/app/online-shop/settings" },
+    { icon: Truck, bn: "ডেলিভারি", en: "Delivery", color: "text-orange-500", onClick: () => undefined, to: "/app/online-shop/delivery" },
+    { icon: Star, bn: "ফিচার্ড পণ্য", en: "Featured Products", color: "text-yellow-500", onClick: () => undefined, to: "/app/online-shop/featured" },
+    { icon: Megaphone, bn: "মার্কেটিং ও SEO", en: "Marketing & SEO", color: "text-fuchsia-500", onClick: () => undefined, to: "/app/online-shop/marketing" },
+    { icon: ShieldCheck, bn: "শপ পলিসি", en: "Shop Policy", color: "text-teal-500", onClick: () => undefined, to: "/app/online-shop/policy" },
+    { icon: AlertTriangle, bn: "ফ্রড চেক", en: "Fraud Check", color: "text-red-500", onClick: () => undefined, to: "/app/online-shop/fraud-check" },
+    { icon: Tag, bn: "প্রোমো কোড", en: "Promo Code", color: "text-rose-500", onClick: () => undefined, to: "/app/online-shop/promo-codes" },
   ];
 
-  // Log a visit when owner opens dashboard? No — only public hits.
-  useEffect(() => {
-    if (shop && !shop.username) {
-      // Auto-open settings on first load if no username
-      setSettingsOpen(true);
-    }
-  }, [shop?.id, shop?.username]);
+  // No auto-open dialog — Settings is now its own page
 
   return (
     <div className="container px-4 py-4">
@@ -187,8 +172,8 @@ function OnlineShopDashboard() {
               <span className="font-semibold text-destructive">{lang === "bn" ? "এখনো সেট করা হয়নি" : "Not set yet"}</span>
             )}
           </div>
-          <Button size="sm" variant="outline" onClick={() => setSettingsOpen(true)}>
-            {lang === "bn" ? "এডিট" : "Edit"}
+          <Button asChild size="sm" variant="outline">
+            <Link to="/app/online-shop/settings">{lang === "bn" ? "এডিট" : "Edit"}</Link>
           </Button>
         </div>
       )}
@@ -230,18 +215,6 @@ function OnlineShopDashboard() {
 
       {shop && (
         <>
-          <StoreSettingsDialog
-            open={settingsOpen}
-            onOpenChange={setSettingsOpen}
-            shop={shop}
-            onSaved={() => { void refetch(); }}
-          />
-          <ShopPolicyDialog
-            open={policyOpen}
-            onOpenChange={setPolicyOpen}
-            shop={shop}
-            onSaved={() => { void refetch(); }}
-          />
           {publicUrl && (
             <QrCodeDialog open={qrOpen} onOpenChange={setQrOpen} url={publicUrl} shopName={shop.name} />
           )}

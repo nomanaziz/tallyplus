@@ -943,10 +943,43 @@ export type Database = {
           },
         ]
       }
+      fraud_check_logs: {
+        Row: {
+          checked_at: string
+          id: string
+          phone: string
+          result: Json | null
+          shop_id: string
+        }
+        Insert: {
+          checked_at?: string
+          id?: string
+          phone: string
+          result?: Json | null
+          shop_id: string
+        }
+        Update: {
+          checked_at?: string
+          id?: string
+          phone?: string
+          result?: Json | null
+          shop_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fraud_check_logs_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       marketplace_listings: {
         Row: {
           created_at: string
           id: string
+          is_featured: boolean
           is_published: boolean
           min_order: number | null
           price: number
@@ -961,6 +994,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          is_featured?: boolean
           is_published?: boolean
           min_order?: number | null
           price?: number
@@ -975,6 +1009,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          is_featured?: boolean
           is_published?: boolean
           min_order?: number | null
           price?: number
@@ -1249,6 +1284,7 @@ export type Database = {
           expiry_date: string | null
           id: string
           image_url: string | null
+          is_featured: boolean
           is_marketplace_published: boolean
           low_stock_alert: number | null
           name: string
@@ -1280,6 +1316,7 @@ export type Database = {
           expiry_date?: string | null
           id?: string
           image_url?: string | null
+          is_featured?: boolean
           is_marketplace_published?: boolean
           low_stock_alert?: number | null
           name: string
@@ -1311,6 +1348,7 @@ export type Database = {
           expiry_date?: string | null
           id?: string
           image_url?: string | null
+          is_featured?: boolean
           is_marketplace_published?: boolean
           low_stock_alert?: number | null
           name?: string
@@ -1378,6 +1416,62 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      promo_codes: {
+        Row: {
+          code: string
+          created_at: string
+          discount_type: string
+          discount_value: number
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          max_uses: number | null
+          min_order_amount: number
+          shop_id: string
+          starts_at: string | null
+          updated_at: string
+          used_count: number
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          discount_type?: string
+          discount_value?: number
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          max_uses?: number | null
+          min_order_amount?: number
+          shop_id: string
+          starts_at?: string | null
+          updated_at?: string
+          used_count?: number
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          discount_type?: string
+          discount_value?: number
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          max_uses?: number | null
+          min_order_amount?: number
+          shop_id?: string
+          starts_at?: string | null
+          updated_at?: string
+          used_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "promo_codes_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       purchase_items: {
         Row: {
@@ -1657,6 +1751,53 @@ export type Database = {
           },
         ]
       }
+      shipping_packages: {
+        Row: {
+          area_type: string
+          created_at: string
+          delivery_time: string | null
+          id: string
+          is_active: boolean
+          name: string
+          price: number
+          shop_id: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          area_type?: string
+          created_at?: string
+          delivery_time?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          price?: number
+          shop_id: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          area_type?: string
+          created_at?: string
+          delivery_time?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          price?: number
+          shop_id?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shipping_packages_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shop_custom_roles: {
         Row: {
           created_at: string
@@ -1877,12 +2018,22 @@ export type Database = {
       shops: {
         Row: {
           about: string | null
+          about_us: string | null
+          active_app_theme: string | null
+          active_web_theme: string | null
           address: string | null
+          banner_url: string | null
           cover_url: string | null
           created_at: string
           currency: string
           deleted_at: string | null
           facebook_url: string | null
+          fb_pixel_id: string | null
+          fb_pixel_test_id: string | null
+          fb_pixel_token: string | null
+          fraud_api_key: string | null
+          fraud_api_provider: string | null
+          gtm_id: string | null
           id: string
           logo_url: string | null
           marketplace_enabled: boolean
@@ -1890,10 +2041,12 @@ export type Database = {
           name: string
           owner_id: string
           phone: string | null
+          privacy_policy: string | null
           return_policy: string | null
           shipping_policy: string | null
           shop_type_code: string | null
           slug: string | null
+          social_links: Json | null
           tagline: string | null
           terms_and_conditions: string | null
           updated_at: string
@@ -1903,12 +2056,22 @@ export type Database = {
         }
         Insert: {
           about?: string | null
+          about_us?: string | null
+          active_app_theme?: string | null
+          active_web_theme?: string | null
           address?: string | null
+          banner_url?: string | null
           cover_url?: string | null
           created_at?: string
           currency?: string
           deleted_at?: string | null
           facebook_url?: string | null
+          fb_pixel_id?: string | null
+          fb_pixel_test_id?: string | null
+          fb_pixel_token?: string | null
+          fraud_api_key?: string | null
+          fraud_api_provider?: string | null
+          gtm_id?: string | null
           id?: string
           logo_url?: string | null
           marketplace_enabled?: boolean
@@ -1916,10 +2079,12 @@ export type Database = {
           name: string
           owner_id: string
           phone?: string | null
+          privacy_policy?: string | null
           return_policy?: string | null
           shipping_policy?: string | null
           shop_type_code?: string | null
           slug?: string | null
+          social_links?: Json | null
           tagline?: string | null
           terms_and_conditions?: string | null
           updated_at?: string
@@ -1929,12 +2094,22 @@ export type Database = {
         }
         Update: {
           about?: string | null
+          about_us?: string | null
+          active_app_theme?: string | null
+          active_web_theme?: string | null
           address?: string | null
+          banner_url?: string | null
           cover_url?: string | null
           created_at?: string
           currency?: string
           deleted_at?: string | null
           facebook_url?: string | null
+          fb_pixel_id?: string | null
+          fb_pixel_test_id?: string | null
+          fb_pixel_token?: string | null
+          fraud_api_key?: string | null
+          fraud_api_provider?: string | null
+          gtm_id?: string | null
           id?: string
           logo_url?: string | null
           marketplace_enabled?: boolean
@@ -1942,10 +2117,12 @@ export type Database = {
           name?: string
           owner_id?: string
           phone?: string | null
+          privacy_policy?: string | null
           return_policy?: string | null
           shipping_policy?: string | null
           shop_type_code?: string | null
           slug?: string | null
+          social_links?: Json | null
           tagline?: string | null
           terms_and_conditions?: string | null
           updated_at?: string
