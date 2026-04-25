@@ -6,15 +6,11 @@ import logo from "@/assets/logo.png";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { usePermissions } from "@/lib/permissions-hook";
 import { usePwaInstall } from "@/hooks/use-pwa-install";
-import { Download, Store } from "lucide-react";
+import { Download } from "lucide-react";
 import { toast } from "sonner";
 
 type Item = { to: string; bn: string; en: string; icon: string; highlight?: boolean; perm?: string };
 type Section = { id: string; bn: string; en: string; items: Item[] };
-
-const PINNED: Item[] = [
-  { to: "/app/subscribe", bn: "সাবস্ক্রিপশন কিনুন", en: "Buy Subscription", icon: icons.buySubscription, highlight: true },
-];
 
 const SECTIONS: Section[] = [
   {
@@ -88,10 +84,11 @@ const SECTIONS: Section[] = [
   {
     id: "more",
     bn: "অন্যান্য",
-    en: "More",
+    en: "Others",
     items: [
       { to: "/app/training", bn: "অ্যাপ ট্রেনিং", en: "App Training", icon: icons.training },
       { to: "/app/affiliate", bn: "গ্রোথ পার্টনার", en: "Growth Partner", icon: icons.contact },
+      { to: "/app/subscribe", bn: "সাবস্ক্রিপশন কিনুন", en: "Buy Subscription", icon: icons.buySubscription },
     ],
   },
 ];
@@ -137,50 +134,6 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
       </div>
       <ScrollArea className="flex-1">
         <nav className="flex flex-col gap-0.5 px-1.5 py-2">
-          {!pwa.installed && (
-            <button
-              type="button"
-              onClick={async () => {
-                if (pwa.canInstall) {
-                  const outcome = await pwa.promptInstall();
-                  if (outcome === "accepted") {
-                    toast.success(lang === "bn" ? "অ্যাপ ইনস্টল হচ্ছে…" : "Installing app…");
-                  }
-                } else if (pwa.isIos) {
-                  toast.info(
-                    lang === "bn"
-                      ? "Safari Share → 'Add to Home Screen' সিলেক্ট করুন"
-                      : "Tap Safari Share → 'Add to Home Screen'",
-                    { duration: 6000 },
-                  );
-                } else {
-                  toast.info(
-                    lang === "bn"
-                      ? "ব্রাউজার মেনু থেকে 'Install app' সিলেক্ট করুন"
-                      : "Use browser menu → 'Install app'",
-                    { duration: 6000 },
-                  );
-                }
-              }}
-              className="group mb-1 flex items-center gap-2.5 rounded-md bg-emerald-600/15 px-2 py-1.5 text-[13px] font-semibold leading-tight text-emerald-700 transition-colors hover:bg-emerald-600/25 dark:text-emerald-400"
-            >
-              <Download className="h-5 w-5 flex-none" />
-              <span className="truncate">{lang === "bn" ? "অ্যাপ ইনস্টল করুন" : "Install App"}</span>
-            </button>
-          )}
-          <Link
-            to="/shop"
-            onClick={onNavigate}
-            target="_blank"
-            rel="noopener"
-            className={cn(
-              "group mb-1 flex items-center gap-2.5 rounded-md bg-primary/10 px-2 py-1.5 text-[13px] font-semibold leading-tight transition-colors hover:bg-primary/20",
-            )}
-          >
-            <Store className="h-5 w-5 flex-none" />
-            <span className="truncate">{lang === "bn" ? "অনলাইন মার্কেটপ্লেস" : "Online Marketplace"}</span>
-          </Link>
-          {PINNED.filter(isVisible).map(renderItem)}
           {SECTIONS.map((section) => {
             const items = section.items.filter(isVisible);
             if (items.length === 0) return null;
@@ -192,6 +145,37 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
                   </span>
                 </div>
                 {items.map(renderItem)}
+                {section.id === "more" && !pwa.installed && (
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      if (pwa.canInstall) {
+                        const outcome = await pwa.promptInstall();
+                        if (outcome === "accepted") {
+                          toast.success(lang === "bn" ? "অ্যাপ ইনস্টল হচ্ছে…" : "Installing app…");
+                        }
+                      } else if (pwa.isIos) {
+                        toast.info(
+                          lang === "bn"
+                            ? "Safari Share → 'Add to Home Screen' সিলেক্ট করুন"
+                            : "Tap Safari Share → 'Add to Home Screen'",
+                          { duration: 6000 },
+                        );
+                      } else {
+                        toast.info(
+                          lang === "bn"
+                            ? "ব্রাউজার মেনু থেকে 'Install app' সিলেক্ট করুন"
+                            : "Use browser menu → 'Install app'",
+                          { duration: 6000 },
+                        );
+                      }
+                    }}
+                    className="group flex items-center gap-2.5 rounded-md px-2 py-1.5 text-[13px] leading-tight text-emerald-700 transition-colors hover:bg-sidebar-accent dark:text-emerald-400"
+                  >
+                    <Download className="h-5 w-5 flex-none" />
+                    <span className="truncate">{lang === "bn" ? "অ্যাপ ইনস্টল করুন" : "Install App"}</span>
+                  </button>
+                )}
               </div>
             );
           })}
