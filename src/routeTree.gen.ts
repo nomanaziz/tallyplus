@@ -15,6 +15,7 @@ import { Route as AppRouteImport } from './routes/app'
 import { Route as AffiliateRouteImport } from './routes/affiliate'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ShopIndexRouteImport } from './routes/shop.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as FSlugRouteImport } from './routes/f.$slug'
 import { Route as AppWarrantyRouteImport } from './routes/app.warranty'
@@ -86,6 +87,11 @@ const AdminRoute = AdminRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ShopIndexRoute = ShopIndexRouteImport.update({
+  id: '/shop/',
+  path: '/shop/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
@@ -348,6 +354,7 @@ export interface FileRoutesByFullPath {
   '/app/warranty': typeof AppWarrantyRoute
   '/f/$slug': typeof FSlugRouteWithChildren
   '/admin/': typeof AdminIndexRoute
+  '/shop/': typeof ShopIndexRoute
   '/f/$slug/my': typeof FSlugMyRoute
 }
 export interface FileRoutesByTo {
@@ -397,6 +404,7 @@ export interface FileRoutesByTo {
   '/app/warranty': typeof AppWarrantyRoute
   '/f/$slug': typeof FSlugRouteWithChildren
   '/admin': typeof AdminIndexRoute
+  '/shop': typeof ShopIndexRoute
   '/f/$slug/my': typeof FSlugMyRoute
 }
 export interface FileRoutesById {
@@ -448,6 +456,7 @@ export interface FileRoutesById {
   '/app/warranty': typeof AppWarrantyRoute
   '/f/$slug': typeof FSlugRouteWithChildren
   '/admin/': typeof AdminIndexRoute
+  '/shop/': typeof ShopIndexRoute
   '/f/$slug/my': typeof FSlugMyRoute
 }
 export interface FileRouteTypes {
@@ -500,6 +509,7 @@ export interface FileRouteTypes {
     | '/app/warranty'
     | '/f/$slug'
     | '/admin/'
+    | '/shop/'
     | '/f/$slug/my'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -549,6 +559,7 @@ export interface FileRouteTypes {
     | '/app/warranty'
     | '/f/$slug'
     | '/admin'
+    | '/shop'
     | '/f/$slug/my'
   id:
     | '__root__'
@@ -599,6 +610,7 @@ export interface FileRouteTypes {
     | '/app/warranty'
     | '/f/$slug'
     | '/admin/'
+    | '/shop/'
     | '/f/$slug/my'
   fileRoutesById: FileRoutesById
 }
@@ -610,6 +622,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   PricingRoute: typeof PricingRoute
   FSlugRoute: typeof FSlugRouteWithChildren
+  ShopIndexRoute: typeof ShopIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -654,6 +667,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/shop/': {
+      id: '/shop/'
+      path: '/shop'
+      fullPath: '/shop/'
+      preLoaderRoute: typeof ShopIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/': {
@@ -1077,6 +1097,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   PricingRoute: PricingRoute,
   FSlugRoute: FSlugRouteWithChildren,
+  ShopIndexRoute: ShopIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
