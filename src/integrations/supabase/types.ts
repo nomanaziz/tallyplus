@@ -14,6 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      affiliate_agents: {
+        Row: {
+          agent_referral_code: string
+          agent_user_id: string | null
+          created_at: string
+          email: string | null
+          full_name: string
+          id: string
+          parent_affiliate_id: string
+          phone: string
+          status: string
+          total_commission: number
+          total_subscriptions: number
+          updated_at: string
+        }
+        Insert: {
+          agent_referral_code: string
+          agent_user_id?: string | null
+          created_at?: string
+          email?: string | null
+          full_name: string
+          id?: string
+          parent_affiliate_id: string
+          phone: string
+          status?: string
+          total_commission?: number
+          total_subscriptions?: number
+          updated_at?: string
+        }
+        Update: {
+          agent_referral_code?: string
+          agent_user_id?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string
+          id?: string
+          parent_affiliate_id?: string
+          phone?: string
+          status?: string
+          total_commission?: number
+          total_subscriptions?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       affiliate_commissions: {
         Row: {
           affiliate_id: string
@@ -65,6 +110,78 @@ export type Database = {
           },
         ]
       }
+      affiliate_marketing_assets: {
+        Row: {
+          body: string | null
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          sort_order: number
+          title: string
+          type: string
+          url: string | null
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          sort_order?: number
+          title: string
+          type: string
+          url?: string | null
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          sort_order?: number
+          title?: string
+          type?: string
+          url?: string | null
+        }
+        Relationships: []
+      }
+      affiliate_payout_methods: {
+        Row: {
+          fee_pct: number
+          id: string
+          is_active: boolean
+          key: string
+          label_bn: string
+          label_en: string
+          max_amount: number
+          min_amount: number
+          sort_order: number
+        }
+        Insert: {
+          fee_pct?: number
+          id?: string
+          is_active?: boolean
+          key: string
+          label_bn: string
+          label_en: string
+          max_amount?: number
+          min_amount?: number
+          sort_order?: number
+        }
+        Update: {
+          fee_pct?: number
+          id?: string
+          is_active?: boolean
+          key?: string
+          label_bn?: string
+          label_en?: string
+          max_amount?: number
+          min_amount?: number
+          sort_order?: number
+        }
+        Relationships: []
+      }
       affiliate_referrals: {
         Row: {
           affiliate_id: string
@@ -115,34 +232,92 @@ export type Database = {
       }
       affiliate_settings: {
         Row: {
+          agent_override_pct: number
+          auto_tier_upgrade: boolean
           default_commission_pct: number
           id: boolean
           is_program_active: boolean
           lifetime_commission_pct: number
+          live_chat_url: string | null
+          max_withdrawal_per_month: number
+          min_withdrawal_amount: number
           referee_discount_pct: number
+          subscription_pay_enabled: boolean
+          support_email: string | null
+          support_phone: string | null
           updated_at: string
         }
         Insert: {
+          agent_override_pct?: number
+          auto_tier_upgrade?: boolean
           default_commission_pct?: number
           id?: boolean
           is_program_active?: boolean
           lifetime_commission_pct?: number
+          live_chat_url?: string | null
+          max_withdrawal_per_month?: number
+          min_withdrawal_amount?: number
           referee_discount_pct?: number
+          subscription_pay_enabled?: boolean
+          support_email?: string | null
+          support_phone?: string | null
           updated_at?: string
         }
         Update: {
+          agent_override_pct?: number
+          auto_tier_upgrade?: boolean
           default_commission_pct?: number
           id?: boolean
           is_program_active?: boolean
           lifetime_commission_pct?: number
+          live_chat_url?: string | null
+          max_withdrawal_per_month?: number
+          min_withdrawal_amount?: number
           referee_discount_pct?: number
+          subscription_pay_enabled?: boolean
+          support_email?: string | null
+          support_phone?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      affiliate_support_messages: {
+        Row: {
+          affiliate_id: string | null
+          created_at: string
+          email: string | null
+          id: string
+          message: string
+          name: string
+          status: string
+          subject: string | null
+        }
+        Insert: {
+          affiliate_id?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          message: string
+          name: string
+          status?: string
+          subject?: string | null
+        }
+        Update: {
+          affiliate_id?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          message?: string
+          name?: string
+          status?: string
+          subject?: string | null
         }
         Relationships: []
       }
       affiliate_tiers: {
         Row: {
           bonus_pct: number
+          color: string | null
           commission_pct: number
           created_at: string
           id: string
@@ -153,6 +328,7 @@ export type Database = {
         }
         Insert: {
           bonus_pct?: number
+          color?: string | null
           commission_pct?: number
           created_at?: string
           id?: string
@@ -163,6 +339,7 @@ export type Database = {
         }
         Update: {
           bonus_pct?: number
+          color?: string | null
           commission_pct?: number
           created_at?: string
           id?: string
@@ -170,6 +347,114 @@ export type Database = {
           name?: string
           sort_order?: number
           updated_at?: string
+        }
+        Relationships: []
+      }
+      affiliate_wallet: {
+        Row: {
+          affiliate_id: string
+          available_balance: number
+          lifetime_earned: number
+          lifetime_spent_on_subscription: number
+          lifetime_withdrawn: number
+          pending_balance: number
+          updated_at: string
+        }
+        Insert: {
+          affiliate_id: string
+          available_balance?: number
+          lifetime_earned?: number
+          lifetime_spent_on_subscription?: number
+          lifetime_withdrawn?: number
+          pending_balance?: number
+          updated_at?: string
+        }
+        Update: {
+          affiliate_id?: string
+          available_balance?: number
+          lifetime_earned?: number
+          lifetime_spent_on_subscription?: number
+          lifetime_withdrawn?: number
+          pending_balance?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      affiliate_wallet_transactions: {
+        Row: {
+          affiliate_id: string
+          amount: number
+          balance_after: number
+          created_at: string
+          id: string
+          note: string | null
+          reference_id: string | null
+          type: string
+        }
+        Insert: {
+          affiliate_id: string
+          amount: number
+          balance_after?: number
+          created_at?: string
+          id?: string
+          note?: string | null
+          reference_id?: string | null
+          type: string
+        }
+        Update: {
+          affiliate_id?: string
+          amount?: number
+          balance_after?: number
+          created_at?: string
+          id?: string
+          note?: string | null
+          reference_id?: string | null
+          type?: string
+        }
+        Relationships: []
+      }
+      affiliate_withdrawals: {
+        Row: {
+          account_name: string | null
+          account_number: string
+          admin_note: string | null
+          affiliate_id: string
+          amount: number
+          id: string
+          method: string
+          processed_at: string | null
+          processed_by: string | null
+          requested_at: string
+          status: string
+          transaction_ref: string | null
+        }
+        Insert: {
+          account_name?: string | null
+          account_number: string
+          admin_note?: string | null
+          affiliate_id: string
+          amount: number
+          id?: string
+          method: string
+          processed_at?: string | null
+          processed_by?: string | null
+          requested_at?: string
+          status?: string
+          transaction_ref?: string | null
+        }
+        Update: {
+          account_name?: string | null
+          account_number?: string
+          admin_note?: string | null
+          affiliate_id?: string
+          amount?: number
+          id?: string
+          method?: string
+          processed_at?: string | null
+          processed_by?: string | null
+          requested_at?: string
+          status?: string
+          transaction_ref?: string | null
         }
         Relationships: []
       }
@@ -1714,6 +1999,11 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      affiliate_pay_subscription: { Args: { _plan_id: string }; Returns: Json }
+      affiliate_recalculate_tier: {
+        Args: { _aff_id: string }
+        Returns: undefined
+      }
       dashboard_summary: {
         Args: { _shop_id: string; _since: string }
         Returns: {
@@ -1727,6 +2017,7 @@ export type Database = {
           stock_value: number
         }[]
       }
+      ensure_affiliate_wallet: { Args: { _aff_id: string }; Returns: undefined }
       has_active_subscription: { Args: { _user_id: string }; Returns: boolean }
       has_role: {
         Args: {
