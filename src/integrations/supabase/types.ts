@@ -1098,6 +1098,95 @@ export type Database = {
           },
         ]
       }
+      marketplace_order_items: {
+        Row: {
+          created_at: string
+          id: string
+          listing_id: string | null
+          name: string
+          order_id: string
+          price: number
+          product_id: string | null
+          qty: number
+          total: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          listing_id?: string | null
+          name: string
+          order_id: string
+          price?: number
+          product_id?: string | null
+          qty?: number
+          total?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          listing_id?: string | null
+          name?: string
+          order_id?: string
+          price?: number
+          product_id?: string | null
+          qty?: number
+          total?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketplace_order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "marketplace_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      marketplace_orders: {
+        Row: {
+          created_at: string
+          customer_address: string | null
+          customer_name: string
+          customer_phone: string
+          id: string
+          note: string | null
+          order_no: string | null
+          payment_method: string | null
+          shop_id: string
+          status: string
+          total: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          customer_address?: string | null
+          customer_name: string
+          customer_phone: string
+          id?: string
+          note?: string | null
+          order_no?: string | null
+          payment_method?: string | null
+          shop_id: string
+          status?: string
+          total?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          customer_address?: string | null
+          customer_name?: string
+          customer_phone?: string
+          id?: string
+          note?: string | null
+          order_no?: string | null
+          payment_method?: string | null
+          shop_id?: string
+          status?: string
+          total?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       marketplace_products: {
         Row: {
           barcode: string | null
@@ -2129,6 +2218,7 @@ export type Database = {
           created_at: string
           currency: string
           deleted_at: string | null
+          facebook_page_id: string | null
           facebook_url: string | null
           fb_pixel_id: string | null
           fb_pixel_test_id: string | null
@@ -2152,6 +2242,7 @@ export type Database = {
           tagline: string | null
           terms_and_conditions: string | null
           theme_border_radius: number | null
+          theme_card_shape: string
           theme_card_variant: string | null
           theme_font_family: string | null
           theme_primary_color: string | null
@@ -2172,6 +2263,7 @@ export type Database = {
           created_at?: string
           currency?: string
           deleted_at?: string | null
+          facebook_page_id?: string | null
           facebook_url?: string | null
           fb_pixel_id?: string | null
           fb_pixel_test_id?: string | null
@@ -2195,6 +2287,7 @@ export type Database = {
           tagline?: string | null
           terms_and_conditions?: string | null
           theme_border_radius?: number | null
+          theme_card_shape?: string
           theme_card_variant?: string | null
           theme_font_family?: string | null
           theme_primary_color?: string | null
@@ -2215,6 +2308,7 @@ export type Database = {
           created_at?: string
           currency?: string
           deleted_at?: string | null
+          facebook_page_id?: string | null
           facebook_url?: string | null
           fb_pixel_id?: string | null
           fb_pixel_test_id?: string | null
@@ -2238,6 +2332,7 @@ export type Database = {
           tagline?: string | null
           terms_and_conditions?: string | null
           theme_border_radius?: number | null
+          theme_card_shape?: string
           theme_card_variant?: string | null
           theme_font_family?: string | null
           theme_primary_color?: string | null

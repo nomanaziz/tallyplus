@@ -128,7 +128,7 @@ function OnlineShopDashboard() {
     color: string;
     to?: string;
   }> = [
-    { img: contactIcon, bn: "মেসেজ", en: "Message", color: "text-pink-500", onClick: comingSoon },
+    { img: contactIcon, bn: "মেসেজ", en: "Message", color: "text-pink-500", onClick: () => undefined, to: "/app/online-shop/messages" },
     { img: accessIcon, bn: "স্টোর সেটিংস", en: "Store Settings", color: "text-blue-500", onClick: () => undefined, to: "/app/online-shop/settings" },
     { img: productListIcon, bn: "অনলাইন প্রোডাক্ট", en: "Online Product", color: "text-emerald-500", onClick: () => undefined, to: "/app/online-shop/products" },
     { img: salesListIcon, bn: "অর্ডার লিস্ট", en: "Order List", color: "text-amber-500", onClick: () => undefined, to: "/app/online-shop/orders" },

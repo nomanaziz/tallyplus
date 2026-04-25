@@ -70,6 +70,7 @@ import { Route as AppOnlineShopSettingsRouteImport } from './routes/app.online-s
 import { Route as AppOnlineShopPromoCodesRouteImport } from './routes/app.online-shop.promo-codes'
 import { Route as AppOnlineShopProductsRouteImport } from './routes/app.online-shop.products'
 import { Route as AppOnlineShopOrdersRouteImport } from './routes/app.online-shop.orders'
+import { Route as AppOnlineShopMessagesRouteImport } from './routes/app.online-shop.messages'
 import { Route as AppOnlineShopFraudCheckRouteImport } from './routes/app.online-shop.fraud-check'
 import { Route as AppOnlineShopCustomizeRouteImport } from './routes/app.online-shop.customize'
 
@@ -379,6 +380,11 @@ const AppOnlineShopOrdersRoute = AppOnlineShopOrdersRouteImport.update({
   path: '/orders',
   getParentRoute: () => AppOnlineShopRoute,
 } as any)
+const AppOnlineShopMessagesRoute = AppOnlineShopMessagesRouteImport.update({
+  id: '/messages',
+  path: '/messages',
+  getParentRoute: () => AppOnlineShopRoute,
+} as any)
 const AppOnlineShopFraudCheckRoute = AppOnlineShopFraudCheckRouteImport.update({
   id: '/fraud-check',
   path: '/fraud-check',
@@ -446,6 +452,7 @@ export interface FileRoutesByFullPath {
   '/shop/': typeof ShopIndexRoute
   '/app/online-shop/customize': typeof AppOnlineShopCustomizeRoute
   '/app/online-shop/fraud-check': typeof AppOnlineShopFraudCheckRoute
+  '/app/online-shop/messages': typeof AppOnlineShopMessagesRoute
   '/app/online-shop/orders': typeof AppOnlineShopOrdersRoute
   '/app/online-shop/products': typeof AppOnlineShopProductsRoute
   '/app/online-shop/promo-codes': typeof AppOnlineShopPromoCodesRoute
@@ -510,6 +517,7 @@ export interface FileRoutesByTo {
   '/shop': typeof ShopIndexRoute
   '/app/online-shop/customize': typeof AppOnlineShopCustomizeRoute
   '/app/online-shop/fraud-check': typeof AppOnlineShopFraudCheckRoute
+  '/app/online-shop/messages': typeof AppOnlineShopMessagesRoute
   '/app/online-shop/orders': typeof AppOnlineShopOrdersRoute
   '/app/online-shop/products': typeof AppOnlineShopProductsRoute
   '/app/online-shop/promo-codes': typeof AppOnlineShopPromoCodesRoute
@@ -576,6 +584,7 @@ export interface FileRoutesById {
   '/shop/': typeof ShopIndexRoute
   '/app/online-shop/customize': typeof AppOnlineShopCustomizeRoute
   '/app/online-shop/fraud-check': typeof AppOnlineShopFraudCheckRoute
+  '/app/online-shop/messages': typeof AppOnlineShopMessagesRoute
   '/app/online-shop/orders': typeof AppOnlineShopOrdersRoute
   '/app/online-shop/products': typeof AppOnlineShopProductsRoute
   '/app/online-shop/promo-codes': typeof AppOnlineShopPromoCodesRoute
@@ -643,6 +652,7 @@ export interface FileRouteTypes {
     | '/shop/'
     | '/app/online-shop/customize'
     | '/app/online-shop/fraud-check'
+    | '/app/online-shop/messages'
     | '/app/online-shop/orders'
     | '/app/online-shop/products'
     | '/app/online-shop/promo-codes'
@@ -707,6 +717,7 @@ export interface FileRouteTypes {
     | '/shop'
     | '/app/online-shop/customize'
     | '/app/online-shop/fraud-check'
+    | '/app/online-shop/messages'
     | '/app/online-shop/orders'
     | '/app/online-shop/products'
     | '/app/online-shop/promo-codes'
@@ -772,6 +783,7 @@ export interface FileRouteTypes {
     | '/shop/'
     | '/app/online-shop/customize'
     | '/app/online-shop/fraud-check'
+    | '/app/online-shop/messages'
     | '/app/online-shop/orders'
     | '/app/online-shop/products'
     | '/app/online-shop/promo-codes'
@@ -1225,6 +1237,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppOnlineShopOrdersRouteImport
       parentRoute: typeof AppOnlineShopRoute
     }
+    '/app/online-shop/messages': {
+      id: '/app/online-shop/messages'
+      path: '/messages'
+      fullPath: '/app/online-shop/messages'
+      preLoaderRoute: typeof AppOnlineShopMessagesRouteImport
+      parentRoute: typeof AppOnlineShopRoute
+    }
     '/app/online-shop/fraud-check': {
       id: '/app/online-shop/fraud-check'
       path: '/fraud-check'
@@ -1291,6 +1310,7 @@ const AffiliateRouteWithChildren = AffiliateRoute._addFileChildren(
 interface AppOnlineShopRouteChildren {
   AppOnlineShopCustomizeRoute: typeof AppOnlineShopCustomizeRoute
   AppOnlineShopFraudCheckRoute: typeof AppOnlineShopFraudCheckRoute
+  AppOnlineShopMessagesRoute: typeof AppOnlineShopMessagesRoute
   AppOnlineShopOrdersRoute: typeof AppOnlineShopOrdersRoute
   AppOnlineShopProductsRoute: typeof AppOnlineShopProductsRoute
   AppOnlineShopPromoCodesRoute: typeof AppOnlineShopPromoCodesRoute
@@ -1301,6 +1321,7 @@ interface AppOnlineShopRouteChildren {
 const AppOnlineShopRouteChildren: AppOnlineShopRouteChildren = {
   AppOnlineShopCustomizeRoute: AppOnlineShopCustomizeRoute,
   AppOnlineShopFraudCheckRoute: AppOnlineShopFraudCheckRoute,
+  AppOnlineShopMessagesRoute: AppOnlineShopMessagesRoute,
   AppOnlineShopOrdersRoute: AppOnlineShopOrdersRoute,
   AppOnlineShopProductsRoute: AppOnlineShopProductsRoute,
   AppOnlineShopPromoCodesRoute: AppOnlineShopPromoCodesRoute,

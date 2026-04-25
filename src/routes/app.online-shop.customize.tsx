@@ -25,6 +25,7 @@ type ThemeRow = {
   theme_border_radius: number | null;
   theme_font_family: string | null;
   theme_card_variant: string | null;
+  theme_card_shape: string | null;
 };
 
 function CustomizePage() {
@@ -36,6 +37,7 @@ function CustomizePage() {
   const [radius, setRadius] = useState(0);
   const [font, setFont] = useState("Inter");
   const [variant, setVariant] = useState<"primary" | "secondary">("primary");
+  const [shape, setShape] = useState<"round" | "square" | "pill">("square");
   const [saving, setSaving] = useState(false);
 
   const { data } = useQuery({
@@ -43,7 +45,7 @@ function CustomizePage() {
     enabled: !!shopId,
     queryFn: async () => {
       const { data } = await supabase.from("shops")
-        .select("theme_primary_color,theme_secondary_color,theme_border_radius,theme_font_family,theme_card_variant")
+        .select("theme_primary_color,theme_secondary_color,theme_border_radius,theme_font_family,theme_card_variant,theme_card_shape" as string)
         .eq("id", shopId!).maybeSingle();
       return data as ThemeRow | null;
     },
@@ -56,6 +58,7 @@ function CustomizePage() {
     setRadius(data.theme_border_radius ?? 0);
     setFont(data.theme_font_family || "Inter");
     setVariant((data.theme_card_variant as "primary" | "secondary") || "primary");
+    setShape((data.theme_card_shape as "round" | "square" | "pill") || "square");
   }, [data]);
 
   const save = async () => {
@@ -67,13 +70,16 @@ function CustomizePage() {
       theme_border_radius: radius,
       theme_font_family: font,
       theme_card_variant: variant,
-    }).eq("id", shopId);
+      theme_card_shape: shape,
+    } as never).eq("id", shopId);
     setSaving(false);
     if (error) { toast.error(error.message); return; }
     toast.success(lang === "bn" ? "সেভ হয়েছে" : "Saved");
   };
 
   const accent = variant === "primary" ? primary : secondary;
+  const shapeRadius = shape === "round" ? Math.max(radius, 16) : shape === "pill" ? 9999 : 0;
+  const effectiveRadius = shape === "square" ? 0 : shapeRadius;
 
   return (
     <div className="container mx-auto max-w-4xl px-4 pb-24">
@@ -117,15 +123,34 @@ function CustomizePage() {
         }>
           <div className="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-3" style={{ fontFamily: font }}>
             {[1, 2, 3].map((i) => (
-              <div key={i} className="border bg-background p-3" style={{ borderRadius: radius }}>
-                <div className="aspect-square w-full bg-muted" style={{ borderRadius: radius }} />
+              <div key={i} className="border bg-background p-3" style={{ borderRadius: effectiveRadius }}>
+                <div className="aspect-square w-full bg-muted" style={{ borderRadius: effectiveRadius }} />
                 <div className="mt-2 text-xs text-muted-foreground">CATEGORY</div>
                 <div className="text-sm font-bold">Sample Product {i}</div>
                 <div className="mt-1 text-base font-extrabold" style={{ color: accent }}>৳ {99 + i * 10}</div>
-                <button className="mt-2 w-full py-1.5 text-xs font-bold text-white" style={{ background: accent, borderRadius: radius }}>
+                <button className="mt-2 w-full py-1.5 text-xs font-bold text-white" style={{ background: accent, borderRadius: effectiveRadius }}>
                   {lang === "bn" ? "কার্টে যোগ" : "Add to cart"}
                 </button>
               </div>
+            ))}
+          </div>
+        </Section>
+
+        {/* Card shape */}
+        <Section title={lang === "bn" ? "কার্ড আকৃতি" : "Card Shape"}>
+          <div className="grid grid-cols-3 gap-3">
+            {(["round", "square", "pill"] as const).map((s) => (
+              <button
+                key={s}
+                onClick={() => setShape(s)}
+                className={`flex flex-col items-center gap-2 rounded-lg border p-3 text-xs font-semibold transition-colors ${shape === s ? "border-primary bg-primary/5 text-primary" : "text-muted-foreground hover:bg-muted/40"}`}
+              >
+                <div
+                  className="h-10 w-16 bg-muted-foreground/20"
+                  style={{ borderRadius: s === "round" ? 16 : s === "pill" ? 9999 : 0 }}
+                />
+                <span className="capitalize">{s}</span>
+              </button>
             ))}
           </div>
         </Section>
