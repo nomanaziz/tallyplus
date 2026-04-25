@@ -5,6 +5,8 @@ import { useAuth } from "@/lib/auth";
 import { useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import {
   ArrowLeftRight,
   ChevronRight,
@@ -21,7 +23,37 @@ import {
   Facebook,
   HelpCircle,
   LogOut,
+  Link as LinkIcon,
+  MessageCircle,
+  Globe,
+  Youtube,
+  BookOpen,
+  Mail,
 } from "lucide-react";
+
+const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
+  Users,
+  Facebook,
+  HelpCircle,
+  MessageCircle,
+  Globe,
+  Youtube,
+  BookOpen,
+  Mail,
+  Link: LinkIcon,
+};
+
+type AppLink = {
+  key: string;
+  label_bn: string;
+  label_en: string;
+  url: string;
+  link_type: "internal" | "external";
+  icon: string;
+  section: string;
+  sort_order: number;
+  is_active: boolean;
+};
 
 type RowProps = {
   icon: React.ReactNode;
@@ -62,6 +94,21 @@ export function SettingsSheet({ open, onOpenChange }: { open: boolean; onOpenCha
   const { current } = useShop();
   const { signOut } = useAuth();
   const nav = useNavigate();
+
+  const { data: appLinks } = useQuery({
+    queryKey: ["app_links", "other"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("app_links")
+        .select("*")
+        .eq("section", "other")
+        .eq("is_active", true)
+        .order("sort_order", { ascending: true });
+      if (error) throw error;
+      return (data ?? []) as AppLink[];
+    },
+    staleTime: 60_000,
+  });
 
   const [currency, setCurrency] = useState<string>("BDT");
   const [theme, setTheme] = useState<"light" | "dark">("light");
@@ -202,25 +249,28 @@ export function SettingsSheet({ open, onOpenChange }: { open: boolean; onOpenCha
 
           <SectionLabel>{lang === "bn" ? "অন্যান্য" : "Other"}</SectionLabel>
           <div className="space-y-2">
-            <Row
-              icon={<Users className="h-4 w-4" />}
-              label={lang === "bn" ? "হিসাবী গ্রোথ পার্টনার" : "Growth Partner"}
-              onClick={() => go("/app/affiliate")}
-            />
-            <Row
-              icon={<Facebook className="h-4 w-4" />}
-              label={lang === "bn" ? "ফেসবুক কমিউনিটি" : "Facebook Community"}
-              onClick={() => window.open("https://facebook.com", "_blank")}
-            />
-            <Row
-              icon={<HelpCircle className="h-4 w-4" />}
-              label={lang === "bn" ? "হেল্প ও সাপোর্ট সেন্টার" : "Help & Support"}
-              onClick={() => window.open("https://wa.me/8801841577944", "_blank")}
-            />
+            {(appLinks ?? []).map((link) => {
+              const Icon = ICON_MAP[link.icon] ?? LinkIcon;
+              return (
+                <Row
+                  key={link.key}
+                  icon={<Icon className="h-4 w-4" />}
+                  label={lang === "bn" ? link.label_bn : link.label_en}
+                  onClick={() => {
+                    if (link.link_type === "internal") {
+                      go(link.url);
+                    } else {
+                      onOpenChange(false);
+                      window.open(link.url, "_blank");
+                    }
+                  }}
+                />
+              );
+            })}
           </div>
 
           <div className="mt-5 text-center text-[11px] text-muted-foreground">
-            <span>{lang === "bn" ? "ভার্সন" : "Version"} : 3.2.1</span>
+            <span>{lang === "bn" ? "ভার্সন" : "Version"} : {__APP_VERSION__}</span>
             <span className="ml-2 rounded bg-muted px-1.5 py-0.5">OS: Web</span>
           </div>
         </div>
