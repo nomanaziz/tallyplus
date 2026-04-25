@@ -398,6 +398,16 @@ function ContactDialog({
     if (!current) return;
     if (!name.trim()) { toast.error(lang === "bn" ? "নাম দিন" : "Name required"); return; }
     setBusy(true);
+    // Defensive: verify the active shop exists & is accessible to this user.
+    const { data: shopRow, error: shopErr } = await supabase
+      .from("shops").select("id").eq("id", current.id).maybeSingle();
+    if (shopErr || !shopRow) {
+      setBusy(false);
+      toast.error(lang === "bn"
+        ? "এই দোকানে এক্সেস নেই — পেজ রিফ্রেশ করুন"
+        : "Active shop not accessible — please refresh");
+      return;
+    }
     const payload = { name: name.trim(), phone: phone.trim() || null, address: address.trim() || null, shop_id: current.id };
     const { error } = editing
       ? await supabase.from(table).update(payload).eq("id", editing.id)
