@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, Coins, ArrowLeft, MoreVertical, Pencil, Trash2 } from "lucide-react";
+import { Coins, ArrowLeft, MoreVertical, Pencil, Trash2, Home, Truck, Zap, User, MoreHorizontal } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useShop } from "@/lib/shop";
 import { useAuth } from "@/lib/auth";
@@ -33,6 +33,15 @@ export const Route = createFileRoute("/app/expense-ledger")({
   component: ExpenseLedgerPage,
 });
 
+type CatKey = "rent" | "transport" | "utility" | "salary" | "other";
+const PRESET_CATS: { key: CatKey; bn: string; en: string; icon: React.ReactNode; color: string }[] = [
+  { key: "rent", bn: "দোকান ভাড়া", en: "Rent", icon: <Home className="h-6 w-6" />, color: "bg-amber-50 border-amber-300 text-amber-800 hover:bg-amber-100" },
+  { key: "transport", bn: "পরিবহন", en: "Transport", icon: <Truck className="h-6 w-6" />, color: "bg-sky-50 border-sky-300 text-sky-800 hover:bg-sky-100" },
+  { key: "utility", bn: "ইউটিলিটি", en: "Utility", icon: <Zap className="h-6 w-6" />, color: "bg-violet-50 border-violet-300 text-violet-800 hover:bg-violet-100" },
+  { key: "salary", bn: "বেতন", en: "Salary", icon: <User className="h-6 w-6" />, color: "bg-emerald-50 border-emerald-300 text-emerald-800 hover:bg-emerald-100" },
+  { key: "other", bn: "অন্যান্য", en: "Other", icon: <MoreHorizontal className="h-6 w-6" />, color: "bg-slate-50 border-slate-300 text-slate-800 hover:bg-slate-100" },
+];
+
 function ExpenseLedgerPage() {
   const { lang } = useI18n();
   const { current } = useShop();
@@ -43,6 +52,7 @@ function ExpenseLedgerPage() {
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Expense | null>(null);
+  const [presetCat, setPresetCat] = useState<string | null>(null);
 
   const total = useMemo(() => list.reduce((s, e) => s + Number(e.amount), 0), [list]);
   const filtered = useMemo(() => {
@@ -71,10 +81,29 @@ function ExpenseLedgerPage() {
           <img src={icons.expense} alt="" className="h-6 w-6" />
           <h1 className="text-xl font-extrabold md:text-2xl">{lang === "bn" ? "খরচের খাতা" : "Expense Ledger"}</h1>
         </div>
-        <Button className="h-10 gap-2" onClick={() => { setEditing(null); setOpen(true); }}>
-          <Plus className="h-4 w-4" />
-          {lang === "bn" ? "নতুন খরচ" : "New expense"}
-        </Button>
+      </div>
+
+      {/* Preset category tiles */}
+      <div className="mt-4">
+        <div className="mb-2 text-sm font-semibold text-muted-foreground">
+          {lang === "bn" ? "নতুন খরচ যোগ করুন" : "Add new expense"}
+        </div>
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+          {PRESET_CATS.map((c) => (
+            <button
+              key={c.key}
+              onClick={() => {
+                setEditing(null);
+                setPresetCat(lang === "bn" ? c.bn : c.en);
+                setOpen(true);
+              }}
+              className={"flex flex-col items-center justify-center gap-2 rounded-xl border-2 px-3 py-4 font-semibold shadow-sm transition active:scale-[0.98] " + c.color}
+            >
+              {c.icon}
+              <span className="text-xs">{lang === "bn" ? c.bn : c.en}</span>
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -133,12 +162,18 @@ function ExpenseLedgerPage() {
         )}
       </div>
 
-      <ExpenseDialog open={open} onOpenChange={setOpen} editing={editing} onSaved={refresh} />
+      <ExpenseDialog
+        open={open}
+        onOpenChange={(v) => { setOpen(v); if (!v) setPresetCat(null); }}
+        editing={editing}
+        defaultCategory={presetCat}
+        onSaved={refresh}
+      />
     </div>
   );
 }
 
-function ExpenseDialog({ open, onOpenChange, editing, onSaved }: { open: boolean; onOpenChange: (v: boolean) => void; editing: Expense | null; onSaved: () => void }) {
+function ExpenseDialog({ open, onOpenChange, editing, defaultCategory, onSaved }: { open: boolean; onOpenChange: (v: boolean) => void; editing: Expense | null; defaultCategory?: string | null; onSaved: () => void }) {
   const { lang } = useI18n();
   const { current } = useShop();
   const { user } = useAuth();
@@ -150,12 +185,12 @@ function ExpenseDialog({ open, onOpenChange, editing, onSaved }: { open: boolean
 
   useEffect(() => {
     if (open) {
-      setCategory(editing?.category ?? "");
+      setCategory(editing?.category ?? defaultCategory ?? "");
       setAmount(editing ? String(editing.amount) : "");
       setNote(editing?.note ?? "");
       setPaidVia(((editing?.paid_via as "cash" | "bkash" | "nagad" | "rocket" | "bank") ?? "cash"));
     }
-  }, [open, editing]);
+  }, [open, editing, defaultCategory]);
 
   const save = async () => {
     if (!current || !user) return;
@@ -177,7 +212,13 @@ function ExpenseDialog({ open, onOpenChange, editing, onSaved }: { open: boolean
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>{editing ? (lang === "bn" ? "খরচ এডিট" : "Edit expense") : (lang === "bn" ? "নতুন খরচ" : "New expense")}</DialogTitle>
+          <DialogTitle>
+            {editing
+              ? (lang === "bn" ? "খরচ এডিট" : "Edit expense")
+              : category
+                ? (lang === "bn" ? `নতুন খরচ — ${category}` : `New expense — ${category}`)
+                : (lang === "bn" ? "নতুন খরচ" : "New expense")}
+          </DialogTitle>
         </DialogHeader>
         <div className="grid gap-3">
           <div className="grid gap-1.5">
@@ -186,7 +227,7 @@ function ExpenseDialog({ open, onOpenChange, editing, onSaved }: { open: boolean
           </div>
           <div className="grid gap-1.5">
             <Label>{lang === "bn" ? "পরিমাণ" : "Amount"}</Label>
-            <Input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} />
+            <Input type="number" autoFocus value={amount} onChange={(e) => setAmount(e.target.value)} />
           </div>
           <div className="grid gap-1.5">
             <Label>{lang === "bn" ? "পেমেন্ট মাধ্যম" : "Paid via"}</Label>

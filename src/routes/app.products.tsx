@@ -37,8 +37,13 @@ type Product = {
 };
 
 export const Route = createFileRoute("/app/products")({
-  component: ProductsPage,
+  component: GuardedProductsPage,
 });
+
+import { RequirePerm } from "@/components/app/RequirePerm";
+function GuardedProductsPage() {
+  return <RequirePerm group="products"><ProductsPage /></RequirePerm>;
+}
 
 function ProductsPage() {
   const { lang } = useI18n();

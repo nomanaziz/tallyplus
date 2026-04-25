@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { useShop, ShopProvider } from "@/lib/shop";
+import { PermissionsProvider } from "@/lib/permissions-hook";
 import { useI18n } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,7 +27,9 @@ export const Route = createFileRoute("/app")({
 function AppLayoutWithShop() {
   return (
     <ShopProvider>
-      <AppLayout />
+      <PermissionsProvider>
+        <AppLayout />
+      </PermissionsProvider>
     </ShopProvider>
   );
 }

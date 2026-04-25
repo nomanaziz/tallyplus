@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, ArrowDownCircle, ArrowUpCircle, Wallet } from "lucide-react";
+import { ArrowDownCircle, ArrowUpCircle, Wallet } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useShop } from "@/lib/shop";
 import { useAuth } from "@/lib/auth";
@@ -11,7 +11,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DataToolbar } from "@/components/app/DataToolbar";
 import { EmptyState } from "@/components/app/EmptyState";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -38,7 +37,7 @@ function CashboxPage() {
   const { data: rawData = [], refetch } = useQuery(cashMovementsQuery(current?.id ?? null));
   const movements = rawData as unknown as Movement[];
   const [search, setSearch] = useState("");
-  const [open, setOpen] = useState(false);
+  const [openDir, setOpenDir] = useState<"in" | "out" | null>(null);
 
   const totals = useMemo(() => {
     const cashIn = movements.filter((m) => m.direction === "in").reduce((s, m) => s + Number(m.amount), 0);
@@ -59,12 +58,23 @@ function CashboxPage() {
   return (
     <div className="container px-4 py-4">
       <div className="mb-1 text-xs text-muted-foreground">Cashbox</div>
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-xl font-extrabold md:text-2xl">{lang === "bn" ? "ক্যাশবক্স" : "Cashbox"}</h1>
-        <Button className="h-10 gap-2" onClick={() => setOpen(true)}>
-          <Plus className="h-4 w-4" />
-          {lang === "bn" ? "নতুন এন্ট্রি" : "New entry"}
-        </Button>
+      <h1 className="text-xl font-extrabold md:text-2xl">{lang === "bn" ? "ক্যাশবক্স" : "Cashbox"}</h1>
+
+      <div className="mt-4 grid grid-cols-2 gap-3">
+        <button
+          onClick={() => setOpenDir("in")}
+          className="group flex items-center justify-center gap-2 rounded-xl border-2 border-emerald-300 bg-emerald-50 px-4 py-5 text-emerald-800 shadow-sm transition hover:bg-emerald-100 active:scale-[0.98]"
+        >
+          <ArrowDownCircle className="h-6 w-6" />
+          <span className="text-base font-extrabold">{lang === "bn" ? "জমা" : "Cash In"}</span>
+        </button>
+        <button
+          onClick={() => setOpenDir("out")}
+          className="group flex items-center justify-center gap-2 rounded-xl border-2 border-rose-300 bg-rose-50 px-4 py-5 text-rose-800 shadow-sm transition hover:bg-rose-100 active:scale-[0.98]"
+        >
+          <ArrowUpCircle className="h-6 w-6" />
+          <span className="text-base font-extrabold">{lang === "bn" ? "খরচ" : "Cash Out"}</span>
+        </button>
       </div>
 
       <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -128,7 +138,11 @@ function CashboxPage() {
         )}
       </div>
 
-      <CashEntryDialog open={open} onOpenChange={setOpen} onSaved={refresh} />
+      <CashEntryDialog
+        direction={openDir}
+        onClose={() => setOpenDir(null)}
+        onSaved={refresh}
+      />
     </div>
   );
 }
@@ -145,21 +159,29 @@ function SummaryCard({ icon, label, value, tone }: { icon: React.ReactNode; labe
   );
 }
 
-function CashEntryDialog({ open, onOpenChange, onSaved }: { open: boolean; onOpenChange: (v: boolean) => void; onSaved: () => void }) {
+function CashEntryDialog({
+  direction,
+  onClose,
+  onSaved,
+}: {
+  direction: "in" | "out" | null;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
   const { lang } = useI18n();
   const { current } = useShop();
   const { user } = useAuth();
-  const [direction, setDirection] = useState<"in" | "out">("in");
   const [amount, setAmount] = useState("");
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
+  const open = direction !== null;
 
   useEffect(() => {
-    if (open) { setDirection("in"); setAmount(""); setNote(""); }
+    if (open) { setAmount(""); setNote(""); }
   }, [open]);
 
   const save = async () => {
-    if (!current || !user) return;
+    if (!current || !user || !direction) return;
     const amt = Number(amount);
     if (!amt || amt <= 0) { toast.error(lang === "bn" ? "সঠিক পরিমাণ দিন" : "Enter amount"); return; }
     setBusy(true);
@@ -173,30 +195,30 @@ function CashEntryDialog({ open, onOpenChange, onSaved }: { open: boolean; onOpe
     setBusy(false);
     if (error) { toast.error(error.message); return; }
     toast.success(lang === "bn" ? "সেভ হয়েছে" : "Saved");
-    onOpenChange(false);
+    onClose();
     onSaved();
   };
 
+  const isIn = direction === "in";
+  const title = isIn
+    ? (lang === "bn" ? "জমা যোগ করুন" : "Add Cash In")
+    : (lang === "bn" ? "খরচ যোগ করুন" : "Add Cash Out");
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>{lang === "bn" ? "নতুন এন্ট্রি" : "New entry"}</DialogTitle>
+          <DialogTitle className={isIn ? "text-emerald-700" : "text-rose-700"}>
+            <span className="inline-flex items-center gap-2">
+              {isIn ? <ArrowDownCircle className="h-5 w-5" /> : <ArrowUpCircle className="h-5 w-5" />}
+              {title}
+            </span>
+          </DialogTitle>
         </DialogHeader>
-        <Tabs value={direction} onValueChange={(v) => setDirection(v as "in" | "out")}>
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="in" className="data-[state=active]:bg-emerald-100 data-[state=active]:text-emerald-700">
-              {lang === "bn" ? "জমা" : "Cash in"}
-            </TabsTrigger>
-            <TabsTrigger value="out" className="data-[state=active]:bg-rose-100 data-[state=active]:text-rose-700">
-              {lang === "bn" ? "খরচ" : "Cash out"}
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
         <div className="grid gap-3">
           <div className="grid gap-1.5">
             <Label>{lang === "bn" ? "পরিমাণ" : "Amount"}</Label>
-            <Input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} />
+            <Input type="number" autoFocus value={amount} onChange={(e) => setAmount(e.target.value)} />
           </div>
           <div className="grid gap-1.5">
             <Label>{lang === "bn" ? "নোট" : "Note"}</Label>
@@ -204,8 +226,14 @@ function CashEntryDialog({ open, onOpenChange, onSaved }: { open: boolean; onOpe
           </div>
         </div>
         <DialogFooter>
-          <Button variant="ghost" onClick={() => onOpenChange(false)}>{lang === "bn" ? "বাতিল" : "Cancel"}</Button>
-          <Button onClick={save} disabled={busy}>{busy ? "..." : lang === "bn" ? "সেভ" : "Save"}</Button>
+          <Button variant="ghost" onClick={onClose}>{lang === "bn" ? "বাতিল" : "Cancel"}</Button>
+          <Button
+            onClick={save}
+            disabled={busy}
+            className={isIn ? "bg-emerald-600 hover:bg-emerald-700" : "bg-rose-600 hover:bg-rose-700"}
+          >
+            {busy ? "..." : lang === "bn" ? "সেভ" : "Save"}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

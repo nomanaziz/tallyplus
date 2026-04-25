@@ -24,8 +24,13 @@ type Member = {
 };
 
 export const Route = createFileRoute("/app/access")({
-  component: AccessPage,
+  component: GuardedAccessPage,
 });
+
+import { RequirePerm } from "@/components/app/RequirePerm";
+function GuardedAccessPage() {
+  return <RequirePerm ownerOnly><AccessPage /></RequirePerm>;
+}
 
 function AccessPage() {
   const { lang } = useI18n();
