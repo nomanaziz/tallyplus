@@ -1,169 +1,189 @@
-# Plan: Settings Menu + Affiliate / Growth Partner Program
+# Affiliate Portal v2 — Full Interactive System
 
-## Part 1 — Fix the Settings menu (top bar)
+Rebuild the affiliate area into a real, functional partner portal that matches the screenshots from `hishabee-affiliate.netlify.app`. Every number on every screen will be driven by real database data. Partners can earn, withdraw, OR spend earnings on their own subscription. Admin controls every rule and approves every payout.
 
-Currently the "সেটিংস" button in `AppTopbar.tsx` is a plain `<button>` with no onClick — clicking it does nothing. Convert it into an opening trigger for a right-side `Sheet` that mirrors the screenshot the user shared.
+---
 
-**Component:** new `src/components/app/SettingsSheet.tsx`
+## 1. New Database Tables (migration)
 
-Sections (matching the uploaded reference):
-- **দোকান পরিবর্তন করুন** — opens existing shop switcher (reuse logic from `useShop`).
-- **অ্যাপ সেটিংস** — list rows (each navigates or opens an inline control):
-  - কমপ্লিট ড্যাশবোর্ড → `/app/dashboard`
-  - সাবস্ক্রিপশন → `/app/subscribe`
-  - ভাষা — inline select (bn/en) using `useI18n`
-  - কারেন্সি — select (BDT default, persist in localStorage)
-  - থিম — Light/Dark toggle (persist)
-  - দশমিক পয়েন্ট — 0/2 select (persist)
-  - লিমিট চার্ট ও ব্যবহার → placeholder route
-  - হিসাবী মোবাইল অ্যাপ → external link
-  - অ্যাপ ট্রেনিং → `/app/training`
-- **অন্যান্য**
-  - হিসাবী গ্রোথ পার্টনার → `/app/affiliate` (new, see Part 2)
-  - ফেসবুক কমিউনিটি → external
-  - হেল্প ও সাপোর্ট সেন্টার → WhatsApp link
-- **Footer:** version + OS + red "লগআউট করুন" button.
+Extend the existing `affiliates`, `affiliate_tiers`, `affiliate_referrals`, `affiliate_commissions`, `affiliate_settings` with:
 
-Wire the topbar button: `onClick={() => setSettingsOpen(true)}` and render `<SettingsSheet open={...} onOpenChange={...} />`.
+**`affiliate_wallet`** — one row per affiliate
+- `affiliate_id` (PK), `available_balance`, `pending_balance`, `lifetime_earned`, `lifetime_withdrawn`, `lifetime_spent_on_subscription`
 
-## Part 2 — Affiliate / Growth Partner Program
+**`affiliate_wallet_transactions`** — full ledger
+- `id`, `affiliate_id`, `type` (`commission_credit` | `agent_bonus` | `tier_bonus` | `withdrawal_debit` | `subscription_debit` | `adjustment`), `amount` (signed), `balance_after`, `reference_id` (commission/withdrawal/etc.), `note`, `created_at`
 
-Replicate the structure of `hishabee-affiliate.netlify.app` adapted for this app. Two surfaces: **public landing** + **partner dashboard**, plus **admin controls** and **referral capture in signup**.
+**`affiliate_withdrawals`** — withdrawal requests
+- `id`, `affiliate_id`, `amount`, `method` (`bkash`|`nagad`|`rocket`|`bank`), `account_number`, `account_name`, `status` (`pending`|`approved`|`paid`|`rejected`), `admin_note`, `transaction_ref`, `requested_at`, `processed_at`, `processed_by`
 
-### 2A. Database (new migration)
+**`affiliate_agents`** — sub-affiliates (agents added by an affiliate)
+- `id`, `parent_affiliate_id`, `agent_user_id` (nullable), `full_name`, `phone`, `email`, `status` (`active`|`inactive`), `created_at`. Adds 2-level structure: agent's referrals also pay a small `%` to parent affiliate (admin-controlled `agent_override_pct` in settings).
 
-```sql
--- Commission tier configuration (admin-editable)
-create table public.affiliate_tiers (
-  id uuid primary key default gen_random_uuid(),
-  name text not null,             -- e.g. Bronze, Silver, Gold
-  min_sales int not null default 0,
-  commission_pct numeric not null,-- e.g. 15.00
-  bonus_pct numeric not null default 0,
-  sort_order int not null default 0,
-  created_at timestamptz default now()
-);
+**`affiliate_payout_methods`** — admin-managed list of accepted methods + min/max amounts, fees.
+- `id`, `key`, `label_bn`, `label_en`, `min_amount`, `max_amount`, `fee_pct`, `is_active`
 
--- Global affiliate settings (single row)
-create table public.affiliate_settings (
-  id boolean primary key default true check (id),
-  default_commission_pct numeric not null default 15,
-  lifetime_commission_pct numeric not null default 20,
-  referee_discount_pct numeric not null default 10, -- benefit to referred customer
-  is_program_active boolean not null default true,
-  updated_at timestamptz default now()
-);
+**`affiliate_marketing_assets`** — admin-uploaded banners, copy templates, video links the partner can download/share.
+- `id`, `title`, `type` (`banner`|`video`|`copy`|`pdf`), `url`, `description`, `is_active`, `sort_order`
 
--- An affiliate (separate from shop owner; a shop owner can also be an affiliate)
-create table public.affiliates (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid references auth.users(id) on delete cascade unique,
-  full_name text not null,
-  phone text not null,
-  email text,
-  referral_code text not null unique, -- short uppercase code
-  current_tier_id uuid references public.affiliate_tiers(id),
-  total_referrals int not null default 0,
-  total_commission numeric not null default 0,
-  status text not null default 'active', -- active | suspended
-  created_at timestamptz default now()
-);
+**Extend `affiliate_settings`** with: `min_withdrawal_amount`, `max_withdrawal_per_month`, `agent_override_pct`, `auto_tier_upgrade` (bool), `subscription_pay_enabled` (bool), `support_phone`, `support_email`, `live_chat_url`.
 
--- Referral events (when someone signs up via a code)
-create table public.affiliate_referrals (
-  id uuid primary key default gen_random_uuid(),
-  affiliate_id uuid not null references public.affiliates(id) on delete cascade,
-  referred_user_id uuid references auth.users(id) on delete set null,
-  referred_shop_id uuid references public.shops(id) on delete set null,
-  referral_code text not null,
-  status text not null default 'pending', -- pending | converted
-  converted_at timestamptz,
-  created_at timestamptz default now()
-);
+**Extend `affiliate_tiers`** with: optional `color` (badge color hex) and ensure default seeded tiers match the screenshot: `Independent` (10%, 0% bonus, 0 sales), `Active` (15%, +10%, 10k), `Rising Star` (16%, +5%, 50k), `Bronze` (18%, +2.5%, 100k), `Silver` (20%, +2%, 500k), `Gold` (22%, +2%, 10L), `Platinum` (23%, +2%, 25L), `Diamond` (24%, +2%, 50L), `Titan` (25%, +2%, 1Cr).
 
--- Commission earnings (one row per qualifying subscription purchase)
-create table public.affiliate_commissions (
-  id uuid primary key default gen_random_uuid(),
-  affiliate_id uuid not null references public.affiliates(id) on delete cascade,
-  referral_id uuid references public.affiliate_referrals(id) on delete set null,
-  subscription_amount numeric not null,
-  commission_pct numeric not null,
-  commission_amount numeric not null,
-  status text not null default 'pending', -- pending | approved | paid
-  paid_at timestamptz,
-  created_at timestamptz default now()
-);
+**DB triggers / functions:**
+- `affiliate_recalculate_tier(affiliate_id)` — picks highest tier where `total_sales >= min_sales` and updates `current_tier_id`. Called whenever a commission row is approved.
+- `affiliate_apply_commission(commission_id)` — when a commission is `approved`, debits `pending_balance`, credits `available_balance`, inserts a `wallet_transactions` row, increments `lifetime_earned`, recomputes tier, and (if agent override applies) creates an additional `agent_bonus` commission row for the parent.
+- All new tables get RLS: affiliate sees own data; admin sees all.
+
+---
+
+## 2. New Layout — Affiliate Portal Shell
+
+Create `src/routes/app.affiliate.tsx` as a layout (Outlet) with the sidebar from the screenshots and these child routes:
+
+```text
+src/routes/
+  app.affiliate.tsx                 -> layout with yellow sidebar + topbar
+  app.affiliate.index.tsx           -> Dashboard (welcome + stats + top affiliates)
+  app.affiliate.earnings.tsx        -> Earnings (cards + tabs: All/Referral/Agent/Bonus + commission policy)
+  app.affiliate.referrals.tsx       -> Referrals + agent management ("নতুন এজেন্ট যোগ করুন" / "নতুন রেফারেল যোগ করুন")
+  app.affiliate.tiers.tsx           -> Commission tiers comparison + current tier progress
+  app.affiliate.marketing.tsx       -> Share link, QR, banners, copy templates
+  app.affiliate.training.tsx        -> Training videos (reuse existing training data, filtered to "affiliate" topic)
+  app.affiliate.help.tsx            -> Help center (FAQ accordion + chat + contact + message form)
+  app.affiliate.withdraw.tsx        -> Withdrawal flow (request, history, methods)
+  app.affiliate.pay-subscription.tsx-> Use balance to pay own subscription
 ```
 
-RLS: affiliates see only their own rows; admins see all (using `has_role(uid,'admin')`). `affiliate_settings` & `affiliate_tiers` readable by everyone, writable by admins only.
+The sidebar shows: ড্যাশবোর্ড, আয়, রেফারেল, কমিশন টিয়ার, মার্কেটিং, প্রশিক্ষণ, সাহায্য. Header chip shows shop name + current tier badge ("Independent Affiliate" style). Yellow `#FACC15` highlight on active item like the reference.
 
-### 2B. Public landing page — `src/routes/affiliate.tsx`
+---
 
-Marketing page with sections (Bengali primary, EN toggle):
-1. Hero: "হিসাবী গ্রোথ পার্টনার — বিনা পুঁজিতে ইনকামের সুযোগ" + CTA "পার্টনার হয়ে যান".
-2. Why join (3 cards): উচ্চ কমিশন, বিনা পুঁজি, ক্যারিয়ার গঠন.
-3. How it works — 3 steps: রেজিস্ট্রেশন → প্রোমোট → আয় করুন.
-4. Commission tier table (rendered from `affiliate_tiers` so admin edits reflect live).
-5. FAQ accordion (4 Qs from the reference: registration cost, how to refer, how much, how to track).
-6. Final CTA → `/affiliate/register`.
+## 3. Page-by-page Logic
 
-Per TanStack rules: own `head()` with title/og:title/og:description.
+### Dashboard (`/app/affiliate`)
+- Welcome banner: "স্বাগতম, {shop_name}".
+- 2 hero stats: মোট আয় (lifetime_earned), রেফারেল (total_referrals).
+- 4 stat cards: মোট আয়, এই মাস (sum of commissions this month), মোট রেফারেল, কনভার্শন রেট (`converted/total*100`).
+- শীর্ষ এফিলিয়েট leaderboard table: top 10 affiliates this month with rank icons (trophy/medal), name, referrals, earnings, status badge. Sourced via `select ... order by month_earnings desc limit 10`.
 
-### 2C. Affiliate registration / login — `src/routes/affiliate.register.tsx`
+### Earnings (`/app/affiliate/earnings`)
+- 3 cards: মোট আয় (`available_balance + lifetime_withdrawn + lifetime_spent`), অপেক্ষমান পেমেন্ট (`pending_balance`), এজেন্ট কমিশন (sum from agent_bonus type).
+- Tabs: সকল আয় / রেফারেল / এজেন্ট / বোনাস — each tab filters `affiliate_wallet_transactions` by type.
+- Table: তারিখ, বিবরণ, পরিমাণ, স্ট্যাটাস, with pagination.
+- "কমিশন পলিসি" section pulled from `affiliate_settings` (referral % + agent % + bonus rules).
+- Top buttons: "টাকা তুলুন" → withdraw page, "সাবস্ক্রিপশন কিনুন" → pay-subscription page.
 
-Form (name, phone, email, password). On submit, creates an auth user, then inserts into `affiliates` with auto-generated `referral_code` (6-char uppercase). Existing shop owners visiting `/app/affiliate` get an auto-enroll flow that reuses their auth user.
+### Referrals (`/app/affiliate/referrals`)
+- Stats row: মোট রেফারেল, কনভার্শন রেট, মোট কমিশন, অপেক্ষমান কমিশন.
+- "এজেন্ট পারফরম্যান্স" row: মোট এজেন্ট, সক্রিয় এজেন্ট, এজেন্ট সাবস্ক্রিপশন, এজেন্ট কমিশন.
+- Two CTAs: **নতুন এজেন্ট যোগ করুন** (dialog → inserts into `affiliate_agents`, generates a sub-referral code), **নতুন রেফারেল যোগ করুন** (dialog → manual referral entry, creates `affiliate_referrals` with status=`pending`).
+- Referrals table: name search, name, যোগদান, প্যাকেজ, কমিশন, স্ট্যাটাস, অ্যাকশন (resend invite link).
+- Empty state: "কোনো এজেন্ট যোগ করা নেই".
 
-### 2D. Partner dashboard — `src/routes/app.affiliate.tsx`
+### Commission Tiers (`/app/affiliate/tiers`)
+- "কমিশন তুলনা টেবিল": all tiers with name (current marked "বর্তমান"), commission %, bonus %, min sales — highlight current row in yellow.
+- Right column: "আপনার বর্তমান টিয়ার" card with name, commission badge, sales-vs-target progress bar, and "X টাকা সেল বাকি আছে {next_tier} টিয়ার পেতে".
+- Below: "পরবর্তী টিয়ার" card.
+- Bottom: card grid for each tier with commission, bonus badge, and min sales.
 
-Sidebar entry under "অন্যান্য" (gated only by being signed in — no permission group). Tabs:
-- **ড্যাশবোর্ড**: total referrals, conversions, total earned, pending payout, current tier card.
-- **শেয়ার লিংক**: copyable `https://<host>/?ref=CODE`, copy buttons for WhatsApp / FB / SMS templates.
-- **রেফারেল**: table from `affiliate_referrals`.
-- **কমিশন**: table from `affiliate_commissions` with status badges.
+### Marketing (`/app/affiliate/marketing`)
+- Big copy box: referral link `https://app.hishabee.io/?ref={CODE}` with copy/QR/share buttons (WhatsApp, Facebook, Telegram, X, email).
+- QR code (use `qrcode` lib, install via `bun add qrcode`).
+- Banner gallery from `affiliate_marketing_assets` (download buttons).
+- Pre-written copy templates (BN/EN) — click to copy.
 
-### 2E. Referral capture in signup
+### Training (`/app/affiliate/training`)
+- List training videos filtered by `topic = 'affiliate'` from existing training table; embedded player.
 
-- Add `RefCaptureProvider` at root: reads `?ref=CODE` from the URL on first visit, validates against `affiliates.referral_code`, stores in `localStorage('aff_ref')` for 30 days.
-- Modify `supabase/functions/signup-with-pin/index.ts` to accept an optional `referral_code`. When present and valid, after auth user is created insert an `affiliate_referrals` row (status `pending`). When the new user later subscribes (in `/app/subscribe` purchase flow), insert an `affiliate_commissions` row using the active commission pct, mark referral `converted`, increment `affiliates.total_*`.
-- The referred customer benefit: on the subscribe page, if a `ref` cookie/storage value is present and valid, apply `referee_discount_pct` to the displayed price (visual only for now; persisted in the order).
+### Help (`/app/affiliate/help`)
+- 3 hero cards: সাধারণ প্রশ্ন (scrolls to FAQ), লাইভ চ্যাট (opens `live_chat_url`), যোগাযোগ (phone + email from settings).
+- FAQ accordion: 5 default questions, admin-editable from admin panel.
+- Message form → inserts into existing `wishlist`/new `affiliate_support_messages` table.
 
-### 2F. Admin controls — `src/routes/admin.affiliates.tsx`
+### Withdraw (`/app/affiliate/withdraw`)
+- Available balance (large), min withdrawal info.
+- Form: amount, method (from `affiliate_payout_methods` active rows), account number, account name → creates `affiliate_withdrawals` (status=pending) and immediately decrements `available_balance` (held).
+- History table with status badges; reject re-credits balance.
 
-New admin sidebar item "Affiliate Program" with sub-sections:
-- **Settings card**: edit `default_commission_pct`, `lifetime_commission_pct`, `referee_discount_pct`, program on/off.
-- **Tiers**: CRUD list (name, min sales, commission %, bonus %, sort).
-- **Affiliates**: list with search, status toggle (active/suspended), tier override.
-- **Commissions**: list of all earnings with bulk approve/mark-paid action.
+### Pay Subscription (`/app/affiliate/pay-subscription`)
+- Shows available balance vs current/upgrade subscription price.
+- "ব্যালান্স দিয়ে পরিশোধ করুন" button → debits wallet (`subscription_debit`), creates a `subscriptions` row (or extends existing) for the user. If balance < price, show shortfall amount and link to top-up via normal subscription flow.
 
-Add admin sidebar link in `src/components/admin/AdminSidebar.tsx`.
+---
 
-### 2G. Where to surface referral entry to customers
+## 4. Admin Side (`/admin/affiliates`)
 
-When a client opens any product page on a shop's online storefront (`/f/$slug` in `f.$slug.tsx`), add a small "রেফারেল কোড আছে?" link near the price/cart that reveals an input. Submitting it stores the code in `localStorage` and shows the discounted price preview. (Pure UI hook + same capture mechanism as 2E.)
+Expand the existing admin tabs:
 
-## Files
+- **Overview** (new): KPIs across the program — total partners, active partners, this month's commissions, pending withdrawals count + amount, top performers.
+- **Settings**: existing fields + new ones (min withdrawal, agent override %, support phone/email, live chat URL, auto-tier upgrade toggle, subscription-pay toggle).
+- **Tiers**: existing + color picker + reset-to-defaults button (seeds the 9 tiers from screenshot).
+- **Affiliates**: existing list + view detail (wallet balance, withdrawal history, manual adjustment dialog inserts a `wallet_transactions` row).
+- **Commissions**: existing approve/pay flow now triggers `affiliate_apply_commission` (server function) which moves money pending → available.
+- **Withdrawals** (new tab): pending list with approve / mark-paid / reject buttons; reject re-credits wallet; mark-paid records `transaction_ref`.
+- **Marketing Assets** (new tab): CRUD for `affiliate_marketing_assets` (upload to `product-images` bucket or new `affiliate-assets` bucket).
+- **Payout Methods** (new tab): CRUD for `affiliate_payout_methods`.
+- **Support Messages** (new tab): inbox for messages submitted from Help page.
 
-**Created**
-- `src/components/app/SettingsSheet.tsx`
-- `src/routes/affiliate.tsx` (public landing)
-- `src/routes/affiliate.register.tsx`
-- `src/routes/app.affiliate.tsx` (partner dashboard)
-- `src/routes/admin.affiliates.tsx`
-- `src/lib/referral.tsx` (capture provider + helpers)
-- `supabase/migrations/<timestamp>_affiliate_program.sql`
+---
 
-**Edited**
-- `src/components/app/AppTopbar.tsx` (wire Settings button)
-- `src/components/app/AppSidebar.tsx` (Growth Partner link)
-- `src/components/admin/AdminSidebar.tsx` (Affiliate Program link)
-- `src/routes/__root.tsx` (mount `RefCaptureProvider`)
-- `src/routes/f.$slug.tsx` (referral code input on storefront)
-- `src/routes/app.subscribe.tsx` (apply referee discount + record commission on purchase)
-- `supabase/functions/signup-with-pin/index.ts` (accept `referral_code`)
+## 5. Server Functions / Edge Functions
 
-## Notes / decisions
+Use TanStack `createServerFn` + Supabase service role client (`client.server.ts`) for sensitive operations to bypass RLS safely:
 
-- Default commission: 15% (matches reference site copy). Admin-editable.
-- Referral code: random 6-char A–Z/0–9, regenerable from dashboard.
-- All affiliate copy in Bengali first with EN fallback via `useI18n`.
-- No payout integration in this iteration — admins mark commissions "paid" manually.
+- `requestWithdrawal({ amount, method, account })` — validates min/max, debits wallet atomically.
+- `approveCommission({ id })` / `rejectCommission({ id })` — admin only; runs ledger updates.
+- `processWithdrawal({ id, action, txnRef? })` — admin only.
+- `paySubscriptionWithBalance({ planId })` — debits wallet, creates subscription.
+- `addAgent({ fullName, phone, email })` — generates agent code, links to parent.
+
+All server functions verify `is_admin(auth.uid())` for admin-only actions.
+
+---
+
+## 6. Wiring & Polish
+
+- Add new sidebar item **"গ্রোথ পার্টনার"** (already exists) → routes to `/app/affiliate`.
+- Update `AppSidebar` to highlight properly.
+- The existing `/app/affiliate` page (current dashboard) becomes `/app/affiliate/index.tsx` content.
+- The `RefCaptureProvider` already captures `?ref=`. Update `signup-with-pin` edge function to insert into `affiliate_referrals` on signup if a referral code is in localStorage and POSTed with the request.
+- Update `app.subscribe.tsx` so successful subscription not only inserts a pending commission, but the commission insert (after admin approval) auto-credits via the trigger above.
+- Reuse existing `Card`, `Tabs`, `Accordion`, `Dialog`, `Sheet`, `Badge`, `Progress`, `Input`, `Button` components — no new UI primitives needed except `qrcode` lib.
+
+---
+
+## 7. Files To Create / Modify
+
+**Created (~14 files)**
+- `supabase/migrations/<ts>_affiliate_v2.sql`
+- `src/routes/app.affiliate.tsx` (converted to layout)
+- `src/routes/app.affiliate.index.tsx`
+- `src/routes/app.affiliate.earnings.tsx`
+- `src/routes/app.affiliate.referrals.tsx`
+- `src/routes/app.affiliate.tiers.tsx`
+- `src/routes/app.affiliate.marketing.tsx`
+- `src/routes/app.affiliate.training.tsx`
+- `src/routes/app.affiliate.help.tsx`
+- `src/routes/app.affiliate.withdraw.tsx`
+- `src/routes/app.affiliate.pay-subscription.tsx`
+- `src/components/affiliate/AffiliateSidebar.tsx`
+- `src/components/affiliate/AddAgentDialog.tsx`, `AddReferralDialog.tsx`
+- `src/server/affiliate.functions.ts` (server functions)
+
+**Modified**
+- `src/routes/admin.affiliates.tsx` (add Withdrawals, Assets, Methods, Support, Overview tabs)
+- `src/routes/app.subscribe.tsx` (use approved commission flow)
+- `src/integrations/supabase/types.ts` (regenerated)
+- `src/components/app/AppSidebar.tsx` (point to new layout)
+- `supabase/functions/signup-with-pin/index.ts` (referral attribution)
+- `package.json` (add `qrcode`)
+
+---
+
+## 8. Out of scope (this iteration)
+- Real money transfer integrations (bKash/Nagad APIs) — we record the `transaction_ref` manually, admin pays out externally.
+- Multi-currency.
+- Affiliate mobile app.
+
+After approval, the migration runs first, then routes/components, then admin-side enhancements, then polish + QA.
