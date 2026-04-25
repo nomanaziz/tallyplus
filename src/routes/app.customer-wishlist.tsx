@@ -357,31 +357,60 @@ function WishlistDetailDialog({
             )}
 
             <div className="rounded-lg border bg-background">
-              <div className="border-b px-3 py-2 text-xs font-bold text-muted-foreground">
-                {lang === "bn" ? "পণ্যের তালিকা" : "Items"} ({items.length})
+              <div className="flex items-center justify-between border-b px-3 py-2 text-xs font-bold text-muted-foreground">
+                <span>{lang === "bn" ? "পণ্যের তালিকা" : "Items"} ({items.length})</span>
+                <span>{lang === "bn" ? "একক দাম" : "Unit price"}</span>
               </div>
               <ul className="divide-y">
-                {items.map((it) => (
-                  <li key={it.id} className="flex items-center gap-2 px-3 py-2">
-                    <button
-                      type="button"
-                      onClick={() => toggleItem(it)}
-                      className={`flex h-5 w-5 flex-none items-center justify-center rounded border ${it.done ? "border-success bg-success text-white" : "border-muted-foreground/40"}`}
-                      aria-label="toggle"
-                    >
-                      {it.done && <Check className="h-3 w-3" />}
-                    </button>
-                    <div className={`flex-1 text-sm ${it.done ? "text-muted-foreground line-through" : ""}`}>
-                      {it.name}
-                      {(it.qty != null || it.unit) && (
-                        <span className="ml-1 text-xs text-muted-foreground">
-                          — {it.qty ?? ""} {it.unit ?? ""}
-                        </span>
-                      )}
-                    </div>
-                  </li>
-                ))}
+                {items.map((it) => {
+                  const lineTotal = (Number(it.qty) || 0) && (Number(it.price) || 0)
+                    ? (Number(it.qty) || 0) * (Number(it.price) || 0)
+                    : (Number(it.price) || 0);
+                  return (
+                    <li key={it.id} className="flex items-center gap-2 px-3 py-2">
+                      <button
+                        type="button"
+                        onClick={() => toggleItem(it)}
+                        className={`flex h-5 w-5 flex-none items-center justify-center rounded border ${it.done ? "border-success bg-success text-white" : "border-muted-foreground/40"}`}
+                        aria-label="toggle"
+                      >
+                        {it.done && <Check className="h-3 w-3" />}
+                      </button>
+                      <div className={`flex-1 text-sm ${it.done ? "text-muted-foreground line-through" : ""}`}>
+                        <div>{it.name}</div>
+                        {(it.qty != null || it.unit) && (
+                          <span className="text-xs text-muted-foreground">
+                            {it.qty ?? ""} {it.unit ?? ""}
+                          </span>
+                        )}
+                        {lineTotal > 0 && (
+                          <span className="ml-2 text-xs font-semibold text-primary">= ৳ {lineTotal.toLocaleString("bn-BD", { maximumFractionDigits: 2 })}</span>
+                        )}
+                      </div>
+                      <Input
+                        defaultValue={it.price ?? ""}
+                        onBlur={(e) => {
+                          const v = e.target.value;
+                          if ((v === "" ? null : Number(v)) !== it.price) updateItemPrice(it, v);
+                        }}
+                        placeholder="দাম"
+                        inputMode="decimal"
+                        className="h-8 w-20 text-right text-xs tabular-nums"
+                      />
+                    </li>
+                  );
+                })}
               </ul>
+              <div className="flex items-center justify-between border-t bg-muted/40 px-3 py-2 text-sm">
+                <span className="font-semibold">{lang === "bn" ? "মোট" : "Total"}</span>
+                <span className="text-base font-extrabold tabular-nums text-primary">
+                  ৳ {items.reduce((sum, it) => {
+                    const q = Number(it.qty) || 0;
+                    const pr = Number(it.price) || 0;
+                    return sum + (q && pr ? q * pr : pr);
+                  }, 0).toLocaleString("bn-BD", { maximumFractionDigits: 2 })}
+                </span>
+              </div>
             </div>
           </div>
         )}
