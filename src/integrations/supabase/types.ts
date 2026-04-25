@@ -511,6 +511,48 @@ export type Database = {
           },
         ]
       }
+      app_links: {
+        Row: {
+          created_at: string
+          icon: string
+          is_active: boolean
+          key: string
+          label_bn: string
+          label_en: string
+          link_type: string
+          section: string
+          sort_order: number
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          icon?: string
+          is_active?: boolean
+          key: string
+          label_bn: string
+          label_en: string
+          link_type?: string
+          section?: string
+          sort_order?: number
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          created_at?: string
+          icon?: string
+          is_active?: boolean
+          key?: string
+          label_bn?: string
+          label_en?: string
+          link_type?: string
+          section?: string
+          sort_order?: number
+          updated_at?: string
+          url?: string
+        }
+        Relationships: []
+      }
       cash_movements: {
         Row: {
           amount: number
