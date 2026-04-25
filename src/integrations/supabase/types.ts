@@ -269,6 +269,108 @@ export type Database = {
           },
         ]
       }
+      marketplace_listings: {
+        Row: {
+          created_at: string
+          id: string
+          is_published: boolean
+          min_order: number | null
+          price: number
+          product_id: string
+          seller_id: string
+          shop_id: string
+          stock: number
+          unit: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_published?: boolean
+          min_order?: number | null
+          price?: number
+          product_id: string
+          seller_id: string
+          shop_id: string
+          stock?: number
+          unit?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_published?: boolean
+          min_order?: number | null
+          price?: number
+          product_id?: string
+          seller_id?: string
+          shop_id?: string
+          stock?: number
+          unit?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketplace_listings_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "marketplace_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketplace_listings_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      marketplace_products: {
+        Row: {
+          base_unit: string | null
+          category: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean
+          name_bn: string
+          name_en: string
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          base_unit?: string | null
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          name_bn: string
+          name_en: string
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          base_unit?: string | null
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          name_bn?: string
+          name_en?: string
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       notification_settings: {
         Row: {
           telegram: boolean
@@ -780,6 +882,44 @@ export type Database = {
           },
         ]
       }
+      seller_locations: {
+        Row: {
+          district: string | null
+          division: string | null
+          lat: number | null
+          lng: number | null
+          shop_id: string
+          upazila: string | null
+          updated_at: string
+        }
+        Insert: {
+          district?: string | null
+          division?: string | null
+          lat?: number | null
+          lng?: number | null
+          shop_id: string
+          upazila?: string | null
+          updated_at?: string
+        }
+        Update: {
+          district?: string | null
+          division?: string | null
+          lat?: number | null
+          lng?: number | null
+          shop_id?: string
+          upazila?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seller_locations_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: true
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shop_custom_roles: {
         Row: {
           created_at: string
@@ -968,6 +1108,36 @@ export type Database = {
           slug?: string | null
           updated_at?: string
           wishlist_slug?: string | null
+        }
+        Relationships: []
+      }
+      site_content: {
+        Row: {
+          created_at: string
+          data: Json
+          id: string
+          is_published: boolean
+          section: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          data?: Json
+          id?: string
+          is_published?: boolean
+          section: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          data?: Json
+          id?: string
+          is_published?: boolean
+          section?: string
+          updated_at?: string
+          updated_by?: string | null
         }
         Relationships: []
       }
@@ -1251,7 +1421,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "owner" | "manager" | "cashier"
+      app_role: "admin" | "owner" | "manager" | "cashier" | "buyer"
       payment_method:
         | "cash"
         | "bkash"
@@ -1391,7 +1561,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "owner", "manager", "cashier"],
+      app_role: ["admin", "owner", "manager", "cashier", "buyer"],
       payment_method: [
         "cash",
         "bkash",

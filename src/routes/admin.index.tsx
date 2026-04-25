@@ -1,96 +1,81 @@
-import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
-import { Loader2, ShieldCheck, LogOut } from "lucide-react";
-import { toast } from "sonner";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Users, Store, CreditCard, Receipt, Package } from "lucide-react";
 
 export const Route = createFileRoute("/admin/")({
-  head: () => ({ meta: [{ title: "Admin — Tally Plus" }] }),
-  component: AdminHome,
+  component: AdminOverview,
 });
 
-function AdminHome() {
-  const nav = useNavigate();
-  const [checking, setChecking] = useState(true);
-  const [email, setEmail] = useState<string | null>(null);
+type Stats = {
+  users: number;
+  shops: number;
+  activeSubs: number;
+  pendingRequests: number;
+  marketplaceProducts: number;
+};
+
+function AdminOverview() {
+  const [stats, setStats] = useState<Stats | null>(null);
 
   useEffect(() => {
-    let cancelled = false;
     (async () => {
-      const { data } = await supabase.auth.getUser();
-      const user = data.user;
-      if (!user) {
-        if (!cancelled) nav({ to: "/admin/login" });
-        return;
-      }
-      const { data: roleRow } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", user.id)
-        .eq("role", "admin")
-        .maybeSingle();
-      if (cancelled) return;
-      if (!roleRow) {
-        await supabase.auth.signOut();
-        toast.error("আপনার admin access নেই");
-        nav({ to: "/admin/login" });
-        return;
-      }
-      setEmail(user.email ?? null);
-      setChecking(false);
+      const nowIso = new Date().toISOString();
+      const [u, s, sub, req, mp] = await Promise.all([
+        supabase.from("profiles").select("id", { count: "exact", head: true }),
+        supabase.from("shops").select("id", { count: "exact", head: true }).is("deleted_at", null),
+        supabase
+          .from("subscriptions")
+          .select("id", { count: "exact", head: true })
+          .eq("status", "active")
+          .gt("expires_at", nowIso),
+        supabase
+          .from("subscription_requests")
+          .select("id", { count: "exact", head: true })
+          .eq("status", "pending"),
+        supabase.from("marketplace_products").select("id", { count: "exact", head: true }),
+      ]);
+      setStats({
+        users: u.count ?? 0,
+        shops: s.count ?? 0,
+        activeSubs: sub.count ?? 0,
+        pendingRequests: req.count ?? 0,
+        marketplaceProducts: mp.count ?? 0,
+      });
     })();
-    return () => {
-      cancelled = true;
-    };
-  }, [nav]);
+  }, []);
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    nav({ to: "/admin/login" });
-  };
-
-  if (checking) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
+  const cards = [
+    { label: "Total Users", value: stats?.users, icon: Users },
+    { label: "Active Shops", value: stats?.shops, icon: Store },
+    { label: "Active Subscriptions", value: stats?.activeSubs, icon: CreditCard },
+    { label: "Pending Payment Requests", value: stats?.pendingRequests, icon: Receipt },
+    { label: "Marketplace Products", value: stats?.marketplaceProducts, icon: Package },
+  ];
 
   return (
-    <div className="min-h-screen bg-muted/30">
-      <header className="border-b bg-card">
-        <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <ShieldCheck className="h-5 w-5 text-primary" />
-            <h1 className="text-lg font-semibold">Admin Dashboard</h1>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="text-sm text-muted-foreground hidden sm:inline">
-              {email}
-            </span>
-            <Button variant="outline" size="sm" onClick={handleLogout}>
-              <LogOut className="h-4 w-4 mr-1" /> Logout
-            </Button>
-          </div>
-        </div>
-      </header>
-
-      <main className="max-w-5xl mx-auto px-4 py-8 space-y-4">
-        <div className="rounded-2xl border bg-card p-6">
-          <h2 className="font-semibold mb-2">Welcome</h2>
-          <p className="text-sm text-muted-foreground">
-            Admin panel-এ আপনি স্বাগতম। User, subscription এবং plan management
-            module শীঘ্রই যুক্ত হবে।
-          </p>
-        </div>
-        <div className="text-sm">
-          <Link to="/app/dashboard" className="text-primary underline">
-            App dashboard-এ ফিরে যান
-          </Link>
-        </div>
-      </main>
+    <div className="mx-auto max-w-6xl space-y-6 p-6">
+      <div>
+        <h1 className="text-2xl font-bold">Overview</h1>
+        <p className="text-sm text-muted-foreground">প্ল্যাটফর্মের সারসংক্ষেপ</p>
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {cards.map((c) => {
+          const Icon = c.icon;
+          return (
+            <Card key={c.label}>
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">{c.label}</CardTitle>
+                <Icon className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold">{c.value ?? "—"}</div>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
     </div>
   );
 }
