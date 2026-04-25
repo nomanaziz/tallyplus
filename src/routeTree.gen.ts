@@ -34,6 +34,7 @@ import { Route as AppPurchaseLedgerRouteImport } from './routes/app.purchase-led
 import { Route as AppPurchaseRouteImport } from './routes/app.purchase'
 import { Route as AppProductsRouteImport } from './routes/app.products'
 import { Route as AppPrinterRouteImport } from './routes/app.printer'
+import { Route as AppOwnerReportRouteImport } from './routes/app.owner-report'
 import { Route as AppOwnerLedgerRouteImport } from './routes/app.owner-ledger'
 import { Route as AppOnlineShopRouteImport } from './routes/app.online-shop'
 import { Route as AppMarketingRouteImport } from './routes/app.marketing'
@@ -195,6 +196,11 @@ const AppProductsRoute = AppProductsRouteImport.update({
 const AppPrinterRoute = AppPrinterRouteImport.update({
   id: '/printer',
   path: '/printer',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppOwnerReportRoute = AppOwnerReportRouteImport.update({
+  id: '/owner-report',
+  path: '/owner-report',
   getParentRoute: () => AppRoute,
 } as any)
 const AppOwnerLedgerRoute = AppOwnerLedgerRouteImport.update({
@@ -418,6 +424,7 @@ export interface FileRoutesByFullPath {
   '/app/marketing': typeof AppMarketingRoute
   '/app/online-shop': typeof AppOnlineShopRouteWithChildren
   '/app/owner-ledger': typeof AppOwnerLedgerRoute
+  '/app/owner-report': typeof AppOwnerReportRoute
   '/app/printer': typeof AppPrinterRoute
   '/app/products': typeof AppProductsRoute
   '/app/purchase': typeof AppPurchaseRoute
@@ -481,6 +488,7 @@ export interface FileRoutesByTo {
   '/app/marketing': typeof AppMarketingRoute
   '/app/online-shop': typeof AppOnlineShopRouteWithChildren
   '/app/owner-ledger': typeof AppOwnerLedgerRoute
+  '/app/owner-report': typeof AppOwnerReportRoute
   '/app/printer': typeof AppPrinterRoute
   '/app/products': typeof AppProductsRoute
   '/app/purchase': typeof AppPurchaseRoute
@@ -546,6 +554,7 @@ export interface FileRoutesById {
   '/app/marketing': typeof AppMarketingRoute
   '/app/online-shop': typeof AppOnlineShopRouteWithChildren
   '/app/owner-ledger': typeof AppOwnerLedgerRoute
+  '/app/owner-report': typeof AppOwnerReportRoute
   '/app/printer': typeof AppPrinterRoute
   '/app/products': typeof AppProductsRoute
   '/app/purchase': typeof AppPurchaseRoute
@@ -612,6 +621,7 @@ export interface FileRouteTypes {
     | '/app/marketing'
     | '/app/online-shop'
     | '/app/owner-ledger'
+    | '/app/owner-report'
     | '/app/printer'
     | '/app/products'
     | '/app/purchase'
@@ -675,6 +685,7 @@ export interface FileRouteTypes {
     | '/app/marketing'
     | '/app/online-shop'
     | '/app/owner-ledger'
+    | '/app/owner-report'
     | '/app/printer'
     | '/app/products'
     | '/app/purchase'
@@ -739,6 +750,7 @@ export interface FileRouteTypes {
     | '/app/marketing'
     | '/app/online-shop'
     | '/app/owner-ledger'
+    | '/app/owner-report'
     | '/app/printer'
     | '/app/products'
     | '/app/purchase'
@@ -959,6 +971,13 @@ declare module '@tanstack/react-router' {
       path: '/printer'
       fullPath: '/app/printer'
       preLoaderRoute: typeof AppPrinterRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/owner-report': {
+      id: '/app/owner-report'
+      path: '/owner-report'
+      fullPath: '/app/owner-report'
+      preLoaderRoute: typeof AppOwnerReportRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/owner-ledger': {
@@ -1308,6 +1327,7 @@ interface AppRouteChildren {
   AppMarketingRoute: typeof AppMarketingRoute
   AppOnlineShopRoute: typeof AppOnlineShopRouteWithChildren
   AppOwnerLedgerRoute: typeof AppOwnerLedgerRoute
+  AppOwnerReportRoute: typeof AppOwnerReportRoute
   AppPrinterRoute: typeof AppPrinterRoute
   AppProductsRoute: typeof AppProductsRoute
   AppPurchaseRoute: typeof AppPurchaseRoute
@@ -1340,6 +1360,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppMarketingRoute: AppMarketingRoute,
   AppOnlineShopRoute: AppOnlineShopRouteWithChildren,
   AppOwnerLedgerRoute: AppOwnerLedgerRoute,
+  AppOwnerReportRoute: AppOwnerReportRoute,
   AppPrinterRoute: AppPrinterRoute,
   AppProductsRoute: AppProductsRoute,
   AppPurchaseRoute: AppPurchaseRoute,
