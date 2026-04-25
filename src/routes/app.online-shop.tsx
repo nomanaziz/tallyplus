@@ -1,205 +1,284 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useI18n, bnNum } from "@/lib/i18n";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import { useShop } from "@/lib/shop";
 import { PageHeader } from "@/components/app/PageHeader";
-import { Loader2, Search, ShoppingBag, Store, ShieldCheck, Package } from "lucide-react";
-
-type Listing = {
-  id: string;
-  shop_id: string;
-  product_id: string;
-  price: number;
-  stock: number;
-  unit: string | null;
-  min_order: number | null;
-  warranty_months: number | null;
-};
-type Shop = { id: string; name: string; slug: string | null; logo_url: string | null; tagline: string | null };
-type Product = { id: string; name: string; image_url: string | null; unit: string | null };
+import { DashboardBannerCarousel } from "@/components/app/DashboardBannerCarousel";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+import {
+  Globe, Copy, QrCode, MessageCircle, Settings, ShoppingBag, ClipboardList,
+  Palette, AtSign, Truck, Smartphone, Star, Megaphone, ShieldCheck, AlertTriangle,
+  Tag, Wrench, Package, TrendingUp, Eye, ExternalLink,
+} from "lucide-react";
+import { StoreSettingsDialog } from "@/components/app/online-shop/StoreSettingsDialog";
+import { ShopPolicyDialog } from "@/components/app/online-shop/ShopPolicyDialog";
+import { QrCodeDialog } from "@/components/app/online-shop/QrCodeDialog";
 
 export const Route = createFileRoute("/app/online-shop")({
-  head: () => ({ meta: [{ title: "অনলাইন মার্কেটপ্লেস — Hishabee" }] }),
-  component: OnlineMarketplacePage,
+  head: () => ({ meta: [{ title: "অনলাইন শপ — Tally Plus" }] }),
+  component: OnlineShopDashboard,
 });
 
-function OnlineMarketplacePage() {
+type ShopRow = {
+  id: string;
+  name: string;
+  username: string | null;
+  marketplace_enabled: boolean;
+  logo_url: string | null;
+  cover_url: string | null;
+  tagline: string | null;
+  address: string | null;
+  phone: string | null;
+  about: string | null;
+  terms_and_conditions: string | null;
+  return_policy: string | null;
+  shipping_policy: string | null;
+  facebook_url: string | null;
+  whatsapp_number: string | null;
+  meta_description: string | null;
+};
+
+function OnlineShopDashboard() {
   const { lang } = useI18n();
-  const [q, setQ] = useState("");
-  const [submittedQ, setSubmittedQ] = useState("");
-  const [page, setPage] = useState(1);
-  const pageSize = 24;
-  const [loading, setLoading] = useState(true);
-  const [listings, setListings] = useState<Listing[]>([]);
-  const [shops, setShops] = useState<Record<string, Shop>>({});
-  const [products, setProducts] = useState<Record<string, Product>>({});
-  const [total, setTotal] = useState(0);
+  const { current } = useShop();
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [policyOpen, setPolicyOpen] = useState(false);
+  const [qrOpen, setQrOpen] = useState(false);
 
-  useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    void supabase.functions
-      .invoke("marketplace-public", {
-        body: { action: "list", q: submittedQ, page, pageSize },
-      })
-      .then(({ data, error }) => {
-        if (cancelled) return;
-        if (error || !data) {
-          setListings([]);
-          setTotal(0);
-        } else {
-          const d = data as {
-            listings: Listing[];
-            shops: Record<string, Shop>;
-            products: Record<string, Product>;
-            total: number;
-          };
-          setListings(d.listings ?? []);
-          setShops(d.shops ?? {});
-          setProducts(d.products ?? {});
-          setTotal(d.total ?? 0);
-        }
-        setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [submittedQ, page]);
+  const shopId = current?.id ?? null;
 
-  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const { data: shop, refetch } = useQuery<ShopRow | null>({
+    queryKey: ["shop-online", shopId],
+    enabled: !!shopId,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("shops")
+        .select("id,name,username,marketplace_enabled,logo_url,cover_url,tagline,address,phone,about,terms_and_conditions,return_policy,shipping_policy,facebook_url,whatsapp_number,meta_description")
+        .eq("id", shopId!)
+        .maybeSingle();
+      return (data as ShopRow | null) ?? null;
+    },
+  });
 
-  const submit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setPage(1);
-    setSubmittedQ(q.trim());
+  const { data: stats } = useQuery({
+    queryKey: ["online-shop-stats", shopId],
+    enabled: !!shopId,
+    queryFn: async () => {
+      const [{ count: products }, { count: visits }] = await Promise.all([
+        supabase.from("marketplace_listings").select("id", { count: "exact", head: true }).eq("shop_id", shopId!).eq("is_published", true),
+        supabase.from("shop_visits").select("id", { count: "exact", head: true }).eq("shop_id", shopId!),
+      ]);
+      return { activeOrders: 0, products: products ?? 0, earning: 0, visits: visits ?? 0 };
+    },
+  });
+
+  const username = shop?.username ?? null;
+  const publicUrl = useMemo(() => {
+    if (!username || typeof window === "undefined") return "";
+    return `${window.location.origin}/${username}`;
+  }, [username]);
+
+  const copyLink = async () => {
+    if (!publicUrl) {
+      toast.error(lang === "bn" ? "প্রথমে username সেট করুন" : "Set a username first");
+      setSettingsOpen(true);
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(publicUrl);
+      toast.success(lang === "bn" ? "লিংক কপি হয়েছে" : "Link copied");
+    } catch {
+      toast.error(lang === "bn" ? "কপি করতে পারিনি" : "Failed to copy");
+    }
   };
+
+  const openWebsite = () => {
+    if (!publicUrl) {
+      toast.error(lang === "bn" ? "প্রথমে username সেট করুন" : "Set a username first");
+      setSettingsOpen(true);
+      return;
+    }
+    window.open(publicUrl, "_blank", "noopener");
+  };
+
+  const openQr = () => {
+    if (!publicUrl) {
+      toast.error(lang === "bn" ? "প্রথমে username সেট করুন" : "Set a username first");
+      setSettingsOpen(true);
+      return;
+    }
+    setQrOpen(true);
+  };
+
+  const comingSoon = () =>
+    toast.info(lang === "bn" ? "শীঘ্রই আসছে" : "Coming soon");
+
+  const tiles: Array<{
+    icon: typeof Settings;
+    bn: string;
+    en: string;
+    onClick: () => void;
+    color: string;
+    to?: string;
+  }> = [
+    { icon: MessageCircle, bn: "মেসেজ", en: "Message", color: "text-pink-500", onClick: comingSoon },
+    { icon: Settings, bn: "স্টোর সেটিংস", en: "Store Settings", color: "text-blue-500", onClick: () => setSettingsOpen(true) },
+    { icon: ShoppingBag, bn: "অনলাইন প্রোডাক্ট", en: "Online Product", color: "text-emerald-500", onClick: () => undefined, to: "/app/online-shop/products" },
+    { icon: ClipboardList, bn: "অর্ডার লিস্ট", en: "Order List", color: "text-amber-500", onClick: comingSoon },
+    { icon: Palette, bn: "থিম", en: "Themes", color: "text-purple-500", onClick: comingSoon },
+    { icon: AtSign, bn: "Username পরিবর্তন", en: "Change Username", color: "text-cyan-500", onClick: () => setSettingsOpen(true) },
+    { icon: Truck, bn: "ডেলিভারি", en: "Delivery", color: "text-orange-500", onClick: comingSoon },
+    { icon: Smartphone, bn: "অ্যাপ তৈরি", en: "Build App", color: "text-indigo-500", onClick: comingSoon },
+    { icon: Star, bn: "ফিচার্ড পণ্য", en: "Featured Products", color: "text-yellow-500", onClick: comingSoon },
+    { icon: Megaphone, bn: "মার্কেটিং ও SEO", en: "Marketing & SEO", color: "text-fuchsia-500", onClick: comingSoon },
+    { icon: ShieldCheck, bn: "শপ পলিসি", en: "Shop Policy", color: "text-teal-500", onClick: () => setPolicyOpen(true) },
+    { icon: AlertTriangle, bn: "ফ্রড চেক", en: "Fraud Check", color: "text-red-500", onClick: comingSoon },
+    { icon: Tag, bn: "প্রোমো কোড", en: "Promo Code", color: "text-rose-500", onClick: comingSoon },
+    { icon: Wrench, bn: "কাস্টমাইজেশন", en: "Customization", color: "text-slate-500", onClick: comingSoon },
+  ];
+
+  // Log a visit when owner opens dashboard? No — only public hits.
+  useEffect(() => {
+    if (shop && !shop.username) {
+      // Auto-open settings on first load if no username
+      setSettingsOpen(true);
+    }
+  }, [shop?.id, shop?.username]);
 
   return (
     <div className="container px-4 py-4">
       <PageHeader
-        breadcrumb="Online Marketplace"
-        title={lang === "bn" ? "অনলাইন মার্কেটপ্লেস" : "Online Marketplace"}
+        breadcrumb="Online-shop"
+        title={lang === "bn" ? "অনলাইন শপ" : "Online Shop"}
       />
-      <p className="mt-1 text-sm text-muted-foreground">
-        {lang === "bn" ? "সকল দোকানের প্রকাশিত পণ্য এক জায়গায়" : "Published products from all shops"}
-      </p>
 
-      <form onSubmit={submit} className="mt-4 flex max-w-xl items-center gap-2">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder={lang === "bn" ? "পণ্য বা দোকান খুঁজুন…" : "Search product or shop…"}
-            className="pl-9 h-10"
-          />
-        </div>
-        <Button type="submit" className="h-10">{lang === "bn" ? "খুঁজুন" : "Search"}</Button>
-      </form>
-
-      <div className="mt-6">
-        {loading ? (
-          <div className="flex justify-center py-20">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-          </div>
-        ) : listings.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 text-center">
-            <ShoppingBag className="mb-3 h-12 w-12 text-muted-foreground" />
-            <p className="text-base font-medium">
-              {lang === "bn" ? "কোনো পণ্য পাওয়া যায়নি" : "No products found"}
-            </p>
-            <p className="mt-1 text-sm text-muted-foreground">
-              {submittedQ
-                ? (lang === "bn" ? "অন্য নাম দিয়ে খুঁজে দেখুন।" : "Try a different search.")
-                : (lang === "bn"
-                    ? "এখনো কোনো দোকান পণ্য প্রকাশ করেনি।"
-                    : "No shops have published products yet.")}
-            </p>
-          </div>
-        ) : (
-          <>
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:gap-4 lg:grid-cols-4 xl:grid-cols-5">
-              {listings.map((l) => {
-                const p = products[l.product_id];
-                const s = shops[l.shop_id];
-                if (!p || !s) return null;
-                const inStock = Number(l.stock) > 0;
-                return (
-                  <a
-                    key={l.id}
-                    href={`/shop/p/${l.id}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="group flex flex-col rounded-xl border bg-card p-3 transition-shadow hover:shadow-md"
-                  >
-                    <div className="aspect-square overflow-hidden rounded-lg bg-muted">
-                      {p.image_url ? (
-                        <img
-                          src={p.image_url}
-                          alt={p.name}
-                          loading="lazy"
-                          className="h-full w-full object-cover transition-transform group-hover:scale-105"
-                        />
-                      ) : (
-                        <div className="flex h-full items-center justify-center text-muted-foreground">
-                          <Package className="h-10 w-10" />
-                        </div>
-                      )}
-                    </div>
-                    <div className="mt-2 line-clamp-2 text-sm font-medium">{p.name}</div>
-                    <div className="mt-1 text-base font-bold text-primary">৳ {l.price}</div>
-                    <div className="mt-1 flex flex-wrap items-center gap-1">
-                      {inStock ? (
-                        <span className="inline-flex items-center rounded-full bg-emerald-500/15 px-2 py-0.5 text-[11px] font-medium text-emerald-700 dark:text-emerald-400">
-                          {lang === "bn"
-                            ? `স্টক ${bnNum(Number(l.stock))} ${l.unit ?? p.unit ?? ""}`
-                            : `Stock ${l.stock} ${l.unit ?? p.unit ?? ""}`}
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
-                          {lang === "bn" ? "স্টক আউট" : "Out of stock"}
-                        </span>
-                      )}
-                      {l.warranty_months ? (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
-                          <ShieldCheck className="h-3 w-3" />
-                          {lang === "bn"
-                            ? `${bnNum(l.warranty_months)} মাস ওয়ারেন্টি`
-                            : `${l.warranty_months}mo warranty`}
-                        </span>
-                      ) : null}
-                    </div>
-                    <div className="mt-2 flex items-center gap-1 text-xs text-muted-foreground">
-                      {s.logo_url ? (
-                        <img src={s.logo_url} alt="" className="h-4 w-4 rounded-full" />
-                      ) : (
-                        <Store className="h-3 w-3" />
-                      )}
-                      <span className="truncate">{s.name}</span>
-                    </div>
-                  </a>
-                );
-              })}
-            </div>
-
-            {totalPages > 1 && (
-              <div className="mt-8 flex items-center justify-center gap-2">
-                <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(page - 1)}>
-                  {lang === "bn" ? "পূর্ববর্তী" : "Previous"}
-                </Button>
-                <span className="text-sm text-muted-foreground">
-                  {lang === "bn" ? `পৃষ্ঠা ${bnNum(page)} / ${bnNum(totalPages)}` : `Page ${page} / ${totalPages}`}
-                </span>
-                <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage(page + 1)}>
-                  {lang === "bn" ? "পরবর্তী" : "Next"}
-                </Button>
-              </div>
-            )}
-          </>
-        )}
+      <div className="mt-4 overflow-hidden rounded-xl">
+        <DashboardBannerCarousel />
       </div>
+
+      {/* Stats */}
+      <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4">
+        <StatCard icon={ClipboardList} label={lang === "bn" ? "অ্যাক্টিভ অর্ডার" : "Active Order"} value={bnNumIf(lang, stats?.activeOrders ?? 0)} accent="amber" />
+        <StatCard icon={Package} label={lang === "bn" ? "অনলাইন প্রোডাক্ট" : "Online Product"} value={bnNumIf(lang, stats?.products ?? 0)} accent="emerald" />
+        <StatCard icon={TrendingUp} label={lang === "bn" ? "মোট আয়" : "Total Earning"} value={`৳ ${bnNumIf(lang, stats?.earning ?? 0)}`} accent="blue" />
+        <StatCard icon={Eye} label={lang === "bn" ? "ওয়েবসাইট ভিজিট" : "Website Visit"} value={bnNumIf(lang, stats?.visits ?? 0)} accent="violet" />
+      </div>
+
+      {/* Quick actions */}
+      <div className="mt-3 grid grid-cols-3 gap-3">
+        <ActionCard icon={Globe} label={lang === "bn" ? "ওয়েবসাইট" : "Website"} onClick={openWebsite} />
+        <ActionCard icon={Copy} label={lang === "bn" ? "লিংক কপি" : "Copy Link"} onClick={copyLink} />
+        <ActionCard icon={QrCode} label={lang === "bn" ? "QR কোড" : "QR Code"} onClick={openQr} />
+      </div>
+
+      {/* Username banner */}
+      {shop && (
+        <div className="mt-3 flex flex-col items-start justify-between gap-2 rounded-xl border bg-muted/40 px-4 py-3 sm:flex-row sm:items-center">
+          <div className="min-w-0 text-sm">
+            <span className="text-muted-foreground">{lang === "bn" ? "আপনার দোকানের লিংক:" : "Your store URL:"}</span>{" "}
+            {username ? (
+              <a href={publicUrl} target="_blank" rel="noopener" className="break-all font-semibold text-primary hover:underline">
+                {publicUrl} <ExternalLink className="inline h-3 w-3" />
+              </a>
+            ) : (
+              <span className="font-semibold text-destructive">{lang === "bn" ? "এখনো সেট করা হয়নি" : "Not set yet"}</span>
+            )}
+          </div>
+          <Button size="sm" variant="outline" onClick={() => setSettingsOpen(true)}>
+            {lang === "bn" ? "এডিট" : "Edit"}
+          </Button>
+        </div>
+      )}
+
+      {/* Tools grid */}
+      <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+        {tiles.map((t, i) => {
+          const inner = (
+            <>
+              <t.icon className={`mb-2 h-7 w-7 ${t.color}`} />
+              <span className="text-center text-[13px] font-semibold">
+                {lang === "bn" ? t.bn : t.en}
+              </span>
+            </>
+          );
+          if (t.to) {
+            return (
+              <Link
+                key={i}
+                to={t.to as never}
+                className="flex flex-col items-center justify-center rounded-xl border bg-card p-4 shadow-sm transition-all hover:scale-[1.02] hover:shadow-md"
+              >
+                {inner}
+              </Link>
+            );
+          }
+          return (
+            <button
+              key={i}
+              type="button"
+              onClick={t.onClick}
+              className="flex flex-col items-center justify-center rounded-xl border bg-card p-4 shadow-sm transition-all hover:scale-[1.02] hover:shadow-md"
+            >
+              {inner}
+            </button>
+          );
+        })}
+      </div>
+
+      {shop && (
+        <>
+          <StoreSettingsDialog
+            open={settingsOpen}
+            onOpenChange={setSettingsOpen}
+            shop={shop}
+            onSaved={() => { void refetch(); }}
+          />
+          <ShopPolicyDialog
+            open={policyOpen}
+            onOpenChange={setPolicyOpen}
+            shop={shop}
+            onSaved={() => { void refetch(); }}
+          />
+          {publicUrl && (
+            <QrCodeDialog open={qrOpen} onOpenChange={setQrOpen} url={publicUrl} shopName={shop.name} />
+          )}
+        </>
+      )}
     </div>
+  );
+}
+
+function bnNumIf(lang: string, n: number) {
+  return lang === "bn" ? bnNum(n) : String(n);
+}
+
+function StatCard({ icon: Icon, label, value, accent }: { icon: typeof Settings; label: string; value: string; accent: string }) {
+  const accentMap: Record<string, string> = {
+    amber: "text-amber-500", emerald: "text-emerald-500", blue: "text-blue-500", violet: "text-violet-500",
+  };
+  return (
+    <div className="rounded-xl border bg-card p-3 shadow-sm">
+      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        <Icon className={`h-4 w-4 ${accentMap[accent] ?? ""}`} />
+        <span>{label}</span>
+      </div>
+      <div className="mt-1 text-xl font-extrabold">{value}</div>
+    </div>
+  );
+}
+
+function ActionCard({ icon: Icon, label, onClick }: { icon: typeof Globe; label: string; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex flex-col items-center justify-center gap-1.5 rounded-xl border bg-card p-4 shadow-sm transition-all hover:scale-[1.02] hover:shadow-md"
+    >
+      <Icon className="h-5 w-5 text-primary" />
+      <span className="text-sm font-semibold">{label}</span>
+    </button>
   );
 }

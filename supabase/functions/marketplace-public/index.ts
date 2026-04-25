@@ -2,6 +2,8 @@
 // Actions:
 //   { action: "list", q?, category?, page?, pageSize? }  -> listings grid
 //   { action: "shop", slug }                              -> shop page (info + listings)
+//   { action: "shop-by-username", username }              -> shop page by username
+//   { action: "log-visit", shop_id }                      -> increment visit counter
 //   { action: "listing", id }                             -> single listing detail
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -171,6 +173,67 @@ Deno.serve(async (req) => {
       const { products } = await attachShopsAndProducts(admin, rows);
 
       return json({ shop: s, listings: rows, products });
+    }
+
+    if (action === "shop-by-username") {
+      const username = String(body.username ?? "").trim().toLowerCase();
+      if (!username) return json({ error: "Invalid username" }, 400);
+
+      const { data: shop } = await admin
+        .from("shops")
+        .select("id, name, username, slug, logo_url, cover_url, tagline, address, phone, shop_type_code, marketplace_enabled, about, terms_and_conditions, return_policy, shipping_policy, facebook_url, whatsapp_number, meta_description")
+        .eq("username", username)
+        .is("deleted_at", null)
+        .maybeSingle();
+      if (!shop) return json({ error: "দোকান খুঁজে পাওয়া যায়নি" }, 404);
+      const s = shop as ShopRow & {
+        marketplace_enabled: boolean;
+        username: string | null;
+        about: string | null;
+        terms_and_conditions: string | null;
+        return_policy: string | null;
+        shipping_policy: string | null;
+        facebook_url: string | null;
+        whatsapp_number: string | null;
+        meta_description: string | null;
+      };
+      if (!s.marketplace_enabled) {
+        return json({ error: "এই দোকান এখনো অনলাইনে নেই" }, 404);
+      }
+
+      const { data: listings } = await admin
+        .from("marketplace_listings")
+        .select("id, shop_id, product_id, price, stock, unit, min_order, is_published, created_at, warranty_months")
+        .eq("shop_id", s.id)
+        .eq("is_published", true)
+        .order("created_at", { ascending: false });
+      const rows = (listings as ListingRow[] | null) ?? [];
+      const { products } = await attachShopsAndProducts(admin, rows);
+
+      return json({ shop: s, listings: rows, products });
+    }
+
+    if (action === "log-visit") {
+      const shopId = String(body.shop_id ?? "").trim();
+      if (!shopId) return json({ error: "Invalid shop_id" }, 400);
+      const ip = req.headers.get("x-forwarded-for") ?? "0.0.0.0";
+      const ua = req.headers.get("user-agent") ?? "";
+      // Hash IP for privacy
+      const enc = new TextEncoder().encode(ip);
+      const hashBuf = await crypto.subtle.digest("SHA-256", enc);
+      const ipHash = Array.from(new Uint8Array(hashBuf)).slice(0, 8).map((b) => b.toString(16).padStart(2, "0")).join("");
+      // Rate limit: skip if same hash visited in last 30 min
+      const since = new Date(Date.now() - 30 * 60 * 1000).toISOString();
+      const { count: recent } = await admin
+        .from("shop_visits")
+        .select("id", { count: "exact", head: true })
+        .eq("shop_id", shopId)
+        .eq("ip_hash", ipHash)
+        .gte("visited_at", since);
+      if ((recent ?? 0) === 0) {
+        await admin.from("shop_visits").insert({ shop_id: shopId, ip_hash: ipHash, user_agent: ua.slice(0, 200) });
+      }
+      return json({ ok: true });
     }
 
     if (action === "listing") {

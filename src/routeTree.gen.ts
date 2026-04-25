@@ -14,6 +14,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as AffiliateRouteImport } from './routes/affiliate'
 import { Route as AdminRouteImport } from './routes/admin'
+import { Route as UsernameRouteImport } from './routes/$username'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ShopIndexRouteImport } from './routes/shop.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
@@ -61,6 +62,7 @@ import { Route as AdminAffiliatesRouteImport } from './routes/admin.affiliates'
 import { Route as ShopSSlugRouteImport } from './routes/shop.s.$slug'
 import { Route as ShopPIdRouteImport } from './routes/shop.p.$id'
 import { Route as FSlugMyRouteImport } from './routes/f.$slug.my'
+import { Route as AppOnlineShopProductsRouteImport } from './routes/app.online-shop.products'
 
 const PricingRoute = PricingRouteImport.update({
   id: '/pricing',
@@ -85,6 +87,11 @@ const AffiliateRoute = AffiliateRouteImport.update({
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
   path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const UsernameRoute = UsernameRouteImport.update({
+  id: '/$username',
+  path: '/$username',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -323,9 +330,15 @@ const FSlugMyRoute = FSlugMyRouteImport.update({
   path: '/my',
   getParentRoute: () => FSlugRoute,
 } as any)
+const AppOnlineShopProductsRoute = AppOnlineShopProductsRouteImport.update({
+  id: '/products',
+  path: '/products',
+  getParentRoute: () => AppOnlineShopRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/$username': typeof UsernameRoute
   '/admin': typeof AdminRouteWithChildren
   '/affiliate': typeof AffiliateRouteWithChildren
   '/app': typeof AppRouteWithChildren
@@ -355,7 +368,7 @@ export interface FileRoutesByFullPath {
   '/app/expense-ledger': typeof AppExpenseLedgerRoute
   '/app/expiring': typeof AppExpiringRoute
   '/app/marketing': typeof AppMarketingRoute
-  '/app/online-shop': typeof AppOnlineShopRoute
+  '/app/online-shop': typeof AppOnlineShopRouteWithChildren
   '/app/printer': typeof AppPrinterRoute
   '/app/products': typeof AppProductsRoute
   '/app/purchase': typeof AppPurchaseRoute
@@ -374,12 +387,14 @@ export interface FileRoutesByFullPath {
   '/f/$slug': typeof FSlugRouteWithChildren
   '/admin/': typeof AdminIndexRoute
   '/shop/': typeof ShopIndexRoute
+  '/app/online-shop/products': typeof AppOnlineShopProductsRoute
   '/f/$slug/my': typeof FSlugMyRoute
   '/shop/p/$id': typeof ShopPIdRoute
   '/shop/s/$slug': typeof ShopSSlugRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/$username': typeof UsernameRoute
   '/affiliate': typeof AffiliateRouteWithChildren
   '/app': typeof AppRouteWithChildren
   '/auth': typeof AuthRoute
@@ -408,7 +423,7 @@ export interface FileRoutesByTo {
   '/app/expense-ledger': typeof AppExpenseLedgerRoute
   '/app/expiring': typeof AppExpiringRoute
   '/app/marketing': typeof AppMarketingRoute
-  '/app/online-shop': typeof AppOnlineShopRoute
+  '/app/online-shop': typeof AppOnlineShopRouteWithChildren
   '/app/printer': typeof AppPrinterRoute
   '/app/products': typeof AppProductsRoute
   '/app/purchase': typeof AppPurchaseRoute
@@ -427,6 +442,7 @@ export interface FileRoutesByTo {
   '/f/$slug': typeof FSlugRouteWithChildren
   '/admin': typeof AdminIndexRoute
   '/shop': typeof ShopIndexRoute
+  '/app/online-shop/products': typeof AppOnlineShopProductsRoute
   '/f/$slug/my': typeof FSlugMyRoute
   '/shop/p/$id': typeof ShopPIdRoute
   '/shop/s/$slug': typeof ShopSSlugRoute
@@ -434,6 +450,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/$username': typeof UsernameRoute
   '/admin': typeof AdminRouteWithChildren
   '/affiliate': typeof AffiliateRouteWithChildren
   '/app': typeof AppRouteWithChildren
@@ -463,7 +480,7 @@ export interface FileRoutesById {
   '/app/expense-ledger': typeof AppExpenseLedgerRoute
   '/app/expiring': typeof AppExpiringRoute
   '/app/marketing': typeof AppMarketingRoute
-  '/app/online-shop': typeof AppOnlineShopRoute
+  '/app/online-shop': typeof AppOnlineShopRouteWithChildren
   '/app/printer': typeof AppPrinterRoute
   '/app/products': typeof AppProductsRoute
   '/app/purchase': typeof AppPurchaseRoute
@@ -482,6 +499,7 @@ export interface FileRoutesById {
   '/f/$slug': typeof FSlugRouteWithChildren
   '/admin/': typeof AdminIndexRoute
   '/shop/': typeof ShopIndexRoute
+  '/app/online-shop/products': typeof AppOnlineShopProductsRoute
   '/f/$slug/my': typeof FSlugMyRoute
   '/shop/p/$id': typeof ShopPIdRoute
   '/shop/s/$slug': typeof ShopSSlugRoute
@@ -490,6 +508,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/$username'
     | '/admin'
     | '/affiliate'
     | '/app'
@@ -538,12 +557,14 @@ export interface FileRouteTypes {
     | '/f/$slug'
     | '/admin/'
     | '/shop/'
+    | '/app/online-shop/products'
     | '/f/$slug/my'
     | '/shop/p/$id'
     | '/shop/s/$slug'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/$username'
     | '/affiliate'
     | '/app'
     | '/auth'
@@ -591,12 +612,14 @@ export interface FileRouteTypes {
     | '/f/$slug'
     | '/admin'
     | '/shop'
+    | '/app/online-shop/products'
     | '/f/$slug/my'
     | '/shop/p/$id'
     | '/shop/s/$slug'
   id:
     | '__root__'
     | '/'
+    | '/$username'
     | '/admin'
     | '/affiliate'
     | '/app'
@@ -645,6 +668,7 @@ export interface FileRouteTypes {
     | '/f/$slug'
     | '/admin/'
     | '/shop/'
+    | '/app/online-shop/products'
     | '/f/$slug/my'
     | '/shop/p/$id'
     | '/shop/s/$slug'
@@ -652,6 +676,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  UsernameRoute: typeof UsernameRoute
   AdminRoute: typeof AdminRouteWithChildren
   AffiliateRoute: typeof AffiliateRouteWithChildren
   AppRoute: typeof AppRouteWithChildren
@@ -698,6 +723,13 @@ declare module '@tanstack/react-router' {
       path: '/admin'
       fullPath: '/admin'
       preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/$username': {
+      id: '/$username'
+      path: '/$username'
+      fullPath: '/$username'
+      preLoaderRoute: typeof UsernameRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -1029,6 +1061,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FSlugMyRouteImport
       parentRoute: typeof FSlugRoute
     }
+    '/app/online-shop/products': {
+      id: '/app/online-shop/products'
+      path: '/products'
+      fullPath: '/app/online-shop/products'
+      preLoaderRoute: typeof AppOnlineShopProductsRouteImport
+      parentRoute: typeof AppOnlineShopRoute
+    }
   }
 }
 
@@ -1078,6 +1117,18 @@ const AffiliateRouteWithChildren = AffiliateRoute._addFileChildren(
   AffiliateRouteChildren,
 )
 
+interface AppOnlineShopRouteChildren {
+  AppOnlineShopProductsRoute: typeof AppOnlineShopProductsRoute
+}
+
+const AppOnlineShopRouteChildren: AppOnlineShopRouteChildren = {
+  AppOnlineShopProductsRoute: AppOnlineShopProductsRoute,
+}
+
+const AppOnlineShopRouteWithChildren = AppOnlineShopRoute._addFileChildren(
+  AppOnlineShopRouteChildren,
+)
+
 interface AppRouteChildren {
   AppAccessRoute: typeof AppAccessRoute
   AppAffiliateRoute: typeof AppAffiliateRoute
@@ -1090,7 +1141,7 @@ interface AppRouteChildren {
   AppExpenseLedgerRoute: typeof AppExpenseLedgerRoute
   AppExpiringRoute: typeof AppExpiringRoute
   AppMarketingRoute: typeof AppMarketingRoute
-  AppOnlineShopRoute: typeof AppOnlineShopRoute
+  AppOnlineShopRoute: typeof AppOnlineShopRouteWithChildren
   AppPrinterRoute: typeof AppPrinterRoute
   AppProductsRoute: typeof AppProductsRoute
   AppPurchaseRoute: typeof AppPurchaseRoute
@@ -1120,7 +1171,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppExpenseLedgerRoute: AppExpenseLedgerRoute,
   AppExpiringRoute: AppExpiringRoute,
   AppMarketingRoute: AppMarketingRoute,
-  AppOnlineShopRoute: AppOnlineShopRoute,
+  AppOnlineShopRoute: AppOnlineShopRouteWithChildren,
   AppPrinterRoute: AppPrinterRoute,
   AppProductsRoute: AppProductsRoute,
   AppPurchaseRoute: AppPurchaseRoute,
@@ -1152,6 +1203,7 @@ const FSlugRouteWithChildren = FSlugRoute._addFileChildren(FSlugRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  UsernameRoute: UsernameRoute,
   AdminRoute: AdminRouteWithChildren,
   AffiliateRoute: AffiliateRouteWithChildren,
   AppRoute: AppRouteWithChildren,

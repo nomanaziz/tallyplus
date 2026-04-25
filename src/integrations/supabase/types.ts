@@ -1842,59 +1842,115 @@ export type Database = {
         }
         Relationships: []
       }
+      shop_visits: {
+        Row: {
+          id: string
+          ip_hash: string | null
+          shop_id: string
+          user_agent: string | null
+          visited_at: string
+        }
+        Insert: {
+          id?: string
+          ip_hash?: string | null
+          shop_id: string
+          user_agent?: string | null
+          visited_at?: string
+        }
+        Update: {
+          id?: string
+          ip_hash?: string | null
+          shop_id?: string
+          user_agent?: string | null
+          visited_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shop_visits_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shops: {
         Row: {
+          about: string | null
           address: string | null
           cover_url: string | null
           created_at: string
           currency: string
           deleted_at: string | null
+          facebook_url: string | null
           id: string
           logo_url: string | null
           marketplace_enabled: boolean
+          meta_description: string | null
           name: string
           owner_id: string
           phone: string | null
+          return_policy: string | null
+          shipping_policy: string | null
           shop_type_code: string | null
           slug: string | null
           tagline: string | null
+          terms_and_conditions: string | null
           updated_at: string
+          username: string | null
+          whatsapp_number: string | null
           wishlist_slug: string | null
         }
         Insert: {
+          about?: string | null
           address?: string | null
           cover_url?: string | null
           created_at?: string
           currency?: string
           deleted_at?: string | null
+          facebook_url?: string | null
           id?: string
           logo_url?: string | null
           marketplace_enabled?: boolean
+          meta_description?: string | null
           name: string
           owner_id: string
           phone?: string | null
+          return_policy?: string | null
+          shipping_policy?: string | null
           shop_type_code?: string | null
           slug?: string | null
           tagline?: string | null
+          terms_and_conditions?: string | null
           updated_at?: string
+          username?: string | null
+          whatsapp_number?: string | null
           wishlist_slug?: string | null
         }
         Update: {
+          about?: string | null
           address?: string | null
           cover_url?: string | null
           created_at?: string
           currency?: string
           deleted_at?: string | null
+          facebook_url?: string | null
           id?: string
           logo_url?: string | null
           marketplace_enabled?: boolean
+          meta_description?: string | null
           name?: string
           owner_id?: string
           phone?: string | null
+          return_policy?: string | null
+          shipping_policy?: string | null
           shop_type_code?: string | null
           slug?: string | null
           tagline?: string | null
+          terms_and_conditions?: string | null
           updated_at?: string
+          username?: string | null
+          whatsapp_number?: string | null
           wishlist_slug?: string | null
         }
         Relationships: [
