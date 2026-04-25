@@ -121,7 +121,7 @@ export const cashMovementsQuery = (shopId: string | null | undefined) =>
       if (!shopId) return [];
       const { data, error } = await supabase
         .from("cash_movements")
-        .select("id,direction,amount,note,ref_table,ref_id,created_at")
+        .select("id,direction,amount,note,ref_table,ref_id,created_at,denominations")
         .eq("shop_id", shopId)
         .order("created_at", { ascending: false })
         .limit(500);
