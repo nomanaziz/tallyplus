@@ -1,14 +1,14 @@
 import { Link, useLocation } from "@tanstack/react-router";
 import { useI18n } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
-import { Home, ShoppingCart, BarChart3, Menu as MenuIcon, Package } from "lucide-react";
+import { Home, ShoppingCart, BarChart3, Menu as MenuIcon, Undo2 } from "lucide-react";
 
 type Tab = { to: string; bn: string; en: string; Icon: typeof Home; matchPrefix?: string };
 
 const TABS: Tab[] = [
   { to: "/app/dashboard", bn: "হোম", en: "Home", Icon: Home },
   { to: "/app/sell", bn: "বেচা", en: "Sell", Icon: ShoppingCart, matchPrefix: "/app/sell" },
-  { to: "/app/products", bn: "পণ্য", en: "Items", Icon: Package, matchPrefix: "/app/products" },
+  { to: "/app/returns", bn: "রিটার্ন", en: "Return", Icon: Undo2, matchPrefix: "/app/returns" },
   { to: "/app/reports", bn: "রিপোর্ট", en: "Report", Icon: BarChart3, matchPrefix: "/app/reports" },
 ];
 
