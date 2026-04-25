@@ -40,6 +40,7 @@ import { Route as AppDueLedgerRouteImport } from './routes/app.due-ledger'
 import { Route as AppDashboardRouteImport } from './routes/app.dashboard'
 import { Route as AppCustomerWishlistRouteImport } from './routes/app.customer-wishlist'
 import { Route as AppContactsRouteImport } from './routes/app.contacts'
+import { Route as AppCombinedReportRouteImport } from './routes/app.combined-report'
 import { Route as AppCashboxRouteImport } from './routes/app.cashbox'
 import { Route as AppAffiliateRouteImport } from './routes/app.affiliate'
 import { Route as AppAccessRouteImport } from './routes/app.access'
@@ -211,6 +212,11 @@ const AppContactsRoute = AppContactsRouteImport.update({
   path: '/contacts',
   getParentRoute: () => AppRoute,
 } as any)
+const AppCombinedReportRoute = AppCombinedReportRouteImport.update({
+  id: '/combined-report',
+  path: '/combined-report',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppCashboxRoute = AppCashboxRouteImport.update({
   id: '/cashbox',
   path: '/cashbox',
@@ -310,6 +316,7 @@ export interface FileRoutesByFullPath {
   '/app/access': typeof AppAccessRoute
   '/app/affiliate': typeof AppAffiliateRoute
   '/app/cashbox': typeof AppCashboxRoute
+  '/app/combined-report': typeof AppCombinedReportRoute
   '/app/contacts': typeof AppContactsRoute
   '/app/customer-wishlist': typeof AppCustomerWishlistRoute
   '/app/dashboard': typeof AppDashboardRoute
@@ -357,6 +364,7 @@ export interface FileRoutesByTo {
   '/app/access': typeof AppAccessRoute
   '/app/affiliate': typeof AppAffiliateRoute
   '/app/cashbox': typeof AppCashboxRoute
+  '/app/combined-report': typeof AppCombinedReportRoute
   '/app/contacts': typeof AppContactsRoute
   '/app/customer-wishlist': typeof AppCustomerWishlistRoute
   '/app/dashboard': typeof AppDashboardRoute
@@ -406,6 +414,7 @@ export interface FileRoutesById {
   '/app/access': typeof AppAccessRoute
   '/app/affiliate': typeof AppAffiliateRoute
   '/app/cashbox': typeof AppCashboxRoute
+  '/app/combined-report': typeof AppCombinedReportRoute
   '/app/contacts': typeof AppContactsRoute
   '/app/customer-wishlist': typeof AppCustomerWishlistRoute
   '/app/dashboard': typeof AppDashboardRoute
@@ -456,6 +465,7 @@ export interface FileRouteTypes {
     | '/app/access'
     | '/app/affiliate'
     | '/app/cashbox'
+    | '/app/combined-report'
     | '/app/contacts'
     | '/app/customer-wishlist'
     | '/app/dashboard'
@@ -503,6 +513,7 @@ export interface FileRouteTypes {
     | '/app/access'
     | '/app/affiliate'
     | '/app/cashbox'
+    | '/app/combined-report'
     | '/app/contacts'
     | '/app/customer-wishlist'
     | '/app/dashboard'
@@ -551,6 +562,7 @@ export interface FileRouteTypes {
     | '/app/access'
     | '/app/affiliate'
     | '/app/cashbox'
+    | '/app/combined-report'
     | '/app/contacts'
     | '/app/customer-wishlist'
     | '/app/dashboard'
@@ -807,6 +819,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppContactsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/combined-report': {
+      id: '/app/combined-report'
+      path: '/combined-report'
+      fullPath: '/app/combined-report'
+      preLoaderRoute: typeof AppCombinedReportRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/cashbox': {
       id: '/app/cashbox'
       path: '/cashbox'
@@ -963,6 +982,7 @@ interface AppRouteChildren {
   AppAccessRoute: typeof AppAccessRoute
   AppAffiliateRoute: typeof AppAffiliateRoute
   AppCashboxRoute: typeof AppCashboxRoute
+  AppCombinedReportRoute: typeof AppCombinedReportRoute
   AppContactsRoute: typeof AppContactsRoute
   AppCustomerWishlistRoute: typeof AppCustomerWishlistRoute
   AppDashboardRoute: typeof AppDashboardRoute
@@ -992,6 +1012,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppAccessRoute: AppAccessRoute,
   AppAffiliateRoute: AppAffiliateRoute,
   AppCashboxRoute: AppCashboxRoute,
+  AppCombinedReportRoute: AppCombinedReportRoute,
   AppContactsRoute: AppContactsRoute,
   AppCustomerWishlistRoute: AppCustomerWishlistRoute,
   AppDashboardRoute: AppDashboardRoute,
