@@ -110,10 +110,14 @@ function Dashboard() {
         </div>
         <div className="grid grid-cols-3 divide-x">
           <Stat label={lang === "bn" ? "আজকের বিক্রি" : "Sales"} value={fmtMoney(stats.sales, lang)} tone="primary" />
+          <Stat label={lang === "bn" ? "আজকের কেনা" : "Purchase"} value={fmtMoney(stats.purchases, lang)} tone="primary" />
           <Stat label={lang === "bn" ? "আজকের খরচ" : "Expense"} value={fmtMoney(stats.expenses, lang)} tone="danger" />
-          <Stat label={lang === "bn" ? "স্টক সংখ্যা" : "Stock"} value={(Math.round(stats.stockValue * 100) / 100).toFixed(0)} tone="default" />
         </div>
-        <div className="grid grid-cols-2 divide-x border-t">
+        <div className="grid grid-cols-3 divide-x border-t">
+          <div className="p-2.5 text-center">
+            <div className="text-[11px] text-muted-foreground">{lang === "bn" ? "স্টক সংখ্যা" : "Stock"}</div>
+            <div className="mt-0.5 text-sm font-bold">{(Math.round(stats.stockValue * 100) / 100).toFixed(0)}</div>
+          </div>
           <div className="p-2.5 text-center">
             <div className="text-[11px] text-muted-foreground">{lang === "bn" ? "বাকি দিয়েছি" : "Receivable"}</div>
             <div className="mt-0.5 text-sm font-bold text-success">{fmtMoney(stats.receivable, lang)}</div>
