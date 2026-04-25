@@ -11,11 +11,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
-import { AppSidebar } from "./AppSidebar";
 import { QuickSellSheet } from "./QuickSellSheet";
 import { SettingsSheet } from "./SettingsSheet";
-import { Bell, Settings, MessageCircle, ChevronDown, Menu, LogOut, Languages, Zap, ArrowLeftRight, LayoutDashboard } from "lucide-react";
+import { Bell, Settings, MessageCircle, ChevronDown, LogOut, Languages, Zap, ArrowLeftRight, LayoutDashboard } from "lucide-react";
 
 export function AppTopbar() {
   const { profile, signOut } = useAuth();
@@ -36,17 +34,9 @@ export function AppTopbar() {
   return (
     <header className="sticky top-0 z-30 flex h-14 flex-none items-center justify-between border-b bg-background/90 px-3 backdrop-blur">
       <div className="flex items-center gap-2">
-        <Sheet>
-          <SheetTrigger asChild>
-            <Button variant="ghost" size="icon" className="md:hidden">
-              <Menu className="h-5 w-5" />
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="left" className="w-60 p-0">
-            <SheetTitle className="sr-only">Menu</SheetTitle>
-            <AppSidebar />
-          </SheetContent>
-        </Sheet>
+        <span className="text-sm font-extrabold tracking-tight md:hidden">
+          {current?.name ?? (lang === "bn" ? "Tally Plus" : "Tally Plus")}
+        </span>
       </div>
 
       <div className="flex items-center gap-1.5">
