@@ -1,131 +1,96 @@
-# Plan: পুরো App এর জন্য Color Theme সিস্টেম
+## Online Shop — fix dashboard tiles & build out feature pages
 
-## যা করব
+### 1. Dashboard tile cleanup (`app.online-shop.index.tsx`)
+- Remove the duplicate **"Username পরিবর্তন / Change Username"** tile (username editing already lives inside Store Settings).
 
-পুরো অ্যাপের (homepage, app pages, online-shop সহ সব) জন্য একটা global color theme switcher। User চাইলে যেকোনো জায়গা থেকে color পাল্টাবে আর সব পেজে সাথে সাথে effect হবে।
-
-### ৫টা Color Theme
-
-1. **Green** — সবুজ (default)
-2. **Blue** — নীল
-3. **Red** — লাল
-4. **Yellow** — হলুদ
-5. **Soft Dark** — হালকা ash/dark (একদম pitch-black না, soft slate; চোখের জন্য আরাম)
-
-প্রতিটা theme এর জন্য `--primary`, `--ring`, `--accent`, `--sidebar-primary`, `--sidebar-ring` সেমান্টিক টোকেনগুলো একসাথে আপডেট হবে। কারণ পুরো অ্যাপ ইতিমধ্যে এই tokens ব্যবহার করে (`bg-primary`, `text-primary` ইত্যাদি), তাই একটাই জায়গায় change করলে সর্বত্র effect হবে।
-
-### সিস্টেম কীভাবে কাজ করবে
-
-1. `<html>` element-এ একটা `data-theme` attribute set হবে: `green | blue | red | yellow | soft-dark`।
-2. `src/styles.css`-এ প্রত্যেক theme এর জন্য `[data-theme="..."]` selector দিয়ে primary/accent/ring tokens override করব। বাকি tokens (background, foreground, card) যেমন আছে তেমনই থাকবে — শুধু accent color পাল্টাবে।
-3. **Soft Dark** আলাদা — এতে background-foreground দুটোই পাল্টাবে: pure black (`oklch(0.129...)`) না দিয়ে soft slate (`oklch(0.22 0.015 250)` মতো ash tone) ব্যবহার করব যাতে white text চোখে লাগে না।
-4. Default = **green**। প্রথমবার লোড হলে localStorage এ কিছু না থাকলে green সেট হবে।
-
-### Provider
-
-`src/lib/theme.tsx` — নতুন `ThemeProvider`:
-- State: `theme: "green" | "blue" | "red" | "yellow" | "soft-dark"`
-- localStorage key: `tp_theme_color`
-- Mount-এ saved theme load করবে, না থাকলে `green`
-- `useTheme()` hook দিয়ে যেকোনো component theme পাবে/পাল্টাতে পারবে
-- `<html data-theme="...">` set করবে এবং soft-dark হলে `.dark` class-ও add করবে (Tailwind dark variant এর জন্য)
-
-`__root.tsx` এ `<ThemeProvider>` দিয়ে সব wrap করব।
-
-### UI — কোথায় থেকে পাল্টাবে
-
-1. **SettingsSheet-এ** নতুন "App Color" row — ৫টা color swatch (গোল circle), select করলেই সাথে সাথে apply। বর্তমান light/dark dropdown টা remove হবে, কারণ soft-dark সেটা cover করছে।
-2. **AppTopbar-এ** একটা ছোট palette icon button — ক্লিক করলে popover খুলবে ৫টা color swatch নিয়ে, এক ক্লিকে switch।
-3. (Site/landing page এর header-ও একই button পাবে যাতে homepage থেকেও পাল্টানো যায়।)
-
-## টেকনিক্যাল ডিটেইলস
-
-### `src/styles.css` পরিবর্তন
-
-```css
-/* Default green theme — :root token override */
-:root, [data-theme="green"] {
-  --primary: oklch(0.62 0.18 145);     /* emerald green */
-  --primary-foreground: oklch(0.99 0 0);
-  --ring: oklch(0.62 0.18 145);
-  --accent: oklch(0.94 0.05 145);
-  --sidebar-primary: oklch(0.62 0.18 145);
-  --sidebar-ring: oklch(0.62 0.18 145);
-}
-
-[data-theme="blue"] {
-  --primary: oklch(0.55 0.20 255);
-  --ring: oklch(0.55 0.20 255);
-  --accent: oklch(0.94 0.05 255);
-  --sidebar-primary: oklch(0.55 0.20 255);
-  --sidebar-ring: oklch(0.55 0.20 255);
-}
-
-[data-theme="red"]    { /* primary: oklch(0.58 0.22 25)  — coral red */ }
-[data-theme="yellow"] { /* primary: oklch(0.78 0.17 90)  — amber */ }
-
-/* Soft Dark — overrides background tokens too */
-html.dark[data-theme="soft-dark"],
-[data-theme="soft-dark"] {
-  --background: oklch(0.22 0.012 250);     /* soft ash, not pitch black */
-  --foreground: oklch(0.92 0.005 250);     /* slightly off-white */
-  --card: oklch(0.27 0.014 250);
-  --card-foreground: oklch(0.92 0.005 250);
-  --popover: oklch(0.27 0.014 250);
-  --popover-foreground: oklch(0.92 0.005 250);
-  --muted: oklch(0.30 0.014 250);
-  --muted-foreground: oklch(0.72 0.012 250);
-  --border: oklch(1 0 0 / 8%);
-  --primary: oklch(0.72 0.16 145);   /* still green-tinted accent on dark */
-  --sidebar: oklch(0.25 0.013 250);
-  /* etc. */
-}
+### 2. Delivery page (`app.online-shop.delivery.tsx`) — replace placeholder
+New table `shop_delivery_zones` (migration):
 ```
-
-### `src/lib/theme.tsx` (নতুন ফাইল)
-
-```tsx
-type AppColor = "green" | "blue" | "red" | "yellow" | "soft-dark";
-const KEY = "tp_theme_color";
-
-export function ThemeProvider({ children }) {
-  const [color, setColor] = useState<AppColor>("green");
-  useEffect(() => {
-    const saved = (localStorage.getItem(KEY) as AppColor) || "green";
-    apply(saved); setColor(saved);
-  }, []);
-  const change = (c: AppColor) => {
-    apply(c); setColor(c); localStorage.setItem(KEY, c);
-  };
-  return <Ctx.Provider value={{ color, setColor: change }}>{children}</Ctx.Provider>;
-}
-
-function apply(c: AppColor) {
-  document.documentElement.setAttribute("data-theme", c);
-  document.documentElement.classList.toggle("dark", c === "soft-dark");
-}
+id uuid pk, shop_id uuid, name text, charge numeric,
+free_shipping_min numeric null, sort_order int, is_active bool,
+created_at, updated_at
 ```
+RLS: shop members read/write; admins read.
 
-### নতুন Component: `ColorThemePicker.tsx`
+On first visit, if shop has no zones, auto-seed two defaults:
+- **ঢাকার ভিতরে (Inside Dhaka)** — ৳60
+- **ঢাকার বাইরে (Outside Dhaka)** — ৳120
 
-৫টা swatch button:
-- Green ●  Blue ●  Red ●  Yellow ●  Soft Dark ●
-- Active swatch এ ring/border highlighting।
-- ছোট popover variant (Topbar) + inline grid variant (SettingsSheet)।
+UI:
+- List each zone as a card with: name, delivery charge, optional "free shipping above ৳X", active toggle.
+- Edit (pencil) → dialog to update name, charge, free-shipping threshold, active.
+- "Add new zone" button → same dialog (blank).
+- Delete option in row menu.
+
+Auto-seed runs once per shop (insert only if count = 0).
+
+### 3. Featured Products page (`app.online-shop.featured.tsx`) — replace placeholder
+- Query `products` for current shop where `is_featured = true AND is_marketplace_published = true AND deleted_at IS NULL`.
+- Show grid of cards (image, name, price, stock).
+- Each card has a Switch to toggle `is_featured` off (removes from featured).
+- Empty state with link back to "Online Product" page explaining: tick the ⭐ on any online product to feature it here.
+- Note above grid: "ফিচার্ড পণ্যগুলো ওয়েবসাইটের হোমপেজে আগে দেখানো হবে।"
+
+### 4. Marketing & SEO page (`app.online-shop.marketing.tsx`) — replace placeholder
+Edits fields on `shops` table (already exist: `meta_description`, `tagline`, plus we add `meta_title`, `meta_keywords`, `og_image_url`, `google_analytics_id`, `facebook_pixel_id` via migration if missing).
+
+Sections:
+- **SEO**: Meta title, meta description (textarea, 160 char counter), keywords (comma list), OG image upload (uses `shop-logos` bucket).
+- **Analytics**: Google Analytics ID, Facebook Pixel ID inputs.
+- **Marketing tagline**: shop tagline (already exists).
+- Sticky save button.
+
+### 5. Shop Policy page (`app.online-shop.policy.tsx`) — replace placeholder
+Three accordion/tab sections editing existing `shops` columns: `terms_and_conditions`, `return_policy`, `shipping_policy`. Add a fourth field `privacy_policy` (migration adds column).
+- Each section: large textarea + "Insert default template" button (prefilled Bangla template).
+- Sticky save.
+
+### 6. Promo Code page (`app.online-shop.promo-codes.tsx`) — fix add button
+Current page already has an `AddPromoDialog` and a fixed bottom "Add Promo Code" button — verify it renders. Add **Free Shipping** option:
+
+- Extend `discount_type` choices: `percent`, `amount`, **`free_shipping`**.
+- When type = `free_shipping`: hide discount value input, only show "minimum order amount" (e.g., free shipping above ৳1000).
+- Help text under each type explaining behaviour.
+- Validation: min_order_amount required for free_shipping.
+
+The existing UI already supports percent/amount + min order; we just add the third option and the conditional field rendering.
+
+### 7. Database migrations
+```sql
+-- Delivery zones
+create table public.shop_delivery_zones (
+  id uuid primary key default gen_random_uuid(),
+  shop_id uuid not null,
+  name text not null,
+  charge numeric not null default 0,
+  free_shipping_min numeric,
+  sort_order int not null default 0,
+  is_active boolean not null default true,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+alter table public.shop_delivery_zones enable row level security;
+create policy "zones read shop" on public.shop_delivery_zones for select
+  using (is_shop_member(auth.uid(), shop_id) or is_admin(auth.uid()));
+create policy "zones write shop" on public.shop_delivery_zones for all
+  using (is_shop_member(auth.uid(), shop_id))
+  with check (is_shop_member(auth.uid(), shop_id));
+
+-- Marketing/SEO + privacy fields on shops
+alter table public.shops
+  add column if not exists meta_title text,
+  add column if not exists meta_keywords text,
+  add column if not exists og_image_url text,
+  add column if not exists google_analytics_id text,
+  add column if not exists facebook_pixel_id text,
+  add column if not exists privacy_policy text;
+```
 
 ### Files
+- **Edit**: `src/routes/app.online-shop.index.tsx` (remove username tile)
+- **Replace**: `src/routes/app.online-shop.delivery.tsx`, `app.online-shop.featured.tsx`, `app.online-shop.marketing.tsx`, `app.online-shop.policy.tsx`
+- **Edit**: `src/routes/app.online-shop.promo-codes.tsx` (add free-shipping type + conditional fields)
+- **Migration**: 1 SQL file with the schema above
 
-**নতুন:**
-- `src/lib/theme.tsx`
-- `src/components/app/ColorThemePicker.tsx`
-
-**সম্পাদনা:**
-- `src/styles.css` — প্রতি theme এর tokens
-- `src/routes/__root.tsx` — `<ThemeProvider>` wrap
-- `src/components/app/SettingsSheet.tsx` — old theme dropdown remove → ColorThemePicker (inline)
-- `src/components/app/AppTopbar.tsx` — palette icon popover
-- `src/components/site/SiteHeader.tsx` — homepage header-এ same icon
-
-## ফলাফল
-
-User এক ক্লিকে পুরো অ্যাপের accent color পাল্টাতে পারবে — homepage, dashboard, online-shop, sidebar, button, link, form ring, sidebar highlight সব এক সাথে update হবে। Choice survive করবে browser refresh-এও। Soft-dark mode-এ background pitch-black না হয়ে comfortable ash-dark হবে।
+### Out of scope
+- Wiring delivery zones into the customer checkout flow (only the management UI is built now). Can be added next.
