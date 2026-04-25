@@ -141,7 +141,7 @@ export function AddShopDialog({
     const { data: typeRow } = await supabase
       .from("shop_types")
       .select("default_categories")
-      .eq("code", typeCode)
+      .eq("code", typeCode as string)
       .maybeSingle();
     const defaults = (typeRow?.default_categories as string[] | undefined) ?? [];
     if (shopRow?.id && defaults.length > 0) {
