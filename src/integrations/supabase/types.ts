@@ -2024,6 +2024,42 @@ export type Database = {
           },
         ]
       }
+      shop_delivery_zones: {
+        Row: {
+          charge: number
+          created_at: string
+          free_shipping_min: number | null
+          id: string
+          is_active: boolean
+          name: string
+          shop_id: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          charge?: number
+          created_at?: string
+          free_shipping_min?: number | null
+          id?: string
+          is_active?: boolean
+          name: string
+          shop_id: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          charge?: number
+          created_at?: string
+          free_shipping_min?: number | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          shop_id?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       shop_members: {
         Row: {
           address: string | null
@@ -2219,18 +2255,23 @@ export type Database = {
           currency: string
           deleted_at: string | null
           facebook_page_id: string | null
+          facebook_pixel_id: string | null
           facebook_url: string | null
           fb_pixel_id: string | null
           fb_pixel_test_id: string | null
           fb_pixel_token: string | null
           fraud_api_key: string | null
           fraud_api_provider: string | null
+          google_analytics_id: string | null
           gtm_id: string | null
           id: string
           logo_url: string | null
           marketplace_enabled: boolean
           meta_description: string | null
+          meta_keywords: string | null
+          meta_title: string | null
           name: string
+          og_image_url: string | null
           owner_id: string
           phone: string | null
           privacy_policy: string | null
@@ -2264,18 +2305,23 @@ export type Database = {
           currency?: string
           deleted_at?: string | null
           facebook_page_id?: string | null
+          facebook_pixel_id?: string | null
           facebook_url?: string | null
           fb_pixel_id?: string | null
           fb_pixel_test_id?: string | null
           fb_pixel_token?: string | null
           fraud_api_key?: string | null
           fraud_api_provider?: string | null
+          google_analytics_id?: string | null
           gtm_id?: string | null
           id?: string
           logo_url?: string | null
           marketplace_enabled?: boolean
           meta_description?: string | null
+          meta_keywords?: string | null
+          meta_title?: string | null
           name: string
+          og_image_url?: string | null
           owner_id: string
           phone?: string | null
           privacy_policy?: string | null
@@ -2309,18 +2355,23 @@ export type Database = {
           currency?: string
           deleted_at?: string | null
           facebook_page_id?: string | null
+          facebook_pixel_id?: string | null
           facebook_url?: string | null
           fb_pixel_id?: string | null
           fb_pixel_test_id?: string | null
           fb_pixel_token?: string | null
           fraud_api_key?: string | null
           fraud_api_provider?: string | null
+          google_analytics_id?: string | null
           gtm_id?: string | null
           id?: string
           logo_url?: string | null
           marketplace_enabled?: boolean
           meta_description?: string | null
+          meta_keywords?: string | null
+          meta_title?: string | null
           name?: string
+          og_image_url?: string | null
           owner_id?: string
           phone?: string | null
           privacy_policy?: string | null
