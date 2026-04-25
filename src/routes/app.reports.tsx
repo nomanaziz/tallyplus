@@ -86,54 +86,72 @@ function ReportsPage() {
         }
       />
 
-      <div className="container space-y-4 px-4 py-4">
+      <div className="container space-y-3 px-3 py-3 md:space-y-4 md:px-4 md:py-4">
         {/* Section 1 — সাধারণ বিক্রি রিপোর্ট */}
-        <div className="rounded-xl border bg-background p-4">
-          <h2 className="mb-3 text-sm font-bold">{lang === "bn" ? "সাধারণ বিক্রি রিপোর্ট" : "General sales report"}</h2>
-          <div className="grid gap-2">
+        <div className="rounded-xl border bg-background p-3 md:p-4">
+          <h2 className="mb-2 text-sm font-bold md:mb-3">{lang === "bn" ? "সাধারণ বিক্রি রিপোর্ট" : "General sales report"}</h2>
+          {/* Mobile: 2-column compact tiles. Desktop: stacked rows like before. */}
+          <div className="grid grid-cols-2 gap-2 md:hidden">
+            <Tile label="মোট বিক্রি" value={fmtMoney(s.totalSales, lang)} tone="primary" />
+            <Tile label="নগদ বেচা" sub="(কাস্টমার বাকি বাদে)" value={fmtMoney(s.cashSales, lang)} tone="success" />
+            <Tile label="কাস্টমার থেকে বাকি পেয়েছেন" value={fmtMoney(s.dueReceived, lang)} tone="success" />
+            <Tile label="নগদ কেনা" sub="(সাপ্লায়ার বাকি বাদে)" value={fmtMoney(s.cashPurchase, lang)} tone="danger" />
+            <Tile label="সাপ্লায়ারকে বাকি দিয়েছেন" value={fmtMoney(s.duePaid, lang)} tone="danger" />
+          </div>
+          <div className="hidden gap-2 md:grid">
             <Row label="মোট বিক্রি" value={fmtMoney(s.totalSales, lang)} tone="primary" />
             <Row label="নগদ বেচা" sub="(কাস্টমার বাকি বাদে)" value={fmtMoney(s.cashSales, lang)} tone="success" />
             <Row label="কাস্টমার থেকে বাকির টাকা পেয়েছেন" value={fmtMoney(s.dueReceived, lang)} tone="success" />
             <Row label="নগদ কেনা" sub="(সাপ্লায়ার বাকি বাদে)" value={fmtMoney(s.cashPurchase, lang)} tone="danger" />
             <Row label="সাপ্লায়ারকে বাকির টাকা দিয়েছেন" value={fmtMoney(s.duePaid, lang)} tone="danger" />
-            <div className="my-2 border-t" />
+          </div>
+          <div className="my-2 border-t md:my-3" />
+          <div className="grid gap-2">
             <Row big label="সর্বমোট ব্যালেন্স" sub="(মোট বিক্রি + কাস্টমারের বাকির টাকা + অন্যান্য আয়) - (মোট কেনা + সাপ্লায়ারকে বাকির টাকা + অন্যান্য খরচ)" value={fmtMoney(balance, lang)} tone={balance >= 0 ? "success" : "danger"} />
             <Row big label="পণ্য বিক্রি থেকে লাভ" sub="(বিক্রিত পণ্যের বিক্রয় - ক্রয় মূল্য)" value={fmtMoney(s.productProfit, lang)} tone={s.productProfit >= 0 ? "success" : "danger"} />
           </div>
         </div>
 
-        {/* Section 2 — Other income / expense */}
-        <div className="grid gap-3 md:grid-cols-2">
-          <div className="rounded-xl border bg-background p-4">
-            <div className="text-xs font-bold text-muted-foreground">{lang === "bn" ? "অন্যান্য আয়" : "Other income"}</div>
-            <div className="mt-1 text-2xl font-extrabold text-emerald-600">{fmtMoney(s.otherIncome, lang)}</div>
-            <Button className="mt-3 h-10 w-full bg-emerald-500 hover:bg-emerald-600 text-white">
-              <Plus className="h-4 w-4" /> {lang === "bn" ? "নতুন আয় যুক্ত করুন" : "Add income"}
-            </Button>
+        {/* Section 2 — Other income / expense (always 2-col, compact on mobile) */}
+        <div className="grid grid-cols-2 gap-2 md:gap-3">
+          <div className="rounded-xl border bg-background p-3 md:p-4">
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <div className="text-[11px] font-bold text-muted-foreground md:text-xs">{lang === "bn" ? "অন্যান্য আয়" : "Other income"}</div>
+                <div className="mt-0.5 text-base font-extrabold text-emerald-600 md:text-2xl">{fmtMoney(s.otherIncome, lang)}</div>
+              </div>
+              <Button size="icon" className="h-8 w-8 shrink-0 bg-emerald-500 hover:bg-emerald-600 text-white md:h-9 md:w-9" aria-label={lang === "bn" ? "নতুন আয় যুক্ত করুন" : "Add income"}>
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
-          <div className="rounded-xl border bg-background p-4">
-            <div className="text-xs font-bold text-muted-foreground">{lang === "bn" ? "অন্যান্য খরচ" : "Other expense"}</div>
-            <div className="mt-1 text-2xl font-extrabold text-rose-600">{fmtMoney(s.otherExpense, lang)}</div>
-            <Button className="mt-3 h-10 w-full bg-rose-500 hover:bg-rose-600 text-white">
-              <Plus className="h-4 w-4" /> {lang === "bn" ? "নতুন খরচ যুক্ত করুন" : "Add expense"}
-            </Button>
+          <div className="rounded-xl border bg-background p-3 md:p-4">
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <div className="text-[11px] font-bold text-muted-foreground md:text-xs">{lang === "bn" ? "অন্যান্য খরচ" : "Other expense"}</div>
+                <div className="mt-0.5 text-base font-extrabold text-rose-600 md:text-2xl">{fmtMoney(s.otherExpense, lang)}</div>
+              </div>
+              <Button size="icon" className="h-8 w-8 shrink-0 bg-rose-500 hover:bg-rose-600 text-white md:h-9 md:w-9" aria-label={lang === "bn" ? "নতুন খরচ যুক্ত করুন" : "Add expense"}>
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </div>
 
-        {/* Section 3 — Total dues */}
-        <div className="rounded-xl border bg-background p-4">
+        {/* Section 3 — Total dues (always 2-col side-by-side) */}
+        <div className="rounded-xl border bg-background p-3 md:p-4">
           <div className="mb-2 flex items-center justify-between">
             <div className="text-sm font-bold">{lang === "bn" ? "মোট বাকি" : "Total due"}</div>
             <div className="text-sm font-bold">{fmtMoney(s.receivable + s.payable, lang)}</div>
           </div>
-          <div className="grid gap-3 md:grid-cols-2">
-            <div className="rounded-lg bg-emerald-100 p-4 text-center text-emerald-900">
-              <div className="text-sm font-bold">{lang === "bn" ? "সাপ্লায়ারকে দিবো" : "Owe suppliers"}</div>
-              <div className="text-xl font-extrabold">{fmtMoney(s.payable, lang)}</div>
+          <div className="grid grid-cols-2 gap-2 md:gap-3">
+            <div className="rounded-lg bg-emerald-100 p-3 text-center text-emerald-900 md:p-4">
+              <div className="text-[11px] font-bold md:text-sm">{lang === "bn" ? "সাপ্লায়ারকে দিবো" : "Owe suppliers"}</div>
+              <div className="mt-0.5 text-base font-extrabold md:text-xl">{fmtMoney(s.payable, lang)}</div>
             </div>
-            <div className="rounded-lg bg-rose-100 p-4 text-center text-rose-900">
-              <div className="text-sm font-bold">{lang === "bn" ? "কাস্টমার থেকে পাবো" : "Customers owe"}</div>
-              <div className="text-xl font-extrabold">{fmtMoney(s.receivable, lang)}</div>
+            <div className="rounded-lg bg-rose-100 p-3 text-center text-rose-900 md:p-4">
+              <div className="text-[11px] font-bold md:text-sm">{lang === "bn" ? "কাস্টমার থেকে পাবো" : "Customers owe"}</div>
+              <div className="mt-0.5 text-base font-extrabold md:text-xl">{fmtMoney(s.receivable, lang)}</div>
             </div>
           </div>
         </div>
@@ -170,6 +188,17 @@ function Row({ label, sub, value, tone = "primary", big = false }: { label: stri
         {sub && <div className="text-[11px] text-muted-foreground">{sub}</div>}
       </div>
       <div className={"shrink-0 text-base font-extrabold " + color}>{value}</div>
+    </div>
+  );
+}
+
+function Tile({ label, sub, value, tone = "primary" }: { label: string; sub?: string; value: string; tone?: "primary" | "success" | "danger" }) {
+  const color = tone === "success" ? "text-emerald-600" : tone === "danger" ? "text-rose-600" : "text-primary";
+  return (
+    <div className="flex flex-col gap-0.5 rounded-md border bg-background px-2.5 py-2">
+      <div className="text-[10.5px] font-semibold leading-tight text-foreground">{label}</div>
+      {sub && <div className="text-[9px] leading-tight text-muted-foreground">{sub}</div>}
+      <div className={"mt-auto pt-1 text-sm font-extrabold " + color}>{value}</div>
     </div>
   );
 }
