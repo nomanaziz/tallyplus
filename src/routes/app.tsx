@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import logo from "@/assets/logo.png";
 import { AppSidebar } from "@/components/app/AppSidebar";
 import { AppTopbar } from "@/components/app/AppTopbar";
+import { ShopTypePicker } from "@/components/app/ShopTypePicker";
 
 export const Route = createFileRoute("/app")({
   head: () => ({ meta: [{ title: "ড্যাশবোর্ড — Tally Plus" }] }),
@@ -36,6 +37,7 @@ function AppLayout() {
   const { shops, refresh: refreshShops, loading: shopsLoading } = useShop();
   const nav = useNavigate();
   const [shopName, setShopName] = useState("");
+  const [shopTypeCode, setShopTypeCode] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
 
   useEffect(() => {
@@ -51,11 +53,32 @@ function AppLayout() {
       toast.error(lang === "bn" ? "দোকানের নাম দিন" : "Enter shop name");
       return;
     }
+    if (!shopTypeCode) {
+      toast.error(lang === "bn" ? "দোকানের ধরন বাছাই করুন" : "Choose shop type");
+      return;
+    }
     setCreating(true);
-    const { error } = await supabase.from("shops").insert({ owner_id: user.id, name: shopName.trim() });
+    const { data: shopRow, error } = await supabase
+      .from("shops")
+      .insert({ owner_id: user.id, name: shopName.trim(), shop_type_code: shopTypeCode })
+      .select("id")
+      .single();
     setCreating(false);
     if (error) { toast.error(error.message); return; }
+    // Seed default categories for this shop type
+    const { data: typeRow } = await supabase
+      .from("shop_types")
+      .select("default_categories")
+      .eq("code", shopTypeCode)
+      .maybeSingle();
+    const defaults = (typeRow?.default_categories as string[] | undefined) ?? [];
+    if (shopRow?.id && defaults.length > 0) {
+      await supabase
+        .from("categories")
+        .insert(defaults.map((name) => ({ shop_id: shopRow.id, name })));
+    }
     setShopName("");
+    setShopTypeCode(null);
     await refreshShops();
     toast.success(lang === "bn" ? "দোকান তৈরি হয়েছে" : "Shop created");
   };
@@ -85,6 +108,12 @@ function AppLayout() {
           <div className="mt-6 space-y-3">
             <Label htmlFor="shop">{t("shopName")}</Label>
             <Input id="shop" value={shopName} onChange={(e) => setShopName(e.target.value)} className="h-12 text-base" placeholder={lang === "bn" ? "যেমন: আল্লাহর দান স্টোর" : "e.g. My Shop"} />
+            <ShopTypePicker
+              value={shopTypeCode}
+              onChange={(code) => setShopTypeCode(code)}
+              lang={lang as "bn" | "en"}
+              label={lang === "bn" ? "দোকানের ধরন" : "Shop type"}
+            />
             <Button onClick={createShop} disabled={creating} className="h-12 w-full text-base font-semibold">
               {creating ? "..." : t("create")}
             </Button>
