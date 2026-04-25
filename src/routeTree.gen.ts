@@ -34,6 +34,7 @@ import { Route as AppExpiringRouteImport } from './routes/app.expiring'
 import { Route as AppExpenseLedgerRouteImport } from './routes/app.expense-ledger'
 import { Route as AppDueLedgerRouteImport } from './routes/app.due-ledger'
 import { Route as AppDashboardRouteImport } from './routes/app.dashboard'
+import { Route as AppCustomerWishlistRouteImport } from './routes/app.customer-wishlist'
 import { Route as AppContactsRouteImport } from './routes/app.contacts'
 import { Route as AppCashboxRouteImport } from './routes/app.cashbox'
 import { Route as AppAccessRouteImport } from './routes/app.access'
@@ -164,6 +165,11 @@ const AppDashboardRoute = AppDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AppRoute,
 } as any)
+const AppCustomerWishlistRoute = AppCustomerWishlistRouteImport.update({
+  id: '/customer-wishlist',
+  path: '/customer-wishlist',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppContactsRoute = AppContactsRouteImport.update({
   id: '/contacts',
   path: '/contacts',
@@ -194,6 +200,7 @@ export interface FileRoutesByFullPath {
   '/app/access': typeof AppAccessRoute
   '/app/cashbox': typeof AppCashboxRoute
   '/app/contacts': typeof AppContactsRoute
+  '/app/customer-wishlist': typeof AppCustomerWishlistRoute
   '/app/dashboard': typeof AppDashboardRoute
   '/app/due-ledger': typeof AppDueLedgerRoute
   '/app/expense-ledger': typeof AppExpenseLedgerRoute
@@ -225,6 +232,7 @@ export interface FileRoutesByTo {
   '/app/access': typeof AppAccessRoute
   '/app/cashbox': typeof AppCashboxRoute
   '/app/contacts': typeof AppContactsRoute
+  '/app/customer-wishlist': typeof AppCustomerWishlistRoute
   '/app/dashboard': typeof AppDashboardRoute
   '/app/due-ledger': typeof AppDueLedgerRoute
   '/app/expense-ledger': typeof AppExpenseLedgerRoute
@@ -257,6 +265,7 @@ export interface FileRoutesById {
   '/app/access': typeof AppAccessRoute
   '/app/cashbox': typeof AppCashboxRoute
   '/app/contacts': typeof AppContactsRoute
+  '/app/customer-wishlist': typeof AppCustomerWishlistRoute
   '/app/dashboard': typeof AppDashboardRoute
   '/app/due-ledger': typeof AppDueLedgerRoute
   '/app/expense-ledger': typeof AppExpenseLedgerRoute
@@ -290,6 +299,7 @@ export interface FileRouteTypes {
     | '/app/access'
     | '/app/cashbox'
     | '/app/contacts'
+    | '/app/customer-wishlist'
     | '/app/dashboard'
     | '/app/due-ledger'
     | '/app/expense-ledger'
@@ -321,6 +331,7 @@ export interface FileRouteTypes {
     | '/app/access'
     | '/app/cashbox'
     | '/app/contacts'
+    | '/app/customer-wishlist'
     | '/app/dashboard'
     | '/app/due-ledger'
     | '/app/expense-ledger'
@@ -352,6 +363,7 @@ export interface FileRouteTypes {
     | '/app/access'
     | '/app/cashbox'
     | '/app/contacts'
+    | '/app/customer-wishlist'
     | '/app/dashboard'
     | '/app/due-ledger'
     | '/app/expense-ledger'
@@ -561,6 +573,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppDashboardRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/customer-wishlist': {
+      id: '/app/customer-wishlist'
+      path: '/customer-wishlist'
+      fullPath: '/app/customer-wishlist'
+      preLoaderRoute: typeof AppCustomerWishlistRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/contacts': {
       id: '/app/contacts'
       path: '/contacts'
@@ -596,6 +615,7 @@ interface AppRouteChildren {
   AppAccessRoute: typeof AppAccessRoute
   AppCashboxRoute: typeof AppCashboxRoute
   AppContactsRoute: typeof AppContactsRoute
+  AppCustomerWishlistRoute: typeof AppCustomerWishlistRoute
   AppDashboardRoute: typeof AppDashboardRoute
   AppDueLedgerRoute: typeof AppDueLedgerRoute
   AppExpenseLedgerRoute: typeof AppExpenseLedgerRoute
@@ -621,6 +641,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppAccessRoute: AppAccessRoute,
   AppCashboxRoute: AppCashboxRoute,
   AppContactsRoute: AppContactsRoute,
+  AppCustomerWishlistRoute: AppCustomerWishlistRoute,
   AppDashboardRoute: AppDashboardRoute,
   AppDueLedgerRoute: AppDueLedgerRoute,
   AppExpenseLedgerRoute: AppExpenseLedgerRoute,
