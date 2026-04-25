@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { SiteHeader } from "@/components/site/SiteHeader";
 import { Loader2, MapPin, Phone, ShoppingBag, Store, ArrowLeft } from "lucide-react";
 
 type Listing = { id: string; product_id: string; price: number; stock: number; unit: string | null };
@@ -70,13 +71,14 @@ function ShopPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-30 border-b bg-card/85 backdrop-blur">
-        <div className="container mx-auto flex h-14 items-center gap-3 px-4">
-          <Link to="/shop" className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
-            <ArrowLeft className="h-4 w-4" /> মার্কেটপ্লেস
+      <SiteHeader />
+      <div className="border-b bg-card/40">
+        <div className="container mx-auto px-4 py-2">
+          <Link to="/shop" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+            <ArrowLeft className="h-4 w-4" /> মার্কেটপ্লেসে ফিরুন
           </Link>
         </div>
-      </header>
+      </div>
 
       {/* Cover + identity */}
       <section className="relative">
