@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useI18n, bnNum } from "@/lib/i18n";
@@ -8,7 +8,11 @@ import { PageHeader } from "@/components/app/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { Loader2, Package, ArrowLeft, Save } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { Loader2, Package, Plus, Search, Pencil } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/online-shop/products")({
@@ -20,12 +24,14 @@ type Product = {
   id: string;
   name: string;
   image_url: string | null;
+  description: string | null;
   unit: string | null;
   sale_price: number;
   stock: number;
   warranty_value: number | null;
   warranty_enabled: boolean;
   is_marketplace_published: boolean;
+  is_featured: boolean;
 };
 
 type Listing = {
@@ -36,6 +42,7 @@ type Listing = {
   unit: string | null;
   warranty_months: number | null;
   is_published: boolean;
+  is_featured: boolean;
 };
 
 function OnlineProductsPage() {
@@ -43,6 +50,9 @@ function OnlineProductsPage() {
   const { current } = useShop();
   const qc = useQueryClient();
   const [savingId, setSavingId] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [editingDesc, setEditingDesc] = useState<Product | null>(null);
+  const [descText, setDescText] = useState("");
 
   const shopId = current?.id ?? null;
 
@@ -52,7 +62,7 @@ function OnlineProductsPage() {
     queryFn: async () => {
       const { data } = await supabase
         .from("products")
-        .select("id,name,image_url,unit,sale_price,stock,warranty_value,warranty_enabled,is_marketplace_published")
+        .select("id,name,image_url,description,unit,sale_price,stock,warranty_value,warranty_enabled,is_marketplace_published,is_featured")
         .eq("shop_id", shopId!)
         .is("deleted_at", null)
         .order("name");
@@ -66,7 +76,7 @@ function OnlineProductsPage() {
     queryFn: async () => {
       const { data } = await supabase
         .from("marketplace_listings")
-        .select("id,product_id,price,stock,unit,warranty_months,is_published")
+        .select("id,product_id,price,stock,unit,warranty_months,is_published,is_featured")
         .eq("shop_id", shopId!);
       const map: Record<string, Listing> = {};
       (data as Listing[] | null ?? []).forEach((l) => (map[l.product_id] = l));
@@ -106,124 +116,157 @@ function OnlineProductsPage() {
     toast.success(lang === "bn" ? (publish ? "অনলাইনে যুক্ত হয়েছে" : "অনলাইন থেকে সরানো হয়েছে") : (publish ? "Published online" : "Unpublished"));
   };
 
-  const updateListing = async (productId: string, patch: Partial<Pick<Listing, "price" | "stock" | "warranty_months">>) => {
-    const existing = listings?.[productId];
-    if (!existing) return;
-    setSavingId(productId);
-    const { error } = await supabase
-      .from("marketplace_listings")
-      .update(patch)
-      .eq("id", existing.id);
-    setSavingId(null);
-    if (error) { toast.error(error.message); return; }
+  const toggleFeature = async (p: Product, feature: boolean) => {
+    if (!shopId) return;
+    setSavingId(p.id);
+    await supabase.from("products").update({ is_featured: feature }).eq("id", p.id);
+    const existing = listings?.[p.id];
+    if (existing) {
+      await supabase.from("marketplace_listings").update({ is_featured: feature }).eq("id", existing.id);
+    }
+    await qc.invalidateQueries({ queryKey: ["products-for-online", shopId] });
     await qc.invalidateQueries({ queryKey: ["listings-by-product", shopId] });
-    toast.success(lang === "bn" ? "আপডেট হয়েছে" : "Updated");
+    setSavingId(null);
+    toast.success(feature
+      ? (lang === "bn" ? "ফিচার্ড করা হয়েছে" : "Marked featured")
+      : (lang === "bn" ? "ফিচার্ড সরানো হয়েছে" : "Unfeatured"));
   };
 
-  return (
-    <div className="container px-4 py-4">
-      <PageHeader
-        breadcrumb="Online-shop / Products"
-        title={lang === "bn" ? "অনলাইন প্রোডাক্ট" : "Online Products"}
-        actions={
-          <Button asChild variant="outline" size="sm">
-            <Link to="/app/online-shop">
-              <ArrowLeft className="mr-1 h-4 w-4" />
-              {lang === "bn" ? "ফিরে যান" : "Back"}
-            </Link>
-          </Button>
-        }
-      />
+  const saveDescription = async () => {
+    if (!editingDesc) return;
+    setSavingId(editingDesc.id);
+    const { error } = await supabase.from("products").update({ description: descText }).eq("id", editingDesc.id);
+    setSavingId(null);
+    if (error) { toast.error(error.message); return; }
+    await qc.invalidateQueries({ queryKey: ["products-for-online", shopId] });
+    toast.success(lang === "bn" ? "বিবরণ সংরক্ষণ" : "Description saved");
+    setEditingDesc(null);
+  };
 
-      <p className="mt-2 text-sm text-muted-foreground">
-        {lang === "bn"
-          ? "যে পণ্যগুলো অনলাইনে বিক্রি করতে চান সেগুলো সক্রিয় করুন। দাম ও স্টক আলাদাভাবে সেট করতে পারেন।"
-          : "Enable products you want to sell online. You can override price/stock per listing."}
-      </p>
+  const filtered = useMemo(() => {
+    const list = products ?? [];
+    const q = search.trim().toLowerCase();
+    return q ? list.filter((p) => p.name.toLowerCase().includes(q)) : list;
+  }, [products, search]);
+
+  const published = filtered.filter((p) => listings?.[p.id]?.is_published);
+  const unpublished = filtered.filter((p) => !listings?.[p.id]?.is_published);
+
+  return (
+    <div className="container mx-auto max-w-3xl px-4 py-4">
+      <PageHeader
+        breadcrumb={`Online-shop / ${lang === "bn" ? "অনলাইন প্রোডাক্ট" : "Online Products"}`}
+        title=""
+      />
 
       {isLoading ? (
         <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
-      ) : !products || products.length === 0 ? (
-        <div className="mt-10 flex flex-col items-center text-center">
-          <Package className="h-10 w-10 text-muted-foreground" />
-          <p className="mt-2 text-sm text-muted-foreground">
-            {lang === "bn" ? "কোনো পণ্য নেই। প্রথমে প্রোডাক্ট লিস্টে পণ্য যোগ করুন।" : "No products. Add products first."}
-          </p>
-          <Button asChild className="mt-3" size="sm"><Link to="/app/products">{lang === "bn" ? "পণ্য যোগ করুন" : "Add Product"}</Link></Button>
-        </div>
       ) : (
-        <div className="mt-4 space-y-2">
-          {products.map((p) => {
-            const l = listings?.[p.id];
-            const isOnline = !!l && l.is_published;
-            return (
-              <div key={p.id} className="rounded-xl border bg-card p-3">
-                <div className="flex items-start gap-3">
-                  <div className="h-14 w-14 flex-none overflow-hidden rounded-lg bg-muted">
-                    {p.image_url ? (
-                      <img src={p.image_url} alt={p.name} className="h-full w-full object-cover" />
-                    ) : (
-                      <div className="flex h-full items-center justify-center"><Package className="h-6 w-6 text-muted-foreground" /></div>
-                    )}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="font-semibold">{p.name}</div>
-                      <Switch
-                        checked={isOnline}
-                        disabled={savingId === p.id}
-                        onCheckedChange={(v) => togglePublish(p, v)}
-                      />
-                    </div>
-                    <div className="mt-1 text-xs text-muted-foreground">
-                      {lang === "bn" ? "দোকানের দাম" : "Shop price"}: ৳ {p.sale_price} · {lang === "bn" ? "স্টক" : "Stock"}: {lang === "bn" ? bnNum(p.stock) : p.stock} {p.unit ?? ""}
-                    </div>
-                    {isOnline && l && (
-                      <div className="mt-3 grid grid-cols-3 gap-2">
-                        <ListingField
-                          label={lang === "bn" ? "অনলাইন দাম" : "Online price"}
-                          defaultValue={String(l.price)}
-                          onSave={(v) => updateListing(p.id, { price: Number(v) || 0 })}
-                          saving={savingId === p.id}
-                        />
-                        <ListingField
-                          label={lang === "bn" ? "অনলাইন স্টক" : "Online stock"}
-                          defaultValue={String(l.stock)}
-                          onSave={(v) => updateListing(p.id, { stock: Number(v) || 0 })}
-                          saving={savingId === p.id}
-                        />
-                        <ListingField
-                          label={lang === "bn" ? "ওয়ারেন্টি (মাস)" : "Warranty (mo)"}
-                          defaultValue={l.warranty_months != null ? String(l.warranty_months) : ""}
-                          onSave={(v) => updateListing(p.id, { warranty_months: v.trim() === "" ? null : Number(v) || 0 })}
-                          saving={savingId === p.id}
-                        />
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+        <Tabs defaultValue="published" className="mt-3">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="published">{lang === "bn" ? "প্রকাশিত" : "PUBLISHED"} ({published.length})</TabsTrigger>
+            <TabsTrigger value="unpublished">{lang === "bn" ? "অপ্রকাশিত" : "UNPUBLISHED"} ({unpublished.length})</TabsTrigger>
+          </TabsList>
+
+          <div className="mt-3 flex items-center gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={lang === "bn" ? "প্রোডাক্ট খুঁজুন" : "Search Product"} className="pl-9" />
+            </div>
+            <Button asChild size="icon"><Link to="/app/products"><Plus className="h-4 w-4" /></Link></Button>
+          </div>
+
+          <TabsContent value="published" className="mt-3 space-y-2">
+            {published.length === 0 ? <EmptyState lang={lang} /> : published.map((p) => (
+              <ProductCard key={p.id} p={p} listing={listings?.[p.id]} saving={savingId === p.id} lang={lang}
+                onTogglePublish={(v) => togglePublish(p, v)}
+                onToggleFeature={(v) => toggleFeature(p, v)}
+                onEditDesc={() => { setEditingDesc(p); setDescText(p.description ?? ""); }}
+              />
+            ))}
+          </TabsContent>
+          <TabsContent value="unpublished" className="mt-3 space-y-2">
+            {unpublished.length === 0 ? <EmptyState lang={lang} /> : unpublished.map((p) => (
+              <ProductCard key={p.id} p={p} listing={listings?.[p.id]} saving={savingId === p.id} lang={lang}
+                onTogglePublish={(v) => togglePublish(p, v)}
+                onToggleFeature={(v) => toggleFeature(p, v)}
+                onEditDesc={() => { setEditingDesc(p); setDescText(p.description ?? ""); }}
+              />
+            ))}
+          </TabsContent>
+        </Tabs>
       )}
+
+      <Dialog open={!!editingDesc} onOpenChange={(o) => { if (!o) setEditingDesc(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{lang === "bn" ? "বিবরণ সম্পাদনা" : "Edit Description"}</DialogTitle>
+          </DialogHeader>
+          <div className="text-sm font-medium">{editingDesc?.name}</div>
+          <Textarea value={descText} onChange={(e) => setDescText(e.target.value)} rows={6} placeholder={lang === "bn" ? "পণ্যের বিবরণ" : "Product description"} />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditingDesc(null)}>{lang === "bn" ? "বাতিল" : "Cancel"}</Button>
+            <Button onClick={saveDescription} disabled={!!savingId}>{savingId && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}{lang === "bn" ? "সংরক্ষণ" : "Save"}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
 
-function ListingField({ label, defaultValue, onSave, saving }: { label: string; defaultValue: string; onSave: (v: string) => void; saving: boolean }) {
-  const [v, setV] = useState(defaultValue);
-  const dirty = v !== defaultValue;
+function EmptyState({ lang }: { lang: string }) {
   return (
-    <div>
-      <div className="text-[11px] text-muted-foreground">{label}</div>
-      <div className="flex items-center gap-1">
-        <Input value={v} onChange={(e) => setV(e.target.value)} className="h-8 text-sm" />
-        {dirty && (
-          <Button size="icon" variant="ghost" className="h-8 w-8" disabled={saving} onClick={() => onSave(v)}>
-            <Save className="h-4 w-4 text-primary" />
-          </Button>
-        )}
+    <div className="flex flex-col items-center py-10 text-center">
+      <Package className="h-10 w-10 text-muted-foreground" />
+      <p className="mt-2 text-sm text-muted-foreground">
+        {lang === "bn" ? "কোনো পণ্য নেই" : "No products"}
+      </p>
+    </div>
+  );
+}
+
+function ProductCard({ p, listing, saving, lang, onTogglePublish, onToggleFeature, onEditDesc }: {
+  p: Product; listing: Listing | undefined; saving: boolean; lang: string;
+  onTogglePublish: (v: boolean) => void; onToggleFeature: (v: boolean) => void; onEditDesc: () => void;
+}) {
+  const isPub = !!listing?.is_published;
+  return (
+    <div className="rounded-xl border bg-card p-3">
+      <div className="flex items-start gap-3">
+        <div className="h-14 w-14 flex-none overflow-hidden rounded-lg bg-muted">
+          {p.image_url ? <img src={p.image_url} alt={p.name} className="h-full w-full object-cover" /> :
+            <div className="grid h-full place-items-center"><Package className="h-6 w-6 text-muted-foreground" /></div>}
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="font-semibold">{p.name}</div>
+          <Badge variant={isPub ? "default" : "secondary"} className="mt-1 h-5 text-[10px]">
+            {isPub ? (lang === "bn" ? "প্রকাশিত" : "Published") : (lang === "bn" ? "অপ্রকাশিত" : "Unpublished")}
+          </Badge>
+        </div>
+        <div className="flex flex-col items-end gap-1.5 text-xs">
+          <div className="flex items-center gap-2"><span>{lang === "bn" ? "প্রকাশ" : "Publish"}</span>
+            <Switch checked={isPub} disabled={saving} onCheckedChange={onTogglePublish} />
+          </div>
+          <div className="flex items-center gap-2"><span>{lang === "bn" ? "ফিচার" : "Feature"}</span>
+            <Switch checked={!!p.is_featured} disabled={saving || !isPub} onCheckedChange={onToggleFeature} />
+          </div>
+        </div>
+      </div>
+      <div className="mt-3 grid grid-cols-3 divide-x rounded-md border bg-muted/40 px-2 py-2 text-center text-xs">
+        <div>
+          <div className="text-muted-foreground">{lang === "bn" ? "বিক্রয় মূল্য" : "Sell Price"}</div>
+          <div className="mt-0.5 font-semibold">৳ {lang === "bn" ? bnNum(p.sale_price) : p.sale_price}</div>
+        </div>
+        <div>
+          <div className="text-muted-foreground">{lang === "bn" ? "স্টক" : "Stock"}</div>
+          <div className={`mt-0.5 font-semibold ${p.stock > 0 ? "" : "text-destructive"}`}>{lang === "bn" ? bnNum(p.stock) : p.stock}</div>
+        </div>
+        <div>
+          <div className="text-muted-foreground">{lang === "bn" ? "বিবরণ" : "Description"}</div>
+          <button type="button" onClick={onEditDesc} className="mt-0.5 inline-flex items-center gap-1 text-primary">
+            <Pencil className="h-3 w-3" /> {lang === "bn" ? "এডিট" : "Edit Description"}
+          </button>
+        </div>
       </div>
     </div>
   );

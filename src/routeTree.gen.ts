@@ -62,6 +62,7 @@ import { Route as AdminAffiliatesRouteImport } from './routes/admin.affiliates'
 import { Route as ShopSSlugRouteImport } from './routes/shop.s.$slug'
 import { Route as ShopPIdRouteImport } from './routes/shop.p.$id'
 import { Route as FSlugMyRouteImport } from './routes/f.$slug.my'
+import { Route as AppOnlineShopSettingsRouteImport } from './routes/app.online-shop.settings'
 import { Route as AppOnlineShopProductsRouteImport } from './routes/app.online-shop.products'
 
 const PricingRoute = PricingRouteImport.update({
@@ -330,6 +331,11 @@ const FSlugMyRoute = FSlugMyRouteImport.update({
   path: '/my',
   getParentRoute: () => FSlugRoute,
 } as any)
+const AppOnlineShopSettingsRoute = AppOnlineShopSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AppOnlineShopRoute,
+} as any)
 const AppOnlineShopProductsRoute = AppOnlineShopProductsRouteImport.update({
   id: '/products',
   path: '/products',
@@ -388,6 +394,7 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof AdminIndexRoute
   '/shop/': typeof ShopIndexRoute
   '/app/online-shop/products': typeof AppOnlineShopProductsRoute
+  '/app/online-shop/settings': typeof AppOnlineShopSettingsRoute
   '/f/$slug/my': typeof FSlugMyRoute
   '/shop/p/$id': typeof ShopPIdRoute
   '/shop/s/$slug': typeof ShopSSlugRoute
@@ -443,6 +450,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminIndexRoute
   '/shop': typeof ShopIndexRoute
   '/app/online-shop/products': typeof AppOnlineShopProductsRoute
+  '/app/online-shop/settings': typeof AppOnlineShopSettingsRoute
   '/f/$slug/my': typeof FSlugMyRoute
   '/shop/p/$id': typeof ShopPIdRoute
   '/shop/s/$slug': typeof ShopSSlugRoute
@@ -500,6 +508,7 @@ export interface FileRoutesById {
   '/admin/': typeof AdminIndexRoute
   '/shop/': typeof ShopIndexRoute
   '/app/online-shop/products': typeof AppOnlineShopProductsRoute
+  '/app/online-shop/settings': typeof AppOnlineShopSettingsRoute
   '/f/$slug/my': typeof FSlugMyRoute
   '/shop/p/$id': typeof ShopPIdRoute
   '/shop/s/$slug': typeof ShopSSlugRoute
@@ -558,6 +567,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/shop/'
     | '/app/online-shop/products'
+    | '/app/online-shop/settings'
     | '/f/$slug/my'
     | '/shop/p/$id'
     | '/shop/s/$slug'
@@ -613,6 +623,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/shop'
     | '/app/online-shop/products'
+    | '/app/online-shop/settings'
     | '/f/$slug/my'
     | '/shop/p/$id'
     | '/shop/s/$slug'
@@ -669,6 +680,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/shop/'
     | '/app/online-shop/products'
+    | '/app/online-shop/settings'
     | '/f/$slug/my'
     | '/shop/p/$id'
     | '/shop/s/$slug'
@@ -1061,6 +1073,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FSlugMyRouteImport
       parentRoute: typeof FSlugRoute
     }
+    '/app/online-shop/settings': {
+      id: '/app/online-shop/settings'
+      path: '/settings'
+      fullPath: '/app/online-shop/settings'
+      preLoaderRoute: typeof AppOnlineShopSettingsRouteImport
+      parentRoute: typeof AppOnlineShopRoute
+    }
     '/app/online-shop/products': {
       id: '/app/online-shop/products'
       path: '/products'
@@ -1119,10 +1138,12 @@ const AffiliateRouteWithChildren = AffiliateRoute._addFileChildren(
 
 interface AppOnlineShopRouteChildren {
   AppOnlineShopProductsRoute: typeof AppOnlineShopProductsRoute
+  AppOnlineShopSettingsRoute: typeof AppOnlineShopSettingsRoute
 }
 
 const AppOnlineShopRouteChildren: AppOnlineShopRouteChildren = {
   AppOnlineShopProductsRoute: AppOnlineShopProductsRoute,
+  AppOnlineShopSettingsRoute: AppOnlineShopSettingsRoute,
 }
 
 const AppOnlineShopRouteWithChildren = AppOnlineShopRoute._addFileChildren(
