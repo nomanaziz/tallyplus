@@ -1235,13 +1235,21 @@ export type Database = {
       products: {
         Row: {
           barcode: string | null
+          bulk_enabled: boolean
+          bulk_min_qty: number | null
+          bulk_price: number | null
           category_id: string | null
           cost_price: number
           created_at: string
           deleted_at: string | null
+          description: string | null
+          discount_enabled: boolean
+          discount_type: string | null
+          discount_value: number | null
           expiry_date: string | null
           id: string
           image_url: string | null
+          is_marketplace_published: boolean
           low_stock_alert: number | null
           name: string
           sale_price: number
@@ -1250,16 +1258,29 @@ export type Database = {
           stock: number
           unit: string | null
           updated_at: string
+          vat_enabled: boolean
+          vat_pct: number | null
+          warranty_enabled: boolean
+          warranty_unit: string | null
+          warranty_value: number | null
         }
         Insert: {
           barcode?: string | null
+          bulk_enabled?: boolean
+          bulk_min_qty?: number | null
+          bulk_price?: number | null
           category_id?: string | null
           cost_price?: number
           created_at?: string
           deleted_at?: string | null
+          description?: string | null
+          discount_enabled?: boolean
+          discount_type?: string | null
+          discount_value?: number | null
           expiry_date?: string | null
           id?: string
           image_url?: string | null
+          is_marketplace_published?: boolean
           low_stock_alert?: number | null
           name: string
           sale_price?: number
@@ -1268,16 +1289,29 @@ export type Database = {
           stock?: number
           unit?: string | null
           updated_at?: string
+          vat_enabled?: boolean
+          vat_pct?: number | null
+          warranty_enabled?: boolean
+          warranty_unit?: string | null
+          warranty_value?: number | null
         }
         Update: {
           barcode?: string | null
+          bulk_enabled?: boolean
+          bulk_min_qty?: number | null
+          bulk_price?: number | null
           category_id?: string | null
           cost_price?: number
           created_at?: string
           deleted_at?: string | null
+          description?: string | null
+          discount_enabled?: boolean
+          discount_type?: string | null
+          discount_value?: number | null
           expiry_date?: string | null
           id?: string
           image_url?: string | null
+          is_marketplace_published?: boolean
           low_stock_alert?: number | null
           name?: string
           sale_price?: number
@@ -1286,6 +1320,11 @@ export type Database = {
           stock?: number
           unit?: string | null
           updated_at?: string
+          vat_enabled?: boolean
+          vat_pct?: number | null
+          warranty_enabled?: boolean
+          warranty_unit?: string | null
+          warranty_value?: number | null
         }
         Relationships: [
           {

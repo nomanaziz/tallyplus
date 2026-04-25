@@ -31,6 +31,9 @@ type Product = {
   sale_price: number;
   stock: number;
   image_url: string | null;
+  bulk_enabled?: boolean | null;
+  bulk_price?: number | null;
+  bulk_min_qty?: number | null;
 };
 
 type CartItem = {
@@ -38,7 +41,32 @@ type CartItem = {
   name: string;
   qty: number;
   price: number;
+  sale_price?: number;
+  bulk_enabled?: boolean;
+  bulk_price?: number | null;
+  bulk_min_qty?: number | null;
+  price_overridden?: boolean;
+  is_bulk?: boolean;
 };
+
+function applyBulkPricing(item: CartItem): CartItem {
+  if (!item.bulk_enabled || !item.bulk_price || !item.bulk_min_qty) {
+    return { ...item, is_bulk: false };
+  }
+  const meets = item.qty >= Number(item.bulk_min_qty);
+  if (meets) {
+    // Auto-apply bulk price unless user manually overrode and we're already at bulk
+    if (!item.price_overridden) {
+      return { ...item, price: Number(item.bulk_price), is_bulk: true };
+    }
+    return { ...item, is_bulk: true };
+  }
+  // Below threshold: revert to sale price (only if not overridden)
+  if (!item.price_overridden && item.sale_price != null) {
+    return { ...item, price: Number(item.sale_price), is_bulk: false };
+  }
+  return { ...item, is_bulk: false };
+}
 
 type Contact = { id: string; name: string; phone: string | null; address: string | null };
 
@@ -83,16 +111,42 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
       const i = prev.findIndex((c) => c.product_id === p.id);
       if (i >= 0) {
         const copy = [...prev];
-        copy[i] = { ...copy[i], qty: copy[i].qty + 1 };
+        const next = { ...copy[i], qty: copy[i].qty + 1 };
+        copy[i] = applyBulkPricing(next);
         return copy;
       }
-      return [...prev, { product_id: p.id, name: p.name, qty: 1, price: isSell ? Number(p.sale_price) : Number(p.cost_price) }];
+      const base = isSell ? Number(p.sale_price) : Number(p.cost_price);
+      const newItem: CartItem = {
+        product_id: p.id,
+        name: p.name,
+        qty: 1,
+        price: base,
+        sale_price: Number(p.sale_price),
+        bulk_enabled: isSell ? Boolean(p.bulk_enabled) : false,
+        bulk_price: p.bulk_price != null ? Number(p.bulk_price) : null,
+        bulk_min_qty: p.bulk_min_qty != null ? Number(p.bulk_min_qty) : null,
+      };
+      return [...prev, applyBulkPricing(newItem)];
     });
     setMobileTab("cart");
   };
 
   const updateCart = (idx: number, patch: Partial<CartItem>) => {
-    setCart((prev) => prev.map((it, i) => (i === idx ? { ...it, ...patch } : it)));
+    setCart((prev) =>
+      prev.map((it, i) => {
+        if (i !== idx) return it;
+        const merged = { ...it, ...patch };
+        // Mark price as overridden when user manually edits price
+        if (Object.prototype.hasOwnProperty.call(patch, "price")) {
+          merged.price_overridden = true;
+        }
+        // Recompute bulk pricing on qty changes
+        if (Object.prototype.hasOwnProperty.call(patch, "qty")) {
+          return applyBulkPricing(merged);
+        }
+        return merged;
+      }),
+    );
   };
   const removeCart = (idx: number) => setCart((prev) => prev.filter((_, i) => i !== idx));
   const clearCart = () => { setCart([]); setDiscount("0"); setDelivery("0"); };
@@ -245,7 +299,14 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
                         </div>
                       </div>
                       <div>
-                        <Label className="text-[10px] uppercase text-muted-foreground">{lang === "bn" ? "মূল্য" : "Price"}</Label>
+                        <Label className="text-[10px] uppercase text-muted-foreground">
+                          {lang === "bn" ? "মূল্য" : "Price"}
+                          {it.is_bulk ? (
+                            <span className="ml-1 rounded bg-primary/10 px-1 py-0.5 text-[9px] font-semibold text-primary">
+                              [{lang === "bn" ? "বাল্ক রেট" : "Bulk Rate"}]
+                            </span>
+                          ) : null}
+                        </Label>
                         <Input type="number" value={it.price} className="h-9"
                           onChange={(e) => updateCart(idx, { price: Number(e.target.value) || 0 })} />
                       </div>
