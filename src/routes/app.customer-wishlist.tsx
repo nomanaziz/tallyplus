@@ -38,6 +38,8 @@ type WishlistItem = {
   unit: string | null;
   position: number;
   done: boolean;
+  fulfillment_status?: string;
+  shopkeeper_note?: string | null;
 };
 
 const COLOR_BG: Record<string, string> = {
@@ -286,8 +288,11 @@ function WishlistDetailDialog({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [wishlistId, detailQ.data?.wishlist?.id]);
 
-  const toggleItem = async (it: WishlistItem) => {
-    await supabase.from("customer_wishlist_items").update({ done: !it.done }).eq("id", it.id);
+  const setFulfillment = async (it: WishlistItem, status: string) => {
+    await supabase
+      .from("customer_wishlist_items")
+      .update({ fulfillment_status: status, done: status === "fulfilled" } as never)
+      .eq("id", it.id);
     void detailQ.refetch();
   };
 
@@ -366,17 +371,36 @@ function WishlistDetailDialog({
                   const lineTotal = (Number(it.qty) || 0) && (Number(it.price) || 0)
                     ? (Number(it.qty) || 0) * (Number(it.price) || 0)
                     : (Number(it.price) || 0);
+                  const fs = it.fulfillment_status ?? (it.done ? "fulfilled" : "pending");
                   return (
                     <li key={it.id} className="flex items-center gap-2 px-3 py-2">
-                      <button
-                        type="button"
-                        onClick={() => toggleItem(it)}
-                        className={`flex h-5 w-5 flex-none items-center justify-center rounded border ${it.done ? "border-success bg-success text-white" : "border-muted-foreground/40"}`}
-                        aria-label="toggle"
-                      >
-                        {it.done && <Check className="h-3 w-3" />}
-                      </button>
-                      <div className={`flex-1 text-sm ${it.done ? "text-muted-foreground line-through" : ""}`}>
+                      <div className="flex flex-none gap-0.5">
+                        <button
+                          type="button"
+                          title="পেয়েছে"
+                          onClick={() => setFulfillment(it, fs === "fulfilled" ? "pending" : "fulfilled")}
+                          className={`flex h-6 w-6 items-center justify-center rounded border text-xs ${fs === "fulfilled" ? "border-success bg-success text-white" : "border-muted-foreground/30 text-muted-foreground hover:bg-success/10"}`}
+                        >
+                          ✓
+                        </button>
+                        <button
+                          type="button"
+                          title="পায়নি"
+                          onClick={() => setFulfillment(it, fs === "unavailable" ? "pending" : "unavailable")}
+                          className={`flex h-6 w-6 items-center justify-center rounded border text-xs ${fs === "unavailable" ? "border-destructive bg-destructive text-white" : "border-muted-foreground/30 text-muted-foreground hover:bg-destructive/10"}`}
+                        >
+                          ✗
+                        </button>
+                        <button
+                          type="button"
+                          title="পরে দিবে"
+                          onClick={() => setFulfillment(it, fs === "later" ? "pending" : "later")}
+                          className={`flex h-6 w-6 items-center justify-center rounded border text-xs ${fs === "later" ? "border-amber-500 bg-amber-500 text-white" : "border-muted-foreground/30 text-muted-foreground hover:bg-amber-500/10"}`}
+                        >
+                          ⏳
+                        </button>
+                      </div>
+                      <div className={`flex-1 text-sm ${fs === "fulfilled" ? "text-muted-foreground line-through" : ""}`}>
                         <div>{it.name}</div>
                         {(it.qty != null || it.unit) && (
                           <span className="text-xs text-muted-foreground">
