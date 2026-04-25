@@ -153,7 +153,6 @@ function ReturnsListPage() {
             <EmptyState
               icon={<Undo2 className="h-8 w-8" />}
               title={lang === "bn" ? "এখনো কোনো রিটার্ন নেই" : "No returns yet"}
-              description={lang === "bn" ? "প্রথম রিটার্ন যোগ করতে নিচের বোতাম চাপুন।" : "Add your first return."}
               action={<Button onClick={() => nav({ to: "/app/returns/new" })}><Plus className="mr-1 h-4 w-4" />{lang === "bn" ? "নতুন রিটার্ন" : "New return"}</Button>}
             />
           ) : (
