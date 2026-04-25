@@ -1829,6 +1829,107 @@ export type Database = {
           },
         ]
       }
+      sale_return_items: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          price: number
+          product_id: string | null
+          qty: number
+          return_id: string
+          total: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          price?: number
+          product_id?: string | null
+          qty?: number
+          return_id: string
+          total?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          price?: number
+          product_id?: string | null
+          qty?: number
+          return_id?: string
+          total?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sale_return_items_return_id_fkey"
+            columns: ["return_id"]
+            isOneToOne: false
+            referencedRelation: "sale_returns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sale_returns: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          customer_id: string | null
+          deleted_at: string | null
+          id: string
+          note: string | null
+          reason: string | null
+          reason_note: string | null
+          refund_amount: number
+          refund_method: Database["public"]["Enums"]["payment_method"]
+          refund_status: string
+          restock: boolean
+          return_no: string | null
+          sale_id: string | null
+          shop_id: string
+          total: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string | null
+          deleted_at?: string | null
+          id?: string
+          note?: string | null
+          reason?: string | null
+          reason_note?: string | null
+          refund_amount?: number
+          refund_method?: Database["public"]["Enums"]["payment_method"]
+          refund_status?: string
+          restock?: boolean
+          return_no?: string | null
+          sale_id?: string | null
+          shop_id: string
+          total?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string | null
+          deleted_at?: string | null
+          id?: string
+          note?: string | null
+          reason?: string | null
+          reason_note?: string | null
+          refund_amount?: number
+          refund_method?: Database["public"]["Enums"]["payment_method"]
+          refund_status?: string
+          restock?: boolean
+          return_no?: string | null
+          sale_id?: string | null
+          shop_id?: string
+          total?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       sales: {
         Row: {
           created_at: string
