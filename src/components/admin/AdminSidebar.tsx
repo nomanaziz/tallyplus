@@ -13,6 +13,7 @@ import {
   Tag,
   GraduationCap,
   Handshake,
+  Image,
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
@@ -27,6 +28,7 @@ const ITEMS: Item[] = [
   { to: "/admin/subscriptions", label: "Subscriptions", icon: CreditCard },
   { to: "/admin/plans", label: "Plans", icon: Tags },
   { to: "/admin/marketplace", label: "Master Catalog & Marketplace", icon: Store },
+  { to: "/admin/banners", label: "Dashboard Banners", icon: Image },
   { to: "/admin/training", label: "Training Videos", icon: GraduationCap },
   { to: "/admin/affiliates", label: "Affiliate Program", icon: Handshake },
   { to: "/admin/settings", label: "Settings", icon: Settings },
