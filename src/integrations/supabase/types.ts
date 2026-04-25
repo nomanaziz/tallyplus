@@ -2049,6 +2049,11 @@ export type Database = {
           social_links: Json | null
           tagline: string | null
           terms_and_conditions: string | null
+          theme_border_radius: number | null
+          theme_card_variant: string | null
+          theme_font_family: string | null
+          theme_primary_color: string | null
+          theme_secondary_color: string | null
           updated_at: string
           username: string | null
           whatsapp_number: string | null
@@ -2087,6 +2092,11 @@ export type Database = {
           social_links?: Json | null
           tagline?: string | null
           terms_and_conditions?: string | null
+          theme_border_radius?: number | null
+          theme_card_variant?: string | null
+          theme_font_family?: string | null
+          theme_primary_color?: string | null
+          theme_secondary_color?: string | null
           updated_at?: string
           username?: string | null
           whatsapp_number?: string | null
@@ -2125,6 +2135,11 @@ export type Database = {
           social_links?: Json | null
           tagline?: string | null
           terms_and_conditions?: string | null
+          theme_border_radius?: number | null
+          theme_card_variant?: string | null
+          theme_font_family?: string | null
+          theme_primary_color?: string | null
+          theme_secondary_color?: string | null
           updated_at?: string
           username?: string | null
           whatsapp_number?: string | null
