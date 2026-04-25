@@ -108,12 +108,27 @@ Deno.serve(async (req) => {
       const from = (page - 1) * pageSize;
       const to = from + pageSize - 1;
 
+      const minPrice = body.min_price !== undefined && body.min_price !== "" ? Number(body.min_price) : null;
+      const maxPrice = body.max_price !== undefined && body.max_price !== "" ? Number(body.max_price) : null;
+      const inStock = body.in_stock === true || body.in_stock === "true" || body.in_stock === 1 || body.in_stock === "1";
+      const sort = String(body.sort ?? "newest");
+      const shopTypesRaw = body.shop_type ?? body.shop_types;
+      const shopTypes: string[] = Array.isArray(shopTypesRaw)
+        ? shopTypesRaw.map((s) => String(s)).filter(Boolean)
+        : typeof shopTypesRaw === "string" && shopTypesRaw.length > 0
+          ? shopTypesRaw.split(",").map((s) => s.trim()).filter(Boolean)
+          : [];
+
       // Only listings whose shop has marketplace_enabled = true
-      const { data: enabledShops } = await admin
+      let enabledShopsQ = admin
         .from("shops")
         .select("id")
         .eq("marketplace_enabled", true)
         .is("deleted_at", null);
+      if (shopTypes.length > 0) {
+        enabledShopsQ = enabledShopsQ.in("shop_type_code", shopTypes);
+      }
+      const { data: enabledShops } = await enabledShopsQ;
       const enabledShopIds = (enabledShops as { id: string }[] | null ?? []).map((s) => s.id);
       if (enabledShopIds.length === 0) {
         return json({ listings: [], shops: {}, products: {}, total: 0, page, pageSize });
@@ -124,8 +139,15 @@ Deno.serve(async (req) => {
         .select("id, shop_id, product_id, price, stock, unit, min_order, is_published, created_at, warranty_months", { count: "exact" })
         .eq("is_published", true)
         .in("shop_id", enabledShopIds)
-        .order("created_at", { ascending: false })
         .range(from, to);
+
+      if (minPrice !== null && !Number.isNaN(minPrice)) query = query.gte("price", minPrice);
+      if (maxPrice !== null && !Number.isNaN(maxPrice)) query = query.lte("price", maxPrice);
+      if (inStock) query = query.gt("stock", 0);
+
+      if (sort === "price_asc") query = query.order("price", { ascending: true });
+      else if (sort === "price_desc") query = query.order("price", { ascending: false });
+      else query = query.order("created_at", { ascending: false });
 
       const { data: listings, count } = await query;
       let rows = (listings as ListingRow[] | null) ?? [];
