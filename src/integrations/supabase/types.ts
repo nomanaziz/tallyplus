@@ -328,44 +328,65 @@ export type Database = {
       }
       marketplace_products: {
         Row: {
+          barcode: string | null
           base_unit: string | null
+          brand: string | null
           category: string | null
           created_at: string
           created_by: string | null
+          default_cost: number | null
+          default_price: number | null
           description: string | null
           id: string
           image_url: string | null
           is_active: boolean
           name_bn: string
           name_en: string
+          pack_size: string | null
+          search_text: string | null
+          shop_types: string[]
           slug: string
           updated_at: string
         }
         Insert: {
+          barcode?: string | null
           base_unit?: string | null
+          brand?: string | null
           category?: string | null
           created_at?: string
           created_by?: string | null
+          default_cost?: number | null
+          default_price?: number | null
           description?: string | null
           id?: string
           image_url?: string | null
           is_active?: boolean
           name_bn: string
           name_en: string
+          pack_size?: string | null
+          search_text?: string | null
+          shop_types?: string[]
           slug: string
           updated_at?: string
         }
         Update: {
+          barcode?: string | null
           base_unit?: string | null
+          brand?: string | null
           category?: string | null
           created_at?: string
           created_by?: string | null
+          default_cost?: number | null
+          default_price?: number | null
           description?: string | null
           id?: string
           image_url?: string | null
           is_active?: boolean
           name_bn?: string
           name_en?: string
+          pack_size?: string | null
+          search_text?: string | null
+          shop_types?: string[]
           slug?: string
           updated_at?: string
         }
@@ -1066,6 +1087,45 @@ export type Database = {
         }
         Relationships: []
       }
+      shop_types: {
+        Row: {
+          code: string
+          created_at: string
+          default_categories: string[]
+          icon: string | null
+          id: string
+          is_active: boolean
+          name_bn: string
+          name_en: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          default_categories?: string[]
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          name_bn: string
+          name_en: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          default_categories?: string[]
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          name_bn?: string
+          name_en?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       shops: {
         Row: {
           address: string | null
@@ -1077,6 +1137,7 @@ export type Database = {
           name: string
           owner_id: string
           phone: string | null
+          shop_type_code: string | null
           slug: string | null
           updated_at: string
           wishlist_slug: string | null
@@ -1091,6 +1152,7 @@ export type Database = {
           name: string
           owner_id: string
           phone?: string | null
+          shop_type_code?: string | null
           slug?: string | null
           updated_at?: string
           wishlist_slug?: string | null
@@ -1105,11 +1167,20 @@ export type Database = {
           name?: string
           owner_id?: string
           phone?: string | null
+          shop_type_code?: string | null
           slug?: string | null
           updated_at?: string
           wishlist_slug?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "shops_shop_type_code_fkey"
+            columns: ["shop_type_code"]
+            isOneToOne: false
+            referencedRelation: "shop_types"
+            referencedColumns: ["code"]
+          },
+        ]
       }
       site_content: {
         Row: {
@@ -1419,6 +1490,8 @@ export type Database = {
         Args: { _shop_id: string; _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
       }
+      show_limit: { Args: never; Returns: number }
+      show_trgm: { Args: { "": string }; Returns: string[] }
     }
     Enums: {
       app_role: "admin" | "owner" | "manager" | "cashier" | "buyer"
