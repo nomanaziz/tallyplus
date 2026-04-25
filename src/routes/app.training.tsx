@@ -136,8 +136,7 @@ function TrainingPage() {
         <div className="mt-6 rounded-xl border bg-card">
           <EmptyState
             icon={<GraduationCap className="h-6 w-6" />}
-            title={lang === "bn" ? "এখনো কোনো ট্রেনিং ভিডিও নেই" : "No training videos yet"}
-            subtitle={lang === "bn" ? "এডমিন শীঘ্রই ভিডিও যুক্ত করবে।" : "Admin will add videos soon."}
+            title={lang === "bn" ? "এখনো কোনো ট্রেনিং ভিডিও নেই — শীঘ্রই আসছে" : "No training videos yet — coming soon"}
           />
         </div>
       ) : (
