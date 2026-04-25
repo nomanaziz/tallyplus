@@ -60,8 +60,14 @@ function AppLayout() {
     toast.success(lang === "bn" ? "দোকান তৈরি হয়েছে" : "Shop created");
   };
 
-  if (loading && !user) {
-    return <div className="flex min-h-screen items-center justify-center text-muted-foreground">...</div>;
+  // While auth state is still resolving, show a lightweight splash instead
+  // of bouncing back to /auth (which made login feel frozen on mobile).
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center text-sm text-muted-foreground">
+        {lang === "bn" ? "লোড হচ্ছে..." : "Loading..."}
+      </div>
+    );
   }
 
   if (!shopsLoading && user && shops.length === 0) {
@@ -96,11 +102,7 @@ function AppLayout() {
       <div className="flex min-w-0 flex-1 flex-col">
         <AppTopbar />
         <main className="flex-1 overflow-auto">
-          {shopsLoading && user ? (
-            <div className="flex h-full items-center justify-center text-sm text-muted-foreground">{lang === "bn" ? "ডাটা লোড হচ্ছে..." : "Loading data..."}</div>
-          ) : (
-            <Outlet />
-          )}
+          <Outlet />
         </main>
       </div>
     </div>
