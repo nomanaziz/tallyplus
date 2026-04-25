@@ -58,6 +58,7 @@ import { Route as AdminLoginRouteImport } from './routes/admin.login'
 import { Route as AdminLandingRouteImport } from './routes/admin.landing'
 import { Route as AdminAffiliatesRouteImport } from './routes/admin.affiliates'
 import { Route as ShopSSlugRouteImport } from './routes/shop.s.$slug'
+import { Route as ShopPIdRouteImport } from './routes/shop.p.$id'
 import { Route as FSlugMyRouteImport } from './routes/f.$slug.my'
 
 const PricingRoute = PricingRouteImport.update({
@@ -306,6 +307,11 @@ const ShopSSlugRoute = ShopSSlugRouteImport.update({
   path: '/shop/s/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ShopPIdRoute = ShopPIdRouteImport.update({
+  id: '/shop/p/$id',
+  path: '/shop/p/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const FSlugMyRoute = FSlugMyRouteImport.update({
   id: '/my',
   path: '/my',
@@ -362,6 +368,7 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof AdminIndexRoute
   '/shop/': typeof ShopIndexRoute
   '/f/$slug/my': typeof FSlugMyRoute
+  '/shop/p/$id': typeof ShopPIdRoute
   '/shop/s/$slug': typeof ShopSSlugRoute
 }
 export interface FileRoutesByTo {
@@ -413,6 +420,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminIndexRoute
   '/shop': typeof ShopIndexRoute
   '/f/$slug/my': typeof FSlugMyRoute
+  '/shop/p/$id': typeof ShopPIdRoute
   '/shop/s/$slug': typeof ShopSSlugRoute
 }
 export interface FileRoutesById {
@@ -466,6 +474,7 @@ export interface FileRoutesById {
   '/admin/': typeof AdminIndexRoute
   '/shop/': typeof ShopIndexRoute
   '/f/$slug/my': typeof FSlugMyRoute
+  '/shop/p/$id': typeof ShopPIdRoute
   '/shop/s/$slug': typeof ShopSSlugRoute
 }
 export interface FileRouteTypes {
@@ -520,6 +529,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/shop/'
     | '/f/$slug/my'
+    | '/shop/p/$id'
     | '/shop/s/$slug'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -571,6 +581,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/shop'
     | '/f/$slug/my'
+    | '/shop/p/$id'
     | '/shop/s/$slug'
   id:
     | '__root__'
@@ -623,6 +634,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/shop/'
     | '/f/$slug/my'
+    | '/shop/p/$id'
     | '/shop/s/$slug'
   fileRoutesById: FileRoutesById
 }
@@ -635,6 +647,7 @@ export interface RootRouteChildren {
   PricingRoute: typeof PricingRoute
   FSlugRoute: typeof FSlugRouteWithChildren
   ShopIndexRoute: typeof ShopIndexRoute
+  ShopPIdRoute: typeof ShopPIdRoute
   ShopSSlugRoute: typeof ShopSSlugRoute
 }
 
@@ -983,6 +996,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShopSSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/shop/p/$id': {
+      id: '/shop/p/$id'
+      path: '/shop/p/$id'
+      fullPath: '/shop/p/$id'
+      preLoaderRoute: typeof ShopPIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/f/$slug/my': {
       id: '/f/$slug/my'
       path: '/my'
@@ -1118,6 +1138,7 @@ const rootRouteChildren: RootRouteChildren = {
   PricingRoute: PricingRoute,
   FSlugRoute: FSlugRouteWithChildren,
   ShopIndexRoute: ShopIndexRoute,
+  ShopPIdRoute: ShopPIdRoute,
   ShopSSlugRoute: ShopSSlugRoute,
 }
 export const routeTree = rootRouteImport
