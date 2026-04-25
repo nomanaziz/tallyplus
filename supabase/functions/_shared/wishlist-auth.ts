@@ -11,15 +11,15 @@ function b64url(bytes: ArrayBuffer | Uint8Array): string {
   return btoa(s).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
 
-function fromB64url(s: string): Uint8Array {
+function fromB64url(s: string): Uint8Array<ArrayBuffer> {
   const pad = s.length % 4 === 0 ? "" : "=".repeat(4 - (s.length % 4));
   const b = atob(s.replace(/-/g, "+").replace(/_/g, "/") + pad);
-  const out = new Uint8Array(new ArrayBuffer(b.length));
+  const out = new Uint8Array(new ArrayBuffer(b.length)) as Uint8Array<ArrayBuffer>;
   for (let i = 0; i < b.length; i++) out[i] = b.charCodeAt(i);
   return out;
 }
 
-function timingSafeEqual(a: Uint8Array, b: Uint8Array): boolean {
+function timingSafeEqual(a: Uint8Array<ArrayBuffer>, b: Uint8Array<ArrayBuffer>): boolean {
   if (a.length !== b.length) return false;
   let r = 0;
   for (let i = 0; i < a.length; i++) r |= a[i] ^ b[i];
@@ -51,7 +51,9 @@ export async function verifyPin(pin: string, stored: string): Promise<boolean> {
       key,
       expected.length * 8,
     );
-    return timingSafeEqual(new Uint8Array(bits), expected);
+    const got = new Uint8Array(new ArrayBuffer(expected.length)) as Uint8Array<ArrayBuffer>;
+    got.set(new Uint8Array(bits));
+    return timingSafeEqual(got, expected);
   } catch {
     return false;
   }
