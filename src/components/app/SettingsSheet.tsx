@@ -152,7 +152,7 @@ export function SettingsSheet({ open, onOpenChange }: { open: boolean; onOpenCha
           <div className="space-y-2">
             <Row
               icon={<LayoutDashboard className="h-4 w-4" />}
-              label={lang === "bn" ? "কমপ্লিট ড্যাশবোর্ড" : "Complete Dashboard"}
+              label={lang === "bn" ? "কম্বাইন্ড রিপোর্ট" : "Combined Report"}
               onClick={() => go("/app/combined-report")}
             />
             <Row

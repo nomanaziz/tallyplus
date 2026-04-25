@@ -111,7 +111,7 @@ export function AppTopbar() {
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => nav({ to: "/app/combined-report" })}>
               <LayoutDashboard className="mr-2 h-4 w-4" />
-              {lang === "bn" ? "কমপ্লিট ড্যাশবোর্ড" : "Complete Dashboard"}
+              {lang === "bn" ? "কম্বাইন্ড রিপোর্ট" : "Combined Report"}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setLang(lang === "bn" ? "en" : "bn")}>
               <Languages className="mr-2 h-4 w-4" />
