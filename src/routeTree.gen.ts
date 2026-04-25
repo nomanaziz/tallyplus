@@ -38,6 +38,7 @@ import { Route as AppCustomerWishlistRouteImport } from './routes/app.customer-w
 import { Route as AppContactsRouteImport } from './routes/app.contacts'
 import { Route as AppCashboxRouteImport } from './routes/app.cashbox'
 import { Route as AppAccessRouteImport } from './routes/app.access'
+import { Route as AdminSetupRouteImport } from './routes/admin.setup'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
 
 const PricingRoute = PricingRouteImport.update({
@@ -185,10 +186,15 @@ const AppAccessRoute = AppAccessRouteImport.update({
   path: '/access',
   getParentRoute: () => AppRoute,
 } as any)
+const AdminSetupRoute = AdminSetupRouteImport.update({
+  id: '/admin/setup',
+  path: '/admin/setup',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminLoginRoute = AdminLoginRouteImport.update({
-  id: '/login',
-  path: '/login',
-  getParentRoute: () => AdminRoute,
+  id: '/admin/login',
+  path: '/admin/login',
+  getParentRoute: () => rootRouteImport,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -197,6 +203,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/pricing': typeof PricingRoute
   '/admin/login': typeof AdminLoginRoute
+  '/admin/setup': typeof AdminSetupRoute
   '/app/access': typeof AppAccessRoute
   '/app/cashbox': typeof AppCashboxRoute
   '/app/contacts': typeof AppContactsRoute
@@ -229,6 +236,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/pricing': typeof PricingRoute
   '/admin/login': typeof AdminLoginRoute
+  '/admin/setup': typeof AdminSetupRoute
   '/app/access': typeof AppAccessRoute
   '/app/cashbox': typeof AppCashboxRoute
   '/app/contacts': typeof AppContactsRoute
@@ -262,6 +270,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/pricing': typeof PricingRoute
   '/admin/login': typeof AdminLoginRoute
+  '/admin/setup': typeof AdminSetupRoute
   '/app/access': typeof AppAccessRoute
   '/app/cashbox': typeof AppCashboxRoute
   '/app/contacts': typeof AppContactsRoute
@@ -296,6 +305,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/pricing'
     | '/admin/login'
+    | '/admin/setup'
     | '/app/access'
     | '/app/cashbox'
     | '/app/contacts'
@@ -328,6 +338,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/pricing'
     | '/admin/login'
+    | '/admin/setup'
     | '/app/access'
     | '/app/cashbox'
     | '/app/contacts'
@@ -360,6 +371,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/pricing'
     | '/admin/login'
+    | '/admin/setup'
     | '/app/access'
     | '/app/cashbox'
     | '/app/contacts'
@@ -392,6 +404,8 @@ export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
   AuthRoute: typeof AuthRoute
   PricingRoute: typeof PricingRoute
+  AdminLoginRoute: typeof AdminLoginRoute
+  AdminSetupRoute: typeof AdminSetupRoute
   FSlugRoute: typeof FSlugRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
@@ -601,12 +615,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAccessRouteImport
       parentRoute: typeof AppRoute
     }
+    '/admin/setup': {
+      id: '/admin/setup'
+      path: '/admin/setup'
+      fullPath: '/admin/setup'
+      preLoaderRoute: typeof AdminSetupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/login': {
       id: '/admin/login'
-      path: '/login'
+      path: '/admin/login'
       fullPath: '/admin/login'
       preLoaderRoute: typeof AdminLoginRouteImport
-      parentRoute: typeof AdminRoute
+      parentRoute: typeof rootRouteImport
     }
   }
 }
@@ -670,6 +691,8 @@ const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   AuthRoute: AuthRoute,
   PricingRoute: PricingRoute,
+  AdminLoginRoute: AdminLoginRoute,
+  AdminSetupRoute: AdminSetupRoute,
   FSlugRoute: FSlugRoute,
   AdminIndexRoute: AdminIndexRoute,
 }

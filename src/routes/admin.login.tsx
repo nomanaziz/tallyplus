@@ -129,6 +129,13 @@ function AdminLoginPage() {
             Shop owner হিসেবে login করুন
           </Link>
         </p>
+
+        <p className="text-center text-xs text-muted-foreground">
+          প্রথমবার?{" "}
+          <Link to="/admin/setup" className="underline">
+            Super admin তৈরি করুন
+          </Link>
+        </p>
       </form>
     </div>
   );
