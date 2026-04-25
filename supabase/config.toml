@@ -14,3 +14,9 @@ verify_jwt = false
 
 [functions.create-employee-user]
 verify_jwt = true
+
+[functions.submit-wishlist]
+verify_jwt = false
+
+[functions.wishlist-shop-info]
+verify_jwt = false
