@@ -40,6 +40,7 @@ import { Route as AppContactsRouteImport } from './routes/app.contacts'
 import { Route as AppCashboxRouteImport } from './routes/app.cashbox'
 import { Route as AppAccessRouteImport } from './routes/app.access'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
+import { Route as AdminSubscriptionRequestsRouteImport } from './routes/admin.subscription-requests'
 import { Route as AdminPlansRouteImport } from './routes/admin.plans'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
 import { Route as AdminLandingRouteImport } from './routes/admin.landing'
@@ -199,6 +200,12 @@ const AdminUsersRoute = AdminUsersRouteImport.update({
   path: '/users',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminSubscriptionRequestsRoute =
+  AdminSubscriptionRequestsRouteImport.update({
+    id: '/subscription-requests',
+    path: '/subscription-requests',
+    getParentRoute: () => AdminRoute,
+  } as any)
 const AdminPlansRoute = AdminPlansRouteImport.update({
   id: '/plans',
   path: '/plans',
@@ -224,6 +231,7 @@ export interface FileRoutesByFullPath {
   '/admin/landing': typeof AdminLandingRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/plans': typeof AdminPlansRoute
+  '/admin/subscription-requests': typeof AdminSubscriptionRequestsRoute
   '/admin/users': typeof AdminUsersRoute
   '/app/access': typeof AppAccessRoute
   '/app/cashbox': typeof AppCashboxRoute
@@ -259,6 +267,7 @@ export interface FileRoutesByTo {
   '/admin/landing': typeof AdminLandingRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/plans': typeof AdminPlansRoute
+  '/admin/subscription-requests': typeof AdminSubscriptionRequestsRoute
   '/admin/users': typeof AdminUsersRoute
   '/app/access': typeof AppAccessRoute
   '/app/cashbox': typeof AppCashboxRoute
@@ -296,6 +305,7 @@ export interface FileRoutesById {
   '/admin/landing': typeof AdminLandingRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/plans': typeof AdminPlansRoute
+  '/admin/subscription-requests': typeof AdminSubscriptionRequestsRoute
   '/admin/users': typeof AdminUsersRoute
   '/app/access': typeof AppAccessRoute
   '/app/cashbox': typeof AppCashboxRoute
@@ -334,6 +344,7 @@ export interface FileRouteTypes {
     | '/admin/landing'
     | '/admin/login'
     | '/admin/plans'
+    | '/admin/subscription-requests'
     | '/admin/users'
     | '/app/access'
     | '/app/cashbox'
@@ -369,6 +380,7 @@ export interface FileRouteTypes {
     | '/admin/landing'
     | '/admin/login'
     | '/admin/plans'
+    | '/admin/subscription-requests'
     | '/admin/users'
     | '/app/access'
     | '/app/cashbox'
@@ -405,6 +417,7 @@ export interface FileRouteTypes {
     | '/admin/landing'
     | '/admin/login'
     | '/admin/plans'
+    | '/admin/subscription-requests'
     | '/admin/users'
     | '/app/access'
     | '/app/cashbox'
@@ -661,6 +674,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminUsersRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/subscription-requests': {
+      id: '/admin/subscription-requests'
+      path: '/subscription-requests'
+      fullPath: '/admin/subscription-requests'
+      preLoaderRoute: typeof AdminSubscriptionRequestsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/plans': {
       id: '/admin/plans'
       path: '/plans'
@@ -689,6 +709,7 @@ interface AdminRouteChildren {
   AdminLandingRoute: typeof AdminLandingRoute
   AdminLoginRoute: typeof AdminLoginRoute
   AdminPlansRoute: typeof AdminPlansRoute
+  AdminSubscriptionRequestsRoute: typeof AdminSubscriptionRequestsRoute
   AdminUsersRoute: typeof AdminUsersRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
@@ -697,6 +718,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminLandingRoute: AdminLandingRoute,
   AdminLoginRoute: AdminLoginRoute,
   AdminPlansRoute: AdminPlansRoute,
+  AdminSubscriptionRequestsRoute: AdminSubscriptionRequestsRoute,
   AdminUsersRoute: AdminUsersRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
