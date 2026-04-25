@@ -810,3 +810,157 @@ export const printerSettingsQuery = (shopId: string | null | undefined) =>
       return data;
     },
   });
+
+/* ---------- Owner ledger (invest / withdraw) ---------- */
+export type OwnerTxn = {
+  id: string;
+  shop_id: string;
+  direction: "invest" | "withdraw";
+  amount: number;
+  note: string | null;
+  paid_via: string;
+  tx_date: string;
+  created_at: string;
+};
+
+export const ownerTxnsQuery = (shopId: string | null | undefined, range?: ReportRange) =>
+  queryOptions({
+    queryKey: ["owner-txns", shopId, range?.startIso ?? null, range?.endIso ?? null],
+    enabled: !!shopId,
+    staleTime: 15_000,
+    queryFn: async () => {
+      if (!shopId) return [] as OwnerTxn[];
+      let q = supabase
+        .from("owner_transactions")
+        .select("id,shop_id,direction,amount,note,paid_via,tx_date,created_at")
+        .eq("shop_id", shopId)
+        .is("deleted_at", null)
+        .order("tx_date", { ascending: false })
+        .order("created_at", { ascending: false });
+      if (range) q = q.gte("tx_date", range.startIso.slice(0, 10)).lte("tx_date", range.endIso.slice(0, 10));
+      const { data, error } = await q;
+      if (error) throw error;
+      return (data ?? []) as OwnerTxn[];
+    },
+  });
+
+/* ---------- Assets register ---------- */
+export type AssetRow = {
+  id: string;
+  shop_id: string;
+  name: string;
+  category: string | null;
+  purchase_price: number;
+  purchase_date: string;
+  paid_via: string;
+  quantity: number;
+  status: "active" | "damaged" | "sold" | "disposed";
+  disposed_at: string | null;
+  disposed_value: number;
+  note: string | null;
+  image_url: string | null;
+  created_at: string;
+};
+
+export const assetsListQuery = (shopId: string | null | undefined) =>
+  queryOptions({
+    queryKey: ["assets", "list", shopId],
+    enabled: !!shopId,
+    staleTime: 15_000,
+    queryFn: async () => {
+      if (!shopId) return [] as AssetRow[];
+      const { data, error } = await supabase
+        .from("assets")
+        .select("id,shop_id,name,category,purchase_price,purchase_date,paid_via,quantity,status,disposed_at,disposed_value,note,image_url,created_at")
+        .eq("shop_id", shopId)
+        .is("deleted_at", null)
+        .order("purchase_date", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as AssetRow[];
+    },
+  });
+
+/* ---------- Owner business report (combined statement) ---------- */
+export type OwnerReport = {
+  totalInvest: number;
+  totalWithdraw: number;
+  netCapital: number;
+  activeAssetValue: number;
+  assetLoss: number;
+  productProfit: number;
+  otherIncome: number;
+  otherExpense: number;
+  netProfit: number;
+  ownerEquity: number;
+};
+
+export const ownerReportQuery = (shopId: string | null | undefined, range: ReportRange) =>
+  queryOptions({
+    queryKey: ["owner-report", shopId, range.startIso, range.endIso],
+    enabled: !!shopId,
+    staleTime: 15_000,
+    queryFn: async (): Promise<OwnerReport> => {
+      const empty: OwnerReport = {
+        totalInvest: 0, totalWithdraw: 0, netCapital: 0,
+        activeAssetValue: 0, assetLoss: 0,
+        productProfit: 0, otherIncome: 0, otherExpense: 0, netProfit: 0, ownerEquity: 0,
+      };
+      if (!shopId) return empty;
+      const startDate = range.startIso.slice(0, 10);
+      const endDate = range.endIso.slice(0, 10);
+
+      const [ownerTx, assetsAll, expenses, income, productLine] = await Promise.all([
+        supabase.from("owner_transactions").select("direction,amount")
+          .eq("shop_id", shopId).is("deleted_at", null)
+          .gte("tx_date", startDate).lte("tx_date", endDate),
+        supabase.from("assets").select("purchase_price,disposed_value,status,disposed_at,purchase_date")
+          .eq("shop_id", shopId).is("deleted_at", null),
+        supabase.from("expenses").select("amount").eq("shop_id", shopId).is("deleted_at", null)
+          .gte("created_at", range.startIso).lte("created_at", range.endIso),
+        supabase.from("other_income").select("amount").eq("shop_id", shopId).is("deleted_at", null)
+          .gte("created_at", range.startIso).lte("created_at", range.endIso),
+        supabase.from("sale_items")
+          .select("qty,price,product_id,products(cost_price),sales!inner(shop_id,created_at,deleted_at)")
+          .eq("sales.shop_id", shopId)
+          .gte("sales.created_at", range.startIso)
+          .lte("sales.created_at", range.endIso)
+          .is("sales.deleted_at", null),
+      ]);
+
+      let totalInvest = 0, totalWithdraw = 0;
+      for (const r of (ownerTx.data ?? []) as any[]) {
+        const a = Number(r.amount ?? 0);
+        if (r.direction === "invest") totalInvest += a;
+        else if (r.direction === "withdraw") totalWithdraw += a;
+      }
+      let activeAssetValue = 0, assetLoss = 0;
+      for (const r of (assetsAll.data ?? []) as any[]) {
+        const price = Number(r.purchase_price ?? 0);
+        if (r.status === "active") {
+          activeAssetValue += price;
+        } else {
+          // damaged / sold / disposed
+          assetLoss += Math.max(0, price - Number(r.disposed_value ?? 0));
+        }
+      }
+      let productProfit = 0;
+      for (const r of (productLine.data ?? []) as any[]) {
+        const cost = Number(r?.products?.cost_price ?? 0);
+        const price = Number(r?.price ?? 0);
+        const qty = Number(r?.qty ?? 0);
+        productProfit += (price - cost) * qty;
+      }
+      const sum = (rows: any[] | null | undefined) =>
+        (rows ?? []).reduce((a, r) => a + Number(r?.amount ?? 0), 0);
+      const otherIncome = sum(income.data);
+      const otherExpense = sum(expenses.data);
+      const netProfit = productProfit + otherIncome - otherExpense;
+      const netCapital = totalInvest - totalWithdraw;
+      const ownerEquity = netCapital + netProfit - assetLoss;
+      return {
+        totalInvest, totalWithdraw, netCapital,
+        activeAssetValue, assetLoss,
+        productProfit, otherIncome, otherExpense, netProfit, ownerEquity,
+      };
+    },
+  });
