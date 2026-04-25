@@ -434,6 +434,91 @@ export const businessReportQuery = (shopId: string | null | undefined, range: Re
     },
   });
 
+/* ---------- Combined (multi-shop) report ---------- */
+export type CombinedReport = {
+  perShop: Record<string, BusinessReportSummary>;
+  totals: BusinessReportSummary;
+};
+
+async function fetchOneShopReport(shopId: string, range: ReportRange): Promise<BusinessReportSummary> {
+  const inRange = (q: any) =>
+    q.eq("shop_id", shopId).gte("created_at", range.startIso).lte("created_at", range.endIso);
+
+  const [sales, purchases, expenses, income, custReceipts, supPayments, productLine, recv, pay] = await Promise.all([
+    inRange(supabase.from("sales").select("total,paid,due").is("deleted_at", null)),
+    inRange(supabase.from("purchases").select("total,paid,due").is("deleted_at", null)),
+    inRange(supabase.from("expenses").select("amount").is("deleted_at", null)),
+    inRange(supabase.from("other_income").select("amount").is("deleted_at", null)),
+    inRange(supabase.from("payments").select("amount").eq("direction", "in").not("customer_id", "is", null)),
+    inRange(supabase.from("payments").select("amount").eq("direction", "out").not("supplier_id", "is", null)),
+    supabase
+      .from("sale_items")
+      .select("qty,price,product_id,products(cost_price),sales!inner(shop_id,created_at,deleted_at)")
+      .eq("sales.shop_id", shopId)
+      .gte("sales.created_at", range.startIso)
+      .lte("sales.created_at", range.endIso)
+      .is("sales.deleted_at", null),
+    supabase.from("customers").select("due_balance").eq("shop_id", shopId).is("deleted_at", null),
+    supabase.from("suppliers").select("due_balance").eq("shop_id", shopId).is("deleted_at", null),
+  ]);
+
+  const sum = (rows: any[] | null | undefined, key = "amount") =>
+    (rows ?? []).reduce((a, r) => a + Number(r?.[key] ?? 0), 0);
+
+  let productProfit = 0;
+  for (const r of (productLine.data ?? []) as any[]) {
+    const cost = Number(r?.products?.cost_price ?? 0);
+    const price = Number(r?.price ?? 0);
+    const qty = Number(r?.qty ?? 0);
+    productProfit += (price - cost) * qty;
+  }
+
+  return {
+    totalSales: sum(sales.data ?? [], "total"),
+    cashSales: sum(sales.data ?? [], "paid"),
+    dueReceived: sum(custReceipts.data ?? []),
+    cashPurchase: sum(purchases.data ?? [], "paid"),
+    duePaid: sum(supPayments.data ?? []),
+    otherIncome: sum(income.data ?? []),
+    otherExpense: sum(expenses.data ?? []),
+    receivable: sum(recv.data ?? [], "due_balance"),
+    payable: sum(pay.data ?? [], "due_balance"),
+    productProfit,
+  };
+}
+
+export const combinedReportQuery = (shopIds: string[], range: ReportRange) =>
+  queryOptions({
+    queryKey: ["report", "combined", [...shopIds].sort().join(","), range.startIso, range.endIso],
+    enabled: shopIds.length > 0,
+    staleTime: 15_000,
+    queryFn: async (): Promise<CombinedReport> => {
+      const empty: BusinessReportSummary = {
+        totalSales: 0, cashSales: 0, dueReceived: 0, cashPurchase: 0, duePaid: 0,
+        otherIncome: 0, otherExpense: 0, receivable: 0, payable: 0, productProfit: 0,
+      };
+      if (shopIds.length === 0) return { perShop: {}, totals: empty };
+      const results = await Promise.all(shopIds.map((id) => fetchOneShopReport(id, range)));
+      const perShop: Record<string, BusinessReportSummary> = {};
+      const totals: BusinessReportSummary = { ...empty };
+      shopIds.forEach((id, i) => {
+        perShop[id] = results[i];
+        const r = results[i];
+        totals.totalSales += r.totalSales;
+        totals.cashSales += r.cashSales;
+        totals.dueReceived += r.dueReceived;
+        totals.cashPurchase += r.cashPurchase;
+        totals.duePaid += r.duePaid;
+        totals.otherIncome += r.otherIncome;
+        totals.otherExpense += r.otherExpense;
+        totals.receivable += r.receivable;
+        totals.payable += r.payable;
+        totals.productProfit += r.productProfit;
+      });
+      return { perShop, totals };
+    },
+  });
+
 /* Sales report — invoices in range */
 export const salesReportQuery = (shopId: string | null | undefined, range: ReportRange) =>
   queryOptions({

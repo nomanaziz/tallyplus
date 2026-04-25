@@ -22,6 +22,7 @@ import { Route as AppTrainingRouteImport } from './routes/app.training'
 import { Route as AppSubscribeRouteImport } from './routes/app.subscribe'
 import { Route as AppStockEditRouteImport } from './routes/app.stock-edit'
 import { Route as AppStockRouteImport } from './routes/app.stock'
+import { Route as AppShopsRouteImport } from './routes/app.shops'
 import { Route as AppSellRouteImport } from './routes/app.sell'
 import { Route as AppSalesLedgerRouteImport } from './routes/app.sales-ledger'
 import { Route as AppReportsRouteImport } from './routes/app.reports'
@@ -39,6 +40,7 @@ import { Route as AppDueLedgerRouteImport } from './routes/app.due-ledger'
 import { Route as AppDashboardRouteImport } from './routes/app.dashboard'
 import { Route as AppCustomerWishlistRouteImport } from './routes/app.customer-wishlist'
 import { Route as AppContactsRouteImport } from './routes/app.contacts'
+import { Route as AppCombinedReportRouteImport } from './routes/app.combined-report'
 import { Route as AppCashboxRouteImport } from './routes/app.cashbox'
 import { Route as AppAffiliateRouteImport } from './routes/app.affiliate'
 import { Route as AppAccessRouteImport } from './routes/app.access'
@@ -118,6 +120,11 @@ const AppStockEditRoute = AppStockEditRouteImport.update({
 const AppStockRoute = AppStockRouteImport.update({
   id: '/stock',
   path: '/stock',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppShopsRoute = AppShopsRouteImport.update({
+  id: '/shops',
+  path: '/shops',
   getParentRoute: () => AppRoute,
 } as any)
 const AppSellRoute = AppSellRouteImport.update({
@@ -203,6 +210,11 @@ const AppCustomerWishlistRoute = AppCustomerWishlistRouteImport.update({
 const AppContactsRoute = AppContactsRouteImport.update({
   id: '/contacts',
   path: '/contacts',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppCombinedReportRoute = AppCombinedReportRouteImport.update({
+  id: '/combined-report',
+  path: '/combined-report',
   getParentRoute: () => AppRoute,
 } as any)
 const AppCashboxRoute = AppCashboxRouteImport.update({
@@ -304,6 +316,7 @@ export interface FileRoutesByFullPath {
   '/app/access': typeof AppAccessRoute
   '/app/affiliate': typeof AppAffiliateRoute
   '/app/cashbox': typeof AppCashboxRoute
+  '/app/combined-report': typeof AppCombinedReportRoute
   '/app/contacts': typeof AppContactsRoute
   '/app/customer-wishlist': typeof AppCustomerWishlistRoute
   '/app/dashboard': typeof AppDashboardRoute
@@ -321,6 +334,7 @@ export interface FileRoutesByFullPath {
   '/app/reports': typeof AppReportsRoute
   '/app/sales-ledger': typeof AppSalesLedgerRoute
   '/app/sell': typeof AppSellRoute
+  '/app/shops': typeof AppShopsRoute
   '/app/stock': typeof AppStockRoute
   '/app/stock-edit': typeof AppStockEditRoute
   '/app/subscribe': typeof AppSubscribeRoute
@@ -350,6 +364,7 @@ export interface FileRoutesByTo {
   '/app/access': typeof AppAccessRoute
   '/app/affiliate': typeof AppAffiliateRoute
   '/app/cashbox': typeof AppCashboxRoute
+  '/app/combined-report': typeof AppCombinedReportRoute
   '/app/contacts': typeof AppContactsRoute
   '/app/customer-wishlist': typeof AppCustomerWishlistRoute
   '/app/dashboard': typeof AppDashboardRoute
@@ -367,6 +382,7 @@ export interface FileRoutesByTo {
   '/app/reports': typeof AppReportsRoute
   '/app/sales-ledger': typeof AppSalesLedgerRoute
   '/app/sell': typeof AppSellRoute
+  '/app/shops': typeof AppShopsRoute
   '/app/stock': typeof AppStockRoute
   '/app/stock-edit': typeof AppStockEditRoute
   '/app/subscribe': typeof AppSubscribeRoute
@@ -398,6 +414,7 @@ export interface FileRoutesById {
   '/app/access': typeof AppAccessRoute
   '/app/affiliate': typeof AppAffiliateRoute
   '/app/cashbox': typeof AppCashboxRoute
+  '/app/combined-report': typeof AppCombinedReportRoute
   '/app/contacts': typeof AppContactsRoute
   '/app/customer-wishlist': typeof AppCustomerWishlistRoute
   '/app/dashboard': typeof AppDashboardRoute
@@ -415,6 +432,7 @@ export interface FileRoutesById {
   '/app/reports': typeof AppReportsRoute
   '/app/sales-ledger': typeof AppSalesLedgerRoute
   '/app/sell': typeof AppSellRoute
+  '/app/shops': typeof AppShopsRoute
   '/app/stock': typeof AppStockRoute
   '/app/stock-edit': typeof AppStockEditRoute
   '/app/subscribe': typeof AppSubscribeRoute
@@ -447,6 +465,7 @@ export interface FileRouteTypes {
     | '/app/access'
     | '/app/affiliate'
     | '/app/cashbox'
+    | '/app/combined-report'
     | '/app/contacts'
     | '/app/customer-wishlist'
     | '/app/dashboard'
@@ -464,6 +483,7 @@ export interface FileRouteTypes {
     | '/app/reports'
     | '/app/sales-ledger'
     | '/app/sell'
+    | '/app/shops'
     | '/app/stock'
     | '/app/stock-edit'
     | '/app/subscribe'
@@ -493,6 +513,7 @@ export interface FileRouteTypes {
     | '/app/access'
     | '/app/affiliate'
     | '/app/cashbox'
+    | '/app/combined-report'
     | '/app/contacts'
     | '/app/customer-wishlist'
     | '/app/dashboard'
@@ -510,6 +531,7 @@ export interface FileRouteTypes {
     | '/app/reports'
     | '/app/sales-ledger'
     | '/app/sell'
+    | '/app/shops'
     | '/app/stock'
     | '/app/stock-edit'
     | '/app/subscribe'
@@ -540,6 +562,7 @@ export interface FileRouteTypes {
     | '/app/access'
     | '/app/affiliate'
     | '/app/cashbox'
+    | '/app/combined-report'
     | '/app/contacts'
     | '/app/customer-wishlist'
     | '/app/dashboard'
@@ -557,6 +580,7 @@ export interface FileRouteTypes {
     | '/app/reports'
     | '/app/sales-ledger'
     | '/app/sell'
+    | '/app/shops'
     | '/app/stock'
     | '/app/stock-edit'
     | '/app/subscribe'
@@ -667,6 +691,13 @@ declare module '@tanstack/react-router' {
       path: '/stock'
       fullPath: '/app/stock'
       preLoaderRoute: typeof AppStockRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/shops': {
+      id: '/app/shops'
+      path: '/shops'
+      fullPath: '/app/shops'
+      preLoaderRoute: typeof AppShopsRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/sell': {
@@ -786,6 +817,13 @@ declare module '@tanstack/react-router' {
       path: '/contacts'
       fullPath: '/app/contacts'
       preLoaderRoute: typeof AppContactsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/combined-report': {
+      id: '/app/combined-report'
+      path: '/combined-report'
+      fullPath: '/app/combined-report'
+      preLoaderRoute: typeof AppCombinedReportRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/cashbox': {
@@ -944,6 +982,7 @@ interface AppRouteChildren {
   AppAccessRoute: typeof AppAccessRoute
   AppAffiliateRoute: typeof AppAffiliateRoute
   AppCashboxRoute: typeof AppCashboxRoute
+  AppCombinedReportRoute: typeof AppCombinedReportRoute
   AppContactsRoute: typeof AppContactsRoute
   AppCustomerWishlistRoute: typeof AppCustomerWishlistRoute
   AppDashboardRoute: typeof AppDashboardRoute
@@ -961,6 +1000,7 @@ interface AppRouteChildren {
   AppReportsRoute: typeof AppReportsRoute
   AppSalesLedgerRoute: typeof AppSalesLedgerRoute
   AppSellRoute: typeof AppSellRoute
+  AppShopsRoute: typeof AppShopsRoute
   AppStockRoute: typeof AppStockRoute
   AppStockEditRoute: typeof AppStockEditRoute
   AppSubscribeRoute: typeof AppSubscribeRoute
@@ -972,6 +1012,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppAccessRoute: AppAccessRoute,
   AppAffiliateRoute: AppAffiliateRoute,
   AppCashboxRoute: AppCashboxRoute,
+  AppCombinedReportRoute: AppCombinedReportRoute,
   AppContactsRoute: AppContactsRoute,
   AppCustomerWishlistRoute: AppCustomerWishlistRoute,
   AppDashboardRoute: AppDashboardRoute,
@@ -989,6 +1030,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppReportsRoute: AppReportsRoute,
   AppSalesLedgerRoute: AppSalesLedgerRoute,
   AppSellRoute: AppSellRoute,
+  AppShopsRoute: AppShopsRoute,
   AppStockRoute: AppStockRoute,
   AppStockEditRoute: AppStockEditRoute,
   AppSubscribeRoute: AppSubscribeRoute,

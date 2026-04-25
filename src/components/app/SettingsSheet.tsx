@@ -94,7 +94,7 @@ export function SettingsSheet({ open, onOpenChange }: { open: boolean; onOpenCha
 
         <div className="flex-1 overflow-y-auto px-4 py-3">
           <button
-            onClick={() => go("/app")}
+            onClick={() => go("/app/shops")}
             className="flex w-full items-center justify-center gap-2 rounded-lg bg-foreground px-3 py-2.5 text-sm font-semibold text-background transition hover:opacity-90"
           >
             <ArrowLeftRight className="h-4 w-4" />
@@ -106,7 +106,7 @@ export function SettingsSheet({ open, onOpenChange }: { open: boolean; onOpenCha
             <Row
               icon={<LayoutDashboard className="h-4 w-4" />}
               label={lang === "bn" ? "কমপ্লিট ড্যাশবোর্ড" : "Complete Dashboard"}
-              onClick={() => go("/app/dashboard")}
+              onClick={() => go("/app/combined-report")}
             />
             <Row
               icon={<Crown className="h-4 w-4" />}
