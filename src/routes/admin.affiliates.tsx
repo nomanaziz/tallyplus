@@ -159,8 +159,9 @@ function CommissionsTab() {
   };
   useEffect(() => { void load(); }, []);
   const setStatus = async (id: string, status: string) => {
-    const patch: Record<string, unknown> = { status };
-    if (status === "paid") patch.paid_at = new Date().toISOString();
+    const patch = status === "paid"
+      ? { status, paid_at: new Date().toISOString() }
+      : { status };
     const { error } = await supabase.from("affiliate_commissions").update(patch).eq("id", id);
     if (error) toast.error(error.message); else void load();
   };
