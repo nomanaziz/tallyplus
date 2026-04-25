@@ -34,6 +34,7 @@ type WishlistItem = {
   wishlist_id: string;
   name: string;
   qty: number | null;
+  price: number | null;
   unit: string | null;
   position: number;
   done: boolean;
@@ -96,6 +97,7 @@ function CustomerWishlistPage() {
         .from("customer_wishlists")
         .select("*")
         .eq("shop_id", current.id)
+        .is("deleted_at", null)
         .order("created_at", { ascending: false })
         .limit(200);
       if (error) throw error;
@@ -298,10 +300,19 @@ function WishlistDetailDialog({
 
   const remove = async () => {
     if (!wishlistId) return;
-    if (!confirm(lang === "bn" ? "এই ফর্দটি মুছবেন?" : "Delete this wishlist?")) return;
-    await supabase.from("customer_wishlists").delete().eq("id", wishlistId);
+    if (!confirm(lang === "bn" ? "এই ফর্দটি রিসাইকেল বিনে পাঠাবেন?" : "Move this wishlist to recycle bin?")) return;
+    await supabase
+      .from("customer_wishlists")
+      .update({ deleted_at: new Date().toISOString() })
+      .eq("id", wishlistId);
     onChange();
     onOpenChange(false);
+  };
+
+  const updateItemPrice = async (it: WishlistItem, value: string) => {
+    const v = value.trim() === "" ? null : Number(value);
+    await supabase.from("customer_wishlist_items").update({ price: v }).eq("id", it.id);
+    void detailQ.refetch();
   };
 
   const wl = detailQ.data?.wishlist;
