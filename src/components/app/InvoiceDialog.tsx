@@ -1,6 +1,6 @@
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, X, Printer, Store } from "lucide-react";
+import { CheckCircle2, X, Printer, Receipt, Store } from "lucide-react";
 import { useI18n, fmtMoney, bnNum } from "@/lib/i18n";
 
 export type InvoiceItem = {
@@ -49,6 +49,12 @@ export function InvoiceDialog({
     document.body.classList.add("invoice-printing");
     window.print();
     setTimeout(() => document.body.classList.remove("invoice-printing"), 500);
+  };
+
+  const printPOS = () => {
+    document.body.classList.add("pos-printing");
+    window.print();
+    setTimeout(() => document.body.classList.remove("pos-printing"), 500);
   };
 
   const dt = new Date(data.date);
@@ -195,10 +201,70 @@ export function InvoiceDialog({
 
         {/* Print button */}
         <div className="border-t p-3 print:hidden">
-          <Button onClick={print} className="w-full gap-2 h-11">
-            <Printer className="h-4 w-4" />
-            {lang === "bn" ? "প্রিন্ট" : "Print"}
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={print} className="flex-1 gap-2 h-11">
+              <Printer className="h-4 w-4" />
+              {lang === "bn" ? "প্রিন্ট (A4)" : "Print (A4)"}
+            </Button>
+            <Button
+              onClick={printPOS}
+              variant="outline"
+              size="icon"
+              className="h-11 w-11 shrink-0"
+              title={lang === "bn" ? "POS / থার্মাল রিসিট প্রিন্ট" : "POS / thermal receipt print"}
+              aria-label={lang === "bn" ? "POS প্রিন্ট" : "POS print"}
+            >
+              <Receipt className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+
+        {/* Hidden POS receipt area — only visible during pos-print */}
+        <div id="pos-print-area" className="hidden">
+          <div style={{ textAlign: "center", fontWeight: 700 }}>{data.shop.name}</div>
+          {data.shop.address && (
+            <div style={{ textAlign: "center", fontSize: 10 }}>{data.shop.address}</div>
+          )}
+          {data.shop.phone && (
+            <div style={{ textAlign: "center", fontSize: 10 }}>{data.shop.phone}</div>
+          )}
+          <div style={{ textAlign: "center", fontWeight: 700, margin: "4px 0", borderTop: "1px dashed #000", borderBottom: "1px dashed #000", padding: "2px 0" }}>
+            {lang === "bn" ? "ইনভয়েস" : "INVOICE"}
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10 }}>
+            <span>{lang === "bn" ? "নং:" : "No:"} {data.invoiceNo}</span>
+            <span>{dtStr}</span>
+          </div>
+          {data.party.name && (
+            <div style={{ fontSize: 10 }}>
+              {lang === "bn" ? (isSell ? "ক্রেতা:" : "সাপ্লায়ার:") : (isSell ? "Customer:" : "Supplier:")} {data.party.name}
+              {data.party.phone ? ` • ${data.party.phone}` : ""}
+            </div>
+          )}
+          <div style={{ borderTop: "1px dashed #000", margin: "4px 0" }} />
+          {data.items.map((it, i) => (
+            <div key={i} style={{ marginBottom: 3 }}>
+              <div style={{ fontWeight: 600 }}>{lang === "bn" ? bnNum(i + 1) + ". " : `${i + 1}. `}{it.name}</div>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10 }}>
+                <span>
+                  {lang === "bn" ? bnNum(it.qty) : it.qty}{it.unit ? ` ${it.unit}` : ""} × {fmtMoney(it.price, lang)}
+                </span>
+                <span>{fmtMoney(it.total, lang)}</span>
+              </div>
+            </div>
+          ))}
+          <div style={{ borderTop: "1px dashed #000", margin: "4px 0" }} />
+          <PosRow label={lang === "bn" ? "সাব টোটাল" : "Subtotal"} value={fmtMoney(data.subtotal, lang)} />
+          {data.discount > 0 && <PosRow label={lang === "bn" ? "ছাড়" : "Discount"} value={`- ${fmtMoney(data.discount, lang)}`} />}
+          {data.delivery > 0 && <PosRow label={lang === "bn" ? "ডেলিভারি" : "Delivery"} value={fmtMoney(data.delivery, lang)} />}
+          <div style={{ borderTop: "1px solid #000", margin: "3px 0" }} />
+          <PosRow label={lang === "bn" ? "মোট" : "TOTAL"} value={fmtMoney(data.grandTotal, lang)} bold />
+          <PosRow label={lang === "bn" ? "পরিশোধিত" : "Paid"} value={fmtMoney(data.paid, lang)} />
+          {dueRemain > 0 && <PosRow label={lang === "bn" ? "বাকি" : "Due"} value={fmtMoney(dueRemain, lang)} bold />}
+          <div style={{ borderTop: "1px dashed #000", margin: "4px 0" }} />
+          <div style={{ textAlign: "center", fontSize: 10, marginTop: 4 }}>
+            {lang === "bn" ? "ধন্যবাদ!" : "Thank you!"}
+          </div>
         </div>
       </DialogContent>
     </Dialog>
@@ -208,6 +274,15 @@ export function InvoiceDialog({
 function Row({ label, value, bold }: { label: string; value: string; bold?: boolean }) {
   return (
     <div className={`flex justify-between ${bold ? "font-bold" : ""}`}>
+      <span>{label}</span>
+      <span>{value}</span>
+    </div>
+  );
+}
+
+function PosRow({ label, value, bold }: { label: string; value: string; bold?: boolean }) {
+  return (
+    <div style={{ display: "flex", justifyContent: "space-between", fontWeight: bold ? 700 : 400, fontSize: bold ? 12 : 11 }}>
       <span>{label}</span>
       <span>{value}</span>
     </div>
