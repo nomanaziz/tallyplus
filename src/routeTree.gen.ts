@@ -70,6 +70,7 @@ import { Route as AppOnlineShopThemesRouteImport } from './routes/app.online-sho
 import { Route as AppOnlineShopSettingsRouteImport } from './routes/app.online-shop.settings'
 import { Route as AppOnlineShopPromoCodesRouteImport } from './routes/app.online-shop.promo-codes'
 import { Route as AppOnlineShopProductsRouteImport } from './routes/app.online-shop.products'
+import { Route as AppOnlineShopPolicyRouteImport } from './routes/app.online-shop.policy'
 import { Route as AppOnlineShopOrdersRouteImport } from './routes/app.online-shop.orders'
 import { Route as AppOnlineShopMessagesRouteImport } from './routes/app.online-shop.messages'
 import { Route as AppOnlineShopMarketingRouteImport } from './routes/app.online-shop.marketing'
@@ -384,6 +385,11 @@ const AppOnlineShopProductsRoute = AppOnlineShopProductsRouteImport.update({
   path: '/products',
   getParentRoute: () => AppOnlineShopRoute,
 } as any)
+const AppOnlineShopPolicyRoute = AppOnlineShopPolicyRouteImport.update({
+  id: '/policy',
+  path: '/policy',
+  getParentRoute: () => AppOnlineShopRoute,
+} as any)
 const AppOnlineShopOrdersRoute = AppOnlineShopOrdersRouteImport.update({
   id: '/orders',
   path: '/orders',
@@ -481,6 +487,7 @@ export interface FileRoutesByFullPath {
   '/app/online-shop/marketing': typeof AppOnlineShopMarketingRoute
   '/app/online-shop/messages': typeof AppOnlineShopMessagesRoute
   '/app/online-shop/orders': typeof AppOnlineShopOrdersRoute
+  '/app/online-shop/policy': typeof AppOnlineShopPolicyRoute
   '/app/online-shop/products': typeof AppOnlineShopProductsRoute
   '/app/online-shop/promo-codes': typeof AppOnlineShopPromoCodesRoute
   '/app/online-shop/settings': typeof AppOnlineShopSettingsRoute
@@ -549,6 +556,7 @@ export interface FileRoutesByTo {
   '/app/online-shop/marketing': typeof AppOnlineShopMarketingRoute
   '/app/online-shop/messages': typeof AppOnlineShopMessagesRoute
   '/app/online-shop/orders': typeof AppOnlineShopOrdersRoute
+  '/app/online-shop/policy': typeof AppOnlineShopPolicyRoute
   '/app/online-shop/products': typeof AppOnlineShopProductsRoute
   '/app/online-shop/promo-codes': typeof AppOnlineShopPromoCodesRoute
   '/app/online-shop/settings': typeof AppOnlineShopSettingsRoute
@@ -620,6 +628,7 @@ export interface FileRoutesById {
   '/app/online-shop/marketing': typeof AppOnlineShopMarketingRoute
   '/app/online-shop/messages': typeof AppOnlineShopMessagesRoute
   '/app/online-shop/orders': typeof AppOnlineShopOrdersRoute
+  '/app/online-shop/policy': typeof AppOnlineShopPolicyRoute
   '/app/online-shop/products': typeof AppOnlineShopProductsRoute
   '/app/online-shop/promo-codes': typeof AppOnlineShopPromoCodesRoute
   '/app/online-shop/settings': typeof AppOnlineShopSettingsRoute
@@ -692,6 +701,7 @@ export interface FileRouteTypes {
     | '/app/online-shop/marketing'
     | '/app/online-shop/messages'
     | '/app/online-shop/orders'
+    | '/app/online-shop/policy'
     | '/app/online-shop/products'
     | '/app/online-shop/promo-codes'
     | '/app/online-shop/settings'
@@ -760,6 +770,7 @@ export interface FileRouteTypes {
     | '/app/online-shop/marketing'
     | '/app/online-shop/messages'
     | '/app/online-shop/orders'
+    | '/app/online-shop/policy'
     | '/app/online-shop/products'
     | '/app/online-shop/promo-codes'
     | '/app/online-shop/settings'
@@ -830,6 +841,7 @@ export interface FileRouteTypes {
     | '/app/online-shop/marketing'
     | '/app/online-shop/messages'
     | '/app/online-shop/orders'
+    | '/app/online-shop/policy'
     | '/app/online-shop/products'
     | '/app/online-shop/promo-codes'
     | '/app/online-shop/settings'
@@ -1283,6 +1295,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppOnlineShopProductsRouteImport
       parentRoute: typeof AppOnlineShopRoute
     }
+    '/app/online-shop/policy': {
+      id: '/app/online-shop/policy'
+      path: '/policy'
+      fullPath: '/app/online-shop/policy'
+      preLoaderRoute: typeof AppOnlineShopPolicyRouteImport
+      parentRoute: typeof AppOnlineShopRoute
+    }
     '/app/online-shop/orders': {
       id: '/app/online-shop/orders'
       path: '/orders'
@@ -1389,6 +1408,7 @@ interface AppOnlineShopRouteChildren {
   AppOnlineShopMarketingRoute: typeof AppOnlineShopMarketingRoute
   AppOnlineShopMessagesRoute: typeof AppOnlineShopMessagesRoute
   AppOnlineShopOrdersRoute: typeof AppOnlineShopOrdersRoute
+  AppOnlineShopPolicyRoute: typeof AppOnlineShopPolicyRoute
   AppOnlineShopProductsRoute: typeof AppOnlineShopProductsRoute
   AppOnlineShopPromoCodesRoute: typeof AppOnlineShopPromoCodesRoute
   AppOnlineShopSettingsRoute: typeof AppOnlineShopSettingsRoute
@@ -1404,6 +1424,7 @@ const AppOnlineShopRouteChildren: AppOnlineShopRouteChildren = {
   AppOnlineShopMarketingRoute: AppOnlineShopMarketingRoute,
   AppOnlineShopMessagesRoute: AppOnlineShopMessagesRoute,
   AppOnlineShopOrdersRoute: AppOnlineShopOrdersRoute,
+  AppOnlineShopPolicyRoute: AppOnlineShopPolicyRoute,
   AppOnlineShopProductsRoute: AppOnlineShopProductsRoute,
   AppOnlineShopPromoCodesRoute: AppOnlineShopPromoCodesRoute,
   AppOnlineShopSettingsRoute: AppOnlineShopSettingsRoute,

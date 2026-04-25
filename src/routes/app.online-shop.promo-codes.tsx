@@ -90,7 +90,11 @@ function PromoCodesPage() {
                     <div>
                       <div className="text-muted-foreground">{lang === "bn" ? "ছাড়" : "Discount"}</div>
                       <div className="font-bold text-primary">
-                        {p.discount_type === "percent" ? `${p.discount_value}%` : `৳ ${p.discount_value}`}
+                        {p.discount_type === "percent"
+                          ? `${p.discount_value}%`
+                          : p.discount_type === "free_shipping"
+                          ? (lang === "bn" ? "ফ্রি শিপিং" : "Free Shipping")
+                          : `৳ ${p.discount_value}`}
                       </div>
                     </div>
                     <div>
@@ -149,8 +153,12 @@ function AddPromoDialog({ open, onOpenChange, shopId, lang, onCreated }: { open:
   const submit = async () => {
     const c = code.trim().toUpperCase();
     if (!c) { toast.error(lang === "bn" ? "কোড দিন" : "Enter code"); return; }
-    const v = Number(value);
-    if (!v || v <= 0) { toast.error(lang === "bn" ? "ছাড় দিন" : "Enter discount"); return; }
+    const isFreeShip = type === "free_shipping";
+    const v = isFreeShip ? 0 : Number(value);
+    if (!isFreeShip && (!v || v <= 0)) { toast.error(lang === "bn" ? "ছাড় দিন" : "Enter discount"); return; }
+    if (isFreeShip && (!minAmt || Number(minAmt) <= 0)) {
+      toast.error(lang === "bn" ? "ন্যূনতম ক্রয় দিন" : "Enter minimum order amount"); return;
+    }
     setSaving(true);
     const { error } = await supabase.from("promo_codes").insert({
       shop_id: shopId, code: c, discount_type: type, discount_value: v,
@@ -177,11 +185,20 @@ function AddPromoDialog({ open, onOpenChange, shopId, lang, onCreated }: { open:
               <SelectContent>
                 <SelectItem value="percent">{lang === "bn" ? "শতাংশ" : "Percentage"}</SelectItem>
                 <SelectItem value="amount">{lang === "bn" ? "নির্দিষ্ট অঙ্ক" : "Fixed Amount"}</SelectItem>
+                <SelectItem value="free_shipping">{lang === "bn" ? "ফ্রি শিপিং" : "Free Shipping"}</SelectItem>
               </SelectContent>
-            </Select></div>
-          <div><Label>{lang === "bn" ? "ছাড়ের পরিমাণ" : "Discount Amount"}</Label>
-            <Input type="number" value={value} onChange={(e) => setValue(e.target.value)} placeholder="eg. 10, 25, 50" /></div>
-          <div><Label>{lang === "bn" ? "ন্যূনতম ক্রয়" : "Minimum Purchase Amount"}</Label>
+            </Select>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {type === "percent" && (lang === "bn" ? "মোট অর্ডারের শতাংশ ছাড়।" : "Percentage off total order.")}
+              {type === "amount" && (lang === "bn" ? "মোট অর্ডার থেকে নির্দিষ্ট টাকা কমে যাবে।" : "Fixed amount off order total.")}
+              {type === "free_shipping" && (lang === "bn" ? "নির্দিষ্ট অঙ্কের বেশি অর্ডারে ডেলিভারি ফ্রি।" : "Free delivery on orders above the minimum.")}
+            </p>
+          </div>
+          {type !== "free_shipping" && (
+            <div><Label>{lang === "bn" ? "ছাড়ের পরিমাণ" : "Discount Amount"}</Label>
+              <Input type="number" value={value} onChange={(e) => setValue(e.target.value)} placeholder="eg. 10, 25, 50" /></div>
+          )}
+          <div><Label>{lang === "bn" ? "ন্যূনতম ক্রয়" : "Minimum Purchase Amount"} {type === "free_shipping" && <span className="text-destructive">*</span>}</Label>
             <Input type="number" value={minAmt} onChange={(e) => setMinAmt(e.target.value)} placeholder="eg. 500, 1000, 2000" /></div>
           <div><Label>{lang === "bn" ? "মেয়াদ শেষ" : "Expiry Date"}</Label>
             <Input type="date" value={exp} onChange={(e) => setExp(e.target.value)} /></div>
