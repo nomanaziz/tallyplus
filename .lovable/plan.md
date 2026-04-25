@@ -1,112 +1,114 @@
-## Five fixes
+# Quick Order / দ্রুত ফর্দ Screen
 
-### 1. Cashbox — direct Jomā / Khoroch buttons
+A new in-app screen for shop owners to take orders **as fast as writing on paper** — type product name, get instant suggestions from your store, auto-fill price & unit, then either convert to a real sale or print a checklist for the customer.
 
-**Now:** "New entry" opens a dialog with tabs.
-**Change:** Top of `/app/cashbox` will show two big buttons side-by-side — green **জমা (Cash In)** and red **খরচ (Cash Out)**. Each opens a focused dialog (no tab switch) pre-set to that direction asking only Amount + Note. Remove the combined "New entry" button.
-
-File: `src/routes/app.cashbox.tsx`
+This is **separate** from the existing `/app/customer-wishlist` (which receives lists from customers via shared link). This new screen is the **owner's own scratchpad** for taking phoned-in / over-the-counter orders quickly.
 
 ---
 
-### 2. Expense page — preset category cards first, amount after
+## Where it lives
 
-**Now:** "New expense" opens a free-text "Category" input.
-**Change:** Top of `/app/expense-ledger` shows **4 preset category cards** with icons:
-- 🏠 দোকান ভাড়া (Rent)
-- 🚚 পরিবহন (Transport)
-- ⚡ ইউটিলিটি (Utility — bills)
-- 👤 বেতন (Salary)
-- ➕ অন্যান্য (Other — for custom)
-
-Click a card → dialog opens with that category locked → user enters Amount → Paid via → optional Note → Save. Existing expense list/total stays below.
-
-Categories will be hard-coded (no DB needed for v1) so they show immediately for everyone.
-
-File: `src/routes/app.expense-ledger.tsx`
+- **Route**: `/app/quick-order` (new file `src/routes/app.quick-order.tsx`)
+- **Sidebar**: Add "দ্রুত ফর্দ / Quick Order" entry under the Sell group, with `perm: "sell"` gating
+- **Permission**: Reuses existing `sell` permission; print-only mode also allowed if user only has `sell`
 
 ---
 
-### 3. Customers RLS error — "new row violates row-level security policy"
+## Screen layout (mobile-first)
 
-**Cause:** The insert payload is correct and RLS allows shop owners + members. The error happens because in some sessions `current.id` in localStorage points to a shop the logged-in user no longer owns/is-member of (stale cache after shop creation flow).
-
-**Fix:**
-- In `app.contacts.tsx` `ContactDialog.save()`, before insert verify the active shop with a fresh `shops` lookup; if user isn't a member, force `shop.refresh()` and show a clear error.
-- Add the same guard to expense, supplier, product saves.
-- On login + shop change, re-validate cached `tp_shop_current` against the fresh server list and clear if missing.
-
-Files: `src/lib/shop.tsx`, `src/routes/app.contacts.tsx`.
-
----
-
-### 4. App Training — admin-managed YouTube videos by category
-
-**New table** `training_videos`:
+```text
+┌─────────────────────────────────────────────┐
+│  দ্রুত ফর্দ          [Customer ▾] [টোগল ⚙] │
+├─────────────────────────────────────────────┤
+│  ① পণ্য টাইপ করুন...        [কলম ৳10/pcs ✓]│ ← suggestions dropdown
+│  ──────────────────────────────────────     │
+│  1. কলম           ৳10  × [ 5  ] pcs   [×]   │ ← price/unit locked (from store)
+│  2. খাতা          ৳40  × [ 2  ] pcs   [×]   │
+│  3. চক (external) [৳ 25]× [ 1  ] [pcs▾][×]  │ ← editable (not in store)
+│  ──────────────────────────────────────     │
+│  মোট: ৳ 130                                  │
+├─────────────────────────────────────────────┤
+│  [🖨 প্রিন্ট ফর্দ]   [💰 বিক্রিতে রূপান্তর]│
+└─────────────────────────────────────────────┘
 ```
-id uuid pk
-title_bn text, title_en text
-youtube_id text         -- e.g. "dQw4w9WgXcQ"
-category text           -- "sell" | "purchase" | "stock" | "expense" | "general" | ...
-sort_order int default 0
-is_published bool default true
-created_at, updated_at
-```
-RLS: public read where `is_published`; admin write only.
 
-**Admin page** `/admin/training` (added to AdminSidebar):
-- List + Add/Edit/Delete videos.
-- Fields: title (bn/en), YouTube URL (auto-extract id), category dropdown, sort, published toggle.
-- Thumbnail preview from `https://img.youtube.com/vi/{id}/hqdefault.jpg`.
+### Top toggle
+- "শুধু আমার দোকানের পণ্য" / "Allow external items" — controls whether unmatched names can be added as external items.
 
-**User page** `/app/training` (replace placeholder):
-- Fetches published videos, groups by category.
-- Each card: thumbnail + title + Play → opens dialog with embedded `<iframe youtube>`.
-- Search + category filter chips at top.
-- Empty state if admin hasn't added any yet.
+### Smart input (single line at the top)
+- Single text input with autocomplete dropdown
+- Searches `products` table for current shop (name + sku + barcode, ilike)
+- Enter or click suggestion → adds the row with auto-filled price + unit + product_id
+- Enter on unmatched text → if "external allowed", adds row with empty price (user fills); otherwise toast "পণ্য পাওয়া যায়নি"
+- Quantity defaults to 1, focus jumps to qty field of the just-added row
 
-Files: new migration, new `src/routes/admin.training.tsx`, rewrite `src/routes/app.training.tsx`, update `src/components/admin/AdminSidebar.tsx`.
+### Item row rules
+- **Store product**: name, price, unit are read-only (price shown as label, unit as label). Only quantity editable. Small ✓ badge.
+- **External product**: name, price, unit all editable. "External" badge in muted color.
+- Delete button on right.
+
+### Optional fields (collapsible "+ আরও")
+- Customer (link to existing customers via combobox, or just type a name)
+- Phone, address, note
 
 ---
 
-### 5. Access Management — actually enforce permissions
+## Action: 🖨 Print Order (print-friendly view)
 
-**Problem:** `shop_members.permissions` JSON is set in UI but **nothing in the app checks it**. A cashier sees full sidebar and can add products / update stock.
+Opens a print dialog showing the order in a clean ticket layout:
 
-**Approach (UI-level gating, RLS stays as-is):**
-
-a. **New hook** `usePermissions()` in `src/lib/permissions.tsx`:
-   - For current user + current shop, fetches `shop_members` row (or owner status).
-   - Resolves effective permissions: owner → all; member → row's `permissions` JSON, else custom_role permissions, else preset for `role`.
-   - Returns `{ isOwner, can(group, item), canGroup(group) }`.
-
-b. **Sidebar gating** (`AppSidebar.tsx`): each nav item gets a required-permission tag. Hide items the user can't access. Cashier preset will only show: Sell, Quick Sell, Purchase, Cashbox, related ledgers — no Products, Stock, Access, Reports, Marketing, Online Shop, Settings.
-
-c. **Route-level guard**: a small `<RequirePerm group item>` wrapper rendered inside protected route components (Products, Stock, Access, Reports, etc.) that shows "এই পেজে এক্সেস নেই" if missing — defense-in-depth so URL-typing also fails.
-
-d. **In-page action gating**: hide Add / Edit / Delete buttons on Products, Stock, Contacts, Expense, Sell, Purchase based on `can(...)`. Owner always sees everything.
-
-e. **Cashier preset update** in `ROLE_PRESETS` (`src/lib/permissions.ts`):
+```text
+        শপের নাম
+      Quick Order
+─────────────────────────
+গ্রাহক: করিম    মোবাইল: 017...
+তারিখ: 25/04/26 14:30
+─────────────────────────
+✓  কলম        5 pcs   ৳50
+✓  খাতা       2 pcs   ৳80
+✗  চক         1 pcs   —
+─────────────────────────
+মোট:                  ৳130
 ```
-EMPLOYEE (cashier): {
-  sell: [sell, quick_sell, cart_edit],
-  purchase: [],   // remove buy/cart_edit/discount/delivery from default
-  contacts: [view, customers, add_customer]
-}
-```
-Owners can still customize via Access page.
 
-f. **Note on RLS:** The DB still allows any shop member to write — that's a separate hardening pass. This step blocks the UI which is what's user-visible. We can follow up with column-level RLS using a helper SQL function `member_has_perm(user, shop, group, item)` if you want hard enforcement.
+- Each row has a **✓ / ✗ toggle** beside it before printing — owner clicks to mark which items are available vs unavailable.
+- **Price field stays editable in the print preview** — owner can adjust before printing.
+- Unavailable items show ✗ and are excluded from total.
+- Print button uses existing `window.print()` with a print-only stylesheet (similar pattern to `InvoiceDialog`).
+- No DB write — print is purely client-side.
 
-Files: `src/lib/permissions.ts` (+ new `.tsx` hook), `src/components/app/AppSidebar.tsx`, all `src/routes/app.*.tsx` action buttons, new `src/components/app/RequirePerm.tsx`.
+## Action: 💰 Convert to Sale
+
+- Validates: at least one row, all rows have qty > 0 and price ≥ 0
+- Optionally creates/links customer if a name was entered
+- Creates `sales` row → `sale_items` rows → `stock_movements` (out) for items with `product_id` → decrements `products.stock`
+- External items (no product_id) are added as sale items but skip stock movement (same as current POS behavior for ad-hoc items)
+- On success: toast + navigate to `/app/sales-ledger` (or open `InvoiceDialog`)
+- Reuses the exact insertion pattern already in `src/components/app/POSPage.tsx` (lines 540-615) so behavior stays consistent.
 
 ---
 
-## Order of execution
-1. DB migration (training_videos table).
-2. Cashbox + Expense UI redesign.
-3. Customers RLS guard / shop refresh.
-4. Admin Training + User Training pages.
-5. Permissions hook + sidebar + route guards + button gating.
+## Files to create / change
 
-Approve and I'll implement in this order.
+**New**
+- `src/routes/app.quick-order.tsx` — the screen
+- `src/components/app/QuickOrderPrintView.tsx` — print-only layout component
+
+**Modify**
+- `src/components/app/AppSidebar.tsx` — add nav entry
+- `src/routeTree.gen.ts` — auto-regenerated by TanStack plugin
+
+**No DB migration needed** — uses existing `products`, `sales`, `sale_items`, `stock_movements`, `customers` tables.
+
+---
+
+## Technical notes
+
+- Product search query: `supabase.from("products").select("id,name,sale_price,unit,stock,sku,barcode").eq("shop_id", shopId).is("deleted_at", null).or(\`name.ilike.%q%,sku.ilike.%q%,barcode.ilike.%q%\`).limit(8)` — debounced 150ms.
+- Use `useQuery` with `keepPreviousData` for snappy suggestions.
+- State shape: `Item = { tempId, productId?: string, name, price, unit, qty, isExternal, available: boolean }`.
+- Print stylesheet uses `@media print` to hide everything except `.print-area`.
+- Sale conversion wrapped in try/catch with rollback-by-reverse-delete on partial failure (matching POSPage pattern).
+- Route gated with `<RequirePerm perm="sell">` (the existing guard).
+- Bilingual labels via `useI18n()` like other app routes.
+
