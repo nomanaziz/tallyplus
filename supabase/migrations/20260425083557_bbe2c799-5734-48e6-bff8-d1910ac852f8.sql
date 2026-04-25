@@ -1,0 +1,1 @@
+INSERT INTO public.marketplace_products (name_bn,name_en,brand,pack_size,base_unit,default_price,default_cost,category,shop_types,slug,is_active) VALUES ('মিনিকেট চাল প্রিমিয়াম','Miniket Rice Premium','ACI Pure','৫ কেজি','kg',450,420,'চাল',ARRAY['grocery','general']::text[],'grocery-miniket-rice-premium-aci-pure-৫-কেজি',true) ON CONFLICT (slug) DO NOTHING;
