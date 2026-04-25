@@ -11,6 +11,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { DateRangePicker, monthStartIso, todayIso, type DateRange } from "@/components/app/DateRangePicker";
 import { Printer, Store, ArrowLeft, ChevronDown } from "lucide-react";
 import { printReport, type PrintRow } from "@/lib/print-report";
+import { useAuth } from "@/lib/auth";
+import { SubscriptionGateDialog } from "@/components/app/SubscriptionGateDialog";
 
 export const Route = createFileRoute("/app/combined-report")({
   head: () => ({ meta: [{ title: "সমন্বিত রিপোর্ট — Tally Plus" }] }),
@@ -25,6 +27,24 @@ function CombinedReportPage() {
   const { lang } = useI18n();
   const { shops } = useShop();
   const nav = useNavigate();
+  const { hasActiveSubscription, loading: authLoading } = useAuth();
+
+  if (authLoading) {
+    return <div className="min-h-full bg-muted/30" />;
+  }
+
+  if (!hasActiveSubscription) {
+    return (
+      <div className="min-h-full bg-muted/30">
+        <SubscriptionGateDialog
+          open
+          onClose={() => nav({ to: "/app/dashboard" })}
+          onUnlock={() => nav({ to: "/app/subscribe" })}
+        />
+      </div>
+    );
+  }
+
   const [range, setRange] = useState<DateRange>({ start: monthStartIso(), end: todayIso() });
   const [selected, setSelected] = useState<string[]>([]);
   const [tab, setTab] = useState<Tab>("general");
