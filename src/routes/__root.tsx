@@ -46,12 +46,18 @@ export const Route = createRootRouteWithContext<RouterContext>()({
       { name: "twitter:description", content: "POS, স্টক, বাকি, খরচ ও রিপোর্ট — মোবাইলে, বাংলায়, অফলাইনেও।" },
       { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/899a7f72-54d4-4456-89b0-bd30133bb570/id-preview-3f1b3ef5--e4d92826-ce92-461c-958d-c7f5ac77bccc.lovable.app-1777094700226.png" },
       { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/899a7f72-54d4-4456-89b0-bd30133bb570/id-preview-3f1b3ef5--e4d92826-ce92-461c-958d-c7f5ac77bccc.lovable.app-1777094700226.png" },
+      { name: "theme-color", content: "#16a34a" },
+      { name: "apple-mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-title", content: "Tally Plus" },
+      { name: "apple-mobile-web-app-status-bar-style", content: "default" },
     ],
     links: [
       {
         rel: "stylesheet",
         href: appCss,
       },
+      { rel: "manifest", href: "/manifest.webmanifest" },
+      { rel: "apple-touch-icon", href: "/icon-192.png" },
     ],
   }),
   shellComponent: RootShell,
