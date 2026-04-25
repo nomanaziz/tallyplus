@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { usePwaInstall } from "@/hooks/use-pwa-install";
+import { ColorThemeInline } from "./ColorThemePicker";
 import { toast } from "sonner";
 import {
   ArrowLeftRight,
@@ -114,15 +115,11 @@ export function SettingsSheet({ open, onOpenChange }: { open: boolean; onOpenCha
   });
 
   const [currency, setCurrency] = useState<string>("BDT");
-  const [theme, setTheme] = useState<"light" | "dark">("light");
   const [decimal, setDecimal] = useState<"0" | "2">("2");
 
   useEffect(() => {
     if (typeof window === "undefined") return;
     setCurrency(localStorage.getItem("tp_currency") || current?.currency || "BDT");
-    const t = (localStorage.getItem("tp_theme") as "light" | "dark") || "light";
-    setTheme(t);
-    document.documentElement.classList.toggle("dark", t === "dark");
     setDecimal((localStorage.getItem("tp_decimal") as "0" | "2") || "2");
   }, [current?.currency, open]);
 
@@ -198,22 +195,15 @@ export function SettingsSheet({ open, onOpenChange }: { open: boolean; onOpenCha
               icon={<Sun className="h-4 w-4" />}
               label={lang === "bn" ? "থিম" : "Theme"}
               right={
-                <select
-                  className="rounded border bg-background px-2 py-1 text-xs"
-                  value={theme}
-                  onChange={(e) => {
-                    const v = e.target.value as "light" | "dark";
-                    setTheme(v);
-                    persist("tp_theme", v);
-                    document.documentElement.classList.toggle("dark", v === "dark");
-                  }}
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <option value="light">Light</option>
-                  <option value="dark">Dark</option>
-                </select>
+                null
               }
             />
+            <div className="rounded-lg border bg-card p-3">
+              <div className="mb-2 text-xs font-semibold text-muted-foreground">
+                {lang === "bn" ? "অ্যাপের রং" : "App Color"}
+              </div>
+              <ColorThemeInline />
+            </div>
             <Row
               icon={<Hash className="h-4 w-4" />}
               label={lang === "bn" ? "দশমিক পয়েন্ট" : "Decimal Points"}

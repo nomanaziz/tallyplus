@@ -14,6 +14,7 @@ import {
 import { QuickSellSheet } from "./QuickSellSheet";
 import { SettingsSheet } from "./SettingsSheet";
 import { InstallAppButton } from "./InstallAppPrompt";
+import { ColorThemeButton } from "./ColorThemePicker";
 import { Bell, Settings, MessageCircle, ChevronDown, LogOut, Languages, Zap, ArrowLeftRight, LayoutDashboard } from "lucide-react";
 
 export function AppTopbar() {
@@ -64,6 +65,7 @@ export function AppTopbar() {
         >
           <Bell className="h-5 w-5" />
         </button>
+        <ColorThemeButton />
         <InstallAppButton />
         <button
           onClick={() => setLang(lang === "bn" ? "en" : "bn")}
