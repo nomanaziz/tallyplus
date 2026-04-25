@@ -71,7 +71,7 @@ function StoreSettingsPage() {
     if (!shop) return;
     setEnabled(shop.marketplace_enabled);
     setName(shop.name ?? "");
-    setUsername(shop.username ?? "");
+    setUsername(shop.username ?? defaultUsername(shop.name ?? ""));
     setPhone(shop.phone ?? "");
     setAddress(shop.address ?? "");
     setLogoUrl(shop.logo_url);
@@ -148,7 +148,7 @@ function StoreSettingsPage() {
     void refetch();
   };
 
-  const publicUrl = username && typeof window !== "undefined" ? `${window.location.origin}/${username}` : "";
+  const publicUrl = username && typeof window !== "undefined" ? `${window.location.origin}/vendor/${username}` : "";
 
   const copyLink = async () => {
     if (!publicUrl) return;
@@ -237,7 +237,7 @@ function StoreSettingsPage() {
           {editingUsername ? (
             <div className="mt-2 flex items-center gap-1">
               <span className="rounded-l-md border border-r-0 bg-muted px-2 py-2 text-xs text-muted-foreground">
-                {typeof window !== "undefined" ? window.location.origin : ""}/
+                {typeof window !== "undefined" ? window.location.origin : ""}/vendor/
               </span>
               <Input value={username} onChange={(e) => setUsername(e.target.value.toLowerCase())} className="rounded-l-none" placeholder="my-shop" />
               <Button size="sm" onClick={() => setEditingUsername(false)}>OK</Button>
@@ -302,4 +302,11 @@ function SocialField({ icon, value, onChange, placeholder }: { icon: React.React
       <Input value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} className="border-0 px-0 shadow-none focus-visible:ring-0" />
     </div>
   );
+}
+
+function defaultUsername(name: string): string {
+  return name.toLowerCase().trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 32);
 }

@@ -23,7 +23,7 @@ type Product = { id: string; name: string; image_url: string | null; unit: strin
 
 type LoaderData = { shop: Shop; listings: Listing[]; products: Record<string, Product> };
 
-export const Route = createFileRoute("/$username")({
+export const Route = createFileRoute("/vendor/$username")({
   loader: async ({ params }): Promise<LoaderData> => {
     const u = params.username.toLowerCase();
     if (RESERVED.has(u) || !/^[a-z0-9][a-z0-9_-]{2,31}$/.test(u)) throw notFound();

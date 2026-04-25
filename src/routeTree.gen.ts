@@ -14,10 +14,10 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as AffiliateRouteImport } from './routes/affiliate'
 import { Route as AdminRouteImport } from './routes/admin'
-import { Route as UsernameRouteImport } from './routes/$username'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ShopIndexRouteImport } from './routes/shop.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as VendorUsernameRouteImport } from './routes/vendor.$username'
 import { Route as FSlugRouteImport } from './routes/f.$slug'
 import { Route as AppWarrantyRouteImport } from './routes/app.warranty'
 import { Route as AppTrainingRouteImport } from './routes/app.training'
@@ -64,8 +64,11 @@ import { Route as ShopPIdRouteImport } from './routes/shop.p.$id'
 import { Route as FSlugMyRouteImport } from './routes/f.$slug.my'
 import { Route as AppOnlineShopThemesRouteImport } from './routes/app.online-shop.themes'
 import { Route as AppOnlineShopSettingsRouteImport } from './routes/app.online-shop.settings'
+import { Route as AppOnlineShopPromoCodesRouteImport } from './routes/app.online-shop.promo-codes'
 import { Route as AppOnlineShopProductsRouteImport } from './routes/app.online-shop.products'
 import { Route as AppOnlineShopOrdersRouteImport } from './routes/app.online-shop.orders'
+import { Route as AppOnlineShopFraudCheckRouteImport } from './routes/app.online-shop.fraud-check'
+import { Route as AppOnlineShopCustomizeRouteImport } from './routes/app.online-shop.customize'
 
 const PricingRoute = PricingRouteImport.update({
   id: '/pricing',
@@ -92,11 +95,6 @@ const AdminRoute = AdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
-const UsernameRoute = UsernameRouteImport.update({
-  id: '/$username',
-  path: '/$username',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -111,6 +109,11 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AdminRoute,
+} as any)
+const VendorUsernameRoute = VendorUsernameRouteImport.update({
+  id: '/vendor/$username',
+  path: '/vendor/$username',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const FSlugRoute = FSlugRouteImport.update({
   id: '/f/$slug',
@@ -343,6 +346,11 @@ const AppOnlineShopSettingsRoute = AppOnlineShopSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => AppOnlineShopRoute,
 } as any)
+const AppOnlineShopPromoCodesRoute = AppOnlineShopPromoCodesRouteImport.update({
+  id: '/promo-codes',
+  path: '/promo-codes',
+  getParentRoute: () => AppOnlineShopRoute,
+} as any)
 const AppOnlineShopProductsRoute = AppOnlineShopProductsRouteImport.update({
   id: '/products',
   path: '/products',
@@ -353,10 +361,19 @@ const AppOnlineShopOrdersRoute = AppOnlineShopOrdersRouteImport.update({
   path: '/orders',
   getParentRoute: () => AppOnlineShopRoute,
 } as any)
+const AppOnlineShopFraudCheckRoute = AppOnlineShopFraudCheckRouteImport.update({
+  id: '/fraud-check',
+  path: '/fraud-check',
+  getParentRoute: () => AppOnlineShopRoute,
+} as any)
+const AppOnlineShopCustomizeRoute = AppOnlineShopCustomizeRouteImport.update({
+  id: '/customize',
+  path: '/customize',
+  getParentRoute: () => AppOnlineShopRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/$username': typeof UsernameRoute
   '/admin': typeof AdminRouteWithChildren
   '/affiliate': typeof AffiliateRouteWithChildren
   '/app': typeof AppRouteWithChildren
@@ -403,10 +420,14 @@ export interface FileRoutesByFullPath {
   '/app/training': typeof AppTrainingRoute
   '/app/warranty': typeof AppWarrantyRoute
   '/f/$slug': typeof FSlugRouteWithChildren
+  '/vendor/$username': typeof VendorUsernameRoute
   '/admin/': typeof AdminIndexRoute
   '/shop/': typeof ShopIndexRoute
+  '/app/online-shop/customize': typeof AppOnlineShopCustomizeRoute
+  '/app/online-shop/fraud-check': typeof AppOnlineShopFraudCheckRoute
   '/app/online-shop/orders': typeof AppOnlineShopOrdersRoute
   '/app/online-shop/products': typeof AppOnlineShopProductsRoute
+  '/app/online-shop/promo-codes': typeof AppOnlineShopPromoCodesRoute
   '/app/online-shop/settings': typeof AppOnlineShopSettingsRoute
   '/app/online-shop/themes': typeof AppOnlineShopThemesRoute
   '/f/$slug/my': typeof FSlugMyRoute
@@ -415,7 +436,6 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/$username': typeof UsernameRoute
   '/affiliate': typeof AffiliateRouteWithChildren
   '/app': typeof AppRouteWithChildren
   '/auth': typeof AuthRoute
@@ -461,10 +481,14 @@ export interface FileRoutesByTo {
   '/app/training': typeof AppTrainingRoute
   '/app/warranty': typeof AppWarrantyRoute
   '/f/$slug': typeof FSlugRouteWithChildren
+  '/vendor/$username': typeof VendorUsernameRoute
   '/admin': typeof AdminIndexRoute
   '/shop': typeof ShopIndexRoute
+  '/app/online-shop/customize': typeof AppOnlineShopCustomizeRoute
+  '/app/online-shop/fraud-check': typeof AppOnlineShopFraudCheckRoute
   '/app/online-shop/orders': typeof AppOnlineShopOrdersRoute
   '/app/online-shop/products': typeof AppOnlineShopProductsRoute
+  '/app/online-shop/promo-codes': typeof AppOnlineShopPromoCodesRoute
   '/app/online-shop/settings': typeof AppOnlineShopSettingsRoute
   '/app/online-shop/themes': typeof AppOnlineShopThemesRoute
   '/f/$slug/my': typeof FSlugMyRoute
@@ -474,7 +498,6 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/$username': typeof UsernameRoute
   '/admin': typeof AdminRouteWithChildren
   '/affiliate': typeof AffiliateRouteWithChildren
   '/app': typeof AppRouteWithChildren
@@ -521,10 +544,14 @@ export interface FileRoutesById {
   '/app/training': typeof AppTrainingRoute
   '/app/warranty': typeof AppWarrantyRoute
   '/f/$slug': typeof FSlugRouteWithChildren
+  '/vendor/$username': typeof VendorUsernameRoute
   '/admin/': typeof AdminIndexRoute
   '/shop/': typeof ShopIndexRoute
+  '/app/online-shop/customize': typeof AppOnlineShopCustomizeRoute
+  '/app/online-shop/fraud-check': typeof AppOnlineShopFraudCheckRoute
   '/app/online-shop/orders': typeof AppOnlineShopOrdersRoute
   '/app/online-shop/products': typeof AppOnlineShopProductsRoute
+  '/app/online-shop/promo-codes': typeof AppOnlineShopPromoCodesRoute
   '/app/online-shop/settings': typeof AppOnlineShopSettingsRoute
   '/app/online-shop/themes': typeof AppOnlineShopThemesRoute
   '/f/$slug/my': typeof FSlugMyRoute
@@ -535,7 +562,6 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/$username'
     | '/admin'
     | '/affiliate'
     | '/app'
@@ -582,10 +608,14 @@ export interface FileRouteTypes {
     | '/app/training'
     | '/app/warranty'
     | '/f/$slug'
+    | '/vendor/$username'
     | '/admin/'
     | '/shop/'
+    | '/app/online-shop/customize'
+    | '/app/online-shop/fraud-check'
     | '/app/online-shop/orders'
     | '/app/online-shop/products'
+    | '/app/online-shop/promo-codes'
     | '/app/online-shop/settings'
     | '/app/online-shop/themes'
     | '/f/$slug/my'
@@ -594,7 +624,6 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/$username'
     | '/affiliate'
     | '/app'
     | '/auth'
@@ -640,10 +669,14 @@ export interface FileRouteTypes {
     | '/app/training'
     | '/app/warranty'
     | '/f/$slug'
+    | '/vendor/$username'
     | '/admin'
     | '/shop'
+    | '/app/online-shop/customize'
+    | '/app/online-shop/fraud-check'
     | '/app/online-shop/orders'
     | '/app/online-shop/products'
+    | '/app/online-shop/promo-codes'
     | '/app/online-shop/settings'
     | '/app/online-shop/themes'
     | '/f/$slug/my'
@@ -652,7 +685,6 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
-    | '/$username'
     | '/admin'
     | '/affiliate'
     | '/app'
@@ -699,10 +731,14 @@ export interface FileRouteTypes {
     | '/app/training'
     | '/app/warranty'
     | '/f/$slug'
+    | '/vendor/$username'
     | '/admin/'
     | '/shop/'
+    | '/app/online-shop/customize'
+    | '/app/online-shop/fraud-check'
     | '/app/online-shop/orders'
     | '/app/online-shop/products'
+    | '/app/online-shop/promo-codes'
     | '/app/online-shop/settings'
     | '/app/online-shop/themes'
     | '/f/$slug/my'
@@ -712,13 +748,13 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  UsernameRoute: typeof UsernameRoute
   AdminRoute: typeof AdminRouteWithChildren
   AffiliateRoute: typeof AffiliateRouteWithChildren
   AppRoute: typeof AppRouteWithChildren
   AuthRoute: typeof AuthRoute
   PricingRoute: typeof PricingRoute
   FSlugRoute: typeof FSlugRouteWithChildren
+  VendorUsernameRoute: typeof VendorUsernameRoute
   ShopIndexRoute: typeof ShopIndexRoute
   ShopPIdRoute: typeof ShopPIdRoute
   ShopSSlugRoute: typeof ShopSSlugRoute
@@ -761,13 +797,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/$username': {
-      id: '/$username'
-      path: '/$username'
-      fullPath: '/$username'
-      preLoaderRoute: typeof UsernameRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/': {
       id: '/'
       path: '/'
@@ -788,6 +817,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/'
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRoute
+    }
+    '/vendor/$username': {
+      id: '/vendor/$username'
+      path: '/vendor/$username'
+      fullPath: '/vendor/$username'
+      preLoaderRoute: typeof VendorUsernameRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/f/$slug': {
       id: '/f/$slug'
@@ -1111,6 +1147,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppOnlineShopSettingsRouteImport
       parentRoute: typeof AppOnlineShopRoute
     }
+    '/app/online-shop/promo-codes': {
+      id: '/app/online-shop/promo-codes'
+      path: '/promo-codes'
+      fullPath: '/app/online-shop/promo-codes'
+      preLoaderRoute: typeof AppOnlineShopPromoCodesRouteImport
+      parentRoute: typeof AppOnlineShopRoute
+    }
     '/app/online-shop/products': {
       id: '/app/online-shop/products'
       path: '/products'
@@ -1123,6 +1166,20 @@ declare module '@tanstack/react-router' {
       path: '/orders'
       fullPath: '/app/online-shop/orders'
       preLoaderRoute: typeof AppOnlineShopOrdersRouteImport
+      parentRoute: typeof AppOnlineShopRoute
+    }
+    '/app/online-shop/fraud-check': {
+      id: '/app/online-shop/fraud-check'
+      path: '/fraud-check'
+      fullPath: '/app/online-shop/fraud-check'
+      preLoaderRoute: typeof AppOnlineShopFraudCheckRouteImport
+      parentRoute: typeof AppOnlineShopRoute
+    }
+    '/app/online-shop/customize': {
+      id: '/app/online-shop/customize'
+      path: '/customize'
+      fullPath: '/app/online-shop/customize'
+      preLoaderRoute: typeof AppOnlineShopCustomizeRouteImport
       parentRoute: typeof AppOnlineShopRoute
     }
   }
@@ -1175,15 +1232,21 @@ const AffiliateRouteWithChildren = AffiliateRoute._addFileChildren(
 )
 
 interface AppOnlineShopRouteChildren {
+  AppOnlineShopCustomizeRoute: typeof AppOnlineShopCustomizeRoute
+  AppOnlineShopFraudCheckRoute: typeof AppOnlineShopFraudCheckRoute
   AppOnlineShopOrdersRoute: typeof AppOnlineShopOrdersRoute
   AppOnlineShopProductsRoute: typeof AppOnlineShopProductsRoute
+  AppOnlineShopPromoCodesRoute: typeof AppOnlineShopPromoCodesRoute
   AppOnlineShopSettingsRoute: typeof AppOnlineShopSettingsRoute
   AppOnlineShopThemesRoute: typeof AppOnlineShopThemesRoute
 }
 
 const AppOnlineShopRouteChildren: AppOnlineShopRouteChildren = {
+  AppOnlineShopCustomizeRoute: AppOnlineShopCustomizeRoute,
+  AppOnlineShopFraudCheckRoute: AppOnlineShopFraudCheckRoute,
   AppOnlineShopOrdersRoute: AppOnlineShopOrdersRoute,
   AppOnlineShopProductsRoute: AppOnlineShopProductsRoute,
+  AppOnlineShopPromoCodesRoute: AppOnlineShopPromoCodesRoute,
   AppOnlineShopSettingsRoute: AppOnlineShopSettingsRoute,
   AppOnlineShopThemesRoute: AppOnlineShopThemesRoute,
 }
@@ -1266,13 +1329,13 @@ const FSlugRouteWithChildren = FSlugRoute._addFileChildren(FSlugRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  UsernameRoute: UsernameRoute,
   AdminRoute: AdminRouteWithChildren,
   AffiliateRoute: AffiliateRouteWithChildren,
   AppRoute: AppRouteWithChildren,
   AuthRoute: AuthRoute,
   PricingRoute: PricingRoute,
   FSlugRoute: FSlugRouteWithChildren,
+  VendorUsernameRoute: VendorUsernameRoute,
   ShopIndexRoute: ShopIndexRoute,
   ShopPIdRoute: ShopPIdRoute,
   ShopSSlugRoute: ShopSSlugRoute,
