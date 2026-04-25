@@ -34,14 +34,18 @@ Deno.serve(async (req) => {
 
     const { data, error } = await admin
       .from("shops")
-      .select("name, logo_url")
+      .select("name, logo_url, shop_type_code")
       .eq("wishlist_slug", slug)
       .is("deleted_at", null)
       .maybeSingle();
     if (error) return json({ error: error.message }, 500);
     if (!data) return json({ error: "এই লিঙ্কটি আর সক্রিয় নেই" }, 404);
 
-    return json({ shop_name: data.name, shop_logo_url: data.logo_url });
+    return json({
+      shop_name: data.name,
+      shop_logo_url: data.logo_url,
+      shop_type_code: data.shop_type_code,
+    });
   } catch (e) {
     return json({ error: (e as Error).message }, 500);
   }

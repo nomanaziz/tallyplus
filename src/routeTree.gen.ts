@@ -42,6 +42,7 @@ import { Route as AppAccessRouteImport } from './routes/app.access'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminSubscriptionsRouteImport } from './routes/admin.subscriptions'
 import { Route as AdminSubscriptionRequestsRouteImport } from './routes/admin.subscription-requests'
+import { Route as AdminShopTypesRouteImport } from './routes/admin.shop-types'
 import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
 import { Route as AdminPlansRouteImport } from './routes/admin.plans'
 import { Route as AdminMarketplaceRouteImport } from './routes/admin.marketplace'
@@ -214,6 +215,11 @@ const AdminSubscriptionRequestsRoute =
     path: '/subscription-requests',
     getParentRoute: () => AdminRoute,
   } as any)
+const AdminShopTypesRoute = AdminShopTypesRouteImport.update({
+  id: '/shop-types',
+  path: '/shop-types',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminSettingsRoute = AdminSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -251,6 +257,7 @@ export interface FileRoutesByFullPath {
   '/admin/marketplace': typeof AdminMarketplaceRoute
   '/admin/plans': typeof AdminPlansRoute
   '/admin/settings': typeof AdminSettingsRoute
+  '/admin/shop-types': typeof AdminShopTypesRoute
   '/admin/subscription-requests': typeof AdminSubscriptionRequestsRoute
   '/admin/subscriptions': typeof AdminSubscriptionsRoute
   '/admin/users': typeof AdminUsersRoute
@@ -290,6 +297,7 @@ export interface FileRoutesByTo {
   '/admin/marketplace': typeof AdminMarketplaceRoute
   '/admin/plans': typeof AdminPlansRoute
   '/admin/settings': typeof AdminSettingsRoute
+  '/admin/shop-types': typeof AdminShopTypesRoute
   '/admin/subscription-requests': typeof AdminSubscriptionRequestsRoute
   '/admin/subscriptions': typeof AdminSubscriptionsRoute
   '/admin/users': typeof AdminUsersRoute
@@ -331,6 +339,7 @@ export interface FileRoutesById {
   '/admin/marketplace': typeof AdminMarketplaceRoute
   '/admin/plans': typeof AdminPlansRoute
   '/admin/settings': typeof AdminSettingsRoute
+  '/admin/shop-types': typeof AdminShopTypesRoute
   '/admin/subscription-requests': typeof AdminSubscriptionRequestsRoute
   '/admin/subscriptions': typeof AdminSubscriptionsRoute
   '/admin/users': typeof AdminUsersRoute
@@ -373,6 +382,7 @@ export interface FileRouteTypes {
     | '/admin/marketplace'
     | '/admin/plans'
     | '/admin/settings'
+    | '/admin/shop-types'
     | '/admin/subscription-requests'
     | '/admin/subscriptions'
     | '/admin/users'
@@ -412,6 +422,7 @@ export interface FileRouteTypes {
     | '/admin/marketplace'
     | '/admin/plans'
     | '/admin/settings'
+    | '/admin/shop-types'
     | '/admin/subscription-requests'
     | '/admin/subscriptions'
     | '/admin/users'
@@ -452,6 +463,7 @@ export interface FileRouteTypes {
     | '/admin/marketplace'
     | '/admin/plans'
     | '/admin/settings'
+    | '/admin/shop-types'
     | '/admin/subscription-requests'
     | '/admin/subscriptions'
     | '/admin/users'
@@ -724,6 +736,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminSubscriptionRequestsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/shop-types': {
+      id: '/admin/shop-types'
+      path: '/shop-types'
+      fullPath: '/admin/shop-types'
+      preLoaderRoute: typeof AdminShopTypesRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/settings': {
       id: '/admin/settings'
       path: '/settings'
@@ -768,6 +787,7 @@ interface AdminRouteChildren {
   AdminMarketplaceRoute: typeof AdminMarketplaceRoute
   AdminPlansRoute: typeof AdminPlansRoute
   AdminSettingsRoute: typeof AdminSettingsRoute
+  AdminShopTypesRoute: typeof AdminShopTypesRoute
   AdminSubscriptionRequestsRoute: typeof AdminSubscriptionRequestsRoute
   AdminSubscriptionsRoute: typeof AdminSubscriptionsRoute
   AdminUsersRoute: typeof AdminUsersRoute
@@ -780,6 +800,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminMarketplaceRoute: AdminMarketplaceRoute,
   AdminPlansRoute: AdminPlansRoute,
   AdminSettingsRoute: AdminSettingsRoute,
+  AdminShopTypesRoute: AdminShopTypesRoute,
   AdminSubscriptionRequestsRoute: AdminSubscriptionRequestsRoute,
   AdminSubscriptionsRoute: AdminSubscriptionsRoute,
   AdminUsersRoute: AdminUsersRoute,

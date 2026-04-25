@@ -20,6 +20,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
+import { CatalogProductPicker, type CatalogProduct } from "@/components/app/CatalogProductPicker";
 
 type Product = {
   id: string;
@@ -166,6 +167,7 @@ function ProductsPage() {
         onOpenChange={setOpenForm}
         product={editing}
         shopId={current?.id ?? null}
+        shopTypeCode={current?.shop_type_code ?? null}
         onSaved={load}
       />
     </div>
@@ -177,12 +179,14 @@ function ProductFormDialog({
   onOpenChange,
   product,
   shopId,
+  shopTypeCode,
   onSaved,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   product: Product | null;
   shopId: string | null;
+  shopTypeCode?: string | null;
   onSaved: () => void;
 }) {
   const { lang } = useI18n();
@@ -245,7 +249,25 @@ function ProductFormDialog({
         <div className="grid gap-3">
           <div className="grid gap-1.5">
             <Label>{lang === "bn" ? "পণ্যের নাম" : "Name"}</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} />
+            <CatalogProductPicker
+              value={name}
+              onChange={setName}
+              onSelect={(p: CatalogProduct) => {
+                const fullName = p.name_bn + (p.pack_size ? ` (${p.pack_size})` : "");
+                setName(fullName);
+                if (p.barcode) setBarcode(p.barcode);
+                if (p.base_unit) setUnit(p.base_unit);
+                if (p.default_price) setSale(String(p.default_price));
+                if (p.default_cost) setCost(String(p.default_cost));
+              }}
+              shopTypeCode={shopTypeCode}
+              placeholder={lang === "bn" ? "২ অক্ষর লিখলে suggestion পাবেন" : "Type 2+ chars for suggestions"}
+            />
+            <p className="text-xs text-muted-foreground">
+              {lang === "bn"
+                ? "Tip: Catalog থেকে suggest হলে দাম, ইউনিট auto-fill হবে।"
+                : "Tip: Selecting a catalog suggestion auto-fills price & unit."}
+            </p>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="grid gap-1.5">

@@ -10,6 +10,7 @@ import {
   Store,
   Settings,
   ShieldCheck,
+  Tag,
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
@@ -19,10 +20,11 @@ const ITEMS: Item[] = [
   { to: "/admin", label: "Overview", icon: LayoutDashboard },
   { to: "/admin/landing", label: "Landing Page", icon: FileEdit },
   { to: "/admin/users", label: "Users", icon: Users },
+  { to: "/admin/shop-types", label: "Shop Types", icon: Tag },
   { to: "/admin/subscription-requests", label: "Subscription Requests", icon: Receipt },
   { to: "/admin/subscriptions", label: "Subscriptions", icon: CreditCard },
   { to: "/admin/plans", label: "Plans", icon: Tags },
-  { to: "/admin/marketplace", label: "Marketplace", icon: Store },
+  { to: "/admin/marketplace", label: "Master Catalog & Marketplace", icon: Store },
   { to: "/admin/settings", label: "Settings", icon: Settings },
 ];
 
