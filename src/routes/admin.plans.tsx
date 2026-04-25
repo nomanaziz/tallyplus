@@ -29,6 +29,7 @@ type Plan = {
   price_bdt: number;
   duration_days: number;
   is_active: boolean;
+  max_shops: number;
 };
 
 function PlansPage() {
@@ -61,6 +62,7 @@ function PlansPage() {
       price_bdt: Number(editing.price_bdt) || 0,
       duration_days: Number(editing.duration_days) || 30,
       is_active: editing.is_active ?? true,
+      max_shops: Math.max(1, Number(editing.max_shops) || 1),
     };
     const { error } = editing.id
       ? await supabase.from("subscription_plans").update(payload).eq("id", editing.id)
@@ -79,7 +81,7 @@ function PlansPage() {
           <h1 className="text-2xl font-bold">Subscription Plans</h1>
           <p className="text-sm text-muted-foreground">Plan add/edit করুন</p>
         </div>
-        <Button onClick={() => setEditing({ is_active: true, duration_days: 30 })}>
+        <Button onClick={() => setEditing({ is_active: true, duration_days: 30, max_shops: 1 })}>
           <Plus className="mr-1 h-4 w-4" /> New Plan
         </Button>
       </div>
@@ -103,7 +105,9 @@ function PlansPage() {
                   </Badge>
                 </div>
                 <div className="mt-3 text-2xl font-bold">৳ {p.price_bdt}</div>
-                <div className="text-xs text-muted-foreground">{p.duration_days} days</div>
+                <div className="text-xs text-muted-foreground">
+                  {p.duration_days} days • Max {p.max_shops} shop{p.max_shops === 1 ? "" : "s"}
+                </div>
                 <Button variant="outline" size="sm" className="mt-4" onClick={() => setEditing(p)}>
                   <Pencil className="mr-1 h-3.5 w-3.5" /> Edit
                 </Button>
@@ -147,6 +151,19 @@ function PlansPage() {
                 <Label>Duration (days)</Label>
                 <Input type="number" value={editing?.duration_days ?? 30} onChange={(e) => setEditing({ ...editing, duration_days: Number(e.target.value) })} />
               </div>
+            </div>
+            <div>
+              <Label>Max Shops Allowed</Label>
+              <Input
+                type="number"
+                min={1}
+                value={editing?.max_shops ?? 1}
+                onChange={(e) => setEditing({ ...editing, max_shops: Number(e.target.value) })}
+                placeholder="e.g. 1, 3, 5, 10"
+              />
+              <p className="mt-1 text-xs text-muted-foreground">
+                এই plan-এ একজন user সর্বোচ্চ কতগুলো দোকান add করতে পারবে।
+              </p>
             </div>
             <div className="flex items-center gap-2">
               <Switch checked={editing?.is_active ?? true} onCheckedChange={(v) => setEditing({ ...editing, is_active: v })} />
