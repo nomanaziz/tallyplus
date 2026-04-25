@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Loader2, Plus, Send, Trash2, Check, X } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { Loader2, Plus, Send, Trash2, Check, X, Copy, MessageCircle, History, KeyRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,12 +9,18 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { CatalogProductPicker, type CatalogProduct } from "@/components/app/CatalogProductPicker";
 
+type SearchParams = { reuse?: string; tpl?: string };
+
 export const Route = createFileRoute("/f/$slug")({
   head: () => ({
     meta: [
       { title: "গ্রাহক ফর্দ — পণ্যের তালিকা পাঠান" },
       { name: "description", content: "আপনার দোকানদারকে কেনাকাটার তালিকা পাঠান।" },
     ],
+  }),
+  validateSearch: (search: Record<string, unknown>): SearchParams => ({
+    reuse: typeof search.reuse === "string" ? search.reuse : undefined,
+    tpl: typeof search.tpl === "string" ? search.tpl : undefined,
   }),
   component: PublicWishlistPage,
 });
@@ -35,6 +42,7 @@ function newId() {
 
 function PublicWishlistPage() {
   const { slug } = Route.useParams();
+  const search = Route.useSearch();
   const [shopName, setShopName] = useState("");
   const [shopLogo, setShopLogo] = useState<string | null>(null);
   const [shopTypeCode, setShopTypeCode] = useState<string | null>(null);
@@ -49,6 +57,10 @@ function PublicWishlistPage() {
   const [items, setItems] = useState<Item[]>([{ id: newId(), name: "", qty: "", unit: "", price: "" }]);
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
+  const [issuedPin, setIssuedPin] = useState<string | null>(null);
+  const [savedToken, setSavedToken] = useState<string | null>(null);
+  const [pinInput, setPinInput] = useState("");
+  const [hasExistingProfile, setHasExistingProfile] = useState(false);
 
   const palette = useMemo(() => PALETTE.find((p) => p.key === color) ?? PALETTE[0], [color]);
 
@@ -77,6 +89,50 @@ function PublicWishlistPage() {
       cancelled = true;
     };
   }, [slug]);
+
+  // Pre-fill from a previous wishlist or template (passed via sessionStorage by /my page)
+  useEffect(() => {
+    if (!search.reuse && !search.tpl) return;
+    try {
+      const key = search.reuse ? `wl-reuse-${search.reuse}` : `wl-tpl-${search.tpl}`;
+      const raw = sessionStorage.getItem(key);
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as {
+        name?: string;
+        phone?: string;
+        address?: string;
+        items?: Array<{ name: string; qty?: number | null; unit?: string | null; price?: number | null }>;
+      };
+      if (parsed.name) setName(parsed.name);
+      if (parsed.phone) setPhone(parsed.phone);
+      if (parsed.address) setAddress(parsed.address);
+      if (parsed.items && parsed.items.length > 0) {
+        setItems(
+          parsed.items.map((it) => ({
+            id: newId(),
+            name: it.name,
+            qty: it.qty != null ? String(it.qty) : "",
+            unit: it.unit ?? "",
+            price: it.price != null ? String(it.price) : "",
+          })),
+        );
+      }
+    } catch {
+      // ignore
+    }
+  }, [search.reuse, search.tpl]);
+
+  // Load saved token + PIN-known flag for this slug from localStorage
+  useEffect(() => {
+    try {
+      const t = localStorage.getItem(`wl-token-${slug}`);
+      if (t) setSavedToken(t);
+      const knownPhones = JSON.parse(localStorage.getItem(`wl-phones-${slug}`) ?? "[]") as string[];
+      if (phone && knownPhones.includes(phone.replace(/[^\d+]/g, ""))) setHasExistingProfile(true);
+    } catch {
+      // ignore
+    }
+  }, [slug, phone]);
 
   const addItem = () => setItems((xs) => [...xs, { id: newId(), name: "", qty: "", unit: "", price: "" }]);
   const removeItem = (id: string) => setItems((xs) => xs.filter((x) => x.id !== id));
@@ -109,6 +165,7 @@ function PublicWishlistPage() {
           customer_address: address.trim() || null,
           note: note.trim() || null,
           color,
+          pin: pinInput.trim() || null,
           items: cleanItems.map((it) => ({
             name: it.name,
             qty: it.qty ? Number(it.qty) : null,
@@ -117,10 +174,31 @@ function PublicWishlistPage() {
           })),
         },
       });
-      const err = (data as { error?: string })?.error ?? error?.message;
+      const resp = (data ?? {}) as {
+        ok?: boolean;
+        pin?: string | null;
+        token?: string;
+        error?: string;
+      };
+      const err = resp.error ?? error?.message;
       if (err) {
         toast.error(err);
       } else {
+        if (resp.token) {
+          try {
+            localStorage.setItem(`wl-token-${slug}`, resp.token);
+            const np = phone.trim().replace(/[^\d+]/g, "");
+            const known = JSON.parse(localStorage.getItem(`wl-phones-${slug}`) ?? "[]") as string[];
+            if (!known.includes(np)) {
+              known.push(np);
+              localStorage.setItem(`wl-phones-${slug}`, JSON.stringify(known));
+            }
+            setSavedToken(resp.token);
+          } catch {
+            // ignore
+          }
+        }
+        if (resp.pin) setIssuedPin(resp.pin);
         setDone(true);
       }
     } catch (e) {
@@ -135,6 +213,8 @@ function PublicWishlistPage() {
     setPhone("");
     setAddress("");
     setNote("");
+    setPinInput("");
+    setIssuedPin(null);
     setItems([{ id: newId(), name: "", qty: "", unit: "", price: "" }]);
     setDone(false);
   };
@@ -160,17 +240,75 @@ function PublicWishlistPage() {
   }
 
   if (done) {
+    const personalUrl = typeof window !== "undefined" ? `${window.location.origin}/f/${slug}/my` : `/f/${slug}/my`;
+    const copyText = async (txt: string, label: string) => {
+      try {
+        await navigator.clipboard.writeText(txt);
+        toast.success(`${label} কপি হয়েছে`);
+      } catch {
+        toast.error("Copy failed");
+      }
+    };
+    const waShare = () => {
+      const msg = encodeURIComponent(
+        `${shopName} — আমার ফর্দ দেখতে ও আবার পাঠাতে এই লিঙ্কে যান:\n${personalUrl}${issuedPin ? `\n\nPIN: ${issuedPin}` : ""}`,
+      );
+      window.open(`https://wa.me/?text=${msg}`, "_blank");
+    };
     return (
-      <div className="flex min-h-screen items-center justify-center bg-muted/30 p-6">
-        <div className="max-w-sm rounded-2xl border bg-card p-8 text-center shadow-sm">
+      <div className="flex min-h-screen items-center justify-center bg-muted/30 p-4">
+        <div className="w-full max-w-sm rounded-2xl border bg-card p-6 text-center shadow-sm">
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-success/15 text-success">
             <Check className="h-7 w-7" />
           </div>
-          <h1 className="mt-4 text-xl font-bold">ধন্যবাদ!</h1>
-          <p className="mt-2 text-sm text-muted-foreground">
+          <h1 className="mt-3 text-xl font-bold">ধন্যবাদ!</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
             আপনার ফর্দ <span className="font-semibold text-foreground">{shopName}</span>-কে পাঠানো হয়েছে। দোকানদার শীঘ্রই যোগাযোগ করবেন।
           </p>
-          <Button className="mt-6 w-full" onClick={reset}>
+
+          {issuedPin && (
+            <div className="mt-5 rounded-xl border-2 border-primary/40 bg-primary/5 p-4 text-left">
+              <div className="flex items-center gap-2 text-xs font-semibold text-primary">
+                <KeyRound className="h-4 w-4" /> আপনার গোপন PIN
+              </div>
+              <div className="mt-1 flex items-center justify-between gap-2">
+                <div className="text-3xl font-extrabold tracking-[0.4em] tabular-nums text-foreground">
+                  {issuedPin}
+                </div>
+                <Button size="sm" variant="outline" onClick={() => copyText(issuedPin, "PIN")}>
+                  <Copy className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+              <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
+                এই PIN ও আপনার মোবাইল নাম্বার দিয়ে পরে আপনার সব ফর্দ দেখতে পারবেন। PIN সংরক্ষণ করুন বা স্ক্রিনশট নিন।
+              </p>
+            </div>
+          )}
+
+          <div className="mt-4 rounded-xl border bg-muted/40 p-3 text-left">
+            <div className="text-[11px] font-semibold text-muted-foreground">আপনার ফর্দ লিঙ্ক</div>
+            <div className="mt-1 flex items-center gap-2">
+              <div className="flex-1 truncate font-mono text-xs">{personalUrl}</div>
+              <Button size="sm" variant="outline" onClick={() => copyText(personalUrl, "লিঙ্ক")}>
+                <Copy className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+            <div className="mt-2 flex gap-2">
+              <Button size="sm" onClick={waShare} className="flex-1 bg-[oklch(0.65_0.18_150)] text-white hover:bg-[oklch(0.6_0.18_150)]">
+                <MessageCircle className="mr-1 h-3.5 w-3.5" /> WhatsApp এ পাঠান
+              </Button>
+            </div>
+          </div>
+
+          <Link
+            to="/f/$slug/my"
+            params={{ slug }}
+            className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-md border bg-background px-3 py-2 text-sm font-semibold hover:bg-accent"
+          >
+            <History className="h-4 w-4" /> আমার সব ফর্দ দেখুন
+          </Link>
+
+          <Button className="mt-2 w-full" variant="outline" onClick={reset}>
             নতুন ফর্দ শুরু করুন
           </Button>
         </div>
@@ -182,7 +320,7 @@ function PublicWishlistPage() {
     <div className="min-h-screen bg-muted/30 pb-32">
       <div className="mx-auto max-w-md px-4 pt-6">
         {/* Shop header */}
-        <div className="mb-4 flex items-center gap-3">
+        <div className="mb-3 flex items-center gap-3">
           {shopLogo ? (
             <img src={shopLogo} alt="" className="h-12 w-12 rounded-xl border bg-card object-cover" />
           ) : (
@@ -194,7 +332,25 @@ function PublicWishlistPage() {
             <div className="text-xs text-muted-foreground">আপনার ফর্দ পাঠাচ্ছেন</div>
             <h1 className="truncate text-lg font-extrabold leading-tight">{shopName}</h1>
           </div>
+          <Link
+            to="/f/$slug/my"
+            params={{ slug }}
+            className="flex-none rounded-lg border bg-card px-2.5 py-1.5 text-[11px] font-semibold hover:bg-accent"
+            title="আমার ফর্দ"
+          >
+            <History className="mr-1 inline h-3.5 w-3.5" />
+            আমার ফর্দ
+          </Link>
         </div>
+
+        {savedToken && (
+          <div className="mb-3 rounded-xl border border-primary/30 bg-primary/5 p-3 text-xs">
+            <span className="font-semibold text-primary">আপনি এই দোকানে আগেও ফর্দ পাঠিয়েছেন।</span>{" "}
+            <Link to="/f/$slug/my" params={{ slug }} className="underline">
+              আগের ফর্দ দেখুন বা আবার পাঠান
+            </Link>
+          </div>
+        )}
 
         {/* Card */}
         <div className={`rounded-3xl border bg-card p-5 shadow-sm ring-1 ${palette.bg} ${palette.ring}`}>
@@ -208,6 +364,23 @@ function PublicWishlistPage() {
               <Label htmlFor="cp">মোবাইল নাম্বার</Label>
               <Input id="cp" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="01XXXXXXXXX" className="h-11 bg-background/70" maxLength={20} />
             </div>
+            {hasExistingProfile && (
+              <div>
+                <Label htmlFor="cpin">আপনার PIN (পুরোনো গ্রাহকদের জন্য)</Label>
+                <Input
+                  id="cpin"
+                  inputMode="numeric"
+                  value={pinInput}
+                  onChange={(e) => setPinInput(e.target.value.replace(/\D/g, "").slice(0, 8))}
+                  placeholder="৬-ডিজিটের PIN"
+                  className="h-11 bg-background/70 tracking-[0.3em] tabular-nums"
+                  maxLength={8}
+                />
+                <p className="mt-1 text-[11px] text-muted-foreground">
+                  PIN ভুলে গেলেও সমস্যা নেই — শুধু আবার নাম্বার দিন, দোকানদার আপনার পরিচয় চিনে নিবেন।
+                </p>
+              </div>
+            )}
             <div>
               <Label htmlFor="ca">ঠিকানা (ইচ্ছাধীন)</Label>
               <Input id="ca" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="বাসা / এলাকা" className="h-11 bg-background/70" maxLength={200} />
