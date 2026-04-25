@@ -19,8 +19,13 @@ import { toast } from "sonner";
 type Product = ProductFull;
 
 export const Route = createFileRoute("/app/stock")({
-  component: StockPage,
+  component: GuardedStockPage,
 });
+
+import { RequirePerm } from "@/components/app/RequirePerm";
+function GuardedStockPage() {
+  return <RequirePerm group="stock"><StockPage /></RequirePerm>;
+}
 
 function StockPage() {
   const { lang } = useI18n();
