@@ -594,30 +594,36 @@ export type Database = {
         Row: {
           created_at: string
           done: boolean
+          fulfillment_status: string
           id: string
           name: string
           position: number
           qty: number | null
+          shopkeeper_note: string | null
           unit: string | null
           wishlist_id: string
         }
         Insert: {
           created_at?: string
           done?: boolean
+          fulfillment_status?: string
           id?: string
           name: string
           position?: number
           qty?: number | null
+          shopkeeper_note?: string | null
           unit?: string | null
           wishlist_id: string
         }
         Update: {
           created_at?: string
           done?: boolean
+          fulfillment_status?: string
           id?: string
           name?: string
           position?: number
           qty?: number | null
+          shopkeeper_note?: string | null
           unit?: string | null
           wishlist_id?: string
         }
@@ -643,6 +649,7 @@ export type Database = {
           shop_id: string
           status: string
           updated_at: string
+          wishlist_customer_id: string | null
         }
         Insert: {
           color?: string
@@ -655,6 +662,7 @@ export type Database = {
           shop_id: string
           status?: string
           updated_at?: string
+          wishlist_customer_id?: string | null
         }
         Update: {
           color?: string
@@ -667,6 +675,7 @@ export type Database = {
           shop_id?: string
           status?: string
           updated_at?: string
+          wishlist_customer_id?: string | null
         }
         Relationships: [
           {
@@ -1999,6 +2008,77 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      wishlist_customers: {
+        Row: {
+          address: string | null
+          created_at: string
+          id: string
+          last_seen_at: string | null
+          name: string
+          phone: string
+          pin_hash: string
+          shop_id: string
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          id?: string
+          last_seen_at?: string | null
+          name: string
+          phone: string
+          pin_hash: string
+          shop_id: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          id?: string
+          last_seen_at?: string | null
+          name?: string
+          phone?: string
+          pin_hash?: string
+          shop_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      wishlist_templates: {
+        Row: {
+          created_at: string
+          id: string
+          items: Json
+          name: string
+          updated_at: string
+          wishlist_customer_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          items?: Json
+          name: string
+          updated_at?: string
+          wishlist_customer_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          items?: Json
+          name?: string
+          updated_at?: string
+          wishlist_customer_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wishlist_templates_wishlist_customer_id_fkey"
+            columns: ["wishlist_customer_id"]
+            isOneToOne: false
+            referencedRelation: "wishlist_customers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
