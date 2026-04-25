@@ -56,6 +56,7 @@ import { Route as AdminPlansRouteImport } from './routes/admin.plans'
 import { Route as AdminMarketplaceRouteImport } from './routes/admin.marketplace'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
 import { Route as AdminLandingRouteImport } from './routes/admin.landing'
+import { Route as AdminBannersRouteImport } from './routes/admin.banners'
 import { Route as AdminAffiliatesRouteImport } from './routes/admin.affiliates'
 import { Route as ShopSSlugRouteImport } from './routes/shop.s.$slug'
 import { Route as ShopPIdRouteImport } from './routes/shop.p.$id'
@@ -297,6 +298,11 @@ const AdminLandingRoute = AdminLandingRouteImport.update({
   path: '/landing',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminBannersRoute = AdminBannersRouteImport.update({
+  id: '/banners',
+  path: '/banners',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminAffiliatesRoute = AdminAffiliatesRouteImport.update({
   id: '/affiliates',
   path: '/affiliates',
@@ -326,6 +332,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/pricing': typeof PricingRoute
   '/admin/affiliates': typeof AdminAffiliatesRoute
+  '/admin/banners': typeof AdminBannersRoute
   '/admin/landing': typeof AdminLandingRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/marketplace': typeof AdminMarketplaceRoute
@@ -378,6 +385,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/pricing': typeof PricingRoute
   '/admin/affiliates': typeof AdminAffiliatesRoute
+  '/admin/banners': typeof AdminBannersRoute
   '/admin/landing': typeof AdminLandingRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/marketplace': typeof AdminMarketplaceRoute
@@ -432,6 +440,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/pricing': typeof PricingRoute
   '/admin/affiliates': typeof AdminAffiliatesRoute
+  '/admin/banners': typeof AdminBannersRoute
   '/admin/landing': typeof AdminLandingRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/marketplace': typeof AdminMarketplaceRoute
@@ -487,6 +496,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/pricing'
     | '/admin/affiliates'
+    | '/admin/banners'
     | '/admin/landing'
     | '/admin/login'
     | '/admin/marketplace'
@@ -539,6 +549,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/pricing'
     | '/admin/affiliates'
+    | '/admin/banners'
     | '/admin/landing'
     | '/admin/login'
     | '/admin/marketplace'
@@ -592,6 +603,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/pricing'
     | '/admin/affiliates'
+    | '/admin/banners'
     | '/admin/landing'
     | '/admin/login'
     | '/admin/marketplace'
@@ -982,6 +994,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminLandingRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/banners': {
+      id: '/admin/banners'
+      path: '/banners'
+      fullPath: '/admin/banners'
+      preLoaderRoute: typeof AdminBannersRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/affiliates': {
       id: '/admin/affiliates'
       path: '/affiliates'
@@ -1015,6 +1034,7 @@ declare module '@tanstack/react-router' {
 
 interface AdminRouteChildren {
   AdminAffiliatesRoute: typeof AdminAffiliatesRoute
+  AdminBannersRoute: typeof AdminBannersRoute
   AdminLandingRoute: typeof AdminLandingRoute
   AdminLoginRoute: typeof AdminLoginRoute
   AdminMarketplaceRoute: typeof AdminMarketplaceRoute
@@ -1030,6 +1050,7 @@ interface AdminRouteChildren {
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminAffiliatesRoute: AdminAffiliatesRoute,
+  AdminBannersRoute: AdminBannersRoute,
   AdminLandingRoute: AdminLandingRoute,
   AdminLoginRoute: AdminLoginRoute,
   AdminMarketplaceRoute: AdminMarketplaceRoute,
