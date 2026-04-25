@@ -1,50 +1,61 @@
-## Combined Report — Improvements & Multi-Shop Limit
+## Goal
 
-### 1. Add Shop Limit (per subscription plan)
+Make `/admin/marketplace` admin-friendly for laptop work: wide layout, category grouping, pagination, fast filtering, and bulk actions. Same treatment for the Listings tab.
 
-**Database**
-- Add column `max_shops INTEGER NOT NULL DEFAULT 1` to `subscription_plans`.
-- Backfill sensible defaults (Free=1, Basic=3, Pro=5, Premium=10) but admin can override anytime.
-- Add helper SQL function `public.user_shop_limit(_user_id uuid)` returning the user's current allowed limit (active subscription's `max_shops`, default 1 if none).
-- Add helper `public.user_active_shop_count(_user_id uuid)` returning active (non-deleted) shop count.
+## Layout changes (Products tab)
 
-**Admin UI** (`src/routes/admin.plans.tsx`)
-- Add a "Max Shops" numeric input on plan create/edit form.
-- Show column in plans table.
+- Switch container from `max-w-6xl` centered cards to a full-width admin layout (`max-w-[1600px]`, dense padding) — uses available laptop width.
+- Replace the 2–3 column card grid with a **dense data table** (one product per row):
+  - Columns: image (40px), Bangla name + English name, Brand, Pack size, Category, Shop types (chips, max 3 + "+N"), Default price, Default cost, Active toggle, Edit button.
+  - Sortable headers: name, category, price, created date.
+  - Sticky header, zebra rows, row hover highlight.
+- Top toolbar (sticky): search box, **Category filter** dropdown, **Shop type filter** dropdown, Active/Inactive filter, "+ New Product" button, "Bulk actions" menu.
 
-**Enforcement (client + server)**
-- `AddShopDialog` & `app.shops.tsx`: before opening "Add Shop", fetch current limit & count. If `count >= limit`, disable the "Add new shop" tile and show a tooltip/toast: *"আপনার plan-এ সর্বোচ্চ X টি দোকান allowed। Upgrade করুন।"* with a link to `/app/subscribe`.
-- Add server-side guard via a database trigger on `shops` INSERT: raise exception if owner exceeds `user_shop_limit(owner_id)`.
+## Category grouping
 
-### 2. Improve "Add New Shop" Form (match uploaded mockup)
+- Add a left sidebar (collapsible on narrow widths) listing all distinct categories from `marketplace_products.category` with the product count next to each (e.g. `Beverages (24)`).
+- Selecting a category filters the table to that category. "All categories" resets.
+- Add a category header chip above the table when filtered, with an "x" to clear.
+- In the editor dialog, change the Category field from a free-text `Input` to a **Combobox** that suggests existing categories (with "Create new" option) so admins reuse the same names instead of typos creating duplicate buckets.
 
-Redesign `AddShopDialog` to include all fields from the screenshot:
-- Logo upload (circular, "Add a logo of your Shop" — uses `shop-logos` bucket)
-- Shop Name * (existing)
-- Shop Type * (existing, ShopTypePicker)
-- Division / District / Area (3 location dropdowns — store in `seller_locations`)
-- Address *
-- Mobile Number * (with +88 country code prefix)
-- "Do you want to sell Online?" — Yes / No radio cards
-- Footer: Cancel + Add New Shop buttons
+## Pagination
 
-Validation with zod (name, address, phone required; phone = 11 digits BD format).
-On submit: insert into `shops` (with logo_url, address, phone), then insert into `seller_locations` (division/district/area), seed default categories. If "Yes" online, set a flag to surface online-shop onboarding next.
+- Server-side pagination using Supabase `.range()` + `count: "exact"`:
+  - Page size selector: 25 / 50 / 100 (default 50).
+  - Pager: First / Prev / page numbers / Next / Last + "Showing 51–100 of 842".
+- Search, category filter, shop type filter, and active filter all run server-side (`.ilike`, `.eq`, `.contains`) so pagination stays accurate across the whole dataset.
+- Debounce search input (300ms).
 
-### 3. Combined Report Page Polish
+## Bulk actions
 
-- **Mobile responsiveness**: Stack action buttons vertically on small screens; make shop-selector popover full-width; section cards single-column on mobile (already `lg:grid-cols-2`); details report table → horizontal scroll preserved with sticky first column.
-- **Remove a button**: User indicated a button to remove on the screenshot but didn't specify which. The plan removes the **Refresh** button (data already refetches when filters change and via TanStack Query cache; explicit refresh is redundant alongside auto-refetch). If you meant a different button (Download/Print, Shops selector, or Back arrow), tell me before I implement and I'll swap.
-- Keep tabs (General / Details), date range, shop multi-select, download/print.
+- Row checkboxes + "select all on page" header checkbox.
+- Bulk menu: Activate, Deactivate, Assign category, Assign shop types, Delete (with confirm).
 
-### 4. Files Changed
+## Listings tab
 
-- `supabase/migrations/*` — add `max_shops`, helper functions, INSERT trigger on shops.
-- `src/routes/admin.plans.tsx` — max_shops field in form/table.
-- `src/components/app/AddShopDialog.tsx` — redesign with full fields + logo upload + location + phone.
-- `src/routes/app.shops.tsx` — limit enforcement on "Add new shop" tile.
-- `src/routes/app.combined-report.tsx` — mobile layout + remove Refresh button.
-- `src/lib/queries.ts` (if needed) — add `userShopLimitQuery`.
+- Same wide table treatment with pagination (default 50/page).
+- Columns: product (Bangla name), shop name, price, stock, min order, unit, published toggle, created date.
+- Filters: search by product/shop name, published/hidden, shop type.
+- Add a "Group by product" view toggle that collapses listings under each canonical product so admins can audit how many shops sell each item.
 
-### Summary
-Builds a proper plan-aware multi-shop limit (admin-controlled per plan, enforced at DB and UI level), revamps the Add-Shop form to match your mockup with logo + address + phone + location + online-sell flag, and polishes the Combined Report with mobile-friendly layout. Pending your confirmation on which button to remove from the report header.
+## Editor dialog improvements
+
+- Keep current fields; widen dialog to `max-w-3xl`.
+- Category becomes Combobox (existing values + create new).
+- Shop type chips grouped in two rows for readability.
+- Show a small "Used in N listings" count next to the title when editing an existing product.
+
+## Technical notes
+
+- All data fetching moves into TanStack Query (`useQuery`) keyed by `[filters, page, pageSize]` so navigation/filter changes are cached and snappy. (TanStack Query already required by router context per project conventions.)
+- Use `supabase.from("marketplace_products").select("*", { count: "exact" }).range(from, to)` with `.ilike("name_bn"|"name_en", `%q%`)`, `.eq("category", cat)`, `.contains("shop_types", [code])`, `.eq("is_active", flag)` chained based on active filters.
+- Distinct category list fetched via a lightweight grouped query: `select("category").not("category", "is", null)` then dedupe client-side (cheap; used only for the sidebar).
+- Bulk update uses `supabase.from("marketplace_products").update({...}).in("id", selectedIds)`.
+- Debounce via a small `useDebouncedValue` hook in the same file.
+- No DB schema changes required.
+
+## Out of scope
+
+- No changes to the public marketplace experience.
+- No changes to `marketplace_products` schema.
+- Mobile layout for admin stays functional but is not the design target (per user — admin is laptop-first).
