@@ -41,6 +41,7 @@ type ListingRow = {
   min_order: number | null;
   is_published: boolean;
   created_at: string;
+  warranty_months?: number | null;
 };
 
 type ProductRow = {
@@ -117,7 +118,7 @@ Deno.serve(async (req) => {
 
       let query = admin
         .from("marketplace_listings")
-        .select("id, shop_id, product_id, price, stock, unit, min_order, is_published, created_at", { count: "exact" })
+        .select("id, shop_id, product_id, price, stock, unit, min_order, is_published, created_at, warranty_months", { count: "exact" })
         .eq("is_published", true)
         .in("shop_id", enabledShopIds)
         .order("created_at", { ascending: false })
@@ -161,7 +162,7 @@ Deno.serve(async (req) => {
 
       const { data: listings } = await admin
         .from("marketplace_listings")
-        .select("id, shop_id, product_id, price, stock, unit, min_order, is_published, created_at")
+        .select("id, shop_id, product_id, price, stock, unit, min_order, is_published, created_at, warranty_months")
         .eq("shop_id", s.id)
         .eq("is_published", true)
         .order("created_at", { ascending: false });
@@ -177,7 +178,7 @@ Deno.serve(async (req) => {
 
       const { data: listing } = await admin
         .from("marketplace_listings")
-        .select("id, shop_id, product_id, price, stock, unit, min_order, is_published, created_at")
+        .select("id, shop_id, product_id, price, stock, unit, min_order, is_published, created_at, warranty_months")
         .eq("id", id)
         .eq("is_published", true)
         .maybeSingle();

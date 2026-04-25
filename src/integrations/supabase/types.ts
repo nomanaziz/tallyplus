@@ -956,6 +956,7 @@ export type Database = {
           stock: number
           unit: string | null
           updated_at: string
+          warranty_months: number | null
         }
         Insert: {
           created_at?: string
@@ -969,6 +970,7 @@ export type Database = {
           stock?: number
           unit?: string | null
           updated_at?: string
+          warranty_months?: number | null
         }
         Update: {
           created_at?: string
@@ -982,6 +984,7 @@ export type Database = {
           stock?: number
           unit?: string | null
           updated_at?: string
+          warranty_months?: number | null
         }
         Relationships: [
           {
