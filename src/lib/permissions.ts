@@ -143,12 +143,17 @@ export type PermissionMap = Record<string, string[]>;
 /** Preset permissions per role. */
 export const ROLE_PRESETS: Record<RoleKey, PermissionMap> = {
   EMPLOYEE: {
-    purchase: ["buy", "cart_edit", "discount", "delivery"],
-    sell: ["sell", "quick_sell"],
+    sell: ["sell", "quick_sell", "cart_edit"],
+    contacts: ["view", "customers", "add_customer"],
   },
   MANAGER: {
     purchase: ["buy", "cart_edit", "discount", "delivery"],
     sell: ["sell", "quick_sell", "cart_edit", "discount", "delivery"],
+    expense: ["expense", "list", "add"],
+    contacts: ["view", "customers", "suppliers", "add_customer", "add_supplier"],
+    products: ["view"],
+    stock: ["view", "history"],
+    report: ["view"],
   },
   OWNER: Object.fromEntries(FEATURE_GROUPS.map((g) => [g.key, g.items.map((i) => i.key)])),
 };
