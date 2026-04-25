@@ -137,7 +137,7 @@ function PublicShopPage() {
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-            {listings.map((l) => {
+            {listings.map((l: Listing) => {
               const p = products[l.product_id];
               if (!p) return null;
               return (
