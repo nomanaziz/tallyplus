@@ -74,7 +74,7 @@ function OnlineShopDashboard() {
   const username = shop?.username ?? null;
   const publicUrl = useMemo(() => {
     if (!username || typeof window === "undefined") return "";
-    return `${window.location.origin}/${username}`;
+    return `${window.location.origin}/vendor/${username}`;
   }, [username]);
 
   const copyLink = async () => {
@@ -122,6 +122,7 @@ function OnlineShopDashboard() {
     { icon: ShoppingBag, bn: "অনলাইন প্রোডাক্ট", en: "Online Product", color: "text-emerald-500", onClick: () => undefined, to: "/app/online-shop/products" },
     { icon: ClipboardList, bn: "অর্ডার লিস্ট", en: "Order List", color: "text-amber-500", onClick: () => undefined, to: "/app/online-shop/orders" },
     { icon: Palette, bn: "থিম", en: "Themes", color: "text-purple-500", onClick: () => undefined, to: "/app/online-shop/themes" },
+    { icon: Palette, bn: "কাস্টমাইজেশন", en: "Customization", color: "text-violet-500", onClick: () => undefined, to: "/app/online-shop/customize" },
     { icon: AtSign, bn: "Username পরিবর্তন", en: "Change Username", color: "text-cyan-500", onClick: () => undefined, to: "/app/online-shop/settings" },
     { icon: Truck, bn: "ডেলিভারি", en: "Delivery", color: "text-orange-500", onClick: () => undefined, to: "/app/online-shop/delivery" },
     { icon: Star, bn: "ফিচার্ড পণ্য", en: "Featured Products", color: "text-yellow-500", onClick: () => undefined, to: "/app/online-shop/featured" },
