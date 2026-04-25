@@ -167,7 +167,7 @@ function ProductsPage() {
         onOpenChange={setOpenForm}
         product={editing}
         shopId={current?.id ?? null}
-        shopTypeCode={(current as any)?.shop_type_code ?? null}
+        shopTypeCode={current?.shop_type_code ?? null}
         onSaved={load}
       />
     </div>
