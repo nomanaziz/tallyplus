@@ -10,9 +10,9 @@ export function SiteHeader() {
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-background/85 backdrop-blur">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
-        <Link to="/" className="flex items-center gap-2">
-          <img src={logo} alt="Tally Plus" width={32} height={32} className="h-8 w-8" />
-          <span className="text-lg font-extrabold tracking-tight">{t("appName")}</span>
+        <Link to="/" className="flex items-center gap-2.5">
+          <img src={logo} alt="Tally Plus" width={44} height={44} className="h-11 w-11 object-contain" />
+          <span className="text-xl font-extrabold leading-none tracking-tight">{t("appName")}</span>
         </Link>
         <nav className="hidden items-center gap-6 text-sm font-medium md:flex">
           <Link to="/" activeProps={{ className: "text-primary font-semibold" }} className="hover:text-primary">{t("home")}</Link>
