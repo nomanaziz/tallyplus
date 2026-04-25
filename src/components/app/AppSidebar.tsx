@@ -5,6 +5,9 @@ import { cn } from "@/lib/utils";
 import logo from "@/assets/logo.png";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { usePermissions } from "@/lib/permissions-hook";
+import { usePwaInstall } from "@/hooks/use-pwa-install";
+import { Download, Store } from "lucide-react";
+import { toast } from "sonner";
 
 type Item = { to: string; bn: string; en: string; icon: string; highlight?: boolean; perm?: string };
 
