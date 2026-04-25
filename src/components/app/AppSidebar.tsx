@@ -48,13 +48,13 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
   });
 
   return (
-    <aside className="flex h-full w-60 flex-col border-r bg-sidebar">
-      <div className="flex h-14 flex-none items-center gap-2 border-b px-4">
-        <img src={logo} alt="" className="h-7 w-7" />
-        <span className="text-base font-extrabold tracking-tight">Tally Plus</span>
+    <aside className="flex h-full w-52 flex-col border-r bg-sidebar">
+      <div className="flex h-14 flex-none items-center gap-2 border-b px-3">
+        <img src={logo} alt="" className="h-6 w-6" />
+        <span className="text-sm font-extrabold tracking-tight">Tally Plus</span>
       </div>
       <ScrollArea className="flex-1">
-        <nav className="flex flex-col gap-0.5 px-2 py-2">
+        <nav className="flex flex-col gap-0.5 px-1.5 py-2">
           {visibleItems.map((it) => {
             const active = loc.pathname === it.to || loc.pathname.startsWith(it.to + "/");
             return (
@@ -63,13 +63,13 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
                 to={it.to as never}
                 onClick={onNavigate}
                 className={cn(
-                  "group flex items-center gap-3 rounded-md px-2.5 py-2 text-sm transition-colors",
+                  "group flex items-center gap-2.5 rounded-md px-2 py-1.5 text-[13px] leading-tight transition-colors",
                   it.highlight && !active && "bg-primary/15 font-semibold hover:bg-primary/25",
                   active && "bg-primary/25 font-semibold text-foreground",
                   !active && !it.highlight && "hover:bg-sidebar-accent",
                 )}
               >
-                <img src={it.icon} alt="" className="h-6 w-6 flex-none" />
+                <img src={it.icon} alt="" className="h-5 w-5 flex-none" />
                 <span className="truncate">{lang === "bn" ? it.bn : it.en}</span>
               </Link>
             );
