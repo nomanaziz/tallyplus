@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, Download, MoreVertical, Package, Pencil, Trash2 } from "lucide-react";
+import { Plus, Download, MoreVertical, Package, Pencil, Trash2, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useShop } from "@/lib/shop";
 import { productsListQuery } from "@/lib/queries";
@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { CatalogProductPicker, type CatalogProduct } from "@/components/app/CatalogProductPicker";
+import { SampleProductImportSheet } from "@/components/app/SampleProductImportSheet";
 
 type Product = {
   id: string;
@@ -53,6 +54,7 @@ function ProductsPage() {
   const [search, setSearch] = useState("");
   const [openForm, setOpenForm] = useState(false);
   const [editing, setEditing] = useState<Product | null>(null);
+  const [openImport, setOpenImport] = useState(false);
   const load = async () => {
     await qc.invalidateQueries({ queryKey: ["products"] });
     await refetch();
@@ -82,12 +84,17 @@ function ProductsPage() {
             <Download className="h-4 w-4" />
             {lang === "bn" ? "ডাউনলোড/প্রিন্ট" : "Download/Print"}
           </Button>
+          <Button variant="outline" className="h-10 gap-2" onClick={() => setOpenImport(true)}>
+            <Sparkles className="h-4 w-4 text-primary" />
+            {lang === "bn" ? "স্যাম্পল ইম্পোর্ট" : "Import Sample"}
+          </Button>
           <Button className="h-10 gap-2" onClick={() => { setEditing(null); setOpenForm(true); }}>
             <Plus className="h-4 w-4" />
             {lang === "bn" ? "প্রোডাক্ট যুক্ত করুন" : "Add Product"}
           </Button>
         </div>
       </div>
+      <SampleProductImportSheet open={openImport} onOpenChange={setOpenImport} onImported={() => void load()} />
 
       <div className="mt-4">
         <DataToolbar search={search} onSearch={setSearch} onRefresh={load} />
