@@ -187,3 +187,13 @@ function Section({
     </div>
   );
 }
+
+function Stat({ label, value, tone }: { label: string; value: string; tone: "primary" | "danger" | "default" }) {
+  const cls = tone === "primary" ? "text-primary" : tone === "danger" ? "text-destructive" : "text-foreground";
+  return (
+    <div className="p-2.5 text-center">
+      <div className="text-[11px] text-muted-foreground">{label}</div>
+      <div className={`mt-0.5 text-sm font-bold ${cls}`}>{value}</div>
+    </div>
+  );
+}
