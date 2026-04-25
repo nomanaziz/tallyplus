@@ -106,7 +106,7 @@ export function SettingsSheet({ open, onOpenChange }: { open: boolean; onOpenCha
             <Row
               icon={<LayoutDashboard className="h-4 w-4" />}
               label={lang === "bn" ? "কমপ্লিট ড্যাশবোর্ড" : "Complete Dashboard"}
-              onClick={() => go("/app/dashboard")}
+              onClick={() => go("/app/combined-report")}
             />
             <Row
               icon={<Crown className="h-4 w-4" />}
