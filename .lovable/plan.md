@@ -1,114 +1,169 @@
-# Quick Order / দ্রুত ফর্দ Screen
+# Plan: Settings Menu + Affiliate / Growth Partner Program
 
-A new in-app screen for shop owners to take orders **as fast as writing on paper** — type product name, get instant suggestions from your store, auto-fill price & unit, then either convert to a real sale or print a checklist for the customer.
+## Part 1 — Fix the Settings menu (top bar)
 
-This is **separate** from the existing `/app/customer-wishlist` (which receives lists from customers via shared link). This new screen is the **owner's own scratchpad** for taking phoned-in / over-the-counter orders quickly.
+Currently the "সেটিংস" button in `AppTopbar.tsx` is a plain `<button>` with no onClick — clicking it does nothing. Convert it into an opening trigger for a right-side `Sheet` that mirrors the screenshot the user shared.
 
----
+**Component:** new `src/components/app/SettingsSheet.tsx`
 
-## Where it lives
+Sections (matching the uploaded reference):
+- **দোকান পরিবর্তন করুন** — opens existing shop switcher (reuse logic from `useShop`).
+- **অ্যাপ সেটিংস** — list rows (each navigates or opens an inline control):
+  - কমপ্লিট ড্যাশবোর্ড → `/app/dashboard`
+  - সাবস্ক্রিপশন → `/app/subscribe`
+  - ভাষা — inline select (bn/en) using `useI18n`
+  - কারেন্সি — select (BDT default, persist in localStorage)
+  - থিম — Light/Dark toggle (persist)
+  - দশমিক পয়েন্ট — 0/2 select (persist)
+  - লিমিট চার্ট ও ব্যবহার → placeholder route
+  - হিসাবী মোবাইল অ্যাপ → external link
+  - অ্যাপ ট্রেনিং → `/app/training`
+- **অন্যান্য**
+  - হিসাবী গ্রোথ পার্টনার → `/app/affiliate` (new, see Part 2)
+  - ফেসবুক কমিউনিটি → external
+  - হেল্প ও সাপোর্ট সেন্টার → WhatsApp link
+- **Footer:** version + OS + red "লগআউট করুন" button.
 
-- **Route**: `/app/quick-order` (new file `src/routes/app.quick-order.tsx`)
-- **Sidebar**: Add "দ্রুত ফর্দ / Quick Order" entry under the Sell group, with `perm: "sell"` gating
-- **Permission**: Reuses existing `sell` permission; print-only mode also allowed if user only has `sell`
+Wire the topbar button: `onClick={() => setSettingsOpen(true)}` and render `<SettingsSheet open={...} onOpenChange={...} />`.
 
----
+## Part 2 — Affiliate / Growth Partner Program
 
-## Screen layout (mobile-first)
+Replicate the structure of `hishabee-affiliate.netlify.app` adapted for this app. Two surfaces: **public landing** + **partner dashboard**, plus **admin controls** and **referral capture in signup**.
 
-```text
-┌─────────────────────────────────────────────┐
-│  দ্রুত ফর্দ          [Customer ▾] [টোগল ⚙] │
-├─────────────────────────────────────────────┤
-│  ① পণ্য টাইপ করুন...        [কলম ৳10/pcs ✓]│ ← suggestions dropdown
-│  ──────────────────────────────────────     │
-│  1. কলম           ৳10  × [ 5  ] pcs   [×]   │ ← price/unit locked (from store)
-│  2. খাতা          ৳40  × [ 2  ] pcs   [×]   │
-│  3. চক (external) [৳ 25]× [ 1  ] [pcs▾][×]  │ ← editable (not in store)
-│  ──────────────────────────────────────     │
-│  মোট: ৳ 130                                  │
-├─────────────────────────────────────────────┤
-│  [🖨 প্রিন্ট ফর্দ]   [💰 বিক্রিতে রূপান্তর]│
-└─────────────────────────────────────────────┘
+### 2A. Database (new migration)
+
+```sql
+-- Commission tier configuration (admin-editable)
+create table public.affiliate_tiers (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,             -- e.g. Bronze, Silver, Gold
+  min_sales int not null default 0,
+  commission_pct numeric not null,-- e.g. 15.00
+  bonus_pct numeric not null default 0,
+  sort_order int not null default 0,
+  created_at timestamptz default now()
+);
+
+-- Global affiliate settings (single row)
+create table public.affiliate_settings (
+  id boolean primary key default true check (id),
+  default_commission_pct numeric not null default 15,
+  lifetime_commission_pct numeric not null default 20,
+  referee_discount_pct numeric not null default 10, -- benefit to referred customer
+  is_program_active boolean not null default true,
+  updated_at timestamptz default now()
+);
+
+-- An affiliate (separate from shop owner; a shop owner can also be an affiliate)
+create table public.affiliates (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users(id) on delete cascade unique,
+  full_name text not null,
+  phone text not null,
+  email text,
+  referral_code text not null unique, -- short uppercase code
+  current_tier_id uuid references public.affiliate_tiers(id),
+  total_referrals int not null default 0,
+  total_commission numeric not null default 0,
+  status text not null default 'active', -- active | suspended
+  created_at timestamptz default now()
+);
+
+-- Referral events (when someone signs up via a code)
+create table public.affiliate_referrals (
+  id uuid primary key default gen_random_uuid(),
+  affiliate_id uuid not null references public.affiliates(id) on delete cascade,
+  referred_user_id uuid references auth.users(id) on delete set null,
+  referred_shop_id uuid references public.shops(id) on delete set null,
+  referral_code text not null,
+  status text not null default 'pending', -- pending | converted
+  converted_at timestamptz,
+  created_at timestamptz default now()
+);
+
+-- Commission earnings (one row per qualifying subscription purchase)
+create table public.affiliate_commissions (
+  id uuid primary key default gen_random_uuid(),
+  affiliate_id uuid not null references public.affiliates(id) on delete cascade,
+  referral_id uuid references public.affiliate_referrals(id) on delete set null,
+  subscription_amount numeric not null,
+  commission_pct numeric not null,
+  commission_amount numeric not null,
+  status text not null default 'pending', -- pending | approved | paid
+  paid_at timestamptz,
+  created_at timestamptz default now()
+);
 ```
 
-### Top toggle
-- "শুধু আমার দোকানের পণ্য" / "Allow external items" — controls whether unmatched names can be added as external items.
+RLS: affiliates see only their own rows; admins see all (using `has_role(uid,'admin')`). `affiliate_settings` & `affiliate_tiers` readable by everyone, writable by admins only.
 
-### Smart input (single line at the top)
-- Single text input with autocomplete dropdown
-- Searches `products` table for current shop (name + sku + barcode, ilike)
-- Enter or click suggestion → adds the row with auto-filled price + unit + product_id
-- Enter on unmatched text → if "external allowed", adds row with empty price (user fills); otherwise toast "পণ্য পাওয়া যায়নি"
-- Quantity defaults to 1, focus jumps to qty field of the just-added row
+### 2B. Public landing page — `src/routes/affiliate.tsx`
 
-### Item row rules
-- **Store product**: name, price, unit are read-only (price shown as label, unit as label). Only quantity editable. Small ✓ badge.
-- **External product**: name, price, unit all editable. "External" badge in muted color.
-- Delete button on right.
+Marketing page with sections (Bengali primary, EN toggle):
+1. Hero: "হিসাবী গ্রোথ পার্টনার — বিনা পুঁজিতে ইনকামের সুযোগ" + CTA "পার্টনার হয়ে যান".
+2. Why join (3 cards): উচ্চ কমিশন, বিনা পুঁজি, ক্যারিয়ার গঠন.
+3. How it works — 3 steps: রেজিস্ট্রেশন → প্রোমোট → আয় করুন.
+4. Commission tier table (rendered from `affiliate_tiers` so admin edits reflect live).
+5. FAQ accordion (4 Qs from the reference: registration cost, how to refer, how much, how to track).
+6. Final CTA → `/affiliate/register`.
 
-### Optional fields (collapsible "+ আরও")
-- Customer (link to existing customers via combobox, or just type a name)
-- Phone, address, note
+Per TanStack rules: own `head()` with title/og:title/og:description.
 
----
+### 2C. Affiliate registration / login — `src/routes/affiliate.register.tsx`
 
-## Action: 🖨 Print Order (print-friendly view)
+Form (name, phone, email, password). On submit, creates an auth user, then inserts into `affiliates` with auto-generated `referral_code` (6-char uppercase). Existing shop owners visiting `/app/affiliate` get an auto-enroll flow that reuses their auth user.
 
-Opens a print dialog showing the order in a clean ticket layout:
+### 2D. Partner dashboard — `src/routes/app.affiliate.tsx`
 
-```text
-        শপের নাম
-      Quick Order
-─────────────────────────
-গ্রাহক: করিম    মোবাইল: 017...
-তারিখ: 25/04/26 14:30
-─────────────────────────
-✓  কলম        5 pcs   ৳50
-✓  খাতা       2 pcs   ৳80
-✗  চক         1 pcs   —
-─────────────────────────
-মোট:                  ৳130
-```
+Sidebar entry under "অন্যান্য" (gated only by being signed in — no permission group). Tabs:
+- **ড্যাশবোর্ড**: total referrals, conversions, total earned, pending payout, current tier card.
+- **শেয়ার লিংক**: copyable `https://<host>/?ref=CODE`, copy buttons for WhatsApp / FB / SMS templates.
+- **রেফারেল**: table from `affiliate_referrals`.
+- **কমিশন**: table from `affiliate_commissions` with status badges.
 
-- Each row has a **✓ / ✗ toggle** beside it before printing — owner clicks to mark which items are available vs unavailable.
-- **Price field stays editable in the print preview** — owner can adjust before printing.
-- Unavailable items show ✗ and are excluded from total.
-- Print button uses existing `window.print()` with a print-only stylesheet (similar pattern to `InvoiceDialog`).
-- No DB write — print is purely client-side.
+### 2E. Referral capture in signup
 
-## Action: 💰 Convert to Sale
+- Add `RefCaptureProvider` at root: reads `?ref=CODE` from the URL on first visit, validates against `affiliates.referral_code`, stores in `localStorage('aff_ref')` for 30 days.
+- Modify `supabase/functions/signup-with-pin/index.ts` to accept an optional `referral_code`. When present and valid, after auth user is created insert an `affiliate_referrals` row (status `pending`). When the new user later subscribes (in `/app/subscribe` purchase flow), insert an `affiliate_commissions` row using the active commission pct, mark referral `converted`, increment `affiliates.total_*`.
+- The referred customer benefit: on the subscribe page, if a `ref` cookie/storage value is present and valid, apply `referee_discount_pct` to the displayed price (visual only for now; persisted in the order).
 
-- Validates: at least one row, all rows have qty > 0 and price ≥ 0
-- Optionally creates/links customer if a name was entered
-- Creates `sales` row → `sale_items` rows → `stock_movements` (out) for items with `product_id` → decrements `products.stock`
-- External items (no product_id) are added as sale items but skip stock movement (same as current POS behavior for ad-hoc items)
-- On success: toast + navigate to `/app/sales-ledger` (or open `InvoiceDialog`)
-- Reuses the exact insertion pattern already in `src/components/app/POSPage.tsx` (lines 540-615) so behavior stays consistent.
+### 2F. Admin controls — `src/routes/admin.affiliates.tsx`
 
----
+New admin sidebar item "Affiliate Program" with sub-sections:
+- **Settings card**: edit `default_commission_pct`, `lifetime_commission_pct`, `referee_discount_pct`, program on/off.
+- **Tiers**: CRUD list (name, min sales, commission %, bonus %, sort).
+- **Affiliates**: list with search, status toggle (active/suspended), tier override.
+- **Commissions**: list of all earnings with bulk approve/mark-paid action.
 
-## Files to create / change
+Add admin sidebar link in `src/components/admin/AdminSidebar.tsx`.
 
-**New**
-- `src/routes/app.quick-order.tsx` — the screen
-- `src/components/app/QuickOrderPrintView.tsx` — print-only layout component
+### 2G. Where to surface referral entry to customers
 
-**Modify**
-- `src/components/app/AppSidebar.tsx` — add nav entry
-- `src/routeTree.gen.ts` — auto-regenerated by TanStack plugin
+When a client opens any product page on a shop's online storefront (`/f/$slug` in `f.$slug.tsx`), add a small "রেফারেল কোড আছে?" link near the price/cart that reveals an input. Submitting it stores the code in `localStorage` and shows the discounted price preview. (Pure UI hook + same capture mechanism as 2E.)
 
-**No DB migration needed** — uses existing `products`, `sales`, `sale_items`, `stock_movements`, `customers` tables.
+## Files
 
----
+**Created**
+- `src/components/app/SettingsSheet.tsx`
+- `src/routes/affiliate.tsx` (public landing)
+- `src/routes/affiliate.register.tsx`
+- `src/routes/app.affiliate.tsx` (partner dashboard)
+- `src/routes/admin.affiliates.tsx`
+- `src/lib/referral.tsx` (capture provider + helpers)
+- `supabase/migrations/<timestamp>_affiliate_program.sql`
 
-## Technical notes
+**Edited**
+- `src/components/app/AppTopbar.tsx` (wire Settings button)
+- `src/components/app/AppSidebar.tsx` (Growth Partner link)
+- `src/components/admin/AdminSidebar.tsx` (Affiliate Program link)
+- `src/routes/__root.tsx` (mount `RefCaptureProvider`)
+- `src/routes/f.$slug.tsx` (referral code input on storefront)
+- `src/routes/app.subscribe.tsx` (apply referee discount + record commission on purchase)
+- `supabase/functions/signup-with-pin/index.ts` (accept `referral_code`)
 
-- Product search query: `supabase.from("products").select("id,name,sale_price,unit,stock,sku,barcode").eq("shop_id", shopId).is("deleted_at", null).or(\`name.ilike.%q%,sku.ilike.%q%,barcode.ilike.%q%\`).limit(8)` — debounced 150ms.
-- Use `useQuery` with `keepPreviousData` for snappy suggestions.
-- State shape: `Item = { tempId, productId?: string, name, price, unit, qty, isExternal, available: boolean }`.
-- Print stylesheet uses `@media print` to hide everything except `.print-area`.
-- Sale conversion wrapped in try/catch with rollback-by-reverse-delete on partial failure (matching POSPage pattern).
-- Route gated with `<RequirePerm perm="sell">` (the existing guard).
-- Bilingual labels via `useI18n()` like other app routes.
+## Notes / decisions
 
+- Default commission: 15% (matches reference site copy). Admin-editable.
+- Referral code: random 6-char A–Z/0–9, regenerable from dashboard.
+- All affiliate copy in Bengali first with EN fallback via `useI18n`.
+- No payout integration in this iteration — admins mark commissions "paid" manually.
