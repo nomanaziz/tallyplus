@@ -53,14 +53,16 @@ function AuthPage() {
   const validPhone = (p: string) => /^01\d{9}$/.test(p.replace(/\D/g, ""));
 
   const finishLogin = async (data: { access_token: string; refresh_token: string }) => {
-    const { error } = await supabase.auth.setSession({
+    const { data: sessionData, error } = await supabase.auth.setSession({
       access_token: data.access_token,
       refresh_token: data.refresh_token,
     });
     if (error) throw error;
-    // Navigate immediately; refresh providers in background.
+    // Wait for the auth provider to actually pick up the new session before
+    // navigating, otherwise the /app guard will bounce us back to /auth.
+    if (!sessionData?.session?.user) throw new Error("Session not established");
+    await Promise.all([refresh(), refreshShops()]).catch(() => {});
     nav({ to: "/app/dashboard" });
-    void Promise.all([refresh(), refreshShops()]).catch(() => {});
   };
 
   const handleSignup = async () => {
