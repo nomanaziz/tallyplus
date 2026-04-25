@@ -5,7 +5,8 @@ import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { AddShopDialog } from "@/components/app/AddShopDialog";
-import { LogOut, Plus, Store, CheckCircle2, Lock } from "lucide-react";
+import { LogOut, Plus, Store, CheckCircle2, Lock, Trash2 } from "lucide-react";
+import { DeleteShopDialog } from "@/components/app/DeleteShopDialog";
 import logo from "@/assets/logo.png";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -17,11 +18,12 @@ export const Route = createFileRoute("/app/shops")({
 
 function ShopsPage() {
   const { lang } = useI18n();
-  const { shops, current, setCurrent } = useShop();
+  const { shops, current, setCurrent, refresh: refreshShops } = useShop();
   const { signOut, user } = useAuth();
   const nav = useNavigate();
   const [addOpen, setAddOpen] = useState(false);
   const [limit, setLimit] = useState<number>(1);
+  const [delTarget, setDelTarget] = useState<{ id: string; name: string } | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -111,17 +113,30 @@ function ShopsPage() {
                   </div>
                   {active && <CheckCircle2 className="h-5 w-5 flex-none text-emerald-500" />}
                 </div>
-                <Button
-                  onClick={() => select(s)}
-                  className={
-                    "mt-auto h-10 w-full font-semibold " +
-                    (active ? "bg-emerald-600 hover:bg-emerald-700" : "")
-                  }
-                >
-                  {active
-                    ? lang === "bn" ? "বর্তমান দোকান" : "Current Shop"
-                    : lang === "bn" ? "সিলেক্ট করুন" : "Select"}
-                </Button>
+                <div className="mt-auto flex items-center gap-2">
+                  <Button
+                    onClick={() => select(s)}
+                    className={
+                      "h-10 flex-1 font-semibold " +
+                      (active ? "bg-emerald-600 hover:bg-emerald-700" : "")
+                    }
+                  >
+                    {active
+                      ? lang === "bn" ? "বর্তমান দোকান" : "Current Shop"
+                      : lang === "bn" ? "সিলেক্ট করুন" : "Select"}
+                  </Button>
+                  {user?.id === s.owner_id && (
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-10 w-10 border-rose-300 text-rose-600 hover:bg-rose-50 hover:text-rose-700"
+                      onClick={() => setDelTarget({ id: s.id, name: s.name })}
+                      title={lang === "bn" ? "দোকান মুছুন" : "Delete shop"}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
               </div>
             );
           })}
@@ -150,6 +165,23 @@ function ShopsPage() {
           </button>
         </div>
       </div>
+
+      <DeleteShopDialog
+        open={!!delTarget}
+        onOpenChange={(v) => { if (!v) setDelTarget(null); }}
+        shop={delTarget}
+        onDeleted={async () => {
+          // If we just deleted the current shop, clear it from local storage
+          if (current && delTarget && current.id === delTarget.id) {
+            if (typeof window !== "undefined") {
+              localStorage.removeItem("tp_shop_id");
+              localStorage.removeItem("tp_shop_current");
+            }
+          }
+          setDelTarget(null);
+          await refreshShops();
+        }}
+      />
 
       <AddShopDialog open={addOpen} onOpenChange={setAddOpen} onCreated={() => { /* refresh in dialog */ }} />
     </div>
