@@ -56,6 +56,7 @@ import { Route as AdminMarketplaceRouteImport } from './routes/admin.marketplace
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
 import { Route as AdminLandingRouteImport } from './routes/admin.landing'
 import { Route as AdminAffiliatesRouteImport } from './routes/admin.affiliates'
+import { Route as FSlugMyRouteImport } from './routes/f.$slug.my'
 
 const PricingRoute = PricingRouteImport.update({
   id: '/pricing',
@@ -293,6 +294,11 @@ const AdminAffiliatesRoute = AdminAffiliatesRouteImport.update({
   path: '/affiliates',
   getParentRoute: () => AdminRoute,
 } as any)
+const FSlugMyRoute = FSlugMyRouteImport.update({
+  id: '/my',
+  path: '/my',
+  getParentRoute: () => FSlugRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -340,8 +346,9 @@ export interface FileRoutesByFullPath {
   '/app/subscribe': typeof AppSubscribeRoute
   '/app/training': typeof AppTrainingRoute
   '/app/warranty': typeof AppWarrantyRoute
-  '/f/$slug': typeof FSlugRoute
+  '/f/$slug': typeof FSlugRouteWithChildren
   '/admin/': typeof AdminIndexRoute
+  '/f/$slug/my': typeof FSlugMyRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -388,8 +395,9 @@ export interface FileRoutesByTo {
   '/app/subscribe': typeof AppSubscribeRoute
   '/app/training': typeof AppTrainingRoute
   '/app/warranty': typeof AppWarrantyRoute
-  '/f/$slug': typeof FSlugRoute
+  '/f/$slug': typeof FSlugRouteWithChildren
   '/admin': typeof AdminIndexRoute
+  '/f/$slug/my': typeof FSlugMyRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -438,8 +446,9 @@ export interface FileRoutesById {
   '/app/subscribe': typeof AppSubscribeRoute
   '/app/training': typeof AppTrainingRoute
   '/app/warranty': typeof AppWarrantyRoute
-  '/f/$slug': typeof FSlugRoute
+  '/f/$slug': typeof FSlugRouteWithChildren
   '/admin/': typeof AdminIndexRoute
+  '/f/$slug/my': typeof FSlugMyRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -491,6 +500,7 @@ export interface FileRouteTypes {
     | '/app/warranty'
     | '/f/$slug'
     | '/admin/'
+    | '/f/$slug/my'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -539,6 +549,7 @@ export interface FileRouteTypes {
     | '/app/warranty'
     | '/f/$slug'
     | '/admin'
+    | '/f/$slug/my'
   id:
     | '__root__'
     | '/'
@@ -588,6 +599,7 @@ export interface FileRouteTypes {
     | '/app/warranty'
     | '/f/$slug'
     | '/admin/'
+    | '/f/$slug/my'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -597,7 +609,7 @@ export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
   AuthRoute: typeof AuthRoute
   PricingRoute: typeof PricingRoute
-  FSlugRoute: typeof FSlugRoute
+  FSlugRoute: typeof FSlugRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -931,6 +943,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminAffiliatesRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/f/$slug/my': {
+      id: '/f/$slug/my'
+      path: '/my'
+      fullPath: '/f/$slug/my'
+      preLoaderRoute: typeof FSlugMyRouteImport
+      parentRoute: typeof FSlugRoute
+    }
   }
 }
 
@@ -1040,6 +1059,16 @@ const AppRouteChildren: AppRouteChildren = {
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
+interface FSlugRouteChildren {
+  FSlugMyRoute: typeof FSlugMyRoute
+}
+
+const FSlugRouteChildren: FSlugRouteChildren = {
+  FSlugMyRoute: FSlugMyRoute,
+}
+
+const FSlugRouteWithChildren = FSlugRoute._addFileChildren(FSlugRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
@@ -1047,7 +1076,7 @@ const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   AuthRoute: AuthRoute,
   PricingRoute: PricingRoute,
-  FSlugRoute: FSlugRoute,
+  FSlugRoute: FSlugRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
