@@ -44,7 +44,8 @@ function ThemesPage() {
   const setTheme = async (col: "active_web_theme" | "active_app_theme", val: string) => {
     if (!shopId) return;
     setSaving(true);
-    await supabase.from("shops").update({ [col]: val }).eq("id", shopId);
+    const payload = col === "active_web_theme" ? { active_web_theme: val } : { active_app_theme: val };
+    await supabase.from("shops").update(payload).eq("id", shopId);
     await qc.invalidateQueries({ queryKey: ["shop-themes", shopId] });
     setSaving(false);
     toast.success(lang === "bn" ? "থিম সেট হয়েছে" : "Theme applied");
