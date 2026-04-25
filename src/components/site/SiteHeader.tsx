@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
+import { ColorThemeButton } from "@/components/app/ColorThemePicker";
 import logo from "@/assets/logo.png";
 
 export function SiteHeader() {
@@ -22,6 +23,7 @@ export function SiteHeader() {
           <a href="/#contact" className="hover:text-primary">{t("contact")}</a>
         </nav>
         <div className="flex items-center gap-2">
+          <ColorThemeButton className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-accent" />
           <button
             onClick={() => setLang(lang === "bn" ? "en" : "bn")}
             className="rounded-md border px-2 py-1 text-xs font-semibold hover:bg-accent"
