@@ -214,17 +214,49 @@ function ProductFormDialog({
   const [stock, setStock] = useState("0");
   const [low, setLow] = useState("5");
   const [busy, setBusy] = useState(false);
+  const [description, setDescription] = useState("");
+  // toggles
+  const [onlineOn, setOnlineOn] = useState(false);
+  const [bulkOn, setBulkOn] = useState(false);
+  const [bulkPrice, setBulkPrice] = useState("");
+  const [bulkMinQty, setBulkMinQty] = useState("");
+  const [lowOn, setLowOn] = useState(false);
+  const [vatOn, setVatOn] = useState(false);
+  const [vatPct, setVatPct] = useState("");
+  const [warrantyOn, setWarrantyOn] = useState(false);
+  const [warrantyValue, setWarrantyValue] = useState("");
+  const [warrantyUnit, setWarrantyUnit] = useState<"day"|"week"|"month"|"year">("month");
+  const [discountOn, setDiscountOn] = useState(false);
+  const [discountValue, setDiscountValue] = useState("");
+  const [discountType, setDiscountType] = useState<"percent"|"flat">("percent");
+  const [barcodeOn, setBarcodeOn] = useState(false);
 
   useEffect(() => {
     if (open) {
-      setName(product?.name ?? "");
-      setSku(product?.sku ?? "");
-      setBarcode(product?.barcode ?? "");
-      setUnit(product?.unit ?? "pcs");
-      setCost(String(product?.cost_price ?? 0));
-      setSale(String(product?.sale_price ?? 0));
-      setStock(String(product?.stock ?? 0));
-      setLow(String(product?.low_stock_alert ?? 5));
+      const p = product as (Product & Record<string, unknown>) | null;
+      setName(p?.name ?? "");
+      setSku(p?.sku ?? "");
+      setBarcode(p?.barcode ?? "");
+      setUnit(p?.unit ?? "pcs");
+      setCost(String(p?.cost_price ?? 0));
+      setSale(String(p?.sale_price ?? 0));
+      setStock(String(p?.stock ?? 0));
+      setLow(String(p?.low_stock_alert ?? 5));
+      setDescription(String((p?.description as string) ?? ""));
+      setOnlineOn(Boolean(p?.is_marketplace_published));
+      setBulkOn(Boolean(p?.bulk_enabled));
+      setBulkPrice(p?.bulk_price != null ? String(p.bulk_price) : "");
+      setBulkMinQty(p?.bulk_min_qty != null ? String(p.bulk_min_qty) : "");
+      setLowOn(p?.low_stock_alert != null && Number(p.low_stock_alert) > 0);
+      setVatOn(Boolean(p?.vat_enabled));
+      setVatPct(p?.vat_pct != null ? String(p.vat_pct) : "");
+      setWarrantyOn(Boolean(p?.warranty_enabled));
+      setWarrantyValue(p?.warranty_value != null ? String(p.warranty_value) : "");
+      setWarrantyUnit(((p?.warranty_unit as "day"|"week"|"month"|"year") ?? "month"));
+      setDiscountOn(Boolean(p?.discount_enabled));
+      setDiscountValue(p?.discount_value != null ? String(p.discount_value) : "");
+      setDiscountType(((p?.discount_type as "percent"|"flat") ?? "percent"));
+      setBarcodeOn(Boolean(p?.barcode));
     }
   }, [open, product]);
 
@@ -235,13 +267,26 @@ function ProductFormDialog({
     const payload = {
       name: name.trim(),
       sku: sku.trim() || null,
-      barcode: barcode.trim() || null,
+      barcode: barcodeOn ? (barcode.trim() || null) : null,
       unit: unit.trim() || "pcs",
       cost_price: Number(cost) || 0,
       sale_price: Number(sale) || 0,
       stock: Number(stock) || 0,
-      low_stock_alert: Number(low) || 0,
+      low_stock_alert: lowOn ? (Number(low) || 0) : 0,
       shop_id: shopId,
+      description: description.trim() || null,
+      is_marketplace_published: onlineOn,
+      bulk_enabled: bulkOn,
+      bulk_price: bulkOn ? (Number(bulkPrice) || 0) : null,
+      bulk_min_qty: bulkOn ? (Number(bulkMinQty) || 0) : null,
+      vat_enabled: vatOn,
+      vat_pct: vatOn ? (Number(vatPct) || 0) : null,
+      warranty_enabled: warrantyOn,
+      warranty_value: warrantyOn ? (Number(warrantyValue) || 0) : null,
+      warranty_unit: warrantyOn ? warrantyUnit : null,
+      discount_enabled: discountOn,
+      discount_value: discountOn ? (Number(discountValue) || 0) : null,
+      discount_type: discountOn ? discountType : null,
     };
     const { error } = product
       ? await supabase.from("products").update(payload).eq("id", product.id)
@@ -254,23 +299,25 @@ function ProductFormDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
-        <DialogHeader>
-          <DialogTitle>
-            {product ? (lang === "bn" ? "প্রোডাক্ট এডিট" : "Edit product") : (lang === "bn" ? "নতুন প্রোডাক্ট" : "New product")}
-          </DialogTitle>
-        </DialogHeader>
-        <div className="grid gap-3">
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="right" className="w-full sm:max-w-lg overflow-y-auto">
+        <SheetHeader>
+          <SheetTitle className="text-center">
+            {product ? (lang === "bn" ? "প্রোডাক্ট এডিট" : "Edit Product") : (lang === "bn" ? "প্রোডাক্ট যোগ করুন" : "Add Product")}
+          </SheetTitle>
+        </SheetHeader>
+
+        <div className="mt-4 grid gap-4 pb-24">
+          {/* Always-visible required fields */}
           <div className="grid gap-1.5">
-            <Label>{lang === "bn" ? "পণ্যের নাম" : "Name"}</Label>
+            <Label>{lang === "bn" ? "পণ্যের নাম" : "Product Name"} *</Label>
             <CatalogProductPicker
               value={name}
               onChange={setName}
               onSelect={(p: CatalogProduct) => {
                 const fullName = p.name_bn + (p.pack_size ? ` (${p.pack_size})` : "");
                 setName(fullName);
-                if (p.barcode) setBarcode(p.barcode);
+                if (p.barcode) { setBarcode(p.barcode); setBarcodeOn(true); }
                 if (p.base_unit) setUnit(p.base_unit);
                 if (p.default_price) setSale(String(p.default_price));
                 if (p.default_cost) setCost(String(p.default_cost));
@@ -278,48 +325,159 @@ function ProductFormDialog({
               shopTypeCode={shopTypeCode}
               placeholder={lang === "bn" ? "২ অক্ষর লিখলে suggestion পাবেন" : "Type 2+ chars for suggestions"}
             />
-            <p className="text-xs text-muted-foreground">
-              {lang === "bn"
-                ? "Tip: Catalog থেকে suggest হলে দাম, ইউনিট auto-fill হবে।"
-                : "Tip: Selecting a catalog suggestion auto-fills price & unit."}
-            </p>
           </div>
+
           <div className="grid grid-cols-2 gap-3">
             <div className="grid gap-1.5">
-              <Label>SKU</Label>
-              <Input value={sku} onChange={(e) => setSku(e.target.value)} />
-            </div>
-            <div className="grid gap-1.5">
-              <Label>Barcode</Label>
-              <Input value={barcode} onChange={(e) => setBarcode(e.target.value)} />
-            </div>
-            <div className="grid gap-1.5">
-              <Label>{lang === "bn" ? "ক্রয় মূল্য" : "Cost price"}</Label>
-              <Input type="number" value={cost} onChange={(e) => setCost(e.target.value)} />
-            </div>
-            <div className="grid gap-1.5">
-              <Label>{lang === "bn" ? "বিক্রয় মূল্য" : "Sale price"}</Label>
-              <Input type="number" value={sale} onChange={(e) => setSale(e.target.value)} />
-            </div>
-            <div className="grid gap-1.5">
-              <Label>{lang === "bn" ? "মজুদ" : "Stock"}</Label>
+              <Label>{lang === "bn" ? "বর্তমান মজুদ" : "Current Stock"}</Label>
               <Input type="number" value={stock} onChange={(e) => setStock(e.target.value)} />
             </div>
             <div className="grid gap-1.5">
-              <Label>{lang === "bn" ? "লো-স্টক অ্যালার্ট" : "Low stock alert"}</Label>
-              <Input type="number" value={low} onChange={(e) => setLow(e.target.value)} />
+              <Label>{lang === "bn" ? "ইউনিট" : "Unit"}</Label>
+              <Input value={unit} onChange={(e) => setUnit(e.target.value)} placeholder="pcs / kg / ltr" />
             </div>
             <div className="grid gap-1.5">
-              <Label>{lang === "bn" ? "ইউনিট" : "Unit"}</Label>
-              <Input value={unit} onChange={(e) => setUnit(e.target.value)} />
+              <Label>{lang === "bn" ? "ক্রয় মূল্য" : "Purchase Price"}</Label>
+              <Input type="number" value={cost} onChange={(e) => setCost(e.target.value)} />
+            </div>
+            <div className="grid gap-1.5">
+              <Label>{lang === "bn" ? "বিক্রয় মূল্য" : "Sell Price"}</Label>
+              <Input type="number" value={sale} onChange={(e) => setSale(e.target.value)} />
             </div>
           </div>
+
+          <div className="grid gap-1.5">
+            <Label>SKU</Label>
+            <Input value={sku} onChange={(e) => setSku(e.target.value)} placeholder="Optional" />
+          </div>
+
+          <div className="grid gap-1.5">
+            <Label>{lang === "bn" ? "প্রোডাক্ট বিবরণ" : "Product Details"}</Label>
+            <Textarea rows={3} value={description} onChange={(e) => setDescription(e.target.value)} />
+          </div>
+
+          {/* Toggle sections */}
+          <ToggleSection
+            title={lang === "bn" ? "অনলাইনে বিক্রি করতে চান?" : "Want to sell this product online?"}
+            checked={onlineOn} onChange={setOnlineOn}
+          />
+
+          <ToggleSection
+            title={lang === "bn" ? "বাল্ক/পাইকারি বিক্রি?" : "Want to sell this in bulk?"}
+            checked={bulkOn} onChange={setBulkOn}
+          >
+            <div className="grid grid-cols-2 gap-3">
+              <div className="grid gap-1.5">
+                <Label>{lang === "bn" ? "বাল্ক দাম" : "Bulk Price"}</Label>
+                <Input type="number" value={bulkPrice} onChange={(e) => setBulkPrice(e.target.value)} />
+              </div>
+              <div className="grid gap-1.5">
+                <Label>{lang === "bn" ? "মিনিমাম পরিমাণ" : "Minimum Order Qty"}</Label>
+                <Input type="number" value={bulkMinQty} onChange={(e) => setBulkMinQty(e.target.value)} />
+              </div>
+            </div>
+          </ToggleSection>
+
+          <ToggleSection
+            title={lang === "bn" ? "লো-স্টক অ্যালার্ট" : "Low stock alert"}
+            checked={lowOn} onChange={setLowOn}
+          >
+            <div className="grid gap-1.5">
+              <Label>{lang === "bn" ? "অ্যালার্ট স্টক পরিমাণ" : "Alert when stock reaches"}</Label>
+              <Input type="number" value={low} onChange={(e) => setLow(e.target.value)} />
+            </div>
+          </ToggleSection>
+
+          <ToggleSection
+            title={lang === "bn" ? "VAT applicable?" : "VAT applicable?"}
+            checked={vatOn} onChange={setVatOn}
+          >
+            <div className="grid gap-1.5">
+              <Label>{lang === "bn" ? "VAT (%)" : "VAT percentage (%)"}</Label>
+              <Input type="number" value={vatPct} onChange={(e) => setVatPct(e.target.value)} />
+            </div>
+          </ToggleSection>
+
+          <ToggleSection
+            title={lang === "bn" ? "ওয়ারেন্টি" : "Warranty"}
+            checked={warrantyOn} onChange={setWarrantyOn}
+          >
+            <div className="grid grid-cols-[1fr_140px] gap-3">
+              <div className="grid gap-1.5">
+                <Label>{lang === "bn" ? "বিক্রির পর সময়" : "Days after sale date"}</Label>
+                <Input type="number" value={warrantyValue} onChange={(e) => setWarrantyValue(e.target.value)} />
+              </div>
+              <div className="grid gap-1.5">
+                <Label>&nbsp;</Label>
+                <Select value={warrantyUnit} onValueChange={(v) => setWarrantyUnit(v as "day"|"week"|"month"|"year")}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="day">Day</SelectItem>
+                    <SelectItem value="week">Week</SelectItem>
+                    <SelectItem value="month">Month</SelectItem>
+                    <SelectItem value="year">Year</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </ToggleSection>
+
+          <ToggleSection
+            title={lang === "bn" ? "ডিসকাউন্ট" : "Discount"}
+            checked={discountOn} onChange={setDiscountOn}
+          >
+            <div className="grid grid-cols-[1fr_120px] gap-3">
+              <div className="grid gap-1.5">
+                <Label>{lang === "bn" ? "ডিসকাউন্ট" : "Discount"}</Label>
+                <Input type="number" value={discountValue} onChange={(e) => setDiscountValue(e.target.value)} />
+              </div>
+              <div className="grid gap-1.5">
+                <Label>&nbsp;</Label>
+                <Select value={discountType} onValueChange={(v) => setDiscountType(v as "percent"|"flat")}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="percent">%</SelectItem>
+                    <SelectItem value="flat">৳</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </ToggleSection>
+
+          <ToggleSection
+            title={lang === "bn" ? "বারকোড" : "Barcode"}
+            checked={barcodeOn} onChange={setBarcodeOn}
+          >
+            <div className="grid gap-1.5">
+              <Label>{lang === "bn" ? "বারকোড" : "Barcode"}</Label>
+              <Input value={barcode} onChange={(e) => setBarcode(e.target.value)} />
+            </div>
+          </ToggleSection>
         </div>
-        <DialogFooter>
-          <Button variant="ghost" onClick={() => onOpenChange(false)}>{lang === "bn" ? "বাতিল" : "Cancel"}</Button>
-          <Button onClick={save} disabled={busy}>{busy ? "..." : (lang === "bn" ? "সেভ" : "Save")}</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+
+        <SheetFooter className="sticky bottom-0 -mx-6 border-t bg-background px-6 py-3 sm:flex-row sm:justify-between sm:gap-2">
+          <Button variant="outline" className="flex-1" onClick={() => onOpenChange(false)}>
+            {lang === "bn" ? "বাতিল" : "Cancel"}
+          </Button>
+          <Button className="flex-1" onClick={save} disabled={busy}>
+            {busy ? "..." : product ? (lang === "bn" ? "আপডেট" : "Update Product") : (lang === "bn" ? "যোগ করুন" : "Add New Product")}
+          </Button>
+        </SheetFooter>
+      </SheetContent>
+    </Sheet>
+  );
+}
+
+function ToggleSection({
+  title, checked, onChange, children,
+}: { title: string; checked: boolean; onChange: (v: boolean) => void; children?: React.ReactNode }) {
+  return (
+    <div className="rounded-xl border bg-card">
+      <div className="flex items-center justify-between gap-3 px-4 py-3">
+        <div className="text-sm font-medium">{title}</div>
+        <Switch checked={checked} onCheckedChange={onChange} />
+      </div>
+      {checked && children ? <div className="border-t px-4 py-3">{children}</div> : null}
+    </div>
   );
 }
