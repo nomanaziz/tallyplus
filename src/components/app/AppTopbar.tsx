@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { QuickSellSheet } from "./QuickSellSheet";
 import { SettingsSheet } from "./SettingsSheet";
+import { InstallAppButton } from "./InstallAppPrompt";
 import { Bell, Settings, MessageCircle, ChevronDown, LogOut, Languages, Zap, ArrowLeftRight, LayoutDashboard } from "lucide-react";
 
 export function AppTopbar() {
@@ -63,6 +64,7 @@ export function AppTopbar() {
         >
           <Bell className="h-5 w-5" />
         </button>
+        <InstallAppButton />
         <button
           onClick={() => setLang(lang === "bn" ? "en" : "bn")}
           className="hidden h-9 items-center gap-1 rounded-full px-2 text-xs font-semibold text-muted-foreground hover:bg-accent md:inline-flex"

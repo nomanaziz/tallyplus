@@ -4,6 +4,7 @@ import { I18nProvider } from "@/lib/i18n";
 import { AuthProvider } from "@/lib/auth";
 import { RefCaptureProvider } from "@/lib/referral";
 import { Toaster } from "@/components/ui/sonner";
+import { InstallAppPrompt } from "@/components/app/InstallAppPrompt";
 
 import appCss from "../styles.css?url";
 
@@ -88,6 +89,7 @@ function RootComponent() {
           <RefCaptureProvider>
             <Outlet />
             <Toaster richColors position="top-center" />
+            <InstallAppPrompt />
           </RefCaptureProvider>
         </AuthProvider>
       </I18nProvider>
