@@ -237,7 +237,7 @@ function StoreSettingsPage() {
           {editingUsername ? (
             <div className="mt-2 flex items-center gap-1">
               <span className="rounded-l-md border border-r-0 bg-muted px-2 py-2 text-xs text-muted-foreground">
-                {typeof window !== "undefined" ? window.location.origin : ""}/
+                {typeof window !== "undefined" ? window.location.origin : ""}/vendor/
               </span>
               <Input value={username} onChange={(e) => setUsername(e.target.value.toLowerCase())} className="rounded-l-none" placeholder="my-shop" />
               <Button size="sm" onClick={() => setEditingUsername(false)}>OK</Button>
