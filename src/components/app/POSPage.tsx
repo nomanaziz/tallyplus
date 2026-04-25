@@ -395,7 +395,15 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
         partyLabelEn={partyLabelEn}
         onSaved={(inv) => { clearCart(); setDueOpen(false); void loadProducts(); if (inv) setInvoice(inv); }}
       />
-      <InvoiceDialog open={!!invoice} onClose={() => setInvoice(null)} data={invoice} />
+      <InvoiceDialog
+        open={!!invoice}
+        onClose={() => {
+          setInvoice(null);
+          // After completing a transaction and closing the invoice, return to dashboard.
+          nav({ to: "/app/dashboard" });
+        }}
+        data={invoice}
+      />
     </div>
   );
 }
