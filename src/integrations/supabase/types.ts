@@ -90,6 +90,94 @@ export type Database = {
           },
         ]
       }
+      customer_wishlist_items: {
+        Row: {
+          created_at: string
+          done: boolean
+          id: string
+          name: string
+          position: number
+          qty: number | null
+          unit: string | null
+          wishlist_id: string
+        }
+        Insert: {
+          created_at?: string
+          done?: boolean
+          id?: string
+          name: string
+          position?: number
+          qty?: number | null
+          unit?: string | null
+          wishlist_id: string
+        }
+        Update: {
+          created_at?: string
+          done?: boolean
+          id?: string
+          name?: string
+          position?: number
+          qty?: number | null
+          unit?: string | null
+          wishlist_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_wishlist_items_wishlist_id_fkey"
+            columns: ["wishlist_id"]
+            isOneToOne: false
+            referencedRelation: "customer_wishlists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      customer_wishlists: {
+        Row: {
+          color: string
+          created_at: string
+          customer_address: string | null
+          customer_name: string
+          customer_phone: string
+          id: string
+          note: string | null
+          shop_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          customer_address?: string | null
+          customer_name: string
+          customer_phone: string
+          id?: string
+          note?: string | null
+          shop_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          customer_address?: string | null
+          customer_name?: string
+          customer_phone?: string
+          id?: string
+          note?: string | null
+          shop_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_wishlists_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customers: {
         Row: {
           address: string | null
@@ -851,6 +939,7 @@ export type Database = {
           phone: string | null
           slug: string | null
           updated_at: string
+          wishlist_slug: string | null
         }
         Insert: {
           address?: string | null
@@ -864,6 +953,7 @@ export type Database = {
           phone?: string | null
           slug?: string | null
           updated_at?: string
+          wishlist_slug?: string | null
         }
         Update: {
           address?: string | null
@@ -877,6 +967,7 @@ export type Database = {
           phone?: string | null
           slug?: string | null
           updated_at?: string
+          wishlist_slug?: string | null
         }
         Relationships: []
       }
