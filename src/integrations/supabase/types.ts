@@ -516,6 +516,7 @@ export type Database = {
           amount: number
           created_at: string
           created_by: string | null
+          denominations: Json
           direction: string
           id: string
           note: string | null
@@ -527,6 +528,7 @@ export type Database = {
           amount: number
           created_at?: string
           created_by?: string | null
+          denominations?: Json
           direction: string
           id?: string
           note?: string | null
@@ -538,6 +540,7 @@ export type Database = {
           amount?: number
           created_at?: string
           created_by?: string | null
+          denominations?: Json
           direction?: string
           id?: string
           note?: string | null
