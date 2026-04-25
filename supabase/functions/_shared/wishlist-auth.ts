@@ -14,7 +14,7 @@ function b64url(bytes: ArrayBuffer | Uint8Array): string {
 function fromB64url(s: string): Uint8Array {
   const pad = s.length % 4 === 0 ? "" : "=".repeat(4 - (s.length % 4));
   const b = atob(s.replace(/-/g, "+").replace(/_/g, "/") + pad);
-  const out = new Uint8Array(b.length);
+  const out = new Uint8Array(new ArrayBuffer(b.length));
   for (let i = 0; i < b.length; i++) out[i] = b.charCodeAt(i);
   return out;
 }
@@ -28,7 +28,7 @@ function timingSafeEqual(a: Uint8Array, b: Uint8Array): boolean {
 
 // PIN hashing: PBKDF2-SHA256, 100k iters, 16-byte salt
 export async function hashPin(pin: string): Promise<string> {
-  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const salt = crypto.getRandomValues(new Uint8Array(new ArrayBuffer(16)));
   const key = await crypto.subtle.importKey("raw", enc.encode(pin), "PBKDF2", false, ["deriveBits"]);
   const bits = await crypto.subtle.deriveBits(
     { name: "PBKDF2", salt, iterations: 100_000, hash: "SHA-256" },
