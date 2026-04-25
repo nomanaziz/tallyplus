@@ -34,6 +34,7 @@ import { Route as AppPurchaseLedgerRouteImport } from './routes/app.purchase-led
 import { Route as AppPurchaseRouteImport } from './routes/app.purchase'
 import { Route as AppProductsRouteImport } from './routes/app.products'
 import { Route as AppPrinterRouteImport } from './routes/app.printer'
+import { Route as AppOwnerLedgerRouteImport } from './routes/app.owner-ledger'
 import { Route as AppOnlineShopRouteImport } from './routes/app.online-shop'
 import { Route as AppMarketingRouteImport } from './routes/app.marketing'
 import { Route as AppExpiringRouteImport } from './routes/app.expiring'
@@ -193,6 +194,11 @@ const AppProductsRoute = AppProductsRouteImport.update({
 const AppPrinterRoute = AppPrinterRouteImport.update({
   id: '/printer',
   path: '/printer',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppOwnerLedgerRoute = AppOwnerLedgerRouteImport.update({
+  id: '/owner-ledger',
+  path: '/owner-ledger',
   getParentRoute: () => AppRoute,
 } as any)
 const AppOnlineShopRoute = AppOnlineShopRouteImport.update({
@@ -404,6 +410,7 @@ export interface FileRoutesByFullPath {
   '/app/expiring': typeof AppExpiringRoute
   '/app/marketing': typeof AppMarketingRoute
   '/app/online-shop': typeof AppOnlineShopRouteWithChildren
+  '/app/owner-ledger': typeof AppOwnerLedgerRoute
   '/app/printer': typeof AppPrinterRoute
   '/app/products': typeof AppProductsRoute
   '/app/purchase': typeof AppPurchaseRoute
@@ -465,6 +472,7 @@ export interface FileRoutesByTo {
   '/app/expiring': typeof AppExpiringRoute
   '/app/marketing': typeof AppMarketingRoute
   '/app/online-shop': typeof AppOnlineShopRouteWithChildren
+  '/app/owner-ledger': typeof AppOwnerLedgerRoute
   '/app/printer': typeof AppPrinterRoute
   '/app/products': typeof AppProductsRoute
   '/app/purchase': typeof AppPurchaseRoute
@@ -528,6 +536,7 @@ export interface FileRoutesById {
   '/app/expiring': typeof AppExpiringRoute
   '/app/marketing': typeof AppMarketingRoute
   '/app/online-shop': typeof AppOnlineShopRouteWithChildren
+  '/app/owner-ledger': typeof AppOwnerLedgerRoute
   '/app/printer': typeof AppPrinterRoute
   '/app/products': typeof AppProductsRoute
   '/app/purchase': typeof AppPurchaseRoute
@@ -592,6 +601,7 @@ export interface FileRouteTypes {
     | '/app/expiring'
     | '/app/marketing'
     | '/app/online-shop'
+    | '/app/owner-ledger'
     | '/app/printer'
     | '/app/products'
     | '/app/purchase'
@@ -653,6 +663,7 @@ export interface FileRouteTypes {
     | '/app/expiring'
     | '/app/marketing'
     | '/app/online-shop'
+    | '/app/owner-ledger'
     | '/app/printer'
     | '/app/products'
     | '/app/purchase'
@@ -715,6 +726,7 @@ export interface FileRouteTypes {
     | '/app/expiring'
     | '/app/marketing'
     | '/app/online-shop'
+    | '/app/owner-ledger'
     | '/app/printer'
     | '/app/products'
     | '/app/purchase'
@@ -935,6 +947,13 @@ declare module '@tanstack/react-router' {
       path: '/printer'
       fullPath: '/app/printer'
       preLoaderRoute: typeof AppPrinterRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/owner-ledger': {
+      id: '/app/owner-ledger'
+      path: '/owner-ledger'
+      fullPath: '/app/owner-ledger'
+      preLoaderRoute: typeof AppOwnerLedgerRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/online-shop': {
@@ -1268,6 +1287,7 @@ interface AppRouteChildren {
   AppExpiringRoute: typeof AppExpiringRoute
   AppMarketingRoute: typeof AppMarketingRoute
   AppOnlineShopRoute: typeof AppOnlineShopRouteWithChildren
+  AppOwnerLedgerRoute: typeof AppOwnerLedgerRoute
   AppPrinterRoute: typeof AppPrinterRoute
   AppProductsRoute: typeof AppProductsRoute
   AppPurchaseRoute: typeof AppPurchaseRoute
@@ -1298,6 +1318,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppExpiringRoute: AppExpiringRoute,
   AppMarketingRoute: AppMarketingRoute,
   AppOnlineShopRoute: AppOnlineShopRouteWithChildren,
+  AppOwnerLedgerRoute: AppOwnerLedgerRoute,
   AppPrinterRoute: AppPrinterRoute,
   AppProductsRoute: AppProductsRoute,
   AppPurchaseRoute: AppPurchaseRoute,
