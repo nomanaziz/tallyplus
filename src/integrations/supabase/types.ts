@@ -1086,7 +1086,7 @@ export type Database = {
             foreignKeyName: "marketplace_listings_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
-            referencedRelation: "marketplace_products"
+            referencedRelation: "products"
             referencedColumns: ["id"]
           },
           {
