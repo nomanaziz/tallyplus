@@ -71,7 +71,7 @@ function StoreSettingsPage() {
     if (!shop) return;
     setEnabled(shop.marketplace_enabled);
     setName(shop.name ?? "");
-    setUsername(shop.username ?? "");
+    setUsername(shop.username ?? defaultUsername(shop.name ?? ""));
     setPhone(shop.phone ?? "");
     setAddress(shop.address ?? "");
     setLogoUrl(shop.logo_url);
