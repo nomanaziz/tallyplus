@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { CatalogProductPicker, type CatalogProduct } from "@/components/app/CatalogProductPicker";
 
 export const Route = createFileRoute("/f/$slug")({
   head: () => ({
@@ -36,6 +37,7 @@ function PublicWishlistPage() {
   const { slug } = Route.useParams();
   const [shopName, setShopName] = useState("");
   const [shopLogo, setShopLogo] = useState<string | null>(null);
+  const [shopTypeCode, setShopTypeCode] = useState<string | null>(null);
   const [loadingShop, setLoadingShop] = useState(true);
   const [shopError, setShopError] = useState<string | null>(null);
 
@@ -63,6 +65,7 @@ function PublicWishlistPage() {
         } else {
           setShopName((data as { shop_name: string }).shop_name);
           setShopLogo((data as { shop_logo_url: string | null }).shop_logo_url);
+          setShopTypeCode((data as { shop_type_code?: string | null }).shop_type_code ?? null);
         }
       } catch (e) {
         if (!cancelled) setShopError((e as Error).message);
@@ -216,12 +219,19 @@ function PublicWishlistPage() {
               <div key={it.id} className="flex items-start gap-2">
                 <div className="mt-2 w-5 select-none text-center text-xs font-semibold text-muted-foreground">{idx + 1}.</div>
                 <div className="grid flex-1 grid-cols-12 gap-1.5">
-                  <Input
+                  <CatalogProductPicker
+                    className="col-span-7"
+                    inputClassName="h-10 bg-background/70"
                     value={it.name}
-                    onChange={(e) => updateItem(it.id, { name: e.target.value })}
+                    onChange={(v) => updateItem(it.id, { name: v })}
+                    onSelect={(p: CatalogProduct) => {
+                      updateItem(it.id, {
+                        name: p.name_bn + (p.pack_size ? ` (${p.pack_size})` : ""),
+                        unit: it.unit || p.base_unit || "",
+                      });
+                    }}
+                    shopTypeCode={shopTypeCode}
                     placeholder="পণ্যের নাম"
-                    className="col-span-7 h-10 bg-background/70"
-                    maxLength={120}
                   />
                   <Input
                     value={it.qty}
