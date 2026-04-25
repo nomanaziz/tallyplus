@@ -15,7 +15,7 @@ import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/s
 import { AppSidebar } from "./AppSidebar";
 import { QuickSellSheet } from "./QuickSellSheet";
 import { SettingsSheet } from "./SettingsSheet";
-import { Bell, Settings, MessageCircle, ChevronDown, Menu, LogOut, Languages, Zap } from "lucide-react";
+import { Bell, Settings, MessageCircle, ChevronDown, Menu, LogOut, Languages, Zap, ArrowLeftRight, LayoutDashboard } from "lucide-react";
 
 export function AppTopbar() {
   const { profile, signOut } = useAuth();
@@ -105,6 +105,14 @@ export function AppTopbar() {
               <div className="text-muted-foreground">{profile?.phone}</div>
             </div>
             <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => nav({ to: "/app/shops" })}>
+              <ArrowLeftRight className="mr-2 h-4 w-4" />
+              {lang === "bn" ? "দোকান পরিবর্তন" : "Switch Shop"}
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => nav({ to: "/app/combined-report" })}>
+              <LayoutDashboard className="mr-2 h-4 w-4" />
+              {lang === "bn" ? "কমপ্লিট ড্যাশবোর্ড" : "Complete Dashboard"}
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setLang(lang === "bn" ? "en" : "bn")}>
               <Languages className="mr-2 h-4 w-4" />
               {lang === "bn" ? "English" : "বাংলা"}
