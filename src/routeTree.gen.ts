@@ -61,6 +61,7 @@ import { Route as AdminAffiliatesRouteImport } from './routes/admin.affiliates'
 import { Route as ShopSSlugRouteImport } from './routes/shop.s.$slug'
 import { Route as ShopPIdRouteImport } from './routes/shop.p.$id'
 import { Route as FSlugMyRouteImport } from './routes/f.$slug.my'
+import { Route as AppOnlineShopProductsRouteImport } from './routes/app.online-shop.products'
 
 const PricingRoute = PricingRouteImport.update({
   id: '/pricing',
@@ -323,6 +324,11 @@ const FSlugMyRoute = FSlugMyRouteImport.update({
   path: '/my',
   getParentRoute: () => FSlugRoute,
 } as any)
+const AppOnlineShopProductsRoute = AppOnlineShopProductsRouteImport.update({
+  id: '/products',
+  path: '/products',
+  getParentRoute: () => AppOnlineShopRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -355,7 +361,7 @@ export interface FileRoutesByFullPath {
   '/app/expense-ledger': typeof AppExpenseLedgerRoute
   '/app/expiring': typeof AppExpiringRoute
   '/app/marketing': typeof AppMarketingRoute
-  '/app/online-shop': typeof AppOnlineShopRoute
+  '/app/online-shop': typeof AppOnlineShopRouteWithChildren
   '/app/printer': typeof AppPrinterRoute
   '/app/products': typeof AppProductsRoute
   '/app/purchase': typeof AppPurchaseRoute
@@ -374,6 +380,7 @@ export interface FileRoutesByFullPath {
   '/f/$slug': typeof FSlugRouteWithChildren
   '/admin/': typeof AdminIndexRoute
   '/shop/': typeof ShopIndexRoute
+  '/app/online-shop/products': typeof AppOnlineShopProductsRoute
   '/f/$slug/my': typeof FSlugMyRoute
   '/shop/p/$id': typeof ShopPIdRoute
   '/shop/s/$slug': typeof ShopSSlugRoute
@@ -408,7 +415,7 @@ export interface FileRoutesByTo {
   '/app/expense-ledger': typeof AppExpenseLedgerRoute
   '/app/expiring': typeof AppExpiringRoute
   '/app/marketing': typeof AppMarketingRoute
-  '/app/online-shop': typeof AppOnlineShopRoute
+  '/app/online-shop': typeof AppOnlineShopRouteWithChildren
   '/app/printer': typeof AppPrinterRoute
   '/app/products': typeof AppProductsRoute
   '/app/purchase': typeof AppPurchaseRoute
@@ -427,6 +434,7 @@ export interface FileRoutesByTo {
   '/f/$slug': typeof FSlugRouteWithChildren
   '/admin': typeof AdminIndexRoute
   '/shop': typeof ShopIndexRoute
+  '/app/online-shop/products': typeof AppOnlineShopProductsRoute
   '/f/$slug/my': typeof FSlugMyRoute
   '/shop/p/$id': typeof ShopPIdRoute
   '/shop/s/$slug': typeof ShopSSlugRoute
@@ -463,7 +471,7 @@ export interface FileRoutesById {
   '/app/expense-ledger': typeof AppExpenseLedgerRoute
   '/app/expiring': typeof AppExpiringRoute
   '/app/marketing': typeof AppMarketingRoute
-  '/app/online-shop': typeof AppOnlineShopRoute
+  '/app/online-shop': typeof AppOnlineShopRouteWithChildren
   '/app/printer': typeof AppPrinterRoute
   '/app/products': typeof AppProductsRoute
   '/app/purchase': typeof AppPurchaseRoute
@@ -482,6 +490,7 @@ export interface FileRoutesById {
   '/f/$slug': typeof FSlugRouteWithChildren
   '/admin/': typeof AdminIndexRoute
   '/shop/': typeof ShopIndexRoute
+  '/app/online-shop/products': typeof AppOnlineShopProductsRoute
   '/f/$slug/my': typeof FSlugMyRoute
   '/shop/p/$id': typeof ShopPIdRoute
   '/shop/s/$slug': typeof ShopSSlugRoute
@@ -538,6 +547,7 @@ export interface FileRouteTypes {
     | '/f/$slug'
     | '/admin/'
     | '/shop/'
+    | '/app/online-shop/products'
     | '/f/$slug/my'
     | '/shop/p/$id'
     | '/shop/s/$slug'
@@ -591,6 +601,7 @@ export interface FileRouteTypes {
     | '/f/$slug'
     | '/admin'
     | '/shop'
+    | '/app/online-shop/products'
     | '/f/$slug/my'
     | '/shop/p/$id'
     | '/shop/s/$slug'
@@ -645,6 +656,7 @@ export interface FileRouteTypes {
     | '/f/$slug'
     | '/admin/'
     | '/shop/'
+    | '/app/online-shop/products'
     | '/f/$slug/my'
     | '/shop/p/$id'
     | '/shop/s/$slug'
@@ -1029,6 +1041,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FSlugMyRouteImport
       parentRoute: typeof FSlugRoute
     }
+    '/app/online-shop/products': {
+      id: '/app/online-shop/products'
+      path: '/products'
+      fullPath: '/app/online-shop/products'
+      preLoaderRoute: typeof AppOnlineShopProductsRouteImport
+      parentRoute: typeof AppOnlineShopRoute
+    }
   }
 }
 
@@ -1078,6 +1097,18 @@ const AffiliateRouteWithChildren = AffiliateRoute._addFileChildren(
   AffiliateRouteChildren,
 )
 
+interface AppOnlineShopRouteChildren {
+  AppOnlineShopProductsRoute: typeof AppOnlineShopProductsRoute
+}
+
+const AppOnlineShopRouteChildren: AppOnlineShopRouteChildren = {
+  AppOnlineShopProductsRoute: AppOnlineShopProductsRoute,
+}
+
+const AppOnlineShopRouteWithChildren = AppOnlineShopRoute._addFileChildren(
+  AppOnlineShopRouteChildren,
+)
+
 interface AppRouteChildren {
   AppAccessRoute: typeof AppAccessRoute
   AppAffiliateRoute: typeof AppAffiliateRoute
@@ -1090,7 +1121,7 @@ interface AppRouteChildren {
   AppExpenseLedgerRoute: typeof AppExpenseLedgerRoute
   AppExpiringRoute: typeof AppExpiringRoute
   AppMarketingRoute: typeof AppMarketingRoute
-  AppOnlineShopRoute: typeof AppOnlineShopRoute
+  AppOnlineShopRoute: typeof AppOnlineShopRouteWithChildren
   AppPrinterRoute: typeof AppPrinterRoute
   AppProductsRoute: typeof AppProductsRoute
   AppPurchaseRoute: typeof AppPurchaseRoute
@@ -1120,7 +1151,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppExpenseLedgerRoute: AppExpenseLedgerRoute,
   AppExpiringRoute: AppExpiringRoute,
   AppMarketingRoute: AppMarketingRoute,
-  AppOnlineShopRoute: AppOnlineShopRoute,
+  AppOnlineShopRoute: AppOnlineShopRouteWithChildren,
   AppPrinterRoute: AppPrinterRoute,
   AppProductsRoute: AppProductsRoute,
   AppPurchaseRoute: AppPurchaseRoute,
