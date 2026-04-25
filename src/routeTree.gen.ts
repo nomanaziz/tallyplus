@@ -70,9 +70,13 @@ import { Route as AppOnlineShopThemesRouteImport } from './routes/app.online-sho
 import { Route as AppOnlineShopSettingsRouteImport } from './routes/app.online-shop.settings'
 import { Route as AppOnlineShopPromoCodesRouteImport } from './routes/app.online-shop.promo-codes'
 import { Route as AppOnlineShopProductsRouteImport } from './routes/app.online-shop.products'
+import { Route as AppOnlineShopPolicyRouteImport } from './routes/app.online-shop.policy'
 import { Route as AppOnlineShopOrdersRouteImport } from './routes/app.online-shop.orders'
 import { Route as AppOnlineShopMessagesRouteImport } from './routes/app.online-shop.messages'
+import { Route as AppOnlineShopMarketingRouteImport } from './routes/app.online-shop.marketing'
 import { Route as AppOnlineShopFraudCheckRouteImport } from './routes/app.online-shop.fraud-check'
+import { Route as AppOnlineShopFeaturedRouteImport } from './routes/app.online-shop.featured'
+import { Route as AppOnlineShopDeliveryRouteImport } from './routes/app.online-shop.delivery'
 import { Route as AppOnlineShopCustomizeRouteImport } from './routes/app.online-shop.customize'
 
 const PricingRoute = PricingRouteImport.update({
@@ -381,6 +385,11 @@ const AppOnlineShopProductsRoute = AppOnlineShopProductsRouteImport.update({
   path: '/products',
   getParentRoute: () => AppOnlineShopRoute,
 } as any)
+const AppOnlineShopPolicyRoute = AppOnlineShopPolicyRouteImport.update({
+  id: '/policy',
+  path: '/policy',
+  getParentRoute: () => AppOnlineShopRoute,
+} as any)
 const AppOnlineShopOrdersRoute = AppOnlineShopOrdersRouteImport.update({
   id: '/orders',
   path: '/orders',
@@ -391,9 +400,24 @@ const AppOnlineShopMessagesRoute = AppOnlineShopMessagesRouteImport.update({
   path: '/messages',
   getParentRoute: () => AppOnlineShopRoute,
 } as any)
+const AppOnlineShopMarketingRoute = AppOnlineShopMarketingRouteImport.update({
+  id: '/marketing',
+  path: '/marketing',
+  getParentRoute: () => AppOnlineShopRoute,
+} as any)
 const AppOnlineShopFraudCheckRoute = AppOnlineShopFraudCheckRouteImport.update({
   id: '/fraud-check',
   path: '/fraud-check',
+  getParentRoute: () => AppOnlineShopRoute,
+} as any)
+const AppOnlineShopFeaturedRoute = AppOnlineShopFeaturedRouteImport.update({
+  id: '/featured',
+  path: '/featured',
+  getParentRoute: () => AppOnlineShopRoute,
+} as any)
+const AppOnlineShopDeliveryRoute = AppOnlineShopDeliveryRouteImport.update({
+  id: '/delivery',
+  path: '/delivery',
   getParentRoute: () => AppOnlineShopRoute,
 } as any)
 const AppOnlineShopCustomizeRoute = AppOnlineShopCustomizeRouteImport.update({
@@ -457,9 +481,13 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof AdminIndexRoute
   '/shop/': typeof ShopIndexRoute
   '/app/online-shop/customize': typeof AppOnlineShopCustomizeRoute
+  '/app/online-shop/delivery': typeof AppOnlineShopDeliveryRoute
+  '/app/online-shop/featured': typeof AppOnlineShopFeaturedRoute
   '/app/online-shop/fraud-check': typeof AppOnlineShopFraudCheckRoute
+  '/app/online-shop/marketing': typeof AppOnlineShopMarketingRoute
   '/app/online-shop/messages': typeof AppOnlineShopMessagesRoute
   '/app/online-shop/orders': typeof AppOnlineShopOrdersRoute
+  '/app/online-shop/policy': typeof AppOnlineShopPolicyRoute
   '/app/online-shop/products': typeof AppOnlineShopProductsRoute
   '/app/online-shop/promo-codes': typeof AppOnlineShopPromoCodesRoute
   '/app/online-shop/settings': typeof AppOnlineShopSettingsRoute
@@ -522,9 +550,13 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminIndexRoute
   '/shop': typeof ShopIndexRoute
   '/app/online-shop/customize': typeof AppOnlineShopCustomizeRoute
+  '/app/online-shop/delivery': typeof AppOnlineShopDeliveryRoute
+  '/app/online-shop/featured': typeof AppOnlineShopFeaturedRoute
   '/app/online-shop/fraud-check': typeof AppOnlineShopFraudCheckRoute
+  '/app/online-shop/marketing': typeof AppOnlineShopMarketingRoute
   '/app/online-shop/messages': typeof AppOnlineShopMessagesRoute
   '/app/online-shop/orders': typeof AppOnlineShopOrdersRoute
+  '/app/online-shop/policy': typeof AppOnlineShopPolicyRoute
   '/app/online-shop/products': typeof AppOnlineShopProductsRoute
   '/app/online-shop/promo-codes': typeof AppOnlineShopPromoCodesRoute
   '/app/online-shop/settings': typeof AppOnlineShopSettingsRoute
@@ -590,9 +622,13 @@ export interface FileRoutesById {
   '/admin/': typeof AdminIndexRoute
   '/shop/': typeof ShopIndexRoute
   '/app/online-shop/customize': typeof AppOnlineShopCustomizeRoute
+  '/app/online-shop/delivery': typeof AppOnlineShopDeliveryRoute
+  '/app/online-shop/featured': typeof AppOnlineShopFeaturedRoute
   '/app/online-shop/fraud-check': typeof AppOnlineShopFraudCheckRoute
+  '/app/online-shop/marketing': typeof AppOnlineShopMarketingRoute
   '/app/online-shop/messages': typeof AppOnlineShopMessagesRoute
   '/app/online-shop/orders': typeof AppOnlineShopOrdersRoute
+  '/app/online-shop/policy': typeof AppOnlineShopPolicyRoute
   '/app/online-shop/products': typeof AppOnlineShopProductsRoute
   '/app/online-shop/promo-codes': typeof AppOnlineShopPromoCodesRoute
   '/app/online-shop/settings': typeof AppOnlineShopSettingsRoute
@@ -659,9 +695,13 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/shop/'
     | '/app/online-shop/customize'
+    | '/app/online-shop/delivery'
+    | '/app/online-shop/featured'
     | '/app/online-shop/fraud-check'
+    | '/app/online-shop/marketing'
     | '/app/online-shop/messages'
     | '/app/online-shop/orders'
+    | '/app/online-shop/policy'
     | '/app/online-shop/products'
     | '/app/online-shop/promo-codes'
     | '/app/online-shop/settings'
@@ -724,9 +764,13 @@ export interface FileRouteTypes {
     | '/admin'
     | '/shop'
     | '/app/online-shop/customize'
+    | '/app/online-shop/delivery'
+    | '/app/online-shop/featured'
     | '/app/online-shop/fraud-check'
+    | '/app/online-shop/marketing'
     | '/app/online-shop/messages'
     | '/app/online-shop/orders'
+    | '/app/online-shop/policy'
     | '/app/online-shop/products'
     | '/app/online-shop/promo-codes'
     | '/app/online-shop/settings'
@@ -791,9 +835,13 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/shop/'
     | '/app/online-shop/customize'
+    | '/app/online-shop/delivery'
+    | '/app/online-shop/featured'
     | '/app/online-shop/fraud-check'
+    | '/app/online-shop/marketing'
     | '/app/online-shop/messages'
     | '/app/online-shop/orders'
+    | '/app/online-shop/policy'
     | '/app/online-shop/products'
     | '/app/online-shop/promo-codes'
     | '/app/online-shop/settings'
@@ -1247,6 +1295,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppOnlineShopProductsRouteImport
       parentRoute: typeof AppOnlineShopRoute
     }
+    '/app/online-shop/policy': {
+      id: '/app/online-shop/policy'
+      path: '/policy'
+      fullPath: '/app/online-shop/policy'
+      preLoaderRoute: typeof AppOnlineShopPolicyRouteImport
+      parentRoute: typeof AppOnlineShopRoute
+    }
     '/app/online-shop/orders': {
       id: '/app/online-shop/orders'
       path: '/orders'
@@ -1261,11 +1316,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppOnlineShopMessagesRouteImport
       parentRoute: typeof AppOnlineShopRoute
     }
+    '/app/online-shop/marketing': {
+      id: '/app/online-shop/marketing'
+      path: '/marketing'
+      fullPath: '/app/online-shop/marketing'
+      preLoaderRoute: typeof AppOnlineShopMarketingRouteImport
+      parentRoute: typeof AppOnlineShopRoute
+    }
     '/app/online-shop/fraud-check': {
       id: '/app/online-shop/fraud-check'
       path: '/fraud-check'
       fullPath: '/app/online-shop/fraud-check'
       preLoaderRoute: typeof AppOnlineShopFraudCheckRouteImport
+      parentRoute: typeof AppOnlineShopRoute
+    }
+    '/app/online-shop/featured': {
+      id: '/app/online-shop/featured'
+      path: '/featured'
+      fullPath: '/app/online-shop/featured'
+      preLoaderRoute: typeof AppOnlineShopFeaturedRouteImport
+      parentRoute: typeof AppOnlineShopRoute
+    }
+    '/app/online-shop/delivery': {
+      id: '/app/online-shop/delivery'
+      path: '/delivery'
+      fullPath: '/app/online-shop/delivery'
+      preLoaderRoute: typeof AppOnlineShopDeliveryRouteImport
       parentRoute: typeof AppOnlineShopRoute
     }
     '/app/online-shop/customize': {
@@ -1326,9 +1402,13 @@ const AffiliateRouteWithChildren = AffiliateRoute._addFileChildren(
 
 interface AppOnlineShopRouteChildren {
   AppOnlineShopCustomizeRoute: typeof AppOnlineShopCustomizeRoute
+  AppOnlineShopDeliveryRoute: typeof AppOnlineShopDeliveryRoute
+  AppOnlineShopFeaturedRoute: typeof AppOnlineShopFeaturedRoute
   AppOnlineShopFraudCheckRoute: typeof AppOnlineShopFraudCheckRoute
+  AppOnlineShopMarketingRoute: typeof AppOnlineShopMarketingRoute
   AppOnlineShopMessagesRoute: typeof AppOnlineShopMessagesRoute
   AppOnlineShopOrdersRoute: typeof AppOnlineShopOrdersRoute
+  AppOnlineShopPolicyRoute: typeof AppOnlineShopPolicyRoute
   AppOnlineShopProductsRoute: typeof AppOnlineShopProductsRoute
   AppOnlineShopPromoCodesRoute: typeof AppOnlineShopPromoCodesRoute
   AppOnlineShopSettingsRoute: typeof AppOnlineShopSettingsRoute
@@ -1338,9 +1418,13 @@ interface AppOnlineShopRouteChildren {
 
 const AppOnlineShopRouteChildren: AppOnlineShopRouteChildren = {
   AppOnlineShopCustomizeRoute: AppOnlineShopCustomizeRoute,
+  AppOnlineShopDeliveryRoute: AppOnlineShopDeliveryRoute,
+  AppOnlineShopFeaturedRoute: AppOnlineShopFeaturedRoute,
   AppOnlineShopFraudCheckRoute: AppOnlineShopFraudCheckRoute,
+  AppOnlineShopMarketingRoute: AppOnlineShopMarketingRoute,
   AppOnlineShopMessagesRoute: AppOnlineShopMessagesRoute,
   AppOnlineShopOrdersRoute: AppOnlineShopOrdersRoute,
+  AppOnlineShopPolicyRoute: AppOnlineShopPolicyRoute,
   AppOnlineShopProductsRoute: AppOnlineShopProductsRoute,
   AppOnlineShopPromoCodesRoute: AppOnlineShopPromoCodesRoute,
   AppOnlineShopSettingsRoute: AppOnlineShopSettingsRoute,
