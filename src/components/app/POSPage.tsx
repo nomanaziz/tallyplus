@@ -31,6 +31,9 @@ type Product = {
   sale_price: number;
   stock: number;
   image_url: string | null;
+  bulk_enabled?: boolean | null;
+  bulk_price?: number | null;
+  bulk_min_qty?: number | null;
 };
 
 type CartItem = {
@@ -38,6 +41,12 @@ type CartItem = {
   name: string;
   qty: number;
   price: number;
+  sale_price?: number;
+  bulk_enabled?: boolean;
+  bulk_price?: number | null;
+  bulk_min_qty?: number | null;
+  price_overridden?: boolean;
+  is_bulk?: boolean;
 };
 
 type Contact = { id: string; name: string; phone: string | null; address: string | null };
@@ -83,16 +92,42 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
       const i = prev.findIndex((c) => c.product_id === p.id);
       if (i >= 0) {
         const copy = [...prev];
-        copy[i] = { ...copy[i], qty: copy[i].qty + 1 };
+        const next = { ...copy[i], qty: copy[i].qty + 1 };
+        copy[i] = applyBulkPricing(next);
         return copy;
       }
-      return [...prev, { product_id: p.id, name: p.name, qty: 1, price: isSell ? Number(p.sale_price) : Number(p.cost_price) }];
+      const base = isSell ? Number(p.sale_price) : Number(p.cost_price);
+      const newItem: CartItem = {
+        product_id: p.id,
+        name: p.name,
+        qty: 1,
+        price: base,
+        sale_price: Number(p.sale_price),
+        bulk_enabled: isSell ? Boolean(p.bulk_enabled) : false,
+        bulk_price: p.bulk_price != null ? Number(p.bulk_price) : null,
+        bulk_min_qty: p.bulk_min_qty != null ? Number(p.bulk_min_qty) : null,
+      };
+      return [...prev, applyBulkPricing(newItem)];
     });
     setMobileTab("cart");
   };
 
   const updateCart = (idx: number, patch: Partial<CartItem>) => {
-    setCart((prev) => prev.map((it, i) => (i === idx ? { ...it, ...patch } : it)));
+    setCart((prev) =>
+      prev.map((it, i) => {
+        if (i !== idx) return it;
+        const merged = { ...it, ...patch };
+        // Mark price as overridden when user manually edits price
+        if (Object.prototype.hasOwnProperty.call(patch, "price")) {
+          merged.price_overridden = true;
+        }
+        // Recompute bulk pricing on qty changes
+        if (Object.prototype.hasOwnProperty.call(patch, "qty")) {
+          return applyBulkPricing(merged);
+        }
+        return merged;
+      }),
+    );
   };
   const removeCart = (idx: number) => setCart((prev) => prev.filter((_, i) => i !== idx));
   const clearCart = () => { setCart([]); setDiscount("0"); setDelivery("0"); };
