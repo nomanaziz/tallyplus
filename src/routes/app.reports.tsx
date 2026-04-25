@@ -12,8 +12,13 @@ import { printReport, type PrintRow } from "@/lib/print-report";
 
 export const Route = createFileRoute("/app/reports")({
   head: () => ({ meta: [{ title: "ব্যবসার রিপোর্ট — Tally Plus" }] }),
-  component: ReportsPage,
+  component: GuardedReportsPage,
 });
+
+import { RequirePerm } from "@/components/app/RequirePerm";
+function GuardedReportsPage() {
+  return <RequirePerm group="report"><ReportsPage /></RequirePerm>;
+}
 
 function ReportsPage() {
   const { lang } = useI18n();
