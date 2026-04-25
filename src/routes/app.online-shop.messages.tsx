@@ -47,10 +47,10 @@ function MessagesPage() {
   const save = async () => {
     if (!shopId) return;
     setSaving(true);
-    const payload: Record<string, string | null> = tab === "whatsapp"
+    const payload = tab === "whatsapp"
       ? { whatsapp_number: wa.trim() || null }
       : { facebook_page_id: fb.trim() || null };
-    const { error } = await supabase.from("shops").update(payload).eq("id", shopId);
+    const { error } = await supabase.from("shops").update(payload as never).eq("id", shopId);
     setSaving(false);
     if (error) { toast.error(error.message); return; }
     toast.success(lang === "bn" ? "সেভ হয়েছে" : "Saved");
