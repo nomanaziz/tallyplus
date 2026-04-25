@@ -66,8 +66,8 @@ export function SubscriptionGateDialog({
           <ul className="space-y-3">
             {benefits.map((b) => (
               <li key={b.title} className="flex items-start gap-3">
-                <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-success">
-                  <Check className="h-3.5 w-3.5 text-success-foreground" strokeWidth={3} />
+                <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-500">
+                  <Check className="h-3.5 w-3.5 text-white" strokeWidth={3} />
                 </span>
                 <div className="min-w-0">
                   <div className="text-sm font-bold leading-tight">{b.title}</div>
