@@ -81,7 +81,7 @@ function PlansPage() {
           <h1 className="text-2xl font-bold">Subscription Plans</h1>
           <p className="text-sm text-muted-foreground">Plan add/edit করুন</p>
         </div>
-        <Button onClick={() => setEditing({ is_active: true, duration_days: 30 })}>
+        <Button onClick={() => setEditing({ is_active: true, duration_days: 30, max_shops: 1 })}>
           <Plus className="mr-1 h-4 w-4" /> New Plan
         </Button>
       </div>
