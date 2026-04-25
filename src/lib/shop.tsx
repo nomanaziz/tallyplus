@@ -11,6 +11,7 @@ export type Shop = {
   phone: string | null;
   currency: string;
   shop_type_code: string | null;
+  owner_id: string;
 };
 
 const ShopCtx = createContext<{
@@ -53,7 +54,7 @@ export function ShopProvider({ children }: { children: ReactNode }) {
     }
     const { data } = await supabase
       .from("shops")
-      .select("id,name,slug,logo_url,address,phone,currency,shop_type_code")
+      .select("id,name,slug,logo_url,address,phone,currency,shop_type_code,owner_id")
       .is("deleted_at", null)
       .order("created_at", { ascending: true });
     const list = (data as Shop[] | null) ?? [];
