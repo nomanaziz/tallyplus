@@ -14,6 +14,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as FSlugRouteImport } from './routes/f.$slug'
 import { Route as AppWarrantyRouteImport } from './routes/app.warranty'
 import { Route as AppTrainingRouteImport } from './routes/app.training'
 import { Route as AppSubscribeRouteImport } from './routes/app.subscribe'
@@ -61,6 +62,11 @@ const IndexRoute = IndexRouteImport.update({
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/admin/',
   path: '/admin/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FSlugRoute = FSlugRouteImport.update({
+  id: '/f/$slug',
+  path: '/f/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppWarrantyRoute = AppWarrantyRouteImport.update({
@@ -207,6 +213,7 @@ export interface FileRoutesByFullPath {
   '/app/subscribe': typeof AppSubscribeRoute
   '/app/training': typeof AppTrainingRoute
   '/app/warranty': typeof AppWarrantyRoute
+  '/f/$slug': typeof FSlugRoute
   '/admin/': typeof AdminIndexRoute
 }
 export interface FileRoutesByTo {
@@ -237,6 +244,7 @@ export interface FileRoutesByTo {
   '/app/subscribe': typeof AppSubscribeRoute
   '/app/training': typeof AppTrainingRoute
   '/app/warranty': typeof AppWarrantyRoute
+  '/f/$slug': typeof FSlugRoute
   '/admin': typeof AdminIndexRoute
 }
 export interface FileRoutesById {
@@ -268,6 +276,7 @@ export interface FileRoutesById {
   '/app/subscribe': typeof AppSubscribeRoute
   '/app/training': typeof AppTrainingRoute
   '/app/warranty': typeof AppWarrantyRoute
+  '/f/$slug': typeof FSlugRoute
   '/admin/': typeof AdminIndexRoute
 }
 export interface FileRouteTypes {
@@ -300,6 +309,7 @@ export interface FileRouteTypes {
     | '/app/subscribe'
     | '/app/training'
     | '/app/warranty'
+    | '/f/$slug'
     | '/admin/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -330,6 +340,7 @@ export interface FileRouteTypes {
     | '/app/subscribe'
     | '/app/training'
     | '/app/warranty'
+    | '/f/$slug'
     | '/admin'
   id:
     | '__root__'
@@ -360,6 +371,7 @@ export interface FileRouteTypes {
     | '/app/subscribe'
     | '/app/training'
     | '/app/warranty'
+    | '/f/$slug'
     | '/admin/'
   fileRoutesById: FileRoutesById
 }
@@ -368,6 +380,7 @@ export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
   AuthRoute: typeof AuthRoute
   PricingRoute: typeof PricingRoute
+  FSlugRoute: typeof FSlugRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
 
@@ -406,6 +419,13 @@ declare module '@tanstack/react-router' {
       path: '/admin'
       fullPath: '/admin/'
       preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/f/$slug': {
+      id: '/f/$slug'
+      path: '/f/$slug'
+      fullPath: '/f/$slug'
+      preLoaderRoute: typeof FSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/app/warranty': {
@@ -629,6 +649,7 @@ const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   AuthRoute: AuthRoute,
   PricingRoute: PricingRoute,
+  FSlugRoute: FSlugRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
 export const routeTree = rootRouteImport
