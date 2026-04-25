@@ -49,6 +49,25 @@ type CartItem = {
   is_bulk?: boolean;
 };
 
+function applyBulkPricing(item: CartItem): CartItem {
+  if (!item.bulk_enabled || !item.bulk_price || !item.bulk_min_qty) {
+    return { ...item, is_bulk: false };
+  }
+  const meets = item.qty >= Number(item.bulk_min_qty);
+  if (meets) {
+    // Auto-apply bulk price unless user manually overrode and we're already at bulk
+    if (!item.price_overridden) {
+      return { ...item, price: Number(item.bulk_price), is_bulk: true };
+    }
+    return { ...item, is_bulk: true };
+  }
+  // Below threshold: revert to sale price (only if not overridden)
+  if (!item.price_overridden && item.sale_price != null) {
+    return { ...item, price: Number(item.sale_price), is_bulk: false };
+  }
+  return { ...item, is_bulk: false };
+}
+
 type Contact = { id: string; name: string; phone: string | null; address: string | null };
 
 export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue?: boolean }) {
