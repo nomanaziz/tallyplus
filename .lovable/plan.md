@@ -1,86 +1,92 @@
-## লক্ষ্য
+# Marketplace + গ্রাহক Account Plan
 
-গ্রাহক যেন তার ফর্দ মোবাইল নাম্বার দিয়ে save করতে পারে, পরে আবার retrieve করে দেখতে পারে দোকানদার কী কী দিয়েছে / দেয়নি, এবং প্রত্যেক মাসে সেই ফর্দটাই reuse করে আবার পাঠাতে পারে।
+বর্তমানে `marketplace_products` (canonical, admin-managed) এবং `marketplace_listings` (per-shop seller listing) আগে থেকেই আছে, কিন্তু কোনো public marketplace UI নেই, এবং গ্রাহকের আলাদা account নেই। নিচের plan-এ এই দুটোকে একসাথে যুক্ত করা হবে।
 
-## কীভাবে কাজ করবে (গ্রাহকের দৃষ্টিকোণ থেকে)
+---
 
-1. গ্রাহক `/f/{slug}` page-এ ফর্দ পাঠালে, তার phone নাম্বার দিয়ে একটা **স্থায়ী customer profile** তৈরি হবে (per shop)। সাথে ৬-ডিজিটের একটা **PIN** auto-generate হবে (browser localStorage-এও save হবে যেন একই ফোনে আবার দেখতে গেলে কিছু লিখতে না হয়)।
-2. Submit হওয়ার পর confirmation screen-এ একটা personal link দেখানো হবে: `/f/{slug}/my` — গ্রাহক bookmark করতে পারবে, WhatsApp-এ নিজেকে পাঠাতে পারবে।
-3. `/f/{slug}/my` page-এ phone + PIN দিয়ে login করলে গ্রাহক দেখবে:
-   - **আমার সব ফর্দ** (history): প্রতিটার date, item count, total, status (নতুন / প্রস্তুত / সরবরাহকৃত)
-   - প্রতিটা ফর্দে item-wise: ✅ পেয়েছি / ❌ পাইনি / ⏳ পরে দিবে — দোকানদার যা mark করেছে
-   - **"আবার পাঠান"** button → আগের ফর্দের সব item pre-fill হয়ে নতুন submit form খুলবে, গ্রাহক qty edit করে আবার পাঠাবে
-4. **নিজস্ব saved templates**: গ্রাহক চাইলে কোনো ফর্দকে "মাসিক বাজার" নাম দিয়ে template হিসেবে save করতে পারবে।
+## 1. গ্রাহক (Consumer) Account System
 
-## কীভাবে কাজ করবে (দোকানদারের দৃষ্টিকোণ থেকে)
+### Auth flow পরিবর্তন
+- `/auth` page-এ এখন শুধু shop owner login. এটাকে **dual-mode** card বানানো হবে:
+  - Tab ১: **দোকান মালিক** (existing shop signup/login — phone + 4-digit PIN)
+  - Tab ২: **গ্রাহক** (consumer signup/login — phone + 4-digit PIN)
+- "Create account" button-এ গেলে আগে account type select করতে হবে: *দোকান মালিক* / *গ্রাহক*।
+- Login form একই page-এ — phone+PIN দিলে system auto-detect করবে user কোন ধরনের।
 
-App-এর গ্রাহক ফর্দ page-এ প্রতিটা item-এর পাশে ৩টা status button থাকবে: **পেয়েছে / পায়নি / পরে দিবে**। দোকানদার tick দিলে গ্রাহক তার retrieval page-এ real-time দেখতে পাবে। (আগে শুধু `done: boolean` ছিল, এখন `fulfillment_status` enum হবে।)
+### Database
+- নতুন table: `consumer_profiles`
+  - `id uuid → auth.users.id` (FK, cascade)
+  - `name`, `phone` (unique), `address`, `default_lat/lng`, `avatar_url`, `created_at`
+- নতুন table: `consumer_favourite_shops`
+  - `consumer_id`, `shop_id`, `created_at` (unique pair) — "প্রিয় দোকান"
+- নতুন enum value `consumer` যোগ হবে `app_role`-এ; `handle_new_user` trigger আপডেট করে user metadata-র `account_type` দেখে owner বা consumer role assign করবে।
+- নতুন edge function: `signup-consumer-with-pin` (existing `signup-with-pin`-এর pattern)। Login function shared থাকবে (`login-with-pin`) — শুধু role check.
 
-## Database changes
+### Routing
+- নতুন route group `/shop/*` (consumer-facing app):
+  - `/shop` — marketplace browse (public, login optional)
+  - `/shop/s/$slug` — individual shop page (logo, name, listings)
+  - `/shop/p/$id` — product detail page
+  - `/shop/me` — গ্রাহক dashboard (orders sent, saved ফর্দ, favourite shops) — login required
+- Shop owner-রা আগের মতোই `/app/*`-এ যাবে। Login-এর পরে role দেখে redirect: owner → `/app/dashboard`, consumer → `/shop`।
 
-নতুন/পরিবর্তিত tables:
+---
 
-- **`wishlist_customers`** (নতুন): per-shop স্থায়ী গ্রাহক identity
-  - `id`, `shop_id`, `phone` (unique per shop), `name`, `address`, `pin_hash` (bcrypt-like, server-only check), `created_at`, `last_seen_at`
-- **`customer_wishlists`** (পরিবর্তন): নতুন column `wishlist_customer_id uuid` যোগ — পুরোনো denormalized name/phone থাকবে backup হিসেবে
-- **`customer_wishlist_items`** (পরিবর্তন):
-  - `done boolean` → keep for backward compat
-  - নতুন: `fulfillment_status text` ('pending' | 'fulfilled' | 'unavailable' | 'later'), default 'pending'
-  - নতুন: `shopkeeper_note text` (কেন পায়নি — optional)
-- **`wishlist_templates`** (নতুন): গ্রাহকের saved monthly template
-  - `id`, `wishlist_customer_id`, `name` (যেমন "মাসিক বাজার"), `items jsonb`, `created_at`
+## 2. Public Marketplace
 
-RLS:
-- `wishlist_customers`: public INSERT/SELECT/UPDATE শুধু edge function-এর service role দিয়ে; shop members read-only own shop's customers
-- `wishlist_templates`: শুধু edge function via PIN auth
+### Shop owner side (`/app`)
+- `app.products.tsx`-এ প্রতিটা product-এ একটা toggle: **"অনলাইনে বিক্রি করব"**। On করলে সেই product-এর জন্য `marketplace_listings` row create/update হবে (price, stock, min_order from product table)।
+- নতুন route `/app/online-shop` (placeholder আছে already) — এখানে shop owner দেখবে কোন product গুলো online-এ live, price/stock edit করতে পারবে, এবং shop's public page link পাবে (`/shop/s/{slug}`)।
+- Shop owner-এর জন্য একটা "online shop profile" form: logo (already in shops table), tagline, cover image, delivery area — এগুলোর জন্য `shops` table-এ `tagline`, `cover_url`, `marketplace_enabled boolean` column add করা হবে।
 
-## Edge functions
+### Public marketplace pages
+- `/shop` — সব published listing-এর grid: product image, name, price, shop name+logo। Filter by category, search, sort by price/recent। Pagination।
+- `/shop/s/$slug` — individual shop's storefront: cover, logo, tagline, address, contact, listed products grid।
+- `/shop/p/$id` — product detail: images, description, price, shop info, "ফর্দে যোগ করুন" button, "এই দোকানের সাথে যোগাযোগ" (WhatsApp link)।
+- Anyone can browse anonymously; কেবল ফর্দ save / send করতে গেলে consumer login লাগবে।
 
-1. **`submit-wishlist`** (update): `pin` input accept করবে। যদি `(shop_id, phone)` জোড়া আগে থাকে → PIN verify করবে; না থাকলে নতুন customer + auto-PIN তৈরি করে response-এ PIN পাঠাবে যেন UI দেখাতে পারে।
-2. **`customer-wishlist-login`** (নতুন): `{ slug, phone, pin }` → verify → return short-lived signed token (HMAC, 30-day) ব্রাউজার localStorage-এ রাখবে।
-3. **`customer-wishlist-history`** (নতুন): `{ token }` → return all wishlists + items + fulfillment status + saved templates।
-4. **`customer-wishlist-resend`** (নতুন): `{ token, template_id | wishlist_id, items_override }` → নতুন wishlist তৈরি করে।
-5. **`save-wishlist-template`** (নতুন): template save।
+---
 
-PIN reset: এই iteration-এ গ্রাহক যদি PIN ভুলে যায় → দোকানদার app থেকে "PIN reset" করে দিতে পারবে (গ্রাহকের পরবর্তী visit-এ নতুন PIN auto-generate)।
+## 3. গ্রাহক ফর্দ (Saved Carts) — Marketplace Integration
 
-## নতুন routes (frontend)
+বর্তমানে `customer_wishlists` + `wishlist_customers` system আছে শুধু per-shop wishlist link (`/f/$slug`)-এর জন্য। এটাকে authenticated consumer accounts-এর সাথে মেলানো হবে।
 
-- `src/routes/f.$slug.my.tsx` — গ্রাহকের login + history + per-item fulfillment view + "আবার পাঠান" + templates
-- `src/routes/f.$slug.tsx` (update) — submit হওয়ার পর confirmation-এ PIN + personal link দেখানো; URL query `?reuse={wishlist_id}` থাকলে items pre-fill
-- `src/routes/app.customer-wishlist.tsx` (update) — প্রতিটা item-এ fulfillment status dropdown (পেয়েছে / পায়নি / পরে) + customer history link
+### Database
+- `customer_wishlists`-এ নতুন nullable column: `consumer_user_id uuid` (auth.users id) — যদি logged-in consumer সাবমিট করে।
+- নতুন table: `consumer_saved_carts`
+  - `id`, `consumer_user_id`, `name` (e.g. "মাসিক বাজার"), `items jsonb` (name, qty, unit, note), `created_at`, `updated_at`
+- নতুন table: `consumer_cart_items` *(in-progress active cart)* — অথবা simply localStorage + একটা single "active cart" row। **Simple approach: active cart = localStorage; saved carts = `consumer_saved_carts` rows।**
 
-## UX flow summary
+### UX flow
+1. Consumer marketplace থেকে product browse করে "ফর্দে যোগ করুন" চাপলে item active cart-এ যাবে (localStorage; logged-in হলে server sync)।
+2. `/shop/me/cart` — current ফর্দ দেখা, edit, delete।
+3. **"ফর্দ save করুন"** button — name দিয়ে save করলে `consumer_saved_carts`-এ store হবে।
+4. **"দোকানে পাঠান"** button — favourite shops list থেকে একটা select করে submit। Backend-এ এটা `submit-wishlist` edge function-কে call করবে (shop slug দিয়ে), শুধু consumer_user_id-ও pass করা হবে যাতে shop owner দেখতে পারে কে পাঠিয়েছে।
+5. `/shop/me` dashboard:
+   - **আমার ফর্দ** (saved carts) — reorder, edit, send to shop
+   - **পাঠানো ফর্দ** (history) — কোন shop, কবে, status (pending/received/delivered)
+   - **প্রিয় দোকান** — manage favourite shops list
 
-```text
-First time:
-  /f/{slug}  →  fill form  →  submit  →  confirmation
-                                          │
-                                          ├─ "আপনার PIN: 482913" (copy button)
-                                          ├─ "আপনার ফর্দ link: /f/{slug}/my" (copy + WhatsApp share)
-                                          └─ "নতুন ফর্দ" / "আমার ফর্দ দেখুন"
+### Shop owner side
+- Existing `/app/customer-wishlist` page এমনিতেই দেখাবে — শুধু consumer-attached submissions-এ একটা badge ("নিবন্ধিত গ্রাহক") add হবে।
 
-Returning customer:
-  /f/{slug}/my  →  phone + PIN login  →  history list
-                                          │
-                                          ├─ ফর্দ #5 (১৫ এপ্রিল) ✅ ১০ পেয়েছি, ❌ ২ পাইনি, total ৳১২৫০
-                                          │   └─ "এটাই আবার পাঠান" → pre-filled form
-                                          │
-                                          └─ Templates: "মাসিক বাজার" → "এখন পাঠান"
-```
+---
 
-## File changes summary
+## 4. Implementation Order (incremental, low-risk)
 
-- নতুন migration: tables + columns + RLS উপরে বর্ণিত
-- নতুন edge functions: `customer-wishlist-login`, `customer-wishlist-history`, `customer-wishlist-resend`, `save-wishlist-template`
-- update edge function: `submit-wishlist` (PIN handling, customer linking)
-- নতুন route: `src/routes/f.$slug.my.tsx`
-- update routes: `src/routes/f.$slug.tsx`, `src/routes/app.customer-wishlist.tsx`
+1. **Schema migration**: `consumer_profiles`, `consumer_favourite_shops`, `consumer_saved_carts`, app_role enum extend, shops table 3 new columns, customer_wishlists.consumer_user_id, RLS policies।
+2. **Consumer auth**: dual-mode `/auth` UI + `signup-consumer-with-pin` edge function + handle_new_user trigger update।
+3. **Public marketplace routes**: `/shop`, `/shop/s/$slug`, `/shop/p/$id` (read-only, anonymous OK)।
+4. **Shop owner online toggle**: `/app/products` row toggle + `/app/online-shop` revamp (replace placeholder)।
+5. **Cart + saved ফর্দ + send to shop** flow: `/shop/me`, `/shop/me/cart`, send-cart edge function।
+6. **Polish**: favourites management, order history view, shop owner badge for registered consumers।
 
-## নিরাপত্তা
+---
 
-- PIN bcrypt-style hash (server-only verify) — কখনো client-এ raw PIN store হবে না, শুধু signed session token
-- Rate limit: same phone থেকে 1 মিনিটে সর্বোচ্চ ৫ login চেষ্টা (in-memory in edge function বা simple table)
-- All input Zod-style validation edge function-এ
+## Open Questions (will ask before coding)
 
-Approve করলে এই plan অনুযায়ী implement শুরু করব।
+1. গ্রাহক কি একই ফোন নাম্বার দিয়ে shop owner হিসেবেও registered থাকতে পারবে, নাকি ১ ফোন = ১ account type?
+2. Marketplace-এ payment/checkout লাগবে নাকি শুধু "ফর্দ পাঠানো" (shop owner WhatsApp/call করে confirm) দিয়েই হবে? — *Plan-এ এখন ফর্দ-only ধরা হলো, কারণ আপনি "simple" বলেছেন*।
+3. Consumer-এর জন্য email/OTP-based reset লাগবে কিনা, নাকি শুধু PIN যথেষ্ট?
+
+Approve করলে আমি step ১ (migration) থেকে শুরু করব।
