@@ -2127,7 +2127,7 @@ export type Database = {
       user_shop_limit: { Args: { _user_id: string }; Returns: number }
     }
     Enums: {
-      app_role: "admin" | "owner" | "manager" | "cashier" | "buyer"
+      app_role: "admin" | "owner" | "manager" | "cashier" | "buyer" | "consumer"
       payment_method:
         | "cash"
         | "bkash"
@@ -2267,7 +2267,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "owner", "manager", "cashier", "buyer"],
+      app_role: ["admin", "owner", "manager", "cashier", "buyer", "consumer"],
       payment_method: [
         "cash",
         "bkash",
