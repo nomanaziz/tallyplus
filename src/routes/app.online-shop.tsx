@@ -79,9 +79,12 @@ function OnlineMarketplacePage() {
   return (
     <div className="container px-4 py-4">
       <PageHeader
+        breadcrumb="Online Marketplace"
         title={lang === "bn" ? "অনলাইন মার্কেটপ্লেস" : "Online Marketplace"}
-        subtitle={lang === "bn" ? "সকল দোকানের প্রকাশিত পণ্য এক জায়গায়" : "Published products from all shops"}
       />
+      <p className="mt-1 text-sm text-muted-foreground">
+        {lang === "bn" ? "সকল দোকানের প্রকাশিত পণ্য এক জায়গায়" : "Published products from all shops"}
+      </p>
 
       <form onSubmit={submit} className="mt-4 flex max-w-xl items-center gap-2">
         <div className="relative flex-1">
