@@ -16,13 +16,13 @@ export const Route = createFileRoute("/app/online-shop/themes")({
 });
 
 const WEB = [
-  { key: "classic", name: "Classic", color: "from-emerald-200 to-emerald-50" },
-  { key: "modern", name: "Modern", color: "from-indigo-200 to-indigo-50" },
-  { key: "elegant", name: "Elegant", color: "from-amber-200 to-amber-50" },
+  { key: "classic", name: "Classic", color: "from-emerald-200 to-emerald-50", accent: "#10b981" },
+  { key: "modern", name: "Modern", color: "from-indigo-200 to-indigo-50", accent: "#4f46e5" },
+  { key: "elegant", name: "Elegant", color: "from-amber-200 to-amber-50", accent: "#d97706" },
 ];
 const APP = [
-  { key: "default", name: "Default", color: "from-rose-200 to-rose-50" },
-  { key: "blue", name: "Blue", color: "from-sky-200 to-sky-50" },
+  { key: "default", name: "Default", color: "from-rose-200 to-rose-50", accent: "#e11d48" },
+  { key: "blue", name: "Blue", color: "from-sky-200 to-sky-50", accent: "#0284c7" },
 ];
 
 function ThemesPage() {
@@ -62,13 +62,13 @@ function ThemesPage() {
         <TabsContent value="web" className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
           {WEB.map((t) => (
             <ThemeCard key={t.key} t={t} active={shop?.active_web_theme === t.key} disabled={saving}
-              onApply={() => setTheme("active_web_theme", t.key)} aspect="aspect-[3/4]" />
+              onApply={() => setTheme("active_web_theme", t.key)} aspect="aspect-[3/4]" kind="web" />
           ))}
         </TabsContent>
         <TabsContent value="app" className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
           {APP.map((t) => (
             <ThemeCard key={t.key} t={t} active={shop?.active_app_theme === t.key} disabled={saving}
-              onApply={() => setTheme("active_app_theme", t.key)} aspect="aspect-[9/16]" />
+              onApply={() => setTheme("active_app_theme", t.key)} aspect="aspect-[9/16]" kind="app" />
           ))}
         </TabsContent>
       </Tabs>
@@ -76,12 +76,24 @@ function ThemesPage() {
   );
 }
 
-function ThemeCard({ t, active, disabled, onApply, aspect }: { t: { name: string; color: string }; active: boolean; disabled: boolean; onApply: () => void; aspect: string }) {
+function ThemeCard({ t, active, disabled, onApply, aspect, kind }: { t: { name: string; color: string; accent: string }; active: boolean; disabled: boolean; onApply: () => void; aspect: string; kind: "web" | "app" }) {
   return (
     <div className="rounded-xl border bg-card p-3">
-      <div className={`relative ${aspect} w-full overflow-hidden rounded-lg bg-gradient-to-br ${t.color}`}>
+      <div className={`relative ${aspect} w-full overflow-hidden rounded-lg bg-gradient-to-br ${t.color} p-3`}>
+        {/* Mini storefront preview */}
+        <div className="h-6 w-2/3 rounded bg-white/70" />
+        <div className="mt-2 grid grid-cols-2 gap-2">
+          {[0, 1, 2, 3].map((i) => (
+            <div key={i} className="rounded-md bg-white/85 p-1.5 shadow-sm">
+              <div className="aspect-square w-full rounded bg-muted" />
+              <div className="mt-1 h-1.5 w-3/4 rounded bg-muted-foreground/40" />
+              <div className="mt-1 h-2 w-1/2 rounded" style={{ background: t.accent }} />
+            </div>
+          ))}
+        </div>
+        {kind === "app" && <div className="absolute inset-x-3 bottom-3 h-7 rounded-full" style={{ background: t.accent }} />}
         {active && (
-          <div className="absolute inset-0 grid place-items-center">
+          <div className="absolute inset-0 grid place-items-center bg-black/10">
             <div className="grid h-12 w-12 place-items-center rounded-full bg-emerald-500 text-white shadow-lg"><Check className="h-7 w-7" /></div>
           </div>
         )}
