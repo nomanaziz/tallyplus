@@ -22,6 +22,7 @@ import { Route as AppTrainingRouteImport } from './routes/app.training'
 import { Route as AppSubscribeRouteImport } from './routes/app.subscribe'
 import { Route as AppStockEditRouteImport } from './routes/app.stock-edit'
 import { Route as AppStockRouteImport } from './routes/app.stock'
+import { Route as AppShopsRouteImport } from './routes/app.shops'
 import { Route as AppSellRouteImport } from './routes/app.sell'
 import { Route as AppSalesLedgerRouteImport } from './routes/app.sales-ledger'
 import { Route as AppReportsRouteImport } from './routes/app.reports'
@@ -118,6 +119,11 @@ const AppStockEditRoute = AppStockEditRouteImport.update({
 const AppStockRoute = AppStockRouteImport.update({
   id: '/stock',
   path: '/stock',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppShopsRoute = AppShopsRouteImport.update({
+  id: '/shops',
+  path: '/shops',
   getParentRoute: () => AppRoute,
 } as any)
 const AppSellRoute = AppSellRouteImport.update({
@@ -321,6 +327,7 @@ export interface FileRoutesByFullPath {
   '/app/reports': typeof AppReportsRoute
   '/app/sales-ledger': typeof AppSalesLedgerRoute
   '/app/sell': typeof AppSellRoute
+  '/app/shops': typeof AppShopsRoute
   '/app/stock': typeof AppStockRoute
   '/app/stock-edit': typeof AppStockEditRoute
   '/app/subscribe': typeof AppSubscribeRoute
@@ -367,6 +374,7 @@ export interface FileRoutesByTo {
   '/app/reports': typeof AppReportsRoute
   '/app/sales-ledger': typeof AppSalesLedgerRoute
   '/app/sell': typeof AppSellRoute
+  '/app/shops': typeof AppShopsRoute
   '/app/stock': typeof AppStockRoute
   '/app/stock-edit': typeof AppStockEditRoute
   '/app/subscribe': typeof AppSubscribeRoute
@@ -415,6 +423,7 @@ export interface FileRoutesById {
   '/app/reports': typeof AppReportsRoute
   '/app/sales-ledger': typeof AppSalesLedgerRoute
   '/app/sell': typeof AppSellRoute
+  '/app/shops': typeof AppShopsRoute
   '/app/stock': typeof AppStockRoute
   '/app/stock-edit': typeof AppStockEditRoute
   '/app/subscribe': typeof AppSubscribeRoute
@@ -464,6 +473,7 @@ export interface FileRouteTypes {
     | '/app/reports'
     | '/app/sales-ledger'
     | '/app/sell'
+    | '/app/shops'
     | '/app/stock'
     | '/app/stock-edit'
     | '/app/subscribe'
@@ -510,6 +520,7 @@ export interface FileRouteTypes {
     | '/app/reports'
     | '/app/sales-ledger'
     | '/app/sell'
+    | '/app/shops'
     | '/app/stock'
     | '/app/stock-edit'
     | '/app/subscribe'
@@ -557,6 +568,7 @@ export interface FileRouteTypes {
     | '/app/reports'
     | '/app/sales-ledger'
     | '/app/sell'
+    | '/app/shops'
     | '/app/stock'
     | '/app/stock-edit'
     | '/app/subscribe'
@@ -667,6 +679,13 @@ declare module '@tanstack/react-router' {
       path: '/stock'
       fullPath: '/app/stock'
       preLoaderRoute: typeof AppStockRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/shops': {
+      id: '/app/shops'
+      path: '/shops'
+      fullPath: '/app/shops'
+      preLoaderRoute: typeof AppShopsRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/sell': {
@@ -961,6 +980,7 @@ interface AppRouteChildren {
   AppReportsRoute: typeof AppReportsRoute
   AppSalesLedgerRoute: typeof AppSalesLedgerRoute
   AppSellRoute: typeof AppSellRoute
+  AppShopsRoute: typeof AppShopsRoute
   AppStockRoute: typeof AppStockRoute
   AppStockEditRoute: typeof AppStockEditRoute
   AppSubscribeRoute: typeof AppSubscribeRoute
@@ -989,6 +1009,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppReportsRoute: AppReportsRoute,
   AppSalesLedgerRoute: AppSalesLedgerRoute,
   AppSellRoute: AppSellRoute,
+  AppShopsRoute: AppShopsRoute,
   AppStockRoute: AppStockRoute,
   AppStockEditRoute: AppStockEditRoute,
   AppSubscribeRoute: AppSubscribeRoute,
