@@ -59,11 +59,17 @@ export function ShopProvider({ children }: { children: ReactNode }) {
     const list = (data as Shop[] | null) ?? [];
     setShops(list);
     const savedId = typeof window !== "undefined" ? localStorage.getItem("tp_shop_id") : null;
+    // Validate cached shop is still in the user's accessible list; fallback to first.
     const found = list.find((s) => s.id === savedId) ?? list[0] ?? null;
     setCurrentState(found);
     if (typeof window !== "undefined") {
-      if (found) localStorage.setItem("tp_shop_current", JSON.stringify(found));
-      else localStorage.removeItem("tp_shop_current");
+      if (found) {
+        localStorage.setItem("tp_shop_current", JSON.stringify(found));
+        localStorage.setItem("tp_shop_id", found.id);
+      } else {
+        localStorage.removeItem("tp_shop_current");
+        localStorage.removeItem("tp_shop_id");
+      }
     }
     setHasLoaded(true);
   };
