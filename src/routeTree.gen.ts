@@ -40,6 +40,7 @@ import { Route as AppContactsRouteImport } from './routes/app.contacts'
 import { Route as AppCashboxRouteImport } from './routes/app.cashbox'
 import { Route as AppAccessRouteImport } from './routes/app.access'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
+import { Route as AdminTrainingRouteImport } from './routes/admin.training'
 import { Route as AdminSubscriptionsRouteImport } from './routes/admin.subscriptions'
 import { Route as AdminSubscriptionRequestsRouteImport } from './routes/admin.subscription-requests'
 import { Route as AdminShopTypesRouteImport } from './routes/admin.shop-types'
@@ -204,6 +205,11 @@ const AdminUsersRoute = AdminUsersRouteImport.update({
   path: '/users',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminTrainingRoute = AdminTrainingRouteImport.update({
+  id: '/training',
+  path: '/training',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminSubscriptionsRoute = AdminSubscriptionsRouteImport.update({
   id: '/subscriptions',
   path: '/subscriptions',
@@ -260,6 +266,7 @@ export interface FileRoutesByFullPath {
   '/admin/shop-types': typeof AdminShopTypesRoute
   '/admin/subscription-requests': typeof AdminSubscriptionRequestsRoute
   '/admin/subscriptions': typeof AdminSubscriptionsRoute
+  '/admin/training': typeof AdminTrainingRoute
   '/admin/users': typeof AdminUsersRoute
   '/app/access': typeof AppAccessRoute
   '/app/cashbox': typeof AppCashboxRoute
@@ -300,6 +307,7 @@ export interface FileRoutesByTo {
   '/admin/shop-types': typeof AdminShopTypesRoute
   '/admin/subscription-requests': typeof AdminSubscriptionRequestsRoute
   '/admin/subscriptions': typeof AdminSubscriptionsRoute
+  '/admin/training': typeof AdminTrainingRoute
   '/admin/users': typeof AdminUsersRoute
   '/app/access': typeof AppAccessRoute
   '/app/cashbox': typeof AppCashboxRoute
@@ -342,6 +350,7 @@ export interface FileRoutesById {
   '/admin/shop-types': typeof AdminShopTypesRoute
   '/admin/subscription-requests': typeof AdminSubscriptionRequestsRoute
   '/admin/subscriptions': typeof AdminSubscriptionsRoute
+  '/admin/training': typeof AdminTrainingRoute
   '/admin/users': typeof AdminUsersRoute
   '/app/access': typeof AppAccessRoute
   '/app/cashbox': typeof AppCashboxRoute
@@ -385,6 +394,7 @@ export interface FileRouteTypes {
     | '/admin/shop-types'
     | '/admin/subscription-requests'
     | '/admin/subscriptions'
+    | '/admin/training'
     | '/admin/users'
     | '/app/access'
     | '/app/cashbox'
@@ -425,6 +435,7 @@ export interface FileRouteTypes {
     | '/admin/shop-types'
     | '/admin/subscription-requests'
     | '/admin/subscriptions'
+    | '/admin/training'
     | '/admin/users'
     | '/app/access'
     | '/app/cashbox'
@@ -466,6 +477,7 @@ export interface FileRouteTypes {
     | '/admin/shop-types'
     | '/admin/subscription-requests'
     | '/admin/subscriptions'
+    | '/admin/training'
     | '/admin/users'
     | '/app/access'
     | '/app/cashbox'
@@ -722,6 +734,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminUsersRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/training': {
+      id: '/admin/training'
+      path: '/training'
+      fullPath: '/admin/training'
+      preLoaderRoute: typeof AdminTrainingRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/subscriptions': {
       id: '/admin/subscriptions'
       path: '/subscriptions'
@@ -790,6 +809,7 @@ interface AdminRouteChildren {
   AdminShopTypesRoute: typeof AdminShopTypesRoute
   AdminSubscriptionRequestsRoute: typeof AdminSubscriptionRequestsRoute
   AdminSubscriptionsRoute: typeof AdminSubscriptionsRoute
+  AdminTrainingRoute: typeof AdminTrainingRoute
   AdminUsersRoute: typeof AdminUsersRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
@@ -803,6 +823,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminShopTypesRoute: AdminShopTypesRoute,
   AdminSubscriptionRequestsRoute: AdminSubscriptionRequestsRoute,
   AdminSubscriptionsRoute: AdminSubscriptionsRoute,
+  AdminTrainingRoute: AdminTrainingRoute,
   AdminUsersRoute: AdminUsersRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
