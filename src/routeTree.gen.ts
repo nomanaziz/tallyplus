@@ -39,6 +39,8 @@ import { Route as AppCustomerWishlistRouteImport } from './routes/app.customer-w
 import { Route as AppContactsRouteImport } from './routes/app.contacts'
 import { Route as AppCashboxRouteImport } from './routes/app.cashbox'
 import { Route as AppAccessRouteImport } from './routes/app.access'
+import { Route as AdminUsersRouteImport } from './routes/admin.users'
+import { Route as AdminPlansRouteImport } from './routes/admin.plans'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
 import { Route as AdminLandingRouteImport } from './routes/admin.landing'
 
@@ -192,6 +194,16 @@ const AppAccessRoute = AppAccessRouteImport.update({
   path: '/access',
   getParentRoute: () => AppRoute,
 } as any)
+const AdminUsersRoute = AdminUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminPlansRoute = AdminPlansRouteImport.update({
+  id: '/plans',
+  path: '/plans',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminLoginRoute = AdminLoginRouteImport.update({
   id: '/login',
   path: '/login',
@@ -211,6 +223,8 @@ export interface FileRoutesByFullPath {
   '/pricing': typeof PricingRoute
   '/admin/landing': typeof AdminLandingRoute
   '/admin/login': typeof AdminLoginRoute
+  '/admin/plans': typeof AdminPlansRoute
+  '/admin/users': typeof AdminUsersRoute
   '/app/access': typeof AppAccessRoute
   '/app/cashbox': typeof AppCashboxRoute
   '/app/contacts': typeof AppContactsRoute
@@ -244,6 +258,8 @@ export interface FileRoutesByTo {
   '/pricing': typeof PricingRoute
   '/admin/landing': typeof AdminLandingRoute
   '/admin/login': typeof AdminLoginRoute
+  '/admin/plans': typeof AdminPlansRoute
+  '/admin/users': typeof AdminUsersRoute
   '/app/access': typeof AppAccessRoute
   '/app/cashbox': typeof AppCashboxRoute
   '/app/contacts': typeof AppContactsRoute
@@ -279,6 +295,8 @@ export interface FileRoutesById {
   '/pricing': typeof PricingRoute
   '/admin/landing': typeof AdminLandingRoute
   '/admin/login': typeof AdminLoginRoute
+  '/admin/plans': typeof AdminPlansRoute
+  '/admin/users': typeof AdminUsersRoute
   '/app/access': typeof AppAccessRoute
   '/app/cashbox': typeof AppCashboxRoute
   '/app/contacts': typeof AppContactsRoute
@@ -315,6 +333,8 @@ export interface FileRouteTypes {
     | '/pricing'
     | '/admin/landing'
     | '/admin/login'
+    | '/admin/plans'
+    | '/admin/users'
     | '/app/access'
     | '/app/cashbox'
     | '/app/contacts'
@@ -348,6 +368,8 @@ export interface FileRouteTypes {
     | '/pricing'
     | '/admin/landing'
     | '/admin/login'
+    | '/admin/plans'
+    | '/admin/users'
     | '/app/access'
     | '/app/cashbox'
     | '/app/contacts'
@@ -382,6 +404,8 @@ export interface FileRouteTypes {
     | '/pricing'
     | '/admin/landing'
     | '/admin/login'
+    | '/admin/plans'
+    | '/admin/users'
     | '/app/access'
     | '/app/cashbox'
     | '/app/contacts'
@@ -630,6 +654,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAccessRouteImport
       parentRoute: typeof AppRoute
     }
+    '/admin/users': {
+      id: '/admin/users'
+      path: '/users'
+      fullPath: '/admin/users'
+      preLoaderRoute: typeof AdminUsersRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/plans': {
+      id: '/admin/plans'
+      path: '/plans'
+      fullPath: '/admin/plans'
+      preLoaderRoute: typeof AdminPlansRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/login': {
       id: '/admin/login'
       path: '/login'
@@ -650,12 +688,16 @@ declare module '@tanstack/react-router' {
 interface AdminRouteChildren {
   AdminLandingRoute: typeof AdminLandingRoute
   AdminLoginRoute: typeof AdminLoginRoute
+  AdminPlansRoute: typeof AdminPlansRoute
+  AdminUsersRoute: typeof AdminUsersRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminLandingRoute: AdminLandingRoute,
   AdminLoginRoute: AdminLoginRoute,
+  AdminPlansRoute: AdminPlansRoute,
+  AdminUsersRoute: AdminUsersRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
 
