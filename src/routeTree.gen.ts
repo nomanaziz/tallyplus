@@ -34,6 +34,8 @@ import { Route as AppPurchaseLedgerRouteImport } from './routes/app.purchase-led
 import { Route as AppPurchaseRouteImport } from './routes/app.purchase'
 import { Route as AppProductsRouteImport } from './routes/app.products'
 import { Route as AppPrinterRouteImport } from './routes/app.printer'
+import { Route as AppOwnerReportRouteImport } from './routes/app.owner-report'
+import { Route as AppOwnerLedgerRouteImport } from './routes/app.owner-ledger'
 import { Route as AppOnlineShopRouteImport } from './routes/app.online-shop'
 import { Route as AppMarketingRouteImport } from './routes/app.marketing'
 import { Route as AppExpiringRouteImport } from './routes/app.expiring'
@@ -44,6 +46,7 @@ import { Route as AppCustomerWishlistRouteImport } from './routes/app.customer-w
 import { Route as AppContactsRouteImport } from './routes/app.contacts'
 import { Route as AppCombinedReportRouteImport } from './routes/app.combined-report'
 import { Route as AppCashboxRouteImport } from './routes/app.cashbox'
+import { Route as AppAssetsRouteImport } from './routes/app.assets'
 import { Route as AppAffiliateRouteImport } from './routes/app.affiliate'
 import { Route as AppAccessRouteImport } from './routes/app.access'
 import { Route as AffiliateRegisterRouteImport } from './routes/affiliate.register'
@@ -195,6 +198,16 @@ const AppPrinterRoute = AppPrinterRouteImport.update({
   path: '/printer',
   getParentRoute: () => AppRoute,
 } as any)
+const AppOwnerReportRoute = AppOwnerReportRouteImport.update({
+  id: '/owner-report',
+  path: '/owner-report',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppOwnerLedgerRoute = AppOwnerLedgerRouteImport.update({
+  id: '/owner-ledger',
+  path: '/owner-ledger',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppOnlineShopRoute = AppOnlineShopRouteImport.update({
   id: '/online-shop',
   path: '/online-shop',
@@ -243,6 +256,11 @@ const AppCombinedReportRoute = AppCombinedReportRouteImport.update({
 const AppCashboxRoute = AppCashboxRouteImport.update({
   id: '/cashbox',
   path: '/cashbox',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAssetsRoute = AppAssetsRouteImport.update({
+  id: '/assets',
+  path: '/assets',
   getParentRoute: () => AppRoute,
 } as any)
 const AppAffiliateRoute = AppAffiliateRouteImport.update({
@@ -394,6 +412,7 @@ export interface FileRoutesByFullPath {
   '/affiliate/register': typeof AffiliateRegisterRoute
   '/app/access': typeof AppAccessRoute
   '/app/affiliate': typeof AppAffiliateRoute
+  '/app/assets': typeof AppAssetsRoute
   '/app/cashbox': typeof AppCashboxRoute
   '/app/combined-report': typeof AppCombinedReportRoute
   '/app/contacts': typeof AppContactsRoute
@@ -404,6 +423,8 @@ export interface FileRoutesByFullPath {
   '/app/expiring': typeof AppExpiringRoute
   '/app/marketing': typeof AppMarketingRoute
   '/app/online-shop': typeof AppOnlineShopRouteWithChildren
+  '/app/owner-ledger': typeof AppOwnerLedgerRoute
+  '/app/owner-report': typeof AppOwnerReportRoute
   '/app/printer': typeof AppPrinterRoute
   '/app/products': typeof AppProductsRoute
   '/app/purchase': typeof AppPurchaseRoute
@@ -455,6 +476,7 @@ export interface FileRoutesByTo {
   '/affiliate/register': typeof AffiliateRegisterRoute
   '/app/access': typeof AppAccessRoute
   '/app/affiliate': typeof AppAffiliateRoute
+  '/app/assets': typeof AppAssetsRoute
   '/app/cashbox': typeof AppCashboxRoute
   '/app/combined-report': typeof AppCombinedReportRoute
   '/app/contacts': typeof AppContactsRoute
@@ -465,6 +487,8 @@ export interface FileRoutesByTo {
   '/app/expiring': typeof AppExpiringRoute
   '/app/marketing': typeof AppMarketingRoute
   '/app/online-shop': typeof AppOnlineShopRouteWithChildren
+  '/app/owner-ledger': typeof AppOwnerLedgerRoute
+  '/app/owner-report': typeof AppOwnerReportRoute
   '/app/printer': typeof AppPrinterRoute
   '/app/products': typeof AppProductsRoute
   '/app/purchase': typeof AppPurchaseRoute
@@ -518,6 +542,7 @@ export interface FileRoutesById {
   '/affiliate/register': typeof AffiliateRegisterRoute
   '/app/access': typeof AppAccessRoute
   '/app/affiliate': typeof AppAffiliateRoute
+  '/app/assets': typeof AppAssetsRoute
   '/app/cashbox': typeof AppCashboxRoute
   '/app/combined-report': typeof AppCombinedReportRoute
   '/app/contacts': typeof AppContactsRoute
@@ -528,6 +553,8 @@ export interface FileRoutesById {
   '/app/expiring': typeof AppExpiringRoute
   '/app/marketing': typeof AppMarketingRoute
   '/app/online-shop': typeof AppOnlineShopRouteWithChildren
+  '/app/owner-ledger': typeof AppOwnerLedgerRoute
+  '/app/owner-report': typeof AppOwnerReportRoute
   '/app/printer': typeof AppPrinterRoute
   '/app/products': typeof AppProductsRoute
   '/app/purchase': typeof AppPurchaseRoute
@@ -582,6 +609,7 @@ export interface FileRouteTypes {
     | '/affiliate/register'
     | '/app/access'
     | '/app/affiliate'
+    | '/app/assets'
     | '/app/cashbox'
     | '/app/combined-report'
     | '/app/contacts'
@@ -592,6 +620,8 @@ export interface FileRouteTypes {
     | '/app/expiring'
     | '/app/marketing'
     | '/app/online-shop'
+    | '/app/owner-ledger'
+    | '/app/owner-report'
     | '/app/printer'
     | '/app/products'
     | '/app/purchase'
@@ -643,6 +673,7 @@ export interface FileRouteTypes {
     | '/affiliate/register'
     | '/app/access'
     | '/app/affiliate'
+    | '/app/assets'
     | '/app/cashbox'
     | '/app/combined-report'
     | '/app/contacts'
@@ -653,6 +684,8 @@ export interface FileRouteTypes {
     | '/app/expiring'
     | '/app/marketing'
     | '/app/online-shop'
+    | '/app/owner-ledger'
+    | '/app/owner-report'
     | '/app/printer'
     | '/app/products'
     | '/app/purchase'
@@ -705,6 +738,7 @@ export interface FileRouteTypes {
     | '/affiliate/register'
     | '/app/access'
     | '/app/affiliate'
+    | '/app/assets'
     | '/app/cashbox'
     | '/app/combined-report'
     | '/app/contacts'
@@ -715,6 +749,8 @@ export interface FileRouteTypes {
     | '/app/expiring'
     | '/app/marketing'
     | '/app/online-shop'
+    | '/app/owner-ledger'
+    | '/app/owner-report'
     | '/app/printer'
     | '/app/products'
     | '/app/purchase'
@@ -937,6 +973,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppPrinterRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/owner-report': {
+      id: '/app/owner-report'
+      path: '/owner-report'
+      fullPath: '/app/owner-report'
+      preLoaderRoute: typeof AppOwnerReportRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/owner-ledger': {
+      id: '/app/owner-ledger'
+      path: '/owner-ledger'
+      fullPath: '/app/owner-ledger'
+      preLoaderRoute: typeof AppOwnerLedgerRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/online-shop': {
       id: '/app/online-shop'
       path: '/online-shop'
@@ -1005,6 +1055,13 @@ declare module '@tanstack/react-router' {
       path: '/cashbox'
       fullPath: '/app/cashbox'
       preLoaderRoute: typeof AppCashboxRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/assets': {
+      id: '/app/assets'
+      path: '/assets'
+      fullPath: '/app/assets'
+      preLoaderRoute: typeof AppAssetsRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/affiliate': {
@@ -1258,6 +1315,7 @@ const AppOnlineShopRouteWithChildren = AppOnlineShopRoute._addFileChildren(
 interface AppRouteChildren {
   AppAccessRoute: typeof AppAccessRoute
   AppAffiliateRoute: typeof AppAffiliateRoute
+  AppAssetsRoute: typeof AppAssetsRoute
   AppCashboxRoute: typeof AppCashboxRoute
   AppCombinedReportRoute: typeof AppCombinedReportRoute
   AppContactsRoute: typeof AppContactsRoute
@@ -1268,6 +1326,8 @@ interface AppRouteChildren {
   AppExpiringRoute: typeof AppExpiringRoute
   AppMarketingRoute: typeof AppMarketingRoute
   AppOnlineShopRoute: typeof AppOnlineShopRouteWithChildren
+  AppOwnerLedgerRoute: typeof AppOwnerLedgerRoute
+  AppOwnerReportRoute: typeof AppOwnerReportRoute
   AppPrinterRoute: typeof AppPrinterRoute
   AppProductsRoute: typeof AppProductsRoute
   AppPurchaseRoute: typeof AppPurchaseRoute
@@ -1288,6 +1348,7 @@ interface AppRouteChildren {
 const AppRouteChildren: AppRouteChildren = {
   AppAccessRoute: AppAccessRoute,
   AppAffiliateRoute: AppAffiliateRoute,
+  AppAssetsRoute: AppAssetsRoute,
   AppCashboxRoute: AppCashboxRoute,
   AppCombinedReportRoute: AppCombinedReportRoute,
   AppContactsRoute: AppContactsRoute,
@@ -1298,6 +1359,8 @@ const AppRouteChildren: AppRouteChildren = {
   AppExpiringRoute: AppExpiringRoute,
   AppMarketingRoute: AppMarketingRoute,
   AppOnlineShopRoute: AppOnlineShopRouteWithChildren,
+  AppOwnerLedgerRoute: AppOwnerLedgerRoute,
+  AppOwnerReportRoute: AppOwnerReportRoute,
   AppPrinterRoute: AppPrinterRoute,
   AppProductsRoute: AppProductsRoute,
   AppPurchaseRoute: AppPurchaseRoute,

@@ -39,6 +39,8 @@ const SECTIONS: Section[] = [
       { to: "/app/sales-ledger", bn: "বেচার খাতা", en: "Sales Ledger", icon: icons.salesList, perm: "sell" },
       { to: "/app/due-ledger", bn: "বাকির খাতা", en: "Due Ledger", icon: icons.due, perm: "due" },
       { to: "/app/expense-ledger", bn: "খরচের খাতা", en: "Expense Ledger", icon: icons.expense, perm: "expense" },
+      { to: "/app/owner-ledger", bn: "মালিকের লেনদেন", en: "Owner Ledger", icon: icons.cashbox, perm: "expense" },
+      { to: "/app/assets", bn: "দোকানের সম্পদ", en: "Shop Assets", icon: icons.cashbox, perm: "expense" },
     ],
   },
   {
@@ -76,6 +78,7 @@ const SECTIONS: Section[] = [
     en: "Reports & Settings",
     items: [
       { to: "/app/reports", bn: "ব্যবসার রিপোর্ট", en: "Business Report", icon: icons.businessReport, perm: "report" },
+      { to: "/app/owner-report", bn: "মালিকের রিপোর্ট", en: "Owner Report", icon: icons.businessReport, perm: "report" },
       { to: "/app/printer", bn: "প্রিন্টার", en: "Printer", icon: icons.printer, perm: "shop" },
       { to: "/app/access", bn: "অ্যাপ অ্যাক্সেস", en: "App Access", icon: icons.access, perm: "__owner__" },
       { to: "/app/recycle-bin", bn: "রিসাইকেল বিন", en: "Recycle Bin", icon: icons.recycle, perm: "__owner__" },

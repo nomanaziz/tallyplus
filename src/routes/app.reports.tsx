@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useI18n, fmtMoney } from "@/lib/i18n";
@@ -7,7 +7,7 @@ import { businessReportQuery, rangeToIso } from "@/lib/queries";
 import { PageHeader } from "@/components/app/PageHeader";
 import { Button } from "@/components/ui/button";
 import { DateRangePicker, monthStartIso, todayIso, type DateRange } from "@/components/app/DateRangePicker";
-import { RefreshCw, Printer, Plus, TrendingUp, ShoppingCart, Wallet, Receipt, BarChart3, Users, UserCog, PieChart, FileText, Truck, DollarSign, Boxes } from "lucide-react";
+import { RefreshCw, Printer, Plus, TrendingUp, ShoppingCart, Wallet, Receipt, BarChart3, Users, UserCog, PieChart, FileText, Truck, DollarSign, Boxes, Package, UserCircle2 } from "lucide-react";
 import { printReport, type PrintRow } from "@/lib/print-report";
 
 export const Route = createFileRoute("/app/reports")({
@@ -23,6 +23,7 @@ function GuardedReportsPage() {
 function ReportsPage() {
   const { lang } = useI18n();
   const { current } = useShop();
+  const nav = useNavigate();
   const [range, setRange] = useState<DateRange>({ start: monthStartIso(), end: todayIso() });
   const iso = rangeToIso(range.start, range.end);
   const { data, isFetching, refetch } = useQuery(businessReportQuery(current?.id ?? null, iso));
@@ -53,7 +54,10 @@ function ReportsPage() {
     });
   };
 
-  const subReports = [
+  const subReports: { Icon: any; bn: string; en: string; to?: string }[] = [
+    { Icon: Wallet, bn: "মালিকের লেনদেন", en: "Owner ledger", to: "/app/owner-ledger" },
+    { Icon: Package, bn: "দোকানের সম্পদ", en: "Shop assets", to: "/app/assets" },
+    { Icon: UserCircle2, bn: "মালিকের রিপোর্ট", en: "Owner report", to: "/app/owner-report" },
     { Icon: BarChart3, bn: "বিক্রির রিপোর্ট", en: "Sales report" },
     { Icon: ShoppingCart, bn: "ক্রয়ের রিপোর্ট", en: "Purchase report" },
     { Icon: Boxes, bn: "স্টকের রিপোর্ট", en: "Stock report" },
@@ -163,6 +167,7 @@ function ReportsPage() {
             {subReports.map((r) => (
               <button
                 key={r.en}
+                onClick={() => { if (r.to) nav({ to: r.to }); }}
                 className="flex flex-col items-center gap-2 rounded-lg border bg-background p-4 text-center transition hover:bg-muted/50"
               >
                 <r.Icon className="h-7 w-7 text-primary" />

@@ -553,6 +553,66 @@ export type Database = {
         }
         Relationships: []
       }
+      assets: {
+        Row: {
+          category: string | null
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          disposed_at: string | null
+          disposed_value: number
+          id: string
+          image_url: string | null
+          name: string
+          note: string | null
+          paid_via: Database["public"]["Enums"]["payment_method"]
+          purchase_date: string
+          purchase_price: number
+          quantity: number
+          shop_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          disposed_at?: string | null
+          disposed_value?: number
+          id?: string
+          image_url?: string | null
+          name: string
+          note?: string | null
+          paid_via?: Database["public"]["Enums"]["payment_method"]
+          purchase_date?: string
+          purchase_price?: number
+          quantity?: number
+          shop_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          disposed_at?: string | null
+          disposed_value?: number
+          id?: string
+          image_url?: string | null
+          name?: string
+          note?: string | null
+          paid_via?: Database["public"]["Enums"]["payment_method"]
+          purchase_date?: string
+          purchase_price?: number
+          quantity?: number
+          shop_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       cash_movements: {
         Row: {
           amount: number
@@ -1199,6 +1259,48 @@ export type Database = {
           paid_via?: Database["public"]["Enums"]["payment_method"]
           shop_id?: string
           source?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      owner_transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          direction: string
+          id: string
+          note: string | null
+          paid_via: Database["public"]["Enums"]["payment_method"]
+          shop_id: string
+          tx_date: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          direction: string
+          id?: string
+          note?: string | null
+          paid_via?: Database["public"]["Enums"]["payment_method"]
+          shop_id: string
+          tx_date?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          direction?: string
+          id?: string
+          note?: string | null
+          paid_via?: Database["public"]["Enums"]["payment_method"]
+          shop_id?: string
+          tx_date?: string
           updated_at?: string
         }
         Relationships: []
