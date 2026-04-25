@@ -1,110 +1,50 @@
-# Cashbox — Note (Denomination) Tracking
+## Combined Report — Improvements & Multi-Shop Limit
 
-The user wants Cashbox to work like a real cash drawer: each entry is built up by **counting notes of each denomination** (BDT 1000, 500, 200, 100, 50, 20, 10, 5, 2, 1). The sum of all the notes becomes the entry amount automatically. A new ledger view shows, per note: how many came in, how many went out, current balance, and where they came from (manual / sale / purchase / expense / income / payment).
+### 1. Add Shop Limit (per subscription plan)
 
----
+**Database**
+- Add column `max_shops INTEGER NOT NULL DEFAULT 1` to `subscription_plans`.
+- Backfill sensible defaults (Free=1, Basic=3, Pro=5, Premium=10) but admin can override anytime.
+- Add helper SQL function `public.user_shop_limit(_user_id uuid)` returning the user's current allowed limit (active subscription's `max_shops`, default 1 if none).
+- Add helper `public.user_active_shop_count(_user_id uuid)` returning active (non-deleted) shop count.
 
-## 1. Database — add denomination breakdown to cash_movements
+**Admin UI** (`src/routes/admin.plans.tsx`)
+- Add a "Max Shops" numeric input on plan create/edit form.
+- Show column in plans table.
 
-One additive migration (no breaking change — old rows stay valid):
+**Enforcement (client + server)**
+- `AddShopDialog` & `app.shops.tsx`: before opening "Add Shop", fetch current limit & count. If `count >= limit`, disable the "Add new shop" tile and show a tooltip/toast: *"আপনার plan-এ সর্বোচ্চ X টি দোকান allowed। Upgrade করুন।"* with a link to `/app/subscribe`.
+- Add server-side guard via a database trigger on `shops` INSERT: raise exception if owner exceeds `user_shop_limit(owner_id)`.
 
-```sql
-ALTER TABLE public.cash_movements
-  ADD COLUMN IF NOT EXISTS denominations jsonb NOT NULL DEFAULT '{}'::jsonb;
-```
+### 2. Improve "Add New Shop" Form (match uploaded mockup)
 
-Shape: `{ "1000": 3, "500": 2, "100": 5, ... }` — only non-zero denominations stored. Sum of `denom × count` must equal `amount`. Validation lives in the client (and a soft DB CHECK is intentionally avoided so manual-amount entries without a breakdown still work).
+Redesign `AddShopDialog` to include all fields from the screenshot:
+- Logo upload (circular, "Add a logo of your Shop" — uses `shop-logos` bucket)
+- Shop Name * (existing)
+- Shop Type * (existing, ShopTypePicker)
+- Division / District / Area (3 location dropdowns — store in `seller_locations`)
+- Address *
+- Mobile Number * (with +88 country code prefix)
+- "Do you want to sell Online?" — Yes / No radio cards
+- Footer: Cancel + Add New Shop buttons
 
-**Auto-fill for sales/purchases/expenses (best-effort)**: when a sale/purchase/expense/payment is paid in cash, the existing app code already inserts a `cash_movements` row. We extend those insert sites to also pass a denominations payload **only if the user opens the new "Note breakdown" panel during checkout**. Otherwise the field stays `{}` and the entry behaves exactly like today. (No backfill for existing rows.)
+Validation with zod (name, address, phone required; phone = 11 digits BD format).
+On submit: insert into `shops` (with logo_url, address, phone), then insert into `seller_locations` (division/district/area), seed default categories. If "Yes" online, set a flag to surface online-shop onboarding next.
 
----
+### 3. Combined Report Page Polish
 
-## 2. Cashbox UI — Note-based entry dialog
+- **Mobile responsiveness**: Stack action buttons vertically on small screens; make shop-selector popover full-width; section cards single-column on mobile (already `lg:grid-cols-2`); details report table → horizontal scroll preserved with sticky first column.
+- **Remove a button**: User indicated a button to remove on the screenshot but didn't specify which. The plan removes the **Refresh** button (data already refetches when filters change and via TanStack Query cache; explicit refresh is redundant alongside auto-refetch). If you meant a different button (Download/Print, Shops selector, or Back arrow), tell me before I implement and I'll swap.
+- Keep tabs (General / Details), date range, shop multi-select, download/print.
 
-Replace the existing `CashEntryDialog` amount field with a denominations grid:
+### 4. Files Changed
 
-```
-┌─ জমা যোগ করুন ────────────────┐
-│ ৳ 1000  [  - ] 3 [ + ]  = 3000 │
-│ ৳  500  [  - ] 2 [ + ]  = 1000 │
-│ ৳  200  [  - ] 0 [ + ]  =    0 │
-│ ৳  100  [  - ] 5 [ + ]  =  500 │
-│ ৳   50  [  - ] 0 [ + ]  =    0 │
-│ ৳   20  [  - ] 1 [ + ]  =   20 │
-│ ৳   10  [  - ] 0 [ + ]  =    0 │
-│ ৳    5  [  - ] 0 [ + ]  =    0 │
-│ ৳    2  [  - ] 0 [ + ]  =    0 │
-│ ৳    1  [  - ] 0 [ + ]  =    0 │
-│────────────────────────────────│
-│ মোট                    ৳ 4,520 │
-│ [ Manual amount mode ]         │
-│ Note: ___________________      │
-│         [Cancel]  [Save]       │
-└────────────────────────────────┘
-```
+- `supabase/migrations/*` — add `max_shops`, helper functions, INSERT trigger on shops.
+- `src/routes/admin.plans.tsx` — max_shops field in form/table.
+- `src/components/app/AddShopDialog.tsx` — redesign with full fields + logo upload + location + phone.
+- `src/routes/app.shops.tsx` — limit enforcement on "Add new shop" tile.
+- `src/routes/app.combined-report.tsx` — mobile layout + remove Refresh button.
+- `src/lib/queries.ts` (if needed) — add `userShopLimitQuery`.
 
-- `+` / `-` steppers + direct number input per note.
-- Live total displayed at the bottom.
-- "Manual amount mode" toggle — falls back to the original single amount field for users who don't want to count notes.
-- Save writes `amount` (the sum) + `denominations` JSON.
-- For "Cash Out" (খরচ), the picker shows currently-available counts per note as a hint ("আছে: 3") and warns (but doesn't block) if the user tries to take out more of a denomination than the running balance.
-
-Reusable component: `src/components/app/DenominationPicker.tsx` returning `{ counts, total }`.
-
----
-
-## 3. Cashbox page — new "Note Ledger" tab
-
-The Cashbox page gets two tabs:
-
-- **এন্ট্রি লিস্ট / Entries** (current table, with a new "নোটের ভাঙতি / Notes" column showing chips like `1000×3, 500×2, 100×5`).
-- **নোটের হিসাব / Note Ledger** — a per-denomination summary table:
-
-| নোট | জমা সংখ্যা | খরচ সংখ্যা | বর্তমান সংখ্যা | বর্তমান টাকা |
-|---|---|---|---|---|
-| ৳1000 | 12 | 4 | 8 | 8,000 |
-| ৳500  | 20 | 6 | 14 | 7,000 |
-| …     |    |    |    |    |
-| **মোট** |  |  |  | **17,520** |
-
-Computed client-side from the `cash_movements` rows:
-- `inCount[d] = Σ denominations[d] for direction='in'`
-- `outCount[d] = Σ denominations[d] for direction='out'`
-- `balance[d]  = inCount[d] - outCount[d]`
-
-A date-range filter at the top (reuse `DateRangePicker`) re-computes for the selected window.
-
-Below the table, a small "Source breakdown" card listing how many notes came from each source (`ref_table` = `sales` / `purchases` / `expenses` / `payments` / `other_income` / NULL for manual).
-
----
-
-## 4. Sales/Purchases/Expense — optional note breakdown
-
-In the existing Quick Sell, Sale form, Purchase form, Expense form, and Payment dialogs, when the payment method is **cash**, add a small "💵 নোটের ভাঙতি দিন" link. Clicking opens the same `DenominationPicker` modal pre-filled with the paid amount (the user just distributes the total across notes). On save, the resulting denominations are passed alongside the existing `cash_movements` insert.
-
-If the user skips it, behaviour is unchanged.
-
----
-
-## 5. Files
-
-**Created**
-- `src/components/app/DenominationPicker.tsx` — reusable note counter
-- `src/components/app/NoteLedger.tsx` — denomination-summary table
-
-**Modified**
-- `src/routes/app.cashbox.tsx` — add tabs, denomination column, new dialog
-- `src/lib/queries.ts` — extend `cashMovementsQuery` to select `denominations`
-- `src/integrations/supabase/types.ts` — auto-regenerated after migration
-- Sales / Purchase / Expense / Payment forms — small optional "Note breakdown" link (Quick Sell, `app.pos.tsx`, `app.purchase-new.tsx`, `app.expense-ledger.tsx`, payment dialog)
-
-**Migration**
-- One `ALTER TABLE cash_movements ADD COLUMN denominations jsonb DEFAULT '{}'`
-
----
-
-## Out of scope
-- No coin/sub-1-taka denominations (BDT in practice uses notes; coins are rare).
-- No DB-level validation that `Σ(denom×count) = amount` — enforced in UI only, to keep manual entries painless.
-- No backfill of existing `cash_movements` (old entries show "—" in the Notes column).
-- Multi-currency note sets — current implementation hardcodes the BDT note set; trivial to extend later.
+### Summary
+Builds a proper plan-aware multi-shop limit (admin-controlled per plan, enforced at DB and UI level), revamps the Add-Shop form to match your mockup with logo + address + phone + location + online-sell flag, and polishes the Combined Report with mobile-friendly layout. Pending your confirmation on which button to remove from the report header.
