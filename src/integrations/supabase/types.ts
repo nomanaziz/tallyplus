@@ -590,6 +590,90 @@ export type Database = {
           },
         ]
       }
+      consumer_favourite_shops: {
+        Row: {
+          consumer_id: string
+          created_at: string
+          id: string
+          shop_id: string
+        }
+        Insert: {
+          consumer_id: string
+          created_at?: string
+          id?: string
+          shop_id: string
+        }
+        Update: {
+          consumer_id?: string
+          created_at?: string
+          id?: string
+          shop_id?: string
+        }
+        Relationships: []
+      }
+      consumer_profiles: {
+        Row: {
+          address: string | null
+          avatar_url: string | null
+          created_at: string
+          default_lat: number | null
+          default_lng: number | null
+          id: string
+          name: string
+          phone: string
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          avatar_url?: string | null
+          created_at?: string
+          default_lat?: number | null
+          default_lng?: number | null
+          id: string
+          name: string
+          phone: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          avatar_url?: string | null
+          created_at?: string
+          default_lat?: number | null
+          default_lng?: number | null
+          id?: string
+          name?: string
+          phone?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      consumer_saved_carts: {
+        Row: {
+          consumer_user_id: string
+          created_at: string
+          id: string
+          items: Json
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          consumer_user_id: string
+          created_at?: string
+          id?: string
+          items?: Json
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          consumer_user_id?: string
+          created_at?: string
+          id?: string
+          items?: Json
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       customer_wishlist_items: {
         Row: {
           created_at: string
@@ -640,6 +724,7 @@ export type Database = {
       customer_wishlists: {
         Row: {
           color: string
+          consumer_user_id: string | null
           created_at: string
           customer_address: string | null
           customer_name: string
@@ -653,6 +738,7 @@ export type Database = {
         }
         Insert: {
           color?: string
+          consumer_user_id?: string | null
           created_at?: string
           customer_address?: string | null
           customer_name: string
@@ -666,6 +752,7 @@ export type Database = {
         }
         Update: {
           color?: string
+          consumer_user_id?: string | null
           created_at?: string
           customer_address?: string | null
           customer_name?: string
@@ -1638,46 +1725,55 @@ export type Database = {
       shops: {
         Row: {
           address: string | null
+          cover_url: string | null
           created_at: string
           currency: string
           deleted_at: string | null
           id: string
           logo_url: string | null
+          marketplace_enabled: boolean
           name: string
           owner_id: string
           phone: string | null
           shop_type_code: string | null
           slug: string | null
+          tagline: string | null
           updated_at: string
           wishlist_slug: string | null
         }
         Insert: {
           address?: string | null
+          cover_url?: string | null
           created_at?: string
           currency?: string
           deleted_at?: string | null
           id?: string
           logo_url?: string | null
+          marketplace_enabled?: boolean
           name: string
           owner_id: string
           phone?: string | null
           shop_type_code?: string | null
           slug?: string | null
+          tagline?: string | null
           updated_at?: string
           wishlist_slug?: string | null
         }
         Update: {
           address?: string | null
+          cover_url?: string | null
           created_at?: string
           currency?: string
           deleted_at?: string | null
           id?: string
           logo_url?: string | null
+          marketplace_enabled?: boolean
           name?: string
           owner_id?: string
           phone?: string | null
           shop_type_code?: string | null
           slug?: string | null
+          tagline?: string | null
           updated_at?: string
           wishlist_slug?: string | null
         }
@@ -2113,6 +2209,7 @@ export type Database = {
         Returns: boolean
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
+      is_consumer: { Args: { _user_id: string }; Returns: boolean }
       is_shop_member: {
         Args: { _shop_id: string; _user_id: string }
         Returns: boolean
