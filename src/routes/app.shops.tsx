@@ -1,12 +1,14 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useShop } from "@/lib/shop";
 import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { AddShopDialog } from "@/components/app/AddShopDialog";
-import { LogOut, Plus, Store, CheckCircle2 } from "lucide-react";
+import { LogOut, Plus, Store, CheckCircle2, Lock } from "lucide-react";
 import logo from "@/assets/logo.png";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/shops")({
   head: () => ({ meta: [{ title: "দোকান সিলেক্ট করুন — Tally Plus" }] }),
@@ -16,9 +18,33 @@ export const Route = createFileRoute("/app/shops")({
 function ShopsPage() {
   const { lang } = useI18n();
   const { shops, current, setCurrent } = useShop();
-  const { signOut } = useAuth();
+  const { signOut, user } = useAuth();
   const nav = useNavigate();
   const [addOpen, setAddOpen] = useState(false);
+  const [limit, setLimit] = useState<number>(1);
+
+  useEffect(() => {
+    if (!user) return;
+    void (async () => {
+      const { data } = await supabase.rpc("user_shop_limit", { _user_id: user.id });
+      if (typeof data === "number") setLimit(data);
+    })();
+  }, [user, shops.length]);
+
+  const atLimit = shops.length >= limit;
+
+  const onAddClick = () => {
+    if (atLimit) {
+      toast.error(
+        lang === "bn"
+          ? `আপনার plan-এ সর্বোচ্চ ${limit} টি দোকান allowed। Upgrade করুন।`
+          : `Your plan allows max ${limit} shop${limit === 1 ? "" : "s"}. Please upgrade.`
+      );
+      nav({ to: "/app/subscribe" });
+      return;
+    }
+    setAddOpen(true);
+  };
 
   const select = (s: (typeof shops)[number]) => {
     setCurrent(s);
@@ -50,6 +76,12 @@ function ShopsPage() {
           {lang === "bn"
             ? "একাধিক দোকান থাকলে যেকোনো একটি বেছে নিন"
             : "Choose one of your shops to continue"}
+        </p>
+
+        <p className="mb-4 text-center text-xs text-muted-foreground">
+          {lang === "bn"
+            ? `${shops.length} / ${limit} টি দোকান ব্যবহার হচ্ছে`
+            : `${shops.length} of ${limit} shops used`}
         </p>
 
         <div className="mx-auto grid max-w-5xl grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -96,14 +128,24 @@ function ShopsPage() {
 
           <button
             type="button"
-            onClick={() => setAddOpen(true)}
-            className="flex min-h-[180px] flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-border bg-background/50 p-5 text-muted-foreground transition hover:border-primary hover:bg-primary/5 hover:text-primary"
+            onClick={onAddClick}
+            className={
+              "flex min-h-[180px] flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed p-5 transition " +
+              (atLimit
+                ? "border-border bg-muted/30 text-muted-foreground hover:border-rose-300 hover:text-rose-600"
+                : "border-border bg-background/50 text-muted-foreground hover:border-primary hover:bg-primary/5 hover:text-primary")
+            }
           >
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
-              <Plus className="h-6 w-6" />
+              {atLimit ? <Lock className="h-6 w-6" /> : <Plus className="h-6 w-6" />}
             </div>
             <span className="font-semibold">
-              {lang === "bn" ? "নতুন দোকান যুক্ত করুন" : "Add new shop"}
+              {atLimit
+                ? (lang === "bn" ? "Plan upgrade করুন" : "Upgrade plan to add")
+                : (lang === "bn" ? "নতুন দোকান যুক্ত করুন" : "Add new shop")}
+            </span>
+            <span className="text-xs">
+              {lang === "bn" ? `সর্বোচ্চ ${limit} টি অনুমোদিত` : `Max ${limit} allowed`}
             </span>
           </button>
         </div>
