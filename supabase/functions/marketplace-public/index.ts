@@ -59,7 +59,8 @@ async function buildAdmin() {
 }
 
 async function attachShopsAndProducts(
-  admin: ReturnType<typeof createClient>,
+  // deno-lint-ignore no-explicit-any
+  admin: any,
   listings: ListingRow[],
 ) {
   if (listings.length === 0) return { shops: {}, products: {} };
