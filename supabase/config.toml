@@ -20,3 +20,15 @@ verify_jwt = false
 
 [functions.wishlist-shop-info]
 verify_jwt = false
+
+[functions.customer-wishlist-login]
+verify_jwt = false
+
+[functions.customer-wishlist-history]
+verify_jwt = false
+
+[functions.customer-wishlist-resend]
+verify_jwt = false
+
+[functions.save-wishlist-template]
+verify_jwt = false
