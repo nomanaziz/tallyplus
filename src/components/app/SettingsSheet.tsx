@@ -195,22 +195,15 @@ export function SettingsSheet({ open, onOpenChange }: { open: boolean; onOpenCha
               icon={<Sun className="h-4 w-4" />}
               label={lang === "bn" ? "থিম" : "Theme"}
               right={
-                <select
-                  className="rounded border bg-background px-2 py-1 text-xs"
-                  value={theme}
-                  onChange={(e) => {
-                    const v = e.target.value as "light" | "dark";
-                    setTheme(v);
-                    persist("tp_theme", v);
-                    document.documentElement.classList.toggle("dark", v === "dark");
-                  }}
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <option value="light">Light</option>
-                  <option value="dark">Dark</option>
-                </select>
+                null
               }
             />
+            <div className="rounded-lg border bg-card p-3">
+              <div className="mb-2 text-xs font-semibold text-muted-foreground">
+                {lang === "bn" ? "অ্যাপের রং" : "App Color"}
+              </div>
+              <ColorThemeInline />
+            </div>
             <Row
               icon={<Hash className="h-4 w-4" />}
               label={lang === "bn" ? "দশমিক পয়েন্ট" : "Decimal Points"}
