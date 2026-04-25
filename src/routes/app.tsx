@@ -13,6 +13,9 @@ import logo from "@/assets/logo.png";
 import { AppSidebar } from "@/components/app/AppSidebar";
 import { AppTopbar } from "@/components/app/AppTopbar";
 import { ShopTypePicker } from "@/components/app/ShopTypePicker";
+import { MobileBottomNav } from "@/components/app/MobileBottomNav";
+import { MobileBackBar } from "@/components/app/MobileBackBar";
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 
 export const Route = createFileRoute("/app")({
   head: () => ({ meta: [{ title: "ড্যাশবোর্ড — Tally Plus" }] }),
@@ -42,6 +45,7 @@ function AppLayout() {
   const [shopName, setShopName] = useState("");
   const [shopTypeCode, setShopTypeCode] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) nav({ to: "/auth" });
@@ -133,9 +137,19 @@ function AppLayout() {
       </div>
       <div className="flex min-w-0 flex-1 flex-col">
         <AppTopbar />
-        <main className="flex-1 overflow-auto">
+        <MobileBackBar />
+        <main className="flex-1 overflow-auto pb-20 md:pb-0">
           <Outlet />
         </main>
+        {/* Mobile bottom navigation */}
+        <MobileBottomNav onMenu={() => setMobileMenuOpen(true)} />
+        {/* Mobile drawer (full sidebar) opened from bottom-nav "Menu" */}
+        <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+          <SheetContent side="left" className="w-64 p-0 md:hidden">
+            <SheetTitle className="sr-only">Menu</SheetTitle>
+            <AppSidebar onNavigate={() => setMobileMenuOpen(false)} />
+          </SheetContent>
+        </Sheet>
       </div>
     </div>
   );
