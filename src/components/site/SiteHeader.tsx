@@ -16,6 +16,7 @@ export function SiteHeader() {
         </Link>
         <nav className="hidden items-center gap-6 text-sm font-medium md:flex">
           <Link to="/" activeProps={{ className: "text-primary font-semibold" }} className="hover:text-primary">{t("home")}</Link>
+          <Link to="/shop" activeProps={{ className: "text-primary font-semibold" }} className="hover:text-primary">{lang === "bn" ? "মার্কেটপ্লেস" : "Marketplace"}</Link>
           <a href="/#features" className="hover:text-primary">{t("features")}</a>
           <a href="/#pricing" className="hover:text-primary">{t("pricing")}</a>
           <a href="/#contact" className="hover:text-primary">{t("contact")}</a>
