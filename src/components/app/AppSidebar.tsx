@@ -29,6 +29,7 @@ const ITEMS: Item[] = [
   // Other group
   { to: "/app/marketing", bn: "মার্কেটিং", en: "Marketing", icon: icons.marketing },
   { to: "/app/online-shop", bn: "অনলাইন শপ", en: "Online Shop", icon: icons.onlineShop },
+  { to: "/app/customer-wishlist", bn: "গ্রাহক ফর্দ", en: "Customer Wishlist", icon: icons.contact },
   { to: "/app/expiring", bn: "মেয়াদোত্তীর্ণ পণ্য", en: "Expiring Products", icon: icons.expired },
   { to: "/app/warranty", bn: "ওয়ারেন্টি পণ্য", en: "Warranty", icon: icons.warranty },
   { to: "/app/recycle-bin", bn: "রিসাইকেল বিন", en: "Recycle Bin", icon: icons.recycle },
