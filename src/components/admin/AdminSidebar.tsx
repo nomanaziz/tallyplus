@@ -12,6 +12,7 @@ import {
   ShieldCheck,
   Tag,
   GraduationCap,
+  Handshake,
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
@@ -27,6 +28,7 @@ const ITEMS: Item[] = [
   { to: "/admin/plans", label: "Plans", icon: Tags },
   { to: "/admin/marketplace", label: "Master Catalog & Marketplace", icon: Store },
   { to: "/admin/training", label: "Training Videos", icon: GraduationCap },
+  { to: "/admin/affiliates", label: "Affiliate Program", icon: Handshake },
   { to: "/admin/settings", label: "Settings", icon: Settings },
 ];
 

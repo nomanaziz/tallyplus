@@ -14,6 +14,218 @@ export type Database = {
   }
   public: {
     Tables: {
+      affiliate_commissions: {
+        Row: {
+          affiliate_id: string
+          commission_amount: number
+          commission_pct: number
+          created_at: string
+          id: string
+          paid_at: string | null
+          referral_id: string | null
+          status: string
+          subscription_amount: number
+        }
+        Insert: {
+          affiliate_id: string
+          commission_amount?: number
+          commission_pct?: number
+          created_at?: string
+          id?: string
+          paid_at?: string | null
+          referral_id?: string | null
+          status?: string
+          subscription_amount?: number
+        }
+        Update: {
+          affiliate_id?: string
+          commission_amount?: number
+          commission_pct?: number
+          created_at?: string
+          id?: string
+          paid_at?: string | null
+          referral_id?: string | null
+          status?: string
+          subscription_amount?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "affiliate_commissions_affiliate_id_fkey"
+            columns: ["affiliate_id"]
+            isOneToOne: false
+            referencedRelation: "affiliates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "affiliate_commissions_referral_id_fkey"
+            columns: ["referral_id"]
+            isOneToOne: false
+            referencedRelation: "affiliate_referrals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      affiliate_referrals: {
+        Row: {
+          affiliate_id: string
+          converted_at: string | null
+          created_at: string
+          id: string
+          referral_code: string
+          referred_shop_id: string | null
+          referred_user_id: string | null
+          status: string
+        }
+        Insert: {
+          affiliate_id: string
+          converted_at?: string | null
+          created_at?: string
+          id?: string
+          referral_code: string
+          referred_shop_id?: string | null
+          referred_user_id?: string | null
+          status?: string
+        }
+        Update: {
+          affiliate_id?: string
+          converted_at?: string | null
+          created_at?: string
+          id?: string
+          referral_code?: string
+          referred_shop_id?: string | null
+          referred_user_id?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "affiliate_referrals_affiliate_id_fkey"
+            columns: ["affiliate_id"]
+            isOneToOne: false
+            referencedRelation: "affiliates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "affiliate_referrals_referred_shop_id_fkey"
+            columns: ["referred_shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      affiliate_settings: {
+        Row: {
+          default_commission_pct: number
+          id: boolean
+          is_program_active: boolean
+          lifetime_commission_pct: number
+          referee_discount_pct: number
+          updated_at: string
+        }
+        Insert: {
+          default_commission_pct?: number
+          id?: boolean
+          is_program_active?: boolean
+          lifetime_commission_pct?: number
+          referee_discount_pct?: number
+          updated_at?: string
+        }
+        Update: {
+          default_commission_pct?: number
+          id?: boolean
+          is_program_active?: boolean
+          lifetime_commission_pct?: number
+          referee_discount_pct?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      affiliate_tiers: {
+        Row: {
+          bonus_pct: number
+          commission_pct: number
+          created_at: string
+          id: string
+          min_sales: number
+          name: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          bonus_pct?: number
+          commission_pct?: number
+          created_at?: string
+          id?: string
+          min_sales?: number
+          name: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          bonus_pct?: number
+          commission_pct?: number
+          created_at?: string
+          id?: string
+          min_sales?: number
+          name?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      affiliates: {
+        Row: {
+          created_at: string
+          current_tier_id: string | null
+          email: string | null
+          full_name: string
+          id: string
+          phone: string
+          referral_code: string
+          status: string
+          total_commission: number
+          total_referrals: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_tier_id?: string | null
+          email?: string | null
+          full_name: string
+          id?: string
+          phone: string
+          referral_code: string
+          status?: string
+          total_commission?: number
+          total_referrals?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_tier_id?: string | null
+          email?: string | null
+          full_name?: string
+          id?: string
+          phone?: string
+          referral_code?: string
+          status?: string
+          total_commission?: number
+          total_referrals?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "affiliates_current_tier_id_fkey"
+            columns: ["current_tier_id"]
+            isOneToOne: false
+            referencedRelation: "affiliate_tiers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cash_movements: {
         Row: {
           amount: number

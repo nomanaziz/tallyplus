@@ -14,6 +14,7 @@ import {
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import { AppSidebar } from "./AppSidebar";
 import { QuickSellSheet } from "./QuickSellSheet";
+import { SettingsSheet } from "./SettingsSheet";
 import { Bell, Settings, MessageCircle, ChevronDown, Menu, LogOut, Languages, Zap } from "lucide-react";
 
 export function AppTopbar() {
@@ -22,6 +23,7 @@ export function AppTopbar() {
   const { lang, setLang } = useI18n();
   const nav = useNavigate();
   const [quickOpen, setQuickOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   const initials = (profile?.full_name || current?.name || "FS")
     .split(" ")
@@ -78,7 +80,10 @@ export function AppTopbar() {
           <Languages className="h-4 w-4" />
           {lang === "bn" ? "EN" : "বাং"}
         </button>
-        <button className="flex h-9 items-center gap-1.5 rounded-full px-2 text-sm font-medium text-muted-foreground hover:bg-accent">
+        <button
+          onClick={() => setSettingsOpen(true)}
+          className="flex h-9 items-center gap-1.5 rounded-full px-2 text-sm font-medium text-muted-foreground hover:bg-accent"
+        >
           <Settings className="h-4 w-4" />
           <span className="hidden md:inline">{lang === "bn" ? "সেটিংস" : "Settings"}</span>
         </button>
@@ -112,6 +117,7 @@ export function AppTopbar() {
         </DropdownMenu>
       </div>
       <QuickSellSheet open={quickOpen} onOpenChange={setQuickOpen} />
+      <SettingsSheet open={settingsOpen} onOpenChange={setSettingsOpen} />
     </header>
   );
 }

@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AppRouteImport } from './routes/app'
+import { Route as AffiliateRouteImport } from './routes/affiliate'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
@@ -39,7 +40,9 @@ import { Route as AppDashboardRouteImport } from './routes/app.dashboard'
 import { Route as AppCustomerWishlistRouteImport } from './routes/app.customer-wishlist'
 import { Route as AppContactsRouteImport } from './routes/app.contacts'
 import { Route as AppCashboxRouteImport } from './routes/app.cashbox'
+import { Route as AppAffiliateRouteImport } from './routes/app.affiliate'
 import { Route as AppAccessRouteImport } from './routes/app.access'
+import { Route as AffiliateRegisterRouteImport } from './routes/affiliate.register'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminTrainingRouteImport } from './routes/admin.training'
 import { Route as AdminSubscriptionsRouteImport } from './routes/admin.subscriptions'
@@ -50,6 +53,7 @@ import { Route as AdminPlansRouteImport } from './routes/admin.plans'
 import { Route as AdminMarketplaceRouteImport } from './routes/admin.marketplace'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
 import { Route as AdminLandingRouteImport } from './routes/admin.landing'
+import { Route as AdminAffiliatesRouteImport } from './routes/admin.affiliates'
 
 const PricingRoute = PricingRouteImport.update({
   id: '/pricing',
@@ -64,6 +68,11 @@ const AuthRoute = AuthRouteImport.update({
 const AppRoute = AppRouteImport.update({
   id: '/app',
   path: '/app',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AffiliateRoute = AffiliateRouteImport.update({
+  id: '/affiliate',
+  path: '/affiliate',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminRoute = AdminRouteImport.update({
@@ -201,10 +210,20 @@ const AppCashboxRoute = AppCashboxRouteImport.update({
   path: '/cashbox',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAffiliateRoute = AppAffiliateRouteImport.update({
+  id: '/affiliate',
+  path: '/affiliate',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppAccessRoute = AppAccessRouteImport.update({
   id: '/access',
   path: '/access',
   getParentRoute: () => AppRoute,
+} as any)
+const AffiliateRegisterRoute = AffiliateRegisterRouteImport.update({
+  id: '/register',
+  path: '/register',
+  getParentRoute: () => AffiliateRoute,
 } as any)
 const AdminUsersRoute = AdminUsersRouteImport.update({
   id: '/users',
@@ -257,13 +276,20 @@ const AdminLandingRoute = AdminLandingRouteImport.update({
   path: '/landing',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminAffiliatesRoute = AdminAffiliatesRouteImport.update({
+  id: '/affiliates',
+  path: '/affiliates',
+  getParentRoute: () => AdminRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
+  '/affiliate': typeof AffiliateRouteWithChildren
   '/app': typeof AppRouteWithChildren
   '/auth': typeof AuthRoute
   '/pricing': typeof PricingRoute
+  '/admin/affiliates': typeof AdminAffiliatesRoute
   '/admin/landing': typeof AdminLandingRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/marketplace': typeof AdminMarketplaceRoute
@@ -274,7 +300,9 @@ export interface FileRoutesByFullPath {
   '/admin/subscriptions': typeof AdminSubscriptionsRoute
   '/admin/training': typeof AdminTrainingRoute
   '/admin/users': typeof AdminUsersRoute
+  '/affiliate/register': typeof AffiliateRegisterRoute
   '/app/access': typeof AppAccessRoute
+  '/app/affiliate': typeof AppAffiliateRoute
   '/app/cashbox': typeof AppCashboxRoute
   '/app/contacts': typeof AppContactsRoute
   '/app/customer-wishlist': typeof AppCustomerWishlistRoute
@@ -303,9 +331,11 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/affiliate': typeof AffiliateRouteWithChildren
   '/app': typeof AppRouteWithChildren
   '/auth': typeof AuthRoute
   '/pricing': typeof PricingRoute
+  '/admin/affiliates': typeof AdminAffiliatesRoute
   '/admin/landing': typeof AdminLandingRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/marketplace': typeof AdminMarketplaceRoute
@@ -316,7 +346,9 @@ export interface FileRoutesByTo {
   '/admin/subscriptions': typeof AdminSubscriptionsRoute
   '/admin/training': typeof AdminTrainingRoute
   '/admin/users': typeof AdminUsersRoute
+  '/affiliate/register': typeof AffiliateRegisterRoute
   '/app/access': typeof AppAccessRoute
+  '/app/affiliate': typeof AppAffiliateRoute
   '/app/cashbox': typeof AppCashboxRoute
   '/app/contacts': typeof AppContactsRoute
   '/app/customer-wishlist': typeof AppCustomerWishlistRoute
@@ -347,9 +379,11 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
+  '/affiliate': typeof AffiliateRouteWithChildren
   '/app': typeof AppRouteWithChildren
   '/auth': typeof AuthRoute
   '/pricing': typeof PricingRoute
+  '/admin/affiliates': typeof AdminAffiliatesRoute
   '/admin/landing': typeof AdminLandingRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/marketplace': typeof AdminMarketplaceRoute
@@ -360,7 +394,9 @@ export interface FileRoutesById {
   '/admin/subscriptions': typeof AdminSubscriptionsRoute
   '/admin/training': typeof AdminTrainingRoute
   '/admin/users': typeof AdminUsersRoute
+  '/affiliate/register': typeof AffiliateRegisterRoute
   '/app/access': typeof AppAccessRoute
+  '/app/affiliate': typeof AppAffiliateRoute
   '/app/cashbox': typeof AppCashboxRoute
   '/app/contacts': typeof AppContactsRoute
   '/app/customer-wishlist': typeof AppCustomerWishlistRoute
@@ -392,9 +428,11 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/admin'
+    | '/affiliate'
     | '/app'
     | '/auth'
     | '/pricing'
+    | '/admin/affiliates'
     | '/admin/landing'
     | '/admin/login'
     | '/admin/marketplace'
@@ -405,7 +443,9 @@ export interface FileRouteTypes {
     | '/admin/subscriptions'
     | '/admin/training'
     | '/admin/users'
+    | '/affiliate/register'
     | '/app/access'
+    | '/app/affiliate'
     | '/app/cashbox'
     | '/app/contacts'
     | '/app/customer-wishlist'
@@ -434,9 +474,11 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/affiliate'
     | '/app'
     | '/auth'
     | '/pricing'
+    | '/admin/affiliates'
     | '/admin/landing'
     | '/admin/login'
     | '/admin/marketplace'
@@ -447,7 +489,9 @@ export interface FileRouteTypes {
     | '/admin/subscriptions'
     | '/admin/training'
     | '/admin/users'
+    | '/affiliate/register'
     | '/app/access'
+    | '/app/affiliate'
     | '/app/cashbox'
     | '/app/contacts'
     | '/app/customer-wishlist'
@@ -477,9 +521,11 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/admin'
+    | '/affiliate'
     | '/app'
     | '/auth'
     | '/pricing'
+    | '/admin/affiliates'
     | '/admin/landing'
     | '/admin/login'
     | '/admin/marketplace'
@@ -490,7 +536,9 @@ export interface FileRouteTypes {
     | '/admin/subscriptions'
     | '/admin/training'
     | '/admin/users'
+    | '/affiliate/register'
     | '/app/access'
+    | '/app/affiliate'
     | '/app/cashbox'
     | '/app/contacts'
     | '/app/customer-wishlist'
@@ -521,6 +569,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
+  AffiliateRoute: typeof AffiliateRouteWithChildren
   AppRoute: typeof AppRouteWithChildren
   AuthRoute: typeof AuthRoute
   PricingRoute: typeof PricingRoute
@@ -548,6 +597,13 @@ declare module '@tanstack/react-router' {
       path: '/app'
       fullPath: '/app'
       preLoaderRoute: typeof AppRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/affiliate': {
+      id: '/affiliate'
+      path: '/affiliate'
+      fullPath: '/affiliate'
+      preLoaderRoute: typeof AffiliateRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin': {
@@ -739,12 +795,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppCashboxRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/affiliate': {
+      id: '/app/affiliate'
+      path: '/affiliate'
+      fullPath: '/app/affiliate'
+      preLoaderRoute: typeof AppAffiliateRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/access': {
       id: '/app/access'
       path: '/access'
       fullPath: '/app/access'
       preLoaderRoute: typeof AppAccessRouteImport
       parentRoute: typeof AppRoute
+    }
+    '/affiliate/register': {
+      id: '/affiliate/register'
+      path: '/register'
+      fullPath: '/affiliate/register'
+      preLoaderRoute: typeof AffiliateRegisterRouteImport
+      parentRoute: typeof AffiliateRoute
     }
     '/admin/users': {
       id: '/admin/users'
@@ -816,10 +886,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminLandingRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/affiliates': {
+      id: '/admin/affiliates'
+      path: '/affiliates'
+      fullPath: '/admin/affiliates'
+      preLoaderRoute: typeof AdminAffiliatesRouteImport
+      parentRoute: typeof AdminRoute
+    }
   }
 }
 
 interface AdminRouteChildren {
+  AdminAffiliatesRoute: typeof AdminAffiliatesRoute
   AdminLandingRoute: typeof AdminLandingRoute
   AdminLoginRoute: typeof AdminLoginRoute
   AdminMarketplaceRoute: typeof AdminMarketplaceRoute
@@ -834,6 +912,7 @@ interface AdminRouteChildren {
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
+  AdminAffiliatesRoute: AdminAffiliatesRoute,
   AdminLandingRoute: AdminLandingRoute,
   AdminLoginRoute: AdminLoginRoute,
   AdminMarketplaceRoute: AdminMarketplaceRoute,
@@ -849,8 +928,21 @@ const AdminRouteChildren: AdminRouteChildren = {
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
+interface AffiliateRouteChildren {
+  AffiliateRegisterRoute: typeof AffiliateRegisterRoute
+}
+
+const AffiliateRouteChildren: AffiliateRouteChildren = {
+  AffiliateRegisterRoute: AffiliateRegisterRoute,
+}
+
+const AffiliateRouteWithChildren = AffiliateRoute._addFileChildren(
+  AffiliateRouteChildren,
+)
+
 interface AppRouteChildren {
   AppAccessRoute: typeof AppAccessRoute
+  AppAffiliateRoute: typeof AppAffiliateRoute
   AppCashboxRoute: typeof AppCashboxRoute
   AppContactsRoute: typeof AppContactsRoute
   AppCustomerWishlistRoute: typeof AppCustomerWishlistRoute
@@ -878,6 +970,7 @@ interface AppRouteChildren {
 
 const AppRouteChildren: AppRouteChildren = {
   AppAccessRoute: AppAccessRoute,
+  AppAffiliateRoute: AppAffiliateRoute,
   AppCashboxRoute: AppCashboxRoute,
   AppContactsRoute: AppContactsRoute,
   AppCustomerWishlistRoute: AppCustomerWishlistRoute,
@@ -908,6 +1001,7 @@ const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
+  AffiliateRoute: AffiliateRouteWithChildren,
   AppRoute: AppRouteWithChildren,
   AuthRoute: AuthRoute,
   PricingRoute: PricingRoute,
