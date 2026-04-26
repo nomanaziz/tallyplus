@@ -52,24 +52,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [profileLoaded, setProfileLoaded] = useState(false);
 
-  const loadProfile = async (uid: string) => {
-    const nowIso = new Date().toISOString();
-    const [{ data: prof }, { data: roles }, { data: sub }] = await Promise.all([
-      supabase.from("profiles").select("*").eq("id", uid).maybeSingle(),
-      supabase.from("user_roles").select("role").eq("user_id", uid),
-      supabase
-        .from("subscriptions")
-        .select("id,status,expires_at,plan_id")
-        .eq("user_id", uid)
-        .eq("status", "active")
-        .gt("expires_at", nowIso)
-        .order("expires_at", { ascending: false })
-        .limit(1)
-        .maybeSingle(),
-    ]);
-    setProfile(prof as Profile | null);
-    setIsAdmin(!!roles?.some((r: { role: string }) => r.role === "admin"));
-    setSubscription((sub as Sub) ?? null);
+  const loadProfile = async (_uid: string) => {
+    // Single round-trip: profile + admin flag + active subscription
+    const { data, error } = await supabase.rpc("my_account");
+    if (error) {
+      console.error("[auth] my_account rpc failed", error);
+      setProfileLoaded(true);
+      return;
+    }
+    const payload = (data ?? {}) as {
+      profile: Profile | null;
+      is_admin: boolean;
+      subscription: Sub | null;
+    };
+    setProfile(payload.profile ?? null);
+    setIsAdmin(!!payload.is_admin);
+    setSubscription(payload.subscription ?? null);
     setProfileLoaded(true);
   };
 
