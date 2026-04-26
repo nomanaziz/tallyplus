@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -16,8 +17,9 @@ import {
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetHeader } from "@/components/ui/sheet";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SiteHeader } from "@/components/site/SiteHeader";
-import { Loader2, Search, Store, SlidersHorizontal, RotateCcw, ShoppingBag, MapPin, FileText } from "lucide-react";
+import { Search, Store, SlidersHorizontal, RotateCcw, ShoppingBag, MapPin, FileText } from "lucide-react";
 import { MarketplaceProductCard } from "@/components/marketplace/MarketplaceProductCard";
+import { VendorGridSkeleton, ProductGridSkeleton } from "@/components/marketplace/MarketplaceSkeleton";
 
 type Listing = {
   id: string;
@@ -98,21 +100,10 @@ function MarketplacePage() {
   const [q, setQ] = useState(search.q ?? "");
   const [minP, setMinP] = useState(search.min !== undefined ? String(search.min) : "");
   const [maxP, setMaxP] = useState(search.max !== undefined ? String(search.max) : "");
-  const [loading, setLoading] = useState(true);
-  const [listings, setListings] = useState<Listing[]>([]);
-  const [shops, setShops] = useState<Record<string, Shop>>({});
-  const [products, setProducts] = useState<Record<string, Product>>({});
-  const [total, setTotal] = useState(0);
   const [shopTypes, setShopTypes] = useState<ShopType[]>([]);
   const page = search.page ?? 1;
   const pageSize = 24;
   const view: View = search.view ?? "vendors";
-
-  // Vendor view state
-  const [vendors, setVendors] = useState<Shop[]>([]);
-  const [vendorCounts, setVendorCounts] = useState<Record<string, number>>({});
-  const [vendorTotal, setVendorTotal] = useState(0);
-  const [vendorLoading, setVendorLoading] = useState(false);
 
   useEffect(() => {
     void supabase
@@ -123,12 +114,27 @@ function MarketplacePage() {
       .then(({ data }) => setShopTypes((data as ShopType[] | null) ?? []));
   }, []);
 
-  useEffect(() => {
-    let cancelled = false;
-    if (view !== "products") return;
-    setLoading(true);
-    void supabase.functions
-      .invoke("marketplace-public", {
+  const typeKey = (search.type ?? []).join(",");
+
+  // Products query — only runs when products view is active
+  const productsQ = useQuery({
+    queryKey: [
+      "marketplace",
+      "products",
+      search.q ?? "",
+      search.min ?? null,
+      search.max ?? null,
+      search.inStock ?? false,
+      search.sort ?? "newest",
+      page,
+      typeKey,
+    ],
+    enabled: view === "products",
+    staleTime: 60_000,
+    gcTime: 5 * 60_000,
+    placeholderData: keepPreviousData,
+    queryFn: async () => {
+      const { data, error } = await supabase.functions.invoke("marketplace-public", {
         body: {
           action: "list",
           q: search.q ?? "",
@@ -140,33 +146,23 @@ function MarketplacePage() {
           in_stock: search.inStock ? true : undefined,
           sort: search.sort ?? "newest",
         },
-      })
-      .then(({ data, error }) => {
-        if (cancelled) return;
-        if (error || !data || (data as { error?: string }).error) {
-          setListings([]);
-          setTotal(0);
-        } else {
-          const d = data as { listings: Listing[]; shops: Record<string, Shop>; products: Record<string, Product>; total: number };
-          setListings(d.listings ?? []);
-          setShops(d.shops ?? {});
-          setProducts(d.products ?? {});
-          setTotal(d.total ?? 0);
-        }
-        setLoading(false);
       });
-    return () => {
-      cancelled = true;
-    };
-  }, [search.q, search.min, search.max, search.inStock, search.sort, page, search.type?.join(","), view]);
+      if (error || !data || (data as { error?: string }).error) {
+        return { listings: [] as Listing[], shops: {} as Record<string, Shop>, products: {} as Record<string, Product>, total: 0 };
+      }
+      return data as { listings: Listing[]; shops: Record<string, Shop>; products: Record<string, Product>; total: number };
+    },
+  });
 
-  // Fetch vendors when in vendor view
-  useEffect(() => {
-    if (view !== "vendors") return;
-    let cancelled = false;
-    setVendorLoading(true);
-    void supabase.functions
-      .invoke("marketplace-public", {
+  // Vendors query — only runs when vendors view is active
+  const vendorsQ = useQuery({
+    queryKey: ["marketplace", "vendors", search.q ?? "", page, typeKey, search.wholesale ?? "all"],
+    enabled: view === "vendors",
+    staleTime: 60_000,
+    gcTime: 5 * 60_000,
+    placeholderData: keepPreviousData,
+    queryFn: async () => {
+      const { data, error } = await supabase.functions.invoke("marketplace-public", {
         body: {
           action: "list-shops",
           q: search.q ?? "",
@@ -177,21 +173,24 @@ function MarketplacePage() {
             search.wholesale === "wholesale" ? "true" :
             search.wholesale === "retail" ? "false" : undefined,
         },
-      })
-      .then(({ data, error }) => {
-        if (cancelled) return;
-        if (error || !data || (data as { error?: string }).error) {
-          setVendors([]); setVendorCounts({}); setVendorTotal(0);
-        } else {
-          const d = data as { shops: Shop[]; counts: Record<string, number>; total: number };
-          setVendors(d.shops ?? []);
-          setVendorCounts(d.counts ?? {});
-          setVendorTotal(d.total ?? 0);
-        }
-        setVendorLoading(false);
       });
-    return () => { cancelled = true; };
-  }, [view, search.q, page, search.type?.join(","), search.wholesale]);
+      if (error || !data || (data as { error?: string }).error) {
+        return { shops: [] as Shop[], counts: {} as Record<string, number>, total: 0 };
+      }
+      return data as { shops: Shop[]; counts: Record<string, number>; total: number };
+    },
+  });
+
+  const listings = productsQ.data?.listings ?? [];
+  const shops = productsQ.data?.shops ?? {};
+  const products = productsQ.data?.products ?? {};
+  const total = productsQ.data?.total ?? 0;
+  const loading = productsQ.isLoading;
+
+  const vendors = vendorsQ.data?.shops ?? [];
+  const vendorCounts = vendorsQ.data?.counts ?? {};
+  const vendorTotal = vendorsQ.data?.total ?? 0;
+  const vendorLoading = vendorsQ.isLoading;
 
   const submitSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -431,9 +430,7 @@ function MarketplacePage() {
           <section className="min-w-0 flex-1">
             {view === "vendors" ? (
               vendorLoading ? (
-                <div className="flex justify-center py-20">
-                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                </div>
+                <VendorGridSkeleton count={8} />
               ) : vendors.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-20 text-center">
                   <Store className="mb-4 h-12 w-12 text-muted-foreground" />
@@ -538,9 +535,7 @@ function MarketplacePage() {
                 </>
               )
             ) : loading ? (
-              <div className="flex justify-center py-20">
-                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-              </div>
+              <ProductGridSkeleton count={10} />
             ) : listings.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20 text-center">
                 <Store className="mb-4 h-12 w-12 text-muted-foreground" />
