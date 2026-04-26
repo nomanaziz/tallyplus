@@ -201,7 +201,6 @@ function FordoHistoryPage() {
               <p className="text-muted-foreground mt-1">{selectedCustomer.phone || "ফোন নেই"}</p>
               <div className="flex gap-3 mt-3 text-sm text-muted-foreground">
                 <span>মোট ফর্দ: <b className="text-foreground">{selectedCustomer.count}</b></span>
-                <span>মোট খরচ: <b className="text-foreground">৳{Math.round(selectedCustomer.total)}</b></span>
               </div>
             </div>
             {selectedCustomer.phone && (
@@ -308,7 +307,6 @@ function FordoHistoryPage() {
                   </div>
                   <div className="flex items-center justify-between mt-3 text-xs text-muted-foreground">
                     <span>সর্বশেষ: {fmtDate(c.lastAt)}</span>
-                    {c.total > 0 && <span className="font-medium text-foreground">৳{Math.round(c.total)}</span>}
                   </div>
                 </Card>
               ))}
