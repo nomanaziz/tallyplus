@@ -35,7 +35,6 @@ type Item = {
   name: string;
   qty: number | null;
   unit: string | null;
-  price?: number | null;
   done: boolean;
   fulfillment_status?: string | null;
 };
@@ -89,7 +88,7 @@ function FordoHistoryPage() {
       if (ids.length === 0) return [] as Item[];
       const { data, error } = await supabase
         .from("customer_wishlist_items")
-        .select("id, wishlist_id, name, qty, unit, price, done, fulfillment_status")
+        .select("id, wishlist_id, name, qty, unit, done, fulfillment_status")
         .in("wishlist_id", ids);
       if (error) throw error;
       return (data || []) as Item[];
