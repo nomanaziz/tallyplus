@@ -99,9 +99,17 @@ export const Link = forwardRef<HTMLAnchorElement, LinkProps>(function Link(
 /** Tanstack-style useNavigate returning a function that takes { to, params, search, replace, hash } */
 export function useNavigate() {
   const nav = useRRNavigate();
-  return (opts: string | { to: string; params?: Record<string, string | number | undefined>; search?: Record<string, unknown> | string; hash?: string; replace?: boolean }) => {
+  return (opts: string | { to?: string; params?: Record<string, string | number | undefined>; search?: Record<string, unknown> | string | ((prev: Record<string, string>) => Record<string, unknown>); hash?: string; replace?: boolean }) => {
     if (typeof opts === "string") return nav(opts);
-    const path = buildPath(opts.to, opts.params, opts.search, opts.hash);
+    const to = opts.to ?? window.location.pathname;
+    let search = opts.search;
+    if (typeof search === "function") {
+      const sp = new URLSearchParams(window.location.search);
+      const cur: Record<string, string> = {};
+      sp.forEach((v, k) => { cur[k] = v; });
+      search = (search as (p: Record<string, string>) => Record<string, unknown>)(cur);
+    }
+    const path = buildPath(to, opts.params, search as Record<string, unknown> | string | undefined, opts.hash);
     return nav(path, { replace: opts.replace });
   };
 }
@@ -141,4 +149,20 @@ export function useRouter() {
 /** Minimal stub. SPA loads instantly; router state used only for transition bars. */
 export function useRouterState<T = unknown>(_opts?: { select?: (s: { isLoading: boolean; isTransitioning: boolean; location: ReturnType<typeof useRRLocation> }) => T }): T {
   return false as unknown as T;
+}
+
+/** No-op stubs kept for source compatibility with TanStack Router code paths. */
+export function redirect(opts: { to: string; hash?: string; replace?: boolean }): never {
+  // In SPA migration, throw a marker error; callers should use useEffect+useNavigate instead.
+  // Provided here only so leftover imports don't break the build.
+  const url = (opts.to || "/") + (opts.hash ? (opts.hash.startsWith("#") ? opts.hash : "#" + opts.hash) : "");
+  if (typeof window !== "undefined") {
+    if (opts.replace) window.location.replace(url);
+    else window.location.href = url;
+  }
+  throw new Error("__redirect__:" + url);
+}
+
+export function notFound(): Error {
+  return new Error("Not Found");
 }
