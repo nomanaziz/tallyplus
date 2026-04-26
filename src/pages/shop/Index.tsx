@@ -54,7 +54,15 @@ type SearchParams = {
 
 
 function MarketplacePage() {
-  const search = useSearch();
+  const rawSearch = useSearch();
+  const search = {
+    ...rawSearch,
+    page: rawSearch.page ? Number(rawSearch.page) : undefined,
+    min: rawSearch.min ? Number(rawSearch.min) : undefined,
+    max: rawSearch.max ? Number(rawSearch.max) : undefined,
+    type: rawSearch.type ? String(rawSearch.type).split(",").filter(Boolean) : undefined,
+    inStock: rawSearch.inStock === "true" ? true : rawSearch.inStock === "false" ? false : undefined,
+  } as SearchParams;
   const navigate = useNavigate();
   const [q, setQ] = useState(search.q ?? "");
   const [minP, setMinP] = useState(search.min !== undefined ? String(search.min) : "");
@@ -62,7 +70,7 @@ function MarketplacePage() {
   const [shopTypes, setShopTypes] = useState<ShopType[]>([]);
   const page = search.page ?? 1;
   const pageSize = 24;
-  const view: View = search.view ?? "vendors";
+  const view: View = (search.view as View) ?? "vendors";
 
   useEffect(() => {
     void supabase
