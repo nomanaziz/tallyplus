@@ -72,10 +72,13 @@ export const getRouter = () => {
     routeTree,
     context: { queryClient },
     scrollRestoration: true,
-    // Intent preloading triggered router-core "_nonReactive" errors and
-    // caused extra background work on every link hover. Disable for now.
-    defaultPreload: false,
-    defaultPreloadStaleTime: 0,
+    // Viewport preloading: routes prefetch when their <Link> scrolls into view.
+    // Avoids the "_nonReactive" error from intent (hover) preloading while still
+    // making clicks feel instant on visible navigation links.
+    defaultPreload: "viewport",
+    defaultPreloadStaleTime: 10_000,
+    defaultPendingMs: 150,
+    defaultPendingMinMs: 200,
     defaultErrorComponent: DefaultErrorComponent,
   });
 
