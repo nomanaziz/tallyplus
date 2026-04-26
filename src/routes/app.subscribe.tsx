@@ -152,7 +152,7 @@ function Subscribe() {
         </ul>
         <div className="flex flex-col items-center justify-center rounded-xl bg-secondary/40 p-4 text-center">
           <Crown className="h-7 w-7 text-primary" />
-          <div className="mt-1 text-sm font-bold">{lang === "bn" ? "হিসাবী স্টোর" : "Tally Store"}</div>
+          <div className="mt-1 text-sm font-bold">{lang === "bn" ? "Tally Plus স্টোর" : "Tally Store"}</div>
         </div>
       </div>
 

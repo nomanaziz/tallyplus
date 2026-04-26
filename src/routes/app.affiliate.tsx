@@ -140,7 +140,7 @@ function AffiliateDashboard() {
                 </div>
               </div>
               <div className="grid grid-cols-3 gap-2">
-                <a href={`https://wa.me/?text=${encodeURIComponent("হিসাবী অ্যাপে রেজিস্ট্রেশন করুন: " + link)}`} target="_blank" rel="noreferrer">
+                <a href={`https://wa.me/?text=${encodeURIComponent("Tally Plus অ্যাপে রেজিস্ট্রেশন করুন: " + link)}`} target="_blank" rel="noreferrer">
                   <Button variant="outline" className="w-full"><Share2 className="mr-1 h-4 w-4" /> WhatsApp</Button>
                 </a>
                 <a href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(link)}`} target="_blank" rel="noreferrer">
