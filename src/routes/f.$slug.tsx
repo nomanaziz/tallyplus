@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { Loader2, Plus, Send, Trash2, Check, X, Copy, MessageCircle, History, KeyRound, Settings2 } from "lucide-react";
+import { Loader2, Plus, Send, Trash2, Check, X, Copy, MessageCircle, History, KeyRound, Settings2, Wifi, WifiOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -63,6 +63,18 @@ function PublicWishlistPage() {
   const [pinInput, setPinInput] = useState("");
   const [hasExistingProfile, setHasExistingProfile] = useState(false);
   const [simpleMode, setSimpleMode] = useState(true);
+  const [online, setOnline] = useState<boolean>(typeof navigator === "undefined" ? true : navigator.onLine);
+
+  useEffect(() => {
+    const on = () => setOnline(true);
+    const off = () => setOnline(false);
+    window.addEventListener("online", on);
+    window.addEventListener("offline", off);
+    return () => {
+      window.removeEventListener("online", on);
+      window.removeEventListener("offline", off);
+    };
+  }, []);
 
   const palette = useMemo(() => PALETTE.find((p) => p.key === color) ?? PALETTE[0], [color]);
 
@@ -361,6 +373,16 @@ function PublicWishlistPage() {
             </Link>
           </div>
         )}
+
+        {/* Internet hint */}
+        <div className={`mb-3 flex items-center gap-2 rounded-lg border px-3 py-2 text-[11px] ${online ? "border-muted-foreground/20 bg-muted/40 text-muted-foreground" : "border-destructive/40 bg-destructive/10 text-destructive"}`}>
+          {online ? <Wifi className="h-3.5 w-3.5 flex-none" /> : <WifiOff className="h-3.5 w-3.5 flex-none" />}
+          <span>
+            {online
+              ? "ফর্দ পাঠাতে ইন্টারনেট সংযোগ লাগবে। কথা বলে ফর্দ বানাতেও net লাগবে।"
+              : "এখন ইন্টারনেট নেই — net চালু করে আবার চেষ্টা করুন।"}
+          </span>
+        </div>
 
         {/* Card */}
         <div className={`rounded-3xl border bg-card p-5 shadow-sm ring-1 ${palette.bg} ${palette.ring}`}>
