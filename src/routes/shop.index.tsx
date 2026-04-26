@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
@@ -15,7 +15,8 @@ import {
 } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetHeader } from "@/components/ui/sheet";
 import { SiteHeader } from "@/components/site/SiteHeader";
-import { Loader2, Search, Store, ShoppingBag, SlidersHorizontal, RotateCcw } from "lucide-react";
+import { Loader2, Search, Store, SlidersHorizontal, RotateCcw } from "lucide-react";
+import { MarketplaceProductCard } from "@/components/marketplace/MarketplaceProductCard";
 
 type Listing = {
   id: string;
@@ -25,8 +26,9 @@ type Listing = {
   stock: number;
   unit: string | null;
   min_order: number | null;
+  warranty_months?: number | null;
 };
-type Shop = { id: string; name: string; slug: string | null; logo_url: string | null; tagline: string | null };
+type Shop = { id: string; name: string; slug: string | null; username: string | null; logo_url: string | null; tagline: string | null };
 type Product = { id: string; name: string; image_url: string | null; unit: string | null };
 type ShopType = { code: string; name_bn: string; name_en: string };
 
