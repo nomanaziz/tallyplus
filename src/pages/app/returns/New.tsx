@@ -353,4 +353,4 @@ function NewReturnPage() {
     </div>
   );
 }
-export default New;
+export default NewReturnPage;
