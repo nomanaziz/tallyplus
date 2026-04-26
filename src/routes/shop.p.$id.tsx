@@ -126,7 +126,9 @@ function ProductDetailPage() {
             ) : null}
           </div>
 
-          {listing.stock > 0 ? (
+          {listing.stock < 0 ? (
+            <div className="text-sm text-primary">সবসময় অর্ডারযোগ্য</div>
+          ) : listing.stock > 0 ? (
             <div className="text-sm text-muted-foreground">স্টক আছে: {listing.stock} {listing.unit ?? product.unit ?? ""}</div>
           ) : (
             <div className="text-sm font-medium text-destructive">এখন স্টক নেই</div>
@@ -137,7 +139,7 @@ function ProductDetailPage() {
           )}
 
           <div className="mt-2 flex flex-wrap gap-2">
-            <Button onClick={addToCart} disabled={listing.stock <= 0} className="gap-2">
+            <Button onClick={addToCart} disabled={listing.stock === 0} className="gap-2">
               <ShoppingBag className="h-4 w-4" /> List-এ যোগ করুন
             </Button>
             {waPhone && (

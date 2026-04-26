@@ -83,7 +83,7 @@ export function MarketplaceProductCard({ listing, product, shop, showShopChip = 
             >
               <Eye className="h-3.5 w-3.5" />
             </button>
-            {listing.stock <= 0 && (
+            {listing.stock === 0 && (
               <div className="absolute left-1.5 top-1.5 rounded-md bg-destructive/90 px-1.5 py-0.5 text-[10px] font-semibold text-destructive-foreground">
                 স্টক নেই
               </div>
@@ -115,7 +115,7 @@ export function MarketplaceProductCard({ listing, product, shop, showShopChip = 
               image_url: product.image_url,
             }}
             minOrder={Number(listing.min_order ?? 1)}
-            maxStock={listing.stock}
+            maxStock={listing.stock < 0 ? undefined : listing.stock}
             size="sm"
           />
         </div>

@@ -43,7 +43,9 @@ export function QuickViewDialog({ open, onOpenChange, listing, product, shop }: 
               <span className="text-3xl font-extrabold text-primary">৳ {listing.price}</span>
               {unit && <span className="text-sm text-muted-foreground">/ {unit}</span>}
             </div>
-            {listing.stock > 0 ? (
+            {listing.stock < 0 ? (
+              <div className="text-sm text-primary">সবসময় অর্ডারযোগ্য</div>
+            ) : listing.stock > 0 ? (
               <div className="text-sm text-muted-foreground">স্টক: {listing.stock} {unit ?? ""}</div>
             ) : (
               <div className="text-sm font-semibold text-destructive">এখন স্টক নেই</div>
@@ -66,7 +68,7 @@ export function QuickViewDialog({ open, onOpenChange, listing, product, shop }: 
                   image_url: product.image_url,
                 }}
                 minOrder={Number(listing.min_order ?? 1)}
-                maxStock={listing.stock}
+                maxStock={listing.stock < 0 ? undefined : listing.stock}
               />
               <Button asChild variant="outline" size="sm">
                 <Link to="/shop/p/$id" params={{ id: listing.id }}>
