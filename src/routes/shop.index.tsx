@@ -29,12 +29,13 @@ type Listing = {
   min_order: number | null;
   warranty_months?: number | null;
 };
-type Shop = { id: string; name: string; slug: string | null; username: string | null; logo_url: string | null; tagline: string | null; address?: string | null };
+type Shop = { id: string; name: string; slug: string | null; username: string | null; logo_url: string | null; tagline: string | null; address?: string | null; is_wholesale?: boolean };
 type Product = { id: string; name: string; image_url: string | null; unit: string | null };
 type ShopType = { code: string; name_bn: string; name_en: string };
 
 type Sort = "newest" | "price_asc" | "price_desc";
 type View = "products" | "vendors";
+type WholesaleFilter = "all" | "wholesale" | "retail";
 
 type SearchParams = {
   q?: string;
@@ -45,6 +46,7 @@ type SearchParams = {
   inStock?: boolean;
   sort?: Sort;
   view?: View;
+  wholesale?: WholesaleFilter;
 };
 
 export const Route = createFileRoute("/shop/")({
@@ -73,6 +75,8 @@ export const Route = createFileRoute("/shop/")({
     const sort = s.sort === "price_asc" || s.sort === "price_desc" || s.sort === "newest" ? (s.sort as Sort) : undefined;
     // Default view is now "vendors" (ফর্দ-first). Only "products" is stored explicitly in URL.
     const view = s.view === "products" ? ("products" as View) : undefined;
+    const wholesale: WholesaleFilter | undefined =
+      s.wholesale === "wholesale" || s.wholesale === "retail" ? (s.wholesale as WholesaleFilter) : undefined;
     return {
       q: typeof s.q === "string" ? s.q : undefined,
       page: toNum(s.page) ?? 1,
@@ -82,6 +86,7 @@ export const Route = createFileRoute("/shop/")({
       inStock: s.inStock === true || s.inStock === "true" || s.inStock === 1 || s.inStock === "1" ? true : undefined,
       sort,
       view,
+      wholesale,
     };
   },
   component: MarketplacePage,
