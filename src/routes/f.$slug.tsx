@@ -1,13 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { Loader2, Plus, Send, Trash2, Check, X, Copy, MessageCircle, History, KeyRound } from "lucide-react";
+import { Loader2, Plus, Send, Trash2, Check, X, Copy, MessageCircle, History, KeyRound, Settings2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { CatalogProductPicker, type CatalogProduct } from "@/components/app/CatalogProductPicker";
+import { VoiceInputButton } from "@/components/wishlist/VoiceInputButton";
 
 type SearchParams = { reuse?: string; tpl?: string };
 
@@ -61,6 +62,7 @@ function PublicWishlistPage() {
   const [savedToken, setSavedToken] = useState<string | null>(null);
   const [pinInput, setPinInput] = useState("");
   const [hasExistingProfile, setHasExistingProfile] = useState(false);
+  const [simpleMode, setSimpleMode] = useState(true);
 
   const palette = useMemo(() => PALETTE.find((p) => p.key === color) ?? PALETTE[0], [color]);
 
@@ -387,79 +389,132 @@ function PublicWishlistPage() {
             </div>
           </div>
 
-          <h2 className="mt-6 text-base font-bold">পণ্যের তালিকা</h2>
-          <div className="mt-2 space-y-2">
-            {items.map((it, idx) => (
-              <div key={it.id} className="flex items-start gap-2">
-                <div className="mt-2 w-5 select-none text-center text-xs font-semibold text-muted-foreground">{idx + 1}.</div>
-                <div className="grid flex-1 grid-cols-12 gap-1.5">
-                  <CatalogProductPicker
-                    className="col-span-12"
-                    inputClassName="h-10 bg-background/70"
-                    value={it.name}
-                    onChange={(v) => updateItem(it.id, { name: v })}
-                    onSelect={(p: CatalogProduct) => {
-                      updateItem(it.id, {
-                        name: p.name_bn + (p.pack_size ? ` (${p.pack_size})` : ""),
-                        unit: it.unit || p.base_unit || "",
-                        price: it.price || (p.default_price != null ? String(p.default_price) : ""),
-                      });
-                    }}
-                    shopTypeCode={shopTypeCode}
-                    placeholder="পণ্যের নাম"
-                  />
-                  <Input
-                    value={it.qty}
-                    onChange={(e) => updateItem(it.id, { qty: e.target.value.replace(/[^0-9.]/g, "") })}
-                    placeholder="পরিমাণ"
-                    inputMode="decimal"
-                    className="col-span-3 h-10 bg-background/70"
-                  />
-                  <Input
-                    value={it.unit}
-                    onChange={(e) => updateItem(it.id, { unit: e.target.value })}
-                    placeholder="একক"
-                    className="col-span-3 h-10 bg-background/70"
-                    maxLength={16}
-                  />
-                  <Input
-                    value={it.price}
-                    onChange={(e) => updateItem(it.id, { price: e.target.value.replace(/[^0-9.]/g, "") })}
-                    placeholder="দাম ৳"
-                    inputMode="decimal"
-                    className="col-span-3 h-10 bg-background/70"
-                  />
-                  <div className="col-span-3 flex h-10 items-center justify-end rounded-md bg-background/40 px-2 text-xs font-semibold tabular-nums">
-                    ৳ {(() => { const q = Number(it.qty) || 0; const pr = Number(it.price) || 0; const t = q && pr ? q * pr : pr; return t ? t.toLocaleString("bn-BD", { maximumFractionDigits: 2 }) : "—"; })()}
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => removeItem(it.id)}
-                  className="mt-1.5 rounded-md p-1.5 text-muted-foreground hover:bg-background/60 hover:text-destructive"
-                  aria-label="মুছুন"
-                  disabled={items.length === 1}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              </div>
-            ))}
+          <div className="mt-6 flex items-center justify-between">
+            <h2 className="text-base font-bold">পণ্যের তালিকা</h2>
+            <button
+              type="button"
+              onClick={() => setSimpleMode((v) => !v)}
+              className="inline-flex items-center gap-1 rounded-full border bg-background/70 px-2.5 py-1 text-[11px] font-semibold text-muted-foreground hover:bg-background"
+            >
+              <Settings2 className="h-3 w-3" />
+              {simpleMode ? "বিস্তারিত mode" : "সহজ mode"}
+            </button>
           </div>
 
-          <div className="mt-3 flex items-center justify-between rounded-xl border bg-background/70 px-3 py-2 text-sm">
-            <span className="font-semibold">মোট</span>
-            <span className="text-base font-extrabold tabular-nums text-primary">
-              ৳ {items.reduce((sum, it) => {
-                const q = Number(it.qty) || 0;
-                const pr = Number(it.price) || 0;
-                return sum + (q && pr ? q * pr : pr);
-              }, 0).toLocaleString("bn-BD", { maximumFractionDigits: 2 })}
-            </span>
+          {/* Voice input — works in both modes */}
+          <div className="mt-3">
+            <VoiceInputButton
+              onLines={(lines) => {
+                setItems((prev) => {
+                  // remove trailing empty rows then append
+                  const cleaned = prev.filter((p) => p.name.trim().length > 0);
+                  const next = [
+                    ...cleaned,
+                    ...lines.map((ln) => ({ id: newId(), name: ln, qty: "", unit: "", price: "" })),
+                  ];
+                  return next.length > 0 ? next : prev;
+                });
+              }}
+            />
+            <p className="mt-1.5 text-center text-[11px] text-muted-foreground">
+              যেমন বলুন: <span className="font-semibold">"এক কেজি চাল, দুই কেজি ডাল, এক ডজন ডিম"</span>
+            </p>
           </div>
+
+          {simpleMode ? (
+            <div className="mt-4 space-y-2">
+              {items.map((it, idx) => (
+                <div key={it.id} className="flex items-start gap-2">
+                  <div className="mt-3 w-5 select-none text-center text-xs font-semibold text-muted-foreground">
+                    {idx + 1}.
+                  </div>
+                  <Input
+                    value={it.name}
+                    onChange={(e) => updateItem(it.id, { name: e.target.value })}
+                    placeholder="যেমন: ১ কেজি পোলাওর চাল"
+                    className="h-11 flex-1 bg-background/70 text-[15px]"
+                    maxLength={120}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeItem(it.id)}
+                    className="mt-2 rounded-md p-2 text-muted-foreground hover:bg-background/60 hover:text-destructive"
+                    aria-label="মুছুন"
+                    disabled={items.length === 1}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="mt-4 space-y-2">
+              {items.map((it, idx) => (
+                <div key={it.id} className="flex items-start gap-2">
+                  <div className="mt-2 w-5 select-none text-center text-xs font-semibold text-muted-foreground">
+                    {idx + 1}.
+                  </div>
+                  <div className="grid flex-1 grid-cols-12 gap-1.5">
+                    <CatalogProductPicker
+                      className="col-span-12"
+                      inputClassName="h-10 bg-background/70"
+                      value={it.name}
+                      onChange={(v) => updateItem(it.id, { name: v })}
+                      onSelect={(p: CatalogProduct) => {
+                        updateItem(it.id, {
+                          name: p.name_bn + (p.pack_size ? ` (${p.pack_size})` : ""),
+                          unit: it.unit || p.base_unit || "",
+                          price: it.price || (p.default_price != null ? String(p.default_price) : ""),
+                        });
+                      }}
+                      shopTypeCode={shopTypeCode}
+                      placeholder="পণ্যের নাম"
+                    />
+                    <Input
+                      value={it.qty}
+                      onChange={(e) => updateItem(it.id, { qty: e.target.value.replace(/[^0-9.]/g, "") })}
+                      placeholder="পরিমাণ"
+                      inputMode="decimal"
+                      className="col-span-4 h-10 bg-background/70"
+                    />
+                    <Input
+                      value={it.unit}
+                      onChange={(e) => updateItem(it.id, { unit: e.target.value })}
+                      placeholder="একক"
+                      className="col-span-4 h-10 bg-background/70"
+                      maxLength={16}
+                    />
+                    <Input
+                      value={it.price}
+                      onChange={(e) => updateItem(it.id, { price: e.target.value.replace(/[^0-9.]/g, "") })}
+                      placeholder="দাম (দোকানদার দিবে)"
+                      inputMode="decimal"
+                      className="col-span-4 h-10 bg-background/70"
+                      readOnly
+                      title="দাম দোকানদার বসাবেন"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => removeItem(it.id)}
+                    className="mt-1.5 rounded-md p-1.5 text-muted-foreground hover:bg-background/60 hover:text-destructive"
+                    aria-label="মুছুন"
+                    disabled={items.length === 1}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
 
           <Button type="button" variant="outline" onClick={addItem} className="mt-3 w-full bg-background/70">
             <Plus className="mr-1 h-4 w-4" /> আরও পণ্য যোগ করুন
           </Button>
+
+          <p className="mt-3 rounded-lg bg-background/50 px-3 py-2 text-center text-[11px] text-muted-foreground">
+            💡 দাম বসানোর দরকার নেই — দোকানদার ফর্দ পেয়ে দাম জানিয়ে দিবেন
+          </p>
 
           <div className="mt-5">
             <Label htmlFor="nt">নোট (ইচ্ছাধীন)</Label>
