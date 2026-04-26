@@ -1,7 +1,7 @@
 import { Link, useLocation } from "@tanstack/react-router";
 import { useI18n } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
-import { Home, ShoppingCart, BarChart3, Menu as MenuIcon, Undo2 } from "lucide-react";
+import { Home, ShoppingCart, BarChart3, User as UserIcon, Undo2 } from "lucide-react";
 
 type Tab = { to: string; bn: string; en: string; Icon: typeof Home; matchPrefix?: string };
 
@@ -12,7 +12,7 @@ const TABS: Tab[] = [
   { to: "/app/reports", bn: "রিপোর্ট", en: "Report", Icon: BarChart3, matchPrefix: "/app/reports" },
 ];
 
-export function MobileBottomNav({ onMenu }: { onMenu: () => void }) {
+export function MobileBottomNav({ onProfile }: { onProfile: () => void }) {
   const { lang } = useI18n();
   const loc = useLocation();
 
@@ -43,12 +43,12 @@ export function MobileBottomNav({ onMenu }: { onMenu: () => void }) {
         );
       })}
       <button
-        onClick={onMenu}
+        onClick={onProfile}
         className="flex flex-1 flex-col items-center justify-center gap-0.5 text-[10px] font-semibold text-muted-foreground transition-colors hover:text-foreground"
-        aria-label={lang === "bn" ? "মেনু" : "Menu"}
+        aria-label={lang === "bn" ? "প্রোফাইল" : "Profile"}
       >
-        <MenuIcon className="h-5 w-5" />
-        <span>{lang === "bn" ? "মেনু" : "Menu"}</span>
+        <UserIcon className="h-5 w-5" />
+        <span>{lang === "bn" ? "প্রোফাইল" : "Profile"}</span>
       </button>
     </nav>
   );
