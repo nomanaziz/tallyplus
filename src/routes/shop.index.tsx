@@ -375,6 +375,36 @@ function MarketplacePage() {
               </TabsList>
             </Tabs>
           </div>
+
+          {/* Wholesale / Retail quick filter (only on vendor view) */}
+          {view === "vendors" && (
+            <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs">
+              {([
+                { v: undefined, label: "সব দোকান" },
+                { v: "retail" as const, label: "খুচরা" },
+                { v: "wholesale" as const, label: "পাইকারি" },
+              ]).map((opt) => {
+                const active = (search.wholesale ?? undefined) === opt.v;
+                return (
+                  <button
+                    key={opt.label}
+                    type="button"
+                    onClick={() =>
+                      navigate({ search: (prev) => ({ ...prev, wholesale: opt.v, page: 1 }) })
+                    }
+                    className={
+                      "rounded-full border px-3 py-1 font-medium transition-colors " +
+                      (active
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-border bg-background hover:bg-accent")
+                    }
+                  >
+                    {opt.label}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
 
