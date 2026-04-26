@@ -217,6 +217,7 @@ function ProductFormDialog({
   const [sale, setSale] = useState("0");
   const [stock, setStock] = useState("0");
   const [low, setLow] = useState("5");
+  const [trackStock, setTrackStock] = useState(true);
   const [busy, setBusy] = useState(false);
   const [description, setDescription] = useState("");
   // toggles
@@ -244,7 +245,10 @@ function ProductFormDialog({
       setUnit(p?.unit ?? "pcs");
       setCost(String(p?.cost_price ?? 0));
       setSale(String(p?.sale_price ?? 0));
-      setStock(String(p?.stock ?? 0));
+      const initStock = Number(p?.stock ?? 0);
+      const isUnlimited = initStock < 0;
+      setTrackStock(!isUnlimited);
+      setStock(isUnlimited ? "0" : String(initStock));
       setLow(String(p?.low_stock_alert ?? 5));
       setDescription(String((p?.description as string) ?? ""));
       setOnlineOn(Boolean(p?.is_marketplace_published));
@@ -275,8 +279,8 @@ function ProductFormDialog({
       unit: unit.trim() || "pcs",
       cost_price: Number(cost) || 0,
       sale_price: Number(sale) || 0,
-      stock: Number(stock) || 0,
-      low_stock_alert: lowOn ? (Number(low) || 0) : 0,
+      stock: trackStock ? (Number(stock) || 0) : -1,
+      low_stock_alert: trackStock && lowOn ? (Number(low) || 0) : 0,
       shop_id: shopId,
       description: description.trim() || null,
       is_marketplace_published: onlineOn,
