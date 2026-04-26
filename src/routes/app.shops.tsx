@@ -58,7 +58,7 @@ function ShopsPage() {
       <header className="flex items-center justify-between border-b bg-background px-4 py-3">
         <Link to="/app/dashboard" className="flex items-center gap-2">
           <img src={logo} alt="" className="h-8 w-8" />
-          <span className="text-lg font-extrabold">{lang === "bn" ? "হিসাবী" : "Hishabee"}</span>
+          <span className="text-lg font-extrabold">Tally Plus</span>
         </Link>
         <Button
           variant="ghost"
