@@ -825,6 +825,7 @@ export type Database = {
       }
       customer_wishlists: {
         Row: {
+          buyer_shop_id: string | null
           color: string
           consumer_user_id: string | null
           created_at: string
@@ -832,6 +833,7 @@ export type Database = {
           customer_name: string
           customer_phone: string
           id: string
+          is_b2b: boolean
           note: string | null
           shop_id: string
           status: string
@@ -839,6 +841,7 @@ export type Database = {
           wishlist_customer_id: string | null
         }
         Insert: {
+          buyer_shop_id?: string | null
           color?: string
           consumer_user_id?: string | null
           created_at?: string
@@ -846,6 +849,7 @@ export type Database = {
           customer_name: string
           customer_phone: string
           id?: string
+          is_b2b?: boolean
           note?: string | null
           shop_id: string
           status?: string
@@ -853,6 +857,7 @@ export type Database = {
           wishlist_customer_id?: string | null
         }
         Update: {
+          buyer_shop_id?: string | null
           color?: string
           consumer_user_id?: string | null
           created_at?: string
@@ -860,6 +865,7 @@ export type Database = {
           customer_name?: string
           customer_phone?: string
           id?: string
+          is_b2b?: boolean
           note?: string | null
           shop_id?: string
           status?: string
@@ -2366,6 +2372,7 @@ export type Database = {
           google_analytics_id: string | null
           gtm_id: string | null
           id: string
+          is_wholesale: boolean
           logo_url: string | null
           marketplace_enabled: boolean
           meta_description: string | null
@@ -2416,6 +2423,7 @@ export type Database = {
           google_analytics_id?: string | null
           gtm_id?: string | null
           id?: string
+          is_wholesale?: boolean
           logo_url?: string | null
           marketplace_enabled?: boolean
           meta_description?: string | null
@@ -2466,6 +2474,7 @@ export type Database = {
           google_analytics_id?: string | null
           gtm_id?: string | null
           id?: string
+          is_wholesale?: boolean
           logo_url?: string | null
           marketplace_enabled?: boolean
           meta_description?: string | null

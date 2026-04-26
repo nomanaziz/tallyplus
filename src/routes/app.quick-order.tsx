@@ -307,7 +307,7 @@ function QuickOrderInner() {
         <label className="flex items-center gap-2 rounded-lg border bg-card px-3 py-1.5 text-xs">
           <Switch checked={allowExternal} onCheckedChange={setAllowExternal} />
           <span className="font-medium">
-            {lang === "bn" ? "দোকানের বাইরের পণ্য" : "External items"}
+            {lang === "bn" ? "স্টকের বাইরের পণ্য" : "Out-of-stock items"}
           </span>
         </label>
       </div>
