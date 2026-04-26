@@ -30,6 +30,7 @@ type ShopRow = {
   address: string | null; phone: string | null; logo_url: string | null;
   banner_url: string | null;
   marketplace_enabled: boolean;
+  is_wholesale: boolean;
   social_links: Record<string, string> | null;
 };
 
@@ -45,7 +46,7 @@ function StoreSettingsPage() {
     queryFn: async () => {
       const { data } = await supabase
         .from("shops")
-        .select("id,name,username,tagline,address,phone,logo_url,banner_url,marketplace_enabled,social_links")
+        .select("id,name,username,tagline,address,phone,logo_url,banner_url,marketplace_enabled,is_wholesale,social_links")
         .eq("id", shopId!)
         .maybeSingle();
       return (data as ShopRow | null) ?? null;
@@ -53,6 +54,7 @@ function StoreSettingsPage() {
   });
 
   const [enabled, setEnabled] = useState(true);
+  const [isWholesale, setIsWholesale] = useState(false);
   const [name, setName] = useState("");
   const [username, setUsername] = useState("");
   const [editingUsername, setEditingUsername] = useState(false);
@@ -70,6 +72,7 @@ function StoreSettingsPage() {
   useEffect(() => {
     if (!shop) return;
     setEnabled(shop.marketplace_enabled);
+    setIsWholesale(!!shop.is_wholesale);
     setName(shop.name ?? "");
     setUsername(shop.username ?? defaultUsername(shop.name ?? ""));
     setPhone(shop.phone ?? "");
@@ -135,6 +138,7 @@ function StoreSettingsPage() {
       address: address.trim() || null,
       logo_url: logoUrl,
       banner_url: bannerUrl,
+      is_wholesale: isWholesale,
       social_links: social,
     }).eq("id", shopId);
     setSaving(false);
@@ -178,6 +182,26 @@ function StoreSettingsPage() {
             </Badge>
           </div>
           <Switch checked={enabled} onCheckedChange={togglePublished} />
+        </div>
+
+        {/* Wholesale (B2B) toggle */}
+        <div className="flex items-start justify-between gap-3 rounded-xl border bg-card p-4">
+          <div className="min-w-0">
+            <div className="text-sm font-bold">
+              {lang === "bn" ? "আপনি কি পাইকারি বিক্রেতা?" : "Are you a wholesale seller?"}
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {lang === "bn"
+                ? "চালু করলে আপনার দোকান পাইকারি (B2B) হিসেবে চিহ্নিত হবে — অন্য খুচরা দোকান আপনার কাছে B2B ফর্দ পাঠাতে পারবে।"
+                : "When enabled, your shop will be marked as wholesale (B2B). Retail shops can send you B2B order lists."}
+            </p>
+            {isWholesale && (
+              <Badge className="mt-2" variant="default">
+                {lang === "bn" ? "পাইকারি বিক্রেতা" : "Wholesale Seller"}
+              </Badge>
+            )}
+          </div>
+          <Switch checked={isWholesale} onCheckedChange={setIsWholesale} />
         </div>
 
         {/* Logo + Name + Type */}

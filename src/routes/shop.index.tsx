@@ -29,12 +29,13 @@ type Listing = {
   min_order: number | null;
   warranty_months?: number | null;
 };
-type Shop = { id: string; name: string; slug: string | null; username: string | null; logo_url: string | null; tagline: string | null; address?: string | null };
+type Shop = { id: string; name: string; slug: string | null; username: string | null; logo_url: string | null; tagline: string | null; address?: string | null; is_wholesale?: boolean };
 type Product = { id: string; name: string; image_url: string | null; unit: string | null };
 type ShopType = { code: string; name_bn: string; name_en: string };
 
 type Sort = "newest" | "price_asc" | "price_desc";
 type View = "products" | "vendors";
+type WholesaleFilter = "all" | "wholesale" | "retail";
 
 type SearchParams = {
   q?: string;
@@ -45,6 +46,7 @@ type SearchParams = {
   inStock?: boolean;
   sort?: Sort;
   view?: View;
+  wholesale?: WholesaleFilter;
 };
 
 export const Route = createFileRoute("/shop/")({
@@ -73,6 +75,8 @@ export const Route = createFileRoute("/shop/")({
     const sort = s.sort === "price_asc" || s.sort === "price_desc" || s.sort === "newest" ? (s.sort as Sort) : undefined;
     // Default view is now "vendors" (ফর্দ-first). Only "products" is stored explicitly in URL.
     const view = s.view === "products" ? ("products" as View) : undefined;
+    const wholesale: WholesaleFilter | undefined =
+      s.wholesale === "wholesale" || s.wholesale === "retail" ? (s.wholesale as WholesaleFilter) : undefined;
     return {
       q: typeof s.q === "string" ? s.q : undefined,
       page: toNum(s.page) ?? 1,
@@ -82,6 +86,7 @@ export const Route = createFileRoute("/shop/")({
       inStock: s.inStock === true || s.inStock === "true" || s.inStock === 1 || s.inStock === "1" ? true : undefined,
       sort,
       view,
+      wholesale,
     };
   },
   component: MarketplacePage,
@@ -168,6 +173,9 @@ function MarketplacePage() {
           page,
           pageSize,
           shop_type: search.type,
+          wholesale:
+            search.wholesale === "wholesale" ? "true" :
+            search.wholesale === "retail" ? "false" : undefined,
         },
       })
       .then(({ data, error }) => {
@@ -183,7 +191,7 @@ function MarketplacePage() {
         setVendorLoading(false);
       });
     return () => { cancelled = true; };
-  }, [view, search.q, page, search.type?.join(",")]);
+  }, [view, search.q, page, search.type?.join(","), search.wholesale]);
 
   const submitSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -367,6 +375,36 @@ function MarketplacePage() {
               </TabsList>
             </Tabs>
           </div>
+
+          {/* Wholesale / Retail quick filter (only on vendor view) */}
+          {view === "vendors" && (
+            <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs">
+              {([
+                { v: undefined, label: "সব দোকান" },
+                { v: "retail" as const, label: "খুচরা" },
+                { v: "wholesale" as const, label: "পাইকারি" },
+              ]).map((opt) => {
+                const active = (search.wholesale ?? undefined) === opt.v;
+                return (
+                  <button
+                    key={opt.label}
+                    type="button"
+                    onClick={() =>
+                      navigate({ search: (prev) => ({ ...prev, wholesale: opt.v, page: 1 }) })
+                    }
+                    className={
+                      "rounded-full border px-3 py-1 font-medium transition-colors " +
+                      (active
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-border bg-background hover:bg-accent")
+                    }
+                  >
+                    {opt.label}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
 
@@ -430,7 +468,14 @@ function MarketplacePage() {
                               )}
                             </div>
                             <div className="min-w-0 flex-1 text-left">
-                              <div className="line-clamp-1 text-sm font-bold leading-tight">{s.name}</div>
+                              <div className="flex items-center gap-1.5">
+                                <div className="line-clamp-1 text-sm font-bold leading-tight">{s.name}</div>
+                                {s.is_wholesale && (
+                                  <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
+                                    পাইকারি
+                                  </span>
+                                )}
+                              </div>
                               {s.address && (
                                 <div className="mt-0.5 line-clamp-1 inline-flex items-center gap-1 text-[11px] text-muted-foreground">
                                   <MapPin className="h-3 w-3" />

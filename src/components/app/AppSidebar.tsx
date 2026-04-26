@@ -26,7 +26,6 @@ const SECTIONS: Section[] = [
     items: [
       { to: "/app/purchase", bn: "কেনা", en: "Purchase", icon: icons.purchase, perm: "purchase" },
       { to: "/app/sell", bn: "বেচা", en: "Sell", icon: icons.sell, perm: "sell" },
-      { to: "/app/quick-order", bn: "দ্রুত ফর্দ", en: "Quick Order", icon: icons.quickSell, perm: "sell" },
       { to: "/app/cashbox", bn: "ক্যাশবক্স", en: "Cashbox", icon: icons.cashbox },
     ],
   },
@@ -37,7 +36,6 @@ const SECTIONS: Section[] = [
     items: [
       { to: "/app/purchase-ledger", bn: "কেনার খাতা", en: "Purchase Ledger", icon: icons.purchaseList, perm: "purchase" },
       { to: "/app/sales-ledger", bn: "বেচার খাতা", en: "Sales Ledger", icon: icons.salesList, perm: "sell" },
-      { to: "/app/returns", bn: "প্রোডাক্ট রিটার্ন", en: "Product Return", icon: icons.salesList, perm: "returns" },
       { to: "/app/due-ledger", bn: "বাকির খাতা", en: "Due Ledger", icon: icons.due, perm: "due" },
       { to: "/app/expense-ledger", bn: "খরচের খাতা", en: "Expense Ledger", icon: icons.expense, perm: "expense" },
       { to: "/app/owner-ledger", bn: "মালিকের লেনদেন", en: "Owner Ledger", icon: icons.cashbox, perm: "expense" },
@@ -51,6 +49,7 @@ const SECTIONS: Section[] = [
     items: [
       { to: "/app/products", bn: "প্রোডাক্ট লিস্ট", en: "Product List", icon: icons.productList, perm: "products" },
       { to: "/app/stock", bn: "স্টকের হিসাব", en: "Stock", icon: icons.stock, perm: "stock" },
+      { to: "/app/returns", bn: "প্রোডাক্ট রিটার্ন", en: "Product Return", icon: icons.salesList, perm: "returns" },
       { to: "/app/expiring", bn: "মেয়াদোত্তীর্ণ পণ্য", en: "Expiring Products", icon: icons.expired, perm: "products" },
       { to: "/app/warranty", bn: "ওয়ারেন্টি পণ্য", en: "Warranty", icon: icons.warranty, perm: "products" },
     ],
@@ -61,6 +60,7 @@ const SECTIONS: Section[] = [
     en: "Customers",
     items: [
       { to: "/app/contacts", bn: "যোগাযোগ", en: "Contacts", icon: icons.contact, perm: "contacts" },
+      { to: "/app/quick-order", bn: "দ্রুত ফর্দ", en: "Quick Order", icon: icons.quickSell, perm: "sell" },
       { to: "/app/customer-wishlist", bn: "গ্রাহক ফর্দ", en: "Customer Wishlist", icon: icons.contact, perm: "contacts" },
       { to: "/app/fordo-history", bn: "ফর্দ ইতিহাস", en: "Fordo History", icon: icons.contact, perm: "contacts" },
       { to: "/app/marketing", bn: "মার্কেটিং", en: "Marketing", icon: icons.marketing, perm: "sms" },

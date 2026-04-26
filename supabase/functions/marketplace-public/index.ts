@@ -183,13 +183,16 @@ Deno.serve(async (req) => {
         : typeof shopTypesRaw === "string" && shopTypesRaw.length > 0
           ? shopTypesRaw.split(",").map((s) => s.trim()).filter(Boolean)
           : [];
+      const wholesaleFilter = body.wholesale; // "true" | "false" | "all" | undefined
 
       let shopsQ = admin
         .from("shops")
-        .select("id, name, slug, username, logo_url, cover_url, tagline, address, phone, shop_type_code", { count: "exact" })
+        .select("id, name, slug, username, logo_url, cover_url, tagline, address, phone, shop_type_code, is_wholesale", { count: "exact" })
         .eq("marketplace_enabled", true)
         .is("deleted_at", null);
       if (shopTypes.length > 0) shopsQ = shopsQ.in("shop_type_code", shopTypes);
+      if (wholesaleFilter === "true" || wholesaleFilter === true) shopsQ = shopsQ.eq("is_wholesale", true);
+      if (wholesaleFilter === "false" || wholesaleFilter === false) shopsQ = shopsQ.eq("is_wholesale", false);
       if (q) shopsQ = shopsQ.ilike("name", `%${q}%`);
       const { data: allShops, count } = await shopsQ.order("name", { ascending: true }).range(from, to);
       const shopRows = (allShops as ShopRow[] | null) ?? [];
@@ -217,7 +220,7 @@ Deno.serve(async (req) => {
 
       const { data: shop } = await admin
         .from("shops")
-        .select("id, name, slug, username, logo_url, cover_url, tagline, address, phone, shop_type_code, marketplace_enabled")
+        .select("id, name, slug, username, logo_url, cover_url, tagline, address, phone, shop_type_code, marketplace_enabled, is_wholesale")
         .eq("slug", slug)
         .is("deleted_at", null)
         .maybeSingle();
