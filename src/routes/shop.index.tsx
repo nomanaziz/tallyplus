@@ -29,7 +29,7 @@ type Listing = {
   min_order: number | null;
   warranty_months?: number | null;
 };
-type Shop = { id: string; name: string; slug: string | null; username: string | null; logo_url: string | null; tagline: string | null; address?: string | null; is_wholesale?: boolean };
+type Shop = { id: string; name: string; slug: string | null; username: string | null; wishlist_slug?: string | null; logo_url: string | null; tagline: string | null; address?: string | null; is_wholesale?: boolean };
 type Product = { id: string; name: string; image_url: string | null; unit: string | null };
 type ShopType = { code: string; name_bn: string; name_en: string };
 
@@ -447,7 +447,7 @@ function MarketplacePage() {
                   <div className="mb-3 text-sm text-muted-foreground">{vendorTotal} টি দোকান</div>
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                     {vendors.map((s) => {
-                      const fordoSlug = s.slug ?? s.username ?? null;
+                      const fordoSlug = s.wishlist_slug ?? null;
                       return (
                         <div
                           key={s.id}

@@ -1,57 +1,32 @@
-## লক্ষ্য
+## সমস্যা
 
-মোবাইলে side drawer menu আর দরকার নাই। সব menu গুলো dashboard (`/app/dashboard`) home page এ category-wise scrollable list হিসেবে চলে আসবে। Settings sheet এ "দোকান পরিবর্তন", "Combined Report" ইত্যাদি আগে থেকেই আছে — সেগুলো ঠিক রেখে মোবাইলে profile/logout এর জন্য সুন্দর entry point দেব।
+মার্কেটপ্লেসে দোকানের কার্ডে থাকা **"ফর্দ পাঠান"** বোতামে ক্লিক করলে error আসছে:
+> Edge function returned 404 — "এই লিঙ্কটি আর সক্রিয় নেই"
 
-## কী করবো
+### কারণ
 
-### 1. Dashboard কে full menu hub বানানো (`src/routes/app.dashboard.tsx`)
+Database-এ "ফর্দ" link-এর জন্য আলাদা একটা column আছে — `shops.wishlist_slug` (যেমন: `epy2h9al`)। কিন্তু `src/routes/shop.index.tsx`-এ button-এর URL বানানো হচ্ছে `s.username` (যেমন: `file-server`) দিয়ে। ফলে `/f/file-server` URL-টা edge function-এ গিয়ে কোনো matching shop পায় না → 404।
 
-বর্তমান dashboard এ summary card + 3 action button + ছোট ছোট grid (Ledgers / Business / Others) আছে — কিন্তু onlineshop sub-pages, B2B, Fordo history, returns ইত্যাদি অনেক menu এখানে নেই।
+মার্কেটপ্লেস API-ও বর্তমানে response-এ `wishlist_slug` field পাঠাচ্ছে না, তাই frontend-এর কাছে ওই value নেই।
 
-Dashboard এ একই category structure use করব যা `AppSidebar.tsx` এ আছে (single source of truth):
+## Fix
 
-- `SECTIONS` array (main, transactions, ledgers, inventory, customers, online, reports, more) `AppSidebar` থেকে export করে dashboard এ reuse করব। এতে future এ নতুন menu add করলে দুই জায়গাতেই auto আসবে।
-- প্রতি section একটা card; card এর ভেতর icon + label এর responsive grid (mobile ৪ column, desktop ৬ column)।
-- Permission filter (`usePermissions`) এবং language (`useI18n`) সম্মান করবে — sidebar এর মতই।
-- Summary card, banner carousel, ৩টা বড় action button (Purchase / Sell / Quick Sell) উপরে থাকবে — পরিবর্তন হবে না।
+### ১. `supabase/functions/marketplace-public/index.ts`
+`list-shops` action-এর shops query-তে `wishlist_slug` field select করতে হবে যাতে frontend-এ আসে।
 
-### 2. মোবাইলে sidebar drawer সরানো (`src/routes/app.tsx`)
+### ২. `src/routes/shop.index.tsx`
+- `Shop` type-এ `wishlist_slug: string | null` field যোগ
+- Line 450-এর fallback chain বদলে:
+  ```tsx
+  const fordoSlug = s.wishlist_slug ?? null;
+  ```
+- যেসব দোকানের `wishlist_slug` নেই, ওদের জন্য আগের মতই "ফর্দ লিঙ্ক নেই" দেখাবে।
 
-- `mobileMenuOpen` state এবং `<Sheet>` যেটা `<AppSidebar>` mobile drawer হিসেবে দেখায় — সেটা বাদ দেব।
-- `MobileBottomNav` এ `onMenu` prop আর use হবে না।
-- Desktop এ `<AppSidebar>` আগের মতই থাকবে (`hidden md:block`)।
+### ৩. Verification
+Fix-এর পর "File Server" দোকানের ফর্দ link হবে `/f/epy2h9al`, যা edge function ঠিকভাবে resolve করবে।
 
-### 3. Mobile bottom nav update (`src/components/app/MobileBottomNav.tsx`)
+## প্রভাব
 
-5টা tab: **Home / Sell / Return / Report / Profile**
-
-- "Menu" button সরিয়ে "Profile" button দেব (User icon)।
-- Profile button click করলে SettingsSheet open হবে (দোকান পরিবর্তন, combined report, language, theme, logout — সব এখানেই আছে)।
-- এর জন্য `MobileBottomNav` কে `onProfile: () => void` prop দেব। `app.tsx` থেকে ওই handler দিয়ে SettingsSheet open করব।
-
-### 4. Settings sheet — মোবাইল থেকে access (`src/routes/app.tsx`)
-
-- `app.tsx` এ একটা `settingsOpen` state নেব এবং `<SettingsSheet>` render করব (এখন AppTopbar এর মধ্যে আছে — ওটাও থাকবে desktop এর জন্য)।
-- Mobile bottom nav এর Profile button → এই sheet খুলবে।
-- SettingsSheet এ "দোকান পরিবর্তন", "Combined Report", language, theme, install app, training, logout — সব আগে থেকেই আছে, কোনো পরিবর্তন লাগবে না।
-
-### 5. SettingsSheet — profile header যোগ (`src/components/app/SettingsSheet.tsx`)
-
-মোবাইলে profile ভাব আনতে sheet এর top এ একটা ছোট profile header section যোগ করব:
-- User initials avatar + full name + phone number
-- নিচে আগের মতই "দোকান পরিবর্তন" বড় button
-
-এটা desktop dropdown এ যেমন profile info দেখায় তেমনই হবে।
-
-## প্রযুক্তিগত বিবরণ
-
-**Files to modify:**
-- `src/components/app/AppSidebar.tsx` — `SECTIONS` constant এবং `Item`/`Section` type export করব (desktop sidebar UI অপরিবর্তিত)।
-- `src/routes/app.dashboard.tsx` — imported `SECTIONS` দিয়ে category-wise grid sections render করার নতুন block যোগ করব (existing summary + 3-button keep)।
-- `src/components/app/MobileBottomNav.tsx` — Menu → Profile (User icon), prop `onMenu` → `onProfile`.
-- `src/routes/app.tsx` — mobile drawer Sheet ও `mobileMenuOpen` state remove; `settingsOpen` state add; `<SettingsSheet>` render; `MobileBottomNav` কে `onProfile={() => setSettingsOpen(true)}` pass করব।
-- `src/components/app/SettingsSheet.tsx` — sheet top এ profile header (avatar + name + phone) যোগ করব। `useAuth()` থেকে `profile` import করব (signOut ইতিমধ্যে use হচ্ছে)।
-
-**Permission/i18n consistency:** dashboard এর নতুন menu grid sidebar এর `usePermissions` এবং `useI18n` logic একইভাবে use করবে যাতে permission নাই এমন menu hide হয়।
-
-**No DB changes, no new routes।**
+- শুধুমাত্র marketplace shop list page-এর "ফর্দ পাঠান" button ঠিক হবে
+- অন্য কোনো feature/page প্রভাবিত হবে না
+- যেসব দোকানে এখনো `wishlist_slug` set করা নেই, তাদের জন্য graceful "ফর্দ লিঙ্ক নেই" দেখাবে (নতুন কোনো error আসবে না)

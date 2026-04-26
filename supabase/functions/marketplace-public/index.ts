@@ -187,7 +187,7 @@ Deno.serve(async (req) => {
 
       let shopsQ = admin
         .from("shops")
-        .select("id, name, slug, username, logo_url, cover_url, tagline, address, phone, shop_type_code, is_wholesale", { count: "exact" })
+        .select("id, name, slug, username, wishlist_slug, logo_url, cover_url, tagline, address, phone, shop_type_code, is_wholesale", { count: "exact" })
         .eq("marketplace_enabled", true)
         .is("deleted_at", null);
       if (shopTypes.length > 0) shopsQ = shopsQ.in("shop_type_code", shopTypes);
