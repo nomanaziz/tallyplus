@@ -390,7 +390,71 @@ function MarketplacePage() {
 
           {/* Results */}
           <section className="min-w-0 flex-1">
-            {loading ? (
+            {view === "vendors" ? (
+              vendorLoading ? (
+                <div className="flex justify-center py-20">
+                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </div>
+              ) : vendors.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-20 text-center">
+                  <Store className="mb-4 h-12 w-12 text-muted-foreground" />
+                  <p className="text-lg font-medium">কোনো দোকান পাওয়া যায়নি</p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {search.q ? "নাম বদলে চেষ্টা করুন।" : "এখনো কোনো দোকান অনলাইনে যুক্ত হয়নি।"}
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <div className="mb-3 text-sm text-muted-foreground">{vendorTotal} টি দোকান</div>
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+                    {vendors.map((s) => (
+                      <Link
+                        key={s.id}
+                        to={s.username ? "/vendor/$username" : "/shop/s/$slug"}
+                        params={s.username ? ({ username: s.username } as never) : ({ slug: s.slug ?? "" } as never)}
+                        className="group flex flex-col items-center rounded-xl border bg-card p-3 text-center transition-shadow hover:shadow-md"
+                      >
+                        <div className="h-16 w-16 overflow-hidden rounded-full border bg-muted">
+                          {s.logo_url ? (
+                            <img src={s.logo_url} alt={s.name} className="h-full w-full object-cover" />
+                          ) : (
+                            <div className="flex h-full items-center justify-center text-muted-foreground">
+                              <Store className="h-8 w-8" />
+                            </div>
+                          )}
+                        </div>
+                        <div className="mt-2 line-clamp-2 text-sm font-semibold leading-snug">{s.name}</div>
+                        {s.tagline && (
+                          <div className="mt-0.5 line-clamp-1 text-[11px] text-muted-foreground">{s.tagline}</div>
+                        )}
+                        {s.address && (
+                          <div className="mt-0.5 line-clamp-1 inline-flex items-center gap-1 text-[11px] text-muted-foreground">
+                            <MapPin className="h-3 w-3" />{s.address}
+                          </div>
+                        )}
+                        <div className="mt-2 inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary">
+                          <ShoppingBag className="h-3 w-3" />
+                          {vendorCounts[s.id] ?? 0} টি পণ্য
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                  {vendorTotalPages > 1 && (
+                    <div className="mt-8 flex items-center justify-center gap-2">
+                      <Button variant="outline" size="sm" disabled={page <= 1}
+                        onClick={() => navigate({ search: (prev) => ({ ...prev, page: page - 1 }) })}>
+                        পূর্ববর্তী
+                      </Button>
+                      <span className="text-sm text-muted-foreground">পৃষ্ঠা {page} / {vendorTotalPages}</span>
+                      <Button variant="outline" size="sm" disabled={page >= vendorTotalPages}
+                        onClick={() => navigate({ search: (prev) => ({ ...prev, page: page + 1 }) })}>
+                        পরবর্তী
+                      </Button>
+                    </div>
+                  )}
+                </>
+              )
+            ) : loading ? (
               <div className="flex justify-center py-20">
                 <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
               </div>
