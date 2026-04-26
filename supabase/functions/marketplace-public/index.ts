@@ -25,6 +25,7 @@ type ShopRow = {
   id: string;
   name: string;
   slug: string | null;
+  username?: string | null;
   logo_url: string | null;
   cover_url: string | null;
   tagline: string | null;
@@ -71,7 +72,7 @@ async function attachShopsAndProducts(
   const [{ data: shops }, { data: products }] = await Promise.all([
     admin
       .from("shops")
-      .select("id, name, slug, logo_url, cover_url, tagline, address, phone, shop_type_code")
+      .select("id, name, slug, username, logo_url, cover_url, tagline, address, phone, shop_type_code")
       .in("id", shopIds)
       .is("deleted_at", null),
     admin
