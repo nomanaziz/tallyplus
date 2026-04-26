@@ -1,4 +1,4 @@
-import { Outlet, useNavigate } from "@/lib/router";
+import { Outlet, useNavigate, useLocation } from "@/lib/router";
 import { lazy, Suspense, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
@@ -25,6 +25,13 @@ const SettingsSheet = lazy(() =>
 
 
 function AppLayoutWithShop() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  useEffect(() => {
+    if (location.pathname === "/app" || location.pathname === "/app/") {
+      navigate({ to: "/app/dashboard", replace: true });
+    }
+  }, [location.pathname, navigate]);
   return (
     <ShopProvider>
       <PermissionsProvider>
