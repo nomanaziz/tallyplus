@@ -407,38 +407,68 @@ function MarketplacePage() {
               ) : (
                 <>
                   <div className="mb-3 text-sm text-muted-foreground">{vendorTotal} টি দোকান</div>
-                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
-                    {vendors.map((s) => (
-                      <Link
-                        key={s.id}
-                        to={s.username ? "/vendor/$username" : "/shop/s/$slug"}
-                        params={s.username ? ({ username: s.username } as never) : ({ slug: s.slug ?? "" } as never)}
-                        className="group flex flex-col items-center rounded-xl border bg-card p-3 text-center transition-shadow hover:shadow-md"
-                      >
-                        <div className="h-16 w-16 overflow-hidden rounded-full border bg-muted">
-                          {s.logo_url ? (
-                            <img src={s.logo_url} alt={s.name} className="h-full w-full object-cover" />
-                          ) : (
-                            <div className="flex h-full items-center justify-center text-muted-foreground">
-                              <Store className="h-8 w-8" />
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                    {vendors.map((s) => {
+                      const fordoSlug = s.slug ?? s.username ?? null;
+                      return (
+                        <div
+                          key={s.id}
+                          className="flex flex-col rounded-2xl border bg-card p-3 transition-shadow hover:shadow-md"
+                        >
+                          <Link
+                            to={s.username ? "/vendor/$username" : "/shop/s/$slug"}
+                            params={s.username ? ({ username: s.username } as never) : ({ slug: s.slug ?? "" } as never)}
+                            className="flex items-center gap-3"
+                          >
+                            <div className="h-14 w-14 flex-none overflow-hidden rounded-full border bg-muted">
+                              {s.logo_url ? (
+                                <img src={s.logo_url} alt={s.name} className="h-full w-full object-cover" />
+                              ) : (
+                                <div className="flex h-full items-center justify-center text-muted-foreground">
+                                  <Store className="h-7 w-7" />
+                                </div>
+                              )}
                             </div>
-                          )}
-                        </div>
-                        <div className="mt-2 line-clamp-2 text-sm font-semibold leading-snug">{s.name}</div>
-                        {s.tagline && (
-                          <div className="mt-0.5 line-clamp-1 text-[11px] text-muted-foreground">{s.tagline}</div>
-                        )}
-                        {s.address && (
-                          <div className="mt-0.5 line-clamp-1 inline-flex items-center gap-1 text-[11px] text-muted-foreground">
-                            <MapPin className="h-3 w-3" />{s.address}
+                            <div className="min-w-0 flex-1 text-left">
+                              <div className="line-clamp-1 text-sm font-bold leading-tight">{s.name}</div>
+                              {s.address && (
+                                <div className="mt-0.5 line-clamp-1 inline-flex items-center gap-1 text-[11px] text-muted-foreground">
+                                  <MapPin className="h-3 w-3" />
+                                  {s.address}
+                                </div>
+                              )}
+                              <div className="mt-1 inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
+                                <ShoppingBag className="h-3 w-3" />
+                                {vendorCounts[s.id] ?? 0} টি পণ্য
+                              </div>
+                            </div>
+                          </Link>
+                          <div className="mt-3 flex gap-2">
+                            {fordoSlug ? (
+                              <Link
+                                to="/f/$slug"
+                                params={{ slug: fordoSlug }}
+                                className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-bold text-primary-foreground shadow-sm hover:bg-primary/90"
+                              >
+                                <FileText className="h-3.5 w-3.5" />
+                                ফর্দ পাঠান
+                              </Link>
+                            ) : (
+                              <span className="flex flex-1 items-center justify-center rounded-lg bg-muted px-3 py-2 text-xs text-muted-foreground">
+                                ফর্দ লিঙ্ক নেই
+                              </span>
+                            )}
+                            <Link
+                              to={s.username ? "/vendor/$username" : "/shop/s/$slug"}
+                              params={s.username ? ({ username: s.username } as never) : ({ slug: s.slug ?? "" } as never)}
+                              className="flex items-center justify-center rounded-lg border bg-background px-3 py-2 text-xs font-semibold hover:bg-accent"
+                            >
+                              দোকান
+                            </Link>
                           </div>
-                        )}
-                        <div className="mt-2 inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary">
-                          <ShoppingBag className="h-3 w-3" />
-                          {vendorCounts[s.id] ?? 0} টি পণ্য
                         </div>
-                      </Link>
-                    ))}
+                      );
+                    })}
                   </div>
                   {vendorTotalPages > 1 && (
                     <div className="mt-8 flex items-center justify-center gap-2">
