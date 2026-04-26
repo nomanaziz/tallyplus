@@ -146,7 +146,11 @@ function ProductsPage() {
                         <span className="font-medium">{p.name}</span>
                       </div>
                     </TableCell>
-                    <TableCell className="text-right">{lang === "bn" ? bnNum(p.stock) : p.stock}</TableCell>
+                    <TableCell className="text-right">
+                      {Number(p.stock) < 0
+                        ? <span className="text-primary">{lang === "bn" ? "অসীম" : "Unlimited"}</span>
+                        : (lang === "bn" ? bnNum(p.stock) : p.stock)}
+                    </TableCell>
                     <TableCell className="text-right">{fmtMoney(Number(p.sale_price), lang)}</TableCell>
                     <TableCell className="hidden md:table-cell text-muted-foreground">—</TableCell>
                     <TableCell className="text-right">
@@ -213,6 +217,7 @@ function ProductFormDialog({
   const [sale, setSale] = useState("0");
   const [stock, setStock] = useState("0");
   const [low, setLow] = useState("5");
+  const [trackStock, setTrackStock] = useState(true);
   const [busy, setBusy] = useState(false);
   const [description, setDescription] = useState("");
   // toggles
@@ -240,7 +245,10 @@ function ProductFormDialog({
       setUnit(p?.unit ?? "pcs");
       setCost(String(p?.cost_price ?? 0));
       setSale(String(p?.sale_price ?? 0));
-      setStock(String(p?.stock ?? 0));
+      const initStock = Number(p?.stock ?? 0);
+      const isUnlimited = initStock < 0;
+      setTrackStock(!isUnlimited);
+      setStock(isUnlimited ? "0" : String(initStock));
       setLow(String(p?.low_stock_alert ?? 5));
       setDescription(String((p?.description as string) ?? ""));
       setOnlineOn(Boolean(p?.is_marketplace_published));
@@ -271,8 +279,8 @@ function ProductFormDialog({
       unit: unit.trim() || "pcs",
       cost_price: Number(cost) || 0,
       sale_price: Number(sale) || 0,
-      stock: Number(stock) || 0,
-      low_stock_alert: lowOn ? (Number(low) || 0) : 0,
+      stock: trackStock ? (Number(stock) || 0) : -1,
+      low_stock_alert: trackStock && lowOn ? (Number(low) || 0) : 0,
       shop_id: shopId,
       description: description.trim() || null,
       is_marketplace_published: onlineOn,
@@ -327,11 +335,30 @@ function ProductFormDialog({
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div className="grid gap-1.5">
-              <Label>{lang === "bn" ? "বর্তমান মজুদ" : "Current Stock"}</Label>
-              <Input type="number" value={stock} onChange={(e) => setStock(e.target.value)} />
+          {/* Stock tracking toggle */}
+          <div className="rounded-lg border bg-muted/30 p-3">
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <div className="text-sm font-medium">
+                  {lang === "bn" ? "স্টক হিসাব রাখতে চান?" : "Track stock for this product?"}
+                </div>
+                <div className="mt-0.5 text-xs text-muted-foreground">
+                  {trackStock
+                    ? (lang === "bn" ? "মজুদ ও লো-স্টক অ্যালার্ট সক্রিয় থাকবে।" : "Stock & low-stock alert will be active.")
+                    : (lang === "bn" ? "স্টক unlimited হিসেবে গণ্য হবে। অর্ডারে স্টক কমবে না, কোনো অ্যালার্ট আসবে না।" : "Stock will be treated as unlimited. Orders won't reduce stock; no alerts.")}
+                </div>
+              </div>
+              <Switch checked={trackStock} onCheckedChange={setTrackStock} />
             </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            {trackStock && (
+              <div className="grid gap-1.5">
+                <Label>{lang === "bn" ? "বর্তমান মজুদ" : "Current Stock"}</Label>
+                <Input type="number" value={stock} onChange={(e) => setStock(e.target.value)} />
+              </div>
+            )}
             <div className="grid gap-1.5">
               <Label>{lang === "bn" ? "ইউনিট" : "Unit"}</Label>
               <Input value={unit} onChange={(e) => setUnit(e.target.value)} placeholder="pcs / kg / ltr" />
@@ -378,15 +405,17 @@ function ProductFormDialog({
             </div>
           </ToggleSection>
 
-          <ToggleSection
-            title={lang === "bn" ? "লো-স্টক অ্যালার্ট" : "Low stock alert"}
-            checked={lowOn} onChange={setLowOn}
-          >
-            <div className="grid gap-1.5">
-              <Label>{lang === "bn" ? "অ্যালার্ট স্টক পরিমাণ" : "Alert when stock reaches"}</Label>
-              <Input type="number" value={low} onChange={(e) => setLow(e.target.value)} />
-            </div>
-          </ToggleSection>
+          {trackStock && (
+            <ToggleSection
+              title={lang === "bn" ? "লো-স্টক অ্যালার্ট" : "Low stock alert"}
+              checked={lowOn} onChange={setLowOn}
+            >
+              <div className="grid gap-1.5">
+                <Label>{lang === "bn" ? "অ্যালার্ট স্টক পরিমাণ" : "Alert when stock reaches"}</Label>
+                <Input type="number" value={low} onChange={(e) => setLow(e.target.value)} />
+              </div>
+            </ToggleSection>
+          )}
 
           <ToggleSection
             title={lang === "bn" ? "VAT applicable?" : "VAT applicable?"}

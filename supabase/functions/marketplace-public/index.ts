@@ -144,7 +144,8 @@ Deno.serve(async (req) => {
 
       if (minPrice !== null && !Number.isNaN(minPrice)) query = query.gte("price", minPrice);
       if (maxPrice !== null && !Number.isNaN(maxPrice)) query = query.lte("price", maxPrice);
-      if (inStock) query = query.gt("stock", 0);
+      // in-stock = stock != 0 (positive stock OR unlimited / -1)
+      if (inStock) query = query.neq("stock", 0);
 
       if (sort === "price_asc") query = query.order("price", { ascending: true });
       else if (sort === "price_desc") query = query.order("price", { ascending: false });
@@ -168,6 +169,46 @@ Deno.serve(async (req) => {
       }
 
       return json({ listings: rows, shops, products, total: count ?? rows.length, page, pageSize });
+    }
+
+    if (action === "list-shops") {
+      const q = String(body.q ?? "").trim().toLowerCase();
+      const page = Math.max(1, parseInt(String(body.page ?? "1"), 10) || 1);
+      const pageSize = Math.min(60, Math.max(1, parseInt(String(body.pageSize ?? "24"), 10) || 24));
+      const from = (page - 1) * pageSize;
+      const to = from + pageSize - 1;
+      const shopTypesRaw = body.shop_type ?? body.shop_types;
+      const shopTypes: string[] = Array.isArray(shopTypesRaw)
+        ? shopTypesRaw.map((s) => String(s)).filter(Boolean)
+        : typeof shopTypesRaw === "string" && shopTypesRaw.length > 0
+          ? shopTypesRaw.split(",").map((s) => s.trim()).filter(Boolean)
+          : [];
+
+      let shopsQ = admin
+        .from("shops")
+        .select("id, name, slug, username, logo_url, cover_url, tagline, address, phone, shop_type_code", { count: "exact" })
+        .eq("marketplace_enabled", true)
+        .is("deleted_at", null);
+      if (shopTypes.length > 0) shopsQ = shopsQ.in("shop_type_code", shopTypes);
+      if (q) shopsQ = shopsQ.ilike("name", `%${q}%`);
+      const { data: allShops, count } = await shopsQ.order("name", { ascending: true }).range(from, to);
+      const shopRows = (allShops as ShopRow[] | null) ?? [];
+      if (shopRows.length === 0) return json({ shops: [], counts: {}, total: count ?? 0, page, pageSize });
+
+      // Count published listings per shop
+      const ids = shopRows.map((s) => s.id);
+      const { data: listingRows } = await admin
+        .from("marketplace_listings")
+        .select("shop_id")
+        .eq("is_published", true)
+        .in("shop_id", ids);
+      const counts: Record<string, number> = {};
+      ((listingRows as { shop_id: string }[] | null) ?? []).forEach((l) => {
+        counts[l.shop_id] = (counts[l.shop_id] ?? 0) + 1;
+      });
+      // Only include shops with at least 1 published listing
+      const filtered = shopRows.filter((s) => (counts[s.id] ?? 0) > 0);
+      return json({ shops: filtered, counts, total: count ?? filtered.length, page, pageSize });
     }
 
     if (action === "shop") {

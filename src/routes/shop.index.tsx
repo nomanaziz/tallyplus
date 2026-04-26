@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
@@ -14,8 +14,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetHeader } from "@/components/ui/sheet";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SiteHeader } from "@/components/site/SiteHeader";
-import { Loader2, Search, Store, SlidersHorizontal, RotateCcw } from "lucide-react";
+import { Loader2, Search, Store, SlidersHorizontal, RotateCcw, ShoppingBag, MapPin } from "lucide-react";
 import { MarketplaceProductCard } from "@/components/marketplace/MarketplaceProductCard";
 
 type Listing = {
@@ -28,11 +29,12 @@ type Listing = {
   min_order: number | null;
   warranty_months?: number | null;
 };
-type Shop = { id: string; name: string; slug: string | null; username: string | null; logo_url: string | null; tagline: string | null };
+type Shop = { id: string; name: string; slug: string | null; username: string | null; logo_url: string | null; tagline: string | null; address?: string | null };
 type Product = { id: string; name: string; image_url: string | null; unit: string | null };
 type ShopType = { code: string; name_bn: string; name_en: string };
 
 type Sort = "newest" | "price_asc" | "price_desc";
+type View = "products" | "vendors";
 
 type SearchParams = {
   q?: string;
@@ -42,6 +44,7 @@ type SearchParams = {
   type?: string[];
   inStock?: boolean;
   sort?: Sort;
+  view?: View;
 };
 
 export const Route = createFileRoute("/shop/")({
@@ -68,6 +71,7 @@ export const Route = createFileRoute("/shop/")({
       return undefined;
     };
     const sort = s.sort === "price_asc" || s.sort === "price_desc" || s.sort === "newest" ? (s.sort as Sort) : undefined;
+    const view = s.view === "vendors" ? ("vendors" as View) : undefined;
     return {
       q: typeof s.q === "string" ? s.q : undefined,
       page: toNum(s.page) ?? 1,
@@ -76,6 +80,7 @@ export const Route = createFileRoute("/shop/")({
       type: toArr(s.type),
       inStock: s.inStock === true || s.inStock === "true" || s.inStock === 1 || s.inStock === "1" ? true : undefined,
       sort,
+      view,
     };
   },
   component: MarketplacePage,
@@ -95,6 +100,13 @@ function MarketplacePage() {
   const [shopTypes, setShopTypes] = useState<ShopType[]>([]);
   const page = search.page ?? 1;
   const pageSize = 24;
+  const view: View = search.view ?? "products";
+
+  // Vendor view state
+  const [vendors, setVendors] = useState<Shop[]>([]);
+  const [vendorCounts, setVendorCounts] = useState<Record<string, number>>({});
+  const [vendorTotal, setVendorTotal] = useState(0);
+  const [vendorLoading, setVendorLoading] = useState(false);
 
   useEffect(() => {
     void supabase
@@ -107,6 +119,7 @@ function MarketplacePage() {
 
   useEffect(() => {
     let cancelled = false;
+    if (view !== "products") return;
     setLoading(true);
     void supabase.functions
       .invoke("marketplace-public", {
@@ -139,7 +152,37 @@ function MarketplacePage() {
     return () => {
       cancelled = true;
     };
-  }, [search.q, search.min, search.max, search.inStock, search.sort, page, search.type?.join(",")]);
+  }, [search.q, search.min, search.max, search.inStock, search.sort, page, search.type?.join(","), view]);
+
+  // Fetch vendors when in vendor view
+  useEffect(() => {
+    if (view !== "vendors") return;
+    let cancelled = false;
+    setVendorLoading(true);
+    void supabase.functions
+      .invoke("marketplace-public", {
+        body: {
+          action: "list-shops",
+          q: search.q ?? "",
+          page,
+          pageSize,
+          shop_type: search.type,
+        },
+      })
+      .then(({ data, error }) => {
+        if (cancelled) return;
+        if (error || !data || (data as { error?: string }).error) {
+          setVendors([]); setVendorCounts({}); setVendorTotal(0);
+        } else {
+          const d = data as { shops: Shop[]; counts: Record<string, number>; total: number };
+          setVendors(d.shops ?? []);
+          setVendorCounts(d.counts ?? {});
+          setVendorTotal(d.total ?? 0);
+        }
+        setVendorLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, [view, search.q, page, search.type?.join(",")]);
 
   const submitSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -187,6 +230,7 @@ function MarketplacePage() {
   };
 
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const vendorTotalPages = Math.max(1, Math.ceil(vendorTotal / pageSize));
   const activeFilterCount = useMemo(() => {
     let n = 0;
     if (search.min !== undefined) n++;
@@ -303,6 +347,25 @@ function MarketplacePage() {
               </SheetContent>
             </Sheet>
           </form>
+
+          {/* View tabs */}
+          <div className="mt-3">
+            <Tabs
+              value={view}
+              onValueChange={(v) =>
+                navigate({ search: (prev) => ({ ...prev, view: v === "vendors" ? "vendors" : undefined, page: 1 }) })
+              }
+            >
+              <TabsList className="h-9">
+                <TabsTrigger value="products" className="gap-1.5">
+                  <ShoppingBag className="h-3.5 w-3.5" /> পণ্য
+                </TabsTrigger>
+                <TabsTrigger value="vendors" className="gap-1.5">
+                  <Store className="h-3.5 w-3.5" /> দোকান
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
         </div>
       </div>
 
@@ -327,7 +390,71 @@ function MarketplacePage() {
 
           {/* Results */}
           <section className="min-w-0 flex-1">
-            {loading ? (
+            {view === "vendors" ? (
+              vendorLoading ? (
+                <div className="flex justify-center py-20">
+                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </div>
+              ) : vendors.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-20 text-center">
+                  <Store className="mb-4 h-12 w-12 text-muted-foreground" />
+                  <p className="text-lg font-medium">কোনো দোকান পাওয়া যায়নি</p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {search.q ? "নাম বদলে চেষ্টা করুন।" : "এখনো কোনো দোকান অনলাইনে যুক্ত হয়নি।"}
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <div className="mb-3 text-sm text-muted-foreground">{vendorTotal} টি দোকান</div>
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+                    {vendors.map((s) => (
+                      <Link
+                        key={s.id}
+                        to={s.username ? "/vendor/$username" : "/shop/s/$slug"}
+                        params={s.username ? ({ username: s.username } as never) : ({ slug: s.slug ?? "" } as never)}
+                        className="group flex flex-col items-center rounded-xl border bg-card p-3 text-center transition-shadow hover:shadow-md"
+                      >
+                        <div className="h-16 w-16 overflow-hidden rounded-full border bg-muted">
+                          {s.logo_url ? (
+                            <img src={s.logo_url} alt={s.name} className="h-full w-full object-cover" />
+                          ) : (
+                            <div className="flex h-full items-center justify-center text-muted-foreground">
+                              <Store className="h-8 w-8" />
+                            </div>
+                          )}
+                        </div>
+                        <div className="mt-2 line-clamp-2 text-sm font-semibold leading-snug">{s.name}</div>
+                        {s.tagline && (
+                          <div className="mt-0.5 line-clamp-1 text-[11px] text-muted-foreground">{s.tagline}</div>
+                        )}
+                        {s.address && (
+                          <div className="mt-0.5 line-clamp-1 inline-flex items-center gap-1 text-[11px] text-muted-foreground">
+                            <MapPin className="h-3 w-3" />{s.address}
+                          </div>
+                        )}
+                        <div className="mt-2 inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary">
+                          <ShoppingBag className="h-3 w-3" />
+                          {vendorCounts[s.id] ?? 0} টি পণ্য
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                  {vendorTotalPages > 1 && (
+                    <div className="mt-8 flex items-center justify-center gap-2">
+                      <Button variant="outline" size="sm" disabled={page <= 1}
+                        onClick={() => navigate({ search: (prev) => ({ ...prev, page: page - 1 }) })}>
+                        পূর্ববর্তী
+                      </Button>
+                      <span className="text-sm text-muted-foreground">পৃষ্ঠা {page} / {vendorTotalPages}</span>
+                      <Button variant="outline" size="sm" disabled={page >= vendorTotalPages}
+                        onClick={() => navigate({ search: (prev) => ({ ...prev, page: page + 1 }) })}>
+                        পরবর্তী
+                      </Button>
+                    </div>
+                  )}
+                </>
+              )
+            ) : loading ? (
               <div className="flex justify-center py-20">
                 <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
               </div>
