@@ -14,12 +14,16 @@ const cors = {
   "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
 };
 
-function json(body: unknown, status = 200) {
+function json(body: unknown, status = 200, extraHeaders: Record<string, string> = {}) {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...cors, "content-type": "application/json" },
+    headers: { ...cors, "content-type": "application/json", ...extraHeaders },
   });
 }
+
+// Public list endpoints can be briefly cached on the edge / browser to soften
+// Edge Function cold-start latency on repeat visits.
+const PUBLIC_CACHE = { "cache-control": "public, max-age=30, s-maxage=60, stale-while-revalidate=300" };
 
 type ShopRow = {
   id: string;
@@ -169,7 +173,7 @@ Deno.serve(async (req) => {
         });
       }
 
-      return json({ listings: rows, shops, products, total: count ?? rows.length, page, pageSize });
+      return json({ listings: rows, shops, products, total: count ?? rows.length, page, pageSize }, 200, PUBLIC_CACHE);
     }
 
     if (action === "list-shops") {
@@ -212,7 +216,7 @@ Deno.serve(async (req) => {
       });
       // Only include shops with at least 1 published listing
       const filtered = shopRows.filter((s) => (counts[s.id] ?? 0) > 0);
-      return json({ shops: filtered, counts, total: count ?? filtered.length, page, pageSize });
+      return json({ shops: filtered, counts, total: count ?? filtered.length, page, pageSize }, 200, PUBLIC_CACHE);
     }
 
     if (action === "shop") {
