@@ -41,7 +41,11 @@ export function NotificationBell() {
     queryKey: ["notifications", user?.id],
     enabled: !!user,
     staleTime: 15_000,
-    refetchInterval: 30_000,
+    // Poll every 60s but pause when tab is hidden — saves bandwidth + battery
+    // and avoids stale "loading…" spinner when user returns.
+    refetchInterval: 60_000,
+    refetchIntervalInBackground: false,
+    refetchOnWindowFocus: true,
     queryFn: async (): Promise<Notif[]> => {
       const { data } = await supabase
         .from("notifications")
