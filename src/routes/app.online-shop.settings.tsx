@@ -184,6 +184,26 @@ function StoreSettingsPage() {
           <Switch checked={enabled} onCheckedChange={togglePublished} />
         </div>
 
+        {/* Wholesale (B2B) toggle */}
+        <div className="flex items-start justify-between gap-3 rounded-xl border bg-card p-4">
+          <div className="min-w-0">
+            <div className="text-sm font-bold">
+              {lang === "bn" ? "আপনি কি পাইকারি বিক্রেতা?" : "Are you a wholesale seller?"}
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {lang === "bn"
+                ? "চালু করলে আপনার দোকান পাইকারি (B2B) হিসেবে চিহ্নিত হবে — অন্য খুচরা দোকান আপনার কাছে B2B ফর্দ পাঠাতে পারবে।"
+                : "When enabled, your shop will be marked as wholesale (B2B). Retail shops can send you B2B order lists."}
+            </p>
+            {isWholesale && (
+              <Badge className="mt-2" variant="default">
+                {lang === "bn" ? "পাইকারি বিক্রেতা" : "Wholesale Seller"}
+              </Badge>
+            )}
+          </div>
+          <Switch checked={isWholesale} onCheckedChange={setIsWholesale} />
+        </div>
+
         {/* Logo + Name + Type */}
         <div className="rounded-xl border bg-card p-4">
           <div className="flex items-start gap-4">
