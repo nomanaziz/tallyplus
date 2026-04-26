@@ -8,6 +8,8 @@ import { icons } from "@/lib/icons";
 import { RefreshCw } from "lucide-react";
 import { QuickSellSheet } from "@/components/app/QuickSellSheet";
 import { DashboardBannerCarousel } from "@/components/app/DashboardBannerCarousel";
+import { SECTIONS, type SidebarItem } from "@/components/app/AppSidebar";
+import { usePermissions } from "@/lib/permissions-hook";
 
 export const Route = createFileRoute("/app/dashboard")({
   head: () => ({ meta: [{ title: "ড্যাশবোর্ড — Tally Plus" }] }),
@@ -29,6 +31,7 @@ function rangeStart(r: Range): Date | null {
 function Dashboard() {
   const { lang } = useI18n();
   const { current } = useShop();
+  const { isOwner, isAdmin, canGroup, loading: permLoading } = usePermissions();
   const [range, setRange] = useState<Range>("today");
   const [quickOpen, setQuickOpen] = useState(false);
   const start = rangeStart(range);
@@ -46,30 +49,16 @@ function Dashboard() {
     { v: "all", bn: "সব", en: "All" },
   ];
 
-  const ledgers = [
-    { to: "/app/purchase-ledger", icon: icons.purchaseList, bn: "কেনার খাতা", en: "Purchase Ledger" },
-    { to: "/app/sales-ledger", icon: icons.salesList, bn: "বেচার খাতা", en: "Sales Ledger" },
-    { to: "/app/due-ledger", icon: icons.due, bn: "বাকির খাতা", en: "Due Ledger" },
-    { to: "/app/expense-ledger", icon: icons.expense, bn: "খরচের খাতা", en: "Expense Ledger" },
-  ];
-  const business = [
-    { to: "/app/contacts", icon: icons.contact, bn: "যোগাযোগ", en: "Contacts" },
-    { to: "/app/products", icon: icons.productList, bn: "প্রোডাক্ট লিস্ট", en: "Products" },
-    { to: "/app/stock", icon: icons.stock, bn: "স্টকের হিসাব", en: "Stock" },
-    { to: "/app/reports", icon: icons.businessReport, bn: "ব্যবসার রিপোর্ট", en: "Business Report" },
-  ];
-  const others = [
-    { to: "/app/cashbox", icon: icons.cashbox, bn: "ক্যাশবক্স", en: "Cashbox" },
-    { to: "/app/training", icon: icons.training, bn: "অ্যাপ ট্রেনিং", en: "Training" },
-    { to: "/app/access", icon: icons.access, bn: "অ্যাপ অ্যাক্সেস", en: "App Access" },
-    { to: "/app/printer", icon: icons.printer, bn: "প্রিন্টার", en: "Printer" },
-    { to: "/app/marketing", icon: icons.marketing, bn: "মার্কেটিং", en: "Marketing" },
-    { to: "/app/online-shop", icon: icons.onlineShop, bn: "অনলাইন শপ", en: "Online Shop" },
-    { to: "/app/customer-wishlist", icon: icons.contact, bn: "গ্রাহক ফর্দ", en: "Customer Wishlist" },
-    { to: "/app/expiring", icon: icons.expired, bn: "মেয়াদোত্তীর্ণ পণ্য", en: "Expiring" },
-    { to: "/app/warranty", icon: icons.warranty, bn: "ওয়ারেন্টি পণ্য", en: "Warranty" },
-    { to: "/app/recycle-bin", icon: icons.recycle, bn: "রিসাইকেল বিন", en: "Recycle Bin" },
-  ];
+  const isVisible = (it: SidebarItem) => {
+    if (!it.perm) return true;
+    if (permLoading) return true;
+    if (it.perm === "__owner__") return isOwner || isAdmin;
+    return canGroup(it.perm);
+  };
+  // Skip the "main" (Home) section since we're already on Home
+  const menuSections = SECTIONS.filter((s) => s.id !== "main")
+    .map((s) => ({ ...s, items: s.items.filter(isVisible) }))
+    .filter((s) => s.items.length > 0);
 
   return (
     <div className="container px-4 py-4">
@@ -149,13 +138,16 @@ function Dashboard() {
       </div>
       <QuickSellSheet open={quickOpen} onOpenChange={setQuickOpen} />
 
-      {/* Khata + Business + Others */}
-      <div className="mt-5 grid gap-3 md:grid-cols-2">
-        <Section title={lang === "bn" ? "খাতাসমূহ" : "Ledgers"} items={ledgers} lang={lang} />
-        <Section title={lang === "bn" ? "আপনার ব্যবসার জন্য" : "For your business"} items={business} lang={lang} />
-      </div>
-      <div className="mt-3">
-        <Section title={lang === "bn" ? "অন্যান্য" : "Others"} items={others} lang={lang} cols={9} />
+      {/* All menus, category-wise */}
+      <div className="mt-5 space-y-3">
+        {menuSections.map((section) => (
+          <Section
+            key={section.id}
+            title={lang === "bn" ? section.bn : section.en}
+            items={section.items}
+            lang={lang}
+          />
+        ))}
       </div>
     </div>
   );
@@ -165,18 +157,15 @@ function Section({
   title,
   items,
   lang,
-  cols,
 }: {
   title: string;
   items: { to: string; icon: string; bn: string; en: string }[];
   lang: "bn" | "en";
-  cols?: number;
 }) {
-  const gridCls = cols ? `grid-cols-3 md:grid-cols-${cols}` : "grid-cols-4";
   return (
     <div className="rounded-xl border bg-card p-3 shadow-sm">
       <div className="px-1 pb-2 text-sm font-bold">{title}</div>
-      <div className={`grid gap-2 ${gridCls}`}>
+      <div className="grid grid-cols-4 gap-2 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8">
         {items.map((it) => (
           <Link
             key={it.to}
