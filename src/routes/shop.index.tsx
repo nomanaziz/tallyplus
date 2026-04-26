@@ -16,7 +16,7 @@ import {
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetHeader } from "@/components/ui/sheet";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SiteHeader } from "@/components/site/SiteHeader";
-import { Loader2, Search, Store, SlidersHorizontal, RotateCcw, ShoppingBag, MapPin } from "lucide-react";
+import { Loader2, Search, Store, SlidersHorizontal, RotateCcw, ShoppingBag, MapPin, FileText } from "lucide-react";
 import { MarketplaceProductCard } from "@/components/marketplace/MarketplaceProductCard";
 
 type Listing = {
@@ -71,7 +71,8 @@ export const Route = createFileRoute("/shop/")({
       return undefined;
     };
     const sort = s.sort === "price_asc" || s.sort === "price_desc" || s.sort === "newest" ? (s.sort as Sort) : undefined;
-    const view = s.view === "vendors" ? ("vendors" as View) : undefined;
+    // Default view is now "vendors" (ফর্দ-first). Only "products" is stored explicitly in URL.
+    const view = s.view === "products" ? ("products" as View) : undefined;
     return {
       q: typeof s.q === "string" ? s.q : undefined,
       page: toNum(s.page) ?? 1,
@@ -100,7 +101,7 @@ function MarketplacePage() {
   const [shopTypes, setShopTypes] = useState<ShopType[]>([]);
   const page = search.page ?? 1;
   const pageSize = 24;
-  const view: View = search.view ?? "products";
+  const view: View = search.view ?? "vendors";
 
   // Vendor view state
   const [vendors, setVendors] = useState<Shop[]>([]);
