@@ -173,6 +173,9 @@ function MarketplacePage() {
           page,
           pageSize,
           shop_type: search.type,
+          wholesale:
+            search.wholesale === "wholesale" ? "true" :
+            search.wholesale === "retail" ? "false" : undefined,
         },
       })
       .then(({ data, error }) => {
@@ -188,7 +191,7 @@ function MarketplacePage() {
         setVendorLoading(false);
       });
     return () => { cancelled = true; };
-  }, [view, search.q, page, search.type?.join(",")]);
+  }, [view, search.q, page, search.type?.join(","), search.wholesale]);
 
   const submitSearch = (e: React.FormEvent) => {
     e.preventDefault();
