@@ -1,4 +1,4 @@
-import { useNavigate, useLocation, useRouter } from "@tanstack/react-router";
+import { useNavigate, useLocation, useRouter } from "@/lib/router";
 import { ArrowLeft } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 

@@ -1,4 +1,4 @@
-import { Link, useLocation } from "@tanstack/react-router";
+import { Link, useLocation } from "@/lib/router";
 import { useI18n } from "@/lib/i18n";
 import { icons } from "@/lib/icons";
 import { cn } from "@/lib/utils";
