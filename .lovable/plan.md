@@ -1,83 +1,97 @@
-# Marketplace UX উন্নয়ন
+## Plan: Marketplace Vendor View + "Stock Maintain করবেন না" toggle
 
-আপনার দেওয়া Chaldal-এর sample অনুসরণ করে marketplace-এ ৩টি প্রধান উন্নয়ন আনব।
+দুটো জিনিস একসাথে করব —
+1. **Marketplace-এ Vendor View tab** যোগ করা (Product View / Vendor View)
+2. **Stock maintain না করার option** (toggle) — যেসব দোকানদার stock track করতে চায় না, তাদের পণ্য সবসময় order/list-এ যোগ করা যাবে
 
-## ১. প্রতিটি product card-এ "List-এ যোগ করুন" button
+---
 
-বর্তমানে marketplace grid-এ প্রতিটি card শুধু product detail page-এ নিয়ে যায়। Chaldal-এর মতো এক click-এ list-এ add করার ব্যবস্থা যোগ করব।
+### ১. Marketplace: Product View + Vendor View
 
-- প্রতিটি card-এর image-এর উপর right-bottom corner-এ একটি বৃত্তাকার `+` button (primary color, sample-এর মতো)
-- Click করলে: `tp_consumer_cart` localStorage-এ এই listing add হবে (`min_order` quantity দিয়ে; ইতিমধ্যে থাকলে qty +1)
-- Card click করলে আগের মতোই detail page-এ যাবে (button-এ `e.stopPropagation()` + `e.preventDefault()`)
-- Button click হলে `+` icon পরিবর্তে quantity number দেখাবে (sample-এর ২য় image-এর মতো)
-- Toast দেখাবে: "List-এ যোগ করা হয়েছে"
-- Stock 0 হলে button disabled
+`/shop` (`src/routes/shop.index.tsx`) পেজে উপরে দুইটা tab বসাব:
 
-একই pattern apply হবে:
-- `src/routes/shop.index.tsx` (marketplace grid)
-- `src/routes/shop.s.$slug.tsx` (legacy slug shop page)
-- `src/routes/vendor.$username.tsx` (public vendor page)
+- **পণ্য (Product View)** — এখন যা আছে: সব দোকানের সব listing grid-এ দেখায়
+- **দোকান (Vendor View)** — শুধু দোকানের কার্ড: logo, নাম, tagline, ঠিকানা, কতটি পণ্য আছে। কার্ডে click করলে vendor home page (`/vendor/$username` বা `/shop/s/$slug`) এ যাবে — যেখানে ওই দোকানের সব পণ্য আগেই দেখা যায়
 
-Detail page-এর "ফর্দে যোগ করুন" button-এর label "List-এ যোগ করুন"-এ পরিবর্তন করব consistency-র জন্য।
+Search box দুইটা tab-এই কাজ করবে (পণ্য নাম / দোকান নাম)।
 
-## ২. দোকানে click করলে দোকানের home page যাবে
+**Backend**: `marketplace-public` edge function-এ নতুন action `list-shops` যোগ করব — যেসব shop অন্তত একটা published listing রাখে, সেগুলোর তালিকা + প্রতিটির listing count return করবে। q filter, shop_type filter, pagination support করবে।
 
-বর্তমান সমস্যা: marketplace card-এ shop name দেখায় কিন্তু সেটা clickable না — পুরো card detail page-এ নিয়ে যায়। আপনার অভিযোগ অনুযায়ী "দোকানের নাম click করলে দোকানের home page আসা উচিত"।
+---
 
-সমাধান:
-- প্রতিটি product card-এর নিচে shop name/logo এখন আলাদা mini-link হবে যা `/{username}` (vendor page) বা fallback হিসেবে `/shop/s/{slug}` খুলবে
-- Card-এর main click → product detail; shop chip-এ click → shop home page (event propagation থামাব)
-- Vendor page (`vendor.$username.tsx`)-এ ইতিমধ্যে দোকানের নাম, address, phone, cover, logo, policies সব দেখায় — সেটাই "দোকানের home"
+### ২. "Stock maintain করবেন না" toggle (পণ্য add/edit form-এ)
 
-## ৩. Quick View button (modal-এ product preview)
+**Convention**: `products.stock = -1` মানে stock maintain করা হচ্ছে না (unlimited)। DB schema-তে কোনো column add লাগবে না — শুধু value `-1` ব্যবহার করব। Migration ছাড়াই কাজ হবে।
 
-ভিতরে গিয়ে ঢোকা সময়সাপেক্ষ — তাই card-এর উপর hover/tap-এ একটি "Quick View" (চোখের icon) button থাকবে যা একটা dialog-এ product image, name, price, stock, unit, "List-এ যোগ করুন", এবং "বিস্তারিত দেখুন" link দেখাবে।
+**`src/routes/app.products.tsx` (Add/Edit Product form)**:
 
-- নতুন component: `src/components/marketplace/QuickViewDialog.tsx`
-- Card-এর image-এর উপর top-right-এ ছোট eye icon button
-- Mobile-এ button সবসময় visible (small), desktop-এ hover-এ visible
-- Dialog-এ same `addToCart` logic ব্যবহার হবে
+বর্তমান "বর্তমান মজুদ" field-এর উপরে নতুন toggle:
 
-## ৪. Card design — sample অনুযায়ী compact
+> **"স্টক হিসাব রাখতে চান?"** (default: ON / yes)
+>
+> - ON হলে: এখনকার মতই "বর্তমান মজুদ" + "লো-স্টক অ্যালার্ট" fields দেখাবে
+> - OFF হলে: ওই দুইটা field hide হয়ে যাবে; নিচে ছোট হিন্ট — *"স্টক unlimited হিসেবে গণ্য হবে। কেউ অর্ডার করলে stock কমবে না, low stock alert আসবে না।"*
+> - Save করার সময় OFF হলে `stock = -1`, `low_stock_alert = 0` সেভ হবে
 
-Sample-এর মতো ছোট, dense card:
-- Image aspect square রাখা
-- Price prominent (red/primary), strike-through original price (যদি future-এ থাকে)
-- Unit label (যেমন "500 gm") image-এর নিচে compact font-এ
-- "+" button image-এর নিচে-ডানে floating
-- Mobile-এ 2 columns, sm 3, md 4, lg 5 (এখন lg 3, xl 4 আছে — denser করব)
+Editing-এ form খোলার সময় `stock < 0` হলে toggle OFF হিসেবে initialize হবে।
 
-## Technical Section
+**`src/routes/app.products.tsx` list table**:
+- `stock < 0` দেখালে "—" বা "অসীম" badge দেখাব, সংখ্যা না
 
-**নতুন/পরিবর্তিত files:**
-- `src/components/marketplace/AddToListButton.tsx` — reusable circular `+` button with qty state, reads/writes `tp_consumer_cart`
-- `src/components/marketplace/QuickViewDialog.tsx` — Dialog wrapper with product preview + AddToListButton
-- `src/components/marketplace/MarketplaceProductCard.tsx` — shared compact card used by all 3 routes (DRY)
-- `src/routes/shop.index.tsx` — replace inline card JSX with `MarketplaceProductCard`; tighten grid breakpoints
-- `src/routes/shop.s.$slug.tsx` — replace inline card with `MarketplaceProductCard`
-- `src/routes/vendor.$username.tsx` — replace inline card with `MarketplaceProductCard`
-- `src/routes/shop.p.$id.tsx` — rename button label to "List-এ যোগ করুন"
+**`src/routes/app.online-shop.products.tsx`**:
+- একই রকম "অসীম" দেখাব stock কলামে যখন `stock < 0`
+- Listing form-এ যদি stock field থাকে, একই toggle pattern apply করব
 
-**Cart logic (extract to `src/lib/consumer-cart.ts`):**
-```ts
-export function addListingToCart(item: CartItem) { /* read, upsert, write */ }
-export function getCartQty(listingId: string): number
-export function useCartQty(listingId: string): number  // subscribes to storage event
+---
+
+### ৩. "Stock নেই" শর্ত সর্বত্র shift করা
+
+এখন কোডে অনেক জায়গায় `stock <= 0` মানে "out of stock"। নতুন rule:
+
+> **out of stock = `stock === 0`** (ঠিক zero)
+> **unlimited / always orderable = `stock < 0`**
+
+নিচের জায়গাগুলোতে আপডেট করব:
+
+- `src/components/marketplace/MarketplaceProductCard.tsx` — `listing.stock <= 0` → `listing.stock === 0`; "স্টক নেই" badge শুধু zero-তে দেখাবে
+- `src/components/marketplace/AddToListButton.tsx` — `maxStock` prop optional ছিল, কিন্তু card থেকে `listing.stock` সবসময় পাঠাচ্ছে। Card-এ change করব: `maxStock={listing.stock < 0 ? undefined : listing.stock}` → unlimited হলে stepper-এ + button disable হবে না
+- `src/components/marketplace/QuickViewDialog.tsx` — একই treatment; "স্টক নেই" শুধু zero-তে
+- `src/routes/shop.p.$id.tsx` — Add to cart button: `disabled={listing.stock === 0}`; "স্টক আছে" line: `stock < 0` হলে দেখাব *"সবসময় অর্ডারযোগ্য"*
+
+**Edge function `marketplace-public`**: `in_stock` filter — এখন `stock > 0` চেক করে। নতুন: `stock !== 0` (অর্থাৎ unlimited বা positive — দুটোই in-stock ধরা হবে)। যেন stock-maintain-না-করা পণ্যগুলো "in stock only" filter-এও আসে।
+
+**Marketplace listing publish**: শুধু stock 0 হলেও যদি product `is_marketplace_published = true` হয়, listing থাকবে — শুধু "Add to cart" disable। Unlimited হলে কখনোই disable হবে না।
+
+---
+
+### ৪. Vendor View card design (concise)
+
+```text
+┌─────────────────────────┐
+│  [logo]  দোকানের নাম      │
+│          tagline         │
+│  📍 ঠিকানা                │
+│  🛒 ১২ টি পণ্য            │
+└─────────────────────────┘
 ```
 
-**Shop link priority:**
-- যদি `shops[shop_id].username` থাকে → `/{username}` (need to add `username` to `marketplace-public` `list` action's shop select)
-- নাহলে fallback → `/shop/s/{slug}`
-- দুটোই না থাকলে link disabled
+Mobile: 2 column, desktop: 3-4 column grid।
 
-**Edge function update (`supabase/functions/marketplace-public/index.ts`):**
-- `attachShopsAndProducts` এর `select` query-তে `username` field add
-- `ShopRow` type-এ `username` যোগ
+---
 
-**Database migration:** প্রয়োজন নেই — `username` column ইতিমধ্যে `shops` table-এ আছে (vendor page থেকে confirmed)।
+### Files to change
 
-## Out of scope
+**Modify:**
+- `src/routes/shop.index.tsx` — Tabs (Product / Vendor), Vendor grid
+- `src/routes/app.products.tsx` — "স্টক হিসাব রাখতে চান?" toggle, list table "অসীম" rendering
+- `src/routes/app.online-shop.products.tsx` — same handling for stock display
+- `src/routes/shop.p.$id.tsx` — stock < 0 logic
+- `src/components/marketplace/MarketplaceProductCard.tsx` — stock===0 badge, maxStock undefined for unlimited
+- `src/components/marketplace/AddToListButton.tsx` — undefined maxStock = no upper limit
+- `src/components/marketplace/QuickViewDialog.tsx` — same display logic
+- `supabase/functions/marketplace-public/index.ts` — `list-shops` action, `in_stock` filter update
 
-- Slide-out cart drawer (sample-এর right side panel) — পরবর্তী step-এ করা যাবে; এখন শুধু toast feedback
-- Coupon/discount price strike-through UI — ডেটা মডেলে original_price নেই, পরে যোগ হবে
-- "Flash sale", "Categories sidebar" — পরবর্তী iteration
+**Create:**
+- `src/components/marketplace/VendorCard.tsx` — vendor card with logo/name/count
+
+কোনো DB migration লাগছে না।
