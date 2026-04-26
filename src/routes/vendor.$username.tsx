@@ -123,6 +123,33 @@ function PublicShopPage() {
       </section>
 
       <main className="container mx-auto px-4 py-8">
+        {/* Primary CTA: Send a ফর্দ */}
+        {shop.slug && (
+          <section className="mb-6 overflow-hidden rounded-2xl border-2 border-primary/30 bg-gradient-to-br from-primary/10 via-primary/5 to-background p-5 shadow-sm">
+            <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 text-xs font-semibold text-primary">
+                  <FileText className="h-4 w-4" /> ফর্দ পাঠান
+                </div>
+                <h2 className="mt-1 text-lg font-extrabold leading-tight sm:text-xl">
+                  বাজারের তালিকা পাঠান, দোকানদার দাম জানিয়ে দিবেন
+                </h2>
+                <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
+                  সরাসরি লিখুন বা মাইক চেপে কথা বলে ফর্দ বানান। ১ মিনিটেই পাঠানো শেষ।
+                </p>
+              </div>
+              <Link
+                to="/f/$slug"
+                params={{ slug: shop.slug }}
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-bold text-primary-foreground shadow-md hover:bg-primary/90 sm:text-base"
+              >
+                <FileText className="h-4 w-4" />
+                ফর্দ তৈরি করুন
+              </Link>
+            </div>
+          </section>
+        )}
+
         {shop.about && (
           <section className="mb-6 rounded-xl border bg-card p-4">
             <h2 className="mb-2 flex items-center gap-2 text-base font-semibold"><Info className="h-4 w-4" /> দোকান সম্পর্কে</h2>
