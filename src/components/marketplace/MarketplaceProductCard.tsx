@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "@tanstack/react-router";
+import { Link } from "@/lib/router";
 import { Eye, ShoppingBag, Store, ShieldCheck } from "lucide-react";
 import { AddToListButton } from "./AddToListButton";
 import { QuickViewDialog } from "./QuickViewDialog";

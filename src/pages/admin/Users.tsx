@@ -1,0 +1,211 @@
+import { useEffect, useMemo, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ShieldCheck, ShieldOff, Ban, Check, Loader2 } from "lucide-react";
+import { toast } from "sonner";
+
+
+
+type Profile = {
+  id: string;
+  full_name: string | null;
+  phone: string | null;
+  is_suspended: boolean;
+  created_at: string;
+};
+
+type Row = Profile & {
+  shopCount: number;
+  isAdmin: boolean;
+  hasWishlist: boolean;
+};
+
+function UsersPage() {
+  const [rows, setRows] = useState<Row[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState<"all" | "owner" | "admin" | "suspended">("all");
+
+  const load = async () => {
+    setLoading(true);
+    const [{ data: profiles }, { data: roles }, { data: shops }] = await Promise.all([
+      supabase.from("profiles").select("id,full_name,phone,is_suspended,created_at").order("created_at", { ascending: false }).limit(500),
+      supabase.from("user_roles").select("user_id,role"),
+      supabase.from("shops").select("owner_id").is("deleted_at", null),
+    ]);
+    const adminSet = new Set((roles ?? []).filter((r: any) => r.role === "admin").map((r: any) => r.user_id));
+    const shopCounts = new Map<string, number>();
+    for (const s of shops ?? []) {
+      shopCounts.set((s as any).owner_id, (shopCounts.get((s as any).owner_id) ?? 0) + 1);
+    }
+    const out: Row[] = ((profiles as Profile[]) ?? []).map((p) => ({
+      ...p,
+      isAdmin: adminSet.has(p.id),
+      shopCount: shopCounts.get(p.id) ?? 0,
+      hasWishlist: false,
+    }));
+    setRows(out);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    void load();
+  }, []);
+
+  const filtered = useMemo(() => {
+    let list = rows;
+    if (filter === "owner") list = list.filter((r) => r.shopCount > 0);
+    else if (filter === "admin") list = list.filter((r) => r.isAdmin);
+    else if (filter === "suspended") list = list.filter((r) => r.is_suspended);
+    if (search.trim()) {
+      const q = search.trim().toLowerCase();
+      list = list.filter(
+        (r) =>
+          (r.full_name ?? "").toLowerCase().includes(q) ||
+          (r.phone ?? "").toLowerCase().includes(q),
+      );
+    }
+    return list;
+  }, [rows, filter, search]);
+
+  const toggleSuspend = async (r: Row) => {
+    const { error } = await supabase.from("profiles").update({ is_suspended: !r.is_suspended }).eq("id", r.id);
+    if (error) return toast.error(error.message);
+    toast.success(r.is_suspended ? "Unsuspended" : "Suspended");
+    void load();
+  };
+
+  const toggleAdmin = async (r: Row) => {
+    if (r.isAdmin) {
+      const { error } = await supabase.from("user_roles").delete().eq("user_id", r.id).eq("role", "admin");
+      if (error) return toast.error(error.message);
+      toast.success("Admin role removed");
+    } else {
+      const { error } = await supabase.from("user_roles").insert({ user_id: r.id, role: "admin" });
+      if (error) return toast.error(error.message);
+      toast.success("Promoted to admin");
+    }
+    void load();
+  };
+
+  const userType = (r: Row) =>
+    r.isAdmin ? "admin" : r.shopCount > 0 ? "owner" : "buyer";
+
+  return (
+    <div className="mx-auto max-w-6xl space-y-6 p-6">
+      <div>
+        <h1 className="text-2xl font-bold">Users</h1>
+        <p className="text-sm text-muted-foreground">সকল user manage করুন</p>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-3">
+        <Input
+          placeholder="Search name or phone..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="max-w-xs"
+        />
+        <Select value={filter} onValueChange={(v) => setFilter(v as any)}>
+          <SelectTrigger className="w-44">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Users</SelectItem>
+            <SelectItem value="owner">Shop Owners</SelectItem>
+            <SelectItem value="admin">Admins</SelectItem>
+            <SelectItem value="suspended">Suspended</SelectItem>
+          </SelectContent>
+        </Select>
+        <span className="text-sm text-muted-foreground">{filtered.length} users</span>
+      </div>
+
+      <Card>
+        <CardContent className="p-0">
+          {loading ? (
+            <div className="flex justify-center p-12">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Phone</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Shops</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Joined</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filtered.map((r) => {
+                  const t = userType(r);
+                  return (
+                    <TableRow key={r.id}>
+                      <TableCell className="font-medium">{r.full_name || "—"}</TableCell>
+                      <TableCell>{r.phone || "—"}</TableCell>
+                      <TableCell>
+                        <Badge variant={t === "admin" ? "default" : t === "owner" ? "secondary" : "outline"}>
+                          {t}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{r.shopCount}</TableCell>
+                      <TableCell>
+                        {r.is_suspended ? (
+                          <Badge variant="destructive">Suspended</Badge>
+                        ) : (
+                          <Badge variant="outline">Active</Badge>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground">
+                        {new Date(r.created_at).toLocaleDateString("en-GB")}
+                      </TableCell>
+                      <TableCell className="text-right space-x-2">
+                        <Button variant="outline" size="sm" onClick={() => toggleAdmin(r)}>
+                          {r.isAdmin ? (
+                            <><ShieldOff className="mr-1 h-3.5 w-3.5" />Revoke</>
+                          ) : (
+                            <><ShieldCheck className="mr-1 h-3.5 w-3.5" />Make Admin</>
+                          )}
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={() => toggleSuspend(r)}>
+                          {r.is_suspended ? (
+                            <><Check className="mr-1 h-3.5 w-3.5" />Unsuspend</>
+                          ) : (
+                            <><Ban className="mr-1 h-3.5 w-3.5" />Suspend</>
+                          )}
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+                {filtered.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                      কোন user পাওয়া যায়নি
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+export default UsersPage;

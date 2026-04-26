@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Package, Banknote } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/lib/i18n";
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate } from "@/lib/router";
 
 export type DueDirection = "giving" | "taking";
 export type DueKind = "goods" | "money";

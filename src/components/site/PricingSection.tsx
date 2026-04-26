@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+import { Link } from "@/lib/router";
 import { useI18n, fmtMoney, bnNum } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";

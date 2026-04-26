@@ -2,7 +2,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { useI18n, type Lang } from "@/lib/i18n";
 import { useShop } from "@/lib/shop";
 import { useAuth } from "@/lib/auth";
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate } from "@/lib/router";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
