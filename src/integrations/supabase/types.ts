@@ -784,6 +784,7 @@ export type Database = {
           id: string
           name: string
           position: number
+          price: number | null
           qty: number | null
           shopkeeper_note: string | null
           unit: string | null
@@ -796,6 +797,7 @@ export type Database = {
           id?: string
           name: string
           position?: number
+          price?: number | null
           qty?: number | null
           shopkeeper_note?: string | null
           unit?: string | null
@@ -808,6 +810,7 @@ export type Database = {
           id?: string
           name?: string
           position?: number
+          price?: number | null
           qty?: number | null
           shopkeeper_note?: string | null
           unit?: string | null
