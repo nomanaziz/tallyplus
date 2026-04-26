@@ -313,11 +313,6 @@ export function SettingsSheet({ open, onOpenChange }: { open: boolean; onOpenCha
               );
             })}
           </div>
-
-          <div className="mt-5 text-center text-[11px] text-muted-foreground">
-            <span>{lang === "bn" ? "ভার্সন" : "Version"} : {__APP_VERSION__}</span>
-            <span className="ml-2 rounded bg-muted px-1.5 py-0.5">OS: Web</span>
-          </div>
         </div>
 
         <div className="flex-none border-t bg-background p-3">
