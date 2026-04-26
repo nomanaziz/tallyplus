@@ -13,7 +13,7 @@ export const Route = createFileRoute("/affiliate/register")({
   head: () => ({
     meta: [
       { title: "Register — Growth Partner" },
-      { name: "description", content: "হিসাবী গ্রোথ পার্টনার হিসেবে রেজিস্ট্রেশন করুন।" },
+      { name: "description", content: "Tally Plus গ্রোথ পার্টনার হিসেবে রেজিস্ট্রেশন করুন।" },
     ],
   }),
   component: RegisterPage,

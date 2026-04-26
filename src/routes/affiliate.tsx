@@ -10,9 +10,9 @@ type Tier = { id: string; name: string; min_sales: number; commission_pct: numbe
 export const Route = createFileRoute("/affiliate")({
   head: () => ({
     meta: [
-      { title: "Growth Partner — হিসাবী এফিলিয়েট প্রোগ্রাম" },
-      { name: "description", content: "বিনা পুঁজিতে ইনকামের সুযোগ — হিসাবী গ্রোথ পার্টনার হয়ে কমিশন আয় করুন।" },
-      { property: "og:title", content: "হিসাবী গ্রোথ পার্টনার" },
+      { title: "Growth Partner — Tally Plus এফিলিয়েট প্রোগ্রাম" },
+      { name: "description", content: "বিনা পুঁজিতে ইনকামের সুযোগ — Tally Plus গ্রোথ পার্টনার হয়ে কমিশন আয় করুন।" },
+      { property: "og:title", content: "Tally Plus গ্রোথ পার্টনার" },
       { property: "og:description", content: "প্রতিটি সফল রেফারেলে কমিশন পান। আজই যুক্ত হোন।" },
     ],
   }),
@@ -36,7 +36,7 @@ function AffiliateLanding() {
       {/* Header */}
       <header className="sticky top-0 z-30 border-b bg-background/85 backdrop-blur">
         <div className="container mx-auto flex h-14 items-center justify-between px-4">
-          <Link to="/" className="text-base font-extrabold">হিসাবী <span className="text-primary">Growth Partner</span></Link>
+          <Link to="/" className="text-base font-extrabold">Tally Plus <span className="text-primary">Growth Partner</span></Link>
           <div className="flex items-center gap-2">
             <Link to="/affiliate/register" className="text-sm font-semibold text-primary hover:underline">রেজিস্ট্রেশন</Link>
             <Link to="/auth"><Button size="sm" variant="outline">লগইন</Button></Link>
@@ -54,7 +54,7 @@ function AffiliateLanding() {
           </h1>
           <p className="mx-auto mt-4 max-w-2xl text-sm text-muted-foreground md:text-base">
             প্রতিটি সফল রেফারেলে পাচ্ছেন <strong className="text-foreground">{maxPct}%</strong> পর্যন্ত কমিশন।
-            আজই যুক্ত হয়ে যান হিসাবী গ্রোথ পার্টনার প্রোগ্রামে।
+            আজই যুক্ত হয়ে যান Tally Plus গ্রোথ পার্টনার প্রোগ্রামে।
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
             <Link to="/affiliate/register"><Button size="lg" className="h-12 px-6 text-base font-bold">পার্টনার হয়ে যান</Button></Link>
@@ -137,7 +137,7 @@ function AffiliateLanding() {
           <h2 className="text-center text-2xl font-bold md:text-3xl">সর্বাধিক জিজ্ঞাসিত প্রশ্ন</h2>
           <Accordion type="single" collapsible className="mt-6">
             <AccordionItem value="a">
-              <AccordionTrigger>হিসাবী গ্রোথ পার্টনার হতে কি কোনো টাকা লাগে?</AccordionTrigger>
+              <AccordionTrigger>Tally Plus গ্রোথ পার্টনার হতে কি কোনো টাকা লাগে?</AccordionTrigger>
               <AccordionContent>না, রেজিস্ট্রেশন একদম ফ্রি। কোনো বিনিয়োগের প্রয়োজন নেই।</AccordionContent>
             </AccordionItem>
             <AccordionItem value="b">
@@ -168,7 +168,7 @@ function AffiliateLanding() {
       </section>
 
       <footer className="border-t py-6 text-center text-xs text-muted-foreground">
-        © {new Date().getFullYear()} হিসাবী। সর্বস্বত্ব সংরক্ষিত।
+        © {new Date().getFullYear()} Tally Plus। সর্বস্বত্ব সংরক্ষিত।
       </footer>
     </div>
   );
