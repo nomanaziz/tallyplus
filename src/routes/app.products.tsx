@@ -146,7 +146,11 @@ function ProductsPage() {
                         <span className="font-medium">{p.name}</span>
                       </div>
                     </TableCell>
-                    <TableCell className="text-right">{lang === "bn" ? bnNum(p.stock) : p.stock}</TableCell>
+                    <TableCell className="text-right">
+                      {Number(p.stock) < 0
+                        ? <span className="text-primary">{lang === "bn" ? "অসীম" : "Unlimited"}</span>
+                        : (lang === "bn" ? bnNum(p.stock) : p.stock)}
+                    </TableCell>
                     <TableCell className="text-right">{fmtMoney(Number(p.sale_price), lang)}</TableCell>
                     <TableCell className="hidden md:table-cell text-muted-foreground">—</TableCell>
                     <TableCell className="text-right">
