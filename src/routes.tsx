@@ -69,7 +69,7 @@ const P58 = lazy(() => import("./pages/app/StockEdit"));
 const P59 = lazy(() => import("./pages/app/Stock"));
 const P60 = lazy(() => import("./pages/app/Subscribe"));
 const P61 = lazy(() => import("./pages/app/Training"));
-const P62 = lazy(() => import("./pages/App"));
+const P62 = lazy(() => import("./pages/app/AppLayout"));
 const P63 = lazy(() => import("./pages/app/Warranty"));
 const P64 = lazy(() => import("./pages/Auth"));
 const P65 = lazy(() => import("./pages/f/slug/My"));
