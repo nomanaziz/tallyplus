@@ -23,7 +23,7 @@ export function ContactSection() {
       bnTitle: "WhatsApp",
       enTitle: "WhatsApp",
       value: PHONE,
-      href: `https://wa.me/${PHONE_DIGITS}?text=${encodeURIComponent(lang === "bn" ? "আসসালামু আলাইকুম, ট্যালি প্লাস সম্পর্কে জানতে চাই।" : "Hi, I want to know more about Tally Plus.")}`,
+      href: `https://wa.me/${PHONE_DIGITS}?text=${encodeURIComponent(lang === "bn" ? "আসসালামু আলাইকুম, টালি প্লাস সম্পর্কে জানতে চাই।" : "Hi, I want to know more about Tally Plus.")}`,
       bnSub: "২৪/৭ চ্যাট সাপোর্ট",
       enSub: "24/7 chat support",
     },
@@ -80,7 +80,7 @@ export function ContactSection() {
         <div className="mt-10 flex justify-center">
           <Button asChild size="lg" className="h-14 rounded-full px-8 text-base font-bold">
             <a
-              href={`https://wa.me/${PHONE_DIGITS}?text=${encodeURIComponent(lang === "bn" ? "হ্যালো, আমি ট্যালি প্লাস সম্পর্কে জানতে চাই।" : "Hi, I'd like to know more about Tally Plus.")}`}
+              href={`https://wa.me/${PHONE_DIGITS}?text=${encodeURIComponent(lang === "bn" ? "হ্যালো, আমি টালি প্লাস সম্পর্কে জানতে চাই।" : "Hi, I'd like to know more about Tally Plus.")}`}
               target="_blank"
               rel="noopener noreferrer"
             >

@@ -48,7 +48,7 @@ export function PainAndSolutions() {
 
         <div className="mt-20 text-center">
           <h2 className="text-3xl font-extrabold md:text-4xl">
-            {lang === "bn" ? <>ট্যালি প্লাসে <span className="text-primary">সহজ সমাধান!</span></> : <>Simple solution in <span className="text-primary">Tally Plus!</span></>}
+            {lang === "bn" ? <>টালি প্লাসে <span className="text-primary">সহজ সমাধান!</span></> : <>Simple solution in <span className="text-primary">Tally Plus!</span></>}
           </h2>
         </div>
         <div className="mx-auto mt-10 grid max-w-5xl gap-5 md:grid-cols-3">
