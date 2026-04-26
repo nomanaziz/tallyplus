@@ -468,7 +468,14 @@ function MarketplacePage() {
                               )}
                             </div>
                             <div className="min-w-0 flex-1 text-left">
-                              <div className="line-clamp-1 text-sm font-bold leading-tight">{s.name}</div>
+                              <div className="flex items-center gap-1.5">
+                                <div className="line-clamp-1 text-sm font-bold leading-tight">{s.name}</div>
+                                {s.is_wholesale && (
+                                  <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
+                                    পাইকারি
+                                  </span>
+                                )}
+                              </div>
                               {s.address && (
                                 <div className="mt-0.5 line-clamp-1 inline-flex items-center gap-1 text-[11px] text-muted-foreground">
                                   <MapPin className="h-3 w-3" />
