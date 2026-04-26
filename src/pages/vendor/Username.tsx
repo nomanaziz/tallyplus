@@ -1,5 +1,5 @@
-import { Link, notFound } from "@/lib/router";
-import { useEffect } from "react";
+import { Link, useParams } from "@/lib/router";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, MapPin, Phone, ShoppingBag, Store, MessageCircle, Facebook, Info, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -23,12 +23,47 @@ type Shop = {
 type Listing = { id: string; product_id: string; price: number; stock: number; unit: string | null; min_order: number | null; warranty_months: number | null };
 type Product = { id: string; name: string; image_url: string | null; unit: string | null };
 
-type LoaderData = { shop: Shop; listings: Listing[]; products: Record<string, Product> };
-
-
-
 function PublicShopPage() {
-  const { shop, listings, products } = Route.useLoaderData();
+  const { username } = useParams<{ username: string }>();
+  const [data, setData] = useState<{ shop: Shop; listings: Listing[]; products: Record<string, Product> } | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
+
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      if (!username || RESERVED.has(username.toLowerCase())) {
+        if (alive) { setNotFound(true); setLoading(false); }
+        return;
+      }
+      const { data: shop } = await supabase
+        .from("shops")
+        .select("*")
+        .or(`username.eq.${username},slug.eq.${username}`)
+        .maybeSingle();
+      if (!shop) { if (alive) { setNotFound(true); setLoading(false); } return; }
+      const { data: listings = [] } = await supabase
+        .from("marketplace_listings" as never)
+        .select("id, product_id, price, stock, unit, min_order, warranty_months")
+        .eq("shop_id", (shop as { id: string }).id)
+        .eq("active", true);
+      const productIds = (listings as Listing[]).map(l => l.product_id);
+      const { data: products = [] } = productIds.length
+        ? await supabase.from("products").select("id, name, image_url, unit").in("id", productIds)
+        : { data: [] as Product[] };
+      const productMap: Record<string, Product> = {};
+      for (const p of products as Product[]) productMap[p.id] = p;
+      if (alive) {
+        setData({ shop: shop as Shop, listings: listings as Listing[], products: productMap });
+        setLoading(false);
+      }
+    })();
+    return () => { alive = false; };
+  }, [username]);
+
+  if (loading) return <div className="flex min-h-screen items-center justify-center"><Loader2 className="h-6 w-6 animate-spin" /></div>;
+  if (notFound || !data) return <div className="flex min-h-screen items-center justify-center text-muted-foreground">দোকান পাওয়া যায়নি</div>;
+  const { shop, listings, products } = data;
   const rawWishlistSlug = shop.wishlist_slug;
   const wishlistSlug =
     typeof rawWishlistSlug === "string" && rawWishlistSlug.trim().length > 0
