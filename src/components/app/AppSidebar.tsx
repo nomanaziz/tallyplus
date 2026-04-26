@@ -9,10 +9,10 @@ import { usePwaInstall } from "@/hooks/use-pwa-install";
 import { Download } from "lucide-react";
 import { toast } from "sonner";
 
-type Item = { to: string; bn: string; en: string; icon: string; highlight?: boolean; perm?: string };
-type Section = { id: string; bn: string; en: string; items: Item[] };
+export type SidebarItem = { to: string; bn: string; en: string; icon: string; highlight?: boolean; perm?: string };
+export type SidebarSection = { id: string; bn: string; en: string; items: SidebarItem[] };
 
-const SECTIONS: Section[] = [
+export const SECTIONS: SidebarSection[] = [
   {
     id: "main",
     bn: "মূল",
