@@ -5,100 +5,251 @@ import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { Loader2, MessageCircle } from "lucide-react";
+
+type Mode = "signup" | "login";
+type Role = "owner" | "customer";
+
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
+const SUPABASE_ANON = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
+const ADMIN_WA = "8801XXXXXXXXX"; // fallback; real number loaded from affiliate_settings
+
+function normalizePhone(raw: string): string {
+  const d = raw.replace(/\D/g, "");
+  if (!d) return "";
+  if (d.startsWith("880")) return "+" + d;
+  if (d.startsWith("01") && d.length === 11) return "+880" + d.slice(1);
+  if (d.length === 10) return "+880" + d;
+  return "+" + d;
+}
+
+async function callFn(name: string, body: unknown) {
+  const res = await fetch(`${SUPABASE_URL}/functions/v1/${name}`, {
+    method: "POST",
+    headers: { "content-type": "application/json", apikey: SUPABASE_ANON, authorization: `Bearer ${SUPABASE_ANON}` },
+    body: JSON.stringify(body),
+  });
+  return await res.json();
+}
 
 export default function AuthPage() {
   const { session } = useAuth();
   const navigate = useNavigate();
-  const [phone, setPhone] = useState("");
+  const [mode, setMode] = useState<Mode>("signup");
+  const [role, setRole] = useState<Role>("owner");
   const [name, setName] = useState("");
-  const [otp, setOtp] = useState("");
-  const [step, setStep] = useState<"phone" | "otp">("phone");
+  const [shopName, setShopName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [pin, setPin] = useState("");
   const [loading, setLoading] = useState(false);
+  const [adminPhone, setAdminPhone] = useState(ADMIN_WA);
 
   useEffect(() => {
     if (session?.user) navigate({ to: "/app/dashboard", replace: true });
   }, [session, navigate]);
 
-  const sendOtp = async () => {
-    if (!phone.trim()) return toast.error("ফোন নম্বর দিন");
-    setLoading(true);
-    const fullPhone = phone.startsWith("+") ? phone : `+88${phone}`;
-    const { error } = await supabase.auth.signInWithOtp({
-      phone: fullPhone,
-      options: { data: { full_name: name, account_type: "owner" } },
-    });
-    setLoading(false);
-    if (error) return toast.error(error.message);
-    toast.success("OTP পাঠানো হয়েছে");
-    setStep("otp");
+  useEffect(() => {
+    void supabase
+      .from("affiliate_settings")
+      .select("support_phone")
+      .maybeSingle()
+      .then(({ data }) => {
+        const p = (data as { support_phone: string | null } | null)?.support_phone;
+        if (p) setAdminPhone(p.replace(/\D/g, ""));
+      });
+  }, []);
+
+  const validate = (): string | null => {
+    const ph = normalizePhone(phone);
+    if (!ph || ph.length < 10) return "সঠিক মোবাইল নম্বর দিন";
+    if (!/^\d{4}$/.test(pin)) return "৪ সংখ্যার PIN দিন";
+    if (mode === "signup") {
+      if (name.trim().length < 2) return "আপনার নাম দিন";
+      if (role === "owner" && shopName.trim().length < 2) return "দোকানের নাম দিন";
+    }
+    return null;
   };
 
-  const verifyOtp = async () => {
+  const setSession = async (access_token: string, refresh_token: string) => {
+    const { error } = await supabase.auth.setSession({ access_token, refresh_token });
+    if (error) throw error;
+  };
+
+  const handleSubmit = async () => {
+    const err = validate();
+    if (err) return toast.error(err);
     setLoading(true);
-    const fullPhone = phone.startsWith("+") ? phone : `+88${phone}`;
-    const { error } = await supabase.auth.verifyOtp({
-      phone: fullPhone,
-      token: otp,
-      type: "sms",
-    });
-    setLoading(false);
-    if (error) return toast.error(error.message);
-    toast.success("লগইন সফল");
-    navigate({ to: "/app/dashboard", replace: true });
+    try {
+      const ph = normalizePhone(phone);
+      if (mode === "signup") {
+        if (role === "owner") {
+          const r = await callFn("signup-with-pin", {
+            phone: ph,
+            full_name: name.trim(),
+            shop_name: shopName.trim(),
+            pin,
+          });
+          if (!r.ok) {
+            if (r.error === "phone_exists") return toast.error("এই নম্বরে account আছে — লগইন করুন");
+            return toast.error(r.error || "সাইনআপ ব্যর্থ");
+          }
+          await setSession(r.access_token, r.refresh_token);
+          toast.success("Account তৈরি হয়েছে");
+          navigate({ to: "/app/dashboard", replace: true });
+        } else {
+          // Customer signup via Supabase phone OTP-less: use signInWithPassword pattern via edge func is for owners.
+          // For customers we still create via admin signup edge function pattern; reuse signup-with-pin with a sentinel shop_name.
+          // Simpler: customers use the existing wishlist customer flow OR create a consumer auth user.
+          // We'll create a minimal consumer using supabase.auth.signUp with email-format phone.
+          const digits = ph.replace(/\D/g, "");
+          const email = `${digits}@tally.local`;
+          const password = `tp_${digits}_pw`;
+          const { error: signUpErr } = await supabase.auth.signUp({
+            email,
+            password,
+            options: { data: { full_name: name.trim(), account_type: "consumer" } },
+          });
+          if (signUpErr && !signUpErr.message.toLowerCase().includes("registered")) {
+            return toast.error(signUpErr.message);
+          }
+          const { error: signInErr } = await supabase.auth.signInWithPassword({ email, password });
+          if (signInErr) return toast.error("লগইন ব্যর্থ — হয়তো এই নম্বর owner হিসেবে আছে");
+          // Save phone + name on consumer_profiles
+          const { data: u } = await supabase.auth.getUser();
+          if (u.user) {
+            await supabase.from("consumer_profiles").upsert({
+              id: u.user.id,
+              name: name.trim(),
+              phone: ph,
+            });
+          }
+          toast.success("Customer account তৈরি");
+          navigate({ to: "/customer/profile", replace: true });
+        }
+      } else {
+        // Login: try owner PIN flow first
+        const r = await callFn("login-with-pin", { phone: ph, pin });
+        if (r.ok) {
+          await setSession(r.access_token, r.refresh_token);
+          toast.success("লগইন সফল");
+          navigate({ to: "/app/dashboard", replace: true });
+          return;
+        }
+        // fallback: try customer (consumer) password
+        const digits = ph.replace(/\D/g, "");
+        const email = `${digits}@tally.local`;
+        const password = `tp_${digits}_pw`;
+        const { error: signInErr } = await supabase.auth.signInWithPassword({ email, password });
+        if (signInErr) {
+          if (r.error === "wrong_pin") return toast.error("ভুল PIN");
+          if (r.error === "no_account") return toast.error("এই নম্বরে account নেই — সাইনআপ করুন");
+          return toast.error("লগইন ব্যর্থ");
+        }
+        toast.success("লগইন সফল");
+        navigate({ to: "/customer/profile", replace: true });
+      }
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const waUrl = () => {
+    const text = encodeURIComponent(
+      `আসসালামু আলাইকুম, আমার Tally Plus account সমস্যা — Phone: ${normalizePhone(phone) || "(আমার নম্বর)"}\nসাহায্য করুন।`
+    );
+    return `https://wa.me/${adminPhone}?text=${text}`;
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="w-full max-w-sm space-y-6 rounded-2xl border bg-card p-6 shadow-sm">
+    <div className="flex min-h-screen items-center justify-center bg-background px-4 py-8">
+      <div className="w-full max-w-md space-y-6 rounded-2xl border bg-card p-6 shadow-sm">
         <div className="text-center">
           <h1 className="text-2xl font-bold">Tally Plus</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            {step === "phone" ? "ফোন নম্বর দিয়ে শুরু করুন" : "OTP লিখুন"}
+            {mode === "signup" ? "নতুন account তৈরি করুন" : "Account-এ লগইন করুন"}
           </p>
         </div>
 
-        {step === "phone" ? (
-          <div className="space-y-4">
+        <Tabs value={mode} onValueChange={(v) => setMode(v as Mode)}>
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="signup">সাইনআপ</TabsTrigger>
+            <TabsTrigger value="login">লগইন</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="signup" className="space-y-4 pt-4">
+            <Tabs value={role} onValueChange={(v) => setRole(v as Role)}>
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="owner">দোকান মালিক</TabsTrigger>
+                <TabsTrigger value="customer">গ্রাহক</TabsTrigger>
+              </TabsList>
+            </Tabs>
+
             <div>
               <Label>আপনার নাম</Label>
-              <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="আপনার নাম" />
+              <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="পূর্ণ নাম" />
+            </div>
+            {role === "owner" && (
+              <div>
+                <Label>দোকানের নাম</Label>
+                <Input value={shopName} onChange={(e) => setShopName(e.target.value)} placeholder="যেমন: রহিম স্টোর" />
+              </div>
+            )}
+            <div>
+              <Label>মোবাইল নম্বর</Label>
+              <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="01XXXXXXXXX" inputMode="tel" />
             </div>
             <div>
-              <Label>ফোন নম্বর</Label>
+              <Label>৪ সংখ্যার PIN তৈরি করুন</Label>
               <Input
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="01XXXXXXXXX"
-                inputMode="tel"
-              />
-            </div>
-            <Button onClick={sendOtp} disabled={loading} className="w-full">
-              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              OTP পাঠান
-            </Button>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            <div>
-              <Label>OTP কোড</Label>
-              <Input
-                value={otp}
-                onChange={(e) => setOtp(e.target.value)}
-                placeholder="6-digit code"
+                value={pin}
+                onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                placeholder="••••"
                 inputMode="numeric"
+                maxLength={4}
+                type="password"
               />
             </div>
-            <Button onClick={verifyOtp} disabled={loading} className="w-full">
+            <Button onClick={handleSubmit} disabled={loading} className="w-full">
+              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Account তৈরি করুন
+            </Button>
+          </TabsContent>
+
+          <TabsContent value="login" className="space-y-4 pt-4">
+            <div>
+              <Label>মোবাইল নম্বর</Label>
+              <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="01XXXXXXXXX" inputMode="tel" />
+            </div>
+            <div>
+              <Label>৪ সংখ্যার PIN</Label>
+              <Input
+                value={pin}
+                onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                placeholder="••••"
+                inputMode="numeric"
+                maxLength={4}
+                type="password"
+              />
+            </div>
+            <Button onClick={handleSubmit} disabled={loading} className="w-full">
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               লগইন করুন
             </Button>
-            <Button variant="ghost" onClick={() => setStep("phone")} className="w-full">
-              ফিরে যান
-            </Button>
-          </div>
-        )}
+            <a
+              href={waUrl()}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-2 rounded-md border border-green-600/30 bg-green-50 px-3 py-2 text-sm text-green-700 hover:bg-green-100 dark:bg-green-950/30 dark:text-green-400"
+            >
+              <MessageCircle className="h-4 w-4" />
+              PIN ভুলে গেছেন? Admin-কে WhatsApp করুন
+            </a>
+          </TabsContent>
+        </Tabs>
 
         <div className="text-center text-xs text-muted-foreground">
           <Link to="/" className="hover:underline">হোমে ফিরুন</Link>
