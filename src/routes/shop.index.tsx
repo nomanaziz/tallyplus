@@ -230,6 +230,7 @@ function MarketplacePage() {
   };
 
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const vendorTotalPages = Math.max(1, Math.ceil(vendorTotal / pageSize));
   const activeFilterCount = useMemo(() => {
     let n = 0;
     if (search.min !== undefined) n++;
@@ -346,6 +347,25 @@ function MarketplacePage() {
               </SheetContent>
             </Sheet>
           </form>
+
+          {/* View tabs */}
+          <div className="mt-3">
+            <Tabs
+              value={view}
+              onValueChange={(v) =>
+                navigate({ search: (prev) => ({ ...prev, view: v === "vendors" ? "vendors" : undefined, page: 1 }) })
+              }
+            >
+              <TabsList className="h-9">
+                <TabsTrigger value="products" className="gap-1.5">
+                  <ShoppingBag className="h-3.5 w-3.5" /> পণ্য
+                </TabsTrigger>
+                <TabsTrigger value="vendors" className="gap-1.5">
+                  <Store className="h-3.5 w-3.5" /> দোকান
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
         </div>
       </div>
 
