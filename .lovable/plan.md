@@ -1,54 +1,67 @@
-## Plan
+## সমস্যা ও সমাধান
 
-1. Stabilize the phone+PIN login flow
-- Fix the login handoff so `/auth` does not bounce back or clear the phone/PIN fields while the new session is still settling.
-- Make the app wait for auth restoration before redirecting from `/app` back to `/auth`.
-- Keep the login button in a true pending state, block double-submit, and show a clearer full-screen/auth-card loader message while login is in progress.
-- Preserve the entered phone number during a failed or interrupted login so the form does not feel like it “reset itself”.
+### ১. গ্রাহক ফর্দ page-এ কোনো ফর্দ দেখা যায় না, কিন্তু ফর্দ ইতিহাসে চারটাই বসে আছে — কেন?
 
-2. Make notifications actually work for incoming ফর্দ/অর্ডার
-- Build a real notification data flow for the existing bell button in the top bar.
-- Add unread count + notification dropdown/panel for the logged-in shop owner.
-- Create notification rows at the server-side creation point when:
-  - a customer submits a new wishlist (`customer_wishlists`)
-  - a new online shop order is created (`marketplace_orders`)
-- Mark notifications as read when opened and keep the UI updated with polling or realtime subscription.
+**আসল কারণ (debug করে পেলাম):**
+- `customer_wishlists` table-এ `deleted_at` কলাম **নেই**।
+- কিন্তু "গ্রাহক ফর্দ" page-এর query-তে আছে `.is("deleted_at", null)` → এটা silently fail করছে → list খালি।
+- "ফর্দ ইতিহাস" page-এ এই filter নেই, তাই সেখানে সব ফর্দ ঠিকঠাক দেখাচ্ছে।
+- "মুছুন" বাটনও fail করছে কারণ সেটাও `deleted_at` set করতে চায়।
 
-3. Add visible loaders so the app never feels frozen
-- Add a global app-shell loading indicator for route changes and initial `/app` boot.
-- Add per-page skeleton/loading states where data is currently fetched silently, starting with the slowest-feeling screens such as Due Ledger and customer/order inbox screens.
-- Show progress text for long actions like login, refresh, and notification fetch.
+**ফিক্স:** `customer_wishlists` table-এ `deleted_at timestamptz` কলাম যোগ করব (recycle-bin route-ও এর উপর depend করে)।
 
-4. Reduce first-load slowness in the app shell
-- Cut unnecessary serial fetching during app boot: auth -> profile -> shops -> permissions -> page data.
-- Refactor shared boot data to load once and be reused instead of re-querying the same shop/role information in multiple providers/components.
-- Convert heavy manual `useEffect` fetches to cached TanStack Query usage where appropriate so revisiting pages is instant and initial loads are clearer.
-- Optimize pages that currently do multiple broad reads just to build simple totals/lists, starting with `/app/due-ledger`.
+---
 
-5. Verify the key journeys after implementation
-- Test login with correct PIN, wrong PIN, and slow network.
-- Test incoming wishlist notification end-to-end.
-- Test incoming marketplace order notification end-to-end.
-- Test first open vs second open of main app pages to confirm the “first time very slow” issue is reduced and loaders appear immediately.
+### ২. দোকানদার দাম বসাতে পারে না / বেচায় convert করতে পারে না
 
-## What I found
-- The notification bell in `AppTopbar` is currently only a button; it does not load notifications, show unread count, or mark anything as read.
-- A `notifications` table already exists, but I could not find active code that inserts notification rows for new wishlists/orders.
-- `submit-wishlist` currently creates wishlist data but does not create a shop-owner notification.
-- The login flow calls `setSession()` and navigates immediately, while `/app` can still see `user = null` briefly and redirect back to `/auth`, which matches the “fields became empty again / login spinning / confusing behavior” symptom.
-- App startup is doing several client-side fetches in sequence across `AuthProvider`, `ShopProvider`, `PermissionsProvider`, and route components.
-- Performance snapshot shows slow first paint on first load (TTFB ~2.3s, FCP ~4.6s), so the app needs both real optimization and much better loading feedback.
+**বর্তমান অবস্থা:** ফর্দ detail dialog-এ প্রতিটা item-এর পাশে দামের input box আছে (একক দাম), কিন্তু:
+- "বেচায় convert" বাটন **নেই** → ফর্দ থেকে সরাসরি Sale তৈরি হয় না।
+- দোকানদার দাম বসিয়ে শুধু "সম্পন্ন" mark করতে পারে, কিন্তু stock কমে না, due ledger-এ যায় না।
 
-## Technical details
-- Files likely involved:
-  - `src/lib/auth.tsx`
-  - `src/routes/auth.tsx`
-  - `src/routes/app.tsx`
-  - `src/components/app/AppTopbar.tsx`
-  - `src/routes/app.due-ledger.tsx`
-  - `src/routes/app.customer-wishlist.tsx`
-  - order creation path for `marketplace_orders`
-  - current wishlist submit server-side handler
-- Notification implementation will reuse the existing `notifications` table instead of inventing a second system.
-- Performance work will prioritize low-risk fixes first: better auth/session coordination, fewer duplicate boot queries, cached query usage, and visible pending states.
-- If needed, I may add one small migration only if notification metadata/unread behavior needs an extra column or index; otherwise I’ll use the existing schema.
+**ফিক্স — ফর্দ detail dialog-এ নতুন বাটন যোগ করব:**
+- **"বেচায় রূপান্তর"** (Convert to Sale)
+  - শুধুমাত্র "পেয়েছে" (fulfilled) item-গুলো নেবে।
+  - প্রতিটা item-এর দাম থাকতে হবে — না থাকলে warn করবে।
+  - নতুন একটা `sales` row তৈরি করবে (existing sales table-এ), customer-কে customers table-এ create/match করবে (phone দিয়ে), payment method ও paid amount জিজ্ঞেস করবে।
+  - সফল হলে wishlist status = `converted` করবে এবং sale-এর reference রাখবে।
+
+---
+
+### ৩. গ্রাহক "২ কেজি চাল" লিখলে দোকানদার সেটা packet-এ convert করতে পারবে
+
+ফর্দ detail-এ প্রতিটা item-এর পাশে এখন quantity edit করার option নেই (শুধু দাম)। দুটো mode যোগ করব:
+
+- **Per-unit price mode** (default): qty × unit price = line total
+- **Lump-sum price mode**: একটা toggle (📦) — qty উপেক্ষা করে শুধু একটা মোট দাম দেবে (যেমন "২ কেজি চাল = ১৪০ ৳")
+- দোকানদার qty এবং unit ইচ্ছামতো edit করতে পারবে (২ কেজি → ২ packet)
+
+UI: প্রতিটা row-তে name-এর নিচে ছোট qty input + unit dropdown (kg/pcs/packet/litre/dozen), আর দামের পাশে একটা ছোট 📦 toggle "lump"।
+
+---
+
+### ৪. Public ফর্দ submission page-এ internet warning + voice option প্রকাশ্য করা
+
+`/f/{slug}` page-এ:
+- উপরে একটা subtle banner: **"📶 ফর্দ পাঠাতে ইন্টারনেট সংযোগ লাগবে।"** (offline হলে red turn করবে — `navigator.onLine`)
+- `VoiceInputButton` component already আছে (অর্থাৎ AI দিয়ে কথা বলে ফর্দ generate ইতিমধ্যে কাজ করছে)। সেটাকে আরো prominent করব — উপরে একটা boxed "🎤 কথা বলে ফর্দ বানান" CTA, যাতে user দেখে।
+- যেহেতু আগে আপনি জিজ্ঞেস করেছিলেন: হ্যাঁ — এটা **real-time AI** (Lovable AI Gateway → Whisper STT → text)। এটা net-connection ছাড়া কাজ করবে না।
+
+---
+
+### ৫. Notification কেন আসছে না?
+
+Database trigger (`tg_notify_new_wishlist`) আগের migration-এ deploy হয়েছে। কিন্তু `notifications` table এখন পুরো খালি — মানে trigger বসানোর পর কোনো **নতুন** ফর্দ আসেনি। পুরনো ফর্দ-গুলোর জন্য notification তৈরি হবে না (trigger শুধু INSERT-এ চলে)।
+
+পরীক্ষা করতে: `/f/{slug}` link থেকে নতুন একটা ফর্দ পাঠালে bell-এ count আসবে। আমি additional verification করব যে trigger সঠিকভাবে attached আছে।
+
+---
+
+## Technical changes
+
+| ফাইল | কাজ |
+|---|---|
+| **DB migration** | `customer_wishlists`-এ `deleted_at timestamptz` কলাম + index। Trigger `tg_notify_new_wishlist` re-attach verify। |
+| `src/routes/app.customer-wishlist.tsx` | Detail dialog-এ qty/unit edit + lump-sum toggle + "বেচায় রূপান্তর" বাটন। |
+| `src/components/app/ConvertWishlistToSaleDialog.tsx` (নতুন) | Sale conversion form (customer match, payment method, due/paid)। |
+| `src/routes/f.$slug.tsx` | উপরে internet hint banner + voice CTA prominent। |
+
