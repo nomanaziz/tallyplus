@@ -220,7 +220,7 @@ Deno.serve(async (req) => {
 
       const { data: shop } = await admin
         .from("shops")
-        .select("id, name, slug, username, logo_url, cover_url, tagline, address, phone, shop_type_code, marketplace_enabled")
+        .select("id, name, slug, username, logo_url, cover_url, tagline, address, phone, shop_type_code, marketplace_enabled, is_wholesale")
         .eq("slug", slug)
         .is("deleted_at", null)
         .maybeSingle();
