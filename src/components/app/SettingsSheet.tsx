@@ -96,7 +96,7 @@ export function SettingsSheet({ open, onOpenChange }: { open: boolean; onOpenCha
   const { lang, setLang } = useI18n();
   const pwa = usePwaInstall();
   const { current } = useShop();
-  const { signOut } = useAuth();
+  const { signOut, profile } = useAuth();
   const nav = useNavigate();
 
   const { data: appLinks } = useQuery({
@@ -140,6 +140,27 @@ export function SettingsSheet({ open, onOpenChange }: { open: boolean; onOpenCha
         </SheetHeader>
 
         <div className="flex-1 overflow-y-auto px-4 py-3">
+          {/* Profile header */}
+          {(profile?.full_name || profile?.phone) && (
+            <div className="mb-3 flex items-center gap-3 rounded-xl border bg-card p-3">
+              <div className="flex h-11 w-11 flex-none items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
+                {(profile?.full_name || current?.name || "U")
+                  .split(" ")
+                  .map((s) => s[0])
+                  .filter(Boolean)
+                  .slice(0, 2)
+                  .join("")
+                  .toUpperCase()}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-sm font-semibold">{profile?.full_name || (lang === "bn" ? "ব্যবহারকারী" : "User")}</div>
+                {profile?.phone && (
+                  <div className="truncate text-xs text-muted-foreground">{profile.phone}</div>
+                )}
+              </div>
+            </div>
+          )}
+
           <button
             onClick={() => go("/app/shops")}
             className="flex w-full items-center justify-center gap-2 rounded-lg bg-foreground px-3 py-2.5 text-sm font-semibold text-background transition hover:opacity-90"
