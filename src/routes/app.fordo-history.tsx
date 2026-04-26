@@ -110,12 +110,9 @@ function FordoHistoryPage() {
     const map = new Map<string, { phone: string; name: string; count: number; lastAt: string; total: number; ids: string[] }>();
     (wlQuery.data || []).forEach((w) => {
       const key = normalizePhone(w.customer_phone) || `name:${w.customer_name}`;
-      const items = itemsByWl.get(w.id) || [];
-      const total = items.reduce((s, it) => s + (Number(it.price) || 0) * (Number(it.qty) || 0), 0);
       const existing = map.get(key);
       if (existing) {
         existing.count += 1;
-        existing.total += total;
         existing.ids.push(w.id);
         if (new Date(w.created_at) > new Date(existing.lastAt)) {
           existing.lastAt = w.created_at;
@@ -127,7 +124,7 @@ function FordoHistoryPage() {
           name: w.customer_name || "—",
           count: 1,
           lastAt: w.created_at,
-          total,
+          total: 0,
           ids: [w.id],
         });
       }
@@ -235,7 +232,6 @@ function FordoHistoryPage() {
               <AccordionContent className="px-4 pb-4 space-y-3">
                 {g.wls.map((w) => {
                   const items = itemsByWl.get(w.id) || [];
-                  const total = items.reduce((s, it) => s + (Number(it.price) || 0) * (Number(it.qty) || 0), 0);
                   return (
                     <div key={w.id} className="border rounded-md p-3">
                       <div className="flex items-center justify-between mb-2">
@@ -249,12 +245,10 @@ function FordoHistoryPage() {
                               {it.name}
                               {it.qty ? <span className="text-muted-foreground"> — {it.qty}{it.unit ? ` ${it.unit}` : ""}</span> : null}
                             </span>
-                            {it.price ? <span className="text-muted-foreground">৳{Number(it.price) * Number(it.qty || 1)}</span> : null}
                           </li>
                         ))}
                         {items.length === 0 && <li className="text-muted-foreground italic">কোনো আইটেম নেই</li>}
                       </ul>
-                      {total > 0 && <div className="mt-2 text-right text-sm font-medium">মোট: ৳{Math.round(total)}</div>}
                     </div>
                   );
                 })}
@@ -381,7 +375,6 @@ function FordoHistoryPage() {
                       {it.name}
                       {it.qty ? <span className="text-muted-foreground"> — {it.qty}{it.unit ? ` ${it.unit}` : ""}</span> : null}
                     </span>
-                    {it.price ? <span>৳{Number(it.price) * Number(it.qty || 1)}</span> : null}
                   </li>
                 ))}
               </ul>
