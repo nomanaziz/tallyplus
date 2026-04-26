@@ -1,8 +1,9 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, MapPin, Phone, ShoppingBag, Store, ShieldCheck, MessageCircle, Facebook, Info, FileText } from "lucide-react";
+import { Loader2, MapPin, Phone, ShoppingBag, Store, MessageCircle, Facebook, Info, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { MarketplaceProductCard } from "@/components/marketplace/MarketplaceProductCard";
 
 const RESERVED = new Set([
   "app","admin","auth","shop","shops","api","pricing","affiliate","f","_",
@@ -12,13 +13,13 @@ const RESERVED = new Set([
 ]);
 
 type Shop = {
-  id: string; name: string; username: string | null; logo_url: string | null;
+  id: string; name: string; username: string | null; slug: string | null; logo_url: string | null;
   cover_url: string | null; tagline: string | null; address: string | null; phone: string | null;
   about: string | null; terms_and_conditions: string | null; return_policy: string | null;
   shipping_policy: string | null; facebook_url: string | null; whatsapp_number: string | null;
   meta_description: string | null;
 };
-type Listing = { id: string; product_id: string; price: number; stock: number; unit: string | null; warranty_months: number | null };
+type Listing = { id: string; product_id: string; price: number; stock: number; unit: string | null; min_order: number | null; warranty_months: number | null };
 type Product = { id: string; name: string; image_url: string | null; unit: string | null };
 
 type LoaderData = { shop: Shop; listings: Listing[]; products: Record<string, Product> };
@@ -141,32 +142,13 @@ function PublicShopPage() {
               const p = products[l.product_id];
               if (!p) return null;
               return (
-                <Link
+                <MarketplaceProductCard
                   key={l.id}
-                  to="/shop/p/$id"
-                  params={{ id: l.id }}
-                  className="group rounded-xl border bg-card p-3 transition-shadow hover:shadow-md"
-                >
-                  <div className="aspect-square overflow-hidden rounded-lg bg-muted">
-                    {p.image_url ? (
-                      <img src={p.image_url} alt={p.name} loading="lazy" className="h-full w-full object-cover transition-transform group-hover:scale-105" />
-                    ) : (
-                      <div className="flex h-full items-center justify-center text-muted-foreground"><ShoppingBag className="h-10 w-10" /></div>
-                    )}
-                  </div>
-                  <div className="mt-2 line-clamp-2 text-sm font-medium">{p.name}</div>
-                  <div className="mt-1 text-base font-bold text-primary">৳ {l.price}</div>
-                  <div className="mt-0.5 flex flex-wrap gap-1">
-                    {l.stock > 0 ? (
-                      <span className="text-xs text-muted-foreground">স্টক: {l.stock} {l.unit ?? p.unit ?? ""}</span>
-                    ) : (
-                      <span className="text-xs text-destructive">স্টক নেই</span>
-                    )}
-                    {l.warranty_months ? (
-                      <span className="inline-flex items-center gap-0.5 text-[11px] text-primary"><ShieldCheck className="h-3 w-3" />{l.warranty_months}মাস</span>
-                    ) : null}
-                  </div>
-                </Link>
+                  listing={{ ...l, shop_id: shop.id }}
+                  product={p}
+                  shop={shop}
+                  showShopChip={false}
+                />
               );
             })}
           </div>
