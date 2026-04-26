@@ -447,7 +447,11 @@ function MarketplacePage() {
                   <div className="mb-3 text-sm text-muted-foreground">{vendorTotal} টি দোকান</div>
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                     {vendors.map((s) => {
-                      const fordoSlug = s.wishlist_slug ?? null;
+                      const rawSlug = s.wishlist_slug;
+                      const fordoSlug =
+                        typeof rawSlug === "string" && rawSlug.trim().length > 0
+                          ? rawSlug.trim()
+                          : null;
                       return (
                         <div
                           key={s.id}
@@ -499,8 +503,11 @@ function MarketplacePage() {
                                 ফর্দ পাঠান
                               </Link>
                             ) : (
-                              <span className="flex flex-1 items-center justify-center rounded-lg bg-muted px-3 py-2 text-xs text-muted-foreground">
-                                ফর্দ লিঙ্ক নেই
+                              <span
+                                title="এই দোকানের ফর্দ লিঙ্ক এখনো সক্রিয় নয়"
+                                className="flex flex-1 items-center justify-center rounded-lg bg-muted px-3 py-2 text-xs text-muted-foreground"
+                              >
+                                ফর্দ লিঙ্ক এখনো নেই
                               </span>
                             )}
                             <Link
