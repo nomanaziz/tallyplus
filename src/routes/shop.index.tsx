@@ -29,7 +29,7 @@ type Listing = {
   min_order: number | null;
   warranty_months?: number | null;
 };
-type Shop = { id: string; name: string; slug: string | null; username: string | null; logo_url: string | null; tagline: string | null };
+type Shop = { id: string; name: string; slug: string | null; username: string | null; logo_url: string | null; tagline: string | null; address?: string | null };
 type Product = { id: string; name: string; image_url: string | null; unit: string | null };
 type ShopType = { code: string; name_bn: string; name_en: string };
 
