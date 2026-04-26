@@ -1,60 +1,100 @@
-## ফর্দ History (গ্রাহক ইতিহাস) — Plan
+## Plan: Label fix, Sidebar cleanup, এবং B2B (পাইকারি) Module
 
-### লক্ষ্য
-দোকানদার নাম বা মোবাইল নম্বর দিয়ে search করে দেখতে পারবেন — কোন গ্রাহক কোন তারিখে কী কী কিনেছিলেন (ফর্দ পাঠিয়েছিলেন)। আলাদা গ্রাহকের কোনো sensitive data রাখা হবে না — শুধু **নাম + ফোন** এবং তাদের পুরোনো ফর্দগুলো।
-
----
-
-### Approach
-নতুন কোনো customer table দরকার নেই — `customer_wishlists` টেবিলেই ইতিমধ্যে `customer_name`, `customer_phone`, `shop_id`, `created_at` আছে এবং `customer_wishlist_items`-এ items আছে। আমরা এই data কে দুইটা view-এ গুছিয়ে দেখাবো।
+তিনটা আলাদা কাজ একসাথে — ছোট থেকে বড় পর্যন্ত।
 
 ---
 
-### What will be built
-
-**1. New route: `/app/fordo-history` (ফর্দ ইতিহাস)**
-
-দুইটা tab:
-
-- **Tab 1: গ্রাহক তালিকা (Customer List)**
-  - Search box: নাম বা মোবাইল নম্বর
-  - প্রতিটি গ্রাহকের জন্য একটি card:
-    - নাম, মোবাইল নম্বর
-    - মোট ফর্দ সংখ্যা
-    - সর্বশেষ ফর্দের তারিখ
-    - মোট আনুমানিক খরচ (items × price যেখানে আছে)
-  - Card-এ click করলে → ওই গ্রাহকের সব ফর্দ মাস অনুযায়ী group করে দেখাবে
-
-- **Tab 2: সব ফর্দ (All Fordos — timeline)**
-  - মাস filter (এপ্রিল ২০২৬, মার্চ ২০২৬…)
-  - Search (নাম/ফোন)
-  - প্রতিটি ফর্দের সংক্ষিপ্ত preview — গ্রাহকের নাম, ফোন, তারিখ, item count, status
-  - Click → বিস্তারিত items সহ dialog
-
-**2. Customer detail view (drill-down)**
-যখন কোনো গ্রাহকে click করা হবে:
-- উপরে গ্রাহকের নাম + ফোন + WhatsApp/Call button
-- নিচে মাস-অনুযায়ী সব ফর্দ — accordion-এ
-- প্রতিটি ফর্দের ভিতরে item list (নাম, পরিমাণ, দাম)
-
-**3. Sidebar/Navigation**
-- `AppSidebar.tsx`-এ "গ্রাহক ফর্দ"-এর নিচে "ফর্দ ইতিহাস" link যোগ করা হবে
+### 1) Label fix (ছোট কাজ)
+`src/routes/app.quick-order.tsx`-এ "দোকানের বাইরের পণ্য" → **"স্টকের বাইরের পণ্য"** করা হবে। English label "External items" রাখব (বা "Out-of-stock items")।
 
 ---
 
-### Technical Details
+### 2) Sidebar restructure
+`src/components/app/AppSidebar.tsx`-এ দুইটা পরিবর্তন:
 
-- Route file: `src/routes/app.fordo-history.tsx`
-- Data source: existing `customer_wishlists` + `customer_wishlist_items` tables (RLS already restricts to shop members — security ✓)
-- Customer aggregation: client-side group-by on `customer_phone` (normalized — trim + last 11 digits) থেকে, যাতে একই ফোনে নাম একটু আলাদা হলেও merge হয়
-- Month grouping: `created_at` থেকে `YYYY-MM` key
-- Search: debounced, case-insensitive substring match on name + phone
-- কোনো নতুন migration লাগবে না — schema পর্যাপ্ত
+- **দ্রুত ফর্দ** (`/app/quick-order`) — এখন "লেনদেন" section-এ আছে। সরিয়ে **"গ্রাহক ও যোগাযোগ"** section-এ "গ্রাহক ফর্দ"-এর কাছে নিয়ে আসা হবে।
+- **প্রোডাক্ট রিটার্ন** (`/app/returns`) — এখন "হিসাবের খাতা" section-এ আছে। সরিয়ে **"পণ্য ও স্টক"** section-এ নিয়ে আসা হবে।
+
+কোনো route URL বদলাবে না — শুধু sidebar grouping।
 
 ---
 
-### Files to create/modify
-- **Create**: `src/routes/app.fordo-history.tsx`
-- **Modify**: `src/components/app/AppSidebar.tsx` (নতুন menu item)
+### 3) B2B (পাইকারি) Module — বড় feature
 
-কোনো DB migration বা edge function পরিবর্তন এই কাজে দরকার নেই।
+**ধারণা:** একই app-এ দুই ধরনের ব্যবসায়ী থাকবে:
+- **খুচরা বিক্রেতা (Retail)** — বর্তমান default behavior
+- **পাইকারি বিক্রেতা (Wholesale)** — extra B2B-specific options
+
+খুচরা দোকানদাররা পাইকারি দোকানদারদের কাছে **B2B ফর্দ** পাঠাতে পারবে — ঠিক যেমন consumer ফর্দ পাঠায়, তেমন।
+
+---
+
+#### ৩.১ Setting toggle: "আপনি কি পাইকারি বিক্রেতা?"
+
+- Shop settings page-এ একটা toggle: `is_wholesale` (default `false`)
+- DB migration: `shops` table-এ নতুন column `is_wholesale boolean default false` যোগ
+- Toggle on করলে shop B2B mode-এ চলে যাবে — নিচের সব পাইকারি features unlock হবে
+
+#### ৩.২ Product-level পাইকারি setting
+
+`products` table-এ ইতিমধ্যে আছে:
+- `bulk_enabled boolean`
+- `bulk_min_qty numeric`
+- `bulk_price numeric`
+
+Wholesale shop হলে product form-এ এই fields আরো prominent করা হবে — "পাইকারি বিক্রির minimum quantity" + "পাইকারি দাম" required দেখাবে। খুচরা shop হলে আগের মতই optional থাকবে।
+
+#### ৩.৩ Marketplace-এ wholesale vendor আলাদা দেখানো
+
+- Marketplace vendor list (`/shop`)-এ filter chip যোগ হবে: **"সব / খুচরা / পাইকারি"**
+- পাইকারি vendor card-এ একটা **"পাইকারি"** badge দেখাবে
+- পাইকারি shop-এর product card-এ price-এর জায়গায় পাইকারি দাম + min qty দেখাবে (e.g., "৳৪৫০/ডজন · সর্বনিম্ন ১ ডজন")
+
+#### ৩.৪ B2B ফর্দ — খুচরা থেকে পাইকারি-তে
+
+পাইকারি shop-এর vendor page-এ **"B2B ফর্দ পাঠান"** button থাকবে (consumer ফর্দ-এর পাশাপাশি)। B2B ফর্দ আলাদা flag দিয়ে চিহ্নিত হবে — যাতে পাইকারি shop-এর dashboard-এ B2B vs consumer ফর্দ আলাদা tab-এ দেখানো যায়।
+
+DB change:
+- `customer_wishlists` table-এ নতুন column `is_b2b boolean default false`
+- `buyer_shop_id uuid` (যে দোকান অর্ডার পাঠাচ্ছে তার shop_id, nullable — consumer হলে null)
+
+পাইকারি shop-এর "গ্রাহক ফর্দ" page-এ দুইটা tab:
+- **Consumer ফর্দ** (পুরাতন behavior)
+- **B2B ফর্দ** (অন্য shop থেকে আসা — buyer shop-এর নাম + ফোন দেখাবে)
+
+#### ৩.৫ B2B order flow simplification
+
+খুচরা shop owner যখন logged-in অবস্থায় কোনো পাইকারি vendor-এর page থেকে ফর্দ পাঠাবে:
+- Auto-fill: shop name → customer_name, owner phone → customer_phone, shop address → customer_address
+- `is_b2b = true`, `buyer_shop_id = current shop id` set হবে
+- পাইকারি দাম apply হবে items-এ (যেখানে `bulk_enabled`)
+
+---
+
+### Phasing (যেহেতু বড় কাজ)
+
+আমি একসাথে সব করব — কিন্তু যদি কোনো অংশ পরে refine করতে চান:
+
+- **Phase A (এই turn-এ):** Label fix + Sidebar restructure + DB migration (`is_wholesale`, `is_b2b`, `buyer_shop_id`) + Settings toggle + Marketplace wholesale filter/badge
+- **Phase B (পরে):** B2B ফর্দ পাঠানোর full flow (auto-fill, পাইকারি দাম apply, পাইকারি shop-এ B2B tab) — Phase A approve হওয়ার পর
+
+আমি **Phase A** দিয়ে শুরু করব, কারণ Phase B-এর জন্য আগে foundation দরকার এবং একসাথে অনেক বদল testing-এ ঝামেলা হবে।
+
+---
+
+### Files to be created/modified (Phase A)
+
+**Modify:**
+- `src/routes/app.quick-order.tsx` — label fix
+- `src/components/app/AppSidebar.tsx` — দ্রুত ফর্দ ও প্রোডাক্ট রিটার্ন relocate
+- `src/routes/app.online-shop.settings.tsx` (or shop settings page) — `is_wholesale` toggle
+- `src/routes/shop.index.tsx` — wholesale filter chip + badge
+- `src/components/marketplace/VendorCard.tsx` (or equivalent) — পাইকারি badge
+- `supabase/functions/marketplace-public/index.ts` — `is_wholesale` field expose
+
+**DB Migration:**
+- `shops.is_wholesale boolean default false`
+- `customer_wishlists.is_b2b boolean default false`
+- `customer_wishlists.buyer_shop_id uuid nullable`
+
+কোনো নতুন route file বা edge function লাগছে না Phase A-তে।
