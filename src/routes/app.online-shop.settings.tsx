@@ -30,6 +30,7 @@ type ShopRow = {
   address: string | null; phone: string | null; logo_url: string | null;
   banner_url: string | null;
   marketplace_enabled: boolean;
+  is_wholesale: boolean;
   social_links: Record<string, string> | null;
 };
 
@@ -45,7 +46,7 @@ function StoreSettingsPage() {
     queryFn: async () => {
       const { data } = await supabase
         .from("shops")
-        .select("id,name,username,tagline,address,phone,logo_url,banner_url,marketplace_enabled,social_links")
+        .select("id,name,username,tagline,address,phone,logo_url,banner_url,marketplace_enabled,is_wholesale,social_links")
         .eq("id", shopId!)
         .maybeSingle();
       return (data as ShopRow | null) ?? null;
@@ -53,6 +54,7 @@ function StoreSettingsPage() {
   });
 
   const [enabled, setEnabled] = useState(true);
+  const [isWholesale, setIsWholesale] = useState(false);
   const [name, setName] = useState("");
   const [username, setUsername] = useState("");
   const [editingUsername, setEditingUsername] = useState(false);
@@ -70,6 +72,7 @@ function StoreSettingsPage() {
   useEffect(() => {
     if (!shop) return;
     setEnabled(shop.marketplace_enabled);
+    setIsWholesale(!!shop.is_wholesale);
     setName(shop.name ?? "");
     setUsername(shop.username ?? defaultUsername(shop.name ?? ""));
     setPhone(shop.phone ?? "");
@@ -135,6 +138,7 @@ function StoreSettingsPage() {
       address: address.trim() || null,
       logo_url: logoUrl,
       banner_url: bannerUrl,
+      is_wholesale: isWholesale,
       social_links: social,
     }).eq("id", shopId);
     setSaving(false);
