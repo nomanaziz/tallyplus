@@ -1,4 +1,4 @@
-import { Outlet, Link, createRootRouteWithContext, HeadContent, Scripts } from "@tanstack/react-router";
+import { Outlet, Link, createRootRouteWithContext, HeadContent, Scripts, useRouterState } from "@tanstack/react-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { I18nProvider } from "@/lib/i18n";
 import { ThemeProvider } from "@/lib/theme";
@@ -89,6 +89,7 @@ function RootComponent() {
         <ThemeProvider>
           <AuthProvider>
             <RefCaptureProvider>
+              <RouteTransitionBar />
               <Outlet />
               <Toaster richColors position="top-center" />
               <InstallAppPrompt />
@@ -97,5 +98,16 @@ function RootComponent() {
         </ThemeProvider>
       </I18nProvider>
     </QueryClientProvider>
+  );
+}
+
+function RouteTransitionBar() {
+  const isLoading = useRouterState({ select: (s) => s.isLoading || s.isTransitioning });
+  if (!isLoading) return null;
+  return (
+    <div className="pointer-events-none fixed inset-x-0 top-0 z-[100] h-0.5 overflow-hidden bg-primary/10">
+      <div className="h-full w-1/3 animate-[slide_1s_ease-in-out_infinite] bg-primary" />
+      <style>{`@keyframes slide{0%{transform:translateX(-100%)}100%{transform:translateX(400%)}}`}</style>
+    </div>
   );
 }

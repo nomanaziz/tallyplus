@@ -15,7 +15,8 @@ import { QuickSellSheet } from "./QuickSellSheet";
 import { SettingsSheet } from "./SettingsSheet";
 import { InstallAppButton } from "./InstallAppPrompt";
 import { ColorThemeButton } from "./ColorThemePicker";
-import { Bell, Settings, MessageCircle, ChevronDown, LogOut, Languages, Zap, ArrowLeftRight, LayoutDashboard } from "lucide-react";
+import { NotificationBell } from "./NotificationBell";
+import { Settings, MessageCircle, ChevronDown, LogOut, Languages, Zap, ArrowLeftRight, LayoutDashboard } from "lucide-react";
 
 export function AppTopbar() {
   const { profile, signOut } = useAuth();
@@ -59,12 +60,7 @@ export function AppTopbar() {
         >
           <MessageCircle className="h-5 w-5" />
         </a>
-        <button
-          className="flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground hover:bg-accent"
-          aria-label="Notifications"
-        >
-          <Bell className="h-5 w-5" />
-        </button>
+        <NotificationBell />
         <ColorThemeButton />
         <InstallAppButton />
         <button

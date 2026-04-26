@@ -2943,6 +2943,16 @@ export type Database = {
         Args: { _shop_id: string; _user_id: string }
         Returns: boolean
       }
+      notify_shop_members: {
+        Args: {
+          _body: string
+          _link: string
+          _shop_id: string
+          _title: string
+          _type: string
+        }
+        Returns: undefined
+      }
       shop_role: {
         Args: { _shop_id: string; _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]

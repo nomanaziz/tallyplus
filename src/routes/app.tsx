@@ -94,8 +94,20 @@ function AppLayout() {
   // of bouncing back to /auth (which made login feel frozen on mobile).
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center text-sm text-muted-foreground">
-        {lang === "bn" ? "লোড হচ্ছে..." : "Loading..."}
+      <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-background text-sm text-muted-foreground">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+        <div>{lang === "bn" ? "লোড হচ্ছে..." : "Loading..."}</div>
+      </div>
+    );
+  }
+
+  // Auth resolved but no user — show a brief redirect splash so the screen
+  // does not look frozen between the redirect and /auth painting.
+  if (!user) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-background text-sm text-muted-foreground">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+        <div>{lang === "bn" ? "লগইন পেজে যাচ্ছি..." : "Redirecting to login..."}</div>
       </div>
     );
   }
