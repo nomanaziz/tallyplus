@@ -62,6 +62,7 @@ const SECTIONS: Section[] = [
     items: [
       { to: "/app/contacts", bn: "যোগাযোগ", en: "Contacts", icon: icons.contact, perm: "contacts" },
       { to: "/app/customer-wishlist", bn: "গ্রাহক ফর্দ", en: "Customer Wishlist", icon: icons.contact, perm: "contacts" },
+      { to: "/app/fordo-history", bn: "ফর্দ ইতিহাস", en: "Fordo History", icon: icons.contact, perm: "contacts" },
       { to: "/app/marketing", bn: "মার্কেটিং", en: "Marketing", icon: icons.marketing, perm: "sms" },
     ],
   },

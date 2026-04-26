@@ -39,6 +39,7 @@ import { Route as AppOwnerReportRouteImport } from './routes/app.owner-report'
 import { Route as AppOwnerLedgerRouteImport } from './routes/app.owner-ledger'
 import { Route as AppOnlineShopRouteImport } from './routes/app.online-shop'
 import { Route as AppMarketingRouteImport } from './routes/app.marketing'
+import { Route as AppFordoHistoryRouteImport } from './routes/app.fordo-history'
 import { Route as AppExpiringRouteImport } from './routes/app.expiring'
 import { Route as AppExpenseLedgerRouteImport } from './routes/app.expense-ledger'
 import { Route as AppDueLedgerRouteImport } from './routes/app.due-ledger'
@@ -230,6 +231,11 @@ const AppOnlineShopRoute = AppOnlineShopRouteImport.update({
 const AppMarketingRoute = AppMarketingRouteImport.update({
   id: '/marketing',
   path: '/marketing',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppFordoHistoryRoute = AppFordoHistoryRouteImport.update({
+  id: '/fordo-history',
+  path: '/fordo-history',
   getParentRoute: () => AppRoute,
 } as any)
 const AppExpiringRoute = AppExpiringRouteImport.update({
@@ -475,6 +481,7 @@ export interface FileRoutesByFullPath {
   '/app/due-ledger': typeof AppDueLedgerRoute
   '/app/expense-ledger': typeof AppExpenseLedgerRoute
   '/app/expiring': typeof AppExpiringRoute
+  '/app/fordo-history': typeof AppFordoHistoryRoute
   '/app/marketing': typeof AppMarketingRoute
   '/app/online-shop': typeof AppOnlineShopRouteWithChildren
   '/app/owner-ledger': typeof AppOwnerLedgerRoute
@@ -548,6 +555,7 @@ export interface FileRoutesByTo {
   '/app/due-ledger': typeof AppDueLedgerRoute
   '/app/expense-ledger': typeof AppExpenseLedgerRoute
   '/app/expiring': typeof AppExpiringRoute
+  '/app/fordo-history': typeof AppFordoHistoryRoute
   '/app/marketing': typeof AppMarketingRoute
   '/app/owner-ledger': typeof AppOwnerLedgerRoute
   '/app/owner-report': typeof AppOwnerReportRoute
@@ -622,6 +630,7 @@ export interface FileRoutesById {
   '/app/due-ledger': typeof AppDueLedgerRoute
   '/app/expense-ledger': typeof AppExpenseLedgerRoute
   '/app/expiring': typeof AppExpiringRoute
+  '/app/fordo-history': typeof AppFordoHistoryRoute
   '/app/marketing': typeof AppMarketingRoute
   '/app/online-shop': typeof AppOnlineShopRouteWithChildren
   '/app/owner-ledger': typeof AppOwnerLedgerRoute
@@ -698,6 +707,7 @@ export interface FileRouteTypes {
     | '/app/due-ledger'
     | '/app/expense-ledger'
     | '/app/expiring'
+    | '/app/fordo-history'
     | '/app/marketing'
     | '/app/online-shop'
     | '/app/owner-ledger'
@@ -771,6 +781,7 @@ export interface FileRouteTypes {
     | '/app/due-ledger'
     | '/app/expense-ledger'
     | '/app/expiring'
+    | '/app/fordo-history'
     | '/app/marketing'
     | '/app/owner-ledger'
     | '/app/owner-report'
@@ -844,6 +855,7 @@ export interface FileRouteTypes {
     | '/app/due-ledger'
     | '/app/expense-ledger'
     | '/app/expiring'
+    | '/app/fordo-history'
     | '/app/marketing'
     | '/app/online-shop'
     | '/app/owner-ledger'
@@ -1112,6 +1124,13 @@ declare module '@tanstack/react-router' {
       path: '/marketing'
       fullPath: '/app/marketing'
       preLoaderRoute: typeof AppMarketingRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/fordo-history': {
+      id: '/app/fordo-history'
+      path: '/fordo-history'
+      fullPath: '/app/fordo-history'
+      preLoaderRoute: typeof AppFordoHistoryRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/expiring': {
@@ -1519,6 +1538,7 @@ interface AppRouteChildren {
   AppDueLedgerRoute: typeof AppDueLedgerRoute
   AppExpenseLedgerRoute: typeof AppExpenseLedgerRoute
   AppExpiringRoute: typeof AppExpiringRoute
+  AppFordoHistoryRoute: typeof AppFordoHistoryRoute
   AppMarketingRoute: typeof AppMarketingRoute
   AppOnlineShopRoute: typeof AppOnlineShopRouteWithChildren
   AppOwnerLedgerRoute: typeof AppOwnerLedgerRoute
@@ -1553,6 +1573,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppDueLedgerRoute: AppDueLedgerRoute,
   AppExpenseLedgerRoute: AppExpenseLedgerRoute,
   AppExpiringRoute: AppExpiringRoute,
+  AppFordoHistoryRoute: AppFordoHistoryRoute,
   AppMarketingRoute: AppMarketingRoute,
   AppOnlineShopRoute: AppOnlineShopRouteWithChildren,
   AppOwnerLedgerRoute: AppOwnerLedgerRoute,
