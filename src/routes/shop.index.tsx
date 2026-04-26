@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
@@ -14,8 +14,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetHeader } from "@/components/ui/sheet";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SiteHeader } from "@/components/site/SiteHeader";
-import { Loader2, Search, Store, SlidersHorizontal, RotateCcw } from "lucide-react";
+import { Loader2, Search, Store, SlidersHorizontal, RotateCcw, ShoppingBag, MapPin } from "lucide-react";
 import { MarketplaceProductCard } from "@/components/marketplace/MarketplaceProductCard";
 
 type Listing = {
@@ -33,6 +34,7 @@ type Product = { id: string; name: string; image_url: string | null; unit: strin
 type ShopType = { code: string; name_bn: string; name_en: string };
 
 type Sort = "newest" | "price_asc" | "price_desc";
+type View = "products" | "vendors";
 
 type SearchParams = {
   q?: string;
@@ -42,6 +44,7 @@ type SearchParams = {
   type?: string[];
   inStock?: boolean;
   sort?: Sort;
+  view?: View;
 };
 
 export const Route = createFileRoute("/shop/")({
@@ -68,6 +71,7 @@ export const Route = createFileRoute("/shop/")({
       return undefined;
     };
     const sort = s.sort === "price_asc" || s.sort === "price_desc" || s.sort === "newest" ? (s.sort as Sort) : undefined;
+    const view = s.view === "vendors" ? ("vendors" as View) : undefined;
     return {
       q: typeof s.q === "string" ? s.q : undefined,
       page: toNum(s.page) ?? 1,
@@ -76,6 +80,7 @@ export const Route = createFileRoute("/shop/")({
       type: toArr(s.type),
       inStock: s.inStock === true || s.inStock === "true" || s.inStock === 1 || s.inStock === "1" ? true : undefined,
       sort,
+      view,
     };
   },
   component: MarketplacePage,
