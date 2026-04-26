@@ -76,7 +76,7 @@ export function QuickViewDialog({ open, onOpenChange, listing, product, shop }: 
             </div>
 
             <Link
-              to={shop.username ? "/$username" : "/shop/s/$slug"}
+              to={shop.username ? "/vendor/$username" : "/shop/s/$slug"}
               params={shop.username ? ({ username: shop.username } as never) : ({ slug: shop.slug ?? "" } as never)}
               className="mt-4 inline-flex items-center gap-2 rounded-lg border bg-card p-2 text-sm hover:bg-accent"
             >
