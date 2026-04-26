@@ -74,9 +74,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
+    let initialized = false;
+    const finish = () => {
+      if (!initialized) {
+        initialized = true;
+        setLoading(false);
+      }
+    };
     const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => {
       setSession(s);
-      setLoading(false);
+      finish();
       if (!s?.user) {
         setProfile(null);
         setIsAdmin(false);
@@ -84,11 +91,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setProfileLoaded(false);
       }
     });
-    supabase.auth.getSession().then(({ data: { session: s } }) => {
-      setSession(s);
-      setLoading(false);
-    });
-    return () => sub.subscription.unsubscribe();
+    supabase.auth
+      .getSession()
+      .then(({ data: { session: s } }) => {
+        setSession((cur) => cur ?? s);
+        finish();
+      })
+      .catch(() => finish());
+    // Hard safety: never let the splash hang forever
+    const t = setTimeout(finish, 4000);
+    return () => {
+      clearTimeout(t);
+      sub.subscription.unsubscribe();
+    };
   }, []);
 
   const refresh = async () => {
