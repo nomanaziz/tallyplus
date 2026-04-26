@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Copy, Share2, MessageCircle, Phone, Trash2, Check, RefreshCw, Loader2, ListChecks, ExternalLink } from "lucide-react";
+import { Copy, Share2, MessageCircle, Phone, Trash2, Check, RefreshCw, Loader2, ListChecks, ExternalLink, Receipt, Package } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useShop } from "@/lib/shop";
 import { useI18n } from "@/lib/i18n";
@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
+import { ConvertWishlistToSaleDialog } from "@/components/app/ConvertWishlistToSaleDialog";
 
 export const Route = createFileRoute("/app/customer-wishlist")({
   head: () => ({ meta: [{ title: "গ্রাহক ফর্দ — Tally Plus" }] }),
@@ -40,6 +41,8 @@ type WishlistItem = {
   done: boolean;
   fulfillment_status?: string;
   shopkeeper_note?: string | null;
+  // local-only flag for lump-sum pricing (not persisted)
+  lump?: boolean;
 };
 
 const COLOR_BG: Record<string, string> = {
