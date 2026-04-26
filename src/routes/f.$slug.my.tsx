@@ -1,19 +1,15 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import {
+  ArrowLeft,
+  ChevronDown,
+  ChevronUp,
   Loader2,
-  KeyRound,
-  History,
-  RefreshCw,
   LogOut,
-  RotateCw,
-  Save,
-  Trash2,
-  Check,
-  X,
-  Clock,
+  Plus,
+  ScrollText,
   Send,
-  ChevronRight,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,21 +21,23 @@ import { supabase } from "@/integrations/supabase/client";
 export const Route = createFileRoute("/f/$slug/my")({
   head: () => ({
     meta: [
-      { title: "আমার ফর্দ — ইতিহাস ও পুনরায় পাঠান" },
-      { name: "description", content: "আপনার পাঠানো ফর্দ দেখুন এবং আবার পাঠান।" },
+      { title: "আমার ফর্দ — Tally Plus" },
+      { name: "description", content: "আপনার পাঠানো সব ফর্দ ও নোট এক জায়গায়।" },
+      { name: "robots", content: "noindex" },
     ],
   }),
-  component: MyWishlistsPage,
+  component: MyWishlistPage,
 });
 
-type Wishlist = {
+type WL = {
   id: string;
   status: string;
   color: string;
   note: string | null;
   created_at: string;
 };
-type Item = {
+
+type WLItem = {
   id: string;
   wishlist_id: string;
   name: string;
@@ -47,110 +45,171 @@ type Item = {
   unit: string | null;
   price: number | null;
   position: number;
-  fulfillment_status: string;
+  fulfillment_status: string | null;
   shopkeeper_note: string | null;
-  done: boolean;
-};
-type TemplateItem = { name: string; qty: number | null; unit: string | null; price: number | null };
-type Template = { id: string; name: string; items: TemplateItem[]; created_at: string; updated_at: string };
-type Customer = { id: string; name: string; phone: string; address: string | null; shop_id: string };
-type Shop = { id: string; name: string; logo_url: string | null; phone: string | null };
-
-const STATUS_BADGE: Record<string, { label: string; cls: string }> = {
-  new: { label: "নতুন", cls: "bg-primary/15 text-primary" },
-  seen: { label: "দোকানদার দেখেছেন", cls: "bg-amber-500/15 text-amber-700" },
-  done: { label: "সম্পন্ন", cls: "bg-success/15 text-success" },
+  done?: boolean;
 };
 
-const FULFILL_BADGE: Record<string, { label: string; icon: typeof Check; cls: string }> = {
-  pending: { label: "অপেক্ষমান", icon: Clock, cls: "bg-muted text-muted-foreground" },
-  fulfilled: { label: "পেয়েছি", icon: Check, cls: "bg-success/15 text-success" },
-  unavailable: { label: "পাইনি", icon: X, cls: "bg-destructive/15 text-destructive" },
-  later: { label: "পরে দিবে", icon: Clock, cls: "bg-amber-500/15 text-amber-700" },
+type Template = {
+  id: string;
+  name: string;
+  items: Array<{ name: string; qty?: number | null; unit?: string | null; price?: number | null }>;
+  updated_at: string;
 };
 
-function fmt(iso: string) {
+type HistoryResp = {
+  ok?: boolean;
+  error?: string;
+  customer?: { id: string; name: string; phone: string; address: string | null };
+  shop?: { id: string; name: string; logo_url: string | null; phone: string | null };
+  wishlists?: WL[];
+  items?: WLItem[];
+  templates?: Template[];
+};
+
+const STATUS_LABEL: Record<string, { bn: string; cls: string }> = {
+  new: { bn: "নতুন", cls: "bg-primary/15 text-primary" },
+  seen: { bn: "দেখা হয়েছে", cls: "bg-muted text-muted-foreground" },
+  done: { bn: "সম্পন্ন", cls: "bg-success/15 text-success" },
+};
+
+const FULFILL_LABEL: Record<string, string> = {
+  pending: "অপেক্ষমাণ",
+  available: "আছে",
+  unavailable: "নেই",
+  partial: "আংশিক",
+};
+
+function fmtTime(iso: string) {
   return new Date(iso).toLocaleString("bn-BD", { dateStyle: "medium", timeStyle: "short" });
 }
 
-function MyWishlistsPage() {
+function MyWishlistPage() {
   const { slug } = Route.useParams();
+  const navigate = useNavigate();
+  const tokenKey = `wl-token-${slug}`;
   const [token, setToken] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [shopName, setShopName] = useState("");
+  const [shopLogo, setShopLogo] = useState<string | null>(null);
+  const [shopErr, setShopErr] = useState<string | null>(null);
+
+  // Login state
   const [phone, setPhone] = useState("");
   const [pin, setPin] = useState("");
   const [loggingIn, setLoggingIn] = useState(false);
 
-  const [loading, setLoading] = useState(false);
-  const [data, setData] = useState<{
-    customer: Customer;
-    shop: Shop | null;
-    wishlists: Wishlist[];
-    items: Item[];
-    templates: Template[];
-  } | null>(null);
-  const [err, setErr] = useState<string | null>(null);
+  // Dashboard state
+  const [data, setData] = useState<HistoryResp | null>(null);
+  const [openId, setOpenId] = useState<string | null>(null);
 
-  // Try existing token from localStorage
   useEffect(() => {
     try {
-      const t = localStorage.getItem(`wl-token-${slug}`);
-      if (t) setToken(t);
+      setToken(localStorage.getItem(tokenKey));
     } catch {
       // ignore
     }
+  }, [tokenKey]);
+
+  // Fetch shop branding
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data: d, error } = await supabase.functions.invoke("wishlist-shop-info", {
+          body: { slug },
+        });
+        if (cancelled) return;
+        const r = (d ?? {}) as { shop_name?: string; shop_logo_url?: string | null; error?: string };
+        if (error || r.error) {
+          setShopErr(r.error ?? error?.message ?? "Shop not found");
+        } else {
+          setShopName(r.shop_name ?? "");
+          setShopLogo(r.shop_logo_url ?? null);
+        }
+      } catch (e) {
+        if (!cancelled) setShopErr((e as Error).message);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [slug]);
 
-  const fetchHistory = async (tok: string) => {
-    setLoading(true);
-    setErr(null);
-    try {
-      const { data: resp, error } = await supabase.functions.invoke("customer-wishlist-history", {
-        body: { token: tok },
-      });
-      if (error || (resp as { error?: string })?.error) {
-        const msg = (resp as { error?: string })?.error ?? error?.message ?? "Failed";
-        setErr(msg);
-        if (msg.includes("টোকেন")) {
-          localStorage.removeItem(`wl-token-${slug}`);
-          setToken(null);
-        }
-      } else {
-        setData(resp as typeof data);
-      }
-    } catch (e) {
-      setErr((e as Error).message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  // Fetch history when token present
   useEffect(() => {
-    if (token) void fetchHistory(token);
-  }, [token]);
+    if (!token) {
+      setLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setLoading(true);
+    (async () => {
+      try {
+        const { data: d, error } = await supabase.functions.invoke("customer-wishlist-history", {
+          body: { token },
+        });
+        if (cancelled) return;
+        const r = (d ?? {}) as HistoryResp;
+        if (error || r.error || !r.ok) {
+          // token expired or invalid → drop it and force re-login
+          try {
+            localStorage.removeItem(tokenKey);
+          } catch {
+            // ignore
+          }
+          setToken(null);
+          if (r.error) toast.error(r.error);
+        } else {
+          setData(r);
+        }
+      } catch (e) {
+        toast.error((e as Error).message);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [token, tokenKey]);
 
-  const login = async () => {
+  const itemsByWishlist = useMemo(() => {
+    const map = new Map<string, WLItem[]>();
+    (data?.items ?? []).forEach((it) => {
+      const arr = map.get(it.wishlist_id) ?? [];
+      arr.push(it);
+      map.set(it.wishlist_id, arr);
+    });
+    return map;
+  }, [data]);
+
+  const handleLogin = async () => {
     if (!/^[0-9+\-\s()]{6,20}$/.test(phone.trim())) {
       toast.error("সঠিক মোবাইল নাম্বার দিন");
       return;
     }
-    if (!/^\d{4,8}$/.test(pin.trim())) {
-      toast.error("সঠিক PIN দিন");
+    if (!/^\d{4,6}$/.test(pin.trim())) {
+      toast.error("৪-৬ digit PIN দিন");
       return;
     }
     setLoggingIn(true);
     try {
-      const { data: resp, error } = await supabase.functions.invoke("customer-wishlist-login", {
+      const { data: d, error } = await supabase.functions.invoke("customer-wishlist-login", {
         body: { slug, phone: phone.trim(), pin: pin.trim() },
       });
-      const r = (resp ?? {}) as { ok?: boolean; token?: string; error?: string };
-      if (r.error || error) {
-        toast.error(r.error ?? error?.message ?? "Login failed");
-      } else if (r.token) {
-        localStorage.setItem(`wl-token-${slug}`, r.token);
-        setToken(r.token);
-        setPhone("");
-        setPin("");
+      const r = (d ?? {}) as { ok?: boolean; token?: string; error?: string };
+      if (error || r.error || !r.ok || !r.token) {
+        toast.error(r.error ?? error?.message ?? "লগইন ব্যর্থ");
+        return;
       }
+      try {
+        localStorage.setItem(tokenKey, r.token);
+      } catch {
+        // ignore
+      }
+      setToken(r.token);
+      toast.success("লগইন সফল");
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
@@ -158,125 +217,144 @@ function MyWishlistsPage() {
     }
   };
 
-  const logout = () => {
-    localStorage.removeItem(`wl-token-${slug}`);
+  const handleLogout = () => {
+    try {
+      localStorage.removeItem(tokenKey);
+    } catch {
+      // ignore
+    }
     setToken(null);
     setData(null);
+    setPin("");
   };
 
-  const reuseWishlist = (wId: string) => {
-    if (!data) return;
-    const its = data.items.filter((i) => i.wishlist_id === wId);
-    const payload = {
-      name: data.customer.name,
-      phone: data.customer.phone,
-      address: data.customer.address ?? "",
-      items: its.map((i) => ({ name: i.name, qty: i.qty, unit: i.unit, price: i.price })),
-    };
-    sessionStorage.setItem(`wl-reuse-${wId}`, JSON.stringify(payload));
-    window.location.href = `/f/${slug}?reuse=${wId}`;
-  };
-
-  const reuseTemplate = (t: Template) => {
-    if (!data) return;
-    const payload = {
-      name: data.customer.name,
-      phone: data.customer.phone,
-      address: data.customer.address ?? "",
-      items: t.items,
-    };
-    sessionStorage.setItem(`wl-tpl-${t.id}`, JSON.stringify(payload));
-    window.location.href = `/f/${slug}?tpl=${t.id}`;
-  };
-
-  const saveAsTemplate = async (wId: string) => {
-    if (!token || !data) return;
-    const name = prompt("টেমপ্লেটের নাম দিন (যেমন: মাসিক বাজার)", "মাসিক বাজার");
-    if (!name?.trim()) return;
-    const its = data.items
-      .filter((i) => i.wishlist_id === wId)
-      .map((i) => ({ name: i.name, qty: i.qty, unit: i.unit, price: i.price }));
-    const { data: resp, error } = await supabase.functions.invoke("save-wishlist-template", {
-      body: { token, action: "save", name: name.trim(), items: its },
-    });
-    const r = (resp ?? {}) as { ok?: boolean; error?: string };
-    if (r.error || error) {
-      toast.error(r.error ?? error?.message ?? "Failed");
-    } else {
-      toast.success("টেমপ্লেট সংরক্ষিত হয়েছে");
-      void fetchHistory(token);
+  const reuseWishlist = (wl: WL) => {
+    const items = itemsByWishlist.get(wl.id) ?? [];
+    try {
+      sessionStorage.setItem(
+        `wl-reuse-${wl.id}`,
+        JSON.stringify({
+          name: data?.customer?.name ?? "",
+          phone: data?.customer?.phone ?? "",
+          address: data?.customer?.address ?? "",
+          items: items.map((it) => ({ name: it.name, qty: it.qty, unit: it.unit, price: it.price })),
+        }),
+      );
+      navigate({ to: "/f/$slug", params: { slug }, search: { reuse: wl.id } });
+    } catch (e) {
+      toast.error((e as Error).message);
     }
   };
 
-  const deleteTemplate = async (id: string) => {
-    if (!token) return;
-    if (!confirm("এই টেমপ্লেট মুছে ফেলবেন?")) return;
-    const { data: resp, error } = await supabase.functions.invoke("save-wishlist-template", {
-      body: { token, action: "delete", id },
-    });
-    const r = (resp ?? {}) as { ok?: boolean; error?: string };
-    if (r.error || error) toast.error(r.error ?? error?.message ?? "Failed");
-    else {
-      toast.success("মুছে ফেলা হয়েছে");
-      void fetchHistory(token);
+  const useTemplate = (tpl: Template) => {
+    try {
+      sessionStorage.setItem(
+        `wl-tpl-${tpl.id}`,
+        JSON.stringify({
+          name: data?.customer?.name ?? "",
+          phone: data?.customer?.phone ?? "",
+          address: data?.customer?.address ?? "",
+          items: tpl.items,
+        }),
+      );
+      navigate({ to: "/f/$slug", params: { slug }, search: { tpl: tpl.id } });
+    } catch (e) {
+      toast.error((e as Error).message);
     }
   };
 
-  // ==== Login screen ====
-  if (!token) {
+  if (shopErr) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-muted/30 p-4">
-        <div className="w-full max-w-sm rounded-2xl border bg-card p-6 shadow-sm">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/15 text-primary">
-            <KeyRound className="h-6 w-6" />
-          </div>
-          <h1 className="mt-3 text-center text-xl font-extrabold">আমার ফর্দ</h1>
-          <p className="mt-1 text-center text-sm text-muted-foreground">
-            আপনার মোবাইল নাম্বার ও PIN দিয়ে লগইন করুন।
-          </p>
-          <div className="mt-5 space-y-3">
-            <div>
-              <Label htmlFor="lp">মোবাইল নাম্বার</Label>
-              <Input
-                id="lp"
-                type="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="01XXXXXXXXX"
-                className="h-11"
-                maxLength={20}
-              />
-            </div>
-            <div>
-              <Label htmlFor="lpin">PIN</Label>
-              <Input
-                id="lpin"
-                inputMode="numeric"
-                value={pin}
-                onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 8))}
-                placeholder="৬-ডিজিটের PIN"
-                className="h-11 tracking-[0.4em] tabular-nums"
-                maxLength={8}
-              />
-            </div>
-            <Button onClick={login} disabled={loggingIn} className="h-11 w-full text-base font-semibold">
-              {loggingIn ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <KeyRound className="mr-2 h-4 w-4" />}
-              লগইন
-            </Button>
-          </div>
-          <Link
-            to="/f/$slug"
-            params={{ slug }}
-            className="mt-4 block text-center text-xs text-muted-foreground underline"
-          >
-            নতুন ফর্দ পাঠান
-          </Link>
+      <div className="flex min-h-screen items-center justify-center bg-muted/30 p-6">
+        <div className="max-w-sm rounded-2xl border bg-card p-6 text-center shadow-sm">
+          <X className="mx-auto h-10 w-10 text-destructive" />
+          <h1 className="mt-3 text-lg font-bold">লিঙ্কটি পাওয়া যায়নি</h1>
+          <p className="mt-1 text-sm text-muted-foreground">{shopErr}</p>
         </div>
       </div>
     );
   }
 
-  if (loading && !data) {
+  // ---------- LOGIN VIEW ----------
+  if (!token) {
+    return (
+      <div className="min-h-screen bg-muted/30 px-4 py-8">
+        <div className="mx-auto max-w-sm">
+          <Link
+            to="/f/$slug"
+            params={{ slug }}
+            className="mb-4 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+          >
+            <ArrowLeft className="h-4 w-4" /> ফর্দ পাঠানোর পেইজে ফিরে যান
+          </Link>
+
+          <div className="rounded-2xl border bg-card p-6 shadow-sm">
+            <div className="mb-4 flex items-center gap-3">
+              {shopLogo ? (
+                <img src={shopLogo} alt="" className="h-12 w-12 rounded-xl border bg-card object-cover" />
+              ) : (
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl border bg-muted text-lg font-bold">
+                  {shopName.charAt(0) || "?"}
+                </div>
+              )}
+              <div className="min-w-0">
+                <div className="text-[11px] uppercase tracking-wide text-muted-foreground">আমার ফর্দ</div>
+                <h1 className="truncate text-lg font-extrabold leading-tight">{shopName}</h1>
+              </div>
+            </div>
+
+            <p className="mb-4 text-sm text-muted-foreground">
+              আপনার <span className="font-semibold text-foreground">মোবাইল নাম্বার</span> ও{" "}
+              <span className="font-semibold text-foreground">PIN</span> দিয়ে এই দোকানে পাঠানো সব পুরাতন ফর্দ ও নোট দেখুন।
+            </p>
+
+            <div className="space-y-3">
+              <div>
+                <Label htmlFor="lp">মোবাইল নাম্বার</Label>
+                <Input
+                  id="lp"
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="01XXXXXXXXX"
+                  className="h-11"
+                  maxLength={20}
+                />
+              </div>
+              <div>
+                <Label htmlFor="lpin">PIN</Label>
+                <Input
+                  id="lpin"
+                  type="password"
+                  inputMode="numeric"
+                  value={pin}
+                  onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                  placeholder="৪-৬ digit"
+                  className="h-11 tracking-[0.3em] tabular-nums"
+                  maxLength={6}
+                />
+              </div>
+              <Button onClick={handleLogin} disabled={loggingIn} className="h-11 w-full">
+                {loggingIn ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                দেখুন
+              </Button>
+            </div>
+
+            <div className="mt-5 rounded-lg bg-muted/50 p-3 text-[11px] text-muted-foreground">
+              💡 আগে এই দোকানে ফর্দ পাঠাননি? আগে{" "}
+              <Link to="/f/$slug" params={{ slug }} className="font-semibold text-primary underline">
+                একটি ফর্দ পাঠান
+              </Link>{" "}
+              — তখন আপনার জন্য একটি account তৈরি হবে।
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ---------- DASHBOARD VIEW ----------
+  if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-muted/30">
         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -284,219 +362,168 @@ function MyWishlistsPage() {
     );
   }
 
-  if (err) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-muted/30 p-4">
-        <div className="max-w-sm rounded-2xl border bg-card p-6 text-center shadow-sm">
-          <p className="text-sm text-destructive">{err}</p>
-          <Button onClick={logout} variant="outline" className="mt-3">
-            আবার লগইন
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
-  if (!data) return null;
+  const wishlists = data?.wishlists ?? [];
+  const templates = data?.templates ?? [];
+  const customerName = data?.customer?.name ?? "গ্রাহক";
 
   return (
-    <div className="min-h-screen bg-muted/30 pb-20">
+    <div className="min-h-screen bg-muted/30 pb-24">
       <div className="mx-auto max-w-md px-4 pt-6">
         {/* Header */}
         <div className="mb-4 flex items-center gap-3">
-          {data.shop?.logo_url ? (
-            <img src={data.shop.logo_url} alt="" className="h-12 w-12 rounded-xl border bg-card object-cover" />
+          {shopLogo ? (
+            <img src={shopLogo} alt="" className="h-11 w-11 rounded-xl border bg-card object-cover" />
           ) : (
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl border bg-card text-lg font-bold text-muted-foreground">
-              {data.shop?.name.charAt(0) ?? "S"}
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl border bg-card text-base font-bold">
+              {shopName.charAt(0)}
             </div>
           )}
           <div className="min-w-0 flex-1">
-            <div className="text-xs text-muted-foreground">আপনার দোকান</div>
-            <h1 className="truncate text-lg font-extrabold leading-tight">{data.shop?.name ?? ""}</h1>
-            <div className="text-[11px] text-muted-foreground">{data.customer.name} · {data.customer.phone}</div>
+            <div className="text-[11px] text-muted-foreground">{shopName}</div>
+            <h1 className="truncate text-base font-extrabold leading-tight">স্বাগতম, {customerName}</h1>
           </div>
-          <Button size="sm" variant="outline" onClick={logout} title="লগআউট">
+          <Button variant="outline" size="sm" onClick={handleLogout} title="লগআউট">
             <LogOut className="h-3.5 w-3.5" />
           </Button>
         </div>
 
-        <div className="mb-3 flex gap-2">
-          <Link
-            to="/f/$slug"
-            params={{ slug }}
-            className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-3 py-2.5 text-sm font-bold text-primary-foreground shadow-sm hover:opacity-95"
-          >
-            <Send className="h-4 w-4" /> নতুন ফর্দ
-          </Link>
-          <Button variant="outline" size="sm" onClick={() => token && fetchHistory(token)} disabled={loading}>
-            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-          </Button>
-        </div>
+        {/* My Wishlists */}
+        <section className="mb-5">
+          <div className="mb-2 flex items-center justify-between">
+            <h2 className="text-sm font-bold">আমার ফর্দসমূহ ({wishlists.length})</h2>
+          </div>
 
-        {/* Templates */}
-        {data.templates.length > 0 && (
-          <div className="mb-5">
-            <h2 className="mb-2 text-sm font-bold text-muted-foreground">সংরক্ষিত টেমপ্লেট</h2>
-            <div className="space-y-2">
-              {data.templates.map((t) => (
-                <div key={t.id} className="rounded-xl border bg-card p-3 shadow-sm">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0 flex-1">
-                      <div className="truncate font-bold">{t.name}</div>
-                      <div className="text-xs text-muted-foreground">{t.items.length}টি পণ্য · {fmt(t.updated_at)}</div>
-                    </div>
-                    <Button size="sm" variant="ghost" onClick={() => deleteTemplate(t.id)} className="text-destructive">
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
-                  </div>
-                  <Button onClick={() => reuseTemplate(t)} className="mt-2 w-full" size="sm">
-                    <Send className="mr-1 h-3.5 w-3.5" /> এই টেমপ্লেট পাঠান
-                  </Button>
-                </div>
-              ))}
+          {wishlists.length === 0 ? (
+            <div className="rounded-xl border bg-card p-6 text-center text-sm text-muted-foreground">
+              এখনও কোনো ফর্দ পাঠাননি।
             </div>
-          </div>
-        )}
+          ) : (
+            <div className="space-y-2">
+              {wishlists.map((wl) => {
+                const items = itemsByWishlist.get(wl.id) ?? [];
+                const open = openId === wl.id;
+                const status = STATUS_LABEL[wl.status] ?? STATUS_LABEL.new;
+                return (
+                  <div key={wl.id} className="overflow-hidden rounded-xl border bg-card shadow-sm">
+                    <button
+                      type="button"
+                      onClick={() => setOpenId(open ? null : wl.id)}
+                      className="flex w-full items-center justify-between gap-3 p-3 text-left hover:bg-accent/40"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <Badge variant="secondary" className={status.cls}>
+                            {status.bn}
+                          </Badge>
+                          <span className="text-[11px] text-muted-foreground">
+                            {items.length} টি পণ্য
+                          </span>
+                        </div>
+                        <div className="mt-1 truncate text-xs text-muted-foreground">{fmtTime(wl.created_at)}</div>
+                        {wl.note && (
+                          <div className="mt-1 line-clamp-1 text-xs text-foreground/80">📝 {wl.note}</div>
+                        )}
+                      </div>
+                      {open ? (
+                        <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                      ) : (
+                        <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                      )}
+                    </button>
 
-        {/* History */}
-        <h2 className="mb-2 text-sm font-bold text-muted-foreground">আমার সব ফর্দ</h2>
-        {data.wishlists.length === 0 ? (
-          <div className="rounded-2xl border border-dashed bg-card p-6 text-center text-sm text-muted-foreground">
-            <History className="mx-auto h-8 w-8 opacity-50" />
-            <p className="mt-2">এখনো কোনো ফর্দ পাঠাননি।</p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {data.wishlists.map((w) => (
-              <WishlistCard
-                key={w.id}
-                w={w}
-                items={data.items.filter((i) => i.wishlist_id === w.id)}
-                onReuse={() => reuseWishlist(w.id)}
-                onSaveTpl={() => saveAsTemplate(w.id)}
-              />
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function WishlistCard({
-  w,
-  items,
-  onReuse,
-  onSaveTpl,
-}: {
-  w: Wishlist;
-  items: Item[];
-  onReuse: () => void;
-  onSaveTpl: () => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const totals = useMemo(() => {
-    let total = 0;
-    let fulfilled = 0;
-    let unavailable = 0;
-    let later = 0;
-    let pending = 0;
-    for (const it of items) {
-      const q = Number(it.qty) || 0;
-      const p = Number(it.price) || 0;
-      total += q && p ? q * p : p;
-      if (it.fulfillment_status === "fulfilled") fulfilled++;
-      else if (it.fulfillment_status === "unavailable") unavailable++;
-      else if (it.fulfillment_status === "later") later++;
-      else pending++;
-    }
-    return { total, fulfilled, unavailable, later, pending };
-  }, [items]);
-
-  const status = STATUS_BADGE[w.status] ?? STATUS_BADGE.new;
-
-  return (
-    <div className="rounded-2xl border bg-card shadow-sm">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center gap-3 p-3 text-left"
-      >
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <Badge variant="secondary" className={status.cls}>
-              {status.label}
-            </Badge>
-            <span className="text-xs text-muted-foreground">{fmt(w.created_at)}</span>
-          </div>
-          <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[11px]">
-            <span className="rounded bg-muted px-1.5 py-0.5 font-semibold">{items.length} পণ্য</span>
-            {totals.fulfilled > 0 && (
-              <span className="rounded bg-success/15 px-1.5 py-0.5 font-semibold text-success">✓ {totals.fulfilled}</span>
-            )}
-            {totals.unavailable > 0 && (
-              <span className="rounded bg-destructive/15 px-1.5 py-0.5 font-semibold text-destructive">✗ {totals.unavailable}</span>
-            )}
-            {totals.later > 0 && (
-              <span className="rounded bg-amber-500/15 px-1.5 py-0.5 font-semibold text-amber-700">⏳ {totals.later}</span>
-            )}
-            <span className="ml-auto font-extrabold tabular-nums text-primary">৳ {totals.total.toLocaleString("bn-BD", { maximumFractionDigits: 2 })}</span>
-          </div>
-        </div>
-        <ChevronRight className={`h-4 w-4 flex-none text-muted-foreground transition-transform ${open ? "rotate-90" : ""}`} />
-      </button>
-
-      {open && (
-        <div className="border-t">
-          <ul className="divide-y">
-            {items.map((it) => {
-              const f = FULFILL_BADGE[it.fulfillment_status] ?? FULFILL_BADGE.pending;
-              const Icon = f.icon;
-              const lineTotal = (Number(it.qty) || 0) && (Number(it.price) || 0)
-                ? (Number(it.qty) || 0) * (Number(it.price) || 0)
-                : Number(it.price) || 0;
-              return (
-                <li key={it.id} className="flex items-start gap-2 p-3">
-                  <div className={`mt-0.5 flex h-6 w-6 flex-none items-center justify-center rounded-full ${f.cls}`} title={f.label}>
-                    <Icon className="h-3.5 w-3.5" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="text-sm font-medium">{it.name}</div>
-                    <div className="text-[11px] text-muted-foreground">
-                      {it.qty ?? "—"} {it.unit ?? ""} {it.price != null && `· ৳${it.price}`}
-                    </div>
-                    {it.shopkeeper_note && (
-                      <div className="mt-1 rounded bg-muted/50 px-2 py-1 text-[11px] italic text-muted-foreground">
-                        দোকানদার: {it.shopkeeper_note}
+                    {open && (
+                      <div className="border-t bg-muted/20 p-3">
+                        {items.length === 0 ? (
+                          <p className="text-xs text-muted-foreground">কোনো পণ্য নেই।</p>
+                        ) : (
+                          <ul className="space-y-1.5">
+                            {items.map((it) => (
+                              <li
+                                key={it.id}
+                                className="flex items-start justify-between gap-2 rounded-md bg-background p-2 text-sm"
+                              >
+                                <div className="min-w-0 flex-1">
+                                  <div className="font-medium">{it.name}</div>
+                                  <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
+                                    {it.qty != null && (
+                                      <span>
+                                        {it.qty} {it.unit ?? ""}
+                                      </span>
+                                    )}
+                                    {it.price != null && (
+                                      <span className="font-semibold text-foreground">৳{it.price}</span>
+                                    )}
+                                    {it.fulfillment_status && it.fulfillment_status !== "pending" && (
+                                      <Badge variant="outline" className="px-1.5 py-0 text-[10px]">
+                                        {FULFILL_LABEL[it.fulfillment_status] ?? it.fulfillment_status}
+                                      </Badge>
+                                    )}
+                                  </div>
+                                  {it.shopkeeper_note && (
+                                    <div className="mt-1 text-[11px] italic text-muted-foreground">
+                                      💬 {it.shopkeeper_note}
+                                    </div>
+                                  )}
+                                </div>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="mt-3 w-full"
+                          onClick={() => reuseWishlist(wl)}
+                        >
+                          <Send className="mr-1.5 h-3.5 w-3.5" /> এই ফর্দ আবার পাঠান
+                        </Button>
                       </div>
                     )}
                   </div>
-                  <div className="flex-none text-right">
-                    <div className="text-[11px] text-muted-foreground">{f.label}</div>
-                    {lineTotal > 0 && (
-                      <div className="text-xs font-semibold tabular-nums text-primary">৳ {lineTotal.toLocaleString("bn-BD", { maximumFractionDigits: 2 })}</div>
-                    )}
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-          {w.note && (
-            <div className="border-t bg-muted/30 px-3 py-2 text-xs">
-              <span className="font-semibold">আপনার নোট:</span> {w.note}
+                );
+              })}
             </div>
           )}
-          <div className="flex gap-2 border-t bg-muted/30 p-2">
-            <Button onClick={onReuse} size="sm" className="flex-1">
-              <RotateCw className="mr-1 h-3.5 w-3.5" /> এটাই আবার পাঠান
-            </Button>
-            <Button onClick={onSaveTpl} size="sm" variant="outline">
-              <Save className="mr-1 h-3.5 w-3.5" /> টেমপ্লেট
-            </Button>
-          </div>
-        </div>
-      )}
+        </section>
+
+        {/* Templates / Notes */}
+        {templates.length > 0 && (
+          <section className="mb-5">
+            <div className="mb-2 flex items-center justify-between">
+              <h2 className="text-sm font-bold">আমার নোট/Templates ({templates.length})</h2>
+            </div>
+            <div className="space-y-2">
+              {templates.map((tpl) => (
+                <div key={tpl.id} className="rounded-xl border bg-card p-3 shadow-sm">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5 font-semibold">
+                        <ScrollText className="h-3.5 w-3.5 text-muted-foreground" />
+                        <span className="truncate">{tpl.name}</span>
+                      </div>
+                      <div className="mt-0.5 text-[11px] text-muted-foreground">
+                        {tpl.items?.length ?? 0} টি পণ্য
+                      </div>
+                    </div>
+                    <Button size="sm" variant="outline" onClick={() => useTemplate(tpl)}>
+                      <Send className="mr-1 h-3.5 w-3.5" /> পাঠান
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* New wishlist CTA */}
+        <Link
+          to="/f/$slug"
+          params={{ slug }}
+          className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed bg-card py-4 text-sm font-semibold text-primary hover:bg-accent/40"
+        >
+          <Plus className="h-4 w-4" /> নতুন ফর্দ পাঠান
+        </Link>
+      </div>
     </div>
   );
 }

@@ -153,6 +153,14 @@ function PublicWishlistPage() {
       toast.error("সঠিক মোবাইল নাম্বার দিন");
       return;
     }
+    if (!/^\d{4,6}$/.test(pinInput.trim())) {
+      toast.error(
+        hasExistingProfile
+          ? "আপনার ৪-৬ digit PIN দিন"
+          : "৪-৬ digit-এর একটি PIN তৈরি করুন",
+      );
+      return;
+    }
     if (cleanItems.length === 0) {
       toast.error("অন্তত একটি পণ্য যোগ করুন");
       return;
@@ -366,23 +374,25 @@ function PublicWishlistPage() {
               <Label htmlFor="cp">মোবাইল নাম্বার</Label>
               <Input id="cp" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="01XXXXXXXXX" className="h-11 bg-background/70" maxLength={20} />
             </div>
-            {hasExistingProfile && (
-              <div>
-                <Label htmlFor="cpin">আপনার PIN (পুরোনো গ্রাহকদের জন্য)</Label>
-                <Input
-                  id="cpin"
-                  inputMode="numeric"
-                  value={pinInput}
-                  onChange={(e) => setPinInput(e.target.value.replace(/\D/g, "").slice(0, 8))}
-                  placeholder="৬-ডিজিটের PIN"
-                  className="h-11 bg-background/70 tracking-[0.3em] tabular-nums"
-                  maxLength={8}
-                />
-                <p className="mt-1 text-[11px] text-muted-foreground">
-                  PIN ভুলে গেলেও সমস্যা নেই — শুধু আবার নাম্বার দিন, দোকানদার আপনার পরিচয় চিনে নিবেন।
-                </p>
-              </div>
-            )}
+            <div>
+              <Label htmlFor="cpin">
+                {hasExistingProfile ? "আপনার PIN" : "নতুন PIN তৈরি করুন"} <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="cpin"
+                inputMode="numeric"
+                value={pinInput}
+                onChange={(e) => setPinInput(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                placeholder="৪-৬ digit PIN"
+                className="h-11 bg-background/70 tracking-[0.3em] tabular-nums"
+                maxLength={6}
+              />
+              <p className="mt-1 text-[11px] text-muted-foreground">
+                {hasExistingProfile
+                  ? "এই নাম্বারে আগে ফর্দ পাঠিয়েছেন — পুরোনো PIN-টিই দিন।"
+                  : "এই PIN ও মোবাইল নাম্বার দিয়ে পরে আপনি নিজের সব ফর্দ ও নোট দেখতে পারবেন। মনে রাখুন বা সংরক্ষণ করুন।"}
+              </p>
+            </div>
             <div>
               <Label htmlFor="ca">ঠিকানা (ইচ্ছাধীন)</Label>
               <Input id="ca" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="বাসা / এলাকা" className="h-11 bg-background/70" maxLength={200} />

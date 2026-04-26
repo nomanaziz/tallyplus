@@ -1,56 +1,65 @@
-## কেন এত slow লাগছে — আসল কারণ
+## লক্ষ্য
 
-আপনার app আসলে "ভারী" না, কিন্তু কয়েকটা specific জায়গায় লোড হওয়ার pattern টা খারাপ। আগের project গুলো instant মনে হত কারণ সেগুলো হয়তো client-only static site ছিল। এই project এ আছে:
+গ্রাহক যখন দোকানের ফর্দ লিঙ্কে গিয়ে ফর্দ পাঠাবে, তখন **মোবাইল নাম্বার + ৪-৬ digit PIN** বাধ্যতামূলক হবে। পরে গ্রাহক একই দোকানের লিঙ্কে এসে নিজের সব পুরাতন ফর্দ, নোট, এবং saved templates একটা ছোট্ট dashboard-এ দেখতে পারবে।
 
-1. **Supabase Edge Function (cold start)** — `marketplace-public` function প্রথম call এ "ঘুম থেকে উঠতে" 1.5–4 সেকেন্ড নেয়। প্রতিবার freeze মনে হওয়ার মূল কারণ এটাই।
-2. **কোনো loading skeleton/feedback নেই** — click করার পর শুধু সাদা স্ক্রিন বা পুরনো data দেখা যায়, তাই "click হইছে কি না" বোঝা যায় না।
-3. **Cache নেই** — marketplace এ প্রতিবার ঢুকলেই নতুন করে fetch হয়, পুরনো data instant দেখায় না।
-4. **`/shop` রুটে দুইটা fetch একসাথে চলে** — একই function কে দুইবার hit করছে (vendors + products), যদিও user একটাই view দেখে।
-5. **`/auth` page এ login button click করার পর কোনো spinner/disable হয় না** — Supabase auth call চলাকালীন বোঝা যায় না কিছু হচ্ছে।
-6. **Marketplace Edge Function inefficient** — আগে সব enabled shop ID আনে, তারপর সেই ID list দিয়ে listings query করে (দুই round-trip)। বড় হলে আরও slow হবে।
-7. **Module নয়, architecture সমস্যা** — কোনো "ভারী module" use করা নাই যেটা remove করলে fix হবে। সব সমস্যা data-loading pattern এর।
+## ভালো খবর — Backend আগেই তৈরি আছে
 
-## কী কী fix করব
+প্রজেক্টে ইতোমধ্যে আছে:
+- `wishlist_customers` table (phone + pin_hash সহ)
+- `customer-wishlist-login` edge function (phone + PIN → 30-দিনের token)
+- `customer-wishlist-history` edge function (token → সব ফর্দ + items + templates)
+- `submit-wishlist` edge function (ইতিমধ্যে PIN handle করে — কিন্তু optional)
 
-### 1. Marketplace fast করা (`/shop`)
-- TanStack Router এর **route loader + staleTime** ব্যবহার করে data prefetch ও cache করব। ফিরে এলে instant দেখাবে।
-- **Skeleton UI** যোগ করব (গ্রে box গুলো) যাতে freeze না মনে হয়।
-- **Active view এর data শুধু fetch হবে** — vendors view এ থাকলে products call হবে না।
-- Edge Function এ দুইটা query কে **single JOIN query** তে combine করব (round-trip কমবে)।
-- Client-side **debounce** — search type করার সাথে সাথে fetch নয়, 300ms wait।
+তাই শুধু **frontend-এ PIN বাধ্যতামূলক করা** এবং **"আমার ফর্দ" page যোগ করা** বাকি।
 
-### 2. Login fast feedback (`/auth`)
-- Login button click এ সঙ্গে সঙ্গে **disable + spinner** দেখাব।
-- "Loading..." overlay এর বদলে প্রপার full-screen splash যা button থেকে বোঝা যায় কাজ চলছে।
+## কী পরিবর্তন হবে
 
-### 3. Dashboard cache
-- `/app/dashboard` এ গেলেই query চলে — `staleTime: 60s` দিয়ে প্রতিবার refetch বন্ধ করব।
+### 1. গ্রাহকের ফর্দ submit form-এ পরিবর্তন (`src/routes/f.$slug.tsx`)
 
-### 4. Edge Function cold start কমানো (limited)
-- Cold start পুরোপুরি যাবে না (Supabase platform limitation), কিন্তু:
-  - Function এর response এ `Cache-Control` header যোগ করব যাতে browser সাময়িক cache করে।
-  - Single `marketplace-public` function এ multiple round-trip কমাব।
+- "ফর্দ পাঠান" বাটনের পাশে দুইটা ইনপুট বাধ্যতামূলক করা:
+  - **মোবাইল নাম্বার** (ইতিমধ্যে আছে)
+  - **PIN (৪-৬ digit)** — নতুন গ্রাহক হলে নিজে তৈরি করবে; আগে থেকে থাকলে সেই PIN দিতে হবে
+- যদি এই নাম্বারে আগে থেকে account থাকে → "আপনার PIN দিন"
+- নতুন হলে → "একটি ৪-৬ digit PIN তৈরি করুন (পরে এই PIN দিয়ে নিজের ফর্দ দেখতে পারবেন)"
+- Submit সফল হলে একটা confirmation card-এ লেখা থাকবে: "✅ ফর্দ পাঠানো হয়েছে। আপনার PIN: ••••। পরে [আমার ফর্দ দেখুন] বাটনে ক্লিক করে এই দোকানের সব ফর্দ দেখতে পারবেন।"
+- উপরে একটা ছোট link/button: **"আমার ফর্দ দেখুন →"** যা `/f/$slug/my` এ নিয়ে যাবে
 
-### 5. Visual feedback সব জায়গায়
-- Marketplace card grid এর জন্য **skeleton placeholders** (12টা গ্রে box প্রথমে দেখাবে)।
-- Login form এ **inline loading state**।
-- Top of page এ একটা **thin progress bar** route change এ (TanStack Router এর built-in)।
+### 2. নতুন গ্রাহক dashboard route — `src/routes/f.$slug.my.tsx`
 
-## আপনার অন্য প্রশ্নের উত্তর
+দুইটা view থাকবে এই page-এ:
 
-> **"কোন module use করছ যে কারণে slow?"** — কোনো ভারী module না। সমস্যা হল Supabase Edge Function এর cold start + cache নেই + skeleton নেই। Module remove করে fix হবে না।
+**A. লগইন স্ক্রিন (token না থাকলে):**
+- দোকানের নাম + logo উপরে
+- মোবাইল নাম্বার + PIN ইনপুট
+- "দেখুন" বাটন → `customer-wishlist-login` কল করে token পাবে → `localStorage`-এ save (key: `wl_token_<slug>`)
 
-> **"আগের project click এ instant হত"** — সেগুলো সম্ভবত client-only ছিল (কোনো backend call ছাড়া)। এটা real database থেকে data আনে, তাই network round-trip আছে। তবে fix করার পর অনেক faster লাগবে।
+**B. Dashboard (token থাকলে):**
+- উপরে: "স্বাগতম, [গ্রাহকের নাম]" + লগআউট
+- **আমার ফর্দসমূহ** — সব past wishlists list, প্রতিটিতে status badge (নতুন/দেখা হয়েছে/সম্পন্ন), তারিখ, item count
+  - কোনো একটায় ক্লিক করলে accordion expand হয়ে items দেখাবে (নাম, qty, unit, দাম, fulfillment status, দোকানদারের নোট)
+- **আমার নোটস/templates** — saved templates (যদি থাকে) — "এই template দিয়ে নতুন ফর্দ পাঠান" বাটন → `/f/$slug?tpl=<id>`
+- নিচে একটা CTA: **"নতুন ফর্দ পাঠান"** → `/f/$slug`
 
-> **"Database query করতে পারছে না?"** — Database কাজ করছে। সমস্যা হল প্রথম call এ Edge Function ঘুম থেকে উঠতে দেরি হয়, এবং কোনো loading indicator নেই বলে freeze মনে হয়।
+### 3. ছোট UI link
 
-## Files যেগুলো change হবে
+- `f.$slug.tsx` page-এর উপরে header-এ ইতিমধ্যে `History` icon আছে — সেটাকে এই নতুন `/f/$slug/my` route-এ পয়েন্ট করানো হবে।
 
-- `src/routes/shop.index.tsx` — loader, skeleton, conditional fetch, debounce
-- `src/routes/auth.tsx` — loading button states
-- `src/routes/app.dashboard.tsx` — staleTime
-- `src/lib/queries.ts` — query options এ caching
-- `supabase/functions/marketplace-public/index.ts` — round-trip কমানো, cache headers
-- নতুন: `src/components/marketplace/MarketplaceSkeleton.tsx`
+## Validation Rules
 
-## Approve করলে এই fix গুলো আমি একসাথে apply করব। তারপর আপনি refresh দিয়ে দেখবেন marketplace ও login অনেক snappy লাগবে।
+- PIN: শুধু ৪–৬ digit number (regex `^\d{4,6}$`)
+- মোবাইল: ইতিমধ্যে `^[0-9+]{6,20}$`
+- উভয়ই খালি থাকলে submit button disabled
+
+## Database পরিবর্তন
+
+কিছু না — schema আগেই ঠিক আছে।
+
+## কী নতুন তৈরি হবে
+
+- `src/routes/f.$slug.my.tsx` — গ্রাহকের dashboard
+
+## কী edit হবে
+
+- `src/routes/f.$slug.tsx` — PIN বাধ্যতামূলক, helper text, "আমার ফর্দ" link, success card update
+
+কাজ শুরু করব কি?
