@@ -259,7 +259,9 @@ function ProductCard({ p, listing, saving, lang, onTogglePublish, onToggleFeatur
         </div>
         <div>
           <div className="text-muted-foreground">{lang === "bn" ? "স্টক" : "Stock"}</div>
-          <div className={`mt-0.5 font-semibold ${p.stock > 0 ? "" : "text-destructive"}`}>{lang === "bn" ? bnNum(p.stock) : p.stock}</div>
+          <div className={`mt-0.5 font-semibold ${p.stock < 0 ? "text-primary" : p.stock > 0 ? "" : "text-destructive"}`}>
+            {p.stock < 0 ? (lang === "bn" ? "অসীম" : "Unlimited") : (lang === "bn" ? bnNum(p.stock) : p.stock)}
+          </div>
         </div>
         <div>
           <div className="text-muted-foreground">{lang === "bn" ? "বিবরণ" : "Description"}</div>
