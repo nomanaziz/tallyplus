@@ -335,11 +335,30 @@ function ProductFormDialog({
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div className="grid gap-1.5">
-              <Label>{lang === "bn" ? "বর্তমান মজুদ" : "Current Stock"}</Label>
-              <Input type="number" value={stock} onChange={(e) => setStock(e.target.value)} />
+          {/* Stock tracking toggle */}
+          <div className="rounded-lg border bg-muted/30 p-3">
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <div className="text-sm font-medium">
+                  {lang === "bn" ? "স্টক হিসাব রাখতে চান?" : "Track stock for this product?"}
+                </div>
+                <div className="mt-0.5 text-xs text-muted-foreground">
+                  {trackStock
+                    ? (lang === "bn" ? "মজুদ ও লো-স্টক অ্যালার্ট সক্রিয় থাকবে।" : "Stock & low-stock alert will be active.")
+                    : (lang === "bn" ? "স্টক unlimited হিসেবে গণ্য হবে। অর্ডারে স্টক কমবে না, কোনো অ্যালার্ট আসবে না।" : "Stock will be treated as unlimited. Orders won't reduce stock; no alerts.")}
+                </div>
+              </div>
+              <Switch checked={trackStock} onCheckedChange={setTrackStock} />
             </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            {trackStock && (
+              <div className="grid gap-1.5">
+                <Label>{lang === "bn" ? "বর্তমান মজুদ" : "Current Stock"}</Label>
+                <Input type="number" value={stock} onChange={(e) => setStock(e.target.value)} />
+              </div>
+            )}
             <div className="grid gap-1.5">
               <Label>{lang === "bn" ? "ইউনিট" : "Unit"}</Label>
               <Input value={unit} onChange={(e) => setUnit(e.target.value)} placeholder="pcs / kg / ltr" />
