@@ -100,6 +100,13 @@ function MarketplacePage() {
   const [shopTypes, setShopTypes] = useState<ShopType[]>([]);
   const page = search.page ?? 1;
   const pageSize = 24;
+  const view: View = search.view ?? "products";
+
+  // Vendor view state
+  const [vendors, setVendors] = useState<Shop[]>([]);
+  const [vendorCounts, setVendorCounts] = useState<Record<string, number>>({});
+  const [vendorTotal, setVendorTotal] = useState(0);
+  const [vendorLoading, setVendorLoading] = useState(false);
 
   useEffect(() => {
     void supabase
@@ -112,6 +119,7 @@ function MarketplacePage() {
 
   useEffect(() => {
     let cancelled = false;
+    if (view !== "products") return;
     setLoading(true);
     void supabase.functions
       .invoke("marketplace-public", {
@@ -144,7 +152,37 @@ function MarketplacePage() {
     return () => {
       cancelled = true;
     };
-  }, [search.q, search.min, search.max, search.inStock, search.sort, page, search.type?.join(",")]);
+  }, [search.q, search.min, search.max, search.inStock, search.sort, page, search.type?.join(","), view]);
+
+  // Fetch vendors when in vendor view
+  useEffect(() => {
+    if (view !== "vendors") return;
+    let cancelled = false;
+    setVendorLoading(true);
+    void supabase.functions
+      .invoke("marketplace-public", {
+        body: {
+          action: "list-shops",
+          q: search.q ?? "",
+          page,
+          pageSize,
+          shop_type: search.type,
+        },
+      })
+      .then(({ data, error }) => {
+        if (cancelled) return;
+        if (error || !data || (data as { error?: string }).error) {
+          setVendors([]); setVendorCounts({}); setVendorTotal(0);
+        } else {
+          const d = data as { shops: Shop[]; counts: Record<string, number>; total: number };
+          setVendors(d.shops ?? []);
+          setVendorCounts(d.counts ?? {});
+          setVendorTotal(d.total ?? 0);
+        }
+        setVendorLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, [view, search.q, page, search.type?.join(",")]);
 
   const submitSearch = (e: React.FormEvent) => {
     e.preventDefault();
