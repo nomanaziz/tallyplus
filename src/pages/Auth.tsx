@@ -4,12 +4,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Loader2, MessageCircle } from "lucide-react";
 
-type Mode = "signup" | "login";
+type Mode = "login" | "signup";
 type Role = "owner" | "customer";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
@@ -37,7 +36,7 @@ async function callFn(name: string, body: unknown) {
 export default function AuthPage() {
   const { session } = useAuth();
   const navigate = useNavigate();
-  const [mode, setMode] = useState<Mode>("signup");
+  const [mode, setMode] = useState<Mode>("login");
   const [role, setRole] = useState<Role>("owner");
   const [name, setName] = useState("");
   const [shopName, setShopName] = useState("");
@@ -166,21 +165,58 @@ export default function AuthPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4 py-8">
-      <div className="w-full max-w-md space-y-6 rounded-2xl border bg-card p-6 shadow-sm">
+      <div className="w-full max-w-sm space-y-5 rounded-2xl border bg-card p-6 shadow-sm">
         <div className="text-center">
           <h1 className="text-2xl font-bold">Tally Plus</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            {mode === "signup" ? "নতুন account তৈরি করুন" : "Account-এ লগইন করুন"}
+            {mode === "login" ? "Account-এ লগইন করুন" : "নতুন account তৈরি করুন"}
           </p>
         </div>
 
-        <Tabs value={mode} onValueChange={(v) => setMode(v as Mode)}>
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="signup">সাইনআপ</TabsTrigger>
-            <TabsTrigger value="login">লগইন</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="signup" className="space-y-4 pt-4">
+        {mode === "login" ? (
+          <div className="space-y-3">
+            <Input
+              value={shopName}
+              onChange={(e) => setShopName(e.target.value)}
+              placeholder="দোকানের নাম (ঐচ্ছিক)"
+            />
+            <Input
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="মোবাইল নম্বর"
+              inputMode="tel"
+            />
+            <Input
+              value={pin}
+              onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 4))}
+              placeholder="৪ সংখ্যার PIN"
+              inputMode="numeric"
+              maxLength={4}
+              type="password"
+            />
+            <Button onClick={handleSubmit} disabled={loading} className="w-full">
+              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              লগইন
+            </Button>
+            <button
+              type="button"
+              onClick={() => setMode("signup")}
+              className="w-full text-center text-sm text-primary hover:underline"
+            >
+              Create account
+            </button>
+            <a
+              href={waUrl()}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-2 rounded-md border border-green-600/30 bg-green-50 px-3 py-2 text-xs text-green-700 hover:bg-green-100 dark:bg-green-950/30 dark:text-green-400"
+            >
+              <MessageCircle className="h-3.5 w-3.5" />
+              PIN ভুলে গেছেন? WhatsApp করুন
+            </a>
+          </div>
+        ) : (
+          <div className="space-y-3">
             <Tabs value={role} onValueChange={(v) => setRole(v as Role)}>
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="owner">দোকান মালিক</TabsTrigger>
@@ -188,68 +224,45 @@ export default function AuthPage() {
               </TabsList>
             </Tabs>
 
-            <div>
-              <Label>আপনার নাম</Label>
-              <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="পূর্ণ নাম" />
-            </div>
+            <Input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="আপনার নাম"
+            />
             {role === "owner" && (
-              <div>
-                <Label>দোকানের নাম</Label>
-                <Input value={shopName} onChange={(e) => setShopName(e.target.value)} placeholder="যেমন: রহিম স্টোর" />
-              </div>
-            )}
-            <div>
-              <Label>মোবাইল নম্বর</Label>
-              <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="01XXXXXXXXX" inputMode="tel" />
-            </div>
-            <div>
-              <Label>৪ সংখ্যার PIN তৈরি করুন</Label>
               <Input
-                value={pin}
-                onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 4))}
-                placeholder="••••"
-                inputMode="numeric"
-                maxLength={4}
-                type="password"
+                value={shopName}
+                onChange={(e) => setShopName(e.target.value)}
+                placeholder="দোকানের নাম"
               />
-            </div>
+            )}
+            <Input
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="মোবাইল নম্বর"
+              inputMode="tel"
+            />
+            <Input
+              value={pin}
+              onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 4))}
+              placeholder="৪ সংখ্যার PIN"
+              inputMode="numeric"
+              maxLength={4}
+              type="password"
+            />
             <Button onClick={handleSubmit} disabled={loading} className="w-full">
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Account তৈরি করুন
             </Button>
-          </TabsContent>
-
-          <TabsContent value="login" className="space-y-4 pt-4">
-            <div>
-              <Label>মোবাইল নম্বর</Label>
-              <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="01XXXXXXXXX" inputMode="tel" />
-            </div>
-            <div>
-              <Label>৪ সংখ্যার PIN</Label>
-              <Input
-                value={pin}
-                onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 4))}
-                placeholder="••••"
-                inputMode="numeric"
-                maxLength={4}
-                type="password"
-              />
-            </div>
-            <Button onClick={handleSubmit} disabled={loading} className="w-full">
-              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              লগইন করুন
-            </Button>
-            <a
-              href={waUrl()}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-center gap-2 rounded-md border border-green-600/30 bg-green-50 px-3 py-2 text-sm text-green-700 hover:bg-green-100 dark:bg-green-950/30 dark:text-green-400"
+            <button
+              type="button"
+              onClick={() => setMode("login")}
+              className="w-full text-center text-sm text-primary hover:underline"
             >
-              <MessageCircle className="h-4 w-4" />
-              PIN ভুলে গেছেন? Admin-কে WhatsApp করুন
-            </a>
-          </TabsContent>
-        </Tabs>
+              ← লগইনে ফিরুন
+            </button>
+          </div>
+        )}
 
         <div className="text-center text-xs text-muted-foreground">
           <Link to="/" className="hover:underline">হোমে ফিরুন</Link>
