@@ -26,6 +26,7 @@ type ShopRow = {
   name: string;
   slug: string | null;
   username?: string | null;
+  wishlist_slug?: string | null;
   logo_url: string | null;
   cover_url: string | null;
   tagline: string | null;
@@ -248,7 +249,7 @@ Deno.serve(async (req) => {
 
       const { data: shop } = await admin
         .from("shops")
-        .select("id, name, username, slug, logo_url, cover_url, tagline, address, phone, shop_type_code, marketplace_enabled, about, terms_and_conditions, return_policy, shipping_policy, facebook_url, whatsapp_number, meta_description")
+        .select("id, name, username, slug, wishlist_slug, logo_url, cover_url, tagline, address, phone, shop_type_code, marketplace_enabled, about, terms_and_conditions, return_policy, shipping_policy, facebook_url, whatsapp_number, meta_description")
         .eq("username", username)
         .is("deleted_at", null)
         .maybeSingle();
