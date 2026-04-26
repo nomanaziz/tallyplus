@@ -28,9 +28,7 @@ type Purchase = {
   created_at: string;
 };
 
-({
-  component: PurchaseLedgerPage,
-});
+
 
 function PurchaseLedgerPage() {
   const { lang } = useI18n();

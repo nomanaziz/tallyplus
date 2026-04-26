@@ -14,15 +14,7 @@ type Shop = {
 };
 type Product = { id: string; name: string; image_url: string | null; unit: string | null };
 
-({
-  head: () => ({
-    meta: [
-      { title: "পণ্যের বিস্তারিত — Tally Plus মার্কেটপ্লেস" },
-      { name: "description", content: "এই পণ্য সম্পর্কে আরও জানুন এবং দোকানদারের সাথে যোগাযোগ করুন।" },
-    ],
-  }),
-  component: ProductDetailPage,
-});
+
 
 function ProductDetailPage() {
   const { id } = useParams();

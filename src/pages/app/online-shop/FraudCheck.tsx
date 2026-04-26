@@ -8,10 +8,7 @@ import { Input } from "@/components/ui/input";
 import { ShieldAlert, Search, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
-({
-  head: () => ({ meta: [{ title: "Fraud Check — Tally Plus" }] }),
-  component: FraudCheckPage,
-});
+
 
 type FraudResult = {
   phone: string; total_orders: number; success: number; cancelled: number; fraud_score: number;

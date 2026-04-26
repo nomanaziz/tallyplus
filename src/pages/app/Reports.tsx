@@ -10,10 +10,7 @@ import { DateRangePicker, monthStartIso, todayIso, type DateRange } from "@/comp
 import { RefreshCw, Printer, Plus, TrendingUp, ShoppingCart, Wallet, Receipt, BarChart3, Users, UserCog, PieChart, FileText, Truck, DollarSign, Boxes, Package, UserCircle2 } from "lucide-react";
 import { printReport, type PrintRow } from "@/lib/print-report";
 
-({
-  head: () => ({ meta: [{ title: "ব্যবসার রিপোর্ট — Tally Plus" }] }),
-  component: GuardedReportsPage,
-});
+
 
 import { RequirePerm } from "@/components/app/RequirePerm";
 function GuardedReportsPage() {

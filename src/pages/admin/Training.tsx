@@ -15,9 +15,7 @@ import {
 import { Plus, Pencil, Trash2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
-({
-  component: TrainingAdmin,
-});
+
 
 type Video = {
   id: string;

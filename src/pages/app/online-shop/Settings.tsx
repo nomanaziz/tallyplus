@@ -13,10 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Loader2, ImagePlus, Pencil, Facebook, Instagram, Youtube, Music2, Copy } from "lucide-react";
 
-({
-  head: () => ({ meta: [{ title: "Store Settings — Tally Plus" }] }),
-  component: StoreSettingsPage,
-});
+
 
 const RESERVED = new Set([
   "app","admin","auth","shop","shops","api","pricing","affiliate","f","_",

@@ -3,9 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, Store, CreditCard, Receipt, Package } from "lucide-react";
 
-({
-  component: AdminOverview,
-});
+
 
 type Stats = {
   users: number;

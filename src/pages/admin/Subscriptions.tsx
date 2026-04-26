@@ -5,9 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Loader2 } from "lucide-react";
 
-({
-  component: SubsPage,
-});
+
 
 function SubsPage() {
   const [items, setItems] = useState<any[]>([]);

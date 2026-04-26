@@ -14,9 +14,7 @@ type Tier = { id: string; name: string; min_sales: number; commission_pct: numbe
 type AffiliateRow = { id: string; full_name: string; phone: string; email: string | null; referral_code: string; status: string; total_referrals: number; total_commission: number; created_at: string };
 type CommissionRow = { id: string; affiliate_id: string; subscription_amount: number; commission_pct: number; commission_amount: number; status: string; created_at: string };
 
-({
-  component: AdminAffiliates,
-});
+
 
 function AdminAffiliates() {
   return (

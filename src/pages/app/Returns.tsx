@@ -13,12 +13,7 @@ import { EmptyState } from "@/components/app/EmptyState";
 import { Plus, Search, Eye, Trash2, Undo2 } from "lucide-react";
 import { toast } from "sonner";
 
-({
-  head: () => ({ meta: [{ title: "প্রোডাক্ট রিটার্ন — Tally Plus" }] }),
-  component: () => (
-    <RequirePerm group="returns" item="view"><ReturnsListPage /></RequirePerm>
-  ),
-});
+
 
 type ReturnRow = {
   id: string;

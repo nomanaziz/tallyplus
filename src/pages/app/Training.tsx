@@ -30,9 +30,7 @@ const CATEGORY_LABELS: Record<string, { bn: string; en: string }> = {
   report: { bn: "রিপোর্ট", en: "Reports" },
 };
 
-({
-  component: TrainingPage,
-});
+
 
 function TrainingPage() {
   const { lang } = useI18n();

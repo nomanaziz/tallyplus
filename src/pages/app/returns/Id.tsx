@@ -7,12 +7,7 @@ import { RequirePerm } from "@/components/app/RequirePerm";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Printer } from "lucide-react";
 
-({
-  head: () => ({ meta: [{ title: "রিটার্ন বিস্তারিত — Tally Plus" }] }),
-  component: () => (
-    <RequirePerm group="returns" item="view"><ReturnDetailsPage /></RequirePerm>
-  ),
-});
+
 
 function ReturnDetailsPage() {
   const { lang } = useI18n();

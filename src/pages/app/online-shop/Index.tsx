@@ -25,10 +25,7 @@ import contactIcon from "@/assets/icons/contact.svg?url";
 import onlineShopIcon from "@/assets/icons/online-shop.svg?url";
 import businessReportIcon from "@/assets/icons/business-report.svg?url";
 
-({
-  head: () => ({ meta: [{ title: "অনলাইন শপ — Tally Plus" }] }),
-  component: OnlineShopDashboard,
-});
+
 
 type ShopRow = {
   id: string;

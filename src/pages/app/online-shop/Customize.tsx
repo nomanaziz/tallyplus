@@ -11,10 +11,7 @@ import { Slider } from "@/components/ui/slider";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { toast } from "sonner";
 
-({
-  head: () => ({ meta: [{ title: "Customization — Tally Plus" }] }),
-  component: CustomizePage,
-});
+
 
 const FONTS = ["Inter", "Roboto", "Poppins", "Hind Siliguri", "Noto Sans Bengali", "Open Sans"];
 

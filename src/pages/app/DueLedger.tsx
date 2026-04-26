@@ -11,9 +11,7 @@ import { MoneyDueEntryDialog } from "@/components/app/MoneyDueEntryDialog";
 import { EmptyState } from "@/components/app/EmptyState";
 import { icons } from "@/lib/icons";
 
-({
-  component: DueLedgerPage,
-});
+
 
 type PartyTab = "customer" | "supplier" | "employee";
 type Contact = { id: string; name: string; phone: string | null; due_balance: number };

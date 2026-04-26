@@ -14,10 +14,7 @@ import { printReport, type PrintRow } from "@/lib/print-report";
 import { useAuth } from "@/lib/auth";
 import { SubscriptionGateDialog } from "@/components/app/SubscriptionGateDialog";
 
-({
-  head: () => ({ meta: [{ title: "সমন্বিত রিপোর্ট — Tally Plus" }] }),
-  component: CombinedReportPage,
-});
+
 
 type Tab = "general" | "details";
 

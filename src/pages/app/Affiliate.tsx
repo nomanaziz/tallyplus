@@ -18,9 +18,7 @@ type Tier = { id: string; name: string; commission_pct: number };
 type Referral = { id: string; referral_code: string; status: string; created_at: string; converted_at: string | null };
 type Commission = { id: string; subscription_amount: number; commission_pct: number; commission_amount: number; status: string; created_at: string };
 
-({
-  component: AffiliateDashboard,
-});
+
 
 function AffiliateDashboard() {
   const { user, loading: authLoading } = useAuth();

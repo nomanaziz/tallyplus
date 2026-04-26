@@ -51,48 +51,7 @@ type SearchParams = {
   wholesale?: WholesaleFilter;
 };
 
-({
-  head: () => ({
-    meta: [
-      { title: "মার্কেটপ্লেস — Tally Plus" },
-      { name: "description", content: "স্থানীয় দোকান থেকে অনলাইনে কেনাকাটা করুন।" },
-      { property: "og:title", content: "Tally Plus মার্কেটপ্লেস" },
-      { property: "og:description", content: "প্রিয় দোকান থেকে ফর্দ পাঠান।" },
-    ],
-  }),
-  validateSearch: (s: Record<string, unknown>): SearchParams => {
-    const toNum = (v: unknown): number | undefined => {
-      if (typeof v === "number") return v;
-      if (typeof v === "string" && v.length > 0) {
-        const n = Number(v);
-        return Number.isFinite(n) ? n : undefined;
-      }
-      return undefined;
-    };
-    const toArr = (v: unknown): string[] | undefined => {
-      if (Array.isArray(v)) return v.map(String).filter(Boolean);
-      if (typeof v === "string" && v.length > 0) return v.split(",").filter(Boolean);
-      return undefined;
-    };
-    const sort = s.sort === "price_asc" || s.sort === "price_desc" || s.sort === "newest" ? (s.sort as Sort) : undefined;
-    // Default view is now "vendors" (ফর্দ-first). Only "products" is stored explicitly in URL.
-    const view = s.view === "products" ? ("products" as View) : undefined;
-    const wholesale: WholesaleFilter | undefined =
-      s.wholesale === "wholesale" || s.wholesale === "retail" ? (s.wholesale as WholesaleFilter) : undefined;
-    return {
-      q: typeof s.q === "string" ? s.q : undefined,
-      page: toNum(s.page) ?? 1,
-      min: toNum(s.min),
-      max: toNum(s.max),
-      type: toArr(s.type),
-      inStock: s.inStock === true || s.inStock === "true" || s.inStock === 1 || s.inStock === "1" ? true : undefined,
-      sort,
-      view,
-      wholesale,
-    };
-  },
-  component: MarketplacePage,
-});
+
 
 function MarketplacePage() {
   const search = useSearch();

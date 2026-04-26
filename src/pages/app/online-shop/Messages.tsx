@@ -10,10 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
-({
-  head: () => ({ meta: [{ title: "Message Settings — Tally Plus" }] }),
-  component: MessagesPage,
-});
+
 
 type Row = { id: string; whatsapp_number: string | null; facebook_page_id: string | null };
 

@@ -12,10 +12,7 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@
 import { ClipboardList, Loader2, Phone, MapPin, Package } from "lucide-react";
 import { toast } from "sonner";
 
-({
-  head: () => ({ meta: [{ title: "Order List — Tally Plus" }] }),
-  component: OrdersPage,
-});
+
 
 type Order = {
   id: string; order_no: string | null; customer_name: string; customer_phone: string;

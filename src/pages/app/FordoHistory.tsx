@@ -12,10 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 
-({
-  head: () => ({ meta: [{ title: "ফর্দ ইতিহাস — Tally Plus" }] }),
-  component: FordoHistoryPage,
-});
+
 
 type Wishlist = {
   id: string;

@@ -9,15 +9,7 @@ import { generateReferralCode } from "@/lib/referral";
 import { toast } from "sonner";
 import { ArrowLeft, Loader2 } from "lucide-react";
 
-({
-  head: () => ({
-    meta: [
-      { title: "Register — Growth Partner" },
-      { name: "description", content: "Tally Plus গ্রোথ পার্টনার হিসেবে রেজিস্ট্রেশন করুন।" },
-    ],
-  }),
-  component: RegisterPage,
-});
+
 
 function RegisterPage() {
   const { user, loading } = useAuth();

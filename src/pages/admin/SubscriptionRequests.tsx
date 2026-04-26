@@ -7,9 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Loader2, Check, X } from "lucide-react";
 import { toast } from "sonner";
 
-({
-  component: RequestsPage,
-});
+
 
 type Req = {
   id: string;

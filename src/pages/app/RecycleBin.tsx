@@ -23,9 +23,7 @@ const tabLabels: Record<Tab, { bn: string; en: string }> = {
   customer_wishlists: { bn: "গ্রাহক ফর্দ", en: "Wishlists" },
 };
 
-({
-  component: RecycleBinPage,
-});
+
 
 function RecycleBinPage() {
   const { lang } = useI18n();

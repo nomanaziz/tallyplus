@@ -18,9 +18,7 @@ import { toast } from "sonner";
 
 type Product = ProductFull;
 
-({
-  component: GuardedStockPage,
-});
+
 
 import { RequirePerm } from "@/components/app/RequirePerm";
 function GuardedStockPage() {

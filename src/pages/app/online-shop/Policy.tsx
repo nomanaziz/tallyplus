@@ -11,10 +11,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
-({
-  head: () => ({ meta: [{ title: "Shop Policy — Tally Plus" }] }),
-  component: PolicyPage,
-});
+
 
 type Row = {
   id: string;

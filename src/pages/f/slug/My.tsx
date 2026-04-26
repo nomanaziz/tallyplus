@@ -18,16 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
-({
-  head: () => ({
-    meta: [
-      { title: "আমার ফর্দ — Tally Plus" },
-      { name: "description", content: "আপনার পাঠানো সব ফর্দ ও নোট এক জায়গায়।" },
-      { name: "robots", content: "noindex" },
-    ],
-  }),
-  component: MyWishlistPage,
-});
+
 
 type WL = {
   id: string;

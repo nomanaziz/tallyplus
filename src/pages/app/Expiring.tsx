@@ -9,10 +9,7 @@ import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/app/PageHeader";
 import { EmptyState } from "@/components/app/EmptyState";
 
-({
-  head: () => ({ meta: [{ title: "মেয়াদোত্তীর্ণ পণ্য — Hishabee" }] }),
-  component: ExpiringPage,
-});
+
 
 type Tab = "soon" | "expired";
 

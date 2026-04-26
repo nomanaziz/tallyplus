@@ -14,10 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 
-({
-  head: () => ({ meta: [{ title: "প্রিন্টার সেটিংস — Tally Plus" }] }),
-  component: PrinterPage,
-});
+
 
 type PrinterType = "inkjet_laser" | "pos_bluetooth" | "pos_usb";
 

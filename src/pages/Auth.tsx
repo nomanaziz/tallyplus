@@ -11,10 +11,7 @@ import { toast } from "sonner";
 import logo from "@/assets/logo.png";
 import { Loader2 } from "lucide-react";
 
-({
-  head: () => ({ meta: [{ title: "লগইন — Tally Plus" }] }),
-  component: AuthPage,
-});
+
 
 function AuthPage() {
   const { t, lang, setLang } = useI18n();

@@ -12,10 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { ConvertWishlistToSaleDialog } from "@/components/app/ConvertWishlistToSaleDialog";
 
-({
-  head: () => ({ meta: [{ title: "গ্রাহক ফর্দ — Tally Plus" }] }),
-  component: CustomerWishlistPage,
-});
+
 
 type Wishlist = {
   id: string;

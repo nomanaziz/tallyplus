@@ -19,9 +19,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Plus, Pencil, Loader2, Package, Store, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, X, Search, MoreHorizontal, Check, FolderOpen } from "lucide-react";
 import { toast } from "sonner";
 
-({
-  component: MarketplacePage,
-});
+
 
 type Product = {
   id: string;

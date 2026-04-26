@@ -25,44 +25,7 @@ type Product = { id: string; name: string; image_url: string | null; unit: strin
 
 type LoaderData = { shop: Shop; listings: Listing[]; products: Record<string, Product> };
 
-({
-  loader: async ({ params }): Promise<LoaderData> => {
-    const u = params.username.toLowerCase();
-    if (RESERVED.has(u) || !/^[a-z0-9][a-z0-9_-]{2,31}$/.test(u)) throw notFound();
-    const { data, error } = await supabase.functions.invoke("marketplace-public", {
-      body: { action: "shop-by-username", username: u },
-    });
-    if (error || !data || (data as { error?: string }).error) throw notFound();
-    const d = data as LoaderData;
-    if (!d.shop) throw notFound();
-    return d;
-  },
-  head: ({ loaderData }) => {
-    const s = loaderData?.shop;
-    if (!s) return { meta: [{ title: "Tally Plus" }] };
-    const desc = s.meta_description || s.tagline || s.about || `${s.name} — অনলাইন দোকান`;
-    return {
-      meta: [
-        { title: `${s.name} — Tally Plus` },
-        { name: "description", content: desc },
-        { property: "og:title", content: s.name },
-        { property: "og:description", content: desc },
-        ...(s.logo_url ? [{ property: "og:image", content: s.logo_url }] : []),
-      ],
-    };
-  },
-  notFoundComponent: () => (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-3 px-4 text-center">
-      <Store className="h-12 w-12 text-muted-foreground" />
-      <p className="text-lg font-semibold">দোকান পাওয়া যায়নি</p>
-      <Link to="/" className="text-primary hover:underline">হোম পেজে ফিরুন</Link>
-    </div>
-  ),
-  errorComponent: () => (
-    <div className="flex min-h-screen items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>
-  ),
-  component: PublicShopPage,
-});
+
 
 function PublicShopPage() {
   const { shop, listings, products } = Route.useLoaderData();

@@ -10,10 +10,7 @@ import { PageHeader } from "@/components/app/PageHeader";
 import { EmptyState } from "@/components/app/EmptyState";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-({
-  head: () => ({ meta: [{ title: "ওয়ারেন্টি পণ্য — Hishabee" }] }),
-  component: WarrantyPage,
-});
+
 
 type Row = {
   id: string;

@@ -19,9 +19,7 @@ type Tab = "customers" | "suppliers" | "employees";
 type Contact = { id: string; name: string; phone: string | null; address: string | null; due_balance: number };
 type Tx = { id: string; invoice_no: string | null; total: number; due: number; paid: number; created_at: string; payment_method: string };
 
-({
-  component: ContactsPage,
-});
+
 
 function ContactsPage() {
   const { lang } = useI18n();

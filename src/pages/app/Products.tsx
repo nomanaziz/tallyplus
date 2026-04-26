@@ -39,9 +39,7 @@ type Product = {
   image_url: string | null;
 };
 
-({
-  component: GuardedProductsPage,
-});
+
 
 import { RequirePerm } from "@/components/app/RequirePerm";
 function GuardedProductsPage() {

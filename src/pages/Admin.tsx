@@ -7,10 +7,7 @@ import { toast } from "sonner";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
-({
-  head: () => ({ meta: [{ title: "Admin — Tally Plus" }] }),
-  component: AdminLayout,
-});
+
 
 function AdminLayout() {
   const nav = useNavigate();

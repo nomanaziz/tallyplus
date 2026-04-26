@@ -22,9 +22,7 @@ type Member = {
   custom_role_id: string | null;
 };
 
-({
-  component: GuardedAccessPage,
-});
+
 
 import { RequirePerm } from "@/components/app/RequirePerm";
 function GuardedAccessPage() {

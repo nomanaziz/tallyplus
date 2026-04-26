@@ -11,18 +11,7 @@ import { ContactSection } from "@/components/site/ContactSection";
 import { StatsStrip, FinalCta } from "@/components/site/StatsAndCta";
 import heroImg from "@/assets/hero-shop.jpg";
 
-({
-  head: () => ({
-    meta: [
-      { title: "Tally Plus — দোকানের পুরো হিসাব এক অ্যাপে" },
-      { name: "description", content: "POS, স্টক, বাকি, খরচ ও রিপোর্ট — মোবাইলে, বাংলায়, অফলাইনেও।" },
-      { property: "og:title", content: "Tally Plus — দোকানের পুরো হিসাব এক অ্যাপে" },
-      { property: "og:description", content: "POS, স্টক, বাকি, খরচ ও রিপোর্ট — মোবাইলে, বাংলায়, অফলাইনেও।" },
-      { property: "og:image", content: heroImg },
-    ],
-  }),
-  component: Index,
-});
+
 
 function Index() {
   return (

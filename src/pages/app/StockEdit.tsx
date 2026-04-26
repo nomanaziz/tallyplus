@@ -23,9 +23,7 @@ type Product = {
   image_url: string | null;
 };
 
-({
-  component: StockEditPage,
-});
+
 
 function StockEditPage() {
   const { lang } = useI18n();

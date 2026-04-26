@@ -9,10 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { Star, Package } from "lucide-react";
 import { toast } from "sonner";
 
-({
-  head: () => ({ meta: [{ title: "Featured Products — Tally Plus" }] }),
-  component: FeaturedPage,
-});
+
 
 type Product = {
   id: string; name: string; image_url: string | null;

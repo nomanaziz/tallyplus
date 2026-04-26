@@ -29,9 +29,7 @@ type Sale = {
   created_at: string;
 };
 
-({
-  component: SalesLedgerPage,
-});
+
 
 function SalesLedgerPage() {
   const { lang } = useI18n();

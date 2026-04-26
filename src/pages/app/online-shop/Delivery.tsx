@@ -12,10 +12,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2, Truck } from "lucide-react";
 
-({
-  head: () => ({ meta: [{ title: "Delivery — Tally Plus" }] }),
-  component: DeliveryPage,
-});
+
 
 type Zone = {
   id: string; shop_id: string; name: string; charge: number;

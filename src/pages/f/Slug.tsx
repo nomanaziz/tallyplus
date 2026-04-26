@@ -10,19 +10,7 @@ import { CatalogProductPicker, type CatalogProduct } from "@/components/app/Cata
 
 type SearchParams = { reuse?: string; tpl?: string };
 
-({
-  head: () => ({
-    meta: [
-      { title: "গ্রাহক ফর্দ — পণ্যের তালিকা পাঠান" },
-      { name: "description", content: "আপনার দোকানদারকে কেনাকাটার তালিকা পাঠান।" },
-    ],
-  }),
-  validateSearch: (search: Record<string, unknown>): SearchParams => ({
-    reuse: typeof search.reuse === "string" ? search.reuse : undefined,
-    tpl: typeof search.tpl === "string" ? search.tpl : undefined,
-  }),
-  component: PublicWishlistPage,
-});
+
 
 type Item = { id: string; name: string; qty: string; unit: string; price: string };
 

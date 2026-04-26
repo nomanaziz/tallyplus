@@ -10,10 +10,7 @@ import { RefreshCw, Printer } from "lucide-react";
 import { printReport, type PrintRow } from "@/lib/print-report";
 import { RequirePerm } from "@/components/app/RequirePerm";
 
-({
-  head: () => ({ meta: [{ title: "মালিকের রিপোর্ট — Tally Plus" }] }),
-  component: Guarded,
-});
+
 
 function Guarded() {
   return <RequirePerm group="report"><OwnerReportPage /></RequirePerm>;

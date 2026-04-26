@@ -15,10 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, Package, Plus, Search, Pencil } from "lucide-react";
 import { toast } from "sonner";
 
-({
-  head: () => ({ meta: [{ title: "অনলাইন প্রোডাক্ট — Tally Plus" }] }),
-  component: OnlineProductsPage,
-});
+
 
 type Product = {
   id: string;

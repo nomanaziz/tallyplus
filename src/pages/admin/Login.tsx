@@ -7,10 +7,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Loader2, ShieldCheck } from "lucide-react";
 
-({
-  head: () => ({ meta: [{ title: "Admin Login — Tally Plus" }] }),
-  component: AdminLoginPage,
-});
+
 
 function AdminLoginPage() {
   const nav = useNavigate();

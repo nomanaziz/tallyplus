@@ -7,17 +7,7 @@ import { TrendingUp, Wallet, GraduationCap, Share2, UserPlus, Coins } from "luci
 
 type Tier = { id: string; name: string; min_sales: number; commission_pct: number; bonus_pct: number; sort_order: number };
 
-({
-  head: () => ({
-    meta: [
-      { title: "Growth Partner — Tally Plus এফিলিয়েট প্রোগ্রাম" },
-      { name: "description", content: "বিনা পুঁজিতে ইনকামের সুযোগ — Tally Plus গ্রোথ পার্টনার হয়ে কমিশন আয় করুন।" },
-      { property: "og:title", content: "Tally Plus গ্রোথ পার্টনার" },
-      { property: "og:description", content: "প্রতিটি সফল রেফারেলে কমিশন পান। আজই যুক্ত হোন।" },
-    ],
-  }),
-  component: AffiliateLanding,
-});
+
 
 function AffiliateLanding() {
   const [tiers, setTiers] = useState<Tier[]>([]);

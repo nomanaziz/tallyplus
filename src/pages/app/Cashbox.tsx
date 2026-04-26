@@ -29,9 +29,7 @@ type Movement = {
   denominations?: DenomCounts | null;
 };
 
-({
-  component: CashboxPage,
-});
+
 
 function CashboxPage() {
   const { lang } = useI18n();

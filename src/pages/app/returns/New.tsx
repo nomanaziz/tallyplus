@@ -15,12 +15,7 @@ import { Switch } from "@/components/ui/switch";
 import { Plus, Trash2, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 
-({
-  head: () => ({ meta: [{ title: "নতুন রিটার্ন — Tally Plus" }] }),
-  component: () => (
-    <RequirePerm group="returns" item="add"><NewReturnPage /></RequirePerm>
-  ),
-});
+
 
 type Item = { product_id: string | null; name: string; qty: number; price: number };
 

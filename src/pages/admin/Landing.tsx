@@ -10,9 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { ExternalLink, Pencil, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
-({
-  component: LandingCMS,
-});
+
 
 type Section = {
   id: string;

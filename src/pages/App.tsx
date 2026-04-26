@@ -1,4 +1,4 @@
-import { Outlet, redirect, useNavigate } from "@/lib/router";
+import { Outlet, useNavigate } from "@/lib/router";
 import { lazy, Suspense, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
@@ -22,15 +22,7 @@ const SettingsSheet = lazy(() =>
   import("@/components/app/SettingsSheet").then((m) => ({ default: m.SettingsSheet }))
 );
 
-({
-  head: () => ({ meta: [{ title: "ড্যাশবোর্ড — Tally Plus" }] }),
-  beforeLoad: ({ location }) => {
-    if (location.pathname === "/app" || location.pathname === "/app/") {
-      throw redirect({ to: "/app/dashboard" });
-    }
-  },
-  component: AppLayoutWithShop,
-});
+
 
 function AppLayoutWithShop() {
   return (

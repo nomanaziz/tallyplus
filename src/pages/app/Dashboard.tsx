@@ -11,10 +11,7 @@ import { DashboardBannerCarousel } from "@/components/app/DashboardBannerCarouse
 import { SECTIONS, type SidebarItem } from "@/components/app/AppSidebar";
 import { usePermissions } from "@/lib/permissions-hook";
 
-({
-  head: () => ({ meta: [{ title: "ড্যাশবোর্ড — Tally Plus" }] }),
-  component: Dashboard,
-});
+
 
 type Range = "today" | "week" | "month" | "year" | "all";
 

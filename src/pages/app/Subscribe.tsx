@@ -8,10 +8,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { Crown, ShieldCheck, HardDrive, Cloud, Headphones, Check, Tag, X } from "lucide-react";
 
-({
-  head: () => ({ meta: [{ title: "সাবস্ক্রিপশন কিনুন — Tally Plus" }] }),
-  component: Subscribe,
-});
+
 
 function Subscribe() {
   const { lang } = useI18n();

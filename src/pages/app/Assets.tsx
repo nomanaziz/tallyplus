@@ -19,10 +19,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { RequirePerm } from "@/components/app/RequirePerm";
 
-({
-  head: () => ({ meta: [{ title: "দোকানের সম্পদ — Tally Plus" }] }),
-  component: GuardedAssets,
-});
+
 
 function GuardedAssets() {
   return <RequirePerm group="expense"><AssetsPage /></RequirePerm>;

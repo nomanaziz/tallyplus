@@ -9,9 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Plus, Pencil, Trash2, Loader2, Upload } from "lucide-react";
 import { toast } from "sonner";
 
-({
-  component: BannersAdmin,
-});
+
 
 type Banner = {
   id: string;

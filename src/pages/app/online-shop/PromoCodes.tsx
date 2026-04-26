@@ -14,10 +14,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { toast } from "sonner";
 import { Tag, Copy, MoreVertical, RefreshCw, Plus, Trash2 } from "lucide-react";
 
-({
-  head: () => ({ meta: [{ title: "Promo Code — Tally Plus" }] }),
-  component: PromoCodesPage,
-});
+
 
 type Promo = {
   id: string; code: string; discount_type: string; discount_value: number;

@@ -22,10 +22,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { PageHeader } from "@/components/app/PageHeader";
 import { toast } from "sonner";
 
-({
-  head: () => ({ meta: [{ title: "মার্কেটিং — Hishabee" }] }),
-  component: MarketingPage,
-});
+
 
 type ContactTab = "customer" | "supplier" | "employee";
 

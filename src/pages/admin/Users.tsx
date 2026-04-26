@@ -16,9 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ShieldCheck, ShieldOff, Ban, Check, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
-({
-  component: UsersPage,
-});
+
 
 type Profile = {
   id: string;

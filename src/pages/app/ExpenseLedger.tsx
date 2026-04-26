@@ -29,9 +29,7 @@ type Expense = {
   created_at: string;
 };
 
-({
-  component: ExpenseLedgerPage,
-});
+
 
 type CatKey = "rent" | "transport" | "utility" | "salary" | "other";
 const PRESET_CATS: { key: CatKey; bn: string; en: string; icon: React.ReactNode; color: string }[] = [

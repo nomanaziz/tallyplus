@@ -14,10 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { RequirePerm } from "@/components/app/RequirePerm";
 import { toast } from "sonner";
 
-({
-  head: () => ({ meta: [{ title: "দ্রুত ফর্দ — Tally Plus" }] }),
-  component: QuickOrderPage,
-});
+
 
 type StoreProduct = {
   id: string;

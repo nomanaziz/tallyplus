@@ -12,15 +12,7 @@ type Shop = {
 };
 type Product = { id: string; name: string; image_url: string | null; unit: string | null };
 
-({
-  head: () => ({
-    meta: [
-      { title: "দোকান — Tally Plus মার্কেটপ্লেস" },
-      { name: "description", content: "এই দোকানের অনলাইন পণ্যসমূহ দেখুন।" },
-    ],
-  }),
-  component: ShopPage,
-});
+
 
 function ShopPage() {
   const { slug } = useParams();

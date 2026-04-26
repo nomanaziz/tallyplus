@@ -11,10 +11,7 @@ import logo from "@/assets/logo.png";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-({
-  head: () => ({ meta: [{ title: "দোকান সিলেক্ট করুন — Tally Plus" }] }),
-  component: ShopsPage,
-});
+
 
 function ShopsPage() {
   const { lang } = useI18n();

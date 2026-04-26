@@ -16,9 +16,7 @@ import {
 import { Plus, Pencil, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
-({
-  component: PlansPage,
-});
+
 
 type Plan = {
   id: string;

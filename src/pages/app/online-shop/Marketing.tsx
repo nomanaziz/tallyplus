@@ -11,10 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
-({
-  head: () => ({ meta: [{ title: "Marketing & SEO — Tally Plus" }] }),
-  component: MarketingPage,
-});
+
 
 type Row = {
   id: string; tagline: string | null; meta_title: string | null;

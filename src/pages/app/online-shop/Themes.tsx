@@ -9,10 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Check } from "lucide-react";
 import { toast } from "sonner";
 
-({
-  head: () => ({ meta: [{ title: "Themes — Tally Plus" }] }),
-  component: ThemesPage,
-});
+
 
 const WEB = [
   { key: "classic", name: "Classic", color: "from-emerald-200 to-emerald-50", accent: "#10b981" },
