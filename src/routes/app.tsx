@@ -1,5 +1,5 @@
 import { createFileRoute, Outlet, redirect, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { useShop, ShopProvider } from "@/lib/shop";
@@ -15,7 +15,12 @@ import { AppTopbar } from "@/components/app/AppTopbar";
 import { ShopTypePicker } from "@/components/app/ShopTypePicker";
 import { MobileBottomNav } from "@/components/app/MobileBottomNav";
 import { MobileBackBar } from "@/components/app/MobileBackBar";
-import { SettingsSheet } from "@/components/app/SettingsSheet";
+
+// SettingsSheet is heavy (329 lines + many imports) and only opens on demand.
+// Lazy-load to keep the app shell bundle small.
+const SettingsSheet = lazy(() =>
+  import("@/components/app/SettingsSheet").then((m) => ({ default: m.SettingsSheet }))
+);
 
 export const Route = createFileRoute("/app")({
   head: () => ({ meta: [{ title: "ড্যাশবোর্ড — Tally Plus" }] }),
@@ -156,7 +161,11 @@ function AppLayout() {
         {/* Mobile bottom navigation */}
         <MobileBottomNav onProfile={() => setSettingsOpen(true)} />
         {/* Settings sheet opened from mobile profile button */}
-        <SettingsSheet open={settingsOpen} onOpenChange={setSettingsOpen} />
+        {settingsOpen && (
+          <Suspense fallback={null}>
+            <SettingsSheet open={settingsOpen} onOpenChange={setSettingsOpen} />
+          </Suspense>
+        )}
       </div>
     </div>
   );
