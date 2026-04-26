@@ -25,7 +25,7 @@ export function HeroSection() {
           </h2>
           <h1 className="mt-2 text-4xl font-extrabold leading-[1.1] tracking-tight md:text-6xl">
             {lang === "bn" ? "ব্যবসা বাড়ান" : "Grow Your Business"} <br />
-            <span className="text-primary">{lang === "bn" ? "ট্যালি প্লাসের সাথে।" : "With Tally Plus."}</span>
+            <span className="text-primary">{lang === "bn" ? "টালি প্লাসের সাথে।" : "With Tally Plus."}</span>
           </h1>
           <p className="mt-5 max-w-md text-base text-muted-foreground md:text-lg">{t("heroSub")}</p>
           <div className="mt-7 flex flex-wrap gap-3">
@@ -54,7 +54,7 @@ export function HeroSection() {
         </div>
         <div className="relative">
           <div className="absolute inset-0 -z-10 mx-auto my-auto h-[85%] w-[85%] rounded-full bg-primary" aria-hidden />
-          <img src={heroImg} alt={lang === "bn" ? "দোকানদার ট্যালি প্লাস ব্যবহার করছেন" : "Shop owner using Tally Plus"} className="relative mx-auto rounded-3xl shadow-2xl ring-4 ring-background" width={1280} height={960} />
+          <img src={heroImg} alt={lang === "bn" ? "দোকানদার টালি প্লাস ব্যবহার করছেন" : "Shop owner using Tally Plus"} className="relative mx-auto rounded-3xl shadow-2xl ring-4 ring-background" width={1280} height={960} />
           {/* Floating chips with real icons */}
           <div className="absolute left-2 top-6 hidden rounded-2xl bg-card p-2 shadow-xl md:flex md:items-center md:gap-2">
             <img src={icons.businessReport} alt="" className="h-8 w-8" />

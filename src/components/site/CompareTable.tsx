@@ -22,16 +22,16 @@ export function CompareTable() {
       ];
 
   const headers = lang === "bn"
-    ? ["ফিচার", "ট্যালি প্লাস", "খাতা-কলম", "অন্যান্য অ্যাপ"]
+    ? ["ফিচার", "টালি প্লাস", "খাতা-কলম", "অন্যান্য অ্যাপ"]
     : ["Feature", "Tally Plus", "Pen & Paper", "Other Apps"];
 
   return (
     <section className="container mx-auto px-4 py-16 md:py-24">
       <h2 className="text-center text-3xl font-extrabold md:text-4xl">
-        {lang === "bn" ? <>ট্যালি প্লাস <span className="text-primary">vs অন্যান্য</span></> : <>Tally Plus <span className="text-primary">vs others</span></>}
+        {lang === "bn" ? <>টালি প্লাস <span className="text-primary">vs অন্যান্য</span></> : <>Tally Plus <span className="text-primary">vs others</span></>}
       </h2>
       <p className="mt-3 text-center text-muted-foreground">
-        {lang === "bn" ? "কেন ট্যালি প্লাস বেছে নেবেন?" : "Why should you choose Tally Plus?"}
+        {lang === "bn" ? "কেন টালি প্লাস বেছে নেবেন?" : "Why should you choose Tally Plus?"}
       </p>
       <div className="mx-auto mt-10 max-w-4xl overflow-x-auto rounded-2xl border bg-card shadow-sm">
         <table className="w-full text-left text-sm">

@@ -184,7 +184,7 @@ function Subscribe() {
           <div className="text-base font-bold">{lang === "bn" ? "স্পেশাল গিফট!" : "Special Gift!"}</div>
           <ul className="mt-2 space-y-1.5 text-sm">
             {(lang === "bn"
-              ? ["ট্যালি প্লাসের মেগা অফার!", "ব্যবসার পাশাপাশি বাড়তি আয়ের সুযোগ", "১০০% ক্লাউড ব্যাকআপ", "২৪/৭ ভিআইপি গ্রাহক সেবা"]
+              ? ["টালি প্লাসের মেগা অফার!", "ব্যবসার পাশাপাশি বাড়তি আয়ের সুযোগ", "১০০% ক্লাউড ব্যাকআপ", "২৪/৭ ভিআইপি গ্রাহক সেবা"]
               : ["Mega offer from Tally Plus!", "Extra income opportunity", "100% cloud backup", "24/7 VIP customer service"]
             ).map((p) => (
               <li key={p} className="flex items-start gap-2"><Check className="mt-0.5 h-4 w-4 flex-none text-success" />{p}</li>

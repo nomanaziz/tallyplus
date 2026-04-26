@@ -19,7 +19,7 @@ export function BusinessTypes() {
             {lang === "bn" ? <>আপনার <span className="text-primary">ব্যবসার ধরন</span> বেছে নিন</> : <>Choose your <span className="text-primary">business type</span></>}
           </h2>
           <p className="mt-3 text-muted-foreground">
-            {lang === "bn" ? "দেখুন ট্যালি প্লাস কীভাবে আপনার ব্যবসা বাড়াবে।" : "See how Tally Plus can grow your business."}
+            {lang === "bn" ? "দেখুন টালি প্লাস কীভাবে আপনার ব্যবসা বাড়াবে।" : "See how Tally Plus can grow your business."}
           </p>
         </div>
         <div className="mt-12 grid grid-cols-2 gap-4 md:grid-cols-3">

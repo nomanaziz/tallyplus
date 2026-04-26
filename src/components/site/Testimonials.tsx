@@ -34,7 +34,7 @@ export function Testimonials() {
           {lang === "bn" ? <>আমাদের <span className="text-primary">খুশি ক্রেতারা</span> বলছেন</> : <>Our <span className="text-primary">happy customers</span> say</>}
         </h2>
         <p className="mt-3 text-muted-foreground">
-          {lang === "bn" ? "হাজার হাজার ব্যবসায়ী ট্যালি প্লাসের সাথে এগিয়ে যাচ্ছেন।" : "Thousands of businessmen are growing with Tally Plus."}
+          {lang === "bn" ? "হাজার হাজার ব্যবসায়ী টালি প্লাসের সাথে এগিয়ে যাচ্ছেন।" : "Thousands of businessmen are growing with Tally Plus."}
         </p>
       </div>
       <Carousel opts={{ loop: true }} className="mx-auto mt-10 max-w-5xl">

@@ -66,7 +66,7 @@ export function FeatureRows() {
     <section id="features" className="container mx-auto px-4 py-16 md:py-24">
       <div className="mx-auto max-w-3xl text-center">
         <h2 className="text-3xl font-extrabold md:text-5xl">
-          {lang === "bn" ? <>ট্যালি প্লাস <span className="text-primary">আপনার ব্যবসা</span> কীভাবে বাড়াবে?</> : <>How will <span className="text-primary">Tally Plus</span> grow your business?</>}
+          {lang === "bn" ? <>টালি প্লাস <span className="text-primary">আপনার ব্যবসা</span> কীভাবে বাড়াবে?</> : <>How will <span className="text-primary">Tally Plus</span> grow your business?</>}
         </h2>
         <p className="mt-3 text-muted-foreground">
           {lang === "bn" ? "ব্যবসার প্রতিটি দিক স্মার্টভাবে ম্যানেজ করুন। রিপোর্ট দেখে সঠিক সিদ্ধান্ত নিন।" : "Manage every aspect of your business smartly. Make decisions by viewing reports."}
