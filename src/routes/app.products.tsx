@@ -405,15 +405,17 @@ function ProductFormDialog({
             </div>
           </ToggleSection>
 
-          <ToggleSection
-            title={lang === "bn" ? "লো-স্টক অ্যালার্ট" : "Low stock alert"}
-            checked={lowOn} onChange={setLowOn}
-          >
-            <div className="grid gap-1.5">
-              <Label>{lang === "bn" ? "অ্যালার্ট স্টক পরিমাণ" : "Alert when stock reaches"}</Label>
-              <Input type="number" value={low} onChange={(e) => setLow(e.target.value)} />
-            </div>
-          </ToggleSection>
+          {trackStock && (
+            <ToggleSection
+              title={lang === "bn" ? "লো-স্টক অ্যালার্ট" : "Low stock alert"}
+              checked={lowOn} onChange={setLowOn}
+            >
+              <div className="grid gap-1.5">
+                <Label>{lang === "bn" ? "অ্যালার্ট স্টক পরিমাণ" : "Alert when stock reaches"}</Label>
+                <Input type="number" value={low} onChange={(e) => setLow(e.target.value)} />
+              </div>
+            </ToggleSection>
+          )}
 
           <ToggleSection
             title={lang === "bn" ? "VAT applicable?" : "VAT applicable?"}
