@@ -260,6 +260,8 @@ function WishlistDetailDialog({
 }) {
   const { lang } = useI18n();
   const open = !!wishlistId;
+  const [convertOpen, setConvertOpen] = useState(false);
+  const [lumpMap, setLumpMap] = useState<Record<string, boolean>>({});
   const detailQ = useQuery({
     queryKey: ["customer-wishlist", wishlistId],
     queryFn: async () => {
@@ -323,6 +325,20 @@ function WishlistDetailDialog({
     void detailQ.refetch();
   };
 
+  const updateItemQty = async (it: WishlistItem, value: string) => {
+    const v = value.trim() === "" ? null : Number(value);
+    await supabase.from("customer_wishlist_items").update({ qty: v } as never).eq("id", it.id);
+    void detailQ.refetch();
+  };
+
+  const updateItemUnit = async (it: WishlistItem, value: string) => {
+    await supabase
+      .from("customer_wishlist_items")
+      .update({ unit: value.trim() || null } as never)
+      .eq("id", it.id);
+    void detailQ.refetch();
+  };
+
   const wl = detailQ.data?.wishlist;
   const items = detailQ.data?.items ?? [];
   const phoneDigits = wl?.customer_phone.replace(/[^0-9+]/g, "") ?? "";
@@ -371,13 +387,15 @@ function WishlistDetailDialog({
               </div>
               <ul className="divide-y">
                 {items.map((it) => {
-                  const lineTotal = (Number(it.qty) || 0) && (Number(it.price) || 0)
-                    ? (Number(it.qty) || 0) * (Number(it.price) || 0)
-                    : (Number(it.price) || 0);
+                  const isLump = !!lumpMap[it.id];
+                  const q = Number(it.qty) || 0;
+                  const pr = Number(it.price) || 0;
+                  const lineTotal = isLump || !q ? pr : q * pr;
                   const fs = it.fulfillment_status ?? (it.done ? "fulfilled" : "pending");
                   return (
-                    <li key={it.id} className="flex items-center gap-2 px-3 py-2">
-                      <div className="flex flex-none gap-0.5">
+                    <li key={it.id} className="space-y-1.5 px-3 py-2">
+                      <div className="flex items-center gap-2">
+                        <div className="flex flex-none gap-0.5">
                         <button
                           type="button"
                           title="পেয়েছে"
@@ -402,28 +420,58 @@ function WishlistDetailDialog({
                         >
                           ⏳
                         </button>
-                      </div>
-                      <div className={`flex-1 text-sm ${fs === "fulfilled" ? "text-muted-foreground line-through" : ""}`}>
-                        <div>{it.name}</div>
-                        {(it.qty != null || it.unit) && (
-                          <span className="text-xs text-muted-foreground">
-                            {it.qty ?? ""} {it.unit ?? ""}
+                        </div>
+                        <div className={`flex-1 text-sm ${fs === "fulfilled" ? "text-muted-foreground" : ""}`}>
+                          <div className="font-medium">{it.name}</div>
+                        </div>
+                        {lineTotal > 0 && (
+                          <span className="flex-none text-xs font-semibold text-primary tabular-nums">
+                            ৳{lineTotal.toLocaleString("bn-BD", { maximumFractionDigits: 2 })}
                           </span>
                         )}
-                        {lineTotal > 0 && (
-                          <span className="ml-2 text-xs font-semibold text-primary">= ৳ {lineTotal.toLocaleString("bn-BD", { maximumFractionDigits: 2 })}</span>
-                        )}
                       </div>
-                      <Input
-                        defaultValue={it.price ?? ""}
-                        onBlur={(e) => {
-                          const v = e.target.value;
-                          if ((v === "" ? null : Number(v)) !== it.price) updateItemPrice(it, v);
-                        }}
-                        placeholder="দাম"
-                        inputMode="decimal"
-                        className="h-8 w-20 text-right text-xs tabular-nums"
-                      />
+                      {/* qty / unit / price / lump-toggle row */}
+                      <div className="ml-7 flex items-center gap-1">
+                        <Input
+                          defaultValue={it.qty ?? ""}
+                          onBlur={(e) => {
+                            const v = e.target.value;
+                            if ((v === "" ? null : Number(v)) !== it.qty) updateItemQty(it, v);
+                          }}
+                          placeholder="পরিমাণ"
+                          inputMode="decimal"
+                          className="h-7 w-14 text-center text-xs tabular-nums"
+                        />
+                        <Input
+                          defaultValue={it.unit ?? ""}
+                          onBlur={(e) => {
+                            const v = e.target.value;
+                            if ((v || null) !== it.unit) updateItemUnit(it, v);
+                          }}
+                          placeholder="একক"
+                          className="h-7 w-14 text-xs"
+                        />
+                        <button
+                          type="button"
+                          title={isLump ? "একসাথে দাম (qty গুনবে না)" : "প্রতিটার দাম (qty × price)"}
+                          onClick={() =>
+                            setLumpMap((m) => ({ ...m, [it.id]: !isLump }))
+                          }
+                          className={`flex h-7 w-7 flex-none items-center justify-center rounded border text-xs ${isLump ? "border-primary bg-primary/10 text-primary" : "border-muted-foreground/30 text-muted-foreground hover:bg-accent"}`}
+                        >
+                          <Package className="h-3.5 w-3.5" />
+                        </button>
+                        <Input
+                          defaultValue={it.price ?? ""}
+                          onBlur={(e) => {
+                            const v = e.target.value;
+                            if ((v === "" ? null : Number(v)) !== it.price) updateItemPrice(it, v);
+                          }}
+                          placeholder={isLump ? "মোট দাম" : "একক দাম"}
+                          inputMode="decimal"
+                          className="h-7 flex-1 text-right text-xs tabular-nums"
+                        />
+                      </div>
                     </li>
                   );
                 })}
@@ -442,14 +490,38 @@ function WishlistDetailDialog({
           </div>
         )}
         <DialogFooter className="flex-row gap-2 sm:justify-between">
-          <Button variant="outline" onClick={remove} className="text-destructive hover:bg-destructive/10">
+          <Button variant="outline" size="sm" onClick={remove} className="text-destructive hover:bg-destructive/10">
             <Trash2 className="mr-1 h-4 w-4" /> {lang === "bn" ? "মুছুন" : "Delete"}
           </Button>
-          <Button onClick={markDone}>
-            <Check className="mr-1 h-4 w-4" /> {lang === "bn" ? "সম্পন্ন" : "Mark done"}
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={markDone}>
+              <Check className="mr-1 h-4 w-4" /> সম্পন্ন
+            </Button>
+            <Button size="sm" onClick={() => setConvertOpen(true)} disabled={!wl}>
+              <Receipt className="mr-1 h-4 w-4" /> বেচায় রূপান্তর
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
+      <ConvertWishlistToSaleDialog
+        open={convertOpen}
+        onOpenChange={setConvertOpen}
+        wishlist={wl ?? null}
+        items={items.map((it) => ({
+          id: it.id,
+          name: it.name,
+          qty: it.qty,
+          unit: it.unit,
+          price: it.price,
+          fulfillment_status: it.fulfillment_status,
+          done: it.done,
+          lump: !!lumpMap[it.id],
+        }))}
+        onConverted={() => {
+          onChange();
+          onOpenChange(false);
+        }}
+      />
     </Dialog>
   );
 }
