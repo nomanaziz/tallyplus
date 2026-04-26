@@ -831,10 +831,12 @@ export type Database = {
           buyer_shop_id: string | null
           color: string
           consumer_user_id: string | null
+          converted_sale_id: string | null
           created_at: string
           customer_address: string | null
           customer_name: string
           customer_phone: string
+          deleted_at: string | null
           id: string
           is_b2b: boolean
           note: string | null
@@ -847,10 +849,12 @@ export type Database = {
           buyer_shop_id?: string | null
           color?: string
           consumer_user_id?: string | null
+          converted_sale_id?: string | null
           created_at?: string
           customer_address?: string | null
           customer_name: string
           customer_phone: string
+          deleted_at?: string | null
           id?: string
           is_b2b?: boolean
           note?: string | null
@@ -863,10 +867,12 @@ export type Database = {
           buyer_shop_id?: string | null
           color?: string
           consumer_user_id?: string | null
+          converted_sale_id?: string | null
           created_at?: string
           customer_address?: string | null
           customer_name?: string
           customer_phone?: string
+          deleted_at?: string | null
           id?: string
           is_b2b?: boolean
           note?: string | null
