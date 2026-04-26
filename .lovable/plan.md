@@ -1,136 +1,144 @@
 
-# গোল
+# TanStack Start থেকে Pure Vite + React SPA-তে Migration
 
-পুরা app টা **super fast** করা — সব feature রেখে, Supabase backend রেখে, Vercel-এ deploy-ready বানিয়ে। কোনো feature বাদ যাবে না।
+## কেন এই migration
 
-# কেন এত slow এখন (root causes)
+আপনার current stack `TanStack Start` (SSR-capable framework, Cloudflare Worker runtime দিয়ে rebuild হয়)। এটাই slow load, Vercel deploy fail, এবং এত route (75+) থাকায় rebuild error-এর মূল কারণ। আপনার আগের সব Lovable apps যেগুলো fast সেগুলো ছিল pure Vite SPA।
 
-1. **SSR overhead in dev**: TanStack Start SSR mode-এ সব routeTree main bundle-এ entry, প্রতি navigation-এ `__tanstack-start/styles.css` + route chunks fetch হয়। Mobile-এ FCP ~3 সেকেন্ড।
-2. **Zero code-splitting**: 74 route file, কোনোটাই `lazy` নয় — auth page খুলতেও admin/affiliate/online-shop সব route module load হয়।
-3. **Login waterfall**: 
-   - `auth.tsx` → edge function `login-with-pin` → `setSession` → তারপর `app.tsx` mount → `AuthProvider.loadProfile` (3টা query) → `ShopProvider.refresh` → `PermissionsProvider` (3টা serial query) → তারপর dashboard query।
-   - প্রতিটা edge function cold start ~1-2s, total প্রায় 5-8s নীরব loading।
-4. **No optimistic UI / visible feedback**: Login button press করলে কোনো instant feedback নেই (form reset হয়ে যায় re-render-এ)।
-5. **Heavy global providers**: I18n + Theme + Auth + RefCapture + InstallAppPrompt সব root-এ — public landing page-ও পুরা auth stack load করে।
-6. **Notifications poll every 30s** + realtime subscribe — সব route-এ চলে।
-7. **Edge function based auth**: প্রতি login-এ Deno cold-start + bcrypt; ভাল হবে direct password sign-in (backend trigger PIN→password mapping ইতিমধ্যে আছে)।
+ভালো খবর: কোডবেসে কোনো `createServerFn` ব্যবহার নেই, কোনো server-side feature নেই — সব data fetching client-side Supabase দিয়ে। শুধু routing layer পাল্টালেই হবে।
 
-# Solution Architecture
+## কী কী রাখা হবে (১০০% অপরিবর্তিত)
 
-## A) Stack: SPA on Vercel (SSR বাদ)
+- পুরো Supabase database, schema, RLS policies, edge functions, storage buckets
+- সব 75টা route file-এর **content/JSX/business logic**
+- সব components (`src/components/`), hooks, lib utilities, i18n, theme, auth provider
+- Tailwind v4 styles (`src/styles.css`), design tokens, brand colors
+- TanStack Query (data fetching), Radix UI, shadcn components, sonner toasts
+- সব assets, public files, manifest, icons
+- Bengali content, copy, branding
 
-TanStack Start-এর SSR এই app-এ extra চাপ — সব data RLS-protected per-user, public SEO-যোগ্য page শুধু `/`, `/pricing`, `/affiliate`, `/shop/*`, `/f/$slug`। এই কয়েকটা page-এর জন্য full SSR overhead রাখা wasteful।
+## কী পাল্টাবে (শুধু stack layer)
 
-**পরিবর্তন:**
-- Vite SPA build (`vite build`) + TanStack **Router** (Start ছাড়া) রাখা।
-- `src/router.tsx` shell unchanged; `__root.tsx` থেকে `shellComponent`/`HeadContent`/`Scripts` সরিয়ে standard `<RouterProvider>` mount in `src/main.tsx`।
-- `index.html` static — meta tags react-helmet-async দিয়ে per-route inject (SEO-যোগ্য কয়েকটা public page-এর জন্য enough)।
-- **Vercel config**: `vercel.json` SPA rewrite (`/* → /index.html`), edge cache for static assets।
-- Edge functions Supabase-এই থাকবে (নতুন কিছু লাগে না)।
+| পুরোনো | নতুন |
+|---|---|
+| `@tanstack/react-start` | সরিয়ে দেওয়া |
+| `@tanstack/react-router` (file-based) | `react-router-dom` v6 (declarative) |
+| `@tanstack/router-plugin`, Cloudflare plugin | সরিয়ে দেওয়া |
+| `@lovable.dev/vite-tanstack-config` | standard `vite + @vitejs/plugin-react` |
+| `src/routes/__root.tsx` (shellComponent) | `src/main.tsx` + `src/App.tsx` |
+| `src/routeTree.gen.ts` (auto-generated) | `src/routes.tsx` (manual route table) |
+| File-based routes (`app.dashboard.tsx`) | Component-based pages (`src/pages/app/Dashboard.tsx`) |
+| `<Link to="/x" />` from tanstack | `<Link to="/x" />` from react-router-dom |
+| `Route.useParams()` | `useParams()` hook |
+| `Route.useSearch()` | `useSearchParams()` hook |
+| SSR/hydration | পুরোপুরি client-rendered SPA |
 
-ফলাফল: প্রথম load 3s → ~700-900ms, route transition instant (chunk cached হয়)।
+## নতুন structure
 
-## B) Aggressive code-splitting
+```text
+src/
+  main.tsx                    # ReactDOM.createRoot, providers wrap
+  App.tsx                     # <BrowserRouter> + <Routes>
+  routes.tsx                  # সব route definitions, lazy-loaded
+  pages/
+    Index.tsx                 # ছিল routes/index.tsx
+    Auth.tsx                  # ছিল routes/auth.tsx
+    Pricing.tsx
+    NotFound.tsx
+    app/
+      Dashboard.tsx           # ছিল routes/app.dashboard.tsx
+      Sell.tsx
+      Products.tsx
+      ... (সব app.* routes)
+      AppLayout.tsx           # ছিল routes/app.tsx (Outlet wrapper)
+      OnlineShop/
+        Index.tsx, Orders.tsx, Products.tsx ...
+    admin/
+      AdminLayout.tsx, Index.tsx, Users.tsx ...
+    fordo/
+      Slug.tsx                # ছিল f.$slug.tsx → /f/:slug
+      SlugMy.tsx              # /f/:slug/my
+    shop/
+      Index.tsx, Product.tsx (/shop/p/:id), Slug.tsx (/shop/s/:slug)
+    affiliate/
+      Index.tsx, Register.tsx
+    vendor/
+      Username.tsx            # /vendor/:username
+  components/                 # অপরিবর্তিত
+  hooks/                      # অপরিবর্তিত
+  lib/                        # অপরিবর্তিত
+  integrations/supabase/      # অপরিবর্তিত (auth-middleware.ts ডিলিট)
+  styles.css                  # অপরিবর্তিত
+index.html                    # নতুন — Vite SPA entry
+```
 
-প্রতি route file-এর component-কে `React.lazy` দিয়ে wrap করব (TanStack Router-এ route definition ছোট রেখে component lazy)। তাহলে `/auth` খুললে শুধু auth chunk + root shell load হবে।
+## Route mapping (সব 75টা)
 
-- Helper: `lazyRoute(() => import("./..."))` factory।
-- Critical bundle target: <120 KB gz (এখন ~600 KB+)।
+ফাইলগুলো একইভাবে move হবে, dot-notation → nested folder:
 
-## C) Login flow rewrite — "instant feel"
+- `index.tsx` → `/` → `pages/Index.tsx`
+- `auth.tsx` → `/auth`
+- `pricing.tsx` → `/pricing`
+- `app.tsx` → layout for `/app/*` (renders `<Outlet/>`)
+- `app.dashboard.tsx` → `/app/dashboard`
+- `app.sell.tsx` → `/app/sell`
+- ... (সব 40+ `app.*` routes একইভাবে)
+- `app.online-shop.tsx` → nested layout for `/app/online-shop/*`
+- `app.online-shop.orders.tsx` → `/app/online-shop/orders`
+- ... (12টা online-shop sub-routes)
+- `app.returns.$id.tsx` → `/app/returns/:id`
+- `admin.tsx` → layout for `/admin/*`
+- `admin.users.tsx` → `/admin/users` ... (সব admin routes)
+- `f.$slug.tsx` → `/f/:slug`
+- `f.$slug.my.tsx` → `/f/:slug/my`
+- `shop.p.$id.tsx` → `/shop/p/:id`
+- `shop.s.$slug.tsx` → `/shop/s/:slug`
+- `vendor.$username.tsx` → `/vendor/:username`
+- `affiliate.tsx`, `affiliate.register.tsx`
+- 404 → `pages/NotFound.tsx`
 
-1. **Form state সুরক্ষা**: Form-এ `useRef`-based controlled input + `defaultValue` দিয়ে re-render-এ field clear হবে না।
-2. **Visible loader**: Login button-এ instant spinner + button label "লগইন হচ্ছে..."; নিচে progress text "PIN যাচাই → সেশন তৈরি → ড্যাশবোর্ড..." যাতে user বুঝতে পারে কোন stage-এ আছে।
-3. **Edge function বদলে direct sign-in**:
-   - Phone + PIN → ক্লায়েন্ট-side `email = "{digits}@tally.local"`, `password = "tp_{digits}_pw"` (existing scheme)।
-   - সরাসরি `supabase.auth.signInWithPassword()` — edge function cold start বাদ। Login 2-3s → ~400ms।
-   - "wrong_pin" detect: signIn fail হলে শুধু তখন edge function call করব verify-এর জন্য (rare path)।
-   - **Signup-এর জন্য** edge function রাখতেই হবে (admin createUser দরকার), কিন্তু signup rare।
-4. **Redirect-back**: `/auth?redirect=/app/sell` support করব যাতে protected route থেকে bounce করলে আবার সেখানেই ফিরে।
-5. **Skeleton dashboard**: Login complete হওয়ার সাথে সাথে dashboard-এ navigate করব stale-while-revalidate cache দিয়ে — সংখ্যাগুলো ০ দেখাবে, তারপর update হবে। Black screen থাকবে না।
+## Performance optimizations নতুন SPA-তে
 
-## D) Auth + data layer simplify
+1. **React.lazy + Suspense**: প্রত্যেক route lazy-loaded → initial bundle ছোট
+2. **Manual chunk splitting**: vite.config-এ vendor chunks (react, radix, recharts, supabase) আলাদা
+3. **Index page eager load**: শুধু landing page eager, বাকি সব lazy
+4. **Preload on hover**: `<Link onMouseEnter>` দিয়ে route prefetch
+5. **No SSR overhead**: সরাসরি static `index.html` serve হবে
+6. **Vercel-friendly**: pure static SPA, যেকোনো host-এ deploy হবে (Vercel/Netlify/Cloudflare Pages/Lovable)
 
-1. `AuthProvider.loadProfile`-এর 3টা query → 1টা PostgreSQL view `v_my_account` (profile + roles + active sub একসাথে), fetch via single `.rpc()` বা view query। 1 round-trip।
-2. `PermissionsProvider`-এর 3 query → 1 view `v_my_shop_perms(shop_id)` — owner/admin/member/custom-role পুরোটা একসাথে।
-3. সব list query (`productsListQuery` etc.) আগে থেকে আছে — শুধু **route loader-এ `ensureQueryData`** দিয়ে prefetch করব যাতে navigation মুহূর্তেই data দেখায়।
-4. Heavy unused queries (admin pages, online-shop pages) only when route hit.
-5. `staleTime` raise: dashboard 60s → 5min, products 60s → 5min — repeat navigation-এ refetch হবে না।
+## Migration steps
 
-## E) Mobile UX feedback (loaders everywhere)
+1. **Dependencies**: `react-router-dom` add করা, TanStack Start/Router/Cloudflare plugin remove করা
+2. **vite.config.ts**: standard `@vitejs/plugin-react` + `@tailwindcss/vite` + `vite-tsconfig-paths` + manual chunks
+3. **index.html**: meta tags, fonts, manifest সহ root entry
+4. **src/main.tsx**: ReactDOM root, providers
+5. **src/App.tsx**: `BrowserRouter` + lazy `Routes`
+6. **পুরোনো routes → new pages**: প্রত্যেক file move + এই পরিবর্তন:
+   - `createFileRoute(...)` wrapper সরানো → plain default-exported component
+   - `import { Link } from "@tanstack/react-router"` → `react-router-dom`
+   - `Route.useParams()` → `useParams()`
+   - `Route.useSearch()` → `useSearchParams()`
+   - `Route.useNavigate()` → `useNavigate()`
+   - `<Link to="/app/sell" params={{...}}>` → `<Link to="/app/sell">`
+   - 3 file-এর loader logic → component-এ `useEffect` বা `useQuery`-তে move
+7. **Delete**: `src/routes/`, `src/router.tsx`, `src/routeTree.gen.ts`, `wrangler.jsonc`, `.wrangler`, `auth-middleware.ts`, `tailwind.config.lov.json`
+8. **Test**: dev server, build, route navigation
+9. **package.json rename**: `tanstack_start_ts` → `tally-plus-spa`
 
-- Top progress bar (already আছে) — এটা retain করব।
-- প্রতি route-এ `pendingComponent` (skeleton)। 200ms-এর বেশি wait হলে দেখাবে।
-- Button-গুলোতে disabled + spinner + হালকা বাংলা status text।
-- Network offline detect → toast "ইন্টারনেট নেই — পুনরায় চেষ্টা করুন"।
+## Outcome
 
-## F) Notifications & realtime
+- Vercel-এ এক ক্লিকে deploy হবে (static SPA)
+- Initial load ~2-3x faster (no SSR hydration, smaller initial JS)
+- Navigation instant (lazy chunks pre-cached)
+- Rebuild error গায়েব (no Cloudflare Worker bundling)
+- Database, content, design, business logic — সব hubahu
 
-- `NotificationBell` realtime subscription শুধু `/app/*` route-এ active হবে (এখন সব page-এ subscribe করে)।
-- Polling 30s → 60s; tab background হলে pause।
-- `tg_notify_new_wishlist` trigger ইতিমধ্যে আছে — confirm করব এবং dropdown unread badge সঠিকভাবে রিফ্রেশ হবে।
+## Estimated scope
 
-## G) Asset & bundle diet
+- ~75 route files migrate (mechanical, repetitive change)
+- ~10 dependency updates
+- ~5 config files (vite, tsconfig, index.html, main.tsx, App.tsx)
+- শুধু routing layer পাল্টাচ্ছে, কোনো feature redesign নেই
+- Approve করলে আমি step-by-step execute করব, বড় কাজ হলেও safe migration
 
-- `logo.png` 47KB → optimized SVG (~3KB)।
-- `embla-carousel-react` শুধু dashboard-এ — already সঠিক, কিন্তু lazy import করব।
-- Icons: lucide tree-shaken; barrel import সরাব।
-- Tailwind v4 জায়গায় আছে — শুধু unused utility purge confirm।
-
-## H) Vercel deployment
-
-- `vercel.json`:
-  ```
-  { "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }],
-    "headers": [{ "source": "/assets/(.*)", "headers": [
-      { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
-    ]}] }
-  ```
-- Build command: `vite build` → output `dist`।
-- ENV: `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY` user Vercel dashboard-এ যোগ করবে (আমি README-এ লিখে দিব)।
-
-# Step-by-step execution plan
-
-1. **Migrate TanStack Start → SPA**: 
-   - Add `src/main.tsx` with `RouterProvider`।
-   - `__root.tsx` থেকে `shellComponent`/`Scripts` সরাও।
-   - Static `index.html` add (meta + root div)।
-   - Update `vite.config.ts` (remove `@tanstack/react-start/plugin`, keep `@tanstack/router-plugin`)।
-   - Add `vercel.json`।
-2. **Code-split every route**: Update all 74 route files to use `lazyRouteComponent` pattern (or convert to `.lazy.tsx`)।
-3. **Login speed-up**:
-   - Rewrite `routes/auth.tsx`: direct `signInWithPassword` first, fallback to edge function on `Invalid login credentials`।
-   - Persist form input via `useRef` + uncontrolled inputs।
-   - Multi-stage loader text।
-   - Add `?redirect=` support।
-4. **Auth waterfall fix**:
-   - Create DB view `v_my_account`, `v_my_shop_perms`।
-   - Update `AuthProvider`/`PermissionsProvider` to single fetch each।
-5. **Loaders + prefetch**:
-   - Each `/app/*` route gets `loader: () => qc.ensureQueryData(...)`।
-   - `pendingComponent` with skeleton।
-6. **Cache tuning**: Bump `staleTime` for read-heavy queries; `gcTime` 30min।
-7. **Notification scope**: Mount realtime only in `/app` layout; pause on background tab।
-8. **Asset diet**: Replace `logo.png` with SVG; lazy-load embla; audit icons।
-9. **QA**: Test login → dashboard → sell → wishlist on slow 3G profile; target FCP <1s, login round-trip <800ms।
-
-# Fallback plan
-
-কোনো step-এ unexpected break হলে আগের state-এ revert করে শুধু সেই module-এর fix চালাব। সব feature regression-test:
-- Login (owner, admin, employee, consumer)
-- Dashboard summary, sell, purchase, wishlist
-- Notifications bell receives new wishlist
-- Online shop public pages
-- Affiliate, admin panels
-
-# Time/credit estimate
-
-মাঝারি refactor — একটা batch-এ সব করব না, **3টা phase**-এ ভাগ করব:
-
-- **Phase 1 (এই approval-এ)**: Login fix + visible loaders + auth waterfall fix + notification scope। সবচেয়ে বড় UX impact।
-- **Phase 2**: Code-splitting + cache tuning + asset diet।
-- **Phase 3**: SPA migration + Vercel config + final QA।
-
-প্রতি phase শেষে আপনি test করে next phase approve করবেন — এতে credit সবচেয়ে কম খরচ হবে এবং কোনো বড় regression হবে না।
-
-**Phase 1 এখনই শুরু করব?** Approve করলে এই plan-এর Phase 1 implement করা হবে।
+আপনি Approve করলে আমি default mode-এ গিয়ে এই পুরো migration শুরু করব।
