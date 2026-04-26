@@ -1,97 +1,71 @@
-## Plan: Marketplace Vendor View + "Stock Maintain করবেন না" toggle
+# ফর্দ-First Marketplace Plan
 
-দুটো জিনিস একসাথে করব —
-1. **Marketplace-এ Vendor View tab** যোগ করা (Product View / Vendor View)
-2. **Stock maintain না করার option** (toggle) — যেসব দোকানদার stock track করতে চায় না, তাদের পণ্য সবসময় order/list-এ যোগ করা যাবে
+আপনার মূল লক্ষ্য পরিষ্কার: **ফর্দ (shopping list) হবে গ্রাহক-দোকান যোগাযোগের মূল মাধ্যম**, marketplace শুধু দোকান খুঁজে পাওয়ার একটা উপায়। নিচে আমি বর্তমানে যা আছে সেটা ব্যবহার করে ছোট কিছু সংযোজন প্রস্তাব করছি।
 
----
+## যা ইতিমধ্যে বানানো আছে (পুনঃব্যবহার হবে)
 
-### ১. Marketplace: Product View + Vendor View
+- `/f/{shop-slug}` — পাবলিক ফর্দ পেজ (গ্রাহক ফর্দ পাঠায়)
+- `/f/{shop-slug}/my` — গ্রাহকের নিজের সব ফর্দ (mobile + PIN দিয়ে login)
+- `/app/customer-wishlist` — দোকানদার ফর্দ দেখে, দাম বসায়, status পাল্টায়
+- PIN auth, color tag, reuse / template — সব আছে
 
-`/shop` (`src/routes/shop.index.tsx`) পেজে উপরে দুইটা tab বসাব:
+## নতুন যা যোগ হবে
 
-- **পণ্য (Product View)** — এখন যা আছে: সব দোকানের সব listing grid-এ দেখায়
-- **দোকান (Vendor View)** — শুধু দোকানের কার্ড: logo, নাম, tagline, ঠিকানা, কতটি পণ্য আছে। কার্ডে click করলে vendor home page (`/vendor/$username` বা `/shop/s/$slug`) এ যাবে — যেখানে ওই দোকানের সব পণ্য আগেই দেখা যায়
+### ১. Marketplace-এ Vendor View কে default করা
+- `/shop` খুললে এখন থেকে **"Vendor View" tab আগে** থাকবে (এখন Product আগে)
+- প্রতিটি **VendorCard**-এ দুইটা প্রধান button:
+  - **"ফর্দ পাঠান"** (primary, বড়) → সরাসরি `/f/{slug}` এ যায়
+  - **"দোকান দেখুন"** (secondary) → `/vendor/{username}` এ যায়
+- Product View tab থেকে যাবে — যারা পণ্য খুঁজতে চায় তাদের জন্য
 
-Search box দুইটা tab-এই কাজ করবে (পণ্য নাম / দোকান নাম)।
+### ২. Vendor home page (`/vendor/{username}`)-এ সবচেয়ে উপরে
+- বড় sticky banner: **"ফর্দ তৈরি করে পাঠান — দোকানদার দাম জানিয়ে দিবেন"** + CTA button → `/f/{slug}`
+- দোকানের নাম, address, phone, logo (এগুলো ইতিমধ্যে আছে — আরো prominent করা হবে)
 
-**Backend**: `marketplace-public` edge function-এ নতুন action `list-shops` যোগ করব — যেসব shop অন্তত একটা published listing রাখে, সেগুলোর তালিকা + প্রতিটির listing count return করবে। q filter, shop_type filter, pagination support করবে।
+### ৩. ফর্দ পেজ সরল করা (`/f/{slug}`)
+এখন form-এ name / qty / unit / price আলাদা ৪টা খোপ — কঠিন লাগে। নতুন design:
 
----
+- **একটাই বড় text box per লাইন**: গ্রাহক যা ইচ্ছা লেখে — *"১ কেজি পোলাওর চাল"*, *"২ কেজি খাসির মাংস"*, *"১ ডজন ডিম"*
+- পাশে **+ Add line** এবং **🗑 delete**
+- নিচে দোকানের catalog থেকে quick-pick suggestion (যা ইতিমধ্যে আছে — থাকবে)
+- Price / unit / qty parsing দরকার নেই — পুরো লাইনটাই `name` হিসেবে save হবে। দোকানদার তার পাশে দাম বসাবেন।
+- "বিস্তারিত mode" toggle থাকবে যারা qty/unit আলাদা দিতে চান তাদের জন্য (পুরোনো UI)
 
-### ২. "Stock maintain করবেন না" toggle (পণ্য add/edit form-এ)
+### ৪. 🎤 Voice Input (Bangla)
+ফর্দ পেজে বড় mic button: **"কথা বলে ফর্দ বানান"**
+- চাপলে browser-এর **Web Speech API** (`SpeechRecognition`) দিয়ে Bangla (`bn-BD`) audio capture
+- যেসব browser-এ Web Speech নেই (iOS Safari ইত্যাদি): MediaRecorder দিয়ে audio record করে **Lovable AI Gateway-এর `google/gemini-2.5-flash`** এ পাঠানো হবে — Gemini multimodal Bangla audio transcribe করতে পারে
+- Transcript পাওয়ার পর **AI দিয়ে item-এ ভাঙা হবে**:
+  - একটা edge function `voice-to-fordo` বানানো হবে যা Gemini-কে বলবে: *"নিচের বাংলা বাক্যকে ফর্দ লাইনে ভাগ করে JSON array দাও"*
+  - Input: *"এক কেজি চাল দুই কেজি ডাল আর এক হালি ডিম"*
+  - Output: `["১ কেজি চাল", "২ কেজি ডাল", "১ হালি ডিম"]`
+- লাইনগুলো form-এ auto-fill হবে, গ্রাহক চাইলে edit করতে পারবে
 
-**Convention**: `products.stock = -1` মানে stock maintain করা হচ্ছে না (unlimited)। DB schema-তে কোনো column add লাগবে না — শুধু value `-1` ব্যবহার করব। Migration ছাড়াই কাজ হবে।
+### ৫. দোকানদার দিকে ছোট সংযোজন
+`/app/customer-wishlist`-এ ইতিমধ্যে প্রতি item-এ price বসানো যায়। নতুন:
+- যদি item name দোকানের products-এর সাথে match করে (fuzzy), **"price auto suggest"** badge দেখাবে — click করলে product-এর sale_price বসে যাবে
+- (এটা optional polish — মূল কাজ নয়)
 
-**`src/routes/app.products.tsx` (Add/Edit Product form)**:
+## Routing উদাহরণ
 
-বর্তমান "বর্তমান মজুদ" field-এর উপরে নতুন toggle:
-
-> **"স্টক হিসাব রাখতে চান?"** (default: ON / yes)
->
-> - ON হলে: এখনকার মতই "বর্তমান মজুদ" + "লো-স্টক অ্যালার্ট" fields দেখাবে
-> - OFF হলে: ওই দুইটা field hide হয়ে যাবে; নিচে ছোট হিন্ট — *"স্টক unlimited হিসেবে গণ্য হবে। কেউ অর্ডার করলে stock কমবে না, low stock alert আসবে না।"*
-> - Save করার সময় OFF হলে `stock = -1`, `low_stock_alert = 0` সেভ হবে
-
-Editing-এ form খোলার সময় `stock < 0` হলে toggle OFF হিসেবে initialize হবে।
-
-**`src/routes/app.products.tsx` list table**:
-- `stock < 0` দেখালে "—" বা "অসীম" badge দেখাব, সংখ্যা না
-
-**`src/routes/app.online-shop.products.tsx`**:
-- একই রকম "অসীম" দেখাব stock কলামে যখন `stock < 0`
-- Listing form-এ যদি stock field থাকে, একই toggle pattern apply করব
-
----
-
-### ৩. "Stock নেই" শর্ত সর্বত্র shift করা
-
-এখন কোডে অনেক জায়গায় `stock <= 0` মানে "out of stock"। নতুন rule:
-
-> **out of stock = `stock === 0`** (ঠিক zero)
-> **unlimited / always orderable = `stock < 0`**
-
-নিচের জায়গাগুলোতে আপডেট করব:
-
-- `src/components/marketplace/MarketplaceProductCard.tsx` — `listing.stock <= 0` → `listing.stock === 0`; "স্টক নেই" badge শুধু zero-তে দেখাবে
-- `src/components/marketplace/AddToListButton.tsx` — `maxStock` prop optional ছিল, কিন্তু card থেকে `listing.stock` সবসময় পাঠাচ্ছে। Card-এ change করব: `maxStock={listing.stock < 0 ? undefined : listing.stock}` → unlimited হলে stepper-এ + button disable হবে না
-- `src/components/marketplace/QuickViewDialog.tsx` — একই treatment; "স্টক নেই" শুধু zero-তে
-- `src/routes/shop.p.$id.tsx` — Add to cart button: `disabled={listing.stock === 0}`; "স্টক আছে" line: `stock < 0` হলে দেখাব *"সবসময় অর্ডারযোগ্য"*
-
-**Edge function `marketplace-public`**: `in_stock` filter — এখন `stock > 0` চেক করে। নতুন: `stock !== 0` (অর্থাৎ unlimited বা positive — দুটোই in-stock ধরা হবে)। যেন stock-maintain-না-করা পণ্যগুলো "in stock only" filter-এও আসে।
-
-**Marketplace listing publish**: শুধু stock 0 হলেও যদি product `is_marketplace_published = true` হয়, listing থাকবে — শুধু "Add to cart" disable। Unlimited হলে কখনোই disable হবে না।
-
----
-
-### ৪. Vendor View card design (concise)
-
-```text
-┌─────────────────────────┐
-│  [logo]  দোকানের নাম      │
-│          tagline         │
-│  📍 ঠিকানা                │
-│  🛒 ১২ টি পণ্য            │
-└─────────────────────────┘
+```
+/shop                       → vendors tab default
+/vendor/karim-store         → "ফর্দ পাঠান" big button
+/f/karim-store              → ফর্দ form (simple + voice)
+/f/karim-store/my           → গ্রাহকের নিজের সব ফর্দ (phone + PIN)
 ```
 
-Mobile: 2 column, desktop: 3-4 column grid।
+## Technical Notes (অভ্যন্তরীণ)
 
----
+- **Files to edit**: `src/routes/shop.index.tsx` (default tab), `src/components/marketplace/VendorCard.tsx` (CTA buttons), `src/routes/vendor.$username.tsx` (top CTA banner), `src/routes/f.$slug.tsx` (simplified single-line items + voice button), `src/routes/app.customer-wishlist.tsx` (price suggest)
+- **New file**: `src/components/wishlist/VoiceInputButton.tsx` (Web Speech + MediaRecorder fallback)
+- **New edge function**: `supabase/functions/voice-to-fordo/index.ts` — Lovable AI Gateway দিয়ে audio/transcript → JSON line array
+- **DB change**: কিছু লাগবে না — বিদ্যমান `customer_wishlists` / `customer_wishlist_items` টেবিল যথেষ্ট
+- **Secret**: `LOVABLE_API_KEY` ইতিমধ্যে set আছে
 
-### Files to change
+## যা এই plan-এ **নেই** (আপনি বললে যোগ করব)
 
-**Modify:**
-- `src/routes/shop.index.tsx` — Tabs (Product / Vendor), Vendor grid
-- `src/routes/app.products.tsx` — "স্টক হিসাব রাখতে চান?" toggle, list table "অসীম" rendering
-- `src/routes/app.online-shop.products.tsx` — same handling for stock display
-- `src/routes/shop.p.$id.tsx` — stock < 0 logic
-- `src/components/marketplace/MarketplaceProductCard.tsx` — stock===0 badge, maxStock undefined for unlimited
-- `src/components/marketplace/AddToListButton.tsx` — undefined maxStock = no upper limit
-- `src/components/marketplace/QuickViewDialog.tsx` — same display logic
-- `supabase/functions/marketplace-public/index.ts` — `list-shops` action, `in_stock` filter update
+- গ্রাহকের আলাদা accounting page (এখনো mobile + PIN দিয়ে `/f/{slug}/my` থেকে past ফর্দ দেখা যায় — সেটাই accounting এর কাজ করছে)। আলাদা analytics চাইলে পরে যোগ হবে।
+- Voice দিয়ে দাম/total auto-calc — এখন শুধু item নাম generate হবে।
 
-**Create:**
-- `src/components/marketplace/VendorCard.tsx` — vendor card with logo/name/count
-
-কোনো DB migration লাগছে না।
+অনুমোদন দিলে এই কাজগুলো করে দিব।
