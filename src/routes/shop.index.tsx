@@ -274,7 +274,7 @@ function MarketplacePage() {
       <div className="border-b bg-card/40">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center gap-2">
-            <ShoppingBag className="h-5 w-5 text-primary" />
+            <Store className="h-5 w-5 text-primary" />
             <h1 className="text-lg font-bold">মার্কেটপ্লেস</h1>
           </div>
           <form onSubmit={submitSearch} className="mt-3 flex items-center gap-2">
@@ -349,43 +349,18 @@ function MarketplacePage() {
                 <div className="mb-3 text-sm text-muted-foreground">
                   {total} টি পণ্য
                 </div>
-                <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4">
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5">
                   {listings.map((l) => {
                     const p = products[l.product_id];
                     const s = shops[l.shop_id];
                     if (!p || !s) return null;
                     return (
-                      <Link
+                      <MarketplaceProductCard
                         key={l.id}
-                        to="/shop/p/$id"
-                        params={{ id: l.id }}
-                        className="group rounded-xl border bg-card p-3 transition-shadow hover:shadow-md"
-                      >
-                        <div className="aspect-square overflow-hidden rounded-lg bg-muted">
-                          {p.image_url ? (
-                            <img
-                              src={p.image_url}
-                              alt={p.name}
-                              loading="lazy"
-                              className="h-full w-full object-cover transition-transform group-hover:scale-105"
-                            />
-                          ) : (
-                            <div className="flex h-full items-center justify-center text-muted-foreground">
-                              <ShoppingBag className="h-10 w-10" />
-                            </div>
-                          )}
-                        </div>
-                        <div className="mt-2 line-clamp-2 text-sm font-medium">{p.name}</div>
-                        <div className="mt-1 text-base font-bold text-primary">৳ {l.price}</div>
-                        <div className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
-                          {s.logo_url ? (
-                            <img src={s.logo_url} alt="" className="h-4 w-4 rounded-full" />
-                          ) : (
-                            <Store className="h-3 w-3" />
-                          )}
-                          <span className="truncate">{s.name}</span>
-                        </div>
-                      </Link>
+                        listing={l}
+                        product={p}
+                        shop={s}
+                      />
                     );
                   })}
                 </div>
