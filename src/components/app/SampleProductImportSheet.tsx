@@ -46,19 +46,24 @@ export function SampleProductImportSheet({
   useEffect(() => {
     if (!open) return;
     setLoading(true);
-    void supabase
+    const shopType = current?.shop_type_code;
+    let q = supabase
       .from("marketplace_products")
-      .select("id,name_bn,name_en,brand,pack_size,category,base_unit,default_price,default_cost,image_url,barcode")
+      .select("id,name_bn,name_en,brand,pack_size,category,base_unit,default_price,default_cost,image_url,barcode,shop_types")
       .eq("is_active", true)
       .order("category", { ascending: true })
-      .limit(2000)
-      .then(({ data, error }) => {
-        if (error) toast.error(error.message);
-        const rows = (data as CatalogProduct[] | null) ?? [];
-        setItems(rows);
-        setLoading(false);
-      });
-  }, [open]);
+      .limit(2000);
+    // Default: filter by current shop's type. If none/empty, show all.
+    if (shopType) {
+      q = q.or(`shop_types.cs.{${shopType}},shop_types.eq.{}`);
+    }
+    void q.then(({ data, error }) => {
+      if (error) toast.error(error.message);
+      const rows = (data as CatalogProduct[] | null) ?? [];
+      setItems(rows);
+      setLoading(false);
+    });
+  }, [open, current?.shop_type_code]);
 
   // Filtered by search across all categories
   const filtered = useMemo(() => {

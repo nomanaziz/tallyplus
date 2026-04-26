@@ -80,6 +80,7 @@ const P69 = lazy(() => import("./pages/shop/Index"));
 const P70 = lazy(() => import("./pages/shop/p/Id"));
 const P71 = lazy(() => import("./pages/shop/s/Slug"));
 const P72 = lazy(() => import("./pages/vendor/Username"));
+const P73 = lazy(() => import("./pages/customer/Profile"));
 
 export function AppRoutes() {
   return (
@@ -168,6 +169,7 @@ export function AppRoutes() {
       <Route path="s/:slug" element={<S><P71 /></S>} />
       </Route>
       <Route path="/vendor/:username" element={<S><P72 /></S>} />
+      <Route path="/customer/profile" element={<S><P73 /></S>} />
       <Route path="*" element={<S><NotFound /></S>} />
     </Routes>
   );
