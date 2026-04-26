@@ -34,6 +34,12 @@ interface RouterContext {
 }
 
 export const Route = createRootRouteWithContext<RouterContext>()({
+  // SPA mode: skip SSR entirely. Pages render on the client only — no server
+  // round-trip per navigation, no hydration cost, much faster perceived load
+  // on slow networks. The shell HTML is still served, but route components
+  // mount in the browser. This eliminates the slow/laggy/freeze behavior the
+  // user was seeing from SSR + cold-start round-trips.
+  ssr: false,
   head: () => ({
     meta: [
       { charSet: "utf-8" },

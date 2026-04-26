@@ -8,7 +8,6 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { CatalogProductPicker, type CatalogProduct } from "@/components/app/CatalogProductPicker";
-import { VoiceInputButton } from "@/components/wishlist/VoiceInputButton";
 
 type SearchParams = { reuse?: string; tpl?: string };
 
@@ -431,26 +430,6 @@ function PublicWishlistPage() {
               <Settings2 className="h-3 w-3" />
               {simpleMode ? "বিস্তারিত mode" : "সহজ mode"}
             </button>
-          </div>
-
-          {/* Voice input — works in both modes */}
-          <div className="mt-3">
-            <VoiceInputButton
-              onLines={(lines) => {
-                setItems((prev) => {
-                  // remove trailing empty rows then append
-                  const cleaned = prev.filter((p) => p.name.trim().length > 0);
-                  const next = [
-                    ...cleaned,
-                    ...lines.map((ln) => ({ id: newId(), name: ln, qty: "", unit: "", price: "" })),
-                  ];
-                  return next.length > 0 ? next : prev;
-                });
-              }}
-            />
-            <p className="mt-1.5 text-center text-[11px] text-muted-foreground">
-              যেমন বলুন: <span className="font-semibold">"এক কেজি চাল, দুই কেজি ডাল, এক ডজন ডিম"</span>
-            </p>
           </div>
 
           {simpleMode ? (
