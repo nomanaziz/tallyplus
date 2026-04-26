@@ -2949,6 +2949,8 @@ export type Database = {
         Args: { _shop_id: string; _user_id: string }
         Returns: boolean
       }
+      my_account: { Args: never; Returns: Json }
+      my_shop_perms: { Args: { _shop_id: string }; Returns: Json }
       notify_shop_members: {
         Args: {
           _body: string
