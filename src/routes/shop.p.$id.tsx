@@ -4,6 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { SiteHeader } from "@/components/site/SiteHeader";
 import { Loader2, ShoppingBag, Store, ArrowLeft, MessageCircle, Phone } from "lucide-react";
+import { addToCart as addToConsumerCart } from "@/lib/consumer-cart";
+import { toast } from "sonner";
 
 type Listing = { id: string; shop_id: string; product_id: string; price: number; stock: number; unit: string | null; min_order: number | null };
 type Shop = {
@@ -54,32 +56,21 @@ function ProductDetailPage() {
 
   const addToCart = () => {
     if (!listing || !product || !shop) return;
-    if (typeof window === "undefined") return;
-    try {
-      const raw = localStorage.getItem("tp_consumer_cart");
-      const cart: Array<{ listing_id: string; shop_id: string; shop_name: string; name: string; price: number; qty: number; unit: string | null; image_url: string | null }> =
-        raw ? JSON.parse(raw) : [];
-      const existing = cart.find((c) => c.listing_id === listing.id);
-      if (existing) {
-        existing.qty += 1;
-      } else {
-        cart.push({
-          listing_id: listing.id,
-          shop_id: shop.id,
-          shop_name: shop.name,
-          name: product.name,
-          price: listing.price,
-          qty: Number(listing.min_order ?? 1),
-          unit: listing.unit ?? product.unit,
-          image_url: product.image_url,
-        });
-      }
-      localStorage.setItem("tp_consumer_cart", JSON.stringify(cart));
-      // simple feedback
-      import("sonner").then(({ toast }) => toast.success("ফর্দে যোগ করা হয়েছে"));
-    } catch {
-      // ignore
-    }
+    const minOrder = Number(listing.min_order ?? 1);
+    addToConsumerCart(
+      {
+        listing_id: listing.id,
+        shop_id: shop.id,
+        shop_name: shop.name,
+        name: product.name,
+        price: listing.price,
+        unit: listing.unit ?? product.unit,
+        image_url: product.image_url,
+        qty: minOrder,
+      },
+      minOrder,
+    );
+    toast.success("List-এ যোগ করা হয়েছে");
   };
 
   if (loading) {
@@ -147,7 +138,7 @@ function ProductDetailPage() {
 
           <div className="mt-2 flex flex-wrap gap-2">
             <Button onClick={addToCart} disabled={listing.stock <= 0} className="gap-2">
-              <ShoppingBag className="h-4 w-4" /> ফর্দে যোগ করুন
+              <ShoppingBag className="h-4 w-4" /> List-এ যোগ করুন
             </Button>
             {waPhone && (
               <Button asChild variant="outline" className="gap-2">
