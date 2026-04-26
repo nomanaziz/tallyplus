@@ -14,6 +14,7 @@ const RESERVED = new Set([
 
 type Shop = {
   id: string; name: string; username: string | null; slug: string | null; logo_url: string | null;
+  wishlist_slug?: string | null;
   cover_url: string | null; tagline: string | null; address: string | null; phone: string | null;
   about: string | null; terms_and_conditions: string | null; return_policy: string | null;
   shipping_policy: string | null; facebook_url: string | null; whatsapp_number: string | null;
@@ -65,6 +66,11 @@ export const Route = createFileRoute("/vendor/$username")({
 
 function PublicShopPage() {
   const { shop, listings, products } = Route.useLoaderData();
+  const rawWishlistSlug = shop.wishlist_slug;
+  const wishlistSlug =
+    typeof rawWishlistSlug === "string" && rawWishlistSlug.trim().length > 0
+      ? rawWishlistSlug.trim()
+      : null;
 
   // Log a visit (fire & forget)
   useEffect(() => {
@@ -124,31 +130,39 @@ function PublicShopPage() {
 
       <main className="container mx-auto px-4 py-8">
         {/* Primary CTA: Send a ফর্দ */}
-        {shop.slug && (
-          <section className="mb-6 overflow-hidden rounded-2xl border-2 border-primary/30 bg-gradient-to-br from-primary/10 via-primary/5 to-background p-5 shadow-sm">
-            <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex-1">
-                <div className="flex items-center gap-2 text-xs font-semibold text-primary">
-                  <FileText className="h-4 w-4" /> ফর্দ পাঠান
-                </div>
-                <h2 className="mt-1 text-lg font-extrabold leading-tight sm:text-xl">
-                  বাজারের তালিকা পাঠান, দোকানদার দাম জানিয়ে দিবেন
-                </h2>
-                <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
-                  সরাসরি লিখুন বা মাইক চেপে কথা বলে ফর্দ বানান। ১ মিনিটেই পাঠানো শেষ।
-                </p>
+        <section className="mb-6 overflow-hidden rounded-2xl border-2 border-primary/30 bg-gradient-to-br from-primary/10 via-primary/5 to-background p-5 shadow-sm">
+          <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex-1">
+              <div className="flex items-center gap-2 text-xs font-semibold text-primary">
+                <FileText className="h-4 w-4" /> ফর্দ পাঠান
               </div>
+              <h2 className="mt-1 text-lg font-extrabold leading-tight sm:text-xl">
+                বাজারের তালিকা পাঠান, দোকানদার দাম জানিয়ে দিবেন
+              </h2>
+              <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
+                সরাসরি লিখুন বা মাইক চেপে কথা বলে ফর্দ বানান। ১ মিনিটেই পাঠানো শেষ।
+              </p>
+            </div>
+            {wishlistSlug ? (
               <Link
                 to="/f/$slug"
-                params={{ slug: shop.slug }}
+                params={{ slug: wishlistSlug }}
                 className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-bold text-primary-foreground shadow-md hover:bg-primary/90 sm:text-base"
               >
                 <FileText className="h-4 w-4" />
                 ফর্দ তৈরি করুন
               </Link>
-            </div>
-          </section>
-        )}
+            ) : (
+              <span
+                title="এই দোকানের ফর্দ লিঙ্ক এখনো সক্রিয় নয়"
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-muted px-5 py-3 text-sm font-bold text-muted-foreground sm:text-base"
+              >
+                <FileText className="h-4 w-4" />
+                ফর্দ লিঙ্ক এখনো নেই
+              </span>
+            )}
+          </div>
+        </section>
 
         {shop.about && (
           <section className="mb-6 rounded-xl border bg-card p-4">
