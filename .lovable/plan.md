@@ -1,100 +1,57 @@
-## Plan: Label fix, Sidebar cleanup, এবং B2B (পাইকারি) Module
+## লক্ষ্য
 
-তিনটা আলাদা কাজ একসাথে — ছোট থেকে বড় পর্যন্ত।
+মোবাইলে side drawer menu আর দরকার নাই। সব menu গুলো dashboard (`/app/dashboard`) home page এ category-wise scrollable list হিসেবে চলে আসবে। Settings sheet এ "দোকান পরিবর্তন", "Combined Report" ইত্যাদি আগে থেকেই আছে — সেগুলো ঠিক রেখে মোবাইলে profile/logout এর জন্য সুন্দর entry point দেব।
 
----
+## কী করবো
 
-### 1) Label fix (ছোট কাজ)
-`src/routes/app.quick-order.tsx`-এ "দোকানের বাইরের পণ্য" → **"স্টকের বাইরের পণ্য"** করা হবে। English label "External items" রাখব (বা "Out-of-stock items")।
+### 1. Dashboard কে full menu hub বানানো (`src/routes/app.dashboard.tsx`)
 
----
+বর্তমান dashboard এ summary card + 3 action button + ছোট ছোট grid (Ledgers / Business / Others) আছে — কিন্তু onlineshop sub-pages, B2B, Fordo history, returns ইত্যাদি অনেক menu এখানে নেই।
 
-### 2) Sidebar restructure
-`src/components/app/AppSidebar.tsx`-এ দুইটা পরিবর্তন:
+Dashboard এ একই category structure use করব যা `AppSidebar.tsx` এ আছে (single source of truth):
 
-- **দ্রুত ফর্দ** (`/app/quick-order`) — এখন "লেনদেন" section-এ আছে। সরিয়ে **"গ্রাহক ও যোগাযোগ"** section-এ "গ্রাহক ফর্দ"-এর কাছে নিয়ে আসা হবে।
-- **প্রোডাক্ট রিটার্ন** (`/app/returns`) — এখন "হিসাবের খাতা" section-এ আছে। সরিয়ে **"পণ্য ও স্টক"** section-এ নিয়ে আসা হবে।
+- `SECTIONS` array (main, transactions, ledgers, inventory, customers, online, reports, more) `AppSidebar` থেকে export করে dashboard এ reuse করব। এতে future এ নতুন menu add করলে দুই জায়গাতেই auto আসবে।
+- প্রতি section একটা card; card এর ভেতর icon + label এর responsive grid (mobile ৪ column, desktop ৬ column)।
+- Permission filter (`usePermissions`) এবং language (`useI18n`) সম্মান করবে — sidebar এর মতই।
+- Summary card, banner carousel, ৩টা বড় action button (Purchase / Sell / Quick Sell) উপরে থাকবে — পরিবর্তন হবে না।
 
-কোনো route URL বদলাবে না — শুধু sidebar grouping।
+### 2. মোবাইলে sidebar drawer সরানো (`src/routes/app.tsx`)
 
----
+- `mobileMenuOpen` state এবং `<Sheet>` যেটা `<AppSidebar>` mobile drawer হিসেবে দেখায় — সেটা বাদ দেব।
+- `MobileBottomNav` এ `onMenu` prop আর use হবে না।
+- Desktop এ `<AppSidebar>` আগের মতই থাকবে (`hidden md:block`)।
 
-### 3) B2B (পাইকারি) Module — বড় feature
+### 3. Mobile bottom nav update (`src/components/app/MobileBottomNav.tsx`)
 
-**ধারণা:** একই app-এ দুই ধরনের ব্যবসায়ী থাকবে:
-- **খুচরা বিক্রেতা (Retail)** — বর্তমান default behavior
-- **পাইকারি বিক্রেতা (Wholesale)** — extra B2B-specific options
+5টা tab: **Home / Sell / Return / Report / Profile**
 
-খুচরা দোকানদাররা পাইকারি দোকানদারদের কাছে **B2B ফর্দ** পাঠাতে পারবে — ঠিক যেমন consumer ফর্দ পাঠায়, তেমন।
+- "Menu" button সরিয়ে "Profile" button দেব (User icon)।
+- Profile button click করলে SettingsSheet open হবে (দোকান পরিবর্তন, combined report, language, theme, logout — সব এখানেই আছে)।
+- এর জন্য `MobileBottomNav` কে `onProfile: () => void` prop দেব। `app.tsx` থেকে ওই handler দিয়ে SettingsSheet open করব।
 
----
+### 4. Settings sheet — মোবাইল থেকে access (`src/routes/app.tsx`)
 
-#### ৩.১ Setting toggle: "আপনি কি পাইকারি বিক্রেতা?"
+- `app.tsx` এ একটা `settingsOpen` state নেব এবং `<SettingsSheet>` render করব (এখন AppTopbar এর মধ্যে আছে — ওটাও থাকবে desktop এর জন্য)।
+- Mobile bottom nav এর Profile button → এই sheet খুলবে।
+- SettingsSheet এ "দোকান পরিবর্তন", "Combined Report", language, theme, install app, training, logout — সব আগে থেকেই আছে, কোনো পরিবর্তন লাগবে না।
 
-- Shop settings page-এ একটা toggle: `is_wholesale` (default `false`)
-- DB migration: `shops` table-এ নতুন column `is_wholesale boolean default false` যোগ
-- Toggle on করলে shop B2B mode-এ চলে যাবে — নিচের সব পাইকারি features unlock হবে
+### 5. SettingsSheet — profile header যোগ (`src/components/app/SettingsSheet.tsx`)
 
-#### ৩.২ Product-level পাইকারি setting
+মোবাইলে profile ভাব আনতে sheet এর top এ একটা ছোট profile header section যোগ করব:
+- User initials avatar + full name + phone number
+- নিচে আগের মতই "দোকান পরিবর্তন" বড় button
 
-`products` table-এ ইতিমধ্যে আছে:
-- `bulk_enabled boolean`
-- `bulk_min_qty numeric`
-- `bulk_price numeric`
+এটা desktop dropdown এ যেমন profile info দেখায় তেমনই হবে।
 
-Wholesale shop হলে product form-এ এই fields আরো prominent করা হবে — "পাইকারি বিক্রির minimum quantity" + "পাইকারি দাম" required দেখাবে। খুচরা shop হলে আগের মতই optional থাকবে।
+## প্রযুক্তিগত বিবরণ
 
-#### ৩.৩ Marketplace-এ wholesale vendor আলাদা দেখানো
+**Files to modify:**
+- `src/components/app/AppSidebar.tsx` — `SECTIONS` constant এবং `Item`/`Section` type export করব (desktop sidebar UI অপরিবর্তিত)।
+- `src/routes/app.dashboard.tsx` — imported `SECTIONS` দিয়ে category-wise grid sections render করার নতুন block যোগ করব (existing summary + 3-button keep)।
+- `src/components/app/MobileBottomNav.tsx` — Menu → Profile (User icon), prop `onMenu` → `onProfile`.
+- `src/routes/app.tsx` — mobile drawer Sheet ও `mobileMenuOpen` state remove; `settingsOpen` state add; `<SettingsSheet>` render; `MobileBottomNav` কে `onProfile={() => setSettingsOpen(true)}` pass করব।
+- `src/components/app/SettingsSheet.tsx` — sheet top এ profile header (avatar + name + phone) যোগ করব। `useAuth()` থেকে `profile` import করব (signOut ইতিমধ্যে use হচ্ছে)।
 
-- Marketplace vendor list (`/shop`)-এ filter chip যোগ হবে: **"সব / খুচরা / পাইকারি"**
-- পাইকারি vendor card-এ একটা **"পাইকারি"** badge দেখাবে
-- পাইকারি shop-এর product card-এ price-এর জায়গায় পাইকারি দাম + min qty দেখাবে (e.g., "৳৪৫০/ডজন · সর্বনিম্ন ১ ডজন")
+**Permission/i18n consistency:** dashboard এর নতুন menu grid sidebar এর `usePermissions` এবং `useI18n` logic একইভাবে use করবে যাতে permission নাই এমন menu hide হয়।
 
-#### ৩.৪ B2B ফর্দ — খুচরা থেকে পাইকারি-তে
-
-পাইকারি shop-এর vendor page-এ **"B2B ফর্দ পাঠান"** button থাকবে (consumer ফর্দ-এর পাশাপাশি)। B2B ফর্দ আলাদা flag দিয়ে চিহ্নিত হবে — যাতে পাইকারি shop-এর dashboard-এ B2B vs consumer ফর্দ আলাদা tab-এ দেখানো যায়।
-
-DB change:
-- `customer_wishlists` table-এ নতুন column `is_b2b boolean default false`
-- `buyer_shop_id uuid` (যে দোকান অর্ডার পাঠাচ্ছে তার shop_id, nullable — consumer হলে null)
-
-পাইকারি shop-এর "গ্রাহক ফর্দ" page-এ দুইটা tab:
-- **Consumer ফর্দ** (পুরাতন behavior)
-- **B2B ফর্দ** (অন্য shop থেকে আসা — buyer shop-এর নাম + ফোন দেখাবে)
-
-#### ৩.৫ B2B order flow simplification
-
-খুচরা shop owner যখন logged-in অবস্থায় কোনো পাইকারি vendor-এর page থেকে ফর্দ পাঠাবে:
-- Auto-fill: shop name → customer_name, owner phone → customer_phone, shop address → customer_address
-- `is_b2b = true`, `buyer_shop_id = current shop id` set হবে
-- পাইকারি দাম apply হবে items-এ (যেখানে `bulk_enabled`)
-
----
-
-### Phasing (যেহেতু বড় কাজ)
-
-আমি একসাথে সব করব — কিন্তু যদি কোনো অংশ পরে refine করতে চান:
-
-- **Phase A (এই turn-এ):** Label fix + Sidebar restructure + DB migration (`is_wholesale`, `is_b2b`, `buyer_shop_id`) + Settings toggle + Marketplace wholesale filter/badge
-- **Phase B (পরে):** B2B ফর্দ পাঠানোর full flow (auto-fill, পাইকারি দাম apply, পাইকারি shop-এ B2B tab) — Phase A approve হওয়ার পর
-
-আমি **Phase A** দিয়ে শুরু করব, কারণ Phase B-এর জন্য আগে foundation দরকার এবং একসাথে অনেক বদল testing-এ ঝামেলা হবে।
-
----
-
-### Files to be created/modified (Phase A)
-
-**Modify:**
-- `src/routes/app.quick-order.tsx` — label fix
-- `src/components/app/AppSidebar.tsx` — দ্রুত ফর্দ ও প্রোডাক্ট রিটার্ন relocate
-- `src/routes/app.online-shop.settings.tsx` (or shop settings page) — `is_wholesale` toggle
-- `src/routes/shop.index.tsx` — wholesale filter chip + badge
-- `src/components/marketplace/VendorCard.tsx` (or equivalent) — পাইকারি badge
-- `supabase/functions/marketplace-public/index.ts` — `is_wholesale` field expose
-
-**DB Migration:**
-- `shops.is_wholesale boolean default false`
-- `customer_wishlists.is_b2b boolean default false`
-- `customer_wishlists.buyer_shop_id uuid nullable`
-
-কোনো নতুন route file বা edge function লাগছে না Phase A-তে।
+**No DB changes, no new routes।**
