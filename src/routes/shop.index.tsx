@@ -354,15 +354,15 @@ function MarketplacePage() {
             <Tabs
               value={view}
               onValueChange={(v) =>
-                navigate({ search: (prev) => ({ ...prev, view: v === "vendors" ? "vendors" : undefined, page: 1 }) })
+                navigate({ search: (prev) => ({ ...prev, view: v === "products" ? "products" : undefined, page: 1 }) })
               }
             >
               <TabsList className="h-9">
-                <TabsTrigger value="products" className="gap-1.5">
-                  <ShoppingBag className="h-3.5 w-3.5" /> পণ্য
-                </TabsTrigger>
                 <TabsTrigger value="vendors" className="gap-1.5">
                   <Store className="h-3.5 w-3.5" /> দোকান
+                </TabsTrigger>
+                <TabsTrigger value="products" className="gap-1.5">
+                  <ShoppingBag className="h-3.5 w-3.5" /> পণ্য
                 </TabsTrigger>
               </TabsList>
             </Tabs>
