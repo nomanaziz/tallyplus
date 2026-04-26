@@ -64,13 +64,6 @@ export const SECTIONS: SidebarSection[] = [
       { to: "/app/customer-wishlist", bn: "গ্রাহক ফর্দ", en: "Customer Wishlist", icon: icons.contact, perm: "contacts" },
       { to: "/app/fordo-history", bn: "ফর্দ ইতিহাস", en: "Fordo History", icon: icons.contact, perm: "contacts" },
       { to: "/app/marketing", bn: "মার্কেটিং", en: "Marketing", icon: icons.marketing, perm: "sms" },
-    ],
-  },
-  {
-    id: "online",
-    bn: "অনলাইন বিক্রি",
-    en: "Online",
-    items: [
       { to: "/app/online-shop", bn: "অনলাইন শপ", en: "Online Shop", icon: icons.onlineShop, perm: "online_shop" },
     ],
   },
