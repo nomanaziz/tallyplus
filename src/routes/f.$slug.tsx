@@ -1,13 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { Loader2, Plus, Send, Trash2, Check, X, Copy, MessageCircle, History, KeyRound } from "lucide-react";
+import { Loader2, Plus, Send, Trash2, Check, X, Copy, MessageCircle, History, KeyRound, Settings2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { CatalogProductPicker, type CatalogProduct } from "@/components/app/CatalogProductPicker";
+import { VoiceInputButton } from "@/components/wishlist/VoiceInputButton";
 
 type SearchParams = { reuse?: string; tpl?: string };
 
@@ -61,6 +62,7 @@ function PublicWishlistPage() {
   const [savedToken, setSavedToken] = useState<string | null>(null);
   const [pinInput, setPinInput] = useState("");
   const [hasExistingProfile, setHasExistingProfile] = useState(false);
+  const [simpleMode, setSimpleMode] = useState(true);
 
   const palette = useMemo(() => PALETTE.find((p) => p.key === color) ?? PALETTE[0], [color]);
 
