@@ -1,65 +1,54 @@
-## লক্ষ্য
+## Plan
 
-গ্রাহক যখন দোকানের ফর্দ লিঙ্কে গিয়ে ফর্দ পাঠাবে, তখন **মোবাইল নাম্বার + ৪-৬ digit PIN** বাধ্যতামূলক হবে। পরে গ্রাহক একই দোকানের লিঙ্কে এসে নিজের সব পুরাতন ফর্দ, নোট, এবং saved templates একটা ছোট্ট dashboard-এ দেখতে পারবে।
+1. Stabilize the phone+PIN login flow
+- Fix the login handoff so `/auth` does not bounce back or clear the phone/PIN fields while the new session is still settling.
+- Make the app wait for auth restoration before redirecting from `/app` back to `/auth`.
+- Keep the login button in a true pending state, block double-submit, and show a clearer full-screen/auth-card loader message while login is in progress.
+- Preserve the entered phone number during a failed or interrupted login so the form does not feel like it “reset itself”.
 
-## ভালো খবর — Backend আগেই তৈরি আছে
+2. Make notifications actually work for incoming ফর্দ/অর্ডার
+- Build a real notification data flow for the existing bell button in the top bar.
+- Add unread count + notification dropdown/panel for the logged-in shop owner.
+- Create notification rows at the server-side creation point when:
+  - a customer submits a new wishlist (`customer_wishlists`)
+  - a new online shop order is created (`marketplace_orders`)
+- Mark notifications as read when opened and keep the UI updated with polling or realtime subscription.
 
-প্রজেক্টে ইতোমধ্যে আছে:
-- `wishlist_customers` table (phone + pin_hash সহ)
-- `customer-wishlist-login` edge function (phone + PIN → 30-দিনের token)
-- `customer-wishlist-history` edge function (token → সব ফর্দ + items + templates)
-- `submit-wishlist` edge function (ইতিমধ্যে PIN handle করে — কিন্তু optional)
+3. Add visible loaders so the app never feels frozen
+- Add a global app-shell loading indicator for route changes and initial `/app` boot.
+- Add per-page skeleton/loading states where data is currently fetched silently, starting with the slowest-feeling screens such as Due Ledger and customer/order inbox screens.
+- Show progress text for long actions like login, refresh, and notification fetch.
 
-তাই শুধু **frontend-এ PIN বাধ্যতামূলক করা** এবং **"আমার ফর্দ" page যোগ করা** বাকি।
+4. Reduce first-load slowness in the app shell
+- Cut unnecessary serial fetching during app boot: auth -> profile -> shops -> permissions -> page data.
+- Refactor shared boot data to load once and be reused instead of re-querying the same shop/role information in multiple providers/components.
+- Convert heavy manual `useEffect` fetches to cached TanStack Query usage where appropriate so revisiting pages is instant and initial loads are clearer.
+- Optimize pages that currently do multiple broad reads just to build simple totals/lists, starting with `/app/due-ledger`.
 
-## কী পরিবর্তন হবে
+5. Verify the key journeys after implementation
+- Test login with correct PIN, wrong PIN, and slow network.
+- Test incoming wishlist notification end-to-end.
+- Test incoming marketplace order notification end-to-end.
+- Test first open vs second open of main app pages to confirm the “first time very slow” issue is reduced and loaders appear immediately.
 
-### 1. গ্রাহকের ফর্দ submit form-এ পরিবর্তন (`src/routes/f.$slug.tsx`)
+## What I found
+- The notification bell in `AppTopbar` is currently only a button; it does not load notifications, show unread count, or mark anything as read.
+- A `notifications` table already exists, but I could not find active code that inserts notification rows for new wishlists/orders.
+- `submit-wishlist` currently creates wishlist data but does not create a shop-owner notification.
+- The login flow calls `setSession()` and navigates immediately, while `/app` can still see `user = null` briefly and redirect back to `/auth`, which matches the “fields became empty again / login spinning / confusing behavior” symptom.
+- App startup is doing several client-side fetches in sequence across `AuthProvider`, `ShopProvider`, `PermissionsProvider`, and route components.
+- Performance snapshot shows slow first paint on first load (TTFB ~2.3s, FCP ~4.6s), so the app needs both real optimization and much better loading feedback.
 
-- "ফর্দ পাঠান" বাটনের পাশে দুইটা ইনপুট বাধ্যতামূলক করা:
-  - **মোবাইল নাম্বার** (ইতিমধ্যে আছে)
-  - **PIN (৪-৬ digit)** — নতুন গ্রাহক হলে নিজে তৈরি করবে; আগে থেকে থাকলে সেই PIN দিতে হবে
-- যদি এই নাম্বারে আগে থেকে account থাকে → "আপনার PIN দিন"
-- নতুন হলে → "একটি ৪-৬ digit PIN তৈরি করুন (পরে এই PIN দিয়ে নিজের ফর্দ দেখতে পারবেন)"
-- Submit সফল হলে একটা confirmation card-এ লেখা থাকবে: "✅ ফর্দ পাঠানো হয়েছে। আপনার PIN: ••••। পরে [আমার ফর্দ দেখুন] বাটনে ক্লিক করে এই দোকানের সব ফর্দ দেখতে পারবেন।"
-- উপরে একটা ছোট link/button: **"আমার ফর্দ দেখুন →"** যা `/f/$slug/my` এ নিয়ে যাবে
-
-### 2. নতুন গ্রাহক dashboard route — `src/routes/f.$slug.my.tsx`
-
-দুইটা view থাকবে এই page-এ:
-
-**A. লগইন স্ক্রিন (token না থাকলে):**
-- দোকানের নাম + logo উপরে
-- মোবাইল নাম্বার + PIN ইনপুট
-- "দেখুন" বাটন → `customer-wishlist-login` কল করে token পাবে → `localStorage`-এ save (key: `wl_token_<slug>`)
-
-**B. Dashboard (token থাকলে):**
-- উপরে: "স্বাগতম, [গ্রাহকের নাম]" + লগআউট
-- **আমার ফর্দসমূহ** — সব past wishlists list, প্রতিটিতে status badge (নতুন/দেখা হয়েছে/সম্পন্ন), তারিখ, item count
-  - কোনো একটায় ক্লিক করলে accordion expand হয়ে items দেখাবে (নাম, qty, unit, দাম, fulfillment status, দোকানদারের নোট)
-- **আমার নোটস/templates** — saved templates (যদি থাকে) — "এই template দিয়ে নতুন ফর্দ পাঠান" বাটন → `/f/$slug?tpl=<id>`
-- নিচে একটা CTA: **"নতুন ফর্দ পাঠান"** → `/f/$slug`
-
-### 3. ছোট UI link
-
-- `f.$slug.tsx` page-এর উপরে header-এ ইতিমধ্যে `History` icon আছে — সেটাকে এই নতুন `/f/$slug/my` route-এ পয়েন্ট করানো হবে।
-
-## Validation Rules
-
-- PIN: শুধু ৪–৬ digit number (regex `^\d{4,6}$`)
-- মোবাইল: ইতিমধ্যে `^[0-9+]{6,20}$`
-- উভয়ই খালি থাকলে submit button disabled
-
-## Database পরিবর্তন
-
-কিছু না — schema আগেই ঠিক আছে।
-
-## কী নতুন তৈরি হবে
-
-- `src/routes/f.$slug.my.tsx` — গ্রাহকের dashboard
-
-## কী edit হবে
-
-- `src/routes/f.$slug.tsx` — PIN বাধ্যতামূলক, helper text, "আমার ফর্দ" link, success card update
-
-কাজ শুরু করব কি?
+## Technical details
+- Files likely involved:
+  - `src/lib/auth.tsx`
+  - `src/routes/auth.tsx`
+  - `src/routes/app.tsx`
+  - `src/components/app/AppTopbar.tsx`
+  - `src/routes/app.due-ledger.tsx`
+  - `src/routes/app.customer-wishlist.tsx`
+  - order creation path for `marketplace_orders`
+  - current wishlist submit server-side handler
+- Notification implementation will reuse the existing `notifications` table instead of inventing a second system.
+- Performance work will prioritize low-risk fixes first: better auth/session coordination, fewer duplicate boot queries, cached query usage, and visible pending states.
+- If needed, I may add one small migration only if notification metadata/unread behavior needs an extra column or index; otherwise I’ll use the existing schema.
