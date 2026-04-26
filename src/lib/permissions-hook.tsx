@@ -41,45 +41,33 @@ export function PermissionsProvider({ children }: { children: ReactNode }) {
     let cancelled = false;
     setLoading(true);
     (async () => {
-      // Check admin role
-      const { data: roles } = await supabase
-        .from("user_roles").select("role").eq("user_id", user.id);
-      const adminFlag = (roles ?? []).some((r) => r.role === "admin");
-
-      // Check shop ownership
-      const { data: shopRow } = await supabase
-        .from("shops").select("owner_id").eq("id", current.id).maybeSingle();
-      const ownerFlag = shopRow?.owner_id === user.id;
-
+      // Single RPC: admin flag + owner flag + member role/perms in one round-trip
+      const { data, error } = await supabase.rpc("my_shop_perms", { _shop_id: current.id });
+      if (cancelled) return;
+      if (error) {
+        console.error("[perms] my_shop_perms rpc failed", error);
+        setLoading(false);
+        return;
+      }
+      const payload = (data ?? {}) as {
+        is_admin: boolean;
+        is_owner: boolean;
+        role: string | null;
+        permissions: PermissionMap | null;
+      };
+      const adminFlag = !!payload.is_admin;
+      const ownerFlag = !!payload.is_owner;
       let resolved: PermissionMap = {};
       if (adminFlag || ownerFlag) {
         resolved = presetForDbRole("owner");
-      } else {
-        const { data: member } = await supabase
-          .from("shop_members")
-          .select("role,permissions,custom_role_id")
-          .eq("shop_id", current.id)
-          .eq("user_id", user.id)
-          .maybeSingle();
-        if (member) {
-          const memberPerms = (member.permissions ?? {}) as PermissionMap;
-          if (memberPerms && Object.keys(memberPerms).length > 0) {
-            resolved = memberPerms;
-          } else if (member.custom_role_id) {
-            const { data: cr } = await supabase
-              .from("shop_custom_roles")
-              .select("permissions")
-              .eq("id", member.custom_role_id)
-              .maybeSingle();
-            resolved = ((cr?.permissions as PermissionMap) ?? {}) || presetForDbRole(member.role);
-            if (Object.keys(resolved).length === 0) resolved = presetForDbRole(member.role);
-          } else {
-            resolved = presetForDbRole(member.role);
-          }
+      } else if (payload.role) {
+        const memberPerms = (payload.permissions ?? {}) as PermissionMap;
+        if (memberPerms && Object.keys(memberPerms).length > 0) {
+          resolved = memberPerms;
+        } else {
+          resolved = presetForDbRole(payload.role);
         }
       }
-
-      if (cancelled) return;
       setIsAdmin(adminFlag);
       setIsOwner(ownerFlag);
       setPerms(resolved);
