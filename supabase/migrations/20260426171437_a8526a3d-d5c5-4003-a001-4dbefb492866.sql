@@ -1,0 +1,1 @@
+ALTER TABLE public.customer_wishlist_items ADD COLUMN IF NOT EXISTS price numeric;
