@@ -95,6 +95,7 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
   const [invoice, setInvoice] = useState<InvoiceData | null>(null);
   useEffect(() => { if (autoOpenDue) setDueOpen(true); }, [autoOpenDue]);
   const [mobileTab, setMobileTab] = useState<"products" | "cart">("products");
+  const [serialPick, setSerialPick] = useState<Product | null>(null);
 
   const isSell = mode === "sell";
   const titleBn = isSell ? "বেচা" : "কেনা";
@@ -113,6 +114,11 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
   }, [products, search]);
 
   const addToCart = (p: Product) => {
+    // Serialized products: open serial picker instead of direct add
+    if (isSell && p.is_serialized) {
+      setSerialPick(p);
+      return;
+    }
     let alreadyInCart = false;
     setCart((prev) => {
       const i = prev.findIndex((c) => c.product_id === p.id);
