@@ -381,6 +381,58 @@ export default function CreateFordo() {
           </Button>
         </div>
       )}
+
+      {/* Save template dialog */}
+      <Dialog open={showSaveTpl} onOpenChange={setShowSaveTpl}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>টেমপ্লেট হিসেবে সংরক্ষণ</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label>টেমপ্লেটের নাম</Label>
+            <Input
+              value={tplName}
+              onChange={(e) => setTplName(e.target.value)}
+              placeholder="যেমন: মাসিক বাজার"
+              maxLength={80}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowSaveTpl(false)}>বাতিল</Button>
+            <Button
+              disabled={savingTpl}
+              onClick={async () => {
+                const name = tplName.trim();
+                if (!name) return toast.error("একটি নাম দিন");
+                if (!user) return toast.error("লগইন করুন");
+                const validItems = items
+                  .filter((it) => it.name.trim())
+                  .map((it) => ({ name: it.name.trim(), qty: it.qty || null, unit: it.unit || null }));
+                setSavingTpl(true);
+                const { error } = await supabase.from("consumer_fordo_templates").insert({
+                  consumer_user_id: user.id,
+                  name,
+                  note: note || null,
+                  items: validItems,
+                } as never);
+                setSavingTpl(false);
+                if (error) return toast.error(error.message);
+                toast.success("টেমপ্লেট সংরক্ষণ করা হয়েছে");
+                setShowSaveTpl(false);
+              }}
+            >
+              {savingTpl ? <Loader2 className="h-4 w-4 animate-spin" /> : "সংরক্ষণ"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <ScheduleFordoDialog
+        open={showSchedule}
+        onOpenChange={setShowSchedule}
+        items={items}
+        note={note}
+      />
     </div>
   );
 }
