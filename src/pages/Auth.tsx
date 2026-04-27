@@ -7,6 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Loader2, MessageCircle } from "lucide-react";
+import { SiteHeader } from "@/components/site/SiteHeader";
+import { SiteFooter } from "@/components/site/SiteFooter";
 
 type Mode = "login" | "signup";
 type Role = "owner" | "customer";
@@ -164,7 +166,9 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4 py-8">
+    <div className="flex min-h-screen flex-col bg-background">
+      <SiteHeader />
+      <main className="flex flex-1 items-center justify-center px-4 py-8">
       <div className="w-full max-w-sm space-y-5 rounded-2xl border bg-card p-6 shadow-sm">
         <div className="text-center">
           <h1 className="text-2xl font-bold">Tally Plus</h1>
@@ -263,6 +267,8 @@ export default function AuthPage() {
           <Link to="/" className="hover:underline">হোমে ফিরুন</Link>
         </div>
       </div>
+      </main>
+      <SiteFooter />
     </div>
   );
 }
