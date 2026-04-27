@@ -4,7 +4,7 @@ import { useAuth } from "@/lib/auth";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/lib/router";
-import { Loader2, Store, ListChecks, Plus, FileText, CalendarClock, Trash2, Pause, Play } from "lucide-react";
+import { Loader2, Store, ListChecks, Plus, FileText, CalendarClock, Trash2, Pause, Play, Star } from "lucide-react";
 import { toast } from "sonner";
 
 type Wishlist = {
@@ -37,6 +37,7 @@ export default function MyFordo() {
   const [shops, setShops] = useState<Record<string, Shop>>({});
   const [templates, setTemplates] = useState<Template[]>([]);
   const [schedules, setSchedules] = useState<Schedule[]>([]);
+  const [favourites, setFavourites] = useState<Shop[]>([]);
 
   useEffect(() => {
     if (!user) return;
@@ -67,15 +68,23 @@ export default function MyFordo() {
       if (cancelled) return;
       setTemplates((tplRes.data ?? []) as Template[]);
       setSchedules((schRes.data ?? []) as Schedule[]);
+      // Load favourite shops
+      const { data: favRows } = await supabase
+        .from("consumer_favourite_shops")
+        .select("shop_id")
+        .eq("consumer_id", user.id);
+      const favShopIds = (favRows ?? []).map((r) => r.shop_id as string);
       const ids = Array.from(new Set([
         ...list.map((w) => w.shop_id),
         ...((schRes.data ?? []) as Schedule[]).map((s) => s.shop_id),
+        ...favShopIds,
       ]));
       if (ids.length > 0) {
         const { data: ss } = await supabase.from("shops").select("id, name").in("id", ids);
         const map: Record<string, Shop> = {};
         for (const s of (ss ?? []) as Shop[]) map[s.id] = s;
         setShops(map);
+        setFavourites(favShopIds.map((id) => map[id]).filter(Boolean));
       }
       setLoading(false);
     })();
@@ -135,6 +144,26 @@ export default function MyFordo() {
           <Button size="sm"><Plus className="mr-1 h-4 w-4" /> নতুন ফর্দ তৈরি করুন</Button>
         </Link>
       </div>
+
+      {/* Favourite shops */}
+      {favourites.length > 0 && (
+        <section className="space-y-2">
+          <h2 className="flex items-center gap-1 text-sm font-bold">
+            <Star className="h-4 w-4 fill-yellow-400 text-yellow-500" /> প্রিয় দোকান
+          </h2>
+          <div className="flex flex-wrap gap-2">
+            {favourites.map((s) => (
+              <Link
+                key={s.id}
+                to={`/customer/create-fordo?shopId=${s.id}`}
+                className="inline-flex items-center gap-1 rounded-full border bg-card px-3 py-1.5 text-xs font-medium hover:bg-accent"
+              >
+                <Store className="h-3 w-3 text-primary" /> {s.name}
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Schedules */}
       {schedules.length > 0 && (
