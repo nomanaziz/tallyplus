@@ -1,129 +1,99 @@
-# Plan: ফর্দ পেজ + Auth Redesign + Voice Mic + গ্রাহক Mini Dashboard
+## সমস্যা সংক্ষেপ
 
-দুটো আলাদা page-এ কাজ হবে: **Public Fordo page (`/f/:slug`)** এবং **Auth page (`/auth`)**, এছাড়া গ্রাহক dashboard।
-
----
-
-## ১. ফর্দ পেজ (`/f/:slug`) Redesign
-
-### Layout পরিবর্তন
-- **SiteHeader + SiteFooter যোগ করা হবে** — main website এ ফিরে যেতে পারবে।
-- "আপনার তথ্য" — title সরিয়ে ফেলা হবে। আলাদা label-ও না।
-- "আপনার নাম", "মোবাইল নাম্বার", "PIN" — সব placeholder-এর ভেতরে যাবে (label tag বাদ)।
-- ফর্ম order: **পণ্যের তালিকা সবার উপরে** → নোট → কার্ডের রং → সবার শেষে compact একটা গ্রাহক info row (নাম, মোবাইল, PIN — তিনটা input পাশাপাশি/grid এ ছোট হয়ে)।
-- যেকোনো বড় heading বাদ — শুধু পণ্যের section-এ ছোট subtitle।
-
-### ঠিকানা field
-- Optional address field বাদ দেওয়া হবে (compact করতে)।
+1. **Subscribe page**-এ ক্লিক করলে দোকানদার "অর্ডার পেয়েছি" toast দেখে — এটা admin-style বার্তা, customer-এর জন্য নয়। Checkout/Payment flow চাই।
+2. Manual payment instructions (bKash / Nagad / Rocket / Bank নম্বর) Subscribe page-এ নেই।
+3. Free plan card Subscribe page-এ দেখায় না, এবং "আপনি এখন কোন প্যাকেজে আছেন" current-plan badge নেই।
+4. Subscribe page design বারবার break হয় — আগের পরিচ্ছন্ন pricing-card design স্থিতিশীলভাবে আনতে হবে।
+5. Settings → Usage Limits-এর সাথে Free plan card সরাসরি link করতে হবে (ইতিমধ্যে `/app/usage-limits` আছে — Subscribe থেকে link দিতে হবে)।
+6. Logo (`src/assets/logo.png`) header/SiteHeader-এ আছে কিন্তু `index.html` favicon এবং PWA icons এখনো generic — সব জায়গায় logo সেট করতে হবে।
 
 ---
 
-## ২. AI Voice Mic (ফর্দ পেজে)
+## পরিবর্তন
 
-### UI
-- পণ্যের তালিকার পাশে / উপরে একটা **floating mic button** (small circle, primary color)।
-- Click করলে → একটা compact voice modal/sheet খুলবে যেখানে:
-  - Animated **waveform / volume bar** (real-time mic input level — ups/downs দেখাবে)
-  - "শুনছি…" / "কিছু বলুন" status text
-  - Live transcript preview
-  - Cancel button
+### A. Subscribe page (`src/pages/app/Subscribe.tsx`) — full redesign as a Checkout flow
 
-### Behavior
-- Web Speech API (`webkitSpeechRecognition` / `SpeechRecognition`) — Bangla (`bn-BD`)। Free, browser-native, কোনো API key লাগবে না।
-- Volume meter: `AudioContext` + `AnalyserNode` দিয়ে real-time mic level, animated bars দেখাবে।
-- **Auto-close rules**:
-  - কথা বলা শেষ হলে (silence ১.৫ second) → final transcript পাঠাবে এবং close।
-  - **১০ second** কোনো কথা না বললে → automatic close।
-- Transcript থেকে items parse করা হবে: comma/“ও”/নতুন line দিয়ে split → প্রতিটা item হিসেবে যোগ হবে।
-- পরবর্তীতে আবার mic press করলে আবার শুরু হবে।
+স্থিতিশীল layout:
 
-### Browser support fallback
-- Speech API সাপোর্ট না থাকলে toast: "আপনার browser এ voice support নেই — Chrome ব্যবহার করুন"।
+```text
+┌─ SiteHeader ───────────────────────────────────┐
+│ Breadcrumb: Settings › Subscription            │
+│ "আপনার বর্তমান প্ল্যান: Free" (badge + meter) │
+├────────────────────────────────────────────────┤
+│  Plan cards grid (Free + Monthly + Yearly +    │
+│   Lifetime), current plan = "Current" pill,    │
+│   others = "Select" button                     │
+├────────────────────────────────────────────────┤
+│  Selected plan summary (sticky) + Pay button   │
+├────────────────────────────────────────────────┤
+│  Manual Payment Instructions (collapsible):    │
+│   bKash / Nagad / Rocket / Bank নম্বর +        │
+│   "টাকা পাঠানোর পর নিচে TxnID + screenshot"   │
+│   → form submits to `subscription_requests`    │
+├─ SiteFooter ───────────────────────────────────┤
+```
 
----
+আচরণ:
+- Free plan card সবসময় দেখাবে — price ৳0, perks = current free limits, button = "Usage Limits দেখুন" → `/app/usage-limits`।
+- Paid plan-এ click করলে: যদি `payment_gateway_settings.is_enabled = true` → automatic gateway redirect (existing edge function); নাহলে নিচের manual payment section-এ scroll, সেখান থেকে TxnID + (optional) proof_url submit করলে `subscription_requests` insert হবে এবং "অনুরোধ পাঠানো হয়েছে — admin verify করবে" toast দেখাবে। **"অর্ডার পেয়েছি" toast পুরোপুরি বাদ।**
+- Current plan detect করতে `subscriptions` table থেকে active row পড়া হবে (UsageLimits page-এর মতই query)।
 
-## ৩. Auth পেজ (`/auth`) Redesign
+### B. Manual payment numbers — admin-controlled
 
-### Layout
-- **SiteHeader + SiteFooter** আগেই যোগ করা হয়েছে — থাকবে।
-- উপরে দুটো **Tab toggle**: `দোকানদার` (default) | `গ্রাহক`
-- Tab অনুযায়ী form দেখাবে।
-- নিচে create button: "নতুন account তৈরি করুন" → mode switch হবে signup এ। Signup-এও আবার একই দুটো tab (default: দোকানদার)।
+`payment_gateway_settings.extra` (jsonb, ইতিমধ্যে আছে) ব্যবহার করব — কোনো schema migration লাগবে না।
 
-### দোকানদার flow (existing)
-- Phone + PIN দিয়ে login → `/app/dashboard` এ redirect।
-- Signup: নাম + দোকানের নাম + phone + PIN।
+structure:
+```json
+{
+  "manual": {
+    "bkash":  { "number": "01XXXXXXXXX", "type": "personal" },
+    "nagad":  { "number": "01XXXXXXXXX", "type": "personal" },
+    "rocket": { "number": "01XXXXXXXXX", "type": "personal" },
+    "bank":   { "name": "City Bank", "account": "1234567890", "branch": "Dhanmondi" },
+    "instructions_bn": "...",
+    "instructions_en": "..."
+  }
+}
+```
 
-### গ্রাহক flow
-- Phone + PIN দিয়ে login → `/customer/dashboard` এ redirect (নতুন page)।
-- Signup: নাম + phone + PIN (দোকানের নাম লাগবে না)।
+`src/pages/admin/PaymentGateway.tsx`-এ একটি নতুন **"Manual Payment Numbers"** section যোগ করা হবে যেখানে admin এই নম্বরগুলো edit করবে; Subscribe page সেগুলো read-only দেখাবে।
 
----
+### C. Logo সব জায়গায়
 
-## ৪. গ্রাহক Mini Dashboard (`/customer/dashboard` — নতুন)
+- `index.html`-এ `<link rel="icon" href="/icon-192.png">` + apple-touch-icon → `src/assets/logo.png` থেকে export করা PNG ব্যবহার (বর্তমান `public/icon-192.png` placeholder)। সঠিক logo `src/assets/logo.png` থেকে public/-এ copy করে favicon, apple-touch-icon, og:image সব update হবে।
+- `manifest.webmanifest`-এ icons reference verify।
+- Admin sidebar / login page / 404 / Auth — যেখানে এখনো logo মিসিং সেখানে `<img src={logo}>` যোগ।
 
-### Pages/Routes
-- `/customer/dashboard` — main dashboard (নতুন)
-- `/customer/profile` — already exists
-- `/customer/notes` — নোট
-- `/customer/money` — income/expense
+### D. Notification routing fix
 
-### Sidebar/Top nav (গ্রাহক layout)
-- **আমার ফর্দ** — সব দোকান থেকে পাঠানো ফর্দ list (existing wishlist data ব্যবহার করে customer-side view)
-- **নোট** — quick notes
-- **আয়-ব্যয়** — mini income/expense module
-- **প্রোফাইল** — existing profile page
+Plan select করার সময় কোনো admin-tone toast দোকানদারকে দেখানো হবে না। `subscription_requests` insert হলে শুধু **"অনুরোধ পাঠানো হয়েছে — admin verify করবে"** দেখাবে। সাথে `notifications` table-এ admin-দের জন্য একটা row insert হবে (existing `notifications` table, type=`subscription_request`) — তাই admin পেজে এটা দেখাবে, দোকানদার নয়।
 
-### আয়-ব্যয় Module (mini)
-নতুন table: `consumer_transactions`
-- `id`, `user_id` (FK auth.users), `type` ('income' | 'expense'), `amount`, `category`, `note`, `tx_date`, `created_at`
-- RLS: শুধু own rows select/insert/update/delete
+### E. Free plan + Usage limit linkage
 
-UI: এক page এ
-- উপরে summary card: এই মাসের income, expense, balance
-- নিচে transaction list + "যোগ করুন" button (sheet/dialog)
-- Simple category dropdown: খাবার, যাতায়াত, বাজার, বিল, অন্যান্য, বেতন, etc.
-
-### নোট
-- Simple list — title + content।
-- নতুন table: `consumer_notes` (id, user_id, title, content, created_at, updated_at) + RLS।
-
-### আমার ফর্দ
-- Existing `wishlists` table থেকে এই গ্রাহকের phone-এর সব ফর্দ দেখাবে (cross-shop)।
-- Reuse / WhatsApp share / details — existing `/f/:slug/my` এর মতো।
+- Subscribe page-এ Free plan card-এ feature limits compact list:
+  > পণ্য ১০, বিক্রয় ১০, ক্রয় ১০, খরচ ১০, গ্রাহক ৫ … "বিস্তারিত দেখুন →" → `/app/usage-limits`
+- `/app/usage-limits` page-এ ইতিমধ্যে "View all subscription packages" button আছে যা `/app/subscribe`-এ পাঠায় — দ্বিমুখী লিংক complete।
 
 ---
 
-## ৫. Database Migration
+## প্রযুক্তিগত বিবরণ (technical)
 
-নতুন tables:
-1. `consumer_transactions` (user_id, type, amount, category, note, tx_date)
-2. `consumer_notes` (user_id, title, content)
-3. দুটোতেই RLS — auth.uid() = user_id check।
-
----
-
-## ৬. Files
-
-### Modified
-- `src/pages/f/Slug.tsx` — header/footer, layout reorder, placeholder-only inputs, mic button
-- `src/pages/Auth.tsx` — tab (দোকানদার/গ্রাহক), গ্রাহক flow, customer signup → consumer_profile
-- `src/lib/auth.tsx` — login redirect logic check (consumer → /customer/dashboard)
-
-### New
-- `src/components/app/VoiceFordoMic.tsx` — mic button + modal + waveform + STT
-- `src/lib/useSpeechRecognition.ts` — Web Speech API hook
-- `src/lib/useMicLevel.ts` — AudioContext analyser hook
-- `src/pages/customer/Dashboard.tsx`
-- `src/pages/customer/Notes.tsx`
-- `src/pages/customer/Money.tsx`
-- `src/pages/customer/MyFordo.tsx`
-- `src/pages/customer/CustomerLayout.tsx` (sidebar/topbar)
-- Routes registered in `src/routes.tsx`
-- Migration: `consumer_transactions`, `consumer_notes` + RLS
+- কোনো নতুন DB table লাগবে না; `payment_gateway_settings.extra` jsonb-তে manual payment data রাখা হবে।
+- `subscription_requests` insert payload: `{ user_id, plan_id, payment_method: 'bkash'|'nagad'|..., txn_id, proof_url? }` — `amount` column নেই, তাই amount পাঠানো হবে না (আগের bug ছিল `amount` insert করার চেষ্টা → silent fail → misleading toast)।
+- নতুন/edited files:
+  - `src/pages/app/Subscribe.tsx` (full rewrite — header/footer ছাড়া কারণ AppLayout already wraps)
+  - `src/pages/admin/PaymentGateway.tsx` (manual numbers section যোগ)
+  - `index.html` (favicon + og:image)
+  - `public/favicon.png`, `public/icon-192.png`, `public/icon-512.png` (regenerate from `src/assets/logo.png` via sharp/ImageMagick script)
+  - `src/pages/Auth.tsx`, `src/pages/admin/Login.tsx`, `src/pages/NotFound.tsx` — logo verify/add।
+- `notifications` insert RLS: existing policy `notif insert admin` allows `is_admin(auth.uid()) OR user_id = auth.uid()` — দোকানদার নিজের জন্য insert করতে পারবে কিন্তু admin-এর user_id-তে নয়। তাই admin notification পাঠানো হবে একটি SECURITY DEFINER RPC দিয়ে অথবা একটি ছোট edge function (`notify-admins-subscription-request`) দিয়ে যা service role-এ admin user-দের জন্য rows insert করবে। **এটিই একমাত্র backend addition।**
 
 ---
 
-## যে বিষয়গুলো confirm দরকার
-- Voice STT-এর জন্য **browser-native Web Speech API** ব্যবহার করব (free, কোনো API key/cost নেই, Bangla support আছে Chrome-এ)। ElevenLabs/Deepgram দরকার নেই unless আপনি বলেন।
-- "ছোট AI voice" বলতে শুধু dictation (কথা → text), কোনো AI conversation/agent নয়। সঠিক?
+## Deliverable summary
+
+1. দোকানদার Subscribe page-এ গেলে: Free card (current highlight) + paid plans + manual payment নম্বর + TxnID submit form দেখবে। "অর্ডার পেয়েছি" toast আর দেখাবে না।
+2. Admin PaymentGateway settings থেকে bKash/Nagad/Rocket/Bank নম্বর আপডেট করতে পারবে।
+3. Admin নতুন subscription request আসলে notification পাবে (existing admin SubscriptionRequests page-এ list)।
+4. Logo সব ব্র্যান্ড touchpoint-এ (favicon, PWA icon, auth pages, 404)।
+5. Free plan ↔ Usage Limits page পরস্পর লিংকড।
