@@ -1,62 +1,109 @@
-# Fix: ফর্দ পেজে voice দিয়ে বললে item আলাদা আলাদা যোগ হবে
+## What we're fixing
 
-## সমস্যা
+You raised two things on the Fordo / ফর্দ flow:
 
-`/f/<slug>` ফর্দ পেজে যখন আপনি বলেন:
+1. **Simple-mode voice output is wrong.** When you say "এক কেজি পেঁয়াজ, দুই কেজি মসুর ডাল, পাঁচ লিটার সয়াবিন তেল একটি", in **বিস্তারিত (detailed) mode** the qty + unit columns get filled correctly. But in **সহজ (simple) mode** — which has only one text box per row — only the bare name is shown ("পেঁয়াজ", "মসুর ডাল", "সয়াবিন তেল") and the quantity/unit info is lost. You want the simple-mode row to read the way a person writes a market list: "১ কেজি পেঁয়াজ", "২ কেজি মসুর ডাল", "৫ লিটার সয়াবিন তেল ১টি".
 
-> "পেঁয়াজ ২ কেজি, ডাল ৪ কেজি, রসুন এক ডজন, ডিম"
+2. **Customer portal Fordo (`/customer/create-fordo`) has no voice.** Right now you have to type each item by hand. You want the same voice mic from the public ফর্দ link page added here, plus two extras: **save the list as a template** for future use, and **schedule** it to send automatically on a recurring date (e.g. every month on the 10th).
 
-বর্তমানে দুটো বাগ হচ্ছে:
+---
 
-1. **সব মিলে এক লাইনে যোগ হচ্ছে** — কারণ পার্সার শুধু `,` `।` `ও` `আর` `এবং` দিয়ে split করে। আপনি যদি comma না বলেন (বা recognizer comma না বসায়), পুরো বাক্য একটাই item হিসেবে যায়।
-2. **কথা শেষ হওয়ার আগে কিছুই add হয় না** — recognizer শুধু একদম শেষে (`onend` এ) একবার পার্স করে item পাঠায়। ফলে আপনি real-time এ নতুন item আসতে দেখেন না।
+## Plan
 
-## সমাধান (২ ভাগ)
+### 1. Simple-mode voice display (public ফর্দ page — `src/pages/f/Slug.tsx`)
 
-### ১. Smart parser — number+unit pattern দেখে item ভাগ করা
+Currently in simple mode the row just renders `it.name`. We'll keep storing `qty` / `unit` in state (so detailed mode keeps working), but for the **display value** in the simple-mode `<Input>` we'll compose a friendly label like:
 
-`VoiceFordoMic.tsx` এর `parseItems()` কে বুদ্ধিমান করব। আগে comma/ও/আর দিয়ে split, তারপর প্রতিটা টুকরোর মধ্যে token-by-token হেঁটে পরের item কোথায় শুরু এটা detect করব:
+- `১ কেজি পেঁয়াজ`
+- `২ কেজি মসুর ডাল`
+- `৫ লিটার সয়াবিন তেল ১টি`
 
-- যখন একটা **নাম** (পেঁয়াজ) এর পরে **সংখ্যা + একক** (২ কেজি / এক ডজন / আধা কেজি / সাড়ে তিন কেজি) আসে — সেটাই একটা item এর শেষ। পরের শব্দ থেকে নতুন item শুরু।
-- যদি item এর পরে শুধু নাম আসে কোনো qty ছাড়া (যেমন শেষের "ডিম"), সেটাও আলাদা item হিসেবে যাবে — qty/unit খালি থাকবে, শপদার জিজ্ঞেস করবেন বা পরে edit করা যাবে।
-- "এক ডজন ডিম" এর মত উল্টো order (qty+unit আগে, name পরে) কেও সাপোর্ট দেব।
-- বাংলা সংখ্যা শব্দ (এক, দুই, আধা, দেড়, আড়াই, সাড়ে দুই) ও bn digit (০-৯) আগের মতই handle হবে।
-- Unit list আগের টাই (কেজি, গ্রাম, লিটার, পিস, ডজন→পিস×১২, হালি→পিস×৪, প্যাকেট, বোতল, বস্তা, আঁটি ইত্যাদি)।
+Rules:
+- If `qty` + `unit` exist → render `{qty} {unit} {name}` (qty in Bengali digits).
+- If only `qty` exists → `{qty} {name}`.
+- If neither → just `{name}` (back-compat with manual typing).
+- If the user edits the simple-mode field by hand, we treat the whole string as `name` and clear `qty`/`unit` (current behavior — no surprise overwrites).
+- Toggling to বিস্তারিত mode still shows the parsed qty / unit columns correctly (no change there).
 
-ফলে "পেঁয়াজ ২ কেজি ডাল ৪ কেজি রসুন এক ডজন ডিম" → ৪টা আলাদা item:
+Also a small parser tweak in `VoiceFordoMic`: phrases like "একটি / একটা" trailing the item ("সয়াবিন তেল একটি") should be captured as `qty=1, unit=পিস` so the simple label reads "৫ লিটার সয়াবিন তেল ১টি" naturally — not lost.
 
-| নাম | পরিমাণ | একক |
-|---|---|---|
-| পেঁয়াজ | 2 | কেজি |
-| ডাল | 4 | কেজি |
-| রসুন | 12 | পিস (এক ডজন) |
-| ডিম | — | — |
+### 2. Voice mic on customer portal Fordo (`src/pages/customer/CreateFordo.tsx`)
 
-### ২. Incremental add — কথা বলার মধ্যেই একটা একটা যোগ হবে
+- Add the existing `<VoiceFordoMic />` next to the "পণ্যের তালিকা" header on Step 1.
+- Wire `onItems` exactly like the public page: fill the first empty row, then append new rows for each spoken item. Each row already has separate `name` / `qty` / `unit` inputs in this page, so detailed values are visible directly.
+- Keep manual input available — voice is additive, not a replacement.
 
-`useSpeechRecognition` hook এ একটা নতুন `onSegment(text)` callback যোগ করব যেটা প্রতিবার browser একটা **final segment** দিলে (`res.isFinal === true`) সাথে সাথে call হবে। এতদিন এই segment গুলো শুধু buffer এ জমা হত শেষে দেওয়ার জন্য।
+### 3. Save as template + schedule (customer portal)
 
-`VoiceFordoMic` এ `onFinal` এর বদলে `onSegment` ব্যবহার করব:
+Add two new buttons on Step 1 of `CreateFordo.tsx` next to "পরবর্তী":
 
-- প্রতিটা final segment আসার সাথে সাথে parse করে `onItems()` call করব।
-- তাতে আপনি দেখবেন — "পেঁয়াজ ২ কেজি" বলার পরই table এ পেঁয়াজের row চলে এসেছে, "ডাল ৪ কেজি" বলার পরই ডাল চলে এসেছে — একটার পর একটা।
-- শেষের final flush ও থাকবে, যাতে কোনো segment বাদ না পড়ে।
-- Duplicate ঠেকানোর জন্য একটা small flag — শেষের emit এ ইতিমধ্যে emit হওয়া text বাদ দেব।
+- **💾 টেমপ্লেট হিসেবে সংরক্ষণ** — saves current items + note as a reusable template.
+- **⏰ সময়সূচী সেট করুন** — opens a small dialog: pick a shop, choose recurrence (every month on day N / every week on weekday / one-time future date), then save.
 
-Mic বন্ধ না করেই আপনি বলতে থাকতে পারবেন, item একটা একটা করে list এ এসে জমবে।
+Plus a new section on the **My Fordo** page (`src/pages/customer/MyFordo.tsx`) with two tabs/sections:
+- **আমার টেমপ্লেট** — list saved templates with "ব্যবহার করুন" (loads into CreateFordo) and "মুছুন".
+- **সময়সূচী (Scheduled)** — list active schedules with next-run time, pause/resume, delete.
 
-## যে ফাইলগুলো বদলাবে
+### 4. Database changes (migration)
 
-- `src/lib/useSpeechRecognition.ts` — নতুন `onSegment` callback যোগ; `onresult` এ final segment হলে সাথে সাথে fire করা।
-- `src/components/app/VoiceFordoMic.tsx` — `parseItems()` কে token-walker দিয়ে rewrite (number+unit boundary detect); `onFinal` এর বদলে `onSegment` use; emit duplicate guard।
-- (`/f/<slug>` page এর `onItems` handler অপরিবর্তিত — এটা ইতিমধ্যে empty row fill এবং নতুন row append করে।)
+Two new tables scoped to logged-in consumers (RLS via `auth.uid()`):
 
-## টেস্ট কেস
+```text
+consumer_fordo_templates
+  id uuid pk
+  consumer_user_id uuid (auth.users.id, indexed)
+  name text                       -- e.g. "মাসিক বাজার"
+  note text
+  items jsonb                     -- [{name, qty, unit}]
+  created_at, updated_at
 
-বলে দেখা হবে এবং ঠিকঠাক কাজ করছে কিনা যাচাই করব:
+consumer_fordo_schedules
+  id uuid pk
+  consumer_user_id uuid (indexed)
+  shop_id uuid → shops.id
+  template_id uuid → consumer_fordo_templates.id (nullable, can be inline)
+  items jsonb                     -- snapshot if no template
+  note text
+  recurrence text                 -- 'monthly' | 'weekly' | 'once'
+  day_of_month int (1-31, nullable)
+  day_of_week int (0-6, nullable)
+  run_at timestamptz (for 'once')
+  next_run_at timestamptz (indexed) -- computed/maintained
+  is_active boolean default true
+  last_run_at timestamptz
+  created_at, updated_at
+```
 
-1. "পেঁয়াজ ২ কেজি ডাল ৪ কেজি রসুন এক ডজন ডিম" → ৪টা row
-2. "আধা কেজি মরিচ" → মরিচ ০.৫ কেজি
-3. "সাড়ে তিন কেজি চাল" → চাল ৩.৫ কেজি
-4. "এক ডজন ডিম" → ডিম ১২ পিস
-5. বিরতি দিয়ে দিয়ে বলা — মাঝে মাঝে item আসতে থাকবে
+RLS:
+- Both tables: `consumer_user_id = auth.uid()` for select/insert/update/delete.
+
+### 5. Scheduled dispatch (cron)
+
+A pg_cron job runs every 5 minutes and calls a new edge function `customer-dispatch-fordo-schedules`. The function:
+- Finds rows where `is_active = true AND next_run_at <= now()`.
+- For each, inserts into `customer_wishlists` + `customer_wishlist_items` (same shape as `customer-create-wishlist` already produces — triggers `tg_notify_new_wishlist` so the shop is notified).
+- Updates `last_run_at = now()`, recomputes `next_run_at` (next month's day_of_month, next weekday, or sets `is_active=false` for 'once').
+
+### 6. Files touched
+
+**Edited:**
+- `src/components/app/VoiceFordoMic.tsx` — handle "একটি/একটা" trailing as qty=1 unit=পিস.
+- `src/pages/f/Slug.tsx` — simple-mode display formatter.
+- `src/pages/customer/CreateFordo.tsx` — add mic, "Save template" button, "Schedule" button + dialog, optional `?templateId=` preload.
+- `src/pages/customer/MyFordo.tsx` — add Templates and Schedules sections.
+
+**New:**
+- `src/components/customer/ScheduleFordoDialog.tsx` — recurrence picker UI.
+- `supabase/functions/customer-dispatch-fordo-schedules/index.ts` — cron worker.
+- Migration: two new tables + RLS + indexes.
+- pg_cron schedule (every 5 min) calling the new edge function.
+
+---
+
+## Notes for you
+
+- Voice mic already requires Chrome + mic permission; same applies on the customer page.
+- "Schedule" only fires if the schedule is active and the consumer is still logged in to receive notifications later — the actual dispatch is server-side, so it works even if the user's phone is off.
+- Templates are private to each consumer.
+
+Approve and I'll implement it in one pass.
