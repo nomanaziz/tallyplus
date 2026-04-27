@@ -713,6 +713,33 @@ export type Database = {
         }
         Relationships: []
       }
+      consumer_notes: {
+        Row: {
+          content: string | null
+          created_at: string
+          id: string
+          title: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string
+          id?: string
+          title?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string | null
+          created_at?: string
+          id?: string
+          title?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       consumer_profiles: {
         Row: {
           address: string | null
@@ -773,6 +800,42 @@ export type Database = {
           items?: Json
           name?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      consumer_transactions: {
+        Row: {
+          amount: number
+          category: string | null
+          created_at: string
+          id: string
+          note: string | null
+          tx_date: string
+          type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          category?: string | null
+          created_at?: string
+          id?: string
+          note?: string | null
+          tx_date?: string
+          type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          category?: string | null
+          created_at?: string
+          id?: string
+          note?: string | null
+          tx_date?: string
+          type?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
