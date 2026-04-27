@@ -221,6 +221,40 @@ export default function CreateFordo() {
 
       {step === 1 && (
         <Card className="space-y-3 p-4">
+          <div className="flex items-center justify-between gap-2">
+            <div>
+              <h2 className="text-base font-bold">পণ্যের তালিকা</h2>
+              <p className="text-[11px] text-muted-foreground">
+                মাইকে চাপ দিয়ে কথা বলে যোগ করুন
+              </p>
+            </div>
+            <VoiceFordoMic
+              onItems={(spoken) => {
+                setItems((cur) => {
+                  const next = [...cur];
+                  let idx = 0;
+                  for (const it of spoken) {
+                    const emptyAt = next.findIndex((r) => !r.name.trim());
+                    if (emptyAt >= 0 && idx === 0) {
+                      next[emptyAt] = {
+                        name: it.name,
+                        qty: it.qty ?? next[emptyAt].qty,
+                        unit: it.unit ?? next[emptyAt].unit,
+                      };
+                    } else {
+                      next.push({
+                        name: it.name,
+                        qty: it.qty ?? "",
+                        unit: it.unit ?? "",
+                      });
+                    }
+                    idx++;
+                  }
+                  return next;
+                });
+              }}
+            />
+          </div>
           {items.map((it, i) => (
             <div key={i} className="grid grid-cols-12 gap-2">
               <Input
@@ -260,8 +294,25 @@ export default function CreateFordo() {
             <Label>নোট (ইচ্ছাধীন)</Label>
             <Textarea value={note} onChange={(e) => setNote(e.target.value)} rows={2} placeholder="দোকানদারকে কোনো বার্তা?" />
           </div>
+          <div className="grid grid-cols-2 gap-2">
+            <Button variant="outline" size="sm" onClick={() => {
+              const valid = items.filter((it) => it.name.trim());
+              if (valid.length === 0) { toast.error("অন্তত একটি পণ্য যোগ করুন"); return; }
+              setTplName("");
+              setShowSaveTpl(true);
+            }}>
+              <Save className="mr-1 h-4 w-4" /> টেমপ্লেট সংরক্ষণ
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => {
+              const valid = items.filter((it) => it.name.trim());
+              if (valid.length === 0) { toast.error("অন্তত একটি পণ্য যোগ করুন"); return; }
+              setShowSchedule(true);
+            }}>
+              <CalendarClock className="mr-1 h-4 w-4" /> সময়সূচী সেট করুন
+            </Button>
+          </div>
           <Button className="w-full" onClick={goNext}>
-            পরবর্তী <ArrowRight className="ml-2 h-4 w-4" />
+            এখনই পাঠান (দোকান বাছাই) <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
         </Card>
       )}
