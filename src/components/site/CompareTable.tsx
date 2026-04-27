@@ -10,14 +10,12 @@ export function CompareTable() {
         { f: "ভাষা সাপোর্ট", us: "বাংলা ও ইংরেজি", paper: false, other: "সীমিত / নেই" },
         { f: "বাড়তি আয়ের সুযোগ", us: "স্টক/মূলধন ছাড়াই আয়", paper: false, other: "সীমিত" },
         { f: "২৪/৭ সাপোর্ট", us: "দিনরাত সাপোর্ট", paper: false, other: "নির্দিষ্ট সময়" },
-        { f: "অফলাইন কাজ করে", us: "ইন্টারনেট ছাড়াই", paper: "(কাগজ অফলাইন)", other: "ইন্টারনেট ছাড়া চলে না" },
         { f: "ব্যবসা-ভিত্তিক ফিচার", us: "কাস্টমাইজড ও সহজ", paper: false, other: "জটিল" },
       ]
     : [
         { f: "Language Support", us: "Bangla & English", paper: false, other: "Limited or none" },
         { f: "Extra Income", us: "No-stock & no-capital income", paper: false, other: "Limited" },
         { f: "24/7 Support", us: "Day & night support", paper: false, other: "Limited time" },
-        { f: "Works Offline", us: "Works without internet", paper: "(paper is offline)", other: "Cannot run without internet" },
         { f: "Business-specific features", us: "Customized and easy", paper: false, other: "Complicated" },
       ];
 

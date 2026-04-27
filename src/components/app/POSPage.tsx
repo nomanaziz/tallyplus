@@ -7,6 +7,7 @@ import { useShop } from "@/lib/shop";
 import { useAuth } from "@/lib/auth";
 import { useI18n, fmtMoney, bnNum } from "@/lib/i18n";
 import { productsLiteQuery } from "@/lib/queries";
+import { SerialPickDialog } from "@/components/app/SerialPickDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -34,6 +35,7 @@ type Product = {
   bulk_enabled?: boolean | null;
   bulk_price?: number | null;
   bulk_min_qty?: number | null;
+  is_serialized?: boolean | null;
 };
 
 type CartItem = {
@@ -47,6 +49,10 @@ type CartItem = {
   bulk_min_qty?: number | null;
   price_overridden?: boolean;
   is_bulk?: boolean;
+  // Serialized item fields
+  is_serialized?: boolean;
+  serial_id?: string | null;
+  serial_no?: string | null;
 };
 
 function applyBulkPricing(item: CartItem): CartItem {
@@ -89,6 +95,7 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
   const [invoice, setInvoice] = useState<InvoiceData | null>(null);
   useEffect(() => { if (autoOpenDue) setDueOpen(true); }, [autoOpenDue]);
   const [mobileTab, setMobileTab] = useState<"products" | "cart">("products");
+  const [serialPick, setSerialPick] = useState<Product | null>(null);
 
   const isSell = mode === "sell";
   const titleBn = isSell ? "বেচা" : "কেনা";
@@ -107,6 +114,11 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
   }, [products, search]);
 
   const addToCart = (p: Product) => {
+    // Serialized products: open serial picker instead of direct add
+    if (isSell && p.is_serialized) {
+      setSerialPick(p);
+      return;
+    }
     let alreadyInCart = false;
     setCart((prev) => {
       const i = prev.findIndex((c) => c.product_id === p.id);
@@ -388,6 +400,31 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
         onAdded={(p) => { void loadProducts(); addToCart(p); }}
       />
 
+      <SerialPickDialog
+        open={serialPick !== null}
+        onOpenChange={(v) => { if (!v) setSerialPick(null); }}
+        productId={serialPick?.id ?? null}
+        productName={serialPick?.name ?? ""}
+        excludeSerialIds={cart.map((c) => c.serial_id).filter((x): x is string => !!x)}
+        onPicked={(s) => {
+          if (!serialPick) return;
+          const p = serialPick;
+          const base = Number(p.sale_price);
+          setCart((prev) => [...prev, {
+            product_id: p.id,
+            name: `${p.name} • ${s.serial_no}`,
+            qty: 1,
+            price: base,
+            sale_price: base,
+            is_serialized: true,
+            serial_id: s.id,
+            serial_no: s.serial_no,
+          }]);
+          setSerialPick(null);
+          toast.success(p.name + " • " + s.serial_no, { duration: 1200 });
+        }}
+      />
+
       <PaymentDialog
         open={cashOpen}
         onClose={() => setCashOpen(false)}
@@ -627,9 +664,19 @@ function PaymentDialog(props: {
         const items = props.cart.map((c) => ({
           sale_id: saleId, product_id: c.product_id, name: c.name,
           qty: c.qty, price: c.price, total: c.qty * c.price,
+          serial_id: c.serial_id ?? null,
         }));
         const { error: eI } = await supabase.from("sale_items").insert(items);
         if (eI) throw eI;
+
+        // Mark sold serials
+        for (const c of props.cart) {
+          if (c.serial_id) {
+            await supabase.from("product_serials")
+              .update({ status: "sold", sale_id: saleId })
+              .eq("id", c.serial_id);
+          }
+        }
 
         // stock decrement + movements
         for (const c of props.cart) {

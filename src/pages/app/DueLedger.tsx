@@ -8,6 +8,7 @@ import { useShop } from "@/lib/shop";
 import { supabase } from "@/integrations/supabase/client";
 import { DueTypePickerDialog, type DueDirection } from "@/components/app/DueTypePickerDialog";
 import { MoneyDueEntryDialog } from "@/components/app/MoneyDueEntryDialog";
+import { DueReminderDialog } from "@/components/app/DueReminderDialog";
 import { EmptyState } from "@/components/app/EmptyState";
 import { icons } from "@/lib/icons";
 
@@ -27,6 +28,8 @@ function DueLedgerPage() {
   const [moneyOpen, setMoneyOpen] = useState(false);
   const [moneyDir, setMoneyDir] = useState<DueDirection>("giving");
   const [refreshTick, setRefreshTick] = useState(0);
+  const [reminderOpen, setReminderOpen] = useState(false);
+  const [reminderTarget, setReminderTarget] = useState<Contact | null>(null);
 
   useEffect(() => {
     if (!current?.id) return;
@@ -114,13 +117,25 @@ function DueLedgerPage() {
             ) : (
               <ul className="divide-y">
                 {filtered.map((c) => (
-                  <li key={c.id} className="flex items-center justify-between gap-3 px-4 py-3 hover:bg-accent/50 cursor-pointer">
-                    <div className="min-w-0">
+                  <li key={c.id} className="flex items-center justify-between gap-3 px-4 py-3 hover:bg-accent/50">
+                    <div className="min-w-0 flex-1">
                       <div className="truncate font-medium">{c.name}</div>
                       <div className="truncate text-xs text-muted-foreground">{c.phone ?? "—"}</div>
                     </div>
-                    <div className={`text-sm font-semibold ${Number(c.due_balance) > 0 ? "text-emerald-600" : "text-muted-foreground"}`}>
-                      {fmtMoney(Number(c.due_balance || 0), lang)}
+                    <div className="flex items-center gap-2">
+                      <div className={`text-sm font-semibold ${Number(c.due_balance) > 0 ? "text-emerald-600" : "text-muted-foreground"}`}>
+                        {fmtMoney(Number(c.due_balance || 0), lang)}
+                      </div>
+                      {tab === "customer" && Number(c.due_balance) > 0 && c.phone && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-8 gap-1 px-2 text-xs"
+                          onClick={(e) => { e.stopPropagation(); setReminderTarget(c); setReminderOpen(true); }}
+                        >
+                          {lang === "bn" ? "রিমাইন্ডার" : "Remind"}
+                        </Button>
+                      )}
                     </div>
                   </li>
                 ))}
@@ -154,6 +169,11 @@ function DueLedgerPage() {
         onOpenChange={setMoneyOpen}
         defaultDirection={moneyDir}
         onSaved={() => setRefreshTick((t) => t + 1)}
+      />
+      <DueReminderDialog
+        open={reminderOpen}
+        onOpenChange={setReminderOpen}
+        customer={reminderTarget}
       />
     </div>
   );

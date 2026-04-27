@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, Pencil, Trash2, UserRound, Truck, Users, RefreshCw, ChevronRight, Search } from "lucide-react";
+import { Plus, Pencil, Trash2, UserRound, Truck, Users, RefreshCw, ChevronRight, Search, MessageCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useShop } from "@/lib/shop";
 import { useI18n, fmtMoney, bnNum } from "@/lib/i18n";
@@ -13,6 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ContactActionsBar } from "@/components/app/ContactActionsBar";
 import { NewUserAccessDialog } from "@/components/app/NewUserAccessDialog";
+import { DueReminderDialog } from "@/components/app/DueReminderDialog";
 import { toast } from "sonner";
 
 type Tab = "customers" | "suppliers" | "employees";
@@ -58,6 +59,7 @@ function ContactsPage() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Contact | null>(null);
   const [openEmployee, setOpenEmployee] = useState(false);
+  const [reminderOpen, setReminderOpen] = useState(false);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -275,6 +277,16 @@ function ContactsPage() {
                       {lang === "bn" ? "এডিট করুন" : "Edit"}
                     </Button>
                   )}
+                  {tab === "customers" && Number(selected.due_balance) > 0 && selected.phone && (
+                    <Button
+                      size="sm"
+                      className="gap-1.5 bg-[#25D366] text-white hover:bg-[#1fb558]"
+                      onClick={() => setReminderOpen(true)}
+                    >
+                      <MessageCircle className="h-4 w-4" />
+                      {lang === "bn" ? "রিমাইন্ডার" : "Remind"}
+                    </Button>
+                  )}
                   <Button variant="destructive" size="sm" className="gap-1.5" onClick={() => onDelete(selected)}>
                     <Trash2 className="h-4 w-4" />
                     {lang === "bn" ? "মুছে ফেলুন" : "Delete"}
@@ -358,6 +370,12 @@ function ContactsPage() {
         customRoles={customRoles}
         onCustomRoleCreated={() => qc.invalidateQueries({ queryKey: ["shop", "custom_roles", current?.id] })}
         onSaved={refresh}
+      />
+
+      <DueReminderDialog
+        open={reminderOpen}
+        onOpenChange={setReminderOpen}
+        customer={selected && tab === "customers" ? { id: selected.id, name: selected.name, phone: selected.phone, due_balance: Number(selected.due_balance || 0) } : null}
       />
     </div>
   );
