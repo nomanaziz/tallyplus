@@ -40,9 +40,19 @@ export default function Subscribe() {
     setBusyId(p.id);
     const finalPrice = p.discount_pct ? Math.round(p.price_bdt * (1 - p.discount_pct / 100)) : p.price_bdt;
     if (gatewayEnabled) {
-      // TODO: integrate Recharge Server checkout flow
-      toast.info(lang === "bn" ? "পেমেন্ট গেটওয়ে শীঘ্রই সক্রিয় হবে" : "Payment gateway coming soon");
+      const { data, error } = await supabase.functions.invoke("recharge-create-payment", {
+        body: {
+          plan_id: p.id,
+          origin: window.location.origin,
+          phone: user.phone ?? user.email ?? "",
+        },
+      });
       setBusyId(null);
+      if (error || !data?.payment_url) {
+        toast.error(error?.message ?? data?.error ?? (lang === "bn" ? "পেমেন্ট তৈরি করা যায়নি" : "Could not create payment"));
+        return;
+      }
+      window.location.href = data.payment_url as string;
       return;
     }
     // Fallback: create a subscription request for admin approval
