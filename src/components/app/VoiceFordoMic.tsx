@@ -1,4 +1,5 @@
 import { Mic } from "lucide-react";
+import { useRef } from "react";
 import { useSpeechRecognition } from "@/lib/useSpeechRecognition";
 import { useMicLevel } from "@/lib/useMicLevel";
 import { toast } from "sonner";
@@ -110,23 +111,136 @@ function parseItems(raw: string): VoiceItem[] {
   const parts = raw
     .split(/[,;।\n]+|\s+(?:ও|আর|এবং|and)\s+/gi)
     .map((s) => s.trim())
-    .filter((s) => s.length > 0 && s.length < 120);
-  return parts.map(parsePhrase).filter((p) => p.name.length > 0);
+    .filter((s) => s.length > 0 && s.length < 240);
+  const out: VoiceItem[] = [];
+  for (const p of parts) {
+    for (const it of splitChunkIntoItems(p)) {
+      if (it.name.trim()) out.push(it);
+    }
+  }
+  return out;
+}
+
+/**
+ * Walk a chunk token-by-token, breaking it into multiple items whenever a
+ * <name> <qty> <unit> sequence completes. Also handles reverse order
+ * (<qty> <unit> <name>), bare names with no qty, and "সাড়ে N" / "আধা" prefixes.
+ */
+function splitChunkIntoItems(chunk: string): VoiceItem[] {
+  const cleaned = normalizeDigits(chunk.trim()).replace(/\s+/g, " ");
+  if (!cleaned) return [];
+  const tokens = cleaned.split(" ");
+  const items: VoiceItem[] = [];
+
+  let nameBuf: string[] = [];
+  let qty: number | null = null;
+  let unit: string | null = null;
+  let pendingHalf = 0;
+
+  const flush = () => {
+    const name = nameBuf.join(" ").trim();
+    if (name || qty !== null) {
+      items.push({
+        name,
+        qty: qty !== null ? String(qty) : undefined,
+        unit: unit ?? undefined,
+      });
+    }
+    nameBuf = [];
+    qty = null;
+    unit = null;
+    pendingHalf = 0;
+  };
+
+  let i = 0;
+  while (i < tokens.length) {
+    const t = tokens[i];
+
+    // "সাড়ে" prefix → adds 0.5 to next number
+    if (t === "সাড়ে") {
+      pendingHalf = 0.5;
+      i++;
+      continue;
+    }
+
+    const n = wordToNum(t);
+    if (n !== null) {
+      // A number starts the qty for the CURRENT item (whatever name we've collected)
+      qty = n + pendingHalf;
+      pendingHalf = 0;
+      i++;
+      // optional unit immediately after
+      if (i < tokens.length) {
+        const u = matchUnit(tokens[i]);
+        if (u) {
+          unit = u.label;
+          qty = qty * u.multiplier;
+          i++;
+        }
+      }
+      // If we already have a name buffered, item is complete → flush.
+      // Else we're in <qty> <unit> <name> order; keep consuming name tokens.
+      if (nameBuf.length > 0) {
+        flush();
+      }
+      continue;
+    }
+
+    // Bare unit token without preceding number (rare) — treat as part of name
+    // so we don't lose it. Otherwise just append to name buffer.
+    nameBuf.push(t);
+    i++;
+
+    // Reverse order completion: qty+unit captured first, now we just hit a name token.
+    // After collecting one name token, peek ahead — if next is a number/qty marker,
+    // flush this item so the next one starts cleanly.
+    if (qty !== null && nameBuf.length >= 1) {
+      const next = tokens[i];
+      if (next !== undefined) {
+        if (next === "সাড়ে" || wordToNum(next) !== null) {
+          flush();
+        }
+      }
+    }
+  }
+
+  // Trailing pendingHalf with no number
+  if (qty === null && pendingHalf > 0) qty = pendingHalf;
+  flush();
+
+  return items;
 }
 
 export function VoiceFordoMic({ onItems, className }: Props) {
+  // Track which segments have already been emitted incrementally,
+  // so the final flush doesn't re-emit them.
+  const emittedRef = useRef<string>("");
+
   const { supported, listening, error, start, stop } = useSpeechRecognition({
     lang: "bn-BD",
     silenceTimeoutMs: 12000,
     noSpeechTimeoutMs: 15000,
-    onFinal: (text) => {
-      const items = parseItems(text);
+    onSegment: (seg) => {
+      const items = parseItems(seg);
       if (items.length > 0) {
         onItems(items);
-        toast.success(`${items.length}টি পণ্য যোগ হয়েছে`);
-      } else {
+      }
+      emittedRef.current += (emittedRef.current ? " " : "") + seg;
+    },
+    onFinal: (text) => {
+      // Flush whatever wasn't emitted as a segment yet (interim leftovers).
+      const already = emittedRef.current.trim();
+      const remainder = text.startsWith(already)
+        ? text.slice(already.length).trim()
+        : text.trim();
+      if (remainder) {
+        const items = parseItems(remainder);
+        if (items.length > 0) onItems(items);
+      }
+      if (!emittedRef.current && !remainder) {
         toast.message("কিছু শোনা যায়নি — আবার চেষ্টা করুন");
       }
+      emittedRef.current = "";
     },
   });
 

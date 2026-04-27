@@ -1,151 +1,62 @@
-## কাজের পরিধি
+# Fix: ফর্দ পেজে voice দিয়ে বললে item আলাদা আলাদা যোগ হবে
 
-গ্রাহক পোর্টালে দুটো বড় পরিবর্তন + শপের জন্য বাংলাদেশের প্রশাসনিক ঠিকানা সিস্টেম + অ্যাডমিন কন্ট্রোল।
+## সমস্যা
 
----
+`/f/<slug>` ফর্দ পেজে যখন আপনি বলেন:
 
-## ১) আয়-ব্যয়: আলাদা বাটন ও বাংলা ক্যাটাগরি
+> "পেঁয়াজ ২ কেজি, ডাল ৪ কেজি, রসুন এক ডজন, ডিম"
 
-**বর্তমান:** একটাই "যোগ করুন" বাটন, sheet এর ভিতরে tabs।
+বর্তমানে দুটো বাগ হচ্ছে:
 
-**পরিবর্তন (`src/pages/customer/Money.tsx`):**
+1. **সব মিলে এক লাইনে যোগ হচ্ছে** — কারণ পার্সার শুধু `,` `।` `ও` `আর` `এবং` দিয়ে split করে। আপনি যদি comma না বলেন (বা recognizer comma না বসায়), পুরো বাক্য একটাই item হিসেবে যায়।
+2. **কথা শেষ হওয়ার আগে কিছুই add হয় না** — recognizer শুধু একদম শেষে (`onend` এ) একবার পার্স করে item পাঠায়। ফলে আপনি real-time এ নতুন item আসতে দেখেন না।
 
-- "যোগ করুন" বাটন সরিয়ে দুটো আলাদা বাটন:
-  - 🟢 **আয় (+)** — সবুজ, plus icon
-  - 🔴 **ব্যয় (−)** — লাল, minus icon
-- বাটন চাপলে sheet সরাসরি correct mode এ খুলবে (tab toggle আর দেখাবে না)।
+## সমাধান (২ ভাগ)
 
-**ক্যাটাগরি বাড়ানো:**
+### ১. Smart parser — number+unit pattern দেখে item ভাগ করা
 
-আয়:
-- বেতন, ব্যবসার আয়, ফ্রিল্যান্স/পার্ট-টাইম, উপহার, বোনাস, বিনিয়োগ থেকে আয়, ভাড়া আয়, ভাতা/পেনশন, ধার ফেরত পেলাম, অন্যান্য।
+`VoiceFordoMic.tsx` এর `parseItems()` কে বুদ্ধিমান করব। আগে comma/ও/আর দিয়ে split, তারপর প্রতিটা টুকরোর মধ্যে token-by-token হেঁটে পরের item কোথায় শুরু এটা detect করব:
 
-ব্যয়:
-- বাজার/খাবার, বাসা ভাড়া, ইউটিলিটি বিল (গ্যাস/বিদ্যুৎ/পানি), ইন্টারনেট/মোবাইল, যাতায়াত, চিকিৎসা, শিক্ষা/পড়াশোনা, পোশাক, বিনোদন, দান/সদকাহ, ঋণ পরিশোধ, সঞ্চয়/বিনিয়োগ, ব্যবসায়িক খরচ, অন্যান্য।
+- যখন একটা **নাম** (পেঁয়াজ) এর পরে **সংখ্যা + একক** (২ কেজি / এক ডজন / আধা কেজি / সাড়ে তিন কেজি) আসে — সেটাই একটা item এর শেষ। পরের শব্দ থেকে নতুন item শুরু।
+- যদি item এর পরে শুধু নাম আসে কোনো qty ছাড়া (যেমন শেষের "ডিম"), সেটাও আলাদা item হিসেবে যাবে — qty/unit খালি থাকবে, শপদার জিজ্ঞেস করবেন বা পরে edit করা যাবে।
+- "এক ডজন ডিম" এর মত উল্টো order (qty+unit আগে, name পরে) কেও সাপোর্ট দেব।
+- বাংলা সংখ্যা শব্দ (এক, দুই, আধা, দেড়, আড়াই, সাড়ে দুই) ও bn digit (০-৯) আগের মতই handle হবে।
+- Unit list আগের টাই (কেজি, গ্রাম, লিটার, পিস, ডজন→পিস×১২, হালি→পিস×৪, প্যাকেট, বোতল, বস্তা, আঁটি ইত্যাদি)।
 
----
+ফলে "পেঁয়াজ ২ কেজি ডাল ৪ কেজি রসুন এক ডজন ডিম" → ৪টা আলাদা item:
 
-## ২) গ্রাহক পোর্টালে "ফর্দ তৈরি করুন" এবং দোকানে পাঠানো
+| নাম | পরিমাণ | একক |
+|---|---|---|
+| পেঁয়াজ | 2 | কেজি |
+| ডাল | 4 | কেজি |
+| রসুন | 12 | পিস (এক ডজন) |
+| ডিম | — | — |
 
-**বর্তমান:** MyFordo শুধু পাঠানো ফর্দ list করে। গ্রাহক ভিতর থেকে নতুন ফর্দ তৈরি/পাঠাতে পারে না।
+### ২. Incremental add — কথা বলার মধ্যেই একটা একটা যোগ হবে
 
-**নতুন flow:**
+`useSpeechRecognition` hook এ একটা নতুন `onSegment(text)` callback যোগ করব যেটা প্রতিবার browser একটা **final segment** দিলে (`res.isFinal === true`) সাথে সাথে call হবে। এতদিন এই segment গুলো শুধু buffer এ জমা হত শেষে দেওয়ার জন্য।
 
-`src/pages/customer/MyFordo.tsx` এ উপরে **"+ নতুন ফর্দ তৈরি করুন"** বাটন।
+`VoiceFordoMic` এ `onFinal` এর বদলে `onSegment` ব্যবহার করব:
 
-```text
-┌─ Step 1: Items ─────────────────────────────┐
-│  পণ্য যোগ করুন (নাম, পরিমাণ, একক)            │
-│  [+ আরও যোগ করুন]                            │
-│  নোট (ইচ্ছাধীন)                              │
-│                            [পরবর্তী →]      │
-└──────────────────────────────────────────────┘
-                  ↓
-┌─ Step 2: Send to ───────────────────────────┐
-│  কোন দোকানে পাঠাবেন?                         │
-│                                              │
-│  ▸ মোবাইল নম্বর দিয়ে খুঁজুন                 │
-│    [01XXXXXXXXX]              [খুঁজুন]      │
-│                                              │
-│  ▸ অথবা দোকানের নাম দিয়ে খুঁজুন             │
-│    [দোকানের নাম...]                          │
-│                                              │
-│  ▸ আমার এলাকার দোকান (default)              │
-│    গ্রাহকের present address থেকে              │
-│    division/district/upazila ম্যাচ করে        │
-│    শপ list — কাছেরটা সবার আগে।                │
-└──────────────────────────────────────────────┘
-                  ↓
-   মালিকের একাধিক দোকান হলে → শপ select dropdown
-                  ↓
-              [পাঠান]
-                  ↓
-   customer_wishlists এ insert (consumer_user_id সহ)
-```
+- প্রতিটা final segment আসার সাথে সাথে parse করে `onItems()` call করব।
+- তাতে আপনি দেখবেন — "পেঁয়াজ ২ কেজি" বলার পরই table এ পেঁয়াজের row চলে এসেছে, "ডাল ৪ কেজি" বলার পরই ডাল চলে এসেছে — একটার পর একটা।
+- শেষের final flush ও থাকবে, যাতে কোনো segment বাদ না পড়ে।
+- Duplicate ঠেকানোর জন্য একটা small flag — শেষের emit এ ইতিমধ্যে emit হওয়া text বাদ দেব।
 
-**Backend:** নতুন edge function `customer-create-wishlist` যেটা logged-in consumer থেকে wishlist + items insert করবে (RLS-friendly, service role দিয়ে)।
+Mic বন্ধ না করেই আপনি বলতে থাকতে পারবেন, item একটা একটা করে list এ এসে জমবে।
 
-**Shop search by phone:** নতুন edge function `find-shops-by-phone` — `shops.phone` অথবা owner profile.phone এর সাথে match করে publicly published (marketplace_enabled) shops list দেবে। যদি একই ফোনে একাধিক শপ থাকে — সবগুলো return করবে যাতে গ্রাহক select করতে পারে।
+## যে ফাইলগুলো বদলাবে
 
----
+- `src/lib/useSpeechRecognition.ts` — নতুন `onSegment` callback যোগ; `onresult` এ final segment হলে সাথে সাথে fire করা।
+- `src/components/app/VoiceFordoMic.tsx` — `parseItems()` কে token-walker দিয়ে rewrite (number+unit boundary detect); `onFinal` এর বদলে `onSegment` use; emit duplicate guard।
+- (`/f/<slug>` page এর `onItems` handler অপরিবর্তিত — এটা ইতিমধ্যে empty row fill এবং নতুন row append করে।)
 
-## ৩) দোকানের বাংলাদেশি ঠিকানা (Division / District / Upazila / Area)
+## টেস্ট কেস
 
-**ইতিমধ্যে আছে:** `seller_locations` (shop_id, division, district, upazila, lat, lng) এবং `AddShopDialog.tsx` এ hard-coded BD_DIVISIONS/DISTRICTS।
+বলে দেখা হবে এবং ঠিকঠাক কাজ করছে কিনা যাচাই করব:
 
-**সমস্যা:** Hard-coded — admin update করতে পারে না, upazila নেই, mandatory নয়।
-
-### ডাটাবেজ পরিবর্তন
-
-নতুন reference tables (admin-managed):
-
-- `bd_divisions` (id, name_bn, name_en, code, is_active, sort_order)
-- `bd_districts` (id, division_id, name_bn, name_en, code, is_active)
-- `bd_upazilas` (id, district_id, name_bn, name_en, code, is_active)
-
-Migration এ বাংলাদেশের সব 8 division, 64 district, ~495 upazila seed করা হবে (Bengali + English নাম)।
-
-`shops` টেবিলে field optional হলেও — frontend mandatory:
-- `seller_locations` ইতিমধ্যে আছে — শুধু নতুন column যোগ: `area text` (নির্দিষ্ট পাড়া/মহল্লা — free text)।
-- `consumer_profiles` এ যোগ: `division text`, `district text`, `upazila text`, `area text` (গ্রাহকের present address)।
-
-**RLS:**
-- `bd_*` tables — public read, admin write।
-- `seller_locations` — already protected।
-
-### Frontend পরিবর্তন
-
-**শপ মালিকের জন্য:**
-- `AddShopDialog.tsx` এবং `EditShopDialog`/Settings: hard-coded list সরিয়ে DB থেকে cascading dropdown (Division → District → Upazila), শেষে free-text "Area/মহল্লা" field। সব mandatory।
-- Signup এর সাথে শপ create এর সময়েও এই fields collect করবে (`signup-with-pin` edge function update)।
-
-**গ্রাহকের জন্য (`/customer/profile`):**
-- "আমার ঠিকানা" section: Division → District → Upazila cascading dropdown + Area free-text। Save করলে `consumer_profiles` এ যাবে।
-- প্রথম login এ যদি address খালি থাকে — Profile pop up করে fill out করতে বলবে (soft prompt)।
-
-**ফর্দ পাঠানোর সময়:**
-- Default: গ্রাহকের saved address থেকে nearest shops first (same upazila > same district > same division > others)।
-- Search by phone / shop name হিসেবে override।
-
-### অ্যাডমিন কন্ট্রোল প্যানেল
-
-নতুন route: **`/admin/locations`** (`src/pages/admin/Locations.tsx`)
-- Division list (toggle is_active) → expand করে Districts → expand করে Upazilas।
-- প্রতিটাতে: সম্পাদনা (নাম bn/en), Active/Inactive toggle।
-- "is_active = false" হলে শপ মালিক/গ্রাহক ওই জেলা দেখতে পারবে না (admin "এই জেলায় খুলতে দিবে না" control)।
-- Sidebar এ "এলাকা সেটিংস (Locations)" link যোগ।
-
----
-
-## কারিগরি ফাইল list
-
-**Database migration:**
-- `bd_divisions`, `bd_districts`, `bd_upazilas` create + seed
-- `consumer_profiles`: division/district/upazila/area columns add
-- `seller_locations`: area column add
-- RLS policies
-
-**Frontend:**
-- `src/pages/customer/Money.tsx` — আয়/ব্যয় আলাদা বাটন + extended categories
-- `src/pages/customer/MyFordo.tsx` — "নতুন ফর্দ" বাটন
-- `src/pages/customer/CreateFordo.tsx` (নতুন) — 2-step wizard
-- `src/pages/customer/Profile.tsx` — address section
-- `src/components/shared/BdLocationPicker.tsx` (নতুন) — reusable cascading picker
-- `src/components/app/AddShopDialog.tsx` — DB-driven location picker, mandatory
-- `src/pages/admin/Locations.tsx` (নতুন) — admin control panel
-- `src/components/admin/AdminSidebar.tsx` — Locations link
-- `src/routes.tsx` — নতুন routes
-
-**Edge functions:**
-- `customer-create-wishlist` (নতুন) — consumer-authenticated wishlist creation
-- `find-shops-by-phone` (নতুন) — shop discovery by phone
-- `signup-with-pin` (update) — collect division/district/upazila/area
-
-## ফলাফল
-
-- ✅ আয়/ব্যয় আলাদা বাটন, বিস্তৃত বাংলা ক্যাটাগরি
-- ✅ গ্রাহক পোর্টাল থেকেই ফর্দ তৈরি ও যেকোনো শপে পাঠানো (ফোন/নাম/এলাকা দিয়ে)
-- ✅ একই owner এর multiple shop থাকলে select করার option
-- ✅ Cascading BD location picker সর্বত্র
-- ✅ গ্রাহকের present address অনুযায়ী নিয়ারেস্ট দোকান priority
-- ✅ অ্যাডমিন division/district/upazila enable/disable করতে পারবে
+1. "পেঁয়াজ ২ কেজি ডাল ৪ কেজি রসুন এক ডজন ডিম" → ৪টা row
+2. "আধা কেজি মরিচ" → মরিচ ০.৫ কেজি
+3. "সাড়ে তিন কেজি চাল" → চাল ৩.৫ কেজি
+4. "এক ডজন ডিম" → ডিম ১২ পিস
+5. বিরতি দিয়ে দিয়ে বলা — মাঝে মাঝে item আসতে থাকবে
