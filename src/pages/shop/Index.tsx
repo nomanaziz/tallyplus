@@ -17,6 +17,7 @@ import {
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetHeader } from "@/components/ui/sheet";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SiteHeader } from "@/components/site/SiteHeader";
+import { SiteFooter } from "@/components/site/SiteFooter";
 import { Search, Store, SlidersHorizontal, RotateCcw, ShoppingBag, MapPin, FileText } from "lucide-react";
 import { MarketplaceProductCard } from "@/components/marketplace/MarketplaceProductCard";
 import { VendorGridSkeleton, ProductGridSkeleton } from "@/components/marketplace/MarketplaceSkeleton";
@@ -287,8 +288,9 @@ function MarketplacePage() {
   );
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="flex min-h-screen flex-col bg-background">
       <SiteHeader />
+      <div className="flex-1">
 
       <div className="border-b bg-card/40">
         <div className="container mx-auto px-4 py-4">
@@ -565,6 +567,8 @@ function MarketplacePage() {
           </section>
         </div>
       </main>
+      </div>
+      <SiteFooter />
     </div>
   );
 }
