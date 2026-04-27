@@ -92,6 +92,8 @@ const P81 = lazy(() => import("./pages/customer/Notes"));
 const P82 = lazy(() => import("./pages/customer/Money"));
 const P83 = lazy(() => import("./pages/customer/MyFordo"));
 const P84 = lazy(() => import("./pages/admin/PaymentAttempts"));
+const P85 = lazy(() => import("./pages/customer/CreateFordo"));
+const P86 = lazy(() => import("./pages/admin/Locations"));
 
 export function AppRoutes() {
   return (
@@ -115,6 +117,7 @@ export function AppRoutes() {
       <Route path="subscriptions" element={<S><P10 /></S>} />
       <Route path="training" element={<S><P11 /></S>} />
       <Route path="users" element={<S><P13 /></S>} />
+      <Route path="locations" element={<S><P86 /></S>} />
       </Route>
       <Route path="/affiliate" element={<S><P15 /></S>}>
       <Route path="register" element={<S><P14 /></S>} />
@@ -190,6 +193,7 @@ export function AppRoutes() {
       <Route path="notes" element={<S><P81 /></S>} />
       <Route path="money" element={<S><P82 /></S>} />
       <Route path="my-fordo" element={<S><P83 /></S>} />
+      <Route path="create-fordo" element={<S><P85 /></S>} />
       </Route>
       <Route path="*" element={<S><NotFound /></S>} />
     </Routes>
