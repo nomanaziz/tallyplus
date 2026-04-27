@@ -86,6 +86,11 @@ const P75 = lazy(() => import("./pages/admin/UsageLimits"));
 const P76 = lazy(() => import("./pages/admin/PromoPopups"));
 const P77 = lazy(() => import("./pages/admin/PaymentGateway"));
 const P78 = lazy(() => import("./pages/app/SubscribeCallback"));
+const P79 = lazy(() => import("./pages/customer/CustomerLayout"));
+const P80 = lazy(() => import("./pages/customer/Dashboard"));
+const P81 = lazy(() => import("./pages/customer/Notes"));
+const P82 = lazy(() => import("./pages/customer/Money"));
+const P83 = lazy(() => import("./pages/customer/MyFordo"));
 
 export function AppRoutes() {
   return (
@@ -178,6 +183,12 @@ export function AppRoutes() {
       </Route>
       <Route path="/vendor/:username" element={<S><P72 /></S>} />
       <Route path="/customer/profile" element={<S><P73 /></S>} />
+      <Route path="/customer" element={<S><P79 /></S>}>
+      <Route path="dashboard" element={<S><P80 /></S>} />
+      <Route path="notes" element={<S><P81 /></S>} />
+      <Route path="money" element={<S><P82 /></S>} />
+      <Route path="my-fordo" element={<S><P83 /></S>} />
+      </Route>
       <Route path="*" element={<S><NotFound /></S>} />
     </Routes>
   );
