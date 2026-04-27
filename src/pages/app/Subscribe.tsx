@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import {
-  Check, Crown, Loader2, Infinity as InfinityIcon, Smartphone, Building2,
+  Check, Crown, Loader2, Infinity as InfinityIcon, Wallet,
   Copy, ArrowRight, Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -21,14 +21,17 @@ type Plan = {
   description_bn: string | null; description_en: string | null; discount_pct: number;
 };
 
-type ManualMethod = { number?: string; type?: string };
-type ManualConfig = {
-  bkash?: ManualMethod;
-  nagad?: ManualMethod;
-  rocket?: ManualMethod;
-  bank?: { name?: string; account?: string; branch?: string };
-  instructions_bn?: string;
-  instructions_en?: string;
+type PaymentMethodRow = {
+  id: string;
+  name: string;
+  type: string;
+  account_number: string;
+  account_holder: string | null;
+  extra_info: string | null;
+  instructions_bn: string | null;
+  instructions_en: string | null;
+  color: string;
+  icon_emoji: string | null;
 };
 
 const FREE_LIMITS_BN = "পণ্য ১০ • বিক্রয় ১০ • ক্রয় ১০ • খরচ ১০ • গ্রাহক ৫ • সাপ্লায়ার ৫";
@@ -41,22 +44,23 @@ export default function Subscribe() {
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [gatewayEnabled, setGatewayEnabled] = useState(false);
-  const [manual, setManual] = useState<ManualConfig>({});
+  const [methods, setMethods] = useState<PaymentMethodRow[]>([]);
+  const [pickedMethodId, setPickedMethodId] = useState<string | null>(null);
   const [currentCode, setCurrentCode] = useState<string>("free");
   const [currentExpires, setCurrentExpires] = useState<string | null>(null);
   const [selected, setSelected] = useState<Plan | null>(null);
-  const [payMethod, setPayMethod] = useState<"bkash" | "nagad" | "rocket" | "bank">("bkash");
   const [txnId, setTxnId] = useState("");
   const [note, setNote] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     void (async () => {
-      const [{ data: pl }, { data: gw }, sub] = await Promise.all([
+      const [{ data: pl }, { data: gw }, { data: pm }, sub] = await Promise.all([
         supabase.from("subscription_plans")
           .select("id,code,name_bn,name_en,price_bdt,old_price_bdt,duration_days,max_shops,is_lifetime,perks,description_bn,description_en,discount_pct")
           .eq("is_active", true).order("price_bdt"),
-        supabase.from("payment_gateway_settings").select("is_enabled,extra").eq("id", true).maybeSingle(),
+        supabase.from("payment_gateway_settings").select("is_enabled").eq("id", true).maybeSingle(),
+        supabase.from("payment_methods").select("*").eq("is_active", true).order("sort_order").order("created_at"),
         user ? supabase
           .from("subscriptions")
           .select("expires_at,status,subscription_plans!inner(code)")
@@ -67,8 +71,9 @@ export default function Subscribe() {
       ]);
       setPlans((pl as Plan[]) ?? []);
       setGatewayEnabled(!!gw?.is_enabled);
-      const extra = (gw?.extra as any) ?? {};
-      setManual((extra?.manual ?? {}) as ManualConfig);
+      const list = (pm as PaymentMethodRow[]) ?? [];
+      setMethods(list);
+      if (list.length > 0) setPickedMethodId(list[0].id);
       const subRow = (sub as any)?.data ?? sub;
       const code = (subRow as any)?.subscription_plans?.code ?? "free";
       setCurrentCode(code);
@@ -104,13 +109,27 @@ export default function Subscribe() {
       toast.error(lang === "bn" ? "TxnID দিন" : "Please enter Transaction ID");
       return;
     }
+    const picked = methods.find((m) => m.id === pickedMethodId);
+    if (!picked) {
+      toast.error(lang === "bn" ? "একটি পেমেন্ট মাধ্যম নির্বাচন করুন" : "Pick a payment method");
+      return;
+    }
+    // map to enum value
+    const enumMap: Record<string, string> = { mobile: "other", bank: "bank", card: "card", other: "other" };
+    const lower = picked.name.toLowerCase();
+    let pm = enumMap[picked.type] || "other";
+    if (lower.includes("bkash")) pm = "bkash";
+    else if (lower.includes("nagad")) pm = "nagad";
+    else if (lower.includes("rocket")) pm = "rocket";
+
+    const noteWithMethod = `[${picked.name} • ${picked.account_number}]${note.trim() ? "\n" + note.trim() : ""}`;
     setSubmitting(true);
     const { error } = await supabase.from("subscription_requests").insert({
       user_id: user.id,
       plan_id: selected.id,
-      payment_method: payMethod as any,
+      payment_method: pm as any,
       txn_id: txnId.trim(),
-      admin_note: note.trim() || null,
+      admin_note: noteWithMethod,
       status: "pending",
     });
     setSubmitting(false);
@@ -142,8 +161,7 @@ export default function Subscribe() {
     );
 
   const finalPrice = (p: Plan) => p.discount_pct ? Math.round(p.price_bdt * (1 - p.discount_pct / 100)) : p.price_bdt;
-  const methodInfo: ManualMethod | undefined =
-    payMethod === "bank" ? undefined : (manual[payMethod] as ManualMethod | undefined);
+  const pickedMethod = methods.find((m) => m.id === pickedMethodId) ?? null;
 
   return (
     <div className="container px-3 py-4 md:px-4 md:py-6">
