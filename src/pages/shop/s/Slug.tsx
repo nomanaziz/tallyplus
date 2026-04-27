@@ -2,6 +2,7 @@ import { Link, useParams } from "@/lib/router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { SiteHeader } from "@/components/site/SiteHeader";
+import { SiteFooter } from "@/components/site/SiteFooter";
 import { Loader2, MapPin, Phone, ShoppingBag, Store, ArrowLeft } from "lucide-react";
 import { MarketplaceProductCard } from "@/components/marketplace/MarketplaceProductCard";
 
@@ -63,8 +64,9 @@ function ShopPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="flex min-h-screen flex-col bg-background">
       <SiteHeader />
+      <div className="flex-1">
       <div className="border-b bg-card/40">
         <div className="container mx-auto px-4 py-2">
           <Link to="/shop" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
@@ -136,6 +138,8 @@ function ShopPage() {
           </div>
         )}
       </main>
+      </div>
+      <SiteFooter />
     </div>
   );
 }

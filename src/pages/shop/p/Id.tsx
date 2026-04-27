@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { SiteHeader } from "@/components/site/SiteHeader";
+import { SiteFooter } from "@/components/site/SiteFooter";
 import { Loader2, ShoppingBag, Store, ArrowLeft, MessageCircle, Phone } from "lucide-react";
 import { addToCart as addToConsumerCart } from "@/lib/consumer-cart";
 import { toast } from "sonner";
@@ -87,8 +88,9 @@ function ProductDetailPage() {
   const waPhone = (shop.phone ?? "").replace(/\D/g, "");
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="flex min-h-screen flex-col bg-background">
       <SiteHeader />
+      <div className="flex-1">
       <div className="border-b bg-card/40">
         <div className="container mx-auto px-4 py-2">
           <Link to="/shop" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
@@ -169,6 +171,8 @@ function ProductDetailPage() {
           </Link>
         </div>
       </main>
+      </div>
+      <SiteFooter />
     </div>
   );
 }

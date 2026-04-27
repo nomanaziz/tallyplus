@@ -8,6 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Loader2, LogOut } from "lucide-react";
+import { SiteHeader } from "@/components/site/SiteHeader";
+import { SiteFooter } from "@/components/site/SiteFooter";
 
 type Consumer = { id: string; name: string; phone: string; address: string | null };
 
@@ -56,15 +58,21 @@ export default function CustomerProfilePage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      <div className="flex min-h-screen flex-col bg-background">
+        <SiteHeader />
+        <div className="flex flex-1 items-center justify-center">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        </div>
+        <SiteFooter />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-muted/20 px-4 py-8">
-      <div className="mx-auto w-full max-w-md space-y-6 rounded-2xl border bg-card p-6 shadow-sm">
+    <div className="flex min-h-screen flex-col bg-muted/20">
+      <SiteHeader />
+      <main className="flex-1 px-4 py-8">
+        <div className="mx-auto w-full max-w-md space-y-6 rounded-2xl border bg-card p-6 shadow-sm">
         <div>
           <h1 className="text-xl font-bold">আমার প্রোফাইল</h1>
           <p className="mt-1 text-sm text-muted-foreground">নাম ও ঠিকানা update করুন</p>
@@ -111,7 +119,9 @@ export default function CustomerProfilePage() {
             লগআউট
           </Button>
         </div>
-      </div>
+        </div>
+      </main>
+      <SiteFooter />
     </div>
   );
 }
