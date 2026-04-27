@@ -1535,6 +1535,57 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_methods: {
+        Row: {
+          account_holder: string | null
+          account_number: string
+          color: string
+          created_at: string
+          extra_info: string | null
+          icon_emoji: string | null
+          id: string
+          instructions_bn: string | null
+          instructions_en: string | null
+          is_active: boolean
+          name: string
+          sort_order: number
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          account_holder?: string | null
+          account_number?: string
+          color?: string
+          created_at?: string
+          extra_info?: string | null
+          icon_emoji?: string | null
+          id?: string
+          instructions_bn?: string | null
+          instructions_en?: string | null
+          is_active?: boolean
+          name: string
+          sort_order?: number
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          account_holder?: string | null
+          account_number?: string
+          color?: string
+          created_at?: string
+          extra_info?: string | null
+          icon_emoji?: string | null
+          id?: string
+          instructions_bn?: string | null
+          instructions_en?: string | null
+          is_active?: boolean
+          name?: string
+          sort_order?: number
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       payment_transactions: {
         Row: {
           amount: number
