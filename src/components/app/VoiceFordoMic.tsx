@@ -6,21 +6,123 @@ import { useSpeechRecognition } from "@/lib/useSpeechRecognition";
 import { useMicLevel } from "@/lib/useMicLevel";
 import { toast } from "sonner";
 
+export type VoiceItem = { name: string; qty?: string; unit?: string };
+
 type Props = {
-  /** Called once final transcript is captured. Receives parsed item names. */
-  onItems: (items: string[]) => void;
+  /** Called once final transcript is captured. Receives parsed items with qty/unit. */
+  onItems: (items: VoiceItem[]) => void;
   className?: string;
 };
 
-/** Parse a free-form spoken text into individual product/item names. */
-function parseItems(raw: string): string[] {
+/** Bengali digit → ASCII digit map. */
+const BN_DIGITS: Record<string, string> = {
+  "০": "0", "১": "1", "২": "2", "৩": "3", "৪": "4",
+  "৫": "5", "৬": "6", "৭": "7", "৮": "8", "৯": "9",
+};
+
+/** Spoken Bengali/English number words → numeric value. */
+const NUMBER_WORDS: Record<string, number> = {
+  // Bengali
+  "এক": 1, "দুই": 2, "দুটি": 2, "দুটো": 2, "তিন": 3, "তিনটি": 3,
+  "চার": 4, "চারটি": 4, "পাঁচ": 5, "পাচ": 5, "ছয়": 6, "সাত": 7,
+  "আট": 8, "নয়": 9, "দশ": 10, "এগারো": 11, "বারো": 12,
+  "আধা": 0.5, "অর্ধ": 0.5, "আধ": 0.5,
+  "দেড়": 1.5, "আড়াই": 2.5, "সাড়ে": 0.5, // "সাড়ে" is a modifier, handled below
+  // English (in case of mixed transcripts)
+  one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7,
+  eight: 8, nine: 9, ten: 10, half: 0.5,
+};
+
+/** Common unit words → canonical short label. */
+const UNIT_WORDS: Array<{ re: RegExp; label: string }> = [
+  { re: /^(কেজি|কিলো|কিলোগ্রাম|kg|kilo|kilogram)s?$/i, label: "কেজি" },
+  { re: /^(গ্রাম|gm|gram)s?$/i, label: "গ্রাম" },
+  { re: /^(লিটার|liter|litre|ltr|l)$/i, label: "লিটার" },
+  { re: /^(মিলি|মিলিলিটার|ml)$/i, label: "মিলি" },
+  { re: /^(পিস|পিছ|piece|pcs|pc)$/i, label: "পিস" },
+  { re: /^(হালি)$/i, label: "হালি" },        // 4
+  { re: /^(ডজন|dozen)$/i, label: "ডজন" },    // 12
+  { re: /^(প্যাকেট|packet|pack|pkt)$/i, label: "প্যাকেট" },
+  { re: /^(বোতল|bottle)$/i, label: "বোতল" },
+  { re: /^(বস্তা|sack|bag)$/i, label: "বস্তা" },
+  { re: /^(আঁটি|আটি|bunch)$/i, label: "আঁটি" },
+  { re: /^(গজ|yard)$/i, label: "গজ" },
+  { re: /^(ফুট|foot|feet|ft)$/i, label: "ফুট" },
+];
+
+function normalizeDigits(s: string): string {
+  return s.replace(/[০-৯]/g, (c) => BN_DIGITS[c] ?? c);
+}
+
+function matchUnit(token: string): string | null {
+  for (const { re, label } of UNIT_WORDS) if (re.test(token)) return label;
+  return null;
+}
+
+function wordToNum(token: string): number | null {
+  if (token in NUMBER_WORDS) return NUMBER_WORDS[token];
+  const norm = normalizeDigits(token);
+  if (/^\d+(\.\d+)?$/.test(norm)) return parseFloat(norm);
+  return null;
+}
+
+/** Parse one phrase like "এক কেজি চাল" → { qty: "1", unit: "কেজি", name: "চাল" }. */
+function parsePhrase(phrase: string): VoiceItem {
+  const cleaned = normalizeDigits(phrase.trim()).replace(/\s+/g, " ");
+  if (!cleaned) return { name: "" };
+  const tokens = cleaned.split(" ");
+  let qty: number | null = null;
+  let unit: string | null = null;
+  let i = 0;
+
+  // Handle "সাড়ে <num>" prefix → 0.5 + num
+  let halfBoost = 0;
+  if (tokens[i] === "সাড়ে") {
+    halfBoost = 0.5;
+    i++;
+  }
+
+  // Read up to 2 leading number tokens (e.g. "এক" "কেজি", or "1.5" "kg", or "দেড়")
+  if (i < tokens.length) {
+    const n = wordToNum(tokens[i]);
+    if (n !== null) {
+      qty = n + halfBoost;
+      i++;
+    } else if (halfBoost > 0) {
+      qty = halfBoost;
+    }
+  }
+
+  // Optional unit token immediately after qty
+  if (i < tokens.length && qty !== null) {
+    const u = matchUnit(tokens[i]);
+    if (u) {
+      unit = u;
+      i++;
+    }
+  }
+
+  // Remaining tokens = product name
+  const name = tokens.slice(i).join(" ").trim();
+
+  // If we couldn't extract a name (qty-only utterance), fall back to whole phrase
+  if (!name) return { name: cleaned };
+
+  return {
+    name,
+    qty: qty !== null ? String(qty) : undefined,
+    unit: unit ?? undefined,
+  };
+}
+
+/** Parse a free-form spoken text into individual product items with qty/unit. */
+function parseItems(raw: string): VoiceItem[] {
   if (!raw) return [];
-  // Split on common separators: comma, period, semicolon, "and"/"ও"/"আর", newline.
   const parts = raw
     .split(/[,;।\n]+|\s+(?:ও|আর|এবং|and)\s+/gi)
     .map((s) => s.trim())
     .filter((s) => s.length > 0 && s.length < 120);
-  return parts;
+  return parts.map(parsePhrase).filter((p) => p.name.length > 0);
 }
 
 export function VoiceFordoMic({ onItems, className }: Props) {
