@@ -26,11 +26,12 @@ function json(body: unknown, status = 200) {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: cors });
   try {
-    const { phone, full_name, shop_name, pin } = await req.json();
+    const { phone, full_name, shop_name, pin, shop_type_code } = await req.json();
     const normalized = normalizePhone(String(phone ?? ""));
     const name = String(full_name ?? "").trim();
     const shop = String(shop_name ?? "").trim();
     const pinStr = String(pin ?? "");
+    const typeCode = shop_type_code ? String(shop_type_code) : null;
 
     if (!normalized) return json({ error: "Invalid phone" }, 400);
     if (name.length < 2) return json({ error: "Name required" }, 400);
@@ -56,18 +57,22 @@ Deno.serve(async (req) => {
       return json({ error: "phone_exists" }, 409);
     }
 
-    // Create user (trigger will auto-create profiles + user_roles row)
+    // Create user (trigger will auto-create profiles + user_roles row).
+    // NOTE: We deliberately do NOT pass `phone` here. Passing phone makes
+    // Supabase try to send a confirmation SMS/email which trips the
+    // shared "email rate limit exceeded" guard. Phone is stored in
+    // public.profiles instead.
     const { data: created, error: createErr } = await admin.auth.admin.createUser({
       email,
       password,
-      phone: normalized,
       email_confirm: true,
-      phone_confirm: true,
       user_metadata: { full_name: name },
     });
     if (createErr || !created.user) {
       console.error("createUser error:", createErr);
-      return json({ error: createErr?.message ?? "Failed to create user" }, 500);
+      const msg = createErr?.message ?? "Failed to create user";
+      if (/rate limit/i.test(msg)) return json({ error: "rate_limit" }, 429);
+      return json({ error: msg }, 500);
     }
     const userId = created.user.id;
 
@@ -79,11 +84,30 @@ Deno.serve(async (req) => {
       .eq("id", userId);
     if (profErr) console.error("profile update error:", profErr);
 
-    // Create the shop
-    const { error: shopErr } = await admin
+    // Create the shop (with type, if provided)
+    const shopInsert: Record<string, unknown> = { owner_id: userId, name: shop };
+    if (typeCode) shopInsert.shop_type_code = typeCode;
+    const { data: shopRow, error: shopErr } = await admin
       .from("shops")
-      .insert({ owner_id: userId, name: shop });
+      .insert(shopInsert)
+      .select("id")
+      .single();
     if (shopErr) console.error("shop insert error:", shopErr);
+
+    // Seed default categories for shop type
+    if (shopRow?.id && typeCode) {
+      const { data: typeRow } = await admin
+        .from("shop_types")
+        .select("default_categories")
+        .eq("code", typeCode)
+        .maybeSingle();
+      const defaults = (typeRow?.default_categories as string[] | undefined) ?? [];
+      if (defaults.length > 0) {
+        await admin
+          .from("categories")
+          .insert(defaults.map((n) => ({ shop_id: shopRow.id, name: n })));
+      }
+    }
 
     // Sign in to issue tokens
     const anon = createClient(url, anonKey);
