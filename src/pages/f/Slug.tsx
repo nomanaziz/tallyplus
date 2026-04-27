@@ -508,9 +508,13 @@ function PublicWishlistPage() {
             </div>
           )}
 
-          <Button type="button" variant="outline" onClick={addItem} className="mt-3 w-full bg-background/70">
-            <Plus className="mr-1 h-4 w-4" /> আরও পণ্য যোগ করুন
-          </Button>
+          <button
+            type="button"
+            onClick={addItem}
+            className="mt-3 inline-flex items-center gap-1 rounded-full border border-dashed border-muted-foreground/40 px-3 py-1 text-xs font-medium text-muted-foreground transition hover:border-foreground/60 hover:text-foreground"
+          >
+            <Plus className="h-3.5 w-3.5" /> আরও পণ্য যোগ করুন
+          </button>
 
           <p className="mt-3 rounded-lg bg-background/50 px-3 py-2 text-center text-[11px] text-muted-foreground">
             💡 দাম বসানোর দরকার নেই — দোকানদার ফর্দ পেয়ে দাম জানিয়ে দিবেন
@@ -525,21 +529,6 @@ function PublicWishlistPage() {
               className="min-h-[64px] w-full rounded-md border bg-background/70 p-2 text-sm"
               maxLength={500}
             />
-          </div>
-
-          <div className="mt-5">
-            <div className="text-xs font-semibold text-muted-foreground">কার্ডের রং</div>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {PALETTE.map((p) => (
-                <button
-                  key={p.key}
-                  type="button"
-                  onClick={() => setColor(p.key)}
-                  className={`h-7 w-7 rounded-full border-2 ${p.bg} ${color === p.key ? "border-foreground" : "border-transparent"}`}
-                  aria-label={p.label}
-                />
-              ))}
-            </div>
           </div>
 
           {/* Compact customer info — at the very bottom, placeholders only */}

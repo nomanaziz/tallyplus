@@ -16,8 +16,8 @@ type Options = {
 export function useSpeechRecognition(opts: Options = {}) {
   const {
     lang = "bn-BD",
-    silenceTimeoutMs = 1500,
-    noSpeechTimeoutMs = 10000,
+    silenceTimeoutMs = 12000,
+    noSpeechTimeoutMs = 15000,
     onFinal,
     onClose,
   } = opts;

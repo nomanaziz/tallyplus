@@ -30,8 +30,8 @@ export function VoiceFordoMic({ onItems, className }: Props) {
   const { supported, listening, transcript, error, start, stop } =
     useSpeechRecognition({
       lang: "bn-BD",
-      silenceTimeoutMs: 1500,
-      noSpeechTimeoutMs: 10000,
+      silenceTimeoutMs: 12000,
+      noSpeechTimeoutMs: 15000,
       onFinal: (text) => {
         const items = parseItems(text);
         if (items.length > 0) {
@@ -151,7 +151,7 @@ export function VoiceFordoMic({ onItems, className }: Props) {
                 </div>
               )}
               <p className="mt-3 text-[11px] text-muted-foreground">
-                পণ্যগুলো comma বা "ও" দিয়ে আলাদা করে বলুন। কথা শেষ হলে অথবা ১০ সেকেন্ড নীরব থাকলে বন্ধ হবে।
+                পণ্যগুলো comma বা "ও" দিয়ে আলাদা করে বলুন। প্রায় ১২ সেকেন্ড নীরব থাকলে স্বয়ংক্রিয়ভাবে বন্ধ হবে — অথবা নিচের বোতামে চাপুন।
               </p>
             </div>
 
