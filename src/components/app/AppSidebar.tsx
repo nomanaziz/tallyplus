@@ -74,6 +74,7 @@ export const SECTIONS: SidebarSection[] = [
     items: [
       { to: "/app/reports", bn: "ব্যবসার রিপোর্ট", en: "Business Report", icon: icons.businessReport, perm: "report" },
       { to: "/app/owner-report", bn: "মালিকের রিপোর্ট", en: "Owner Report", icon: icons.businessReport, perm: "report" },
+      { to: "/app/usage-limits", bn: "ব্যবহারের সীমা", en: "Usage Limits", icon: icons.businessReport },
       { to: "/app/printer", bn: "প্রিন্টার", en: "Printer", icon: icons.printer, perm: "shop" },
       { to: "/app/access", bn: "অ্যাপ অ্যাক্সেস", en: "App Access", icon: icons.access, perm: "__owner__" },
       { to: "/app/recycle-bin", bn: "রিসাইকেল বিন", en: "Recycle Bin", icon: icons.recycle, perm: "__owner__" },

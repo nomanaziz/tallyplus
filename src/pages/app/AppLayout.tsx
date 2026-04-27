@@ -15,6 +15,7 @@ import { AppTopbar } from "@/components/app/AppTopbar";
 import { ShopTypePicker } from "@/components/app/ShopTypePicker";
 import { MobileBottomNav } from "@/components/app/MobileBottomNav";
 import { MobileBackBar } from "@/components/app/MobileBackBar";
+import { PromoPopupDialog } from "@/components/app/PromoPopupDialog";
 
 // SettingsSheet is heavy (329 lines + many imports) and only opens on demand.
 // Lazy-load to keep the app shell bundle small.
@@ -187,6 +188,7 @@ function AppLayout() {
             <SettingsSheet open={settingsOpen} onOpenChange={setSettingsOpen} />
           </Suspense>
         )}
+        <PromoPopupDialog />
       </div>
     </div>
   );

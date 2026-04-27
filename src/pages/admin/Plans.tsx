@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
@@ -27,6 +28,12 @@ type Plan = {
   duration_days: number;
   is_active: boolean;
   max_shops: number;
+  discount_pct?: number;
+  old_price_bdt?: number | null;
+  is_lifetime?: boolean;
+  description_bn?: string | null;
+  description_en?: string | null;
+  perks?: string[];
 };
 
 function PlansPage() {
@@ -60,6 +67,12 @@ function PlansPage() {
       duration_days: Number(editing.duration_days) || 30,
       is_active: editing.is_active ?? true,
       max_shops: Math.max(1, Number(editing.max_shops) || 1),
+      discount_pct: Number(editing.discount_pct) || 0,
+      old_price_bdt: editing.old_price_bdt ? Number(editing.old_price_bdt) : null,
+      is_lifetime: editing.is_lifetime ?? false,
+      description_bn: editing.description_bn ?? null,
+      description_en: editing.description_en ?? null,
+      perks: Array.isArray(editing.perks) ? editing.perks : [],
     };
     const { error } = editing.id
       ? await supabase.from("subscription_plans").update(payload).eq("id", editing.id)
@@ -161,6 +174,37 @@ function PlansPage() {
               <p className="mt-1 text-xs text-muted-foreground">
                 এই plan-এ একজন user সর্বোচ্চ কতগুলো দোকান add করতে পারবে।
               </p>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Discount %</Label>
+                <Input type="number" value={editing?.discount_pct ?? 0} onChange={(e) => setEditing({ ...editing, discount_pct: Number(e.target.value) })} />
+              </div>
+              <div>
+                <Label>Old Price (strike)</Label>
+                <Input type="number" value={editing?.old_price_bdt ?? ""} onChange={(e) => setEditing({ ...editing, old_price_bdt: Number(e.target.value) })} />
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Switch checked={editing?.is_lifetime ?? false} onCheckedChange={(v) => setEditing({ ...editing, is_lifetime: v })} />
+              <Label>Lifetime plan</Label>
+            </div>
+            <div>
+              <Label>Description (BN)</Label>
+              <Input value={editing?.description_bn ?? ""} onChange={(e) => setEditing({ ...editing, description_bn: e.target.value })} />
+            </div>
+            <div>
+              <Label>Description (EN)</Label>
+              <Input value={editing?.description_en ?? ""} onChange={(e) => setEditing({ ...editing, description_en: e.target.value })} />
+            </div>
+            <div>
+              <Label>Perks (one per line)</Label>
+              <Textarea
+                rows={5}
+                value={(editing?.perks ?? []).join("\n")}
+                onChange={(e) => setEditing({ ...editing, perks: e.target.value.split("\n").map((s) => s.trim()).filter(Boolean) })}
+                placeholder={"সব ফিচার আনলক\n২টি দোকান\nWhatsApp সাপোর্ট"}
+              />
             </div>
             <div className="flex items-center gap-2">
               <Switch checked={editing?.is_active ?? true} onCheckedChange={(v) => setEditing({ ...editing, is_active: v })} />

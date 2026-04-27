@@ -81,6 +81,10 @@ const P70 = lazy(() => import("./pages/shop/p/Id"));
 const P71 = lazy(() => import("./pages/shop/s/Slug"));
 const P72 = lazy(() => import("./pages/vendor/Username"));
 const P73 = lazy(() => import("./pages/customer/Profile"));
+const P74 = lazy(() => import("./pages/app/UsageLimits"));
+const P75 = lazy(() => import("./pages/admin/UsageLimits"));
+const P76 = lazy(() => import("./pages/admin/PromoPopups"));
+const P77 = lazy(() => import("./pages/admin/PaymentGateway"));
 
 export function AppRoutes() {
   return (
@@ -93,6 +97,9 @@ export function AppRoutes() {
       <Route path="login" element={<S><P4 /></S>} />
       <Route path="marketplace" element={<S><P5 /></S>} />
       <Route path="plans" element={<S><P6 /></S>} />
+      <Route path="usage-limits" element={<S><P75 /></S>} />
+      <Route path="promo-popups" element={<S><P76 /></S>} />
+      <Route path="payment-gateway" element={<S><P77 /></S>} />
       <Route path="settings" element={<S><P7 /></S>} />
       <Route path="shop-types" element={<S><P8 /></S>} />
       <Route path="subscription-requests" element={<S><P9 /></S>} />
@@ -156,6 +163,7 @@ export function AppRoutes() {
       <Route path="stock-edit" element={<S><P58 /></S>} />
       <Route path="stock" element={<S><P59 /></S>} />
       <Route path="subscribe" element={<S><P60 /></S>} />
+      <Route path="usage-limits" element={<S><P74 /></S>} />
       <Route path="training" element={<S><P61 /></S>} />
       <Route path="warranty" element={<S><P63 /></S>} />
       </Route>

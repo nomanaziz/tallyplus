@@ -1409,6 +1409,36 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_gateway_settings: {
+        Row: {
+          api_url: string | null
+          extra: Json
+          id: boolean
+          is_enabled: boolean
+          merchant_id: string | null
+          provider: string
+          updated_at: string
+        }
+        Insert: {
+          api_url?: string | null
+          extra?: Json
+          id?: boolean
+          is_enabled?: boolean
+          merchant_id?: string | null
+          provider?: string
+          updated_at?: string
+        }
+        Update: {
+          api_url?: string | null
+          extra?: Json
+          id?: boolean
+          is_enabled?: boolean
+          merchant_id?: string | null
+          provider?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       payments: {
         Row: {
           amount: number
@@ -1678,6 +1708,57 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      promo_popups: {
+        Row: {
+          body_bn: string | null
+          body_en: string | null
+          created_at: string
+          cta_link: string | null
+          cta_text_bn: string | null
+          cta_text_en: string | null
+          ends_at: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean
+          starts_at: string | null
+          title_bn: string | null
+          title_en: string | null
+          updated_at: string
+        }
+        Insert: {
+          body_bn?: string | null
+          body_en?: string | null
+          created_at?: string
+          cta_link?: string | null
+          cta_text_bn?: string | null
+          cta_text_en?: string | null
+          ends_at?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          starts_at?: string | null
+          title_bn?: string | null
+          title_en?: string | null
+          updated_at?: string
+        }
+        Update: {
+          body_bn?: string | null
+          body_en?: string | null
+          created_at?: string
+          cta_link?: string | null
+          cta_text_bn?: string | null
+          cta_text_en?: string | null
+          ends_at?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          starts_at?: string | null
+          title_bn?: string | null
+          title_en?: string | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       purchase_items: {
         Row: {
@@ -2668,36 +2749,54 @@ export type Database = {
         Row: {
           code: string
           created_at: string
+          description_bn: string | null
+          description_en: string | null
+          discount_pct: number
           duration_days: number
           id: string
           is_active: boolean
+          is_lifetime: boolean
           max_shops: number
           name_bn: string
           name_en: string
+          old_price_bdt: number | null
+          perks: Json
           price_bdt: number
           updated_at: string
         }
         Insert: {
           code: string
           created_at?: string
+          description_bn?: string | null
+          description_en?: string | null
+          discount_pct?: number
           duration_days: number
           id?: string
           is_active?: boolean
+          is_lifetime?: boolean
           max_shops?: number
           name_bn: string
           name_en: string
+          old_price_bdt?: number | null
+          perks?: Json
           price_bdt: number
           updated_at?: string
         }
         Update: {
           code?: string
           created_at?: string
+          description_bn?: string | null
+          description_en?: string | null
+          discount_pct?: number
           duration_days?: number
           id?: string
           is_active?: boolean
+          is_lifetime?: boolean
           max_shops?: number
           name_bn?: string
           name_en?: string
+          old_price_bdt?: number | null
+          perks?: Json
           price_bdt?: number
           updated_at?: string
         }
@@ -2874,6 +2973,27 @@ export type Database = {
           title_en?: string
           updated_at?: string
           youtube_id?: string
+        }
+        Relationships: []
+      }
+      usage_limits: {
+        Row: {
+          feature_key: string
+          limit_count: number
+          plan_code: string
+          updated_at: string
+        }
+        Insert: {
+          feature_key: string
+          limit_count?: number
+          plan_code: string
+          updated_at?: string
+        }
+        Update: {
+          feature_key?: string
+          limit_count?: number
+          plan_code?: string
+          updated_at?: string
         }
         Relationships: []
       }
