@@ -79,13 +79,33 @@ function useAdConfig(): AdConfig | null {
 export type AdSlotProps = {
   slotKey: string;
   className?: string;
-  /** Override audience: by default we hide for paid subscribers. */
-  forceShow?: boolean;
 };
 
-export function AdSlot({ slotKey, className, forceShow }: AdSlotProps) {
+/**
+ * Renders an ad ONLY for logged-in consumers (গ্রাহক). Anonymous visitors,
+ * shop owners, and any subscribed user never see ads — regardless of admin
+ * audience toggles. Place this component only inside the consumer portal.
+ */
+export function AdSlot({ slotKey, className }: AdSlotProps) {
   const cfg = useAdConfig();
   const { hasActiveSubscription, user } = useAuth();
+  const [isConsumer, setIsConsumer] = useState<boolean | null>(null);
+
+  // Consumer = row exists in consumer_profiles for this user.
+  useEffect(() => {
+    if (!user) { setIsConsumer(false); return; }
+    let cancelled = false;
+    void (async () => {
+      const { data } = await supabase
+        .from("consumer_profiles")
+        .select("id")
+        .eq("id", user.id)
+        .maybeSingle();
+      if (!cancelled) setIsConsumer(!!data);
+    })();
+    return () => { cancelled = true; };
+  }, [user]);
+
   const insRef = useRef<HTMLModElement | null>(null);
   const pushed = useRef(false);
 
@@ -118,18 +138,10 @@ export function AdSlot({ slotKey, className, forceShow }: AdSlotProps) {
   if (!settings.enabled) return null;
   if (!slot.is_active || slot.mode === "disabled") return null;
 
-  // Audience gating
-  if (!forceShow) {
-    if (hasActiveSubscription && !settings.show_to_subscribers) return null;
-    // Anonymous/public visitors always see ads (e.g. on /f/:slug). Logged-in
-    // gating only applies once we know who the user is.
-    if (user) {
-      // We don't have a hard "is consumer" flag here, so we rely on the two
-      // toggles together: if BOTH are off, hide. Specific role separation is
-      // handled by which slots admin assigns to which placements.
-      if (!settings.show_to_free_owners && !settings.show_to_consumers) return null;
-    }
-  }
+  // Hard rules: only logged-in consumers, never subscribers, never anon.
+  if (!user) return null;
+  if (hasActiveSubscription) return null;
+  if (isConsumer !== true) return null;
 
   if (slot.mode === "custom") {
     if (!slot.custom_image_url) return null;
