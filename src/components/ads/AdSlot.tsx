@@ -36,9 +36,18 @@ async function fetchAdConfig(): Promise<AdConfig> {
   if (cache.data && now - cache.ts < TTL_MS) return cache.data;
   if (inflight) return inflight;
   inflight = (async () => {
+    // Cast to any: ad_settings/ad_slots are new tables; generated types
+    // refresh asynchronously after the migration.
+    const sb = supabase as unknown as {
+      from: (t: string) => {
+        select: (q: string) => {
+          eq: (c: string, v: unknown) => { maybeSingle: () => Promise<{ data: unknown }> };
+        } & Promise<{ data: unknown }>;
+      };
+    };
     const [settingsRes, slotsRes] = await Promise.all([
-      supabase.from("ad_settings").select("*").eq("id", true).maybeSingle(),
-      supabase.from("ad_slots").select("*"),
+      sb.from("ad_settings").select("*").eq("id", true).maybeSingle(),
+      sb.from("ad_slots").select("*"),
     ]);
     const settings = (settingsRes.data as AdSettings | null) ?? null;
     const slotsArr = ((slotsRes.data as AdSlotRow[] | null) ?? []);
