@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, Download, MoreVertical, Package, Pencil, Trash2, Sparkles } from "lucide-react";
+import { Plus, Download, MoreVertical, Package, Pencil, Trash2, Sparkles, Hash } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useShop } from "@/lib/shop";
 import { productsListQuery } from "@/lib/queries";
@@ -24,6 +24,7 @@ import {
 import { toast } from "sonner";
 import { CatalogProductPicker, type CatalogProduct } from "@/components/app/CatalogProductPicker";
 import { SampleProductImportSheet } from "@/components/app/SampleProductImportSheet";
+import { ProductSerialsDialog } from "@/components/app/ProductSerialsDialog";
 
 type Product = {
   id: string;
@@ -37,6 +38,7 @@ type Product = {
   low_stock_alert: number | null;
   category_id: string | null;
   image_url: string | null;
+  is_serialized?: boolean;
 };
 
 
@@ -55,6 +57,7 @@ function ProductsPage() {
   const [openForm, setOpenForm] = useState(false);
   const [editing, setEditing] = useState<Product | null>(null);
   const [openImport, setOpenImport] = useState(false);
+  const [serialsTarget, setSerialsTarget] = useState<Product | null>(null);
   const load = async () => {
     await qc.invalidateQueries({ queryKey: ["products"] });
     await refetch();
@@ -161,6 +164,11 @@ function ProductsPage() {
                           <DropdownMenuItem onClick={() => { setEditing(p); setOpenForm(true); }}>
                             <Pencil className="mr-2 h-4 w-4" /> {lang === "bn" ? "এডিট" : "Edit"}
                           </DropdownMenuItem>
+                          {p.is_serialized && (
+                            <DropdownMenuItem onClick={() => setSerialsTarget(p)}>
+                              <Hash className="mr-2 h-4 w-4" /> {lang === "bn" ? "সিরিয়াল ম্যানেজ" : "Manage Serials"}
+                            </DropdownMenuItem>
+                          )}
                           <DropdownMenuItem className="text-destructive" onClick={() => onDelete(p)}>
                             <Trash2 className="mr-2 h-4 w-4" /> {lang === "bn" ? "ডিলিট" : "Delete"}
                           </DropdownMenuItem>
@@ -185,6 +193,13 @@ function ProductsPage() {
         shopId={current?.id ?? null}
         shopTypeCode={current?.shop_type_code ?? null}
         onSaved={load}
+      />
+
+      <ProductSerialsDialog
+        open={serialsTarget !== null}
+        onOpenChange={(v) => { if (!v) setSerialsTarget(null); }}
+        productId={serialsTarget?.id ?? null}
+        productName={serialsTarget?.name ?? ""}
       />
     </div>
   );
