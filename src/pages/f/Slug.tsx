@@ -485,8 +485,11 @@ function PublicWishlistPage() {
                     {idx + 1}.
                   </div>
                   <Input
-                    value={it.name}
-                    onChange={(e) => updateItem(it.id, { name: e.target.value })}
+                    value={simpleLabel(it)}
+                    onChange={(e) => {
+                      const parsed = parseSimpleEdit(e.target.value);
+                      updateItem(it.id, parsed);
+                    }}
                     placeholder="যেমন: ১ কেজি পোলাওর চাল"
                     className="h-11 flex-1 bg-background/70 text-[15px]"
                     maxLength={120}
