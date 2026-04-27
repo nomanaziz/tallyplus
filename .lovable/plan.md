@@ -1,66 +1,45 @@
-## পার্থক্য কী, এবং কেন merge করা যায়
+# গ্রাহকের প্রিয় দোকান + খোঁজার ফিল্ড একীভূত করা
 
-আপনি ঠিকই দেখেছেন — দুটো page একই `products` table-এর উপর কাজ করে, একই row দেখায়, শুধু **focus আলাদা**:
+দুটি ছোট কিন্তু কাজের উন্নতি গ্রাহক পোর্টালে।
 
-| Page | মূল কাজ | আলাদা features |
-|---|---|---|
-| **প্রোডাক্ট লিস্ট** (`/app/products`) | Catalog management | Add/Edit form (নাম, SKU, barcode, দাম, VAT, warranty, discount, online shop toggle, serial), Sample Import, Edit/Delete dropdown |
-| **স্টক খাতা** (`/app/stock`) | Inventory view | মোট মজুদ মূল্য (cost × stock), স্টকের ইতিহাস (movements), Update Stock dialog, Stock Edit (bulk +/− করে stock update) |
+## ১) প্রিয় দোকান (Save করা দোকান) ⭐
 
-দুই page-এই একই product row, একই নাম, একই বর্তমান মজুদ — শুধু action আর extra column ভিন্ন। Merge করাটা সম্পূর্ণ যৌক্তিক।
+গ্রাহক একটা দোকানকে "★ প্রিয়" হিসেবে সংরক্ষণ করতে পারবেন। পরের বার ফর্দ পাঠানোর সময় ওই দোকান সবার উপরে এক ক্লিকে দেখা যাবে — কারণ একজন গ্রাহক সাধারণত নিয়মিত একটা দোকান থেকেই কেনাকাটা করেন।
 
----
+**Database:** `consumer_favourite_shops` table আগেই তৈরি আছে (consumer_id, shop_id, created_at) — শুধু RLS policy ও কোডে ব্যবহার শুরু করতে হবে।
 
-## প্রস্তাবিত merged page: **"প্রোডাক্ট ও স্টক"** (`/app/products`)
+**নতুন ফর্দ পেজে (`/customer/create-fordo`, Step 2):**
+- সবার উপরে নতুন section: **"⭐ আপনার প্রিয় দোকান"**
+- প্রতিটি প্রিয় দোকানের পাশে star ভরা — click করে সরিয়েও ফেলা যাবে
+- কোনো প্রিয় দোকান না থাকলে section হাইড থাকবে
+- এলাকার দোকান/সার্চ ফলাফলে প্রতিটি ShopRow-এর পাশে ফাঁপা ★ icon — click করলে প্রিয় তালিকায় যোগ হবে (টোস্ট: "✓ প্রিয় তালিকায় যোগ হয়েছে")
+- প্রিয় দোকান হলে ★ ভরা দেখাবে
 
-একটাই page যেখানে দুটো page-এর সব feature থাকবে।
+**আমার ফর্দ পেজে (`/customer/my-fordo`):**
+- "সময়সূচী" section-এর উপরে ছোট একটা **"⭐ প্রিয় দোকান"** strip — chip আকারে দোকানের নাম, click করলে সরাসরি `/customer/create-fordo?shopId=xxx` (Step 2-এ ওই দোকান উপরে highlight)
 
-### Top toolbar (সব action একসাথে)
-- **প্রোডাক্ট যুক্ত করুন** (primary button — form খুলবে)
-- **স্যাম্পল ইম্পোর্ট**
-- **স্টক এডিট** (bulk update mode toggle)
-- **স্টকের ইতিহাস** (movements dialog)
-- **ডাউনলোড/প্রিন্ট**
-- Search bar (DataToolbar)
+## ২) দোকান খোঁজার দুটি কার্ড একসাথে করা
 
-### Table columns (দুই page-এর সব column একসাথে)
-| পণ্যের নাম | বর্তমান মজুদ | বিক্রয় মূল্য | দর (cost) | মোট মজুদ মূল্য | Action |
-|---|---|---|---|---|---|
+বর্তমানে Step 2-এ দুটি আলাদা কার্ড: একটি মোবাইল নম্বরে, আরেকটি দোকানের নামে — অযথা জায়গা নষ্ট।
 
-Footer-এ "Total Products: N" + "মোট মজুদ মূল্য: ৳XX" দুটোই।
+**নতুন একক কার্ড — "দোকান খুঁজুন":**
+- একটাই input box
+- Auto-detect: ইনপুটে সংখ্যা থাকলে phone search, না হলে name search
+- Placeholder: `"মোবাইল নম্বর বা দোকানের নাম..."`
+- পাশে একটাই 🔍 button (Enter দিয়েও submit হবে)
 
-### Action column (আপনি যেমন বললেন — view + action পাশাপাশি)
-প্রতি row-তে দুটো button পাশাপাশি:
-1. **👁 View** (Eye icon) — `ProductDetailsDialog` খুলবে (বর্তমান মজুদ, বিক্রয় মূল্য, cost, ইতিহাস summary দেখাবে — Stock page-এর existing dialog)
-2. **⋮ Action** (3-dot menu) — Edit / Stock Update / Manage Serials / Delete
+## প্রযুক্তিগত পরিবর্তন (টেকনিক্যাল)
 
-### Bulk "Stock Edit" mode
-উপরের toolbar-এ "স্টক এডিট" button চাপলে table-টা inline edit mode-এ চলে যাবে (StockEdit.tsx-এর +/− buttons + Save/Cancel) — আলাদা page-এ navigate করতে হবে না। অথবা চাইলে এটা `/app/products/edit-stock` সাব-route হিসেবে রাখতে পারি — আপনি বললে ঠিক করব।
+**Migration (RLS policies for `consumer_favourite_shops`):**
+- Policies already exist ("fav read/insert/delete own") — শুধু verify করা হবে, নতুন migration লাগবে না।
 
-### স্টকের ইতিহাস
-Toolbar button → Dialog (existing `stock_movements` query)। কোনো row-এর জন্য specific history চাইলে View dialog থেকেও পৌঁছানো যাবে।
-
----
-
-## পরিবর্তিত ফাইল
-
-**Edit:**
-- `src/pages/app/Products.tsx` → merged page (Stock.tsx + StockEdit.tsx-এর সব feature integrate)
-- `src/components/app/AppSidebar.tsx` → "স্টকের হিসাব" menu item সরানো (একটাই থাকবে, "প্রোডাক্ট ও স্টক")
-- `src/routes.tsx` → `/app/stock` ও `/app/stock-edit` route-গুলো `/app/products`-এ redirect করা (পুরনো link/bookmark ভাঙবে না)
-- যেসব জায়গা থেকে `nav({ to: "/app/stock" })` বা `/app/stock-edit` call হয় (যেমন Products.tsx-এর "Add Product" button থেকে Stock.tsx-এ যাওয়ার লিংক) — সেগুলো clean up
-
-**Delete (later, route redirect কাজ করার পরে):**
-- `src/pages/app/Stock.tsx`
-- `src/pages/app/StockEdit.tsx`
-
-**নতুন কিছু লাগবে না** — সব dialog (`ProductDetailsDialog`, `UpdateStockDialog`, `ProductFormDialog`, `ProductSerialsDialog`, `SampleProductImportSheet`) ইতিমধ্যেই আছে।
-
----
-
-## ছোট দুটো decision (default ধরে নিচ্ছি, আপনি বললে পাল্টাব)
-
-1. **Stock Edit** — inline mode toggle হিসেবে রাখব (আলাদা page না), যাতে সব same page-এ থাকে। পছন্দ?
-2. **Menu নাম** — "প্রোডাক্ট ও স্টক" / "Products & Stock"। অন্য নাম চাইলে বলুন (যেমন শুধু "প্রোডাক্ট" বা "ইনভেন্টরি")।
-
-Approve করলে implement করে দিচ্ছি।
+**ফাইল পরিবর্তন:**
+- `src/pages/customer/CreateFordo.tsx`:
+  - নতুন `favourites` state + load `consumer_favourite_shops` (shop details সহ join)
+  - Step 2-এ নতুন "প্রিয় দোকান" section সবার উপরে
+  - দুই search কার্ড → এক কার্ডে merge, smart `onSubmit` (digit-detection)
+  - `ShopRow` component-এ star toggle button যোগ
+  - `?shopId=xxx` param সাপোর্ট — auto Step 2-তে যাবে ও ওই দোকান highlight হবে
+- `src/pages/customer/MyFordo.tsx`:
+  - উপরে favourite shops chip strip (click করলে create-fordo-এ যাবে shopId সহ)
+- কোনো নতুন route, edge function, বা schema change লাগবে না।
