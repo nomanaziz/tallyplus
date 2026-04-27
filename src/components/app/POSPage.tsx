@@ -7,6 +7,7 @@ import { useShop } from "@/lib/shop";
 import { useAuth } from "@/lib/auth";
 import { useI18n, fmtMoney, bnNum } from "@/lib/i18n";
 import { productsLiteQuery } from "@/lib/queries";
+import { SerialPickDialog } from "@/components/app/SerialPickDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
