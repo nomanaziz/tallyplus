@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Plus, Trash2, ArrowLeft, ArrowRight, Send, Search, Store, MapPin, Save, CalendarClock } from "lucide-react";
+import { Loader2, Plus, Trash2, ArrowLeft, ArrowRight, Send, Search, Store, MapPin, Save, CalendarClock, Star } from "lucide-react";
 import { toast } from "sonner";
 import { VoiceFordoMic } from "@/components/app/VoiceFordoMic";
 import { ScheduleFordoDialog } from "@/components/customer/ScheduleFordoDialog";
@@ -29,8 +29,7 @@ export default function CreateFordo() {
   const [step, setStep] = useState<1 | 2>(1);
   const [items, setItems] = useState<Item[]>([{ name: "", qty: "", unit: "" }]);
   const [note, setNote] = useState("");
-  const [phoneSearch, setPhoneSearch] = useState("");
-  const [nameSearch, setNameSearch] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
   const [searching, setSearching] = useState(false);
   const [results, setResults] = useState<Shop[]>([]);
   const [nearby, setNearby] = useState<Shop[]>([]);
@@ -41,6 +40,8 @@ export default function CreateFordo() {
   const [tplName, setTplName] = useState("");
   const [savingTpl, setSavingTpl] = useState(false);
   const [showSchedule, setShowSchedule] = useState(false);
+  const [favourites, setFavourites] = useState<Shop[]>([]);
+  const [favIds, setFavIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (!user) return;
@@ -53,7 +54,55 @@ export default function CreateFordo() {
         setProfile(data as never);
         void loadNearby(data as never);
       });
+    void loadFavourites();
   }, [user]);
+
+  const loadFavourites = async () => {
+    if (!user) return;
+    const { data: favRows } = await supabase
+      .from("consumer_favourite_shops")
+      .select("shop_id")
+      .eq("consumer_id", user.id);
+    const ids = (favRows ?? []).map((r) => r.shop_id as string);
+    setFavIds(new Set(ids));
+    if (ids.length === 0) {
+      setFavourites([]);
+      return;
+    }
+    const { data: ss } = await supabase
+      .from("shops")
+      .select("id,name,phone,logo_url,owner_id")
+      .in("id", ids)
+      .is("deleted_at", null);
+    setFavourites((ss ?? []) as Shop[]);
+  };
+
+  const toggleFavourite = async (shop: Shop) => {
+    if (!user) return toast.error("লগইন করুন");
+    if (favIds.has(shop.id)) {
+      const { error } = await supabase
+        .from("consumer_favourite_shops")
+        .delete()
+        .eq("consumer_id", user.id)
+        .eq("shop_id", shop.id);
+      if (error) return toast.error(error.message);
+      setFavIds((s) => {
+        const n = new Set(s);
+        n.delete(shop.id);
+        return n;
+      });
+      setFavourites((arr) => arr.filter((x) => x.id !== shop.id));
+      toast.success("প্রিয় তালিকা থেকে সরানো হয়েছে");
+    } else {
+      const { error } = await supabase
+        .from("consumer_favourite_shops")
+        .insert({ consumer_id: user.id, shop_id: shop.id } as never);
+      if (error) return toast.error(error.message);
+      setFavIds((s) => new Set(s).add(shop.id));
+      setFavourites((arr) => (arr.find((x) => x.id === shop.id) ? arr : [shop, ...arr]));
+      toast.success("✓ প্রিয় তালিকায় যোগ হয়েছে");
+    }
+  };
 
   // Preload template if ?templateId= is set
   useEffect(() => {
@@ -132,44 +181,45 @@ export default function CreateFordo() {
     setStep(2);
   };
 
-  const searchByPhone = async () => {
-    const ph = phoneSearch.trim();
-    if (!ph) return;
+  const runSearch = async () => {
+    const q = searchQuery.trim();
+    if (!q) return;
+    const isPhone = /^[0-9+\-\s]{4,}$/.test(q);
     setSearching(true);
     setResults([]);
     try {
-      const res = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/find-shops-by-phone`,
-        {
-          method: "POST",
-          headers: { "content-type": "application/json", apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY },
-          body: JSON.stringify({ phone: ph }),
-        },
-      );
-      const d = await res.json();
-      if (!res.ok) throw new Error(d.error ?? "ত্রুটি");
-      setResults((d.shops ?? []) as Shop[]);
-      if ((d.shops ?? []).length === 0) toast.info("এই নম্বরে কোনো দোকান পাওয়া যায়নি");
+      if (isPhone) {
+        const res = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/find-shops-by-phone`,
+          {
+            method: "POST",
+            headers: { "content-type": "application/json", apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY },
+            body: JSON.stringify({ phone: q }),
+          },
+        );
+        const d = await res.json();
+        if (!res.ok) throw new Error(d.error ?? "ত্রুটি");
+        setResults((d.shops ?? []) as Shop[]);
+        if ((d.shops ?? []).length === 0) toast.info("কোনো দোকান পাওয়া যায়নি");
+      } else {
+        if (q.length < 2) {
+          toast.info("অন্তত ২ অক্ষর লিখুন");
+          return;
+        }
+        const { data } = await supabase
+          .from("shops")
+          .select("id,name,phone,logo_url,owner_id")
+          .ilike("name", `%${q}%`)
+          .is("deleted_at", null)
+          .limit(20);
+        setResults((data ?? []) as Shop[]);
+        if ((data ?? []).length === 0) toast.info("কোনো দোকান পাওয়া যায়নি");
+      }
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
       setSearching(false);
     }
-  };
-
-  const searchByName = async () => {
-    const q = nameSearch.trim();
-    if (q.length < 2) return;
-    setSearching(true);
-    const { data } = await supabase
-      .from("shops")
-      .select("id,name,phone,logo_url,owner_id")
-      .ilike("name", `%${q}%`)
-      .is("deleted_at", null)
-      .limit(20);
-    setResults((data ?? []) as Shop[]);
-    setSearching(false);
-    if ((data ?? []).length === 0) toast.info("কোনো দোকান পাওয়া যায়নি");
   };
 
   const send = async (shop: Shop) => {
@@ -320,39 +370,55 @@ export default function CreateFordo() {
       {step === 2 && (
         <div className="space-y-4">
           <Card className="p-4">
-            <Label className="mb-2 block text-sm font-semibold">মোবাইল নম্বর দিয়ে দোকান খুঁজুন</Label>
-            <div className="flex gap-2">
+            <Label className="mb-2 block text-sm font-semibold">দোকান খুঁজুন</Label>
+            <form
+              className="flex gap-2"
+              onSubmit={(e) => {
+                e.preventDefault();
+                void runSearch();
+              }}
+            >
               <Input
-                placeholder="01XXXXXXXXX"
-                value={phoneSearch}
-                onChange={(e) => setPhoneSearch(e.target.value)}
-                inputMode="tel"
+                placeholder="মোবাইল নম্বর বা দোকানের নাম..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
               />
-              <Button onClick={searchByPhone} disabled={searching}>
-                <Search className="h-4 w-4" />
+              <Button type="submit" disabled={searching}>
+                {searching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
               </Button>
-            </div>
+            </form>
           </Card>
 
-          <Card className="p-4">
-            <Label className="mb-2 block text-sm font-semibold">দোকানের নাম দিয়ে খুঁজুন</Label>
-            <div className="flex gap-2">
-              <Input
-                placeholder="দোকানের নাম..."
-                value={nameSearch}
-                onChange={(e) => setNameSearch(e.target.value)}
-              />
-              <Button onClick={searchByName} disabled={searching}>
-                <Search className="h-4 w-4" />
-              </Button>
+          {favourites.length > 0 && (
+            <div className="space-y-2">
+              <h3 className="flex items-center gap-1 text-sm font-semibold">
+                <Star className="h-4 w-4 fill-yellow-400 text-yellow-500" /> আপনার প্রিয় দোকান
+              </h3>
+              {favourites.map((s) => (
+                <ShopRow
+                  key={s.id}
+                  shop={s}
+                  onSend={send}
+                  sending={sending}
+                  isFav={favIds.has(s.id)}
+                  onToggleFav={toggleFavourite}
+                />
+              ))}
             </div>
-          </Card>
+          )}
 
           {results.length > 0 && (
             <div className="space-y-2">
               <h3 className="text-sm font-semibold">খোঁজার ফলাফল</h3>
               {results.map((s) => (
-                <ShopRow key={s.id} shop={s} onSend={send} sending={sending} />
+                <ShopRow
+                  key={s.id}
+                  shop={s}
+                  onSend={send}
+                  sending={sending}
+                  isFav={favIds.has(s.id)}
+                  onToggleFav={toggleFavourite}
+                />
               ))}
             </div>
           )}
@@ -372,7 +438,16 @@ export default function CreateFordo() {
             ) : nearby.length === 0 ? (
               <Card className="p-4 text-center text-sm text-muted-foreground">কোনো দোকান পাওয়া যায়নি</Card>
             ) : (
-              nearby.map((s) => <ShopRow key={s.id} shop={s} onSend={send} sending={sending} />)
+              nearby.map((s) => (
+                <ShopRow
+                  key={s.id}
+                  shop={s}
+                  onSend={send}
+                  sending={sending}
+                  isFav={favIds.has(s.id)}
+                  onToggleFav={toggleFavourite}
+                />
+              ))
             )}
           </div>
 
@@ -437,7 +512,19 @@ export default function CreateFordo() {
   );
 }
 
-function ShopRow({ shop, onSend, sending }: { shop: Shop; onSend: (s: Shop) => void; sending: boolean }) {
+function ShopRow({
+  shop,
+  onSend,
+  sending,
+  isFav,
+  onToggleFav,
+}: {
+  shop: Shop;
+  onSend: (s: Shop) => void;
+  sending: boolean;
+  isFav?: boolean;
+  onToggleFav?: (s: Shop) => void;
+}) {
   return (
     <Card className="flex items-center gap-3 p-3">
       <div className="flex h-10 w-10 flex-none items-center justify-center overflow-hidden rounded-xl bg-primary/10 text-primary">
@@ -447,6 +534,16 @@ function ShopRow({ shop, onSend, sending }: { shop: Shop; onSend: (s: Shop) => v
         <div className="truncate font-semibold">{shop.name}</div>
         <div className="truncate text-xs text-muted-foreground">{shop.phone}</div>
       </div>
+      {onToggleFav && (
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => onToggleFav(shop)}
+          aria-label={isFav ? "প্রিয় থেকে সরান" : "প্রিয় তালিকায় যোগ"}
+        >
+          <Star className={`h-4 w-4 ${isFav ? "fill-yellow-400 text-yellow-500" : "text-muted-foreground"}`} />
+        </Button>
+      )}
       <Button size="sm" onClick={() => onSend(shop)} disabled={sending}>
         {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Send className="mr-1 h-4 w-4" /> পাঠান</>}
       </Button>
