@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Plus, Trash2, ArrowLeft, ArrowRight, Send, Search, Store, MapPin, Save, CalendarClock } from "lucide-react";
+import { Loader2, Plus, Trash2, ArrowLeft, ArrowRight, Send, Search, Store, MapPin, Save, CalendarClock, Star } from "lucide-react";
 import { toast } from "sonner";
 import { VoiceFordoMic } from "@/components/app/VoiceFordoMic";
 import { ScheduleFordoDialog } from "@/components/customer/ScheduleFordoDialog";
@@ -29,8 +29,7 @@ export default function CreateFordo() {
   const [step, setStep] = useState<1 | 2>(1);
   const [items, setItems] = useState<Item[]>([{ name: "", qty: "", unit: "" }]);
   const [note, setNote] = useState("");
-  const [phoneSearch, setPhoneSearch] = useState("");
-  const [nameSearch, setNameSearch] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
   const [searching, setSearching] = useState(false);
   const [results, setResults] = useState<Shop[]>([]);
   const [nearby, setNearby] = useState<Shop[]>([]);
@@ -41,6 +40,8 @@ export default function CreateFordo() {
   const [tplName, setTplName] = useState("");
   const [savingTpl, setSavingTpl] = useState(false);
   const [showSchedule, setShowSchedule] = useState(false);
+  const [favourites, setFavourites] = useState<Shop[]>([]);
+  const [favIds, setFavIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (!user) return;
@@ -53,7 +54,55 @@ export default function CreateFordo() {
         setProfile(data as never);
         void loadNearby(data as never);
       });
+    void loadFavourites();
   }, [user]);
+
+  const loadFavourites = async () => {
+    if (!user) return;
+    const { data: favRows } = await supabase
+      .from("consumer_favourite_shops")
+      .select("shop_id")
+      .eq("consumer_id", user.id);
+    const ids = (favRows ?? []).map((r) => r.shop_id as string);
+    setFavIds(new Set(ids));
+    if (ids.length === 0) {
+      setFavourites([]);
+      return;
+    }
+    const { data: ss } = await supabase
+      .from("shops")
+      .select("id,name,phone,logo_url,owner_id")
+      .in("id", ids)
+      .is("deleted_at", null);
+    setFavourites((ss ?? []) as Shop[]);
+  };
+
+  const toggleFavourite = async (shop: Shop) => {
+    if (!user) return toast.error("লগইন করুন");
+    if (favIds.has(shop.id)) {
+      const { error } = await supabase
+        .from("consumer_favourite_shops")
+        .delete()
+        .eq("consumer_id", user.id)
+        .eq("shop_id", shop.id);
+      if (error) return toast.error(error.message);
+      setFavIds((s) => {
+        const n = new Set(s);
+        n.delete(shop.id);
+        return n;
+      });
+      setFavourites((arr) => arr.filter((x) => x.id !== shop.id));
+      toast.success("প্রিয় তালিকা থেকে সরানো হয়েছে");
+    } else {
+      const { error } = await supabase
+        .from("consumer_favourite_shops")
+        .insert({ consumer_id: user.id, shop_id: shop.id } as never);
+      if (error) return toast.error(error.message);
+      setFavIds((s) => new Set(s).add(shop.id));
+      setFavourites((arr) => (arr.find((x) => x.id === shop.id) ? arr : [shop, ...arr]));
+      toast.success("✓ প্রিয় তালিকায় যোগ হয়েছে");
+    }
+  };
 
   // Preload template if ?templateId= is set
   useEffect(() => {
