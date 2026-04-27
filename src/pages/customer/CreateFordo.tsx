@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "@/lib/router";
+import { Link, useNavigate, useSearch } from "@/lib/router";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
@@ -7,8 +7,17 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Plus, Trash2, ArrowLeft, ArrowRight, Send, Search, Store, MapPin } from "lucide-react";
+import { Loader2, Plus, Trash2, ArrowLeft, ArrowRight, Send, Search, Store, MapPin, Save, CalendarClock } from "lucide-react";
 import { toast } from "sonner";
+import { VoiceFordoMic } from "@/components/app/VoiceFordoMic";
+import { ScheduleFordoDialog } from "@/components/customer/ScheduleFordoDialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 type Item = { name: string; qty: string; unit: string };
 type Shop = { id: string; name: string; phone: string; logo_url: string | null; owner_id: string };
@@ -16,6 +25,7 @@ type Shop = { id: string; name: string; phone: string; logo_url: string | null; 
 export default function CreateFordo() {
   const { user, session } = useAuth();
   const navigate = useNavigate();
+  const search = useSearch() as { templateId?: string };
   const [step, setStep] = useState<1 | 2>(1);
   const [items, setItems] = useState<Item[]>([{ name: "", qty: "", unit: "" }]);
   const [note, setNote] = useState("");
@@ -27,6 +37,10 @@ export default function CreateFordo() {
   const [loadingNearby, setLoadingNearby] = useState(true);
   const [sending, setSending] = useState(false);
   const [profile, setProfile] = useState<{ division: string | null; district: string | null; upazila: string | null } | null>(null);
+  const [showSaveTpl, setShowSaveTpl] = useState(false);
+  const [tplName, setTplName] = useState("");
+  const [savingTpl, setSavingTpl] = useState(false);
+  const [showSchedule, setShowSchedule] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -40,6 +54,31 @@ export default function CreateFordo() {
         void loadNearby(data as never);
       });
   }, [user]);
+
+  // Preload template if ?templateId= is set
+  useEffect(() => {
+    if (!user || !search.templateId) return;
+    const tplId = search.templateId;
+    void (async () => {
+      const { data } = await supabase
+        .from("consumer_fordo_templates")
+        .select("name,note,items")
+        .eq("id", tplId)
+        .eq("consumer_user_id", user.id)
+        .maybeSingle();
+      if (data) {
+        const tplItems = (data.items as Array<{ name?: string; qty?: string | number | null; unit?: string | null }> | null) ?? [];
+        const mapped: Item[] = tplItems.map((it) => ({
+          name: it.name ?? "",
+          qty: it.qty != null ? String(it.qty) : "",
+          unit: it.unit ?? "",
+        }));
+        if (mapped.length > 0) setItems(mapped);
+        if (data.note) setNote(data.note);
+        toast.success(`টেমপ্লেট "${data.name}" লোড হয়েছে`);
+      }
+    })();
+  }, [user, search.templateId]);
 
   const loadNearby = async (
     p: { division: string | null; district: string | null; upazila: string | null } | null,
@@ -182,6 +221,40 @@ export default function CreateFordo() {
 
       {step === 1 && (
         <Card className="space-y-3 p-4">
+          <div className="flex items-center justify-between gap-2">
+            <div>
+              <h2 className="text-base font-bold">পণ্যের তালিকা</h2>
+              <p className="text-[11px] text-muted-foreground">
+                মাইকে চাপ দিয়ে কথা বলে যোগ করুন
+              </p>
+            </div>
+            <VoiceFordoMic
+              onItems={(spoken) => {
+                setItems((cur) => {
+                  const next = [...cur];
+                  let idx = 0;
+                  for (const it of spoken) {
+                    const emptyAt = next.findIndex((r) => !r.name.trim());
+                    if (emptyAt >= 0 && idx === 0) {
+                      next[emptyAt] = {
+                        name: it.name,
+                        qty: it.qty ?? next[emptyAt].qty,
+                        unit: it.unit ?? next[emptyAt].unit,
+                      };
+                    } else {
+                      next.push({
+                        name: it.name,
+                        qty: it.qty ?? "",
+                        unit: it.unit ?? "",
+                      });
+                    }
+                    idx++;
+                  }
+                  return next;
+                });
+              }}
+            />
+          </div>
           {items.map((it, i) => (
             <div key={i} className="grid grid-cols-12 gap-2">
               <Input
@@ -221,8 +294,25 @@ export default function CreateFordo() {
             <Label>নোট (ইচ্ছাধীন)</Label>
             <Textarea value={note} onChange={(e) => setNote(e.target.value)} rows={2} placeholder="দোকানদারকে কোনো বার্তা?" />
           </div>
+          <div className="grid grid-cols-2 gap-2">
+            <Button variant="outline" size="sm" onClick={() => {
+              const valid = items.filter((it) => it.name.trim());
+              if (valid.length === 0) { toast.error("অন্তত একটি পণ্য যোগ করুন"); return; }
+              setTplName("");
+              setShowSaveTpl(true);
+            }}>
+              <Save className="mr-1 h-4 w-4" /> টেমপ্লেট সংরক্ষণ
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => {
+              const valid = items.filter((it) => it.name.trim());
+              if (valid.length === 0) { toast.error("অন্তত একটি পণ্য যোগ করুন"); return; }
+              setShowSchedule(true);
+            }}>
+              <CalendarClock className="mr-1 h-4 w-4" /> সময়সূচী সেট করুন
+            </Button>
+          </div>
           <Button className="w-full" onClick={goNext}>
-            পরবর্তী <ArrowRight className="ml-2 h-4 w-4" />
+            এখনই পাঠান (দোকান বাছাই) <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
         </Card>
       )}
@@ -291,6 +381,58 @@ export default function CreateFordo() {
           </Button>
         </div>
       )}
+
+      {/* Save template dialog */}
+      <Dialog open={showSaveTpl} onOpenChange={setShowSaveTpl}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>টেমপ্লেট হিসেবে সংরক্ষণ</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label>টেমপ্লেটের নাম</Label>
+            <Input
+              value={tplName}
+              onChange={(e) => setTplName(e.target.value)}
+              placeholder="যেমন: মাসিক বাজার"
+              maxLength={80}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowSaveTpl(false)}>বাতিল</Button>
+            <Button
+              disabled={savingTpl}
+              onClick={async () => {
+                const name = tplName.trim();
+                if (!name) return toast.error("একটি নাম দিন");
+                if (!user) return toast.error("লগইন করুন");
+                const validItems = items
+                  .filter((it) => it.name.trim())
+                  .map((it) => ({ name: it.name.trim(), qty: it.qty || null, unit: it.unit || null }));
+                setSavingTpl(true);
+                const { error } = await supabase.from("consumer_fordo_templates").insert({
+                  consumer_user_id: user.id,
+                  name,
+                  note: note || null,
+                  items: validItems,
+                } as never);
+                setSavingTpl(false);
+                if (error) return toast.error(error.message);
+                toast.success("টেমপ্লেট সংরক্ষণ করা হয়েছে");
+                setShowSaveTpl(false);
+              }}
+            >
+              {savingTpl ? <Loader2 className="h-4 w-4 animate-spin" /> : "সংরক্ষণ"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <ScheduleFordoDialog
+        open={showSchedule}
+        onOpenChange={setShowSchedule}
+        items={items}
+        note={note}
+      />
     </div>
   );
 }
