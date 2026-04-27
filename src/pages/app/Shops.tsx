@@ -54,7 +54,7 @@ function ShopsPage() {
     <div className="min-h-full bg-muted/30">
       <header className="flex items-center justify-between border-b bg-background px-4 py-3">
         <Link to="/app/dashboard" className="flex items-center gap-2">
-          <img src={logo} alt="" className="h-8 w-8" />
+          <img src={logo} alt="" className="h-8 w-8 object-contain" />
           <span className="text-lg font-extrabold">Tally Plus</span>
         </Link>
         <Button

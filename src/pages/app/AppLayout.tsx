@@ -189,7 +189,7 @@ function AppLayout() {
       <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-primary/30 to-background p-4">
         <div className="w-full max-w-sm rounded-3xl border bg-card p-6 shadow-xl">
           <div className="mb-4 flex items-center gap-2">
-            <img src={logo} alt="" className="h-8 w-8" />
+            <img src={logo} alt="" className="h-8 w-8 object-contain" />
             <span className="font-extrabold">{t("appName")}</span>
           </div>
           <h1 className="text-2xl font-bold">{t("setupShop")}</h1>
