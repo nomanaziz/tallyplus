@@ -1,7 +1,4 @@
-import { useEffect, useState } from "react";
-import { Mic, MicOff, X } from "lucide-react";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+import { Mic } from "lucide-react";
 import { useSpeechRecognition } from "@/lib/useSpeechRecognition";
 import { useMicLevel } from "@/lib/useMicLevel";
 import { toast } from "sonner";
@@ -22,25 +19,21 @@ const BN_DIGITS: Record<string, string> = {
 
 /** Spoken Bengali/English number words → numeric value. */
 const NUMBER_WORDS: Record<string, number> = {
-  // Bengali
   "এক": 1, "দুই": 2, "দুটি": 2, "দুটো": 2, "তিন": 3, "তিনটি": 3,
   "চার": 4, "চারটি": 4, "পাঁচ": 5, "পাচ": 5, "ছয়": 6, "সাত": 7,
   "আট": 8, "নয়": 9, "দশ": 10, "এগারো": 11, "বারো": 12,
   "আধা": 0.5, "অর্ধ": 0.5, "আধ": 0.5,
-  "দেড়": 1.5, "আড়াই": 2.5, "সাড়ে": 0.5, // "সাড়ে" is a modifier, handled below
-  // English (in case of mixed transcripts)
+  "দেড়": 1.5, "আড়াই": 2.5, "সাড়ে": 0.5,
   one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7,
   eight: 8, nine: 9, ten: 10, half: 0.5,
 };
 
-/** Common unit words → canonical short label. */
 const UNIT_WORDS: Array<{ re: RegExp; label: string; multiplier?: number }> = [
   { re: /^(কেজি|কিলো|কিলোগ্রাম|kg|kilo|kilogram)s?$/i, label: "কেজি" },
   { re: /^(গ্রাম|gm|gram)s?$/i, label: "গ্রাম" },
   { re: /^(লিটার|liter|litre|ltr|l)$/i, label: "লিটার" },
   { re: /^(মিলি|মিলিলিটার|ml)$/i, label: "মিলি" },
   { re: /^(পিস|পিছ|piece|pcs|pc)$/i, label: "পিস" },
-  // হালি/ডজন → খুচরা ক্রেতার ভাষা; সফটওয়্যার পিস হিসেবে কনভার্ট করবে
   { re: /^(হালি)$/i, label: "পিস", multiplier: 4 },
   { re: /^(ডজন|dozen)$/i, label: "পিস", multiplier: 12 },
   { re: /^(প্যাকেট|packet|pack|pkt)$/i, label: "প্যাকেট" },
@@ -69,7 +62,6 @@ function wordToNum(token: string): number | null {
   return null;
 }
 
-/** Parse one phrase like "এক কেজি চাল" → { qty: "1", unit: "কেজি", name: "চাল" }. */
 function parsePhrase(phrase: string): VoiceItem {
   const cleaned = normalizeDigits(phrase.trim()).replace(/\s+/g, " ");
   if (!cleaned) return { name: "" };
@@ -78,14 +70,12 @@ function parsePhrase(phrase: string): VoiceItem {
   let unit: string | null = null;
   let i = 0;
 
-  // Handle "সাড়ে <num>" prefix → 0.5 + num
   let halfBoost = 0;
   if (tokens[i] === "সাড়ে") {
     halfBoost = 0.5;
     i++;
   }
 
-  // Read up to 2 leading number tokens (e.g. "এক" "কেজি", or "1.5" "kg", or "দেড়")
   if (i < tokens.length) {
     const n = wordToNum(tokens[i]);
     if (n !== null) {
@@ -96,7 +86,6 @@ function parsePhrase(phrase: string): VoiceItem {
     }
   }
 
-  // Optional unit token immediately after qty
   if (i < tokens.length && qty !== null) {
     const u = matchUnit(tokens[i]);
     if (u) {
@@ -106,10 +95,7 @@ function parsePhrase(phrase: string): VoiceItem {
     }
   }
 
-  // Remaining tokens = product name
   const name = tokens.slice(i).join(" ").trim();
-
-  // If we couldn't extract a name (qty-only utterance), fall back to whole phrase
   if (!name) return { name: cleaned };
 
   return {
@@ -119,7 +105,6 @@ function parsePhrase(phrase: string): VoiceItem {
   };
 }
 
-/** Parse a free-form spoken text into individual product items with qty/unit. */
 function parseItems(raw: string): VoiceItem[] {
   if (!raw) return [];
   const parts = raw
@@ -130,143 +115,67 @@ function parseItems(raw: string): VoiceItem[] {
 }
 
 export function VoiceFordoMic({ onItems, className }: Props) {
-  const [open, setOpen] = useState(false);
-  const level = useMicLevel(open);
+  const { supported, listening, error, start, stop } = useSpeechRecognition({
+    lang: "bn-BD",
+    silenceTimeoutMs: 12000,
+    noSpeechTimeoutMs: 15000,
+    onFinal: (text) => {
+      const items = parseItems(text);
+      if (items.length > 0) {
+        onItems(items);
+        toast.success(`${items.length}টি পণ্য যোগ হয়েছে`);
+      } else {
+        toast.message("কিছু শোনা যায়নি — আবার চেষ্টা করুন");
+      }
+    },
+  });
 
-  const { supported, listening, transcript, error, start, stop } =
-    useSpeechRecognition({
-      lang: "bn-BD",
-      silenceTimeoutMs: 12000,
-      noSpeechTimeoutMs: 15000,
-      onFinal: (text) => {
-        const items = parseItems(text);
-        if (items.length > 0) {
-          onItems(items);
-          toast.success(`${items.length}টি পণ্য যোগ হয়েছে`);
-        }
-      },
-      onClose: () => {
-        setOpen(false);
-      },
-    });
-
-  // Start recognition automatically when modal opens
-  useEffect(() => {
-    if (open) {
-      // delay slightly so AudioContext can also init
-      const t = window.setTimeout(() => start(), 150);
-      return () => window.clearTimeout(t);
-    }
-    return;
-  }, [open, start]);
+  const level = useMicLevel(listening);
 
   const handleClick = () => {
     if (!supported) {
       toast.error("আপনার browser এ voice support নেই — Chrome ব্যবহার করুন");
       return;
     }
-    setOpen(true);
+    if (error) toast.error(error);
+    if (listening) {
+      stop();
+    } else {
+      start();
+    }
   };
-
-  const handleClose = () => {
-    stop();
-    setOpen(false);
-  };
-
-  // 14 animated bars
-  const bars = Array.from({ length: 14 }, (_, i) => {
-    // create a wave-like distribution centred in the middle
-    const center = 6.5;
-    const dist = Math.abs(i - center) / center; // 0 in middle, 1 at edges
-    const factor = 0.4 + (1 - dist) * 0.6;
-    const h = Math.max(0.08, level * factor);
-    return h;
-  });
 
   return (
-    <>
+    <div className={`relative inline-flex items-center justify-center ${className ?? ""}`}>
+      {listening && (
+        <>
+          <span
+            className="pointer-events-none absolute inset-0 rounded-full bg-destructive/30"
+            style={{
+              transform: `scale(${1.2 + level * 0.8})`,
+              transition: "transform 80ms linear",
+            }}
+            aria-hidden
+          />
+          <span
+            className="pointer-events-none absolute inset-0 animate-ping rounded-full bg-destructive/40"
+            aria-hidden
+          />
+        </>
+      )}
       <button
         type="button"
         onClick={handleClick}
-        className={`inline-flex h-11 w-11 flex-none items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md transition hover:bg-primary/90 active:scale-95 ${className ?? ""}`}
-        aria-label="কথা বলে পণ্য যোগ করুন"
-        title="কথা বলে পণ্য যোগ করুন"
+        className={`relative inline-flex h-11 w-11 flex-none items-center justify-center rounded-full shadow-md transition active:scale-95 ${
+          listening
+            ? "bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            : "bg-primary text-primary-foreground hover:bg-primary/90"
+        }`}
+        aria-label={listening ? "রেকর্ডিং বন্ধ করুন" : "কথা বলে পণ্য যোগ করুন"}
+        title={listening ? "রেকর্ডিং বন্ধ করুন (চুপ থাকলেও স্বয়ংক্রিয় বন্ধ হবে)" : "কথা বলে পণ্য যোগ করুন"}
       >
         <Mic className="h-5 w-5" />
       </button>
-
-      <Dialog open={open} onOpenChange={(v) => (v ? setOpen(true) : handleClose())}>
-        <DialogContent className="max-w-sm rounded-3xl p-0 sm:rounded-3xl">
-          <div className="relative flex flex-col items-center gap-4 p-6 pt-8">
-            <button
-              type="button"
-              onClick={handleClose}
-              className="absolute right-3 top-3 rounded-full p-1.5 text-muted-foreground hover:bg-accent"
-              aria-label="বন্ধ করুন"
-            >
-              <X className="h-4 w-4" />
-            </button>
-
-            <div className="relative flex h-24 w-24 items-center justify-center">
-              <span
-                className="absolute inset-0 rounded-full bg-primary/20"
-                style={{
-                  transform: `scale(${1 + level * 0.6})`,
-                  transition: "transform 80ms linear",
-                }}
-              />
-              <span
-                className="absolute inset-2 rounded-full bg-primary/30"
-                style={{
-                  transform: `scale(${1 + level * 0.3})`,
-                  transition: "transform 80ms linear",
-                }}
-              />
-              <div className="relative flex h-16 w-16 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg">
-                {listening ? <Mic className="h-7 w-7" /> : <MicOff className="h-7 w-7" />}
-              </div>
-            </div>
-
-            <div className="flex h-10 items-end gap-1">
-              {bars.map((h, i) => (
-                <span
-                  key={i}
-                  className="w-1.5 rounded-full bg-primary"
-                  style={{
-                    height: `${Math.max(8, h * 100)}%`,
-                    transition: "height 80ms linear",
-                    opacity: listening ? 1 : 0.3,
-                  }}
-                />
-              ))}
-            </div>
-
-            <div className="text-center">
-              <div className="text-sm font-semibold text-foreground">
-                {error
-                  ? error
-                  : listening
-                  ? transcript
-                    ? "শুনছি…"
-                    : "কিছু বলুন"
-                  : "শুরু হচ্ছে…"}
-              </div>
-              {transcript && (
-                <div className="mt-2 max-h-24 overflow-y-auto rounded-lg bg-muted/40 p-2 text-xs leading-relaxed text-muted-foreground">
-                  {transcript}
-                </div>
-              )}
-              <p className="mt-3 text-[11px] text-muted-foreground">
-                পণ্যগুলো comma বা "ও" দিয়ে আলাদা করে বলুন। প্রায় ১২ সেকেন্ড নীরব থাকলে স্বয়ংক্রিয়ভাবে বন্ধ হবে — অথবা নিচের বোতামে চাপুন।
-              </p>
-            </div>
-
-            <Button variant="outline" size="sm" onClick={handleClose} className="w-full">
-              বন্ধ করুন
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-    </>
+    </div>
   );
 }
