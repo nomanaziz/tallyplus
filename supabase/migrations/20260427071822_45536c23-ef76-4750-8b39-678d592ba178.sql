@@ -1,0 +1,1 @@
+ALTER TABLE public.consumer_profiles ADD COLUMN IF NOT EXISTS pin_hash text;

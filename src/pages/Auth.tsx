@@ -65,8 +65,8 @@ export default function AuthPage() {
   const validate = (): string | null => {
     const ph = normalizePhone(phone);
     if (!ph || ph.length < 10) return "সঠিক মোবাইল নম্বর দিন";
-    // PIN only required for owner accounts
-    if (role === "owner" && !/^\d{4}$/.test(pin)) return "৪ সংখ্যার PIN দিন";
+    // PIN required for both owner and customer accounts
+    if (!/^\d{4}$/.test(pin)) return "৪ সংখ্যার PIN দিন";
     if (mode === "signup") {
       if (name.trim().length < 2) return "আপনার নাম দিন";
       if (role === "owner" && shopName.trim().length < 2) return "দোকানের নাম দিন";
@@ -85,12 +85,6 @@ export default function AuthPage() {
     setLoading(true);
     try {
       const ph = normalizePhone(phone);
-      const digits = ph.replace(/\D/g, "");
-      // Customer accounts use a separate email namespace ("c" prefix) so
-      // the same phone number can have BOTH an owner and a customer account
-      // without colliding in auth.users.
-      const customerEmail = `c${digits}@tally.local`;
-      const customerPassword = `tpc_${digits}_pw`;
       if (mode === "signup") {
         if (role === "owner") {
           const r = await callFn("signup-with-pin", {
@@ -107,37 +101,17 @@ export default function AuthPage() {
           toast.success("Account তৈরি হয়েছে");
           navigate({ to: "/app/dashboard", replace: true });
         } else {
-          // Customer signup — separate email namespace so it never collides
-          // with the same phone's owner account.
-          const { error: signUpErr } = await supabase.auth.signUp({
-            email: customerEmail,
-            password: customerPassword,
-            options: {
-              emailRedirectTo: window.location.origin,
-              data: { full_name: name.trim(), account_type: "consumer" },
-            },
+          // Customer signup with PIN — uses dedicated edge function.
+          const r = await callFn("customer-signup-with-pin", {
+            phone: ph,
+            full_name: name.trim(),
+            pin,
           });
-          if (signUpErr) {
-            const msg = signUpErr.message.toLowerCase();
-            if (msg.includes("registered") || msg.includes("already")) {
-              return toast.error("এই নম্বরে গ্রাহক account আগে থেকেই আছে — লগইন করুন");
-            }
-            return toast.error(signUpErr.message);
+          if (!r.ok) {
+            if (r.error === "phone_exists") return toast.error("এই নম্বরে গ্রাহক account আছে — লগইন করুন");
+            return toast.error(r.error || "সাইনআপ ব্যর্থ");
           }
-          const { error: signInErr } = await supabase.auth.signInWithPassword({
-            email: customerEmail,
-            password: customerPassword,
-          });
-          if (signInErr) return toast.error("লগইন ব্যর্থ — আবার চেষ্টা করুন");
-          // Save phone + name on consumer_profiles
-          const { data: u } = await supabase.auth.getUser();
-          if (u.user) {
-            await supabase.from("consumer_profiles").upsert({
-              id: u.user.id,
-              name: name.trim(),
-              phone: ph,
-            });
-          }
+          await setSession(r.access_token, r.refresh_token);
           toast.success("Customer account তৈরি");
           navigate({ to: "/customer/dashboard", replace: true });
         }
@@ -154,13 +128,14 @@ export default function AuthPage() {
           toast.success("লগইন সফল");
           navigate({ to: "/app/dashboard", replace: true });
         } else {
-          const { error: signInErr } = await supabase.auth.signInWithPassword({
-            email: customerEmail,
-            password: customerPassword,
-          });
-          if (signInErr) {
-            return toast.error("এই নম্বরে গ্রাহক account নেই — সাইনআপ করুন");
+          const r = await callFn("customer-login-with-pin", { phone: ph, pin });
+          if (!r.ok) {
+            if (r.error === "wrong_pin") return toast.error("ভুল PIN");
+            if (r.error === "no_account") return toast.error("এই নম্বরে গ্রাহক account নেই — সাইনআপ করুন");
+            if (r.error === "no_pin_set") return toast.error("PIN সেট নেই — WhatsApp এ সাহায্য নিন");
+            return toast.error(r.error || "লগইন ব্যর্থ");
           }
+          await setSession(r.access_token, r.refresh_token);
           toast.success("লগইন সফল");
           navigate({ to: "/customer/dashboard", replace: true });
         }
@@ -205,16 +180,14 @@ export default function AuthPage() {
               placeholder="মোবাইল নম্বর"
               inputMode="tel"
             />
-            {role === "owner" && (
-              <Input
-                value={pin}
-                onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 4))}
-                placeholder="৪ সংখ্যার PIN"
-                inputMode="numeric"
-                maxLength={4}
-                type="password"
-              />
-            )}
+            <Input
+              value={pin}
+              onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 4))}
+              placeholder="৪ সংখ্যার PIN"
+              inputMode="numeric"
+              maxLength={4}
+              type="password"
+            />
             <Button onClick={handleSubmit} disabled={loading} className="w-full">
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               লগইন
@@ -263,16 +236,14 @@ export default function AuthPage() {
               placeholder="মোবাইল নম্বর"
               inputMode="tel"
             />
-            {role === "owner" && (
-              <Input
-                value={pin}
-                onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 4))}
-                placeholder="৪ সংখ্যার PIN"
-                inputMode="numeric"
-                maxLength={4}
-                type="password"
-              />
-            )}
+            <Input
+              value={pin}
+              onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 4))}
+              placeholder="৪ সংখ্যার PIN"
+              inputMode="numeric"
+              maxLength={4}
+              type="password"
+            />
             <Button onClick={handleSubmit} disabled={loading} className="w-full">
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Account তৈরি করুন
