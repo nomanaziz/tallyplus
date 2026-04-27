@@ -371,6 +371,12 @@ function ContactsPage() {
         onCustomRoleCreated={() => qc.invalidateQueries({ queryKey: ["shop", "custom_roles", current?.id] })}
         onSaved={refresh}
       />
+
+      <DueReminderDialog
+        open={reminderOpen}
+        onOpenChange={setReminderOpen}
+        customer={selected && tab === "customers" ? { id: selected.id, name: selected.name, phone: selected.phone, due_balance: Number(selected.due_balance || 0) } : null}
+      />
     </div>
   );
 }
