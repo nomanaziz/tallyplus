@@ -73,14 +73,15 @@ export default function CustomerLayout() {
                 </Button>
               </div>
             </div>
-            <div className="mt-4">
-              <AdSlot slotKey="customer_sidebar" />
-            </div>
           </aside>
 
           <section className="min-w-0">
-            <AdSlot slotKey="customer_top" />
             <Outlet />
+            {/* Small ad at bottom of the consumer area. Only renders for
+                logged-in consumers; never for paid subscribers. */}
+            <div className="mx-auto mt-6 max-w-md">
+              <AdSlot slotKey="customer_inline" className="text-xs" />
+            </div>
           </section>
         </div>
       </main>
