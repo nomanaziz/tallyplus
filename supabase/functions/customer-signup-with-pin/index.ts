@@ -64,7 +64,9 @@ Deno.serve(async (req) => {
     });
     if (createErr || !created.user) {
       console.error("createUser error:", createErr);
-      return json({ error: createErr?.message ?? "Failed to create user" }, 500);
+      const msg = createErr?.message ?? "Failed to create user";
+      if (/rate limit/i.test(msg)) return json({ error: "rate_limit" }, 429);
+      return json({ error: msg }, 500);
     }
     const userId = created.user.id;
 
