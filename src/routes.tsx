@@ -91,6 +91,7 @@ const P80 = lazy(() => import("./pages/customer/Dashboard"));
 const P81 = lazy(() => import("./pages/customer/Notes"));
 const P82 = lazy(() => import("./pages/customer/Money"));
 const P83 = lazy(() => import("./pages/customer/MyFordo"));
+const P84 = lazy(() => import("./pages/admin/PaymentAttempts"));
 
 export function AppRoutes() {
   return (
@@ -107,6 +108,7 @@ export function AppRoutes() {
       <Route path="usage-limits" element={<S><P75 /></S>} />
       <Route path="promo-popups" element={<S><P76 /></S>} />
       <Route path="payment-gateway" element={<S><P77 /></S>} />
+      <Route path="payment-attempts" element={<S><P84 /></S>} />
       <Route path="settings" element={<S><P7 /></S>} />
       <Route path="shop-types" element={<S><P8 /></S>} />
       <Route path="subscription-requests" element={<S><P9 /></S>} />
