@@ -45,6 +45,12 @@ const UNIT_WORDS: Array<{ re: RegExp; label: string; multiplier?: number }> = [
   { re: /^(ফুট|foot|feet|ft)$/i, label: "ফুট" },
 ];
 
+/**
+ * Trailing one-piece markers like "একটি / একটা / একটিও" after a name
+ * (e.g. "সয়াবিন তেল একটি"). When seen at the end of an item, treat as qty=1 unit=পিস.
+ */
+const TRAILING_ONE_PIECE = /^(একটি|একটা|একখানা|একটিও)$/;
+
 function normalizeDigits(s: string): string {
   return s.replace(/[০-৯]/g, (c) => BN_DIGITS[c] ?? c);
 }

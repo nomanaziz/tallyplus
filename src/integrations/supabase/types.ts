@@ -818,6 +818,105 @@ export type Database = {
         }
         Relationships: []
       }
+      consumer_fordo_schedules: {
+        Row: {
+          consumer_user_id: string
+          created_at: string
+          day_of_month: number | null
+          day_of_week: number | null
+          id: string
+          is_active: boolean
+          items: Json
+          last_run_at: string | null
+          next_run_at: string
+          note: string | null
+          recurrence: string
+          run_at: string | null
+          shop_id: string
+          template_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          consumer_user_id: string
+          created_at?: string
+          day_of_month?: number | null
+          day_of_week?: number | null
+          id?: string
+          is_active?: boolean
+          items?: Json
+          last_run_at?: string | null
+          next_run_at: string
+          note?: string | null
+          recurrence: string
+          run_at?: string | null
+          shop_id: string
+          template_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          consumer_user_id?: string
+          created_at?: string
+          day_of_month?: number | null
+          day_of_week?: number | null
+          id?: string
+          is_active?: boolean
+          items?: Json
+          last_run_at?: string | null
+          next_run_at?: string
+          note?: string | null
+          recurrence?: string
+          run_at?: string | null
+          shop_id?: string
+          template_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "consumer_fordo_schedules_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "consumer_fordo_schedules_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "consumer_fordo_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      consumer_fordo_templates: {
+        Row: {
+          consumer_user_id: string
+          created_at: string
+          id: string
+          items: Json
+          name: string
+          note: string | null
+          updated_at: string
+        }
+        Insert: {
+          consumer_user_id: string
+          created_at?: string
+          id?: string
+          items?: Json
+          name: string
+          note?: string | null
+          updated_at?: string
+        }
+        Update: {
+          consumer_user_id?: string
+          created_at?: string
+          id?: string
+          items?: Json
+          name?: string
+          note?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       consumer_notes: {
         Row: {
           content: string | null
