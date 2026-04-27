@@ -400,6 +400,31 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
         onAdded={(p) => { void loadProducts(); addToCart(p); }}
       />
 
+      <SerialPickDialog
+        open={serialPick !== null}
+        onOpenChange={(v) => { if (!v) setSerialPick(null); }}
+        productId={serialPick?.id ?? null}
+        productName={serialPick?.name ?? ""}
+        excludeSerialIds={cart.map((c) => c.serial_id).filter((x): x is string => !!x)}
+        onPicked={(s) => {
+          if (!serialPick) return;
+          const p = serialPick;
+          const base = Number(p.sale_price);
+          setCart((prev) => [...prev, {
+            product_id: p.id,
+            name: `${p.name} • ${s.serial_no}`,
+            qty: 1,
+            price: base,
+            sale_price: base,
+            is_serialized: true,
+            serial_id: s.id,
+            serial_no: s.serial_no,
+          }]);
+          setSerialPick(null);
+          toast.success(p.name + " • " + s.serial_no, { duration: 1200 });
+        }}
+      />
+
       <PaymentDialog
         open={cashOpen}
         onClose={() => setCashOpen(false)}
