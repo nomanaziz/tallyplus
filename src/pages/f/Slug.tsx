@@ -3,10 +3,12 @@ import { Link, useParams, useSearch } from "@/lib/router";
 import { Loader2, Plus, Send, Trash2, Check, X, Copy, MessageCircle, History, KeyRound, Settings2, Wifi, WifiOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { CatalogProductPicker, type CatalogProduct } from "@/components/app/CatalogProductPicker";
+import { SiteHeader } from "@/components/site/SiteHeader";
+import { SiteFooter } from "@/components/site/SiteFooter";
+import { VoiceFordoMic } from "@/components/app/VoiceFordoMic";
 
 type SearchParams = { reuse?: string; tpl?: string };
 
@@ -219,7 +221,6 @@ function PublicWishlistPage() {
   const reset = () => {
     setName("");
     setPhone("");
-    setAddress("");
     setNote("");
     setPinInput("");
     setIssuedPin(null);
@@ -229,20 +230,28 @@ function PublicWishlistPage() {
 
   if (loadingShop) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-muted/30">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      <div className="flex min-h-screen flex-col bg-muted/30">
+        <SiteHeader />
+        <div className="flex flex-1 items-center justify-center">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        </div>
+        <SiteFooter />
       </div>
     );
   }
 
   if (shopError) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-muted/30 p-6">
-        <div className="max-w-sm rounded-2xl border bg-card p-6 text-center shadow-sm">
-          <X className="mx-auto h-10 w-10 text-destructive" />
-          <h1 className="mt-3 text-lg font-bold">লিঙ্কটি পাওয়া যায়নি</h1>
-          <p className="mt-1 text-sm text-muted-foreground">{shopError}</p>
-        </div>
+      <div className="flex min-h-screen flex-col bg-muted/30">
+        <SiteHeader />
+        <main className="flex flex-1 items-center justify-center p-6">
+          <div className="max-w-sm rounded-2xl border bg-card p-6 text-center shadow-sm">
+            <X className="mx-auto h-10 w-10 text-destructive" />
+            <h1 className="mt-3 text-lg font-bold">লিঙ্কটি পাওয়া যায়নি</h1>
+            <p className="mt-1 text-sm text-muted-foreground">{shopError}</p>
+          </div>
+        </main>
+        <SiteFooter />
       </div>
     );
   }
@@ -264,7 +273,9 @@ function PublicWishlistPage() {
       window.open(`https://wa.me/?text=${msg}`, "_blank");
     };
     return (
-      <div className="flex min-h-screen items-center justify-center bg-muted/30 p-4">
+      <div className="flex min-h-screen flex-col bg-muted/30">
+        <SiteHeader />
+        <main className="flex flex-1 items-center justify-center p-4">
         <div className="w-full max-w-sm rounded-2xl border bg-card p-6 text-center shadow-sm">
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-success/15 text-success">
             <Check className="h-7 w-7" />
@@ -320,12 +331,16 @@ function PublicWishlistPage() {
             নতুন ফর্দ শুরু করুন
           </Button>
         </div>
+        </main>
+        <SiteFooter />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-muted/30 pb-32">
+    <div className="flex min-h-screen flex-col bg-muted/30">
+      <SiteHeader />
+      <main className="flex-1 pb-32">
       <div className="mx-auto max-w-md px-4 pt-6">
         {/* Shop header */}
         <div className="mb-3 flex items-center gap-3">
@@ -372,50 +387,37 @@ function PublicWishlistPage() {
 
         {/* Card */}
         <div className={`rounded-3xl border bg-card p-5 shadow-sm ring-1 ${palette.bg} ${palette.ring}`}>
-          <h2 className="text-base font-bold">আপনার তথ্য</h2>
-          <div className="mt-3 space-y-3">
-            <div>
-              <Label htmlFor="cn">আপনার নাম</Label>
-              <Input id="cn" value={name} onChange={(e) => setName(e.target.value)} placeholder="যেমন: করিম" className="h-11 bg-background/70" maxLength={80} />
-            </div>
-            <div>
-              <Label htmlFor="cp">মোবাইল নাম্বার</Label>
-              <Input id="cp" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="01XXXXXXXXX" className="h-11 bg-background/70" maxLength={20} />
-            </div>
-            <div>
-              <Label htmlFor="cpin">
-                {hasExistingProfile ? "আপনার PIN" : "নতুন PIN তৈরি করুন"} <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                id="cpin"
-                inputMode="numeric"
-                value={pinInput}
-                onChange={(e) => setPinInput(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                placeholder="৪-৬ digit PIN"
-                className="h-11 bg-background/70 tracking-[0.3em] tabular-nums"
-                maxLength={6}
+          {/* Products first — main focus */}
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <h2 className="text-base font-bold">পণ্যের তালিকা</h2>
+              <VoiceFordoMic
+                onItems={(spoken) => {
+                  setItems((cur) => {
+                    // fill empty rows first, then append
+                    const next = [...cur];
+                    let idx = 0;
+                    for (const text of spoken) {
+                      const emptyAt = next.findIndex((r) => !r.name.trim());
+                      if (emptyAt >= 0 && idx === 0) {
+                        next[emptyAt] = { ...next[emptyAt], name: text };
+                      } else {
+                        next.push({ id: newId(), name: text, qty: "", unit: "", price: "" });
+                      }
+                      idx++;
+                    }
+                    return next;
+                  });
+                }}
               />
-              <p className="mt-1 text-[11px] text-muted-foreground">
-                {hasExistingProfile
-                  ? "এই নাম্বারে আগে ফর্দ পাঠিয়েছেন — পুরোনো PIN-টিই দিন।"
-                  : "এই PIN ও মোবাইল নাম্বার দিয়ে পরে আপনি নিজের সব ফর্দ ও নোট দেখতে পারবেন। মনে রাখুন বা সংরক্ষণ করুন।"}
-              </p>
             </div>
-            <div>
-              <Label htmlFor="ca">ঠিকানা (ইচ্ছাধীন)</Label>
-              <Input id="ca" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="বাসা / এলাকা" className="h-11 bg-background/70" maxLength={200} />
-            </div>
-          </div>
-
-          <div className="mt-6 flex items-center justify-between">
-            <h2 className="text-base font-bold">পণ্যের তালিকা</h2>
             <button
               type="button"
               onClick={() => setSimpleMode((v) => !v)}
               className="inline-flex items-center gap-1 rounded-full border bg-background/70 px-2.5 py-1 text-[11px] font-semibold text-muted-foreground hover:bg-background"
             >
               <Settings2 className="h-3 w-3" />
-              {simpleMode ? "বিস্তারিত mode" : "সহজ mode"}
+              {simpleMode ? "বিস্তারিত" : "সহজ"}
             </button>
           </div>
 
@@ -515,13 +517,12 @@ function PublicWishlistPage() {
           </p>
 
           <div className="mt-5">
-            <Label htmlFor="nt">নোট (ইচ্ছাধীন)</Label>
             <textarea
               id="nt"
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              placeholder="অতিরিক্ত নির্দেশনা থাকলে লিখুন"
-              className="mt-1 min-h-[72px] w-full rounded-md border bg-background/70 p-2 text-sm"
+              placeholder="নোট (ইচ্ছাধীন) — অতিরিক্ত নির্দেশনা থাকলে লিখুন"
+              className="min-h-[64px] w-full rounded-md border bg-background/70 p-2 text-sm"
               maxLength={500}
             />
           </div>
@@ -540,11 +541,45 @@ function PublicWishlistPage() {
               ))}
             </div>
           </div>
+
+          {/* Compact customer info — at the very bottom, placeholders only */}
+          <div className="mt-6 border-t pt-4">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+              <Input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="আপনার নাম"
+                className="h-10 bg-background/70"
+                maxLength={80}
+              />
+              <Input
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="মোবাইল নাম্বার"
+                className="h-10 bg-background/70"
+                maxLength={20}
+              />
+              <Input
+                inputMode="numeric"
+                value={pinInput}
+                onChange={(e) => setPinInput(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                placeholder={hasExistingProfile ? "আপনার PIN" : "নতুন PIN (৪-৬ digit)"}
+                className="h-10 bg-background/70 tracking-[0.3em] tabular-nums"
+                maxLength={6}
+              />
+            </div>
+            <p className="mt-2 text-[11px] text-muted-foreground">
+              {hasExistingProfile
+                ? "এই নাম্বারে আগে ফর্দ পাঠিয়েছেন — পুরোনো PIN-টিই দিন।"
+                : "PIN ও মোবাইল দিয়ে পরে আপনার সব ফর্দ দেখতে পারবেন।"}
+            </p>
+          </div>
         </div>
       </div>
 
       {/* Sticky submit */}
-      <div className="fixed inset-x-0 bottom-0 border-t bg-background/95 p-3 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+      <div className="fixed inset-x-0 bottom-0 z-30 border-t bg-background/95 p-3 backdrop-blur supports-[backdrop-filter]:bg-background/80">
         <div className="mx-auto max-w-md">
           <Button onClick={submit} disabled={submitting} className="h-12 w-full text-base font-semibold">
             {submitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
@@ -552,6 +587,8 @@ function PublicWishlistPage() {
           </Button>
         </div>
       </div>
+      </main>
+      <SiteFooter />
     </div>
   );
 }
