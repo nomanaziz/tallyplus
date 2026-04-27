@@ -9,6 +9,8 @@ import { toast } from "sonner";
 import { Loader2, MessageCircle } from "lucide-react";
 import { SiteHeader } from "@/components/site/SiteHeader";
 import { SiteFooter } from "@/components/site/SiteFooter";
+import { ShopTypePicker } from "@/components/app/ShopTypePicker";
+import { Sparkles } from "lucide-react";
 
 type Mode = "login" | "signup";
 type Role = "owner" | "customer";
@@ -42,14 +44,18 @@ export default function AuthPage() {
   const [role, setRole] = useState<Role>("owner");
   const [name, setName] = useState("");
   const [shopName, setShopName] = useState("");
+  const [shopTypeCode, setShopTypeCode] = useState<string | null>(null);
   const [phone, setPhone] = useState("");
   const [pin, setPin] = useState("");
   const [loading, setLoading] = useState(false);
   const [adminPhone, setAdminPhone] = useState(ADMIN_WA);
+  const [postSignup, setPostSignup] = useState<null | "owner">(null);
 
   useEffect(() => {
+    // Don't auto-redirect while we're showing the post-signup sample-import prompt
+    if (postSignup) return;
     if (session?.user) navigate({ to: "/app/dashboard", replace: true });
-  }, [session, navigate]);
+  }, [session, navigate, postSignup]);
 
   useEffect(() => {
     void supabase
@@ -69,7 +75,10 @@ export default function AuthPage() {
     if (!/^\d{4}$/.test(pin)) return "৪ সংখ্যার PIN দিন";
     if (mode === "signup") {
       if (name.trim().length < 2) return "আপনার নাম দিন";
-      if (role === "owner" && shopName.trim().length < 2) return "দোকানের নাম দিন";
+      if (role === "owner") {
+        if (shopName.trim().length < 2) return "দোকানের নাম দিন";
+        if (!shopTypeCode) return "দোকানের ধরন বাছাই করুন";
+      }
     }
     return null;
   };
@@ -91,15 +100,17 @@ export default function AuthPage() {
             phone: ph,
             full_name: name.trim(),
             shop_name: shopName.trim(),
+            shop_type_code: shopTypeCode,
             pin,
           });
           if (!r.ok) {
             if (r.error === "phone_exists") return toast.error("এই নম্বরে account আছে — লগইন করুন");
+            if (r.error === "rate_limit") return toast.error("একটু পরে আবার চেষ্টা করুন (সার্ভার ব্যস্ত)");
             return toast.error(r.error || "সাইনআপ ব্যর্থ");
           }
           await setSession(r.access_token, r.refresh_token);
           toast.success("Account তৈরি হয়েছে");
-          navigate({ to: "/app/dashboard", replace: true });
+          setPostSignup("owner");
         } else {
           // Customer signup with PIN — uses dedicated edge function.
           const r = await callFn("customer-signup-with-pin", {
@@ -109,6 +120,7 @@ export default function AuthPage() {
           });
           if (!r.ok) {
             if (r.error === "phone_exists") return toast.error("এই নম্বরে গ্রাহক account আছে — লগইন করুন");
+            if (r.error === "rate_limit") return toast.error("একটু পরে আবার চেষ্টা করুন (সার্ভার ব্যস্ত)");
             return toast.error(r.error || "সাইনআপ ব্যর্থ");
           }
           await setSession(r.access_token, r.refresh_token);
@@ -158,6 +170,39 @@ export default function AuthPage() {
     <div className="flex min-h-screen flex-col bg-background">
       <SiteHeader />
       <main className="flex flex-1 items-center justify-center px-4 py-8">
+      {postSignup === "owner" ? (
+        <div className="w-full max-w-sm space-y-5 rounded-2xl border bg-card p-6 shadow-xl">
+          <div className="flex flex-col items-center gap-2 text-center">
+            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
+              <Sparkles className="h-7 w-7 text-primary" />
+            </div>
+            <h2 className="text-xl font-bold">Account তৈরি হয়েছে! 🎉</h2>
+            <p className="text-sm text-muted-foreground">
+              আপনার দোকানের জন্য কিছু sample product import করব?
+            </p>
+          </div>
+          <div className="space-y-2">
+            <Button
+              className="h-12 w-full text-base font-semibold"
+              onClick={() => {
+                try {
+                  localStorage.setItem("pending_sample_import", "1");
+                } catch { /* ignore */ }
+                navigate({ to: "/app/dashboard", replace: true });
+              }}
+            >
+              হ্যাঁ, import করুন
+            </Button>
+            <Button
+              variant="outline"
+              className="h-12 w-full text-base"
+              onClick={() => navigate({ to: "/app/dashboard", replace: true })}
+            >
+              না, আমি নিজে যোগ করব
+            </Button>
+          </div>
+        </div>
+      ) : (
       <div className="w-full max-w-sm space-y-5 rounded-2xl border bg-card p-6 shadow-sm">
         <div className="text-center">
           <h1 className="text-2xl font-bold">Tally Plus</h1>
@@ -224,11 +269,19 @@ export default function AuthPage() {
               placeholder="আপনার নাম"
             />
             {role === "owner" && (
-              <Input
-                value={shopName}
-                onChange={(e) => setShopName(e.target.value)}
-                placeholder="দোকানের নাম"
-              />
+              <>
+                <Input
+                  value={shopName}
+                  onChange={(e) => setShopName(e.target.value)}
+                  placeholder="দোকানের নাম"
+                />
+                <ShopTypePicker
+                  value={shopTypeCode}
+                  onChange={(code) => setShopTypeCode(code)}
+                  lang="bn"
+                  label="দোকানের ধরন"
+                />
+              </>
             )}
             <Input
               value={phone}
@@ -262,6 +315,7 @@ export default function AuthPage() {
           <Link to="/" className="hover:underline">হোমে ফিরুন</Link>
         </div>
       </div>
+      )}
       </main>
       <SiteFooter />
     </div>

@@ -16,6 +16,7 @@ import { ShopTypePicker } from "@/components/app/ShopTypePicker";
 import { MobileBottomNav } from "@/components/app/MobileBottomNav";
 import { MobileBackBar } from "@/components/app/MobileBackBar";
 import { PromoPopupDialog } from "@/components/app/PromoPopupDialog";
+import { SampleProductImportSheet } from "@/components/app/SampleProductImportSheet";
 
 // SettingsSheet is heavy (329 lines + many imports) and only opens on demand.
 // Lazy-load to keep the app shell bundle small.
@@ -51,6 +52,18 @@ function AppLayout() {
   const [shopTypeCode, setShopTypeCode] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [sampleImportOpen, setSampleImportOpen] = useState(false);
+
+  // Auto-open sample-product import sheet if user opted in at signup time.
+  useEffect(() => {
+    if (!user || shopsLoading || shops.length === 0) return;
+    try {
+      if (localStorage.getItem("pending_sample_import") === "1") {
+        localStorage.removeItem("pending_sample_import");
+        setSampleImportOpen(true);
+      }
+    } catch { /* ignore */ }
+  }, [user, shops.length, shopsLoading]);
 
   useEffect(() => {
     if (!loading && !user) nav({ to: "/auth" });
@@ -221,6 +234,11 @@ function AppLayout() {
           </Suspense>
         )}
         <PromoPopupDialog />
+        <SampleProductImportSheet
+          open={sampleImportOpen}
+          onOpenChange={setSampleImportOpen}
+          onImported={() => setSampleImportOpen(false)}
+        />
       </div>
     </div>
   );

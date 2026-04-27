@@ -1,74 +1,64 @@
-## Goal
+## সমস্যা ও সমাধান
 
-Make subscription purchase flow support **two clear modes** (Pay Online via Recharge Server, Pay Manually via admin-configured methods like bKash/Nagad), fix the failed-callback "Page Not Found" issue, and give Admin a log of failed/cancelled payment attempts so they can follow up with customers.
+### সমস্যা ১: "Email rate limit exceeded" error owner signup এ
 
----
+**কারণ:** `signup-with-pin` edge function `admin.auth.admin.createUser()` কল করে যেখানে `email_confirm: true` এবং `phone_confirm: true` পাঠানো হচ্ছে। Supabase project এ default SMTP enabled থাকলে এটা confirmation/notification email পাঠানোর চেষ্টা করে — Supabase free SMTP এর rate limit (~3-4 emails/hour) অতিক্রম হলে এই error আসে। গ্রাহক signup function এ `phone_confirm` পাঠানো হয় না বলে সেটায় কম সমস্যা হয়।
 
-## 1. Fix the "Page Not Found" on `/app/subscribe/callback`
+**ফিক্স:**
+1. `signup-with-pin` এবং `customer-signup-with-pin` দুটোতে `createUser()` call refactor করা — এমন কিছু না পাঠানো যা email পাঠানোর trigger করে। শুধু `email_confirm: true` রেখে `phone` field সম্পূর্ণ বাদ দেওয়া (phone শুধু `profiles.phone` এ store করা হবে, auth.users এ না — যাতে Supabase কোনো phone OTP/notification পাঠানোর চেষ্টা না করে)।
+2. Email format এ noreply-ish unique domain ব্যবহার করা যাতে duplicate detection trigger না হয়।
+3. error message handling improve করা যাতে user friendly Bangla message দেখায় ("কিছুক্ষণ পর আবার চেষ্টা করুন" — rate limit এর জন্য)।
 
-**Root cause:** The route `/app/subscribe/callback` exists in `src/routes.tsx` (line 170), so it works in preview. The published site (`tallyplus.lovable.app`) returns a hard 404 because the published deployment is stale (every `/app/*` path returns 404 on the published domain right now). The user needs to **republish** the project after these changes go in. No code change is needed for the route itself, but we will harden the callback page to gracefully handle missing/extra query parameters from Recharge Server.
+### সমস্যা ২: Owner signup এ shop type এবং sample product import জিজ্ঞেস না করা
 
-Additionally, in `SubscribeCallback.tsx`:
-- Always log the attempt outcome (success / cancel / failed) into `payment_transactions` even if `local_id` is missing — fall back to looking up by `transactionId`.
-- After 3 seconds on success, auto-redirect to `/app/dashboard`.
-- Show an "Admin notified — they may contact you" line on failure so the user knows it's not silent.
+বর্তমানে owner signup form এ শুধু: নাম, দোকানের নাম, ফোন, PIN। Shop type পরে `AppLayout` এ আলাদা "Setup shop" screen এ আসে। User চান এটা signup এর সাথেই integrated হোক।
 
----
+**ফিক্স:** Owner signup কে **2-step flow** এ পরিবর্তন:
 
-## 2. Subscribe page UI: clear Online vs Manual choice
+```text
+Step 1: নাম, দোকানের নাম, দোকানের ধরন (ShopTypePicker)
+        ফোন, ৪-সংখ্যার PIN
+        [Account তৈরি করুন]
+                ↓
+Step 2 (signup এর পর শেষে দেখাবে):
+        "✨ Sample products import করবেন?"
+        - হ্যাঁ → SampleProductImportSheet খুলবে (shop type অনুযায়ী)
+        - না, আমি নিজে যোগ করব → Direct dashboard
+```
 
-Refactor `src/pages/app/Subscribe.tsx`:
+এর ফলে `AppLayout` এর "Setup shop" screen আর দেখাবে না (কারণ shop ইতিমধ্যে signup এ তৈরি হয়ে গেছে)।
 
-- After clicking a paid plan, **always** show a step-2 section with two big buttons:
-  1. **Pay Online (Card / bKash / Nagad / Rocket)** — only shown if `payment_gateway_settings.is_enabled = true`. Triggers `recharge-create-payment` → redirects to Recharge Server.
-  2. **Manual Payment** — always available. Reveals the existing list of admin-configured `payment_methods` (bKash / Nagad / Bank etc.) with copy buttons, transaction-ID input, and submit-for-verification flow (already exists, just gate it behind this button).
+## কারিগরি পরিবর্তন
 
-This removes the current "auto-redirect to gateway when enabled" behaviour so the user can always choose manual even when the gateway is on.
+### Edge Functions
+- `supabase/functions/signup-with-pin/index.ts`:
+  - `createUser()` থেকে `phone` parameter সরানো (rate limit এড়াতে)
+  - `shop_type_code` parameter accept করা এবং `shops` insert এ ব্যবহার করা
+  - Shop create এর পর shop_type এর `default_categories` seed করা (যেমন AppLayout করে)
+  - Rate limit error detect করে friendly response: `{ error: "rate_limit" }`
+- `supabase/functions/customer-signup-with-pin/index.ts`:
+  - একই rate-limit safe pattern apply করা
 
----
+### Frontend (`src/pages/Auth.tsx`)
+- Owner signup tab এ `ShopTypePicker` component যোগ করা (নাম + দোকানের নাম এর পরে)
+- Validation: shop type required for owner signup
+- `signup-with-pin` কল এ `shop_type_code` পাঠানো
+- Signup success এর পর: state update করে inline "Sample import করবেন?" prompt দেখানো (২টা button: হ্যাঁ / না)
+  - হ্যাঁ → `localStorage` flag set + dashboard এ navigate (dashboard বা AppLayout flag দেখে SampleProductImportSheet auto-open করবে)
+  - না → direct dashboard
+- "Email rate limit" error এর জন্য Bangla message: "একটু পরে আবার চেষ্টা করুন (rate limit)"
 
-## 3. Log every payment attempt (success, cancel, failed)
+### `src/pages/app/AppLayout.tsx`
+- "Setup shop" screen (lines 174-200) সরানো — shop এখন signup এই তৈরি হয়
+- যদি কোনো legacy user shop ছাড়া থাকে, fallback হিসাবে `/auth` এ redirect না করে একটা ছোট "দোকান তৈরি করুন" button দেখানো যা existing flow এ যাবে (edge case)
+- Mount এ `localStorage` থেকে `pending_sample_import` flag check করে SampleProductImportSheet auto-open
 
-The `payment_transactions` table already exists and is written to by `recharge-create-payment` (status `pending`) and updated by `recharge-verify-payment`. Two changes:
+### Database
+কোনো schema change দরকার নেই — `shops.shop_type_code`, `shop_types.default_categories` ইতিমধ্যে আছে।
 
-- **`recharge-verify-payment`** already updates the row to `completed` / `pending` / `failed`. Extend it to also store `payment_method`, `paid_amount`, `payment_fee`, and `failure_reason` (cancel vs failed vs unverified) into `raw_response` so the admin log is rich.
-- **`SubscribeCallback.tsx`**: when status is `cancel` or `failed` and we reach the page, always invoke `recharge-verify-payment` so the row gets a final terminal status (today it only does so when `transactionId` is present — make this robust and fall back to marking the local row `failed` via a small helper edge function `recharge-mark-failed` when no `transactionId` is returned).
+## ফলাফল
 
-**New migration:** add `failure_reason text` and `payment_method text` columns to `payment_transactions` if they don't already exist. Index `(status, created_at desc)` for the admin log view.
-
----
-
-## 4. New Admin page: Payment Attempts Log
-
-Add `src/pages/admin/PaymentAttempts.tsx` and route `/admin/payment-attempts`:
-
-- Table listing every `payment_transactions` row, newest first.
-- Columns: Date, User (name + phone from `profiles`), Plan name, Amount, Status badge (pending/completed/failed/cancelled), Transaction ID, Payment Method, Failure Reason.
-- Filters: status (all / failed / cancelled / pending / completed), date range, search by phone/name.
-- "Call customer" action button (`tel:` link using the user's phone) so admin can quickly follow up on failed attempts.
-- Add link to this page in `src/components/admin/AdminSidebar.tsx` and a card on `src/pages/admin/Index.tsx` showing "X failed attempts in last 7 days".
-
-RLS: only admins (existing `is_admin()` check) can SELECT all rows in `payment_transactions`.
-
----
-
-## 5. Files & changes summary
-
-**Database migration** (new):
-- Add `failure_reason text`, `payment_method text` columns to `payment_transactions` (if missing)
-- Index `payment_transactions(status, created_at desc)`
-- RLS policy allowing admins to SELECT all rows
-
-**Edge functions:**
-- `supabase/functions/recharge-verify-payment/index.ts` — store richer failure info
-- `supabase/functions/recharge-mark-failed/index.ts` (new) — mark a local tx failed when callback returns cancel/failed without verifiable transactionId
-
-**Frontend:**
-- `src/pages/app/Subscribe.tsx` — two-step flow with explicit Online vs Manual choice
-- `src/pages/app/SubscribeCallback.tsx` — robust logging on all outcomes, auto-redirect on success
-- `src/pages/admin/PaymentAttempts.tsx` (new)
-- `src/routes.tsx` — register `/admin/payment-attempts`
-- `src/components/admin/AdminSidebar.tsx` — add nav link
-- `src/pages/admin/Index.tsx` — add "Failed attempts (7d)" KPI card
-
-**Republish required:** After these changes are merged, the user must click Publish so `tallyplus.lovable.app` serves the updated build (this is what's actually causing the current 404).
+- ✅ Owner signup এ shop type জিজ্ঞেস করা হবে
+- ✅ Signup success এর পর sample product import option আসবে
+- ✅ "Email rate limit" error আর আসবে না (কারণ phone/email confirmation trigger বন্ধ)
+- ✅ আলাদা onboarding step নেই — সব signup এই হয়ে যাবে
