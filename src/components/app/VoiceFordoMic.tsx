@@ -34,14 +34,15 @@ const NUMBER_WORDS: Record<string, number> = {
 };
 
 /** Common unit words → canonical short label. */
-const UNIT_WORDS: Array<{ re: RegExp; label: string }> = [
+const UNIT_WORDS: Array<{ re: RegExp; label: string; multiplier?: number }> = [
   { re: /^(কেজি|কিলো|কিলোগ্রাম|kg|kilo|kilogram)s?$/i, label: "কেজি" },
   { re: /^(গ্রাম|gm|gram)s?$/i, label: "গ্রাম" },
   { re: /^(লিটার|liter|litre|ltr|l)$/i, label: "লিটার" },
   { re: /^(মিলি|মিলিলিটার|ml)$/i, label: "মিলি" },
   { re: /^(পিস|পিছ|piece|pcs|pc)$/i, label: "পিস" },
-  { re: /^(হালি)$/i, label: "হালি" },        // 4
-  { re: /^(ডজন|dozen)$/i, label: "ডজন" },    // 12
+  // হালি/ডজন → খুচরা ক্রেতার ভাষা; সফটওয়্যার পিস হিসেবে কনভার্ট করবে
+  { re: /^(হালি)$/i, label: "পিস", multiplier: 4 },
+  { re: /^(ডজন|dozen)$/i, label: "পিস", multiplier: 12 },
   { re: /^(প্যাকেট|packet|pack|pkt)$/i, label: "প্যাকেট" },
   { re: /^(বোতল|bottle)$/i, label: "বোতল" },
   { re: /^(বস্তা|sack|bag)$/i, label: "বস্তা" },
@@ -54,8 +55,10 @@ function normalizeDigits(s: string): string {
   return s.replace(/[০-৯]/g, (c) => BN_DIGITS[c] ?? c);
 }
 
-function matchUnit(token: string): string | null {
-  for (const { re, label } of UNIT_WORDS) if (re.test(token)) return label;
+function matchUnit(token: string): { label: string; multiplier: number } | null {
+  for (const { re, label, multiplier } of UNIT_WORDS) {
+    if (re.test(token)) return { label, multiplier: multiplier ?? 1 };
+  }
   return null;
 }
 
@@ -97,7 +100,8 @@ function parsePhrase(phrase: string): VoiceItem {
   if (i < tokens.length && qty !== null) {
     const u = matchUnit(tokens[i]);
     if (u) {
-      unit = u;
+      unit = u.label;
+      qty = qty * u.multiplier;
       i++;
     }
   }
