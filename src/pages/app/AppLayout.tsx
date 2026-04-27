@@ -60,6 +60,29 @@ function AppLayout() {
     if (user) void ensureProfile();
   }, [user, ensureProfile]);
 
+  // Guard: if the logged-in user is actually a consumer (গ্রাহক), redirect
+  // them to the consumer dashboard. Owners only beyond this point.
+  const [consumerCheck, setConsumerCheck] = useState<"checking" | "owner" | "consumer">("checking");
+  useEffect(() => {
+    let cancelled = false;
+    if (!user) { setConsumerCheck("checking"); return; }
+    (async () => {
+      const { data } = await supabase
+        .from("consumer_profiles")
+        .select("id")
+        .eq("id", user.id)
+        .maybeSingle();
+      if (cancelled) return;
+      if (data) {
+        setConsumerCheck("consumer");
+        nav({ to: "/customer/dashboard", replace: true });
+      } else {
+        setConsumerCheck("owner");
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [user, nav]);
+
   // Idle-prefetch the most-used route chunks so the FIRST navigation
   // (e.g., dashboard → sell) doesn't have to wait for the chunk download.
   useEffect(() => {
@@ -135,6 +158,15 @@ function AppLayout() {
       <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-background text-sm text-muted-foreground">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
         <div>{lang === "bn" ? "লগইন পেজে যাচ্ছি..." : "Redirecting to login..."}</div>
+      </div>
+    );
+  }
+
+  if (consumerCheck !== "owner") {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-background text-sm text-muted-foreground">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+        <div>{lang === "bn" ? "লোড হচ্ছে..." : "Loading..."}</div>
       </div>
     );
   }
