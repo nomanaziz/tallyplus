@@ -23,6 +23,7 @@ import training from "@/assets/icons/training.svg";
 import buySubscription from "@/assets/icons/buy-subscription.png";
 import brandHishabee from "@/assets/icons/brand-hishabee.svg";
 import brandBee from "@/assets/icons/brand-bee.svg";
+import bookmark from "@/assets/icons/bookmark.svg";
 
 export const icons = {
   home,
@@ -49,6 +50,7 @@ export const icons = {
   buySubscription,
   brandHishabee,
   brandBee,
+  bookmark,
 } as const;
 
 export type IconKey = keyof typeof icons;
