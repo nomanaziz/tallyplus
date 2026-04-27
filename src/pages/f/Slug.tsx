@@ -29,6 +29,51 @@ function newId() {
   return Math.random().toString(36).slice(2, 10);
 }
 
+/** Convert ASCII digits in a string to Bengali digits. */
+function toBnDigits(s: string): string {
+  const map: Record<string, string> = {
+    "0": "০", "1": "১", "2": "২", "3": "৩", "4": "৪",
+    "5": "৫", "6": "৬", "7": "৭", "8": "৮", "9": "৯",
+  };
+  return s.replace(/[0-9]/g, (c) => map[c] ?? c);
+}
+
+/** Compose a friendly "১ কেজি পেঁয়াজ"-style label for simple mode. */
+function simpleLabel(it: { name: string; qty: string; unit: string }): string {
+  const name = (it.name || "").trim();
+  const qty = (it.qty || "").trim();
+  const unit = (it.unit || "").trim();
+  if (!qty && !unit) return name;
+  const qtyBn = qty ? toBnDigits(qty) : "";
+  if (qty && unit) return `${qtyBn} ${unit} ${name}`.trim();
+  if (qty) return `${qtyBn} ${name}`.trim();
+  return `${unit} ${name}`.trim();
+}
+
+/** Heuristic reverse-parse: if a user types "1 kg পেঁয়াজ" or "১ কেজি পেঁয়াজ" into the
+ *  simple-mode input, split it back into qty/unit/name so toggling বিস্তারিত is in sync. */
+function parseSimpleEdit(raw: string): { name: string; qty: string; unit: string } {
+  const text = raw.trim();
+  if (!text) return { name: "", qty: "", unit: "" };
+  // BN→ASCII for parsing
+  const bnMap: Record<string, string> = {
+    "০": "0", "১": "1", "২": "2", "৩": "3", "৪": "4",
+    "৫": "5", "৬": "6", "৭": "7", "৮": "8", "৯": "9",
+  };
+  const ascii = text.replace(/[০-৯]/g, (c) => bnMap[c] ?? c);
+  const m = ascii.match(/^(\d+(?:\.\d+)?)\s+(\S+)\s+(.+)$/);
+  if (m) {
+    const qty = m[1];
+    const unitTok = m[2];
+    const rest = m[3].trim();
+    const knownUnits = /^(কেজি|কিলো|গ্রাম|লিটার|মিলি|পিস|প্যাকেট|বোতল|বস্তা|আঁটি|আটি|গজ|ফুট|kg|gm|gram|liter|litre|l|ml|piece|pcs|pc|packet|bottle|sack|bag|bunch|yard|foot|feet|ft)$/i;
+    if (knownUnits.test(unitTok)) {
+      return { name: rest, qty, unit: unitTok };
+    }
+  }
+  return { name: text, qty: "", unit: "" };
+}
+
 function PublicWishlistPage() {
   const { slug } = useParams();
   const search = useSearch();
