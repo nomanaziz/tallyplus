@@ -169,6 +169,15 @@ function splitChunkIntoItems(chunk: string): VoiceItem[] {
       continue;
     }
 
+    // Trailing "একটি / একটা" after a name → qty=1, unit=পিস, then complete item
+    if (TRAILING_ONE_PIECE.test(t) && nameBuf.length > 0 && qty === null) {
+      qty = 1;
+      unit = "পিস";
+      i++;
+      flush();
+      continue;
+    }
+
     const n = wordToNum(t);
     if (n !== null) {
       // A number starts the qty for the CURRENT item (whatever name we've collected)
