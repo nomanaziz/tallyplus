@@ -90,7 +90,8 @@ export function AppRoutes() {
   return (
     <Routes>
       <Route index element={<S><P67 /></S>} />
-      <Route path="/admin" element={<S><P2 /></S>}>
+      <Route path="/admin" element={<S><P12 /></S>}>
+      <Route index element={<S><P2 /></S>} />
       <Route path="affiliates" element={<S><P0 /></S>} />
       <Route path="banners" element={<S><P1 /></S>} />
       <Route path="landing" element={<S><P3 /></S>} />
@@ -106,9 +107,6 @@ export function AppRoutes() {
       <Route path="subscriptions" element={<S><P10 /></S>} />
       <Route path="training" element={<S><P11 /></S>} />
       <Route path="users" element={<S><P13 /></S>} />
-      </Route>
-      <Route path="/admin" element={<S><P12 /></S>}>
-      
       </Route>
       <Route path="/affiliate" element={<S><P15 /></S>}>
       <Route path="register" element={<S><P14 /></S>} />
