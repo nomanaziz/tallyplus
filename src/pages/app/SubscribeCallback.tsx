@@ -17,17 +17,20 @@ export default function SubscribeCallback() {
   const transactionId = params.get("transactionId");
   const localId = params.get("local_id");
   const paidAmount = params.get("paymentAmount");
+  const paymentMethod = params.get("paymentMethod");
+  const paymentFee = params.get("paymentFee");
 
   useEffect(() => {
     void (async () => {
-      if (status === "cancel" || status === "failed") {
-        setState("failed");
-        setMsg(lang === "bn" ? "পেমেন্ট বাতিল হয়েছে" : "Payment was cancelled");
-        return;
-      }
+      // If we have a transactionId (regardless of status string), verify with the gateway
+      // so the DB record reflects the true status (completed / pending / failed).
       if (!transactionId) {
         setState("failed");
-        setMsg(lang === "bn" ? "Transaction ID পাওয়া যায়নি" : "Transaction ID missing");
+        setMsg(
+          status === "cancel" || status === "failed"
+            ? (lang === "bn" ? "পেমেন্ট বাতিল হয়েছে" : "Payment was cancelled")
+            : (lang === "bn" ? "Transaction ID পাওয়া যায়নি" : "Transaction ID missing")
+        );
         return;
       }
       const { data, error } = await supabase.functions.invoke("recharge-verify-payment", {
@@ -46,7 +49,11 @@ export default function SubscribeCallback() {
         setMsg(lang === "bn" ? "পেমেন্ট প্রক্রিয়াধীন" : "Payment is being processed");
       } else {
         setState("failed");
-        setMsg(lang === "bn" ? "পেমেন্ট সফল হয়নি" : "Payment was not successful");
+        setMsg(
+          status === "cancel" || status === "failed"
+            ? (lang === "bn" ? "পেমেন্ট বাতিল করা হয়েছে" : "Payment was cancelled")
+            : (lang === "bn" ? "পেমেন্ট সফল হয়নি" : "Payment was not successful")
+        );
       }
     })();
   }, [transactionId, status, localId, lang]);
@@ -69,10 +76,14 @@ export default function SubscribeCallback() {
             {paidAmount && (
               <p className="mt-1 text-sm text-muted-foreground">
                 ৳{paidAmount} {lang === "bn" ? "পরিশোধিত" : "paid"}
+                {paymentMethod && paymentMethod !== "undetected" ? ` • ${paymentMethod}` : ""}
               </p>
             )}
+            {transactionId && (
+              <p className="mt-1 text-xs text-muted-foreground">TxnID: <span className="font-mono">{transactionId}</span></p>
+            )}
             <Button asChild className="mt-6 w-full">
-              <Link to="/app/dashboard">{lang === "bn" ? "ড্যাশবোর্ডে যান" : "Go to Dashboard"}</Link>
+              <Link to="/app">{lang === "bn" ? "অ্যাপে যান" : "Go to App"}</Link>
             </Button>
           </>
         )}
@@ -92,6 +103,18 @@ export default function SubscribeCallback() {
           <>
             <XCircle className="mx-auto h-14 w-14 text-destructive" />
             <h1 className="mt-3 text-xl font-bold">{msg}</h1>
+            {transactionId && (
+              <p className="mt-2 text-xs text-muted-foreground">
+                TxnID: <span className="font-mono">{transactionId}</span>
+                {paidAmount ? ` • ৳${paidAmount}` : ""}
+                {paymentFee && paymentFee !== "0" ? ` (fee ৳${paymentFee})` : ""}
+              </p>
+            )}
+            <p className="mt-3 text-sm text-muted-foreground">
+              {lang === "bn"
+                ? "যদি আপনি ভুলে cancel করে থাকেন, আবার চেষ্টা করুন। যদি টাকা কাটা হয়েছে কিন্তু subscription active হয়নি, তাহলে কিছুক্ষণ অপেক্ষা করুন বা admin-এর সাথে যোগাযোগ করুন।"
+                : "If you cancelled by mistake, try again. If money was deducted but subscription is not active, please wait a moment or contact admin."}
+            </p>
             <Button asChild className="mt-6 w-full">
               <Link to="/app/subscribe">{lang === "bn" ? "আবার চেষ্টা করুন" : "Try again"}</Link>
             </Button>
