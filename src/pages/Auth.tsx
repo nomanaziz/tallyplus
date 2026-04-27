@@ -170,6 +170,39 @@ export default function AuthPage() {
     <div className="flex min-h-screen flex-col bg-background">
       <SiteHeader />
       <main className="flex flex-1 items-center justify-center px-4 py-8">
+      {postSignup === "owner" ? (
+        <div className="w-full max-w-sm space-y-5 rounded-2xl border bg-card p-6 shadow-xl">
+          <div className="flex flex-col items-center gap-2 text-center">
+            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
+              <Sparkles className="h-7 w-7 text-primary" />
+            </div>
+            <h2 className="text-xl font-bold">Account তৈরি হয়েছে! 🎉</h2>
+            <p className="text-sm text-muted-foreground">
+              আপনার দোকানের জন্য কিছু sample product import করব?
+            </p>
+          </div>
+          <div className="space-y-2">
+            <Button
+              className="h-12 w-full text-base font-semibold"
+              onClick={() => {
+                try {
+                  localStorage.setItem("pending_sample_import", "1");
+                } catch { /* ignore */ }
+                navigate({ to: "/app/dashboard", replace: true });
+              }}
+            >
+              হ্যাঁ, import করুন
+            </Button>
+            <Button
+              variant="outline"
+              className="h-12 w-full text-base"
+              onClick={() => navigate({ to: "/app/dashboard", replace: true })}
+            >
+              না, আমি নিজে যোগ করব
+            </Button>
+          </div>
+        </div>
+      ) : (
       <div className="w-full max-w-sm space-y-5 rounded-2xl border bg-card p-6 shadow-sm">
         <div className="text-center">
           <h1 className="text-2xl font-bold">Tally Plus</h1>
@@ -282,6 +315,7 @@ export default function AuthPage() {
           <Link to="/" className="hover:underline">হোমে ফিরুন</Link>
         </div>
       </div>
+      )}
       </main>
       <SiteFooter />
     </div>
