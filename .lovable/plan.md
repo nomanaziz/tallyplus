@@ -1,48 +1,33 @@
 ## সমস্যা
 
-`src/routes.tsx`-এ admin route মিস-wired:
-- Line 93: `<Route path="/admin" element={<S><P2 /></S>}>` — এখানে `P2` হলো `pages/admin/Index.tsx` (Overview page), কিন্তু এটাকে layout হিসেবে use করা হচ্ছে। Overview page-এ `<Outlet/>` বা sidebar নেই, তাই sidebar render হয় না এবং child routes (banners, plans, ইত্যাদি) overview-এর ভেতরে কখনো mount হয় না।
-- Line 110: `<Route path="/admin" element={<S><P12 /></S>}>` — `P12` হলো আসল `pages/Admin.tsx` (AdminLayout, sidebar সহ), কিন্তু এর body **empty**, কোনো child route declare করা নেই।
+মোবাইলে `SiteHeader`-এর navigation hidden (`hidden md:flex`)। ফলে মোবাইল visitor-রা মার্কেটপ্লেস (`/shop`), Features, Pricing, Contact কোনোটাই access করতে পারছে না — শুধু logo আর Login button দেখা যায়। ভেতরে `/app/*` route-গুলোতে `MobileBottomNav` থাকলেও, public site (`/`, `/shop`, ইত্যাদি) তে কোনো mobile navigation নেই।
 
-ফলে sidebar পুরোপুরি হারিয়ে গেছে এবং `/admin/banners` কাজ করলেও sidebar ছাড়া render হচ্ছে।
+## সমাধান
 
----
+`SiteHeader`-এ একটা **hamburger menu (mobile only)** যোগ করব, যেটা থেকে marketplace সহ সব main page-এ যাওয়া যাবে। সাথে marketplace-কে আরো prominent করার জন্য কিছু extra entry point থাকবে।
 
-## পরিবর্তনসমূহ
+### পরিবর্তন
 
-### ১) `src/routes.tsx` — admin block একীভূত করা
+**1. `src/components/site/SiteHeader.tsx`** (mobile hamburger যোগ)
+- Desktop nav আগের মতোই থাকবে (`hidden md:flex`)।
+- Mobile-এ একটা hamburger icon button দেখাব (`md:hidden`), যেটা `Sheet` (side drawer) খুলবে।
+- Drawer-এ থাকবে: হোম, **মার্কেটপ্লেস** (highlighted, Store icon সহ), Features, Pricing, Contact, language toggle, theme toggle, এবং Login/Dashboard button।
+- Header-এ logo-র পাশে মোবাইলে একটা ছোট "মার্কেটপ্লেস" shortcut icon button (Store icon) থাকবে — এক ট্যাপে `/shop`-এ যাবে, drawer খোলার দরকার নেই।
 
-দুইটা `/admin` block মার্জ করব একটাতে:
-- Layout হিসেবে `P12` (`pages/Admin.tsx` → AdminLayout with sidebar) ব্যবহার করব।
-- `index` route → `P2` (Overview page) — `/admin`-এ গেলে sidebar + Overview দেখাবে।
-- বাকি সব child routes (`banners`, `plans`, `usage-limits`, `promo-popups`, `payment-gateway`, `users`, `landing`, `marketplace`, `settings`, `shop-types`, `subscription-requests`, `subscriptions`, `training`, `affiliates`, `login`) ভেতরে নিয়ে আসব।
-- ডুপ্লিকেট empty `/admin` block (লাইন 110-112) মুছে ফেলব।
+**2. `src/pages/Index.tsx`** (landing page — quick check)
+- Hero বা stats section-এর কাছে যদি ইতিমধ্যেই "মার্কেটপ্লেস দেখুন" CTA না থাকে, একটা যোগ করব মোবাইল visibility-র জন্য। (file inspect করে decide করব।)
 
-ফলাফল: AdminSidebar-এ ইতিমধ্যে declared সব menu item (Overview, Landing Page, Users, Shop Types, Subscription Requests, Subscriptions, Plans, Usage Limits, Promo Popups, Payment Gateway, Marketplace, Banners, Training, Affiliates, Settings) আবার দেখা যাবে এবং কাজ করবে।
+**3. `MobileBottomNav` (logged-in app users)** — অপরিবর্তিত
+- এটা `/app/*` এর জন্য, public marketplace browsing flow-এর সাথে সম্পর্কহীন।
 
-### ২) Bookmark icon ও favicon
+### Technical details
 
-- `user-uploads://icons8-bookmark-100.svg` কপি করব দুই জায়গায়:
-  - `public/favicon.svg` — browser tab favicon হিসেবে।
-  - `src/assets/icons/bookmark.svg` — যদি UI-তে icon হিসেবে ব্যবহার করতে চান।
-- `index.html` update:
-  - `<link rel="icon" type="image/svg+xml" href="/favicon.svg" />` যোগ করব (existing PNG icon fallback রেখে দেব Apple/PWA-এর জন্য)।
-- `src/lib/icons.ts`-এ `bookmark` key যোগ করব যাতে যেকোনো page থেকে `icons.bookmark` দিয়ে use করা যায়।
+- shadcn `Sheet` (already used in project) ব্যবহার করব side="right" দিয়ে।
+- Hamburger icon: `Menu` from `lucide-react`।
+- Marketplace shortcut: `Store` icon button, `aria-label="মার্কেটপ্লেস"`।
+- Sheet বন্ধ হবে যেকোনো link click-এ (`SheetClose` wrap করে)।
 
----
+### Out of scope
 
-## যাচাই
-
-- `/admin` খুললে বাম পাশে full sidebar দেখা যাবে এবং Overview content render হবে।
-- Sidebar-এর প্রতিটি link (banners, plans, usage-limits ইত্যাদি) click করলে sidebar বহাল থেকে content swap হবে।
-- Browser tab-এ নতুন bookmark favicon দেখা যাবে।
-
----
-
-## প্রভাবিত ফাইল
-
-- `src/routes.tsx` (edit — admin block ঠিক)
-- `index.html` (edit — favicon link)
-- `public/favicon.svg` (new)
-- `src/assets/icons/bookmark.svg` (new)
-- `src/lib/icons.ts` (edit — bookmark key যোগ)
+- `/shop` page-এর internal layout পরিবর্তন (responsive grid আগেই `grid-cols-1 sm:grid-cols-2` দিয়ে কাজ করছে — সমস্যা শুধু entry point-এ)।
+- Auth/subscription flow-এ পরিবর্তন।
