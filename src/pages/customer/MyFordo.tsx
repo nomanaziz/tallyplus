@@ -4,7 +4,8 @@ import { useAuth } from "@/lib/auth";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/lib/router";
-import { Loader2, Store, ListChecks, Plus } from "lucide-react";
+import { Loader2, Store, ListChecks, Plus, FileText, CalendarClock, Trash2, Pause, Play } from "lucide-react";
+import { toast } from "sonner";
 
 type Wishlist = {
   id: string;
@@ -17,12 +18,25 @@ type Wishlist = {
 };
 
 type Shop = { id: string; name: string };
+type Template = { id: string; name: string; items: unknown; created_at: string };
+type Schedule = {
+  id: string;
+  shop_id: string;
+  recurrence: string;
+  day_of_month: number | null;
+  day_of_week: number | null;
+  next_run_at: string;
+  is_active: boolean;
+  last_run_at: string | null;
+};
 
 export default function MyFordo() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [items, setItems] = useState<Wishlist[]>([]);
   const [shops, setShops] = useState<Record<string, Shop>>({});
+  const [templates, setTemplates] = useState<Template[]>([]);
+  const [schedules, setSchedules] = useState<Schedule[]>([]);
 
   useEffect(() => {
     if (!user) return;
@@ -38,7 +52,25 @@ export default function MyFordo() {
       if (cancelled) return;
       const list = (wls ?? []) as Wishlist[];
       setItems(list);
-      const ids = Array.from(new Set(list.map((w) => w.shop_id)));
+      const [tplRes, schRes] = await Promise.all([
+        supabase
+          .from("consumer_fordo_templates")
+          .select("id,name,items,created_at")
+          .eq("consumer_user_id", user.id)
+          .order("created_at", { ascending: false }),
+        supabase
+          .from("consumer_fordo_schedules")
+          .select("id,shop_id,recurrence,day_of_month,day_of_week,next_run_at,is_active,last_run_at")
+          .eq("consumer_user_id", user.id)
+          .order("next_run_at", { ascending: true }),
+      ]);
+      if (cancelled) return;
+      setTemplates((tplRes.data ?? []) as Template[]);
+      setSchedules((schRes.data ?? []) as Schedule[]);
+      const ids = Array.from(new Set([
+        ...list.map((w) => w.shop_id),
+        ...((schRes.data ?? []) as Schedule[]).map((s) => s.shop_id),
+      ]));
       if (ids.length > 0) {
         const { data: ss } = await supabase.from("shops").select("id, name").in("id", ids);
         const map: Record<string, Shop> = {};
@@ -49,6 +81,40 @@ export default function MyFordo() {
     })();
     return () => { cancelled = true; };
   }, [user]);
+
+  const deleteTemplate = async (id: string) => {
+    if (!confirm("টেমপ্লেট মুছবেন?")) return;
+    const { error } = await supabase.from("consumer_fordo_templates").delete().eq("id", id);
+    if (error) return toast.error(error.message);
+    setTemplates((t) => t.filter((x) => x.id !== id));
+    toast.success("মুছে ফেলা হয়েছে");
+  };
+
+  const toggleSchedule = async (s: Schedule) => {
+    const { error } = await supabase
+      .from("consumer_fordo_schedules")
+      .update({ is_active: !s.is_active })
+      .eq("id", s.id);
+    if (error) return toast.error(error.message);
+    setSchedules((arr) => arr.map((x) => (x.id === s.id ? { ...x, is_active: !x.is_active } : x)));
+  };
+
+  const deleteSchedule = async (id: string) => {
+    if (!confirm("সময়সূচী মুছবেন?")) return;
+    const { error } = await supabase.from("consumer_fordo_schedules").delete().eq("id", id);
+    if (error) return toast.error(error.message);
+    setSchedules((arr) => arr.filter((x) => x.id !== id));
+    toast.success("মুছে ফেলা হয়েছে");
+  };
+
+  const recurrenceLabel = (s: Schedule) => {
+    if (s.recurrence === "monthly") return `প্রতি মাসে ${s.day_of_month} তারিখ`;
+    if (s.recurrence === "weekly") {
+      const days = ["রবি", "সোম", "মঙ্গল", "বুধ", "বৃহঃ", "শুক্র", "শনি"];
+      return `প্রতি ${days[s.day_of_week ?? 0]}বার`;
+    }
+    return "একবার";
+  };
 
   if (loading) {
     return (
@@ -70,6 +136,67 @@ export default function MyFordo() {
         </Link>
       </div>
 
+      {/* Schedules */}
+      {schedules.length > 0 && (
+        <section className="space-y-2">
+          <h2 className="flex items-center gap-1 text-sm font-bold">
+            <CalendarClock className="h-4 w-4" /> সময়সূচী
+          </h2>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {schedules.map((s) => (
+              <Card key={s.id} className="flex items-center gap-3 p-3">
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-sm font-semibold">
+                    {shops[s.shop_id]?.name ?? "Shop"}
+                  </div>
+                  <div className="text-[11px] text-muted-foreground">
+                    {recurrenceLabel(s)} • পরবর্তী: {new Date(s.next_run_at).toLocaleString("bn-BD")}
+                  </div>
+                  {!s.is_active && (
+                    <span className="mt-1 inline-flex rounded-full bg-muted px-2 py-0.5 text-[10px]">বন্ধ</span>
+                  )}
+                </div>
+                <Button variant="ghost" size="icon" onClick={() => toggleSchedule(s)} aria-label="toggle">
+                  {s.is_active ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+                </Button>
+                <Button variant="ghost" size="icon" onClick={() => deleteSchedule(s.id)} aria-label="মুছুন">
+                  <Trash2 className="h-4 w-4 text-destructive" />
+                </Button>
+              </Card>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Templates */}
+      {templates.length > 0 && (
+        <section className="space-y-2">
+          <h2 className="flex items-center gap-1 text-sm font-bold">
+            <FileText className="h-4 w-4" /> আমার টেমপ্লেট
+          </h2>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {templates.map((t) => {
+              const count = Array.isArray(t.items) ? t.items.length : 0;
+              return (
+                <Card key={t.id} className="flex items-center gap-3 p-3">
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-sm font-semibold">{t.name}</div>
+                    <div className="text-[11px] text-muted-foreground">{count} পণ্য</div>
+                  </div>
+                  <Link to={`/customer/create-fordo?templateId=${t.id}`}>
+                    <Button size="sm" variant="outline">ব্যবহার করুন</Button>
+                  </Link>
+                  <Button variant="ghost" size="icon" onClick={() => deleteTemplate(t.id)} aria-label="মুছুন">
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
+                </Card>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
+      <h2 className="pt-2 text-sm font-bold">পাঠানো ফর্দ</h2>
       {items.length === 0 ? (
         <Card className="p-8 text-center text-sm text-muted-foreground">
           <ListChecks className="mx-auto mb-2 h-8 w-8 text-muted-foreground/50" />
