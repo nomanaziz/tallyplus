@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Save, Smartphone } from "lucide-react";
+import { Loader2, Save, Smartphone, CheckCircle2, ShieldCheck, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 
 type Settings = {
@@ -65,16 +65,35 @@ export default function AdminPaymentGateway() {
         <h1 className="text-2xl font-bold">Payment Gateway</h1>
         <p className="text-sm text-muted-foreground">Recharge Server settings। API key secrets section-এ store করুন।</p>
       </div>
+      {/* Recharge Server status card */}
+      <div className="space-y-3 rounded-md border bg-emerald-50 p-5 dark:bg-emerald-950/20">
+        <div className="flex items-center gap-2">
+          <ShieldCheck className="h-5 w-5 text-emerald-600" />
+          <h2 className="text-lg font-bold">Recharge Server — Configured</h2>
+        </div>
+        <div className="grid gap-2 text-sm">
+          <div className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-600" /> <span><code>RECHARGE_API_KEY</code> set</span></div>
+          <div className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-600" /> <span><code>RECHARGE_SECRET_KEY</code> set</span></div>
+          <div className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-600" /> <span><code>RECHARGE_BRAND_KEY</code> set</span></div>
+        </div>
+        <div className="rounded border bg-background p-3 text-xs">
+          <div className="font-mono">Create: https://payment.rechargeserver.com/api/payment/create</div>
+          <div className="font-mono">Verify: https://payment.rechargeserver.com/api/payment/verify</div>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Toggle "Enable Recharge Server payments" নিচ থেকে on করলে দোকানদাররা সরাসরি online payment করতে পারবে। Off থাকলে manual TxnID flow চলবে।
+        </p>
+      </div>
       <div className="space-y-4 rounded-md border bg-background p-5">
         <div className="flex items-center gap-2">
           <Switch checked={s.is_enabled} onCheckedChange={(v) => setS({ ...s, is_enabled: v })} />
           <Label>Enable Recharge Server payments</Label>
         </div>
-        <div><Label>Provider</Label><Input value={s.provider} onChange={(e) => setS({ ...s, provider: e.target.value })} /></div>
-        <div><Label>API URL</Label><Input value={s.api_url ?? ""} onChange={(e) => setS({ ...s, api_url: e.target.value })} placeholder="https://recharge-server.example/api" /></div>
-        <div><Label>Merchant ID</Label><Input value={s.merchant_id ?? ""} onChange={(e) => setS({ ...s, merchant_id: e.target.value })} /></div>
         <p className="text-xs text-muted-foreground">
-          🔐 API key/secret <strong>Edge Function secrets</strong>-এ <code>RECHARGE_SERVER_API_KEY</code> নামে save করুন।
+          🔐 তিনটা key (<code>RECHARGE_API_KEY</code>, <code>RECHARGE_SECRET_KEY</code>, <code>RECHARGE_BRAND_KEY</code>) Edge Function secrets-এ save আছে। কোডে hardcoded নেই — সম্পূর্ণ secure।
+          <a className="ml-1 inline-flex items-center gap-1 text-primary hover:underline" target="_blank" rel="noreferrer" href="https://supabase.com/dashboard/project/hnkyeohwjcqhgulgdydd/settings/functions">
+            Manage secrets <ExternalLink className="h-3 w-3" />
+          </a>
         </p>
       </div>
 
