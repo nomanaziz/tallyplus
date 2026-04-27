@@ -2,7 +2,9 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { Card } from "@/components/ui/card";
-import { Loader2, Store, ListChecks } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Link } from "@/lib/router";
+import { Loader2, Store, ListChecks, Plus } from "lucide-react";
 
 type Wishlist = {
   id: string;
@@ -58,9 +60,14 @@ export default function MyFordo() {
 
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="text-2xl font-bold">আমার ফর্দ</h1>
-        <p className="text-sm text-muted-foreground">সব দোকানে পাঠানো ফর্দ</p>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <h1 className="text-2xl font-bold">আমার ফর্দ</h1>
+          <p className="text-sm text-muted-foreground">সব দোকানে পাঠানো ফর্দ</p>
+        </div>
+        <Link to="/customer/create-fordo">
+          <Button size="sm"><Plus className="mr-1 h-4 w-4" /> নতুন ফর্দ তৈরি করুন</Button>
+        </Link>
       </div>
 
       {items.length === 0 ? (
