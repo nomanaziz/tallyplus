@@ -34,6 +34,7 @@ type Product = {
   bulk_enabled?: boolean | null;
   bulk_price?: number | null;
   bulk_min_qty?: number | null;
+  is_serialized?: boolean | null;
 };
 
 type CartItem = {
@@ -47,6 +48,10 @@ type CartItem = {
   bulk_min_qty?: number | null;
   price_overridden?: boolean;
   is_bulk?: boolean;
+  // Serialized item fields
+  is_serialized?: boolean;
+  serial_id?: string | null;
+  serial_no?: string | null;
 };
 
 function applyBulkPricing(item: CartItem): CartItem {
