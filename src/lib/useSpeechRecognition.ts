@@ -10,6 +10,8 @@ type Options = {
   silenceTimeoutMs?: number; // close after this much silence (after speech started)
   noSpeechTimeoutMs?: number; // close if no speech ever detected
   onFinal?: (text: string) => void;
+  /** Called every time the recognizer commits a final segment, in real time. */
+  onSegment?: (text: string) => void;
   onClose?: () => void;
 };
 
@@ -19,6 +21,7 @@ export function useSpeechRecognition(opts: Options = {}) {
     silenceTimeoutMs = 12000,
     noSpeechTimeoutMs = 15000,
     onFinal,
+    onSegment,
     onClose,
   } = opts;
 
@@ -32,8 +35,10 @@ export function useSpeechRecognition(opts: Options = {}) {
   const silenceTimerRef = useRef<number | null>(null);
   const noSpeechTimerRef = useRef<number | null>(null);
   const onFinalRef = useRef(onFinal);
+  const onSegmentRef = useRef(onSegment);
   const onCloseRef = useRef(onClose);
   onFinalRef.current = onFinal;
+  onSegmentRef.current = onSegment;
   onCloseRef.current = onClose;
 
   useEffect(() => {
@@ -100,7 +105,11 @@ export function useSpeechRecognition(opts: Options = {}) {
         const res = event.results[i];
         const txt = res[0]?.transcript ?? "";
         if (res.isFinal) {
-          finalTextRef.current += (finalTextRef.current ? " " : "") + txt.trim();
+          const seg = txt.trim();
+          if (seg) {
+            finalTextRef.current += (finalTextRef.current ? " " : "") + seg;
+            if (onSegmentRef.current) onSegmentRef.current(seg);
+          }
         } else {
           interim += txt;
         }
