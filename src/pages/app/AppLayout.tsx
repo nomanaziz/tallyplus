@@ -59,6 +59,28 @@ function AppLayout() {
     if (user) void ensureProfile();
   }, [user, ensureProfile]);
 
+  // Idle-prefetch the most-used route chunks so the FIRST navigation
+  // (e.g., dashboard → sell) doesn't have to wait for the chunk download.
+  useEffect(() => {
+    if (!user) return;
+    const idle = (cb: () => void) => {
+      type IdleWin = Window & { requestIdleCallback?: (cb: () => void) => number };
+      const w = window as IdleWin;
+      if (typeof w.requestIdleCallback === "function") w.requestIdleCallback(cb);
+      else setTimeout(cb, 1500);
+    };
+    idle(() => {
+      void import("@/pages/app/Sell");
+      void import("@/pages/app/Purchase");
+      void import("@/pages/app/Dashboard");
+      void import("@/pages/app/SalesLedger");
+      void import("@/pages/app/PurchaseLedger");
+      void import("@/pages/app/DueLedger");
+      void import("@/pages/app/Products");
+      void import("@/components/app/POSPage");
+    });
+  }, [user]);
+
   const createShop = async () => {
     if (!user || shopName.trim().length < 2) {
       toast.error(lang === "bn" ? "দোকানের নাম দিন" : "Enter shop name");
