@@ -613,6 +613,111 @@ export type Database = {
         }
         Relationships: []
       }
+      bd_districts: {
+        Row: {
+          created_at: string
+          division_legacy_id: string
+          id: string
+          is_active: boolean
+          legacy_id: string | null
+          name_bn: string
+          name_en: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          division_legacy_id: string
+          id?: string
+          is_active?: boolean
+          legacy_id?: string | null
+          name_bn: string
+          name_en: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          division_legacy_id?: string
+          id?: string
+          is_active?: boolean
+          legacy_id?: string | null
+          name_bn?: string
+          name_en?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      bd_divisions: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          legacy_id: string | null
+          name_bn: string
+          name_en: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          legacy_id?: string | null
+          name_bn: string
+          name_en: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          legacy_id?: string | null
+          name_bn?: string
+          name_en?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      bd_upazilas: {
+        Row: {
+          created_at: string
+          district_legacy_id: string
+          id: string
+          is_active: boolean
+          legacy_id: string | null
+          name_bn: string
+          name_en: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          district_legacy_id: string
+          id?: string
+          is_active?: boolean
+          legacy_id?: string | null
+          name_bn: string
+          name_en: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          district_legacy_id?: string
+          id?: string
+          is_active?: boolean
+          legacy_id?: string | null
+          name_bn?: string
+          name_en?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       cash_movements: {
         Row: {
           amount: number
@@ -743,38 +848,50 @@ export type Database = {
       consumer_profiles: {
         Row: {
           address: string | null
+          area: string | null
           avatar_url: string | null
           created_at: string
           default_lat: number | null
           default_lng: number | null
+          district: string | null
+          division: string | null
           id: string
           name: string
           phone: string
           pin_hash: string | null
+          upazila: string | null
           updated_at: string
         }
         Insert: {
           address?: string | null
+          area?: string | null
           avatar_url?: string | null
           created_at?: string
           default_lat?: number | null
           default_lng?: number | null
+          district?: string | null
+          division?: string | null
           id: string
           name: string
           phone: string
           pin_hash?: string | null
+          upazila?: string | null
           updated_at?: string
         }
         Update: {
           address?: string | null
+          area?: string | null
           avatar_url?: string | null
           created_at?: string
           default_lat?: number | null
           default_lng?: number | null
+          district?: string | null
+          division?: string | null
           id?: string
           name?: string
           phone?: string
           pin_hash?: string | null
+          upazila?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -2426,6 +2543,7 @@ export type Database = {
       }
       seller_locations: {
         Row: {
+          area: string | null
           district: string | null
           division: string | null
           lat: number | null
@@ -2435,6 +2553,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          area?: string | null
           district?: string | null
           division?: string | null
           lat?: number | null
@@ -2444,6 +2563,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          area?: string | null
           district?: string | null
           division?: string | null
           lat?: number | null
