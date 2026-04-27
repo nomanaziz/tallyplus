@@ -236,16 +236,14 @@ export default function AuthPage() {
               placeholder="মোবাইল নম্বর"
               inputMode="tel"
             />
-            {role === "owner" && (
-              <Input
-                value={pin}
-                onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 4))}
-                placeholder="৪ সংখ্যার PIN"
-                inputMode="numeric"
-                maxLength={4}
-                type="password"
-              />
-            )}
+            <Input
+              value={pin}
+              onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 4))}
+              placeholder="৪ সংখ্যার PIN"
+              inputMode="numeric"
+              maxLength={4}
+              type="password"
+            />
             <Button onClick={handleSubmit} disabled={loading} className="w-full">
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Account তৈরি করুন
