@@ -1,64 +1,41 @@
-# Customer Auth Fix — Phone + PIN (No Email)
+# Voice Command — Pop-up সরিয়ে Toggle Button
 
 ## সমস্যা
 
-1. **"Email address invalid" error** — Customer signup currently builds a synthetic email `c8801999887766@tally.local` and calls `supabase.auth.signUp()` directly. Supabase Auth's email validator is rejecting the `c` prefix on this Supabase project (looks like an invalid TLD pattern to its validator).
-2. **Customer signup এ PIN field নাই** — শুধু নাম + ফোন নেওয়া হচ্ছে।
-3. **Customer login এ PIN field নাই** — শুধু ফোন নিচ্ছে, যা insecure।
-4. **Customer login এ email/password fallback ব্যর্থ হচ্ছে** — কারণ signup নিজেই ব্যর্থ।
+বর্তমানে মাইক বাটনে ক্লিক করলে একটা বড় dialog/pop-up খুলে যাচ্ছে। ওই pop-up না থাকলেও recognition background-এ চলবে — কিন্তু এখন pop-up-এ ফোকাস আটকে যাচ্ছে, stop button সহজে দেখা যায় না, এবং captured items সব সময় parent list-এ পৌঁছাচ্ছে না।
 
-## সমাধান (Owner-এর মতই PIN-based flow)
+## সমাধান
 
-দোকান মালিকের জন্য যে edge function-based PIN flow আছে (`signup-with-pin`, `login-with-pin`), গ্রাহকের জন্যও একই pattern follow করব। কোনো synthetic email frontend থেকে যাবে না — edge function ভিতরে user create করবে।
+`VoiceFordoMic` component থেকে Dialog/Modal সম্পূর্ণ সরিয়ে দেওয়া হবে। শুধু একটা **toggle mic button** থাকবে যা:
 
-### ১. নতুন Edge Function: `customer-signup-with-pin`
-- Input: `phone`, `full_name`, `pin` (4 digits)
-- Phone normalize করে `<digits>@tallycustomer.local` format-এ email বানাবে (server-side, যাতে Supabase validator pass করে — দরকার হলে domain adjust করব)
-- `admin.auth.admin.createUser` দিয়ে user create + `phone_confirm: true`, `email_confirm: true`, `user_metadata: { account_type: "consumer", full_name }`
-- `handle_new_user` trigger automatically `consumer_profiles` row + `consumer` role দিবে
-- `consumer_profiles` update: name, phone, **pin_hash** (bcrypt)
-- Return access_token + refresh_token
+1. **প্রথম ক্লিকে** → background-এ recording শুরু (button pulse animation, color পাল্টে যাবে — recording চলছে দেখানোর জন্য)
+2. **আবার ক্লিকে** → recording stop, final transcript parse হয়ে items parent list-এ যোগ
+3. **Auto-stop** → ১২ সেকেন্ড নীরবতার পর নিজে থেকেই stop হয়ে list-এ items চলে আসবে (যেটা আগে কাজ করত)
+4. **No dialog** → page-এ অন্য কোথাও ক্লিক করলেও recording বন্ধ হবে না; user button চাপলে বা চুপ থাকলে তবেই বন্ধ হবে
 
-### ২. নতুন Edge Function: `customer-login-with-pin`
-- Input: `phone`, `pin`
-- `consumer_profiles` থেকে pin_hash lookup → bcrypt verify
-- Match হলে `signInWithPassword` (server-side fixed password) দিয়ে session issue করে token return
+## পরিবর্তন
 
-### ৩. DB Migration
-- `consumer_profiles` table-এ `pin_hash text` column add (nullable for backward compat)
-- Existing consumer rows-এ pin_hash NULL থাকবে — তারা নতুন করে সাইনআপ/PIN reset করতে হবে (currently শুধু test users আছে)
+### `src/components/app/VoiceFordoMic.tsx`
+- Dialog, DialogContent এর সব ব্যবহার সরানো
+- `open` state সরিয়ে শুধু `useSpeechRecognition`-এর `listening` state ব্যবহার
+- Button-এ ক্লিক হলে: `listening ? stop() : start()` toggle
+- Recording চলাকালে button-এ:
+  - Color: `bg-destructive` (লাল) → recording active
+  - Pulse ring animation (existing audio-level ring এর simplified version button-এর চারপাশে)
+  - Icon: `MicOff` বা animated pulse dot
+- Stop হলে `onFinal` callback আগের মতই items parse করে `onItems()` call করবে
+- Parsing logic (হালি→পিস, ডজন→পিস ইত্যাদি) অপরিবর্তিত
 
-### ৪. Frontend (`src/pages/Auth.tsx`) Update
+### `src/lib/useSpeechRecognition.ts`
+- কোনো পরিবর্তন নেই — এটা ইতিমধ্যেই auto-stop on silence এবং manual stop দুটোই handle করে
 
-**Customer Signup Tab** (গ্রাহক):
-- নাম (required)
-- মোবাইল নম্বর (required)
-- **৪ সংখ্যার PIN** (নতুন — required)
-- "Account তৈরি করুন" → calls `customer-signup-with-pin` edge function
-- Sets session, redirects to `/customer/dashboard`
+### `src/pages/f/Slug.tsx` ও অন্যান্য consumers
+- `VoiceFordoMic`-এর props (`onItems`, `className`) একই — কোনো breaking change নেই, তাই কোনো edit লাগবে না
 
-**Customer Login Tab** (গ্রাহক):
-- মোবাইল নম্বর (required)
-- **৪ সংখ্যার PIN** (নতুন — required, এখন শুধু ফোন আছে)
-- "লগইন" → calls `customer-login-with-pin` edge function
-- Sets session, redirects to `/customer/dashboard`
-- "PIN ভুলে গেছেন? WhatsApp করুন" link থাকবে (owner-এর মতই)
+## ফলাফল
 
-Validation update: `role === "customer"`-ও PIN required হবে।
-
-### ৫. পুরনো broken code সরানো
-`Auth.tsx` থেকে `customerEmail`/`customerPassword` synthetic email logic আর `supabase.auth.signUp` direct call সরাবো — সব edge function এ চলে যাবে।
-
-## Files Changed
-
-- **Migration**: `consumer_profiles` table-এ `pin_hash` column add
-- **New**: `supabase/functions/customer-signup-with-pin/index.ts`
-- **New**: `supabase/functions/customer-login-with-pin/index.ts`
-- **Edited**: `src/pages/Auth.tsx` — customer signup এ PIN field, customer login এ PIN field, edge function calls
-
-## Result
-
-- ✅ "Email address invalid" error চলে যাবে (proper domain + server-side handling)
-- ✅ গ্রাহক signup: নাম + ফোন + PIN
-- ✅ গ্রাহক login: ফোন + PIN (secure)
-- ✅ দোকান মালিকের সাথে consistent UX
+- কোনো pop-up আসবে না
+- মাইক বাটন নিজেই recording indicator
+- কথা বলার পর চুপ থাকলে → auto list-এ যোগ
+- বাটন আবার চাপলে → তৎক্ষণাৎ stop ও list-এ যোগ
+- পুরোটা একদম আগের কাজ-করা সংস্করণের মতো behavior
