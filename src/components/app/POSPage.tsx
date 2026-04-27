@@ -664,9 +664,19 @@ function PaymentDialog(props: {
         const items = props.cart.map((c) => ({
           sale_id: saleId, product_id: c.product_id, name: c.name,
           qty: c.qty, price: c.price, total: c.qty * c.price,
+          serial_id: c.serial_id ?? null,
         }));
         const { error: eI } = await supabase.from("sale_items").insert(items);
         if (eI) throw eI;
+
+        // Mark sold serials
+        for (const c of props.cart) {
+          if (c.serial_id) {
+            await supabase.from("product_serials")
+              .update({ status: "sold", sale_id: saleId })
+              .eq("id", c.serial_id);
+          }
+        }
 
         // stock decrement + movements
         for (const c of props.cart) {
