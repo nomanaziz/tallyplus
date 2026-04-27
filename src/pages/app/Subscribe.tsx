@@ -142,7 +142,8 @@ export default function Subscribe() {
     );
 
   const finalPrice = (p: Plan) => p.discount_pct ? Math.round(p.price_bdt * (1 - p.discount_pct / 100)) : p.price_bdt;
-  const methodInfo = manual[payMethod];
+  const methodInfo: ManualMethod | undefined =
+    payMethod === "bank" ? undefined : (manual[payMethod] as ManualMethod | undefined);
 
   return (
     <div className="container px-3 py-4 md:px-4 md:py-6">
