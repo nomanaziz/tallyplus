@@ -59,6 +59,7 @@ function ContactsPage() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Contact | null>(null);
   const [openEmployee, setOpenEmployee] = useState(false);
+  const [reminderOpen, setReminderOpen] = useState(false);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -274,6 +275,16 @@ function ContactsPage() {
                     >
                       <Pencil className="h-4 w-4" />
                       {lang === "bn" ? "এডিট করুন" : "Edit"}
+                    </Button>
+                  )}
+                  {tab === "customers" && Number(selected.due_balance) > 0 && selected.phone && (
+                    <Button
+                      size="sm"
+                      className="gap-1.5 bg-[#25D366] text-white hover:bg-[#1fb558]"
+                      onClick={() => setReminderOpen(true)}
+                    >
+                      <MessageCircle className="h-4 w-4" />
+                      {lang === "bn" ? "রিমাইন্ডার" : "Remind"}
                     </Button>
                   )}
                   <Button variant="destructive" size="sm" className="gap-1.5" onClick={() => onDelete(selected)}>
