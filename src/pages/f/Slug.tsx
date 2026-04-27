@@ -397,12 +397,23 @@ function PublicWishlistPage() {
                     // fill empty rows first, then append
                     const next = [...cur];
                     let idx = 0;
-                    for (const text of spoken) {
+                    for (const it of spoken) {
                       const emptyAt = next.findIndex((r) => !r.name.trim());
                       if (emptyAt >= 0 && idx === 0) {
-                        next[emptyAt] = { ...next[emptyAt], name: text };
+                        next[emptyAt] = {
+                          ...next[emptyAt],
+                          name: it.name,
+                          qty: it.qty ?? next[emptyAt].qty,
+                          unit: it.unit ?? next[emptyAt].unit,
+                        };
                       } else {
-                        next.push({ id: newId(), name: text, qty: "", unit: "", price: "" });
+                        next.push({
+                          id: newId(),
+                          name: it.name,
+                          qty: it.qty ?? "",
+                          unit: it.unit ?? "",
+                          price: "",
+                        });
                       }
                       idx++;
                     }
