@@ -65,7 +65,8 @@ export default function AuthPage() {
   const validate = (): string | null => {
     const ph = normalizePhone(phone);
     if (!ph || ph.length < 10) return "সঠিক মোবাইল নম্বর দিন";
-    if (!/^\d{4}$/.test(pin)) return "৪ সংখ্যার PIN দিন";
+    // PIN only required for owner accounts
+    if (role === "owner" && !/^\d{4}$/.test(pin)) return "৪ সংখ্যার PIN দিন";
     if (mode === "signup") {
       if (name.trim().length < 2) return "আপনার নাম দিন";
       if (role === "owner" && shopName.trim().length < 2) return "দোকানের নাম দিন";
@@ -204,14 +205,16 @@ export default function AuthPage() {
               placeholder="মোবাইল নম্বর"
               inputMode="tel"
             />
-            <Input
-              value={pin}
-              onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 4))}
-              placeholder={role === "owner" ? "৪ সংখ্যার PIN" : "৪ সংখ্যার পাসওয়ার্ড"}
-              inputMode="numeric"
-              maxLength={4}
-              type="password"
-            />
+            {role === "owner" && (
+              <Input
+                value={pin}
+                onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                placeholder="৪ সংখ্যার PIN"
+                inputMode="numeric"
+                maxLength={4}
+                type="password"
+              />
+            )}
             <Button onClick={handleSubmit} disabled={loading} className="w-full">
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               লগইন
