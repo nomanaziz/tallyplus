@@ -1,38 +1,44 @@
 ## Problem
 
-On the public fordo page (`src/pages/f/Slug.tsx`):
-1. **Voice mic auto-stops too early.** While speaking, the recognizer ends and the dialog closes mid-sentence. Cause: in `src/lib/useSpeechRecognition.ts`, every interim result starts a 1.5s "silence" timer that stops recognition the moment the speaker pauses briefly between items — even though the user is clearly still talking.
-2. **"আরও পণ্য যোগ করুন" button is too big** (full width, primary/outline style) — looks heavy inside the card.
-3. **"কার্ডের রং" (card color) picker is unwanted** in the public form.
+Home page-এর `PricingSection` সম্পূর্ণ hard-coded — ভেতরে `PLANS` array লেখা আছে (Monthly ৳299, Half-yearly ৳1499, Yearly ৳2499, Lifetime ৳5000), যেগুলো admin-এর Plans page (`/admin/plans` → DB table `subscription_plans`)-এ যা সেট করা আছে তার সাথে মিলছে না। Admin যা edit করেন সেটা home page-এ আসে না।
+
+পাশাপাশি, "Get started" button শুধু `/auth`-এ পাঠায় — actual recharge online payment (যেটা ইতিমধ্যে `/app/subscribe`-এ কাজ করছে via `recharge-create-payment` edge function) এখান থেকে trigger হয় না।
+
+## Goal
+
+Home page-এর pricing section-কে fully dynamic করা — admin যেগুলো `subscription_plans` table-এ active রাখেন সেগুলোই দেখাবে, এবং login করা owner user button-এ click করলে যেখানে সম্ভব সেখানে সরাসরি online recharge payment শুরু হবে; না হলে Subscribe page-এ চলে যাবে যেখানে manual payment করা যায়।
 
 ## Changes
 
-### 1. Voice: stop auto-disconnecting mid-speech
-File: `src/lib/useSpeechRecognition.ts`
+### 1. `src/components/site/PricingSection.tsx` — DB-driven rewrite
 
-- Increase silence-after-speech threshold from `1500ms` → `12000ms` (~12s) and rename usage so the new default matches the user request ("disconnect only after 10–15s of true silence").
-- Update the `VoiceFordoMic` caller (`src/components/app/VoiceFordoMic.tsx`) to pass `silenceTimeoutMs: 12000` and `noSpeechTimeoutMs: 15000`, and update the helper text from "১০ সেকেন্ড" to "১২ সেকেন্ড নীরব থাকলে বন্ধ হবে"।
-- Keep the existing manual "বন্ধ করুন" button so the user can stop whenever they want.
+- পুরো hard-coded `PLANS` array সরিয়ে দাও।
+- Mount হলে দুটো query করো:
+  - `supabase.from("subscription_plans").select("id,code,name_bn,name_en,price_bdt,old_price_bdt,duration_days,max_shops,is_lifetime,perks,description_bn,description_en,discount_pct").eq("is_active", true).order("price_bdt")`
+  - `supabase.from("payment_gateway_settings").select("is_enabled").eq("id", true).maybeSingle()` — online payment চালু কিনা জানার জন্য।
+- Loading state দেখাও (skeleton বা spinner)। Plans খালি/error হলে friendly message: "শীঘ্রই প্ল্যান প্রকাশ হবে" + WhatsApp/Subscribe page link।
+- প্রতিটা plan card-এ `Subscribe` page-এর মতো একই data দেখাও:
+  - Name (lang অনুযায়ী), final price = `discount_pct ? round(price_bdt * (1 - discount_pct/100)) : price_bdt`, strikethrough `old_price_bdt` যদি থাকে এবং `> final`, duration/max_shops, description, perks list।
+  - "Lifetime" plan-এ `is_lifetime` দেখে badge ও infinity icon, top-priced plan (last after sort) auto-highlight।
+- Free plan card সবসময় প্রথমে দেখাও (যেমনটা `/app/subscribe`-এ আছে) — ৳0 / forever, ১টি দোকান, FREE_LIMITS_BN/EN string।
+- Button behaviour:
+  - User logged out → `/auth` (existing behaviour)।
+  - User logged in + `gatewayEnabled` true + plan paid → call `supabase.functions.invoke("recharge-create-payment", { body: { plan_id, origin: window.location.origin, phone: user.phone ?? user.email ?? "" } })` → success হলে `window.location.href = data.payment_url`; error/no url হলে toast দেখাও + `/app/subscribe`-এ পাঠাও।
+  - User logged in + gateway disabled → সরাসরি `/app/subscribe`-এ পাঠাও (সেখানে manual payment + plan selection আছে)।
+  - Free plan card-এর button → logged in হলে `/app/dashboard`, না হলে `/auth`।
+- Reuse `Subscribe.tsx`-এর patterns (একই query, একই finalPrice formula) যাতে দুই page-এ ১০০% consistent থাকে।
 
-This solves the "কথা হচ্ছে but stop হয়ে যাচ্ছে" issue — the recognizer will only close after ~12s of real silence, not after every short pause between item names.
+### 2. কোনো DB / migration / edge function পরিবর্তন দরকার নেই
 
-### 2. Smaller, cleaner "Add more product" button
-File: `src/pages/f/Slug.tsx`
+`subscription_plans`, `payment_gateway_settings`, `recharge-create-payment` সব ইতিমধ্যে আছে এবং `Subscribe` page-এ কাজ করছে। আমরা শুধু home page-কে একই পথে hook করছি।
 
-Replace the full-width outline `<Button>` with a compact, subtle inline button:
-- Smaller size (`size="sm"`), auto width, left-aligned (not `w-full`).
-- Lighter visual weight (`variant="ghost"` with a dashed border or muted background) so it sits nicely under the item rows.
-- Keep the `+` icon and label "আরও পণ্য যোগ করুন".
+### 3. বিদ্যমান behaviour যা থাকছে
 
-### 3. Remove the card color picker
-File: `src/pages/f/Slug.tsx`
-
-- Delete the entire "কার্ডের রং" block (the `<div className="mt-5">` containing the PALETTE swatches around lines 530–543).
-- Keep the note (নোট) textarea — user explicitly wants to keep it.
-- Keep `color` state and the `palette` styling on the card so the card still has its current pleasant background; just remove the user-facing chooser. (Default stays `"mint"`.)
-- The `color` value is still submitted with the form, so backend behaviour is unchanged.
+- `/pricing` route → এখনো `/#pricing`-এ redirect করে (কোনো বদল নেই)।
+- "৭ দিনের ফ্রি ট্রায়াল" badge এবং "৭ দিন money-back guarantee" footer line — থাকছে।
 
 ## Out of scope
 
-- No changes to login/PIN, customer info section, submit button, or backend.
-- No changes to the merchant-side voice flow (only the public fordo page reported the issue).
+- Admin Plans page-এ কোনো বদল না (ইতিমধ্যে কাজ করছে)।
+- Payment gateway settings UI-তে বদল না।
+- Manual payment UI home page-এ যোগ করা হবে না — সেটা `/app/subscribe`-এ থাকবে (চাইলে user "Subscribe" button-এ click করে সেখানে যাবে)।
