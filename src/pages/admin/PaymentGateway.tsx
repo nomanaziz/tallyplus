@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Loader2, Save } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Loader2, Save, Smartphone } from "lucide-react";
 import { toast } from "sonner";
 
 type Settings = {
@@ -45,6 +46,19 @@ export default function AdminPaymentGateway() {
 
   if (loading) return <div className="flex justify-center p-12"><Loader2 className="h-6 w-6 animate-spin" /></div>;
 
+  const manual = (s.extra?.manual ?? {}) as any;
+  const setManualField = (path: string[], value: any) => {
+    const next = JSON.parse(JSON.stringify(s.extra ?? {}));
+    next.manual = next.manual ?? {};
+    let cur = next.manual;
+    for (let i = 0; i < path.length - 1; i++) {
+      cur[path[i]] = cur[path[i]] ?? {};
+      cur = cur[path[i]];
+    }
+    cur[path[path.length - 1]] = value;
+    setS({ ...s, extra: next });
+  };
+
   return (
     <div className="mx-auto max-w-2xl space-y-5 p-6">
       <div>
@@ -62,7 +76,80 @@ export default function AdminPaymentGateway() {
         <p className="text-xs text-muted-foreground">
           🔐 API key/secret <strong>Edge Function secrets</strong>-এ <code>RECHARGE_SERVER_API_KEY</code> নামে save করুন।
         </p>
-        <Button onClick={save} disabled={saving}>{saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="mr-1 h-4 w-4" />} Save</Button>
+      </div>
+
+      {/* Manual payment numbers */}
+      <div className="space-y-4 rounded-md border bg-background p-5">
+        <div className="flex items-center gap-2">
+          <Smartphone className="h-5 w-5 text-primary" />
+          <h2 className="text-lg font-bold">Manual Payment Numbers</h2>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          গেটওয়ে disabled থাকলে দোকানদাররা এই নম্বরগুলোতে টাকা পাঠিয়ে TxnID submit করবে। তারপর Subscription Requests page থেকে approve করুন।
+        </p>
+
+        {(["bkash", "nagad", "rocket"] as const).map((m) => (
+          <div key={m} className="grid grid-cols-1 gap-2 md:grid-cols-2">
+            <div>
+              <Label className="capitalize">{m} number</Label>
+              <Input
+                value={manual?.[m]?.number ?? ""}
+                onChange={(e) => setManualField([m, "number"], e.target.value)}
+                placeholder="01XXXXXXXXX"
+              />
+            </div>
+            <div>
+              <Label>Type</Label>
+              <Input
+                value={manual?.[m]?.type ?? ""}
+                onChange={(e) => setManualField([m, "type"], e.target.value)}
+                placeholder="personal / merchant / agent"
+              />
+            </div>
+          </div>
+        ))}
+
+        <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
+          <div>
+            <Label>Bank name</Label>
+            <Input value={manual?.bank?.name ?? ""} onChange={(e) => setManualField(["bank", "name"], e.target.value)} placeholder="City Bank" />
+          </div>
+          <div>
+            <Label>Account no.</Label>
+            <Input value={manual?.bank?.account ?? ""} onChange={(e) => setManualField(["bank", "account"], e.target.value)} placeholder="1234567890" />
+          </div>
+          <div>
+            <Label>Branch</Label>
+            <Input value={manual?.bank?.branch ?? ""} onChange={(e) => setManualField(["bank", "branch"], e.target.value)} placeholder="Dhanmondi" />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+          <div>
+            <Label>Instructions (Bangla)</Label>
+            <Textarea
+              value={manual?.instructions_bn ?? ""}
+              onChange={(e) => setManualField(["instructions_bn"], e.target.value)}
+              rows={3}
+              placeholder="টাকা পাঠানোর পর TxnID লিখে submit করুন।"
+            />
+          </div>
+          <div>
+            <Label>Instructions (English)</Label>
+            <Textarea
+              value={manual?.instructions_en ?? ""}
+              onChange={(e) => setManualField(["instructions_en"], e.target.value)}
+              rows={3}
+              placeholder="Send money to any number above, then submit the TxnID."
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="flex justify-end">
+        <Button onClick={save} disabled={saving} size="lg">
+          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="mr-1 h-4 w-4" />} Save all
+        </Button>
       </div>
     </div>
   );
