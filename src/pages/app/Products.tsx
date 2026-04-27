@@ -1,9 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, Download, MoreVertical, Package, Pencil, Trash2, Sparkles, Hash } from "lucide-react";
+import {
+  Plus, Download, MoreVertical, Package, Pencil, Trash2, Sparkles, Hash,
+  Eye, History, Save, X, Minus, ListOrdered,
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useShop } from "@/lib/shop";
-import { productsListQuery } from "@/lib/queries";
+import { useAuth } from "@/lib/auth";
+import { productsListQuery, stockHistoryQuery } from "@/lib/queries";
 import { useI18n, fmtMoney, bnNum } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from "@/components/ui/sheet";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DataToolbar } from "@/components/app/DataToolbar";
 import { EmptyState } from "@/components/app/EmptyState";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -25,6 +30,8 @@ import { toast } from "sonner";
 import { CatalogProductPicker, type CatalogProduct } from "@/components/app/CatalogProductPicker";
 import { SampleProductImportSheet } from "@/components/app/SampleProductImportSheet";
 import { ProductSerialsDialog } from "@/components/app/ProductSerialsDialog";
+import { ProductDetailsDialog, type ProductFull } from "@/components/app/ProductDetailsDialog";
+import { UpdateStockDialog } from "@/components/app/UpdateStockDialog";
 
 type Product = {
   id: string;
@@ -51,6 +58,7 @@ function GuardedProductsPage() {
 function ProductsPage() {
   const { lang } = useI18n();
   const { current } = useShop();
+  const { user } = useAuth();
   const qc = useQueryClient();
   const { data: items = [], isLoading: loading, refetch } = useQuery(productsListQuery(current?.id ?? null));
   const [search, setSearch] = useState("");
@@ -58,6 +66,23 @@ function ProductsPage() {
   const [editing, setEditing] = useState<Product | null>(null);
   const [openImport, setOpenImport] = useState(false);
   const [serialsTarget, setSerialsTarget] = useState<Product | null>(null);
+
+  // View / Update stock dialogs
+  const [details, setDetails] = useState<Product | null>(null);
+  const [updateOpen, setUpdateOpen] = useState(false);
+
+  // Stock history dialog
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const { data: history } = useQuery({
+    ...stockHistoryQuery(current?.id ?? null),
+    enabled: !!current?.id && historyOpen,
+  });
+
+  // Bulk Stock Edit mode (inline)
+  const [editStockMode, setEditStockMode] = useState(false);
+  const [updates, setUpdates] = useState<Record<string, number>>({});
+  const [savingStock, setSavingStock] = useState(false);
+
   const load = async () => {
     await qc.invalidateQueries({ queryKey: ["products"] });
     await refetch();
@@ -69,32 +94,136 @@ function ProductsPage() {
     return items.filter((p) => p.name.toLowerCase().includes(q) || (p.sku ?? "").toLowerCase().includes(q));
   }, [items, search]);
 
+  const totalStockValue = useMemo(
+    () => filtered.reduce((sum, p) => {
+      const s = Number(p.stock);
+      if (s < 0) return sum; // unlimited skipped
+      return sum + Number(p.cost_price) * s;
+    }, 0),
+    [filtered],
+  );
+
+  const productMap = useMemo(
+    () => Object.fromEntries(items.map((p) => [p.id, p.name])),
+    [items],
+  );
+
   const onDelete = async (p: Product) => {
     if (!confirm(lang === "bn" ? "ডিলিট করবেন?" : "Delete this product?")) return;
     const { error } = await supabase.from("products").update({ deleted_at: new Date().toISOString() }).eq("id", p.id);
     if (error) { toast.error(error.message); return; }
     toast.success(lang === "bn" ? "ডিলিট হয়েছে" : "Deleted");
+    setDetails(null);
     void load();
+  };
+
+  // Adjust stock from "Update Stock" dialog (single product)
+  const adjust = async (p: Product, newStock: number) => {
+    if (!current || !user) return;
+    const diff = newStock - Number(p.stock);
+    if (diff === 0) return;
+    const { error: e1 } = await supabase.from("products").update({ stock: newStock }).eq("id", p.id);
+    if (e1) { toast.error(e1.message); return; }
+    await supabase.from("stock_movements").insert({
+      shop_id: current.id,
+      product_id: p.id,
+      qty: Math.abs(diff),
+      type: diff > 0 ? "in" : "out",
+      note: "manual adjust",
+      created_by: user.id,
+    });
+    toast.success(lang === "bn" ? "আপডেট হয়েছে" : "Updated");
+    void load();
+    void qc.invalidateQueries({ queryKey: ["stock", "history"] });
+  };
+
+  // Bulk save (inline edit mode)
+  const setQty = (id: string, v: number) => setUpdates((u) => ({ ...u, [id]: v }));
+  const saveBulk = async () => {
+    if (!current || !user) return;
+    const changes = items.filter((p) => updates[p.id] != null && updates[p.id] !== Number(p.stock));
+    if (changes.length === 0) {
+      toast.info(lang === "bn" ? "কোনো পরিবর্তন নেই" : "No changes");
+      return;
+    }
+    setSavingStock(true);
+    for (const p of changes) {
+      const newStock = updates[p.id];
+      const diff = newStock - Number(p.stock);
+      const { error } = await supabase.from("products").update({ stock: newStock }).eq("id", p.id);
+      if (error) { toast.error(error.message); setSavingStock(false); return; }
+      await supabase.from("stock_movements").insert({
+        shop_id: current.id,
+        product_id: p.id,
+        qty: Math.abs(diff),
+        type: diff > 0 ? "in" : "out",
+        note: "bulk edit",
+        created_by: user.id,
+      });
+    }
+    setSavingStock(false);
+    toast.success(lang === "bn" ? "সংরক্ষণ হয়েছে" : "Saved");
+    setUpdates({});
+    setEditStockMode(false);
+    await qc.invalidateQueries({ queryKey: ["products"] });
+    void qc.invalidateQueries({ queryKey: ["stock", "history"] });
+    await refetch();
+  };
+
+  const cancelBulk = () => {
+    setUpdates({});
+    setEditStockMode(false);
   };
 
   return (
     <div className="container px-4 py-4">
-      <div className="mb-1 text-xs text-muted-foreground">Product List</div>
+      <div className="mb-1 text-xs text-muted-foreground">
+        {lang === "bn" ? "প্রোডাক্ট ও স্টক ব্যবস্থাপনা" : "Products & Stock Management"}
+      </div>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-xl font-extrabold md:text-2xl">{lang === "bn" ? "প্রোডাক্ট লিস্ট" : "Product List"}</h1>
+        <h1 className="text-xl font-extrabold md:text-2xl">
+          {lang === "bn" ? "প্রোডাক্ট ও স্টক" : "Products & Stock"}
+        </h1>
         <div className="flex flex-wrap items-center gap-2">
-          <Button variant="outline" className="h-10 gap-2">
-            <Download className="h-4 w-4" />
-            {lang === "bn" ? "ডাউনলোড/প্রিন্ট" : "Download/Print"}
-          </Button>
-          <Button variant="outline" className="h-10 gap-2" onClick={() => setOpenImport(true)}>
-            <Sparkles className="h-4 w-4 text-primary" />
-            {lang === "bn" ? "স্যাম্পল ইম্পোর্ট" : "Import Sample"}
-          </Button>
-          <Button className="h-10 gap-2" onClick={() => { setEditing(null); setOpenForm(true); }}>
-            <Plus className="h-4 w-4" />
-            {lang === "bn" ? "প্রোডাক্ট যুক্ত করুন" : "Add Product"}
-          </Button>
+          {editStockMode ? (
+            <>
+              <Button variant="outline" className="h-10 gap-2" onClick={cancelBulk}>
+                <X className="h-4 w-4" />
+                {lang === "bn" ? "ক্যানসেল" : "Cancel"}
+              </Button>
+              <Button
+                className="h-10 gap-2"
+                onClick={saveBulk}
+                disabled={savingStock || Object.keys(updates).length === 0}
+              >
+                <Save className="h-4 w-4" />
+                {savingStock ? "..." : lang === "bn" ? "সংরক্ষণ করুন" : "Save"}
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button variant="outline" className="h-10 gap-2" onClick={() => setHistoryOpen(true)}>
+                <History className="h-4 w-4" />
+                {lang === "bn" ? "স্টকের ইতিহাস" : "Stock history"}
+              </Button>
+              <Button variant="outline" className="h-10 gap-2" onClick={() => setEditStockMode(true)}>
+                <ListOrdered className="h-4 w-4" />
+                {lang === "bn" ? "স্টক এডিট" : "Stock edit"}
+              </Button>
+              <Button variant="outline" className="h-10 gap-2">
+                <Download className="h-4 w-4" />
+                {lang === "bn" ? "ডাউনলোড/প্রিন্ট" : "Download/Print"}
+              </Button>
+              <Button variant="outline" className="h-10 gap-2" onClick={() => setOpenImport(true)}>
+                <Sparkles className="h-4 w-4 text-primary" />
+                {lang === "bn" ? "স্যাম্পল ইম্পোর্ট" : "Import Sample"}
+              </Button>
+              <Button className="h-10 gap-2" onClick={() => { setEditing(null); setOpenForm(true); }}>
+                <Plus className="h-4 w-4" />
+                {lang === "bn" ? "প্রোডাক্ট যুক্ত করুন" : "Add Product"}
+              </Button>
+            </>
+          )}
         </div>
       </div>
       <SampleProductImportSheet open={openImport} onOpenChange={setOpenImport} onImported={() => void load()} />
@@ -103,9 +232,17 @@ function ProductsPage() {
         <DataToolbar search={search} onSearch={setSearch} onRefresh={load} />
       </div>
 
+      {editStockMode && (
+        <div className="mt-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+          {lang === "bn"
+            ? "স্টক এডিট মোড — পরিমাণ পরিবর্তন করে উপরে \"সংরক্ষণ করুন\" চাপুন।"
+            : "Stock edit mode — change quantities then press \"Save\" above."}
+        </div>
+      )}
+
       <div className="mt-4 rounded-xl border bg-card">
         <div className="border-b px-4 py-3 text-sm font-semibold">
-          Total Products : {lang === "bn" ? bnNum(filtered.length) : filtered.length}
+          {lang === "bn" ? "মোট প্রোডাক্ট:" : "Total Products:"} {lang === "bn" ? bnNum(filtered.length) : filtered.length}
         </div>
         {loading ? (
           <div className="p-8 text-center text-sm text-muted-foreground">...</div>
@@ -126,61 +263,132 @@ function ProductsPage() {
                 <TableRow>
                   <TableHead>{lang === "bn" ? "পণ্যের নাম" : "Product"}</TableHead>
                   <TableHead className="text-right">{lang === "bn" ? "বর্তমান মজুদ" : "In stock"}</TableHead>
+                  <TableHead className="text-right hidden sm:table-cell">{lang === "bn" ? "দর" : "Cost"}</TableHead>
                   <TableHead className="text-right">{lang === "bn" ? "বিক্রয় মূল্য" : "Sale price"}</TableHead>
-                  <TableHead className="hidden md:table-cell">{lang === "bn" ? "সাব ক্যাটাগরি" : "Category"}</TableHead>
-                  <TableHead className="text-right">Action</TableHead>
+                  <TableHead className="text-right hidden md:table-cell">{lang === "bn" ? "মোট মজুদ মূল্য" : "Stock value"}</TableHead>
+                  {editStockMode ? (
+                    <TableHead className="text-center w-[260px]">{lang === "bn" ? "আপডেটেড স্টক" : "Updated stock"}</TableHead>
+                  ) : (
+                    <TableHead className="text-right">Action</TableHead>
+                  )}
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filtered.map((p) => (
-                  <TableRow key={p.id}>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <div className="flex h-8 w-8 flex-none items-center justify-center rounded-md bg-muted">
-                          {p.image_url ? (
-                            <img src={p.image_url} alt="" className="h-8 w-8 rounded-md object-cover" />
-                          ) : (
-                            <Package className="h-4 w-4 text-muted-foreground" />
-                          )}
+                {filtered.map((p) => {
+                  const stockNum = Number(p.stock);
+                  const isUnlimited = stockNum < 0;
+                  const stockValue = isUnlimited ? 0 : Number(p.cost_price) * stockNum;
+                  const cur = updates[p.id] ?? stockNum;
+                  const changed = updates[p.id] != null && updates[p.id] !== stockNum;
+                  return (
+                    <TableRow key={p.id} className={editStockMode && changed ? "bg-amber-50/60 hover:bg-amber-50" : undefined}>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <div className="flex h-8 w-8 flex-none items-center justify-center rounded-md bg-muted">
+                            {p.image_url ? (
+                              <img src={p.image_url} alt="" className="h-8 w-8 rounded-md object-cover" />
+                            ) : (
+                              <Package className="h-4 w-4 text-muted-foreground" />
+                            )}
+                          </div>
+                          <span className="font-medium">{p.name}</span>
                         </div>
-                        <span className="font-medium">{p.name}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {Number(p.stock) < 0
-                        ? <span className="text-primary">{lang === "bn" ? "অসীম" : "Unlimited"}</span>
-                        : (lang === "bn" ? bnNum(p.stock) : p.stock)}
-                    </TableCell>
-                    <TableCell className="text-right">{fmtMoney(Number(p.sale_price), lang)}</TableCell>
-                    <TableCell className="hidden md:table-cell text-muted-foreground">—</TableCell>
-                    <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => { setEditing(p); setOpenForm(true); }}>
-                            <Pencil className="mr-2 h-4 w-4" /> {lang === "bn" ? "এডিট" : "Edit"}
-                          </DropdownMenuItem>
-                          {p.is_serialized && (
-                            <DropdownMenuItem onClick={() => setSerialsTarget(p)}>
-                              <Hash className="mr-2 h-4 w-4" /> {lang === "bn" ? "সিরিয়াল ম্যানেজ" : "Manage Serials"}
-                            </DropdownMenuItem>
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums">
+                        {isUnlimited
+                          ? <span className="text-primary">{lang === "bn" ? "অসীম" : "Unlimited"}</span>
+                          : (lang === "bn" ? bnNum(stockNum) : stockNum)}
+                      </TableCell>
+                      <TableCell className="text-right hidden sm:table-cell tabular-nums">
+                        {fmtMoney(Number(p.cost_price), lang)}
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums">{fmtMoney(Number(p.sale_price), lang)}</TableCell>
+                      <TableCell className="text-right hidden md:table-cell font-semibold tabular-nums">
+                        {isUnlimited ? "—" : fmtMoney(stockValue, lang)}
+                      </TableCell>
+                      {editStockMode ? (
+                        <TableCell>
+                          {isUnlimited ? (
+                            <div className="text-center text-xs text-muted-foreground">
+                              {lang === "bn" ? "অসীম" : "Unlimited"}
+                            </div>
+                          ) : (
+                            <div className="mx-auto flex w-[240px] items-center gap-2">
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                className="h-9 w-10 rounded-md bg-rose-100 text-rose-600 hover:bg-rose-200 border-rose-200"
+                                onClick={() => setQty(p.id, Math.max(0, cur - 1))}
+                              >
+                                <Minus className="h-4 w-4" />
+                              </Button>
+                              <Input
+                                type="number"
+                                value={cur}
+                                onChange={(e) => setQty(p.id, Math.max(0, Number(e.target.value) || 0))}
+                                className={"h-9 text-center text-sm font-semibold tabular-nums " + (changed ? "border-b-2 border-b-blue-500 focus-visible:ring-blue-500" : "")}
+                              />
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                className="h-9 w-10 rounded-md bg-emerald-500 text-white hover:bg-emerald-600 border-emerald-500"
+                                onClick={() => setQty(p.id, cur + 1)}
+                              >
+                                <Plus className="h-4 w-4" />
+                              </Button>
+                            </div>
                           )}
-                          <DropdownMenuItem className="text-destructive" onClick={() => onDelete(p)}>
-                            <Trash2 className="mr-2 h-4 w-4" /> {lang === "bn" ? "ডিলিট" : "Delete"}
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                        </TableCell>
+                      ) : (
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-8 w-8 p-0"
+                              onClick={() => setDetails(p)}
+                              title={lang === "bn" ? "বিস্তারিত" : "View"}
+                            >
+                              <Eye className="h-3.5 w-3.5" />
+                            </Button>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8">
+                                  <MoreVertical className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => { setEditing(p); setOpenForm(true); }}>
+                                  <Pencil className="mr-2 h-4 w-4" /> {lang === "bn" ? "এডিট" : "Edit"}
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => { setDetails(p); setUpdateOpen(true); }}>
+                                  <Plus className="mr-2 h-4 w-4" /> {lang === "bn" ? "স্টক আপডেট" : "Update stock"}
+                                </DropdownMenuItem>
+                                {p.is_serialized && (
+                                  <DropdownMenuItem onClick={() => setSerialsTarget(p)}>
+                                    <Hash className="mr-2 h-4 w-4" /> {lang === "bn" ? "সিরিয়াল ম্যানেজ" : "Manage Serials"}
+                                  </DropdownMenuItem>
+                                )}
+                                <DropdownMenuItem className="text-destructive" onClick={() => onDelete(p)}>
+                                  <Trash2 className="mr-2 h-4 w-4" /> {lang === "bn" ? "ডিলিট" : "Delete"}
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+                        </TableCell>
+                      )}
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
-            <div className="border-t px-4 py-3 text-center text-xs text-muted-foreground">
-              Showing 1 to {filtered.length} of {filtered.length} Products
+            <div className="flex flex-wrap items-center justify-between gap-2 border-t px-4 py-3 text-sm">
+              <span className="text-muted-foreground">
+                Showing 1 to {filtered.length} of {filtered.length}
+              </span>
+              <span className="font-semibold">
+                {lang === "bn" ? "মোট মজুদ মূল্য:" : "Total stock value:"} {fmtMoney(totalStockValue, lang)}
+              </span>
             </div>
           </>
         )}
@@ -201,6 +409,69 @@ function ProductsPage() {
         productId={serialsTarget?.id ?? null}
         productName={serialsTarget?.name ?? ""}
       />
+
+      <ProductDetailsDialog
+        product={details ? ({
+          id: details.id,
+          name: details.name,
+          stock: Number(details.stock),
+          sale_price: Number(details.sale_price),
+          cost_price: Number(details.cost_price),
+          unit: details.unit,
+          category_id: details.category_id,
+          low_stock_alert: details.low_stock_alert,
+          image_url: details.image_url,
+          expiry_date: null,
+        } as ProductFull) : null}
+        open={!!details && !updateOpen}
+        onOpenChange={(v) => !v && setDetails(null)}
+        onUpdateStock={() => setUpdateOpen(true)}
+        onDelete={() => details && onDelete(details)}
+      />
+
+      <UpdateStockDialog
+        open={updateOpen}
+        onOpenChange={(v) => { setUpdateOpen(v); if (!v) setDetails(null); }}
+        productName={details?.name ?? ""}
+        currentStock={Number(details?.stock ?? 0)}
+        onSave={async (newStock) => {
+          if (details) await adjust(details, newStock);
+        }}
+      />
+
+      <Dialog open={historyOpen} onOpenChange={setHistoryOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{lang === "bn" ? "স্টকের ইতিহাস" : "Stock history"}</DialogTitle>
+          </DialogHeader>
+          {history && history.length === 0 ? (
+            <EmptyState title={lang === "bn" ? "কোনো রেকর্ড নেই" : "No records"} />
+          ) : (
+            <div className="max-h-[60vh] overflow-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>{lang === "bn" ? "তারিখ" : "Date"}</TableHead>
+                    <TableHead>{lang === "bn" ? "পণ্য" : "Product"}</TableHead>
+                    <TableHead>{lang === "bn" ? "ধরন" : "Type"}</TableHead>
+                    <TableHead className="text-right">{lang === "bn" ? "পরিমাণ" : "Qty"}</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {history?.map((m) => (
+                    <TableRow key={m.id}>
+                      <TableCell className="text-xs">{new Date(m.created_at).toLocaleString()}</TableCell>
+                      <TableCell>{productMap[m.product_id] ?? "—"}</TableCell>
+                      <TableCell><span className={m.type === "in" ? "text-emerald-600" : "text-destructive"}>{m.type}</span></TableCell>
+                      <TableCell className="text-right">{lang === "bn" ? bnNum(m.qty) : m.qty}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -280,6 +551,7 @@ function ProductFormDialog({
       setDiscountValue(p?.discount_value != null ? String(p.discount_value) : "");
       setDiscountType(((p?.discount_type as "percent"|"flat") ?? "percent"));
       setBarcodeOn(Boolean(p?.barcode));
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       setSerializedOn(Boolean((p as any)?.is_serialized));
     }
   }, [open, product]);

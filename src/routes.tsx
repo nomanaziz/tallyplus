@@ -65,8 +65,7 @@ const P54 = lazy(() => import("./pages/app/Returns"));
 const P55 = lazy(() => import("./pages/app/SalesLedger"));
 const P56 = lazy(() => import("./pages/app/Sell"));
 const P57 = lazy(() => import("./pages/app/Shops"));
-const P58 = lazy(() => import("./pages/app/StockEdit"));
-const P59 = lazy(() => import("./pages/app/Stock"));
+import { Navigate } from "react-router-dom";
 const P60 = lazy(() => import("./pages/app/Subscribe"));
 const P61 = lazy(() => import("./pages/app/Training"));
 const P62 = lazy(() => import("./pages/app/AppLayout"));
@@ -171,8 +170,8 @@ export function AppRoutes() {
       <Route path="sales-ledger" element={<S><P55 /></S>} />
       <Route path="sell" element={<S><P56 /></S>} />
       <Route path="shops" element={<S><P57 /></S>} />
-      <Route path="stock-edit" element={<S><P58 /></S>} />
-      <Route path="stock" element={<S><P59 /></S>} />
+      <Route path="stock-edit" element={<Navigate to="/app/products" replace />} />
+      <Route path="stock" element={<Navigate to="/app/products" replace />} />
       <Route path="subscribe" element={<S><P60 /></S>} />
       <Route path="subscribe/callback" element={<S><P78 /></S>} />
       <Route path="usage-limits" element={<S><P74 /></S>} />

@@ -1,48 +1,66 @@
-## লক্ষ্য
+## পার্থক্য কী, এবং কেন merge করা যায়
 
-1. একটা নতুন, আরও স্পষ্ট বাংলা font try করা — পছন্দ না হলে সহজে ফেরত যাওয়া যাবে।
-2. Header-এ "টালি প্লাস / Tally Plus" লেখাটার উপরের ও নিচের অংশ যে কেটে যাচ্ছে সেটা ঠিক করা।
+আপনি ঠিকই দেখেছেন — দুটো page একই `products` table-এর উপর কাজ করে, একই row দেখায়, শুধু **focus আলাদা**:
+
+| Page | মূল কাজ | আলাদা features |
+|---|---|---|
+| **প্রোডাক্ট লিস্ট** (`/app/products`) | Catalog management | Add/Edit form (নাম, SKU, barcode, দাম, VAT, warranty, discount, online shop toggle, serial), Sample Import, Edit/Delete dropdown |
+| **স্টক খাতা** (`/app/stock`) | Inventory view | মোট মজুদ মূল্য (cost × stock), স্টকের ইতিহাস (movements), Update Stock dialog, Stock Edit (bulk +/− করে stock update) |
+
+দুই page-এই একই product row, একই নাম, একই বর্তমান মজুদ — শুধু action আর extra column ভিন্ন। Merge করাটা সম্পূর্ণ যৌক্তিক।
 
 ---
 
-## কেন কাটছে (সমস্যার মূল কারণ)
+## প্রস্তাবিত merged page: **"প্রোডাক্ট ও স্টক"** (`/app/products`)
 
-`src/components/site/SiteHeader.tsx`-এ logo-র পাশের টেক্সটে `leading-none` (line-height: 1) দেওয়া আছে। বাংলা hরফের মাত্রা (উপরে রেফ, নিচে আ-কার / ্য-ফলা) line-box-এর বাইরে চলে যায়, ফলে উপর-নিচ ছেঁটে যায়। একই pattern অন্য কয়েক জায়গায় (AppSidebar / AppLayout / Shops) আছে কিন্তু সেখানে logo-র পাশে টেক্সট নেই — মূল visible সমস্যা site header-এ।
+একটাই page যেখানে দুটো page-এর সব feature থাকবে।
 
----
+### Top toolbar (সব action একসাথে)
+- **প্রোডাক্ট যুক্ত করুন** (primary button — form খুলবে)
+- **স্যাম্পল ইম্পোর্ট**
+- **স্টক এডিট** (bulk update mode toggle)
+- **স্টকের ইতিহাস** (movements dialog)
+- **ডাউনলোড/প্রিন্ট**
+- Search bar (DataToolbar)
 
-## প্রস্তাবিত পরিবর্তন
+### Table columns (দুই page-এর সব column একসাথে)
+| পণ্যের নাম | বর্তমান মজুদ | বিক্রয় মূল্য | দর (cost) | মোট মজুদ মূল্য | Action |
+|---|---|---|---|---|---|
 
-### ১. নতুন বাংলা font: **Tiro Bangla** (try-out)
+Footer-এ "Total Products: N" + "মোট মজুদ মূল্য: ৳XX" দুটোই।
 
-বর্তমানে কোনো Google Font preload নেই — system default ব্যবহার হচ্ছে। আমি Tiro Bangla যোগ করব (একটা পরিচ্ছন্ন, পড়তে সহজ, modern serif-leaning Bengali font, Google Fonts-এ free)। পাশাপাশি fallback হিসেবে Hind Siliguri ও system font থাকবে।
+### Action column (আপনি যেমন বললেন — view + action পাশাপাশি)
+প্রতি row-তে দুটো button পাশাপাশি:
+1. **👁 View** (Eye icon) — `ProductDetailsDialog` খুলবে (বর্তমান মজুদ, বিক্রয় মূল্য, cost, ইতিহাস summary দেখাবে — Stock page-এর existing dialog)
+2. **⋮ Action** (3-dot menu) — Edit / Stock Update / Manage Serials / Delete
 
-পরিবর্তন:
-- `index.html`-এ Google Fonts preconnect + Tiro Bangla + Hind Siliguri stylesheet link যোগ।
-- `src/styles.css`-এ `body { font-family: "Tiro Bangla", "Hind Siliguri", ui-sans-serif, system-ui, sans-serif; }` সেট।
+### Bulk "Stock Edit" mode
+উপরের toolbar-এ "স্টক এডিট" button চাপলে table-টা inline edit mode-এ চলে যাবে (StockEdit.tsx-এর +/− buttons + Save/Cancel) — আলাদা page-এ navigate করতে হবে না। অথবা চাইলে এটা `/app/products/edit-stock` সাব-route হিসেবে রাখতে পারি — আপনি বললে ঠিক করব।
 
-পছন্দ না হলে এই দুটি জায়গা revert করলেই আগের অবস্থায় ফিরে যাবে — অন্য কোনো কোড changes লাগবে না।
-
-বিকল্প হিসেবে চাইলে আমি **Noto Sans Bengali** বা **Baloo Da 2** ও দেখাতে পারি।
-
-### ২. Logo wordmark clipping fix
-
-`src/components/site/SiteHeader.tsx`:
-- টেক্সটের `leading-none` সরিয়ে `leading-tight` করা (mobile + desktop দুই জায়গায়)।
-- ছোট padding বাড়িয়ে header height-এ একটু breathing room (`py-1` add)।
-- Logo আর টেক্সটকে সঠিকভাবে vertically center করতে `items-center` যথেষ্ট আছে; শুধু line-height ঠিক করলেই চলবে।
-
-Mobile sheet header (line 73-77)-এও একই `leading-none` issue থাকলে তা ঠিক করা।
-
-### ৩. (Optional) AppSidebar/AppLayout/Shops-এর `<img>` logo যেহেতু square frame-এ `object-contain` ছাড়া রেন্ডার হচ্ছে, সামান্য stretching হতে পারে — সব জায়গায় `object-contain` যোগ করব যাতে logo কখনো বিকৃত না হয়।
+### স্টকের ইতিহাস
+Toolbar button → Dialog (existing `stock_movements` query)। কোনো row-এর জন্য specific history চাইলে View dialog থেকেও পৌঁছানো যাবে।
 
 ---
 
 ## পরিবর্তিত ফাইল
 
-- `index.html` — Google Fonts link
-- `src/styles.css` — body font-family
-- `src/components/site/SiteHeader.tsx` — leading fix
-- `src/components/app/AppSidebar.tsx`, `src/pages/app/AppLayout.tsx`, `src/pages/app/Shops.tsx` — `object-contain` যোগ
+**Edit:**
+- `src/pages/app/Products.tsx` → merged page (Stock.tsx + StockEdit.tsx-এর সব feature integrate)
+- `src/components/app/AppSidebar.tsx` → "স্টকের হিসাব" menu item সরানো (একটাই থাকবে, "প্রোডাক্ট ও স্টক")
+- `src/routes.tsx` → `/app/stock` ও `/app/stock-edit` route-গুলো `/app/products`-এ redirect করা (পুরনো link/bookmark ভাঙবে না)
+- যেসব জায়গা থেকে `nav({ to: "/app/stock" })` বা `/app/stock-edit` call হয় (যেমন Products.tsx-এর "Add Product" button থেকে Stock.tsx-এ যাওয়ার লিংক) — সেগুলো clean up
 
-পছন্দ হলো? Approve করলে apply করে দিচ্ছি। font পছন্দ না হলে শুধু বলবেন — এক ক্লিকে আগের system font-এ ফিরিয়ে দেব, বা Noto Sans Bengali / Baloo Da 2 try করে দেখাব।
+**Delete (later, route redirect কাজ করার পরে):**
+- `src/pages/app/Stock.tsx`
+- `src/pages/app/StockEdit.tsx`
+
+**নতুন কিছু লাগবে না** — সব dialog (`ProductDetailsDialog`, `UpdateStockDialog`, `ProductFormDialog`, `ProductSerialsDialog`, `SampleProductImportSheet`) ইতিমধ্যেই আছে।
+
+---
+
+## ছোট দুটো decision (default ধরে নিচ্ছি, আপনি বললে পাল্টাব)
+
+1. **Stock Edit** — inline mode toggle হিসেবে রাখব (আলাদা page না), যাতে সব same page-এ থাকে। পছন্দ?
+2. **Menu নাম** — "প্রোডাক্ট ও স্টক" / "Products & Stock"। অন্য নাম চাইলে বলুন (যেমন শুধু "প্রোডাক্ট" বা "ইনভেন্টরি")।
+
+Approve করলে implement করে দিচ্ছি।
