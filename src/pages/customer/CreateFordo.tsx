@@ -58,11 +58,12 @@ export default function CreateFordo() {
   // Preload template if ?templateId= is set
   useEffect(() => {
     if (!user || !search.templateId) return;
+    const tplId = search.templateId;
     void (async () => {
       const { data } = await supabase
         .from("consumer_fordo_templates")
         .select("name,note,items")
-        .eq("id", search.templateId)
+        .eq("id", tplId)
         .eq("consumer_user_id", user.id)
         .maybeSingle();
       if (data) {
