@@ -1,57 +1,48 @@
-## Plan
+## পরিবর্তনের সারাংশ
 
-1. Add a safe due-discount backend flow
-- Create a small adjustment-history table for sale due changes so discount is recorded instead of silently editing balances.
-- Store: shop, sale, customer, amount, type=`discount`, note, created_by, created_at.
-- Keep RLS aligned with existing shop-member rules.
-- When a discount is applied, update these 3 places together:
-  - `sales.discount` increases
-  - `sales.total` and `sales.due` decrease
-  - `customers.due_balance` decreases
+দুটো অংশে কাজ:
 
-2. Add “Discount” action where due exists
-- Update `src/pages/app/SalesLedger.tsx` so rows with `due > 0` get a new action in the 3-dot menu.
-- Build a reusable dialog/component for due discount:
-  - shows current due
-  - lets user enter discount amount and optional note
-  - validates discount cannot exceed current due
-  - shows remaining due before save
-- Refresh invoice/query state after save so the row updates immediately.
+### ১) Login page সরলীকরণ (`src/pages/Auth.tsx`)
 
-3. Add the same discount support in the Fordo flow
-- Extend `src/components/app/ConvertWishlistToSaleDialog.tsx` so if the converted sale will have due, the modal also allows a discount before final save.
-- Recalculate preview inside the modal:
-  - item total
-  - paid
-  - discount
-  - final due
-- Keep `customer_wishlists.converted_sale_id` linked so the sale remains traceable.
-- Update invoice/receipt data so the discount appears correctly after conversion.
+বর্তমান login form-এ "দোকানের নাম (ঐচ্ছিক)" field আছে যেটা আসলে login-এ ব্যবহারই হয় না (validate/submit-এ ignore করা হয়)। এটা সরাবো।
 
-4. Make first page loads and first navigation feel much faster
-- Reduce eager work in the app shell:
-  - lazy-load `QuickSellSheet` and `SettingsSheet` from `AppTopbar`
-  - defer notification fetch/realtime setup until needed, or at least filter it tightly by `user_id`
-- Add route preloading for the most-used app pages (`/app/sell`, `/app/purchase`, `/app/dashboard`, ledgers) so first click does not wait for chunk download.
-- Keep the shell light while route chunks load by preserving the existing skeleton and warming common routes after idle.
-- Review heavy first-load queries in the shell (`my_account`, shops, perms, notifications`) and avoid unnecessary duplicate work.
+Login mode-এ থাকবে শুধু:
+- মোবাইল নম্বর (placeholder)
+- ৪ সংখ্যার PIN (placeholder)
+- "লগইন" button
+- "Create account" link
+- "PIN ভুলে গেছেন? WhatsApp করুন" link
 
-5. QA pass
-- Verify these cases:
-  - sale with due → apply discount from ledger
-  - discount larger than due is blocked
-  - customer due balance updates correctly
-  - converted Fordo sale with due + discount saves correctly
-  - invoice shows updated discount and due
-  - first open of Sell/Purchase/Ledger pages is noticeably faster than now
+Signup page আগের মতই থাকবে (দোকান মালিক / গ্রাহক tab সহ — যেমনটা আগের turn-এ ঠিক করা হয়েছে)।
 
-## Technical details
-- Likely files:
-  - `src/pages/app/SalesLedger.tsx`
-  - `src/components/app/ConvertWishlistToSaleDialog.tsx`
-  - `src/components/app/InvoiceDialog.tsx`
-  - `src/components/app/AppTopbar.tsx`
-  - `src/pages/app/AppLayout.tsx`
-  - `src/routes.tsx` and/or shared navigation components for route warming
-  - new migration for due-adjustment history
-- Performance note: part of the slowness is from the current preview/dev environment loading many JS chunks on first visit. That cannot become literally zero, but the app can still be made much more responsive by preloading common routes and removing unnecessary shell work.
+### ২) সব public/customer page-এ Header + Footer
+
+বর্তমান অবস্থা:
+- `SiteHeader` আছে: `/shop` (marketplace index), `/shop/s/:slug`, `/shop/p/:id`
+- `SiteFooter` কোথাও use হচ্ছে না
+- `/customer/profile` page-এ কোনো header/footer নেই → Tally Plus-এ ফিরে যাওয়ার কোনো way নেই
+
+পরিবর্তন:
+
+**a) `SiteFooter`-এ "Back to Tally Plus" নিশ্চিত করা** — footer-এ আগে থেকেই brand link থাকার কথা; না থাকলে যোগ করব একটা ছোট "← Tally Plus হোমে ফিরুন" link সব marketplace/customer page-এর নিচে।
+
+**b) নিচের page-গুলোতে `<SiteHeader />` + `<SiteFooter />` যোগ করব** (যেগুলোতে missing):
+- `src/pages/customer/Profile.tsx` — গ্রাহক profile page
+- `src/pages/shop/s/Slug.tsx` — footer যোগ (header আছে)
+- `src/pages/shop/p/Id.tsx` — footer যোগ (header আছে)
+- `src/pages/shop/Index.tsx` — footer যোগ (header আছে)
+
+Layout pattern সবগুলোর জন্য একই হবে:
+```text
+<div className="flex min-h-screen flex-col">
+  <SiteHeader />
+  <main className="flex-1">...page content...</main>
+  <SiteFooter />
+</div>
+```
+
+এতে গ্রাহক যেকোনো marketplace/shop/product/profile page থেকে header logo বা footer link দিয়ে সহজে Tally Plus হোমে ফিরতে পারবে।
+
+### Out of scope (এই plan-এ নেই)
+- App (`/app/*`) internal page-গুলোতে SiteHeader/Footer যোগ — ওগুলোর নিজস্ব AppTopbar আছে
+- Auth page-এ header/footer — login card-এর নিচে আগে থেকেই "হোমে ফিরুন" link আছে
