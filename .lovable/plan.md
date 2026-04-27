@@ -1,81 +1,64 @@
-# Manual Payment Methods — Fully Configurable
+# Customer Auth Fix — Phone + PIN (No Email)
 
-## Goal
+## সমস্যা
 
-Hardcoded ৪টা method (bkash/nagad/rocket/bank) সরিয়ে — admin যেকোনো সংখ্যক payment method add/edit/activate/deactivate করতে পারবে, প্রত্যেকটার নিজস্ব color, instruction, account info থাকবে। গ্রাহকের জন্য mobile-friendly card layout, এক tap copy।
+1. **"Email address invalid" error** — Customer signup currently builds a synthetic email `c8801999887766@tally.local` and calls `supabase.auth.signUp()` directly. Supabase Auth's email validator is rejecting the `c` prefix on this Supabase project (looks like an invalid TLD pattern to its validator).
+2. **Customer signup এ PIN field নাই** — শুধু নাম + ফোন নেওয়া হচ্ছে।
+3. **Customer login এ PIN field নাই** — শুধু ফোন নিচ্ছে, যা insecure।
+4. **Customer login এ email/password fallback ব্যর্থ হচ্ছে** — কারণ signup নিজেই ব্যর্থ।
 
----
+## সমাধান (Owner-এর মতই PIN-based flow)
 
-## ১. Database — নতুন table
+দোকান মালিকের জন্য যে edge function-based PIN flow আছে (`signup-with-pin`, `login-with-pin`), গ্রাহকের জন্যও একই pattern follow করব। কোনো synthetic email frontend থেকে যাবে না — edge function ভিতরে user create করবে।
 
-`payment_methods` table তৈরি করব (admin-managed, সবাই পড়তে পারবে):
+### ১. নতুন Edge Function: `customer-signup-with-pin`
+- Input: `phone`, `full_name`, `pin` (4 digits)
+- Phone normalize করে `<digits>@tallycustomer.local` format-এ email বানাবে (server-side, যাতে Supabase validator pass করে — দরকার হলে domain adjust করব)
+- `admin.auth.admin.createUser` দিয়ে user create + `phone_confirm: true`, `email_confirm: true`, `user_metadata: { account_type: "consumer", full_name }`
+- `handle_new_user` trigger automatically `consumer_profiles` row + `consumer` role দিবে
+- `consumer_profiles` update: name, phone, **pin_hash** (bcrypt)
+- Return access_token + refresh_token
 
-| column | type | উদাহরণ |
-|---|---|---|
-| `id` | uuid PK | |
-| `name` | text | "bKash Personal", "City Bank", "Nagad Merchant" |
-| `type` | text | `mobile` / `bank` / `card` / `other` (icon select-এর জন্য) |
-| `account_number` | text | "01712345678" / "1234-5678-9012" |
-| `account_holder` | text | optional — "Md. Karim" |
-| `extra_info` | text | optional — Bank: branch / Routing |
-| `instructions_bn` | text | "Send Money option-এ পাঠান, cash-out নয়" |
-| `instructions_en` | text | |
-| `color` | text | hex code, default `#E2136B` (bKash pink) etc. |
-| `icon_emoji` | text | optional — 📱 🏦 💳 |
-| `is_active` | boolean | default true |
-| `sort_order` | int | drag বা manual |
-| `created_at`, `updated_at` | timestamp | |
+### ২. নতুন Edge Function: `customer-login-with-pin`
+- Input: `phone`, `pin`
+- `consumer_profiles` থেকে pin_hash lookup → bcrypt verify
+- Match হলে `signInWithPassword` (server-side fixed password) দিয়ে session issue করে token return
 
-**RLS:** admin write, public read (active গুলো সবাই দেখবে)।
+### ৩. DB Migration
+- `consumer_profiles` table-এ `pin_hash text` column add (nullable for backward compat)
+- Existing consumer rows-এ pin_hash NULL থাকবে — তারা নতুন করে সাইনআপ/PIN reset করতে হবে (currently শুধু test users আছে)
 
-পুরনো `payment_gateway_settings.extra.manual` data রেখে দেব backward compatibility-র জন্য — কিন্তু নতুন system primary হবে।
+### ৪. Frontend (`src/pages/Auth.tsx`) Update
 
----
+**Customer Signup Tab** (গ্রাহক):
+- নাম (required)
+- মোবাইল নম্বর (required)
+- **৪ সংখ্যার PIN** (নতুন — required)
+- "Account তৈরি করুন" → calls `customer-signup-with-pin` edge function
+- Sets session, redirects to `/customer/dashboard`
 
-## ২. Admin UI (`/admin/payment-gateway`)
+**Customer Login Tab** (গ্রাহক):
+- মোবাইল নম্বর (required)
+- **৪ সংখ্যার PIN** (নতুন — required, এখন শুধু ফোন আছে)
+- "লগইন" → calls `customer-login-with-pin` edge function
+- Sets session, redirects to `/customer/dashboard`
+- "PIN ভুলে গেছেন? WhatsApp করুন" link থাকবে (owner-এর মতই)
 
-পুরনো hardcoded "Manual Payment Numbers" section সরিয়ে নতুন **"Manual Payment Methods"** section:
+Validation update: `role === "customer"`-ও PIN required হবে।
 
-- 📋 List view — সব method card layout-এ
-- ➕ "Add new method" button → dialog form
-- প্রতিটা method-এ:
-  - Name input
-  - Type dropdown (Mobile / Bank / Card / Other)
-  - Account number + holder name
-  - Color picker (preset + custom hex)
-  - Bangla + English instruction textarea
-  - Active toggle
-  - Edit / Delete / Reorder buttons
-- Live preview — কাস্টমার যা দেখবে
+### ৫. পুরনো broken code সরানো
+`Auth.tsx` থেকে `customerEmail`/`customerPassword` synthetic email logic আর `supabase.auth.signUp` direct call সরাবো — সব edge function এ চলে যাবে।
 
----
+## Files Changed
 
-## ৩. Customer UI (`/app/subscribe`)
+- **Migration**: `consumer_profiles` table-এ `pin_hash` column add
+- **New**: `supabase/functions/customer-signup-with-pin/index.ts`
+- **New**: `supabase/functions/customer-login-with-pin/index.ts`
+- **Edited**: `src/pages/Auth.tsx` — customer signup এ PIN field, customer login এ PIN field, edge function calls
 
-`gatewayEnabled === false` হলে নতুন **"Manual Payment Methods"** section:
+## Result
 
-- Active methods গুলো **mobile-friendly card grid** (২ column mobile, ৩-৪ column desktop)
-- প্রতিটা card-এ:
-  - Color-coded header (admin-set color)
-  - Method name + icon
-  - Account number বড় font + **one-tap Copy button**
-  - Account holder name (যদি থাকে)
-  - "Show instructions" expand → BN/EN instruction
-- কোনো method active না থাকলে fallback message
-- Bottom-এ Transaction ID + note + submit (আগের মতো)
-
----
-
-## ৪. Backward compatibility
-
-- Migration-এর সময় পুরনো `payment_gateway_settings.extra.manual` থেকে existing bkash/nagad/rocket/bank info পড়ে নতুন `payment_methods` table-এ seed করব (যদি data থাকে)।
-- পুরনো extra field রেখে দেব — অন্য কোথাও break না হয়।
-
----
-
-## Questions for you
-
-কাজ শুরু করার আগে দুটো ছোট confirm:
-
-১. **Color** — admin কি একটা color picker দিয়ে যেকোনো hex (e.g. #E2136B) দিতে পারবে, নাকি ৬-৮টা preset (pink/orange/purple/green/blue/red) থেকে বেছে নেবে?
-২. **Old data migration** — বর্তমানে যদি bkash/nagad number set করা থাকে (পুরনো system-এ), সেগুলো কি auto migrate করব নতুন table-এ?
+- ✅ "Email address invalid" error চলে যাবে (proper domain + server-side handling)
+- ✅ গ্রাহক signup: নাম + ফোন + PIN
+- ✅ গ্রাহক login: ফোন + PIN (secure)
+- ✅ দোকান মালিকের সাথে consistent UX
