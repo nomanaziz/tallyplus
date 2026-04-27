@@ -232,6 +232,9 @@ function ProductFormDialog({
   const [discountValue, setDiscountValue] = useState("");
   const [discountType, setDiscountType] = useState<"percent"|"flat">("percent");
   const [barcodeOn, setBarcodeOn] = useState(false);
+  const [serializedOn, setSerializedOn] = useState(false);
+
+  const showSerializedOption = shopTypeCode === "mobile" || shopTypeCode === "electronics";
 
   useEffect(() => {
     if (open) {
@@ -262,6 +265,7 @@ function ProductFormDialog({
       setDiscountValue(p?.discount_value != null ? String(p.discount_value) : "");
       setDiscountType(((p?.discount_type as "percent"|"flat") ?? "percent"));
       setBarcodeOn(Boolean(p?.barcode));
+      setSerializedOn(Boolean((p as any)?.is_serialized));
     }
   }, [open, product]);
 
@@ -292,6 +296,7 @@ function ProductFormDialog({
       discount_enabled: discountOn,
       discount_value: discountOn ? (Number(discountValue) || 0) : null,
       discount_type: discountOn ? discountType : null,
+      is_serialized: serializedOn,
     };
     const { error } = product
       ? await supabase.from("products").update(payload).eq("id", product.id)
