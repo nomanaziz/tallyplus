@@ -53,7 +53,7 @@ export function ContactSection() {
         <div className="mx-auto mt-12 grid max-w-5xl gap-5 md:grid-cols-3">
           {items.map((it) => (
             <a
-              key={it.value}
+              key={`${it.enTitle}-${it.href}`}
               href={it.href}
               target={it.href.startsWith("http") ? "_blank" : undefined}
               rel={it.href.startsWith("http") ? "noopener noreferrer" : undefined}
