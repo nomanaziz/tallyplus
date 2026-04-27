@@ -22,8 +22,8 @@ export function SiteHeader() {
     <header className="sticky top-0 z-40 w-full border-b bg-background/85 backdrop-blur">
       <div className="container mx-auto flex h-16 md:h-20 items-center justify-between px-3 md:px-4 gap-2">
         <Link to="/" className="flex items-center gap-2 md:gap-3 min-w-0">
-          <img src={logo} alt="Tally Plus" width={40} height={40} className="h-7 w-7 md:h-10 md:w-10 object-contain flex-none" />
-          <span className="text-lg md:text-3xl font-extrabold leading-none tracking-tight truncate">{t("appName")}</span>
+          <img src={logo} alt="Tally Plus" width={40} height={40} className="h-7 w-7 md:h-9 md:w-9 object-contain flex-none" />
+          <span className="text-base md:text-2xl font-extrabold leading-tight tracking-tight truncate py-1">{t("appName")}</span>
         </Link>
         <nav className="hidden items-center gap-1 text-sm font-medium md:flex">
           <Link
@@ -70,9 +70,9 @@ export function SiteHeader() {
             </SheetTrigger>
             <SheetContent side="right" className="w-72 p-0 flex flex-col">
               <SheetHeader className="border-b px-4 py-3 text-left">
-                <SheetTitle className="flex items-center gap-2">
-                  <img src={logo} alt="" className="h-7 w-7 object-contain" />
-                  <span>{t("appName")}</span>
+                <SheetTitle className="flex items-center gap-2 leading-tight">
+                  <img src={logo} alt="" className="h-7 w-7 object-contain flex-none" />
+                  <span className="py-0.5">{t("appName")}</span>
                 </SheetTitle>
               </SheetHeader>
               <nav className="flex-1 overflow-y-auto p-3 space-y-1 text-sm font-medium">
