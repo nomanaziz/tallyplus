@@ -176,11 +176,6 @@ export default function AuthPage() {
         {mode === "login" ? (
           <div className="space-y-3">
             <Input
-              value={shopName}
-              onChange={(e) => setShopName(e.target.value)}
-              placeholder="দোকানের নাম (ঐচ্ছিক)"
-            />
-            <Input
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               placeholder="মোবাইল নম্বর"
