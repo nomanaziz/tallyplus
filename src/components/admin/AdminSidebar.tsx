@@ -19,6 +19,7 @@ import {
   CreditCard as CreditCardIcon,
   AlertTriangle,
   MapPin,
+  DollarSign,
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
@@ -41,6 +42,7 @@ const ITEMS: Item[] = [
   { to: "/admin/training", label: "Training Videos", icon: GraduationCap },
   { to: "/admin/affiliates", label: "Affiliate Program", icon: Handshake },
   { to: "/admin/locations", label: "Locations (এলাকা)", icon: MapPin },
+  { to: "/admin/ads", label: "Ads / Monetization", icon: DollarSign },
   { to: "/admin/settings", label: "Settings", icon: Settings },
 ];
 
