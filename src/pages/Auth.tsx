@@ -127,7 +127,7 @@ export default function AuthPage() {
             });
           }
           toast.success("Customer account তৈরি");
-          navigate({ to: "/customer/profile", replace: true });
+          navigate({ to: "/customer/dashboard", replace: true });
         }
       } else {
         // Login: try owner PIN flow first
