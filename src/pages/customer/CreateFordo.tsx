@@ -181,44 +181,45 @@ export default function CreateFordo() {
     setStep(2);
   };
 
-  const searchByPhone = async () => {
-    const ph = phoneSearch.trim();
-    if (!ph) return;
+  const runSearch = async () => {
+    const q = searchQuery.trim();
+    if (!q) return;
+    const isPhone = /^[0-9+\-\s]{4,}$/.test(q);
     setSearching(true);
     setResults([]);
     try {
-      const res = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/find-shops-by-phone`,
-        {
-          method: "POST",
-          headers: { "content-type": "application/json", apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY },
-          body: JSON.stringify({ phone: ph }),
-        },
-      );
-      const d = await res.json();
-      if (!res.ok) throw new Error(d.error ?? "ত্রুটি");
-      setResults((d.shops ?? []) as Shop[]);
-      if ((d.shops ?? []).length === 0) toast.info("এই নম্বরে কোনো দোকান পাওয়া যায়নি");
+      if (isPhone) {
+        const res = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/find-shops-by-phone`,
+          {
+            method: "POST",
+            headers: { "content-type": "application/json", apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY },
+            body: JSON.stringify({ phone: q }),
+          },
+        );
+        const d = await res.json();
+        if (!res.ok) throw new Error(d.error ?? "ত্রুটি");
+        setResults((d.shops ?? []) as Shop[]);
+        if ((d.shops ?? []).length === 0) toast.info("কোনো দোকান পাওয়া যায়নি");
+      } else {
+        if (q.length < 2) {
+          toast.info("অন্তত ২ অক্ষর লিখুন");
+          return;
+        }
+        const { data } = await supabase
+          .from("shops")
+          .select("id,name,phone,logo_url,owner_id")
+          .ilike("name", `%${q}%`)
+          .is("deleted_at", null)
+          .limit(20);
+        setResults((data ?? []) as Shop[]);
+        if ((data ?? []).length === 0) toast.info("কোনো দোকান পাওয়া যায়নি");
+      }
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
       setSearching(false);
     }
-  };
-
-  const searchByName = async () => {
-    const q = nameSearch.trim();
-    if (q.length < 2) return;
-    setSearching(true);
-    const { data } = await supabase
-      .from("shops")
-      .select("id,name,phone,logo_url,owner_id")
-      .ilike("name", `%${q}%`)
-      .is("deleted_at", null)
-      .limit(20);
-    setResults((data ?? []) as Shop[]);
-    setSearching(false);
-    if ((data ?? []).length === 0) toast.info("কোনো দোকান পাওয়া যায়নি");
   };
 
   const send = async (shop: Shop) => {
@@ -369,39 +370,55 @@ export default function CreateFordo() {
       {step === 2 && (
         <div className="space-y-4">
           <Card className="p-4">
-            <Label className="mb-2 block text-sm font-semibold">মোবাইল নম্বর দিয়ে দোকান খুঁজুন</Label>
-            <div className="flex gap-2">
+            <Label className="mb-2 block text-sm font-semibold">দোকান খুঁজুন</Label>
+            <form
+              className="flex gap-2"
+              onSubmit={(e) => {
+                e.preventDefault();
+                void runSearch();
+              }}
+            >
               <Input
-                placeholder="01XXXXXXXXX"
-                value={phoneSearch}
-                onChange={(e) => setPhoneSearch(e.target.value)}
-                inputMode="tel"
+                placeholder="মোবাইল নম্বর বা দোকানের নাম..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
               />
-              <Button onClick={searchByPhone} disabled={searching}>
-                <Search className="h-4 w-4" />
+              <Button type="submit" disabled={searching}>
+                {searching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
               </Button>
-            </div>
+            </form>
           </Card>
 
-          <Card className="p-4">
-            <Label className="mb-2 block text-sm font-semibold">দোকানের নাম দিয়ে খুঁজুন</Label>
-            <div className="flex gap-2">
-              <Input
-                placeholder="দোকানের নাম..."
-                value={nameSearch}
-                onChange={(e) => setNameSearch(e.target.value)}
-              />
-              <Button onClick={searchByName} disabled={searching}>
-                <Search className="h-4 w-4" />
-              </Button>
+          {favourites.length > 0 && (
+            <div className="space-y-2">
+              <h3 className="flex items-center gap-1 text-sm font-semibold">
+                <Star className="h-4 w-4 fill-yellow-400 text-yellow-500" /> আপনার প্রিয় দোকান
+              </h3>
+              {favourites.map((s) => (
+                <ShopRow
+                  key={s.id}
+                  shop={s}
+                  onSend={send}
+                  sending={sending}
+                  isFav={favIds.has(s.id)}
+                  onToggleFav={toggleFavourite}
+                />
+              ))}
             </div>
-          </Card>
+          )}
 
           {results.length > 0 && (
             <div className="space-y-2">
               <h3 className="text-sm font-semibold">খোঁজার ফলাফল</h3>
               {results.map((s) => (
-                <ShopRow key={s.id} shop={s} onSend={send} sending={sending} />
+                <ShopRow
+                  key={s.id}
+                  shop={s}
+                  onSend={send}
+                  sending={sending}
+                  isFav={favIds.has(s.id)}
+                  onToggleFav={toggleFavourite}
+                />
               ))}
             </div>
           )}
