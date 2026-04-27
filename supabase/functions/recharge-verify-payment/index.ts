@@ -66,12 +66,20 @@ Deno.serve(async (req) => {
     const newStatus = isPaid ? "completed" : status === "PENDING" ? "pending" : "failed";
 
     if (tx) {
+      const failureReason = isPaid
+        ? null
+        : status === "PENDING"
+          ? "pending_at_gateway"
+          : status
+            ? `gateway_status_${status.toLowerCase()}`
+            : "no_gateway_status";
       await admin
         .from("payment_transactions")
         .update({
           status: newStatus,
           transaction_id: transactionId,
           payment_method: rsData?.payment_method ?? null,
+          failure_reason: failureReason,
           raw_response: rsData,
         })
         .eq("id", tx.id);
