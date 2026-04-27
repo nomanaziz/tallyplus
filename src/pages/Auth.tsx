@@ -236,11 +236,19 @@ export default function AuthPage() {
               placeholder="আপনার নাম"
             />
             {role === "owner" && (
-              <Input
-                value={shopName}
-                onChange={(e) => setShopName(e.target.value)}
-                placeholder="দোকানের নাম"
-              />
+              <>
+                <Input
+                  value={shopName}
+                  onChange={(e) => setShopName(e.target.value)}
+                  placeholder="দোকানের নাম"
+                />
+                <ShopTypePicker
+                  value={shopTypeCode}
+                  onChange={(code) => setShopTypeCode(code)}
+                  lang="bn"
+                  label="দোকানের ধরন"
+                />
+              </>
             )}
             <Input
               value={phone}
