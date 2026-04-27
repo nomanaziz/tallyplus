@@ -52,3 +52,6 @@ verify_jwt = false
 
 [functions.customer-create-wishlist]
 verify_jwt = true
+
+[functions.customer-dispatch-fordo-schedules]
+verify_jwt = false
