@@ -475,6 +475,20 @@ function ProductFormDialog({
             </div>
           </ToggleSection>
 
+          {showSerializedOption && (
+            <ToggleSection
+              title={lang === "bn" ? "সিরিয়ালাইজড পণ্য (IMEI/সিরিয়াল)" : "Serialized product (IMEI/Serial)"}
+              checked={serializedOn}
+              onChange={setSerializedOn}
+            >
+              <p className="text-xs text-muted-foreground">
+                {lang === "bn"
+                  ? "প্রতিটি পিস আলাদা IMEI/সিরিয়াল নম্বরে track হবে। প্রোডাক্ট save করার পর 'সিরিয়াল ম্যানেজ' বাটন থেকে যোগ করুন।"
+                  : "Each unit will be tracked by a unique IMEI/Serial. Use the 'Manage Serials' button after saving."}
+              </p>
+            </ToggleSection>
+          )}
+
           <ToggleSection
             title={lang === "bn" ? "বারকোড" : "Barcode"}
             checked={barcodeOn} onChange={setBarcodeOn}
