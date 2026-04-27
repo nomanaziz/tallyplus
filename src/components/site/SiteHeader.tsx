@@ -21,7 +21,7 @@ export function SiteHeader() {
     <header className="sticky top-0 z-40 w-full border-b bg-background/85 backdrop-blur">
       <div className="container mx-auto flex h-16 md:h-20 items-center justify-between px-3 md:px-4 gap-2">
         <Link to="/" className="flex items-center gap-2 md:gap-3 min-w-0">
-          <img src={logo} alt="Tally Plus" width={64} height={64} className="h-10 w-10 md:h-16 md:w-16 object-contain flex-none" />
+          <img src={logo} alt="Tally Plus" width={40} height={40} className="h-7 w-7 md:h-10 md:w-10 object-contain flex-none" />
           <span className="text-lg md:text-3xl font-extrabold leading-none tracking-tight truncate">{t("appName")}</span>
         </Link>
         <nav className="hidden items-center gap-6 text-sm font-medium md:flex">
