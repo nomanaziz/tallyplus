@@ -11,7 +11,7 @@ export const productsListQuery = (shopId: string | null | undefined) =>
       if (!shopId) return [];
       const { data, error } = await supabase
         .from("products")
-        .select("id,name,sku,barcode,unit,cost_price,sale_price,stock,low_stock_alert,category_id,image_url")
+        .select("id,name,sku,barcode,unit,cost_price,sale_price,stock,low_stock_alert,category_id,image_url,is_serialized")
         .eq("shop_id", shopId)
         .is("deleted_at", null)
         .order("created_at", { ascending: false });
