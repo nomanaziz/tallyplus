@@ -17,7 +17,6 @@ import { MobileBottomNav } from "@/components/app/MobileBottomNav";
 import { MobileBackBar } from "@/components/app/MobileBackBar";
 import { PromoPopupDialog } from "@/components/app/PromoPopupDialog";
 import { SampleProductImportSheet } from "@/components/app/SampleProductImportSheet";
-import { AdSlot } from "@/components/ads/AdSlot";
 
 // SettingsSheet is heavy (329 lines + many imports) and only opens on demand.
 // Lazy-load to keep the app shell bundle small.
@@ -224,15 +223,9 @@ function AppLayout() {
         <AppTopbar />
         <MobileBackBar />
         <main className="flex-1 overflow-auto pb-20 md:pb-0">
-          <div className="mx-auto w-full max-w-6xl px-3 pt-2">
-            <AdSlot slotKey="app_top" />
-          </div>
           <Outlet />
         </main>
         {/* Mobile bottom navigation */}
-        <div className="fixed inset-x-0 bottom-14 z-20 px-2 md:hidden">
-          <AdSlot slotKey="app_mobile_sticky" className="!my-0" />
-        </div>
         <MobileBottomNav onProfile={() => setSettingsOpen(true)} />
         {/* Settings sheet opened from mobile profile button */}
         {settingsOpen && (
