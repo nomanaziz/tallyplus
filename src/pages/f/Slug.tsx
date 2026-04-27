@@ -9,6 +9,7 @@ import { CatalogProductPicker, type CatalogProduct } from "@/components/app/Cata
 import { SiteHeader } from "@/components/site/SiteHeader";
 import { SiteFooter } from "@/components/site/SiteFooter";
 import { VoiceFordoMic } from "@/components/app/VoiceFordoMic";
+import { AdSlot } from "@/components/ads/AdSlot";
 
 type SearchParams = { reuse?: string; tpl?: string };
 
@@ -387,6 +388,7 @@ function PublicWishlistPage() {
       <SiteHeader />
       <main className="flex-1 pb-32">
       <div className="mx-auto max-w-md px-4 pt-6">
+        <AdSlot slotKey="fordo_public" forceShow />
         {/* Shop header */}
         <div className="mb-3 flex items-center gap-3">
           {shopLogo ? (
