@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Loader2, ShieldCheck } from "lucide-react";
+import { SiteHeader } from "@/components/site/SiteHeader";
+import { SiteFooter } from "@/components/site/SiteFooter";
 
 
 
@@ -76,7 +78,9 @@ function AdminLoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-muted/30 px-4">
+    <div className="min-h-screen flex flex-col bg-muted/30">
+      <SiteHeader />
+      <main className="flex flex-1 items-center justify-center px-4 py-8">
       <form
         onSubmit={handleLogin}
         className="w-full max-w-sm rounded-2xl border bg-card p-6 shadow-sm space-y-5"
@@ -127,6 +131,8 @@ function AdminLoginPage() {
           </Link>
         </p>
       </form>
+      </main>
+      <SiteFooter />
     </div>
   );
 }
