@@ -43,3 +43,12 @@ verify_jwt = true
 
 [functions.recharge-verify-payment]
 verify_jwt = true
+
+[functions.seed-bd-geo]
+verify_jwt = true
+
+[functions.find-shops-by-phone]
+verify_jwt = false
+
+[functions.customer-create-wishlist]
+verify_jwt = true

@@ -4,10 +4,9 @@ import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Plus, Trash2, TrendingUp, TrendingDown, Wallet } from "lucide-react";
+import { Loader2, Plus, Minus, Trash2, TrendingUp, TrendingDown, Wallet } from "lucide-react";
 import { toast } from "sonner";
 
 type Tx = {
@@ -19,8 +18,34 @@ type Tx = {
   tx_date: string;
 };
 
-const INCOME_CATS = ["বেতন", "ব্যবসা", "উপহার", "ভাতা", "অন্যান্য"];
-const EXPENSE_CATS = ["খাবার", "যাতায়াত", "বাজার", "বিল", "চিকিৎসা", "শিক্ষা", "বিনোদন", "অন্যান্য"];
+const INCOME_CATS = [
+  "বেতন",
+  "ব্যবসার আয়",
+  "ফ্রিল্যান্স/পার্ট-টাইম",
+  "উপহার",
+  "বোনাস",
+  "বিনিয়োগ থেকে আয়",
+  "ভাড়া আয়",
+  "ভাতা/পেনশন",
+  "ধার ফেরত পেলাম",
+  "অন্যান্য",
+];
+const EXPENSE_CATS = [
+  "বাজার/খাবার",
+  "বাসা ভাড়া",
+  "ইউটিলিটি বিল (গ্যাস/বিদ্যুৎ/পানি)",
+  "ইন্টারনেট/মোবাইল",
+  "যাতায়াত",
+  "চিকিৎসা",
+  "শিক্ষা/পড়াশোনা",
+  "পোশাক",
+  "বিনোদন",
+  "দান/সদকাহ",
+  "ঋণ পরিশোধ",
+  "সঞ্চয়/বিনিয়োগ",
+  "ব্যবসায়িক খরচ",
+  "অন্যান্য",
+];
 
 function bdt(n: number) {
   return new Intl.NumberFormat("bn-BD", { maximumFractionDigits: 0 }).format(n) + " ৳";
@@ -109,25 +134,32 @@ export default function CustomerMoney() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-2xl font-bold">আয়-ব্যয়</h1>
+        <div className="flex gap-2">
+          <Button
+            size="sm"
+            className="bg-emerald-600 text-white hover:bg-emerald-700"
+            onClick={() => { setType("income"); setCategory(""); setOpen(true); }}
+          >
+            <Plus className="mr-1 h-4 w-4" /> আয়
+          </Button>
+          <Button
+            size="sm"
+            className="bg-rose-600 text-white hover:bg-rose-700"
+            onClick={() => { setType("expense"); setCategory(""); setOpen(true); }}
+          >
+            <Minus className="mr-1 h-4 w-4" /> ব্যয়
+          </Button>
+        </div>
         <Sheet open={open} onOpenChange={setOpen}>
-          <SheetTrigger asChild>
-            <Button size="sm">
-              <Plus className="mr-1 h-4 w-4" /> যোগ করুন
-            </Button>
-          </SheetTrigger>
           <SheetContent side="bottom" className="rounded-t-3xl">
             <SheetHeader>
-              <SheetTitle>নতুন entry</SheetTitle>
+              <SheetTitle className={type === "income" ? "text-emerald-600" : "text-rose-600"}>
+                {type === "income" ? "নতুন আয় যোগ করুন" : "নতুন ব্যয় যোগ করুন"}
+              </SheetTitle>
             </SheetHeader>
             <div className="mt-4 space-y-3">
-              <Tabs value={type} onValueChange={(v) => setType(v as "income" | "expense")}>
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="expense" className="data-[state=active]:bg-rose-600 data-[state=active]:text-white">ব্যয়</TabsTrigger>
-                  <TabsTrigger value="income" className="data-[state=active]:bg-emerald-600 data-[state=active]:text-white">আয়</TabsTrigger>
-                </TabsList>
-              </Tabs>
               <Input
                 inputMode="decimal"
                 placeholder="পরিমাণ (টাকা)"
@@ -145,7 +177,11 @@ export default function CustomerMoney() {
               </Select>
               <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
               <Input placeholder="নোট (ইচ্ছাধীন)" value={note} onChange={(e) => setNote(e.target.value)} />
-              <Button onClick={submit} disabled={saving} className="w-full">
+              <Button
+                onClick={submit}
+                disabled={saving}
+                className={`w-full ${type === "income" ? "bg-emerald-600 hover:bg-emerald-700" : "bg-rose-600 hover:bg-rose-700"} text-white`}
+              >
                 {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} সংরক্ষণ
               </Button>
             </div>
