@@ -839,6 +839,39 @@ export type Database = {
         }
         Relationships: []
       }
+      customer_reminder_log: {
+        Row: {
+          amount: number
+          channel: string
+          created_at: string
+          created_by: string | null
+          customer_id: string
+          id: string
+          message: string | null
+          shop_id: string
+        }
+        Insert: {
+          amount?: number
+          channel: string
+          created_at?: string
+          created_by?: string | null
+          customer_id: string
+          id?: string
+          message?: string | null
+          shop_id: string
+        }
+        Update: {
+          amount?: number
+          channel?: string
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string
+          id?: string
+          message?: string | null
+          shop_id?: string
+        }
+        Relationships: []
+      }
       customer_wishlist_items: {
         Row: {
           created_at: string
@@ -1616,6 +1649,62 @@ export type Database = {
           },
         ]
       }
+      product_serials: {
+        Row: {
+          cost_price: number
+          created_at: string
+          id: string
+          imei2: string | null
+          note: string | null
+          product_id: string
+          sale_id: string | null
+          sale_item_id: string | null
+          serial_no: string
+          shop_id: string
+          status: Database["public"]["Enums"]["serial_status"]
+          updated_at: string
+          warranty_until: string | null
+        }
+        Insert: {
+          cost_price?: number
+          created_at?: string
+          id?: string
+          imei2?: string | null
+          note?: string | null
+          product_id: string
+          sale_id?: string | null
+          sale_item_id?: string | null
+          serial_no: string
+          shop_id: string
+          status?: Database["public"]["Enums"]["serial_status"]
+          updated_at?: string
+          warranty_until?: string | null
+        }
+        Update: {
+          cost_price?: number
+          created_at?: string
+          id?: string
+          imei2?: string | null
+          note?: string | null
+          product_id?: string
+          sale_id?: string | null
+          sale_item_id?: string | null
+          serial_no?: string
+          shop_id?: string
+          status?: Database["public"]["Enums"]["serial_status"]
+          updated_at?: string
+          warranty_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_serials_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           barcode: string | null
@@ -1635,6 +1724,7 @@ export type Database = {
           image_url: string | null
           is_featured: boolean
           is_marketplace_published: boolean
+          is_serialized: boolean
           low_stock_alert: number | null
           name: string
           sale_price: number
@@ -1667,6 +1757,7 @@ export type Database = {
           image_url?: string | null
           is_featured?: boolean
           is_marketplace_published?: boolean
+          is_serialized?: boolean
           low_stock_alert?: number | null
           name: string
           sale_price?: number
@@ -1699,6 +1790,7 @@ export type Database = {
           image_url?: string | null
           is_featured?: boolean
           is_marketplace_published?: boolean
+          is_serialized?: boolean
           low_stock_alert?: number | null
           name?: string
           sale_price?: number
@@ -2057,6 +2149,7 @@ export type Database = {
           product_id: string | null
           qty: number
           sale_id: string
+          serial_id: string | null
           total: number
         }
         Insert: {
@@ -2067,6 +2160,7 @@ export type Database = {
           product_id?: string | null
           qty: number
           sale_id: string
+          serial_id?: string | null
           total: number
         }
         Update: {
@@ -2077,6 +2171,7 @@ export type Database = {
           product_id?: string | null
           qty?: number
           sale_id?: string
+          serial_id?: string | null
           total?: number
         }
         Relationships: [
@@ -3273,6 +3368,7 @@ export type Database = {
         | "due"
         | "other"
       sale_status: "completed" | "draft" | "returned" | "cancelled"
+      serial_status: "in_stock" | "sold" | "returned" | "damaged"
       subscription_request_status: "pending" | "approved" | "rejected"
       subscription_status: "active" | "expired" | "cancelled"
     }
@@ -3414,6 +3510,7 @@ export const Constants = {
         "other",
       ],
       sale_status: ["completed", "draft", "returned", "cancelled"],
+      serial_status: ["in_stock", "sold", "returned", "damaged"],
       subscription_request_status: ["pending", "approved", "rejected"],
       subscription_status: ["active", "expired", "cancelled"],
     },
