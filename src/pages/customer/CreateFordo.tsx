@@ -438,7 +438,16 @@ export default function CreateFordo() {
             ) : nearby.length === 0 ? (
               <Card className="p-4 text-center text-sm text-muted-foreground">কোনো দোকান পাওয়া যায়নি</Card>
             ) : (
-              nearby.map((s) => <ShopRow key={s.id} shop={s} onSend={send} sending={sending} />)
+              nearby.map((s) => (
+                <ShopRow
+                  key={s.id}
+                  shop={s}
+                  onSend={send}
+                  sending={sending}
+                  isFav={favIds.has(s.id)}
+                  onToggleFav={toggleFavourite}
+                />
+              ))
             )}
           </div>
 
@@ -503,7 +512,19 @@ export default function CreateFordo() {
   );
 }
 
-function ShopRow({ shop, onSend, sending }: { shop: Shop; onSend: (s: Shop) => void; sending: boolean }) {
+function ShopRow({
+  shop,
+  onSend,
+  sending,
+  isFav,
+  onToggleFav,
+}: {
+  shop: Shop;
+  onSend: (s: Shop) => void;
+  sending: boolean;
+  isFav?: boolean;
+  onToggleFav?: (s: Shop) => void;
+}) {
   return (
     <Card className="flex items-center gap-3 p-3">
       <div className="flex h-10 w-10 flex-none items-center justify-center overflow-hidden rounded-xl bg-primary/10 text-primary">
@@ -513,6 +534,16 @@ function ShopRow({ shop, onSend, sending }: { shop: Shop; onSend: (s: Shop) => v
         <div className="truncate font-semibold">{shop.name}</div>
         <div className="truncate text-xs text-muted-foreground">{shop.phone}</div>
       </div>
+      {onToggleFav && (
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => onToggleFav(shop)}
+          aria-label={isFav ? "প্রিয় থেকে সরান" : "প্রিয় তালিকায় যোগ"}
+        >
+          <Star className={`h-4 w-4 ${isFav ? "fill-yellow-400 text-yellow-500" : "text-muted-foreground"}`} />
+        </Button>
+      )}
       <Button size="sm" onClick={() => onSend(shop)} disabled={sending}>
         {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Send className="mr-1 h-4 w-4" /> পাঠান</>}
       </Button>
