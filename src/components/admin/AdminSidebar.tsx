@@ -17,6 +17,7 @@ import {
   Gauge,
   Megaphone,
   CreditCard as CreditCardIcon,
+  AlertTriangle,
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
@@ -33,6 +34,7 @@ const ITEMS: Item[] = [
   { to: "/admin/usage-limits", label: "Usage Limits", icon: Gauge },
   { to: "/admin/promo-popups", label: "Promo Popups", icon: Megaphone },
   { to: "/admin/payment-gateway", label: "Payment Gateway", icon: CreditCardIcon },
+  { to: "/admin/payment-attempts", label: "Payment Attempts", icon: AlertTriangle },
   { to: "/admin/marketplace", label: "Marketplace", icon: Store },
   { to: "/admin/banners", label: "Dashboard Banners", icon: Image },
   { to: "/admin/training", label: "Training Videos", icon: GraduationCap },
