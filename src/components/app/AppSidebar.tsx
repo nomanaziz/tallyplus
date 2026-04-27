@@ -47,8 +47,7 @@ export const SECTIONS: SidebarSection[] = [
     bn: "পণ্য ও স্টক",
     en: "Inventory",
     items: [
-      { to: "/app/products", bn: "প্রোডাক্ট লিস্ট", en: "Product List", icon: icons.productList, perm: "products" },
-      { to: "/app/stock", bn: "স্টকের হিসাব", en: "Stock", icon: icons.stock, perm: "stock" },
+      { to: "/app/products", bn: "প্রোডাক্ট ও স্টক", en: "Products & Stock", icon: icons.productList, perm: "products" },
       { to: "/app/returns", bn: "প্রোডাক্ট রিটার্ন", en: "Product Return", icon: icons.salesList, perm: "returns" },
       { to: "/app/expiring", bn: "মেয়াদোত্তীর্ণ পণ্য", en: "Expiring Products", icon: icons.expired, perm: "products" },
       { to: "/app/warranty", bn: "ওয়ারেন্টি পণ্য", en: "Warranty", icon: icons.warranty, perm: "products" },
