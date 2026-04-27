@@ -5,6 +5,7 @@ import { SiteHeader } from "@/components/site/SiteHeader";
 import { SiteFooter } from "@/components/site/SiteFooter";
 import { Loader2, LayoutDashboard, ListChecks, Wallet, NotebookPen, User, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { AdSlot } from "@/components/ads/AdSlot";
 
 const NAV = [
   { to: "/customer/dashboard", label: "ড্যাশবোর্ড", Icon: LayoutDashboard },
@@ -72,9 +73,13 @@ export default function CustomerLayout() {
                 </Button>
               </div>
             </div>
+            <div className="mt-4">
+              <AdSlot slotKey="customer_sidebar" />
+            </div>
           </aside>
 
           <section className="min-w-0">
+            <AdSlot slotKey="customer_top" />
             <Outlet />
           </section>
         </div>
