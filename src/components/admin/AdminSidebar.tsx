@@ -14,6 +14,9 @@ import {
   GraduationCap,
   Handshake,
   Image,
+  Gauge,
+  Megaphone,
+  CreditCard as CreditCardIcon,
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
@@ -27,6 +30,9 @@ const ITEMS: Item[] = [
   { to: "/admin/subscription-requests", label: "Subscription Requests", icon: Receipt },
   { to: "/admin/subscriptions", label: "Subscriptions", icon: CreditCard },
   { to: "/admin/plans", label: "Plans", icon: Tags },
+  { to: "/admin/usage-limits", label: "Usage Limits", icon: Gauge },
+  { to: "/admin/promo-popups", label: "Promo Popups", icon: Megaphone },
+  { to: "/admin/payment-gateway", label: "Payment Gateway", icon: CreditCardIcon },
   { to: "/admin/marketplace", label: "Master Catalog & Marketplace", icon: Store },
   { to: "/admin/banners", label: "Dashboard Banners", icon: Image },
   { to: "/admin/training", label: "Training Videos", icon: GraduationCap },
