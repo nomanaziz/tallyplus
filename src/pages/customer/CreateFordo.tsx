@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "@/lib/router";
+import { Link, useNavigate, useSearch } from "@/lib/router";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
@@ -7,8 +7,17 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Plus, Trash2, ArrowLeft, ArrowRight, Send, Search, Store, MapPin } from "lucide-react";
+import { Loader2, Plus, Trash2, ArrowLeft, ArrowRight, Send, Search, Store, MapPin, Save, CalendarClock } from "lucide-react";
 import { toast } from "sonner";
+import { VoiceFordoMic } from "@/components/app/VoiceFordoMic";
+import { ScheduleFordoDialog } from "@/components/customer/ScheduleFordoDialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 type Item = { name: string; qty: string; unit: string };
 type Shop = { id: string; name: string; phone: string; logo_url: string | null; owner_id: string };
@@ -16,6 +25,7 @@ type Shop = { id: string; name: string; phone: string; logo_url: string | null; 
 export default function CreateFordo() {
   const { user, session } = useAuth();
   const navigate = useNavigate();
+  const search = useSearch() as { templateId?: string };
   const [step, setStep] = useState<1 | 2>(1);
   const [items, setItems] = useState<Item[]>([{ name: "", qty: "", unit: "" }]);
   const [note, setNote] = useState("");
@@ -27,6 +37,10 @@ export default function CreateFordo() {
   const [loadingNearby, setLoadingNearby] = useState(true);
   const [sending, setSending] = useState(false);
   const [profile, setProfile] = useState<{ division: string | null; district: string | null; upazila: string | null } | null>(null);
+  const [showSaveTpl, setShowSaveTpl] = useState(false);
+  const [tplName, setTplName] = useState("");
+  const [savingTpl, setSavingTpl] = useState(false);
+  const [showSchedule, setShowSchedule] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -40,6 +54,30 @@ export default function CreateFordo() {
         void loadNearby(data as never);
       });
   }, [user]);
+
+  // Preload template if ?templateId= is set
+  useEffect(() => {
+    if (!user || !search.templateId) return;
+    void (async () => {
+      const { data } = await supabase
+        .from("consumer_fordo_templates")
+        .select("name,note,items")
+        .eq("id", search.templateId)
+        .eq("consumer_user_id", user.id)
+        .maybeSingle();
+      if (data) {
+        const tplItems = (data.items as Array<{ name?: string; qty?: string | number | null; unit?: string | null }> | null) ?? [];
+        const mapped: Item[] = tplItems.map((it) => ({
+          name: it.name ?? "",
+          qty: it.qty != null ? String(it.qty) : "",
+          unit: it.unit ?? "",
+        }));
+        if (mapped.length > 0) setItems(mapped);
+        if (data.note) setNote(data.note);
+        toast.success(`টেমপ্লেট "${data.name}" লোড হয়েছে`);
+      }
+    })();
+  }, [user, search.templateId]);
 
   const loadNearby = async (
     p: { division: string | null; district: string | null; upazila: string | null } | null,
