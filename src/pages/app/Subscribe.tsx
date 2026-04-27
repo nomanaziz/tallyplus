@@ -273,7 +273,7 @@ export default function Subscribe() {
       {!gatewayEnabled && (
         <div id="manual-pay" className="mt-8 rounded-2xl border bg-card p-5 shadow-sm">
           <div className="flex items-center gap-2">
-            <Smartphone className="h-5 w-5 text-primary" />
+            <Wallet className="h-5 w-5 text-primary" />
             <h2 className="text-lg font-extrabold">
               {lang === "bn" ? "ম্যানুয়াল পেমেন্ট" : "Manual Payment"}
             </h2>
@@ -296,66 +296,74 @@ export default function Subscribe() {
             </div>
           )}
 
-          {/* Method picker */}
-          <div className="mt-4 grid grid-cols-2 gap-2 md:grid-cols-4">
-            {(["bkash", "nagad", "rocket", "bank"] as const).map((m) => {
-              const labels: Record<string, string> = {
-                bkash: "bKash", nagad: "Nagad", rocket: "Rocket",
-                bank: lang === "bn" ? "ব্যাংক" : "Bank",
-              };
-              return (
-                <button
-                  key={m}
-                  type="button"
-                  onClick={() => setPayMethod(m)}
-                  className={"rounded-xl border px-3 py-2.5 text-sm font-semibold transition " + (payMethod === m ? "border-primary bg-primary text-primary-foreground" : "bg-background hover:bg-muted")}
-                >
-                  {labels[m]}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Account display */}
-          <div className="mt-4 rounded-xl border bg-background p-4">
-            {payMethod === "bank" ? (
-              manual.bank?.account ? (
-                <div className="space-y-1 text-sm">
-                  <div className="flex items-center gap-2"><Building2 className="h-4 w-4 text-muted-foreground" /><strong>{manual.bank.name}</strong></div>
-                  <div className="flex items-center justify-between">
-                    <span>A/C: <code className="font-mono text-base">{manual.bank.account}</code></span>
-                    <Button size="sm" variant="ghost" onClick={() => copy(manual.bank?.account)}><Copy className="h-3.5 w-3.5" /></Button>
-                  </div>
-                  {manual.bank.branch && <div className="text-xs text-muted-foreground">{lang === "bn" ? "শাখা:" : "Branch:"} {manual.bank.branch}</div>}
-                </div>
-              ) : (
-                <div className="text-sm text-muted-foreground">
-                  {lang === "bn" ? "এখনো ব্যাংক নম্বর সেট করা হয়নি — admin-এর সাথে যোগাযোগ করুন।" : "Bank info not set yet — contact admin."}
-                </div>
-              )
-            ) : methodInfo?.number ? (
-              <div className="flex items-center justify-between text-sm">
-                <div>
-                  <div className="text-xs uppercase text-muted-foreground">{methodInfo.type || (lang === "bn" ? "পার্সোনাল" : "Personal")}</div>
-                  <code className="font-mono text-lg font-bold">{methodInfo.number}</code>
-                </div>
-                <Button size="sm" variant="outline" onClick={() => copy(methodInfo.number)}><Copy className="mr-1 h-3.5 w-3.5" /> {lang === "bn" ? "কপি" : "Copy"}</Button>
-              </div>
-            ) : (
-              <div className="text-sm text-muted-foreground">
-                {lang === "bn" ? "এই মাধ্যমের নম্বর এখনো সেট করা হয়নি — admin-এর সাথে যোগাযোগ করুন।" : "Number not configured — contact admin."}
-              </div>
-            )}
-          </div>
-
-          {(manual.instructions_bn || manual.instructions_en) && (
-            <p className="mt-3 whitespace-pre-line rounded-lg bg-muted/40 p-3 text-xs text-muted-foreground">
-              {lang === "bn" ? manual.instructions_bn : manual.instructions_en}
-            </p>
+          {/* Method cards */}
+          {methods.length === 0 ? (
+            <div className="mt-4 rounded-xl border border-dashed bg-muted/30 p-6 text-center text-sm text-muted-foreground">
+              {lang === "bn"
+                ? "এখনো কোনো পেমেন্ট মাধ্যম সেট করা হয়নি — admin-এর সাথে যোগাযোগ করুন।"
+                : "No payment methods configured yet — contact admin."}
+            </div>
+          ) : (
+            <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {methods.map((m) => {
+                const isPicked = pickedMethodId === m.id;
+                return (
+                  <button
+                    key={m.id}
+                    type="button"
+                    onClick={() => setPickedMethodId(m.id)}
+                    className={"group overflow-hidden rounded-xl border-2 text-left transition " + (isPicked ? "border-primary shadow-md" : "border-border hover:border-primary/40")}
+                  >
+                    <div className="flex items-center gap-3 p-3" style={{ backgroundColor: m.color + "15" }}>
+                      <div className="flex items-center justify-center rounded-md text-2xl shadow-sm"
+                           style={{ backgroundColor: m.color, width: 42, height: 42, color: "#fff" }}>
+                        {m.icon_emoji || "💳"}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate font-bold">{m.name}</div>
+                        {m.account_holder && (
+                          <div className="truncate text-xs text-muted-foreground">{m.account_holder}</div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="space-y-2 bg-background p-3">
+                      <div className="flex items-center justify-between gap-2">
+                        <code className="font-mono text-base font-bold">{m.account_number}</code>
+                        <span
+                          role="button"
+                          tabIndex={0}
+                          onClick={(e) => { e.stopPropagation(); copy(m.account_number); }}
+                          onKeyDown={(e) => { if (e.key === "Enter") { e.stopPropagation(); copy(m.account_number); } }}
+                          className="inline-flex h-8 items-center gap-1 rounded-md border bg-muted/50 px-2 text-xs font-semibold hover:bg-muted"
+                        >
+                          <Copy className="h-3 w-3" /> {lang === "bn" ? "কপি" : "Copy"}
+                        </span>
+                      </div>
+                      {m.extra_info && (
+                        <div className="text-[11px] text-muted-foreground">{m.extra_info}</div>
+                      )}
+                      {(m.instructions_bn || m.instructions_en) && (
+                        <div className="whitespace-pre-line rounded bg-muted/40 p-2 text-[11px] leading-relaxed text-muted-foreground">
+                          {(lang === "bn" ? m.instructions_bn : m.instructions_en) || m.instructions_en || m.instructions_bn}
+                        </div>
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
           )}
 
           {/* TxnID form */}
-          <div className="mt-4 grid gap-3">
+          {methods.length > 0 && (
+          <div className="mt-5 grid gap-3">
+            {pickedMethod && (
+              <div className="rounded-lg border-l-4 bg-muted/30 px-3 py-2 text-xs"
+                   style={{ borderLeftColor: pickedMethod.color }}>
+                {lang === "bn" ? "নির্বাচিত মাধ্যম: " : "Selected method: "}
+                <strong>{pickedMethod.name}</strong> · <code className="font-mono">{pickedMethod.account_number}</code>
+              </div>
+            )}
             <div>
               <Label htmlFor="txn">{lang === "bn" ? "Transaction ID *" : "Transaction ID *"}</Label>
               <Input id="txn" value={txnId} onChange={(e) => setTxnId(e.target.value)} placeholder="e.g. 7A1B2C3D" className="mt-1" />
@@ -366,12 +374,13 @@ export default function Subscribe() {
             </div>
             <Button
               onClick={submitManual}
-              disabled={submitting || !selected || !txnId.trim()}
+              disabled={submitting || !selected || !txnId.trim() || !pickedMethodId}
               className="h-11 w-full font-bold"
             >
               {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : (lang === "bn" ? "অনুরোধ জমা দিন" : "Submit Request")}
             </Button>
           </div>
+          )}
         </div>
       )}
     </div>
