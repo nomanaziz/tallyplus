@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Loader2, Receipt } from "lucide-react";
+import { Loader2, Receipt, BadgePercent } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -54,6 +54,7 @@ export function ConvertWishlistToSaleDialog({
 }) {
   const [paymentMethod, setPaymentMethod] = useState<string>("cash");
   const [paid, setPaid] = useState<string>("");
+  const [discount, setDiscount] = useState<string>("");
   const [submitting, setSubmitting] = useState(false);
 
   // Only sell items that are fulfilled (পেয়েছে) AND have a price
@@ -73,6 +74,11 @@ export function ConvertWishlistToSaleDialog({
   }, [sellable]);
 
   const skipped = items.length - sellable.length;
+
+  const discountAmt = Math.max(0, Math.min(Number(discount) || 0, total));
+  const grandTotal = Math.max(0, total - discountAmt);
+  const paidAmtPreview = Number(paid) || 0;
+  const previewDue = Math.max(0, grandTotal - paidAmtPreview);
 
   const handleConvert = async () => {
     if (!wishlist) return;
@@ -111,7 +117,8 @@ export function ConvertWishlistToSaleDialog({
       }
 
       const paidAmt = Number(paid) || 0;
-      const due = Math.max(total - paidAmt, 0);
+      const finalTotal = Math.max(0, total - discountAmt);
+      const due = Math.max(finalTotal - paidAmt, 0);
 
       // 2. create sale
       const { data: sale, error: se } = await supabase
@@ -120,7 +127,8 @@ export function ConvertWishlistToSaleDialog({
           shop_id: wishlist.shop_id,
           customer_id: customerId,
           subtotal: total,
-          total,
+          discount: discountAmt,
+          total: finalTotal,
           paid: paidAmt,
           due,
           payment_method: paymentMethod,
@@ -167,7 +175,19 @@ export function ConvertWishlistToSaleDialog({
         .update({ status: "done", converted_sale_id: saleId } as never)
         .eq("id", wishlist.id);
 
-      toast.success(`বেচা তৈরি হয়েছে — মোট ৳${total.toLocaleString("bn-BD")}`);
+      // record discount as adjustment history too
+      if (discountAmt > 0) {
+        await supabase.from("sale_adjustments").insert({
+          shop_id: wishlist.shop_id,
+          sale_id: saleId,
+          customer_id: customerId,
+          type: "discount",
+          amount: discountAmt,
+          note: "ফর্দ রূপান্তরে ডিসকাউন্ট",
+        });
+      }
+
+      toast.success(`বেচা তৈরি হয়েছে — মোট ৳${finalTotal.toLocaleString("bn-BD")}`);
       onConverted();
       onOpenChange(false);
     } catch (e) {
@@ -260,16 +280,34 @@ export function ConvertWishlistToSaleDialog({
               <Input
                 value={paid}
                 onChange={(e) => setPaid(e.target.value.replace(/[^0-9.]/g, ""))}
-                placeholder={String(total)}
+                placeholder={String(grandTotal)}
                 inputMode="decimal"
                 className="h-9 text-right tabular-nums"
               />
             </div>
           </div>
 
-          {paid && Number(paid) < total && (
+          <div className="rounded-lg border p-3 space-y-1.5">
+            <Label className="text-xs flex items-center gap-1">
+              <BadgePercent className="h-3.5 w-3.5 text-primary" />
+              ডিসকাউন্ট (ঐচ্ছিক)
+            </Label>
+            <Input
+              value={discount}
+              onChange={(e) => setDiscount(e.target.value.replace(/[^0-9.]/g, ""))}
+              placeholder="0"
+              inputMode="decimal"
+              className="h-9 text-right tabular-nums"
+            />
+            <div className="flex justify-between text-xs text-muted-foreground">
+              <span>মোট ছাড়ের পর</span>
+              <span className="font-bold text-primary">৳ {grandTotal.toLocaleString("bn-BD")}</span>
+            </div>
+          </div>
+
+          {paid && previewDue > 0 && (
             <div className="rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-900">
-              বাকি থাকবে: <b>৳{(total - Number(paid)).toLocaleString("bn-BD")}</b> — গ্রাহকের due-তে যোগ হবে
+              বাকি থাকবে: <b>৳{previewDue.toLocaleString("bn-BD")}</b> — গ্রাহকের due-তে যোগ হবে
             </div>
           )}
         </div>

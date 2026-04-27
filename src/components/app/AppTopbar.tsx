@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, lazy, Suspense } from "react";
 import { useNavigate } from "@/lib/router";
 import { useAuth } from "@/lib/auth";
 import { useShop } from "@/lib/shop";
@@ -11,12 +11,17 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { QuickSellSheet } from "./QuickSellSheet";
-import { SettingsSheet } from "./SettingsSheet";
 import { InstallAppButton } from "./InstallAppPrompt";
 import { ColorThemeButton } from "./ColorThemePicker";
 import { NotificationBell } from "./NotificationBell";
 import { Settings, MessageCircle, ChevronDown, LogOut, Languages, Zap, ArrowLeftRight, LayoutDashboard } from "lucide-react";
+
+const QuickSellSheet = lazy(() =>
+  import("./QuickSellSheet").then((m) => ({ default: m.QuickSellSheet }))
+);
+const SettingsSheet = lazy(() =>
+  import("./SettingsSheet").then((m) => ({ default: m.SettingsSheet }))
+);
 
 export function AppTopbar() {
   const { profile, signOut } = useAuth();
@@ -114,8 +119,16 @@ export function AppTopbar() {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-      <QuickSellSheet open={quickOpen} onOpenChange={setQuickOpen} />
-      <SettingsSheet open={settingsOpen} onOpenChange={setSettingsOpen} />
+      {quickOpen && (
+        <Suspense fallback={null}>
+          <QuickSellSheet open={quickOpen} onOpenChange={setQuickOpen} />
+        </Suspense>
+      )}
+      {settingsOpen && (
+        <Suspense fallback={null}>
+          <SettingsSheet open={settingsOpen} onOpenChange={setSettingsOpen} />
+        </Suspense>
+      )}
     </header>
   );
 }

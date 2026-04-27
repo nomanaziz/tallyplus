@@ -2,6 +2,7 @@ import { useNavigate } from "@/lib/router";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, FileText, ArrowLeft, MoreVertical, Printer, Eye, Trash2, Download, RefreshCw, Search, Calendar } from "lucide-react";
+import { BadgePercent } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useShop } from "@/lib/shop";
 import { useI18n, fmtMoney, bnNum } from "@/lib/i18n";
@@ -13,12 +14,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { InvoiceDialog, type InvoiceData } from "@/components/app/InvoiceDialog";
+import { DueDiscountDialog, type DueDiscountSale } from "@/components/app/DueDiscountDialog";
 import { toast } from "sonner";
 
 type Sale = {
   id: string;
   invoice_no: string | null;
   customer_id: string | null;
+  shop_id?: string;
   subtotal: number;
   discount: number;
   total: number;
@@ -98,6 +101,7 @@ function SalesLedgerPage() {
   const refresh = async () => { await qc.invalidateQueries({ queryKey: ["sales"] }); await refetch(); };
 
   const [invoice, setInvoice] = useState<InvoiceData | null>(null);
+  const [discountSale, setDiscountSale] = useState<DueDiscountSale | null>(null);
 
   const openInvoice = async (s: Sale) => {
     const { data: items } = await supabase
@@ -261,6 +265,19 @@ function SalesLedgerPage() {
                               <Printer className="mr-2 h-4 w-4" />
                               {lang === "bn" ? "প্রিন্ট" : "Print"}
                             </DropdownMenuItem>
+                            {Number(s.due) > 0 && (
+                              <DropdownMenuItem onClick={() => setDiscountSale({
+                                id: s.id,
+                                shop_id: current?.id ?? "",
+                                customer_id: s.customer_id,
+                                total: Number(s.total),
+                                discount: Number(s.discount),
+                                due: Number(s.due),
+                              })}>
+                                <BadgePercent className="mr-2 h-4 w-4" />
+                                {lang === "bn" ? "ডিসকাউন্ট দিন" : "Apply discount"}
+                              </DropdownMenuItem>
+                            )}
                             <DropdownMenuItem className="text-rose-600" onClick={() => void softDelete(s)}>
                               <Trash2 className="mr-2 h-4 w-4" />
                               {lang === "bn" ? "মুছুন" : "Delete"}
@@ -281,6 +298,12 @@ function SalesLedgerPage() {
       </div>
 
       <InvoiceDialog open={!!invoice} onClose={() => setInvoice(null)} data={invoice} />
+      <DueDiscountDialog
+        open={!!discountSale}
+        onOpenChange={(o) => !o && setDiscountSale(null)}
+        sale={discountSale}
+        onApplied={() => void refresh()}
+      />
     </div>
   );
 }
