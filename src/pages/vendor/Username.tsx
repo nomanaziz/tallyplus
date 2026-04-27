@@ -4,6 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Loader2, MapPin, Phone, ShoppingBag, Store, MessageCircle, Facebook, Info, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { MarketplaceProductCard } from "@/components/marketplace/MarketplaceProductCard";
+import { SiteHeader } from "@/components/site/SiteHeader";
+import { SiteFooter } from "@/components/site/SiteFooter";
 
 const RESERVED = new Set([
   "app","admin","auth","shop","shops","api","pricing","affiliate","f","_",
@@ -46,7 +48,7 @@ function PublicShopPage() {
         .from("marketplace_listings" as never)
         .select("id, product_id, price, stock, unit, min_order, warranty_months")
         .eq("shop_id", (shop as { id: string }).id)
-        .eq("active", true);
+        .eq("is_published", true);
       const productIds = (listings as Listing[]).map(l => l.product_id);
       const { data: products = [] } = productIds.length
         ? await supabase.from("products").select("id, name, image_url, unit").in("id", productIds)
@@ -61,8 +63,33 @@ function PublicShopPage() {
     return () => { alive = false; };
   }, [username]);
 
-  if (loading) return <div className="flex min-h-screen items-center justify-center"><Loader2 className="h-6 w-6 animate-spin" /></div>;
-  if (notFound || !data) return <div className="flex min-h-screen items-center justify-center text-muted-foreground">দোকান পাওয়া যায়নি</div>;
+  // Log a visit (fire & forget) — must run before any early return to satisfy rules of hooks
+  useEffect(() => {
+    const sid = data?.shop?.id;
+    if (!sid) return;
+    void supabase.functions.invoke("marketplace-public", {
+      body: { action: "log-visit", shop_id: sid },
+    });
+  }, [data?.shop?.id]);
+
+  if (loading) return (
+    <div className="flex min-h-screen flex-col bg-background">
+      <SiteHeader />
+      <div className="flex flex-1 items-center justify-center"><Loader2 className="h-6 w-6 animate-spin" /></div>
+      <SiteFooter />
+    </div>
+  );
+  if (notFound || !data) return (
+    <div className="flex min-h-screen flex-col bg-background">
+      <SiteHeader />
+      <div className="flex flex-1 flex-col items-center justify-center gap-3 px-4 text-center">
+        <Store className="h-10 w-10 text-muted-foreground" />
+        <p className="text-muted-foreground">দোকান পাওয়া যায়নি</p>
+        <Link to="/shop" className="text-sm text-primary hover:underline">← মার্কেটপ্লেসে ফিরুন</Link>
+      </div>
+      <SiteFooter />
+    </div>
+  );
   const { shop, listings, products } = data;
   const rawWishlistSlug = shop.wishlist_slug;
   const wishlistSlug =
@@ -70,15 +97,9 @@ function PublicShopPage() {
       ? rawWishlistSlug.trim()
       : null;
 
-  // Log a visit (fire & forget)
-  useEffect(() => {
-    void supabase.functions.invoke("marketplace-public", {
-      body: { action: "log-visit", shop_id: shop.id },
-    });
-  }, [shop.id]);
-
   return (
-    <div className="min-h-screen bg-background">
+    <div className="flex min-h-screen flex-col bg-background">
+      <SiteHeader />
       {/* Cover */}
       <section className="relative">
         <div className="h-40 w-full bg-gradient-to-br from-primary/20 to-primary/5 sm:h-56">
@@ -208,9 +229,10 @@ function PublicShopPage() {
         )}
       </main>
 
-      <footer className="mt-10 border-t bg-muted/40 py-6 text-center text-xs text-muted-foreground">
+      <div className="mt-10 border-t bg-muted/40 py-4 text-center text-xs text-muted-foreground">
         Powered by <Link to="/" className="font-semibold text-primary hover:underline">Tally Plus</Link>
-      </footer>
+      </div>
+      <SiteFooter />
     </div>
   );
 }
