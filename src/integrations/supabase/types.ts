@@ -14,6 +14,84 @@ export type Database = {
   }
   public: {
     Tables: {
+      ad_settings: {
+        Row: {
+          adsense_publisher_id: string | null
+          enabled: boolean
+          id: boolean
+          show_to_consumers: boolean
+          show_to_free_owners: boolean
+          show_to_subscribers: boolean
+          updated_at: string
+        }
+        Insert: {
+          adsense_publisher_id?: string | null
+          enabled?: boolean
+          id?: boolean
+          show_to_consumers?: boolean
+          show_to_free_owners?: boolean
+          show_to_subscribers?: boolean
+          updated_at?: string
+        }
+        Update: {
+          adsense_publisher_id?: string | null
+          enabled?: boolean
+          id?: boolean
+          show_to_consumers?: boolean
+          show_to_free_owners?: boolean
+          show_to_subscribers?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      ad_slots: {
+        Row: {
+          adsense_format: string
+          adsense_slot_id: string | null
+          created_at: string
+          custom_image_url: string | null
+          custom_link_url: string | null
+          custom_title: string | null
+          id: string
+          is_active: boolean
+          label: string
+          mode: string
+          slot_key: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          adsense_format?: string
+          adsense_slot_id?: string | null
+          created_at?: string
+          custom_image_url?: string | null
+          custom_link_url?: string | null
+          custom_title?: string | null
+          id?: string
+          is_active?: boolean
+          label: string
+          mode?: string
+          slot_key: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          adsense_format?: string
+          adsense_slot_id?: string | null
+          created_at?: string
+          custom_image_url?: string | null
+          custom_link_url?: string | null
+          custom_title?: string | null
+          id?: string
+          is_active?: boolean
+          label?: string
+          mode?: string
+          slot_key?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       affiliate_agents: {
         Row: {
           agent_referral_code: string
