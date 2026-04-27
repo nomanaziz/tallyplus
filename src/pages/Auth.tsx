@@ -127,7 +127,7 @@ export default function AuthPage() {
             });
           }
           toast.success("Customer account তৈরি");
-          navigate({ to: "/customer/profile", replace: true });
+          navigate({ to: "/customer/dashboard", replace: true });
         }
       } else {
         // Login: try owner PIN flow first
@@ -149,7 +149,7 @@ export default function AuthPage() {
           return toast.error("লগইন ব্যর্থ");
         }
         toast.success("লগইন সফল");
-        navigate({ to: "/customer/profile", replace: true });
+        navigate({ to: "/customer/dashboard", replace: true });
       }
     } catch (e) {
       toast.error((e as Error).message);
