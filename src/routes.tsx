@@ -94,6 +94,7 @@ const P83 = lazy(() => import("./pages/customer/MyFordo"));
 const P84 = lazy(() => import("./pages/admin/PaymentAttempts"));
 const P85 = lazy(() => import("./pages/customer/CreateFordo"));
 const P86 = lazy(() => import("./pages/admin/Locations"));
+const P87 = lazy(() => import("./pages/admin/Ads"));
 
 export function AppRoutes() {
   return (
@@ -118,6 +119,7 @@ export function AppRoutes() {
       <Route path="training" element={<S><P11 /></S>} />
       <Route path="users" element={<S><P13 /></S>} />
       <Route path="locations" element={<S><P86 /></S>} />
+      <Route path="ads" element={<S><P87 /></S>} />
       </Route>
       <Route path="/affiliate" element={<S><P15 /></S>}>
       <Route path="register" element={<S><P14 /></S>} />
