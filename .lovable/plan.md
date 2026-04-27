@@ -1,109 +1,120 @@
-## What we're fixing
+## Goal
 
-You raised two things on the Fordo / ফর্দ flow:
-
-1. **Simple-mode voice output is wrong.** When you say "এক কেজি পেঁয়াজ, দুই কেজি মসুর ডাল, পাঁচ লিটার সয়াবিন তেল একটি", in **বিস্তারিত (detailed) mode** the qty + unit columns get filled correctly. But in **সহজ (simple) mode** — which has only one text box per row — only the bare name is shown ("পেঁয়াজ", "মসুর ডাল", "সয়াবিন তেল") and the quantity/unit info is lost. You want the simple-mode row to read the way a person writes a market list: "১ কেজি পেঁয়াজ", "২ কেজি মসুর ডাল", "৫ লিটার সয়াবিন তেল ১টি".
-
-2. **Customer portal Fordo (`/customer/create-fordo`) has no voice.** Right now you have to type each item by hand. You want the same voice mic from the public ফর্দ link page added here, plus two extras: **save the list as a template** for future use, and **schedule** it to send automatically on a recurring date (e.g. every month on the 10th).
+Monetize free users by integrating Google AdSense (and optional custom/house ads) across the app. Subscribed (paid) users should NOT see ads. Admin should be able to fully configure everything from the Admin Portal — no code edits needed.
 
 ---
 
-## Plan
+## How it works (user-facing)
 
-### 1. Simple-mode voice display (public ফর্দ page — `src/pages/f/Slug.tsx`)
+- **Free users** (owners without an active subscription, and consumer/গ্রাহক portal users) → see ads in pre-defined slots (top banner, sidebar, between content blocks, mobile sticky bottom, etc.).
+- **Paid subscribers** → ads automatically hidden.
+- **Admin** can:
+  - Turn the entire ad system ON/OFF with one switch.
+  - Paste their **Google AdSense Publisher ID** (e.g., `ca-pub-1234567890123456`) and individual **ad slot IDs** for each placement.
+  - Or upload **custom house ads** (image + link + title) per slot — useful before AdSense approval, or to promote own offers.
+  - Choose per slot: `adsense` / `custom` / `disabled`.
+  - Decide which user roles see ads (free owners only, consumers only, both).
 
-Currently in simple mode the row just renders `it.name`. We'll keep storing `qty` / `unit` in state (so detailed mode keeps working), but for the **display value** in the simple-mode `<Input>` we'll compose a friendly label like:
+---
 
-- `১ কেজি পেঁয়াজ`
-- `২ কেজি মসুর ডাল`
-- `৫ লিটার সয়াবিন তেল ১টি`
+## Where ads will appear
 
-Rules:
-- If `qty` + `unit` exist → render `{qty} {unit} {name}` (qty in Bengali digits).
-- If only `qty` exists → `{qty} {name}`.
-- If neither → just `{name}` (back-compat with manual typing).
-- If the user edits the simple-mode field by hand, we treat the whole string as `name` and clear `qty`/`unit` (current behavior — no surprise overwrites).
-- Toggling to বিস্তারিত mode still shows the parsed qty / unit columns correctly (no change there).
+| Slot key | Location | Format |
+|---|---|---|
+| `app_top` | Top of `/app/*` pages (under topbar) | Responsive banner |
+| `app_sidebar` | Bottom of `AppSidebar` (desktop only) | 300×600 / responsive |
+| `app_mobile_sticky` | Above mobile bottom nav | Sticky 320×50 |
+| `app_dashboard_inline` | Between cards on `/app/dashboard` | Responsive in-feed |
+| `customer_top` | Top of `/customer/*` pages | Responsive banner |
+| `customer_sidebar` | Customer desktop side rail | Responsive |
+| `customer_inline` | Inside `MyFordo` / `Notes` lists every N items | In-feed |
+| `fordo_public` | Public `/f/:slug` fordo view (huge free-traffic page) | Responsive banner |
 
-Also a small parser tweak in `VoiceFordoMic`: phrases like "একটি / একটা" trailing the item ("সয়াবিন তেল একটি") should be captured as `qty=1, unit=পিস` so the simple label reads "৫ লিটার সয়াবিন তেল ১টি" naturally — not lost.
+Subscribers and admin pages never render ads.
 
-### 2. Voice mic on customer portal Fordo (`src/pages/customer/CreateFordo.tsx`)
+---
 
-- Add the existing `<VoiceFordoMic />` next to the "পণ্যের তালিকা" header on Step 1.
-- Wire `onItems` exactly like the public page: fill the first empty row, then append new rows for each spoken item. Each row already has separate `name` / `qty` / `unit` inputs in this page, so detailed values are visible directly.
-- Keep manual input available — voice is additive, not a replacement.
+## Technical Plan
 
-### 3. Save as template + schedule (customer portal)
+### 1. Database (new migration)
 
-Add two new buttons on Step 1 of `CreateFordo.tsx` next to "পরবর্তী":
+**`ad_settings`** (singleton row, admin-managed)
+- `id` (fixed = 1), `enabled` bool, `adsense_publisher_id` text, `show_to_free_owners` bool, `show_to_consumers` bool, `show_to_subscribers` bool (default false), `updated_at`.
 
-- **💾 টেমপ্লেট হিসেবে সংরক্ষণ** — saves current items + note as a reusable template.
-- **⏰ সময়সূচী সেট করুন** — opens a small dialog: pick a shop, choose recurrence (every month on day N / every week on weekday / one-time future date), then save.
+**`ad_slots`**
+- `id`, `slot_key` text unique (matches list above), `label`, `mode` enum(`adsense` | `custom` | `disabled`), `adsense_slot_id` text nullable, `adsense_format` text (auto/rectangle/horizontal), `custom_image_url`, `custom_link_url`, `custom_title`, `is_active`, `sort_order`.
 
-Plus a new section on the **My Fordo** page (`src/pages/customer/MyFordo.tsx`) with two tabs/sections:
-- **আমার টেমপ্লেট** — list saved templates with "ব্যবহার করুন" (loads into CreateFordo) and "মুছুন".
-- **সময়সূচী (Scheduled)** — list active schedules with next-run time, pause/resume, delete.
+**RLS:**
+- `select`: public (so frontend can render).
+- `insert/update/delete`: admin only (uses existing `has_role(auth.uid(),'admin')`).
 
-### 4. Database changes (migration)
+Seed all 8 slot rows as `disabled` by default.
 
-Two new tables scoped to logged-in consumers (RLS via `auth.uid()`):
+### 2. AdSense script loader
 
-```text
-consumer_fordo_templates
-  id uuid pk
-  consumer_user_id uuid (auth.users.id, indexed)
-  name text                       -- e.g. "মাসিক বাজার"
-  note text
-  items jsonb                     -- [{name, qty, unit}]
-  created_at, updated_at
+`src/lib/adsense.ts` — idempotent loader that injects:
+```html
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXX" crossorigin="anonymous"></script>
+```
+Only loads once per session, only when `ad_settings.enabled` AND a publisher ID exists.
 
-consumer_fordo_schedules
-  id uuid pk
-  consumer_user_id uuid (indexed)
-  shop_id uuid → shops.id
-  template_id uuid → consumer_fordo_templates.id (nullable, can be inline)
-  items jsonb                     -- snapshot if no template
-  note text
-  recurrence text                 -- 'monthly' | 'weekly' | 'once'
-  day_of_month int (1-31, nullable)
-  day_of_week int (0-6, nullable)
-  run_at timestamptz (for 'once')
-  next_run_at timestamptz (indexed) -- computed/maintained
-  is_active boolean default true
-  last_run_at timestamptz
-  created_at, updated_at
+### 3. Reusable component
+
+`src/components/ads/AdSlot.tsx`
+- Props: `slotKey: string`, optional `className`.
+- Reads cached `ad_settings` + `ad_slots` via React Query (`['ad-config']`, 5-min stale).
+- Decides what to render:
+  - If user is subscriber and `show_to_subscribers=false` → render `null`.
+  - If slot mode = `disabled` or globally off → `null`.
+  - If `adsense` → render `<ins class="adsbygoogle" ...>` and call `(adsbygoogle = window.adsbygoogle || []).push({})`.
+  - If `custom` → render `<a href={custom_link_url}><img src={custom_image_url} alt={custom_title}/></a>`.
+- Always wrapped in a labelled container ("বিজ্ঞাপন / Advertisement") so ads are clearly disclosed (AdSense policy).
+
+Subscription detection: existing `useAuth().hasActiveSubscription`.
+
+### 4. Placements (frontend wiring)
+
+Drop `<AdSlot slotKey="..." />` into:
+- `src/pages/app/AppLayout.tsx` (top + mobile sticky)
+- `src/components/app/AppSidebar.tsx` (sidebar bottom)
+- `src/pages/app/Dashboard.tsx` (one inline slot)
+- `src/pages/customer/CustomerLayout.tsx` (top + sidebar)
+- `src/pages/customer/MyFordo.tsx` and `Notes.tsx` (inline every 5 items)
+- `src/pages/f/Slug.tsx` (public fordo view top)
+
+### 5. Admin UI — new page `src/pages/admin/Ads.tsx`
+
+Two cards:
+1. **Global settings**: enable switch, publisher ID input, audience checkboxes, "Save" button.
+2. **Slot manager**: table of all 8 slots. Each row → edit dialog with mode selector (adsense/custom/disabled), AdSense slot ID, format, or custom image upload (re-use existing `dashboard-banners` storage bucket pattern), link URL, title, active toggle.
+
+Add to `AdminSidebar.tsx`: `{ to: "/admin/ads", label: "Ads / Monetization", icon: Megaphone }` and register the route.
+
+### 6. SEO / `ads.txt`
+
+Add a public `ads.txt` route (TanStack-style: `/api/public/ads.txt` or static file in `public/ads.txt`) that AdSense requires. It will read the publisher ID from `ad_settings` and serve:
+```
+google.com, pub-XXXXXXXXXXXXXXXX, DIRECT, f08c47fec0942fa0
 ```
 
-RLS:
-- Both tables: `consumer_user_id = auth.uid()` for select/insert/update/delete.
+### 7. Privacy / consent (light-touch)
 
-### 5. Scheduled dispatch (cron)
-
-A pg_cron job runs every 5 minutes and calls a new edge function `customer-dispatch-fordo-schedules`. The function:
-- Finds rows where `is_active = true AND next_run_at <= now()`.
-- For each, inserts into `customer_wishlists` + `customer_wishlist_items` (same shape as `customer-create-wishlist` already produces — triggers `tg_notify_new_wishlist` so the shop is notified).
-- Updates `last_run_at = now()`, recomputes `next_run_at` (next month's day_of_month, next weekday, or sets `is_active=false` for 'once').
-
-### 6. Files touched
-
-**Edited:**
-- `src/components/app/VoiceFordoMic.tsx` — handle "একটি/একটা" trailing as qty=1 unit=পিস.
-- `src/pages/f/Slug.tsx` — simple-mode display formatter.
-- `src/pages/customer/CreateFordo.tsx` — add mic, "Save template" button, "Schedule" button + dialog, optional `?templateId=` preload.
-- `src/pages/customer/MyFordo.tsx` — add Templates and Schedules sections.
-
-**New:**
-- `src/components/customer/ScheduleFordoDialog.tsx` — recurrence picker UI.
-- `supabase/functions/customer-dispatch-fordo-schedules/index.ts` — cron worker.
-- Migration: two new tables + RLS + indexes.
-- pg_cron schedule (every 5 min) calling the new edge function.
+Add a one-line note in `SiteFooter` linking to a basic privacy section explaining AdSense uses cookies. Full GDPR consent is out of scope for v1 (Bangladesh-focused product) but we leave a TODO comment for future Funding Choices integration.
 
 ---
 
-## Notes for you
+## What admin needs to do after deploy
 
-- Voice mic already requires Chrome + mic permission; same applies on the customer page.
-- "Schedule" only fires if the schedule is active and the consumer is still logged in to receive notifications later — the actual dispatch is server-side, so it works even if the user's phone is off.
-- Templates are private to each consumer.
+1. Apply for Google AdSense at https://adsense.google.com (using their domain `tallyplus.lovable.app` or custom domain).
+2. Once approved, copy the Publisher ID + create ad units in AdSense dashboard.
+3. Open `/admin/ads` → toggle ON, paste Publisher ID, paste each slot ID, save.
+4. (Optional) Use "custom" mode meanwhile to display house ads / promo banners.
 
-Approve and I'll implement it in one pass.
+---
+
+## Out of scope (not in this change)
+
+- Full GDPR/CMP consent banner (AdSense Funding Choices)
+- Per-page/per-shop ad targeting
+- Revenue analytics dashboard (AdSense provides its own)
+- Header bidding / multiple ad networks
