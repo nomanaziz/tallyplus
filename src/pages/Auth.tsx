@@ -192,6 +192,12 @@ export default function AuthPage() {
 
         {mode === "login" ? (
           <div className="space-y-3">
+            <Tabs value={role} onValueChange={(v) => setRole(v as Role)}>
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="owner">দোকানদার</TabsTrigger>
+                <TabsTrigger value="customer">গ্রাহক</TabsTrigger>
+              </TabsList>
+            </Tabs>
             <Input
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
@@ -201,7 +207,7 @@ export default function AuthPage() {
             <Input
               value={pin}
               onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 4))}
-              placeholder="৪ সংখ্যার PIN"
+              placeholder={role === "owner" ? "৪ সংখ্যার PIN" : "৪ সংখ্যার পাসওয়ার্ড"}
               inputMode="numeric"
               maxLength={4}
               type="password"
