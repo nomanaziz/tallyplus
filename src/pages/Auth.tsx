@@ -84,6 +84,12 @@ export default function AuthPage() {
     setLoading(true);
     try {
       const ph = normalizePhone(phone);
+      const digits = ph.replace(/\D/g, "");
+      // Customer accounts use a separate email namespace ("c" prefix) so
+      // the same phone number can have BOTH an owner and a customer account
+      // without colliding in auth.users.
+      const customerEmail = `c${digits}@tally.local`;
+      const customerPassword = `tpc_${digits}_pw`;
       if (mode === "signup") {
         if (role === "owner") {
           const r = await callFn("signup-with-pin", {
@@ -100,23 +106,28 @@ export default function AuthPage() {
           toast.success("Account তৈরি হয়েছে");
           navigate({ to: "/app/dashboard", replace: true });
         } else {
-          // Customer signup via Supabase phone OTP-less: use signInWithPassword pattern via edge func is for owners.
-          // For customers we still create via admin signup edge function pattern; reuse signup-with-pin with a sentinel shop_name.
-          // Simpler: customers use the existing wishlist customer flow OR create a consumer auth user.
-          // We'll create a minimal consumer using supabase.auth.signUp with email-format phone.
-          const digits = ph.replace(/\D/g, "");
-          const email = `${digits}@tally.local`;
-          const password = `tp_${digits}_pw`;
+          // Customer signup — separate email namespace so it never collides
+          // with the same phone's owner account.
           const { error: signUpErr } = await supabase.auth.signUp({
-            email,
-            password,
-            options: { data: { full_name: name.trim(), account_type: "consumer" } },
+            email: customerEmail,
+            password: customerPassword,
+            options: {
+              emailRedirectTo: window.location.origin,
+              data: { full_name: name.trim(), account_type: "consumer" },
+            },
           });
-          if (signUpErr && !signUpErr.message.toLowerCase().includes("registered")) {
+          if (signUpErr) {
+            const msg = signUpErr.message.toLowerCase();
+            if (msg.includes("registered") || msg.includes("already")) {
+              return toast.error("এই নম্বরে গ্রাহক account আগে থেকেই আছে — লগইন করুন");
+            }
             return toast.error(signUpErr.message);
           }
-          const { error: signInErr } = await supabase.auth.signInWithPassword({ email, password });
-          if (signInErr) return toast.error("লগইন ব্যর্থ — হয়তো এই নম্বর owner হিসেবে আছে");
+          const { error: signInErr } = await supabase.auth.signInWithPassword({
+            email: customerEmail,
+            password: customerPassword,
+          });
+          if (signInErr) return toast.error("লগইন ব্যর্থ — আবার চেষ্টা করুন");
           // Save phone + name on consumer_profiles
           const { data: u } = await supabase.auth.getUser();
           if (u.user) {
@@ -130,26 +141,28 @@ export default function AuthPage() {
           navigate({ to: "/customer/dashboard", replace: true });
         }
       } else {
-        // Login: try owner PIN flow first
-        const r = await callFn("login-with-pin", { phone: ph, pin });
-        if (r.ok) {
+        // Login — explicitly per the selected tab (owner or customer)
+        if (role === "owner") {
+          const r = await callFn("login-with-pin", { phone: ph, pin });
+          if (!r.ok) {
+            if (r.error === "wrong_pin") return toast.error("ভুল PIN");
+            if (r.error === "no_account") return toast.error("এই নম্বরে দোকানদার account নেই — সাইনআপ করুন");
+            return toast.error(r.error || "লগইন ব্যর্থ");
+          }
           await setSession(r.access_token, r.refresh_token);
           toast.success("লগইন সফল");
           navigate({ to: "/app/dashboard", replace: true });
-          return;
+        } else {
+          const { error: signInErr } = await supabase.auth.signInWithPassword({
+            email: customerEmail,
+            password: customerPassword,
+          });
+          if (signInErr) {
+            return toast.error("এই নম্বরে গ্রাহক account নেই — সাইনআপ করুন");
+          }
+          toast.success("লগইন সফল");
+          navigate({ to: "/customer/dashboard", replace: true });
         }
-        // fallback: try customer (consumer) password
-        const digits = ph.replace(/\D/g, "");
-        const email = `${digits}@tally.local`;
-        const password = `tp_${digits}_pw`;
-        const { error: signInErr } = await supabase.auth.signInWithPassword({ email, password });
-        if (signInErr) {
-          if (r.error === "wrong_pin") return toast.error("ভুল PIN");
-          if (r.error === "no_account") return toast.error("এই নম্বরে account নেই — সাইনআপ করুন");
-          return toast.error("লগইন ব্যর্থ");
-        }
-        toast.success("লগইন সফল");
-        navigate({ to: "/customer/dashboard", replace: true });
       }
     } catch (e) {
       toast.error((e as Error).message);
