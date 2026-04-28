@@ -860,6 +860,7 @@ export type Database = {
           created_at: string
           id: string
           name: string
+          parent_id: string | null
           shop_id: string
           updated_at: string
         }
@@ -867,6 +868,7 @@ export type Database = {
           created_at?: string
           id?: string
           name: string
+          parent_id?: string | null
           shop_id: string
           updated_at?: string
         }
@@ -874,10 +876,18 @@ export type Database = {
           created_at?: string
           id?: string
           name?: string
+          parent_id?: string | null
           shop_id?: string
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "categories_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "categories_shop_id_fkey"
             columns: ["shop_id"]
@@ -2094,6 +2104,7 @@ export type Database = {
           shop_id: string
           sku: string | null
           stock: number
+          sub_category_id: string | null
           unit: string | null
           updated_at: string
           vat_enabled: boolean
@@ -2127,6 +2138,7 @@ export type Database = {
           shop_id: string
           sku?: string | null
           stock?: number
+          sub_category_id?: string | null
           unit?: string | null
           updated_at?: string
           vat_enabled?: boolean
@@ -2160,6 +2172,7 @@ export type Database = {
           shop_id?: string
           sku?: string | null
           stock?: number
+          sub_category_id?: string | null
           unit?: string | null
           updated_at?: string
           vat_enabled?: boolean
@@ -2181,6 +2194,13 @@ export type Database = {
             columns: ["shop_id"]
             isOneToOne: false
             referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_sub_category_id_fkey"
+            columns: ["sub_category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
             referencedColumns: ["id"]
           },
         ]

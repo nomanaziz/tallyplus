@@ -50,6 +50,27 @@ type Product = {
   is_serialized?: boolean;
 };
 
+const PREDEFINED_UNITS = [
+  "pcs", "piece", "ft", "sq.ft", "sq.m", "kg", "gm", "km", "meter", "litre", "ml", "dozen", "pack", "box", "bottle", "bag",
+] as const;
+
+const DEFAULT_CATEGORY_TREE: { name: string; children?: string[] }[] = [
+  {
+    name: "Electronics and Gadgets",
+    children: [
+      "Battery", "Inverter/EV battery", "BMS/Battery Controller", "Inverter/EV battery charger",
+      "Cable clips/connector/jointer", "Electrical/Electronics service charge", "Power Supply/Adapter",
+      "Gaming Consoles", "Telephones", "Headphones and Microphone", "Internet, Router and Switches", "CCTV Cameras",
+    ],
+  },
+  { name: "Home Appliances" },
+  { name: "Stationary and Office Appliances" },
+  { name: "Clothes" },
+  { name: "Shoes" },
+  { name: "Fashion Accessories" },
+  { name: "Home & Kitchen" },
+];
+
 
 
 import { RequirePerm } from "@/components/app/RequirePerm";
@@ -574,6 +595,14 @@ function ProductFormDialog({
   const [trackStock, setTrackStock] = useState(true);
   const [busy, setBusy] = useState(false);
   const [description, setDescription] = useState("");
+  // Category state
+  const [categoryId, setCategoryId] = useState<string | null>(null);
+  const [subCategoryId, setSubCategoryId] = useState<string | null>(null);
+  type Cat = { id: string; name: string; parent_id: string | null };
+  const [allCats, setAllCats] = useState<Cat[]>([]);
+  const [addCatOpen, setAddCatOpen] = useState(false);
+  const [addSubOpen, setAddSubOpen] = useState(false);
+  const [newCatName, setNewCatName] = useState("");
   // toggles
   const [onlineOn, setOnlineOn] = useState(false);
   const [bulkOn, setBulkOn] = useState(false);
@@ -593,6 +622,47 @@ function ProductFormDialog({
 
   const showSerializedOption = shopTypeCode === "mobile" || shopTypeCode === "electronics";
 
+  const reloadCats = async (sid: string) => {
+    const { data } = await supabase
+      .from("categories")
+      .select("id,name,parent_id")
+      .eq("shop_id", sid)
+      .order("name");
+    setAllCats((data as Cat[] | null) ?? []);
+  };
+
+  // Lazy seed default category tree on first open per shop
+  useEffect(() => {
+    if (!open || !shopId) return;
+    let cancelled = false;
+    (async () => {
+      const { data: existing } = await supabase
+        .from("categories")
+        .select("id,name,parent_id")
+        .eq("shop_id", shopId);
+      if (cancelled) return;
+      const list = (existing as Cat[] | null) ?? [];
+      if (list.length === 0) {
+        for (const top of DEFAULT_CATEGORY_TREE) {
+          const { data: parent } = await supabase
+            .from("categories")
+            .insert({ shop_id: shopId, name: top.name })
+            .select("id")
+            .single();
+          if (parent && top.children?.length) {
+            await supabase.from("categories").insert(
+              top.children.map((c) => ({ shop_id: shopId, name: c, parent_id: parent.id })),
+            );
+          }
+        }
+        await reloadCats(shopId);
+      } else {
+        setAllCats(list);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [open, shopId]);
+
   useEffect(() => {
     if (open) {
       const p = product as (Product & Record<string, unknown>) | null;
@@ -608,6 +678,8 @@ function ProductFormDialog({
       setStock(isUnlimited ? "0" : String(initStock));
       setLow(String(p?.low_stock_alert ?? 5));
       setDescription(String((p?.description as string) ?? ""));
+      setCategoryId((p?.category_id as string | null) ?? null);
+      setSubCategoryId((p?.sub_category_id as string | null) ?? null);
       setOnlineOn(Boolean(p?.is_marketplace_published));
       setBulkOn(Boolean(p?.bulk_enabled));
       setBulkPrice(p?.bulk_price != null ? String(p.bulk_price) : "");
@@ -627,6 +699,27 @@ function ProductFormDialog({
     }
   }, [open, product]);
 
+  const topCats = allCats.filter((c) => !c.parent_id);
+  const subCats = categoryId ? allCats.filter((c) => c.parent_id === categoryId) : [];
+
+  const addCategory = async (parent: string | null) => {
+    if (!shopId || !newCatName.trim()) return;
+    const { data, error } = await supabase
+      .from("categories")
+      .insert({ shop_id: shopId, name: newCatName.trim(), parent_id: parent })
+      .select("id,name,parent_id")
+      .single();
+    if (error) { toast.error(error.message); return; }
+    if (data) {
+      setAllCats((prev) => [...prev, data as Cat]);
+      if (parent) setSubCategoryId((data as Cat).id);
+      else setCategoryId((data as Cat).id);
+    }
+    setNewCatName("");
+    setAddCatOpen(false);
+    setAddSubOpen(false);
+  };
+
   const save = async () => {
     if (!shopId) return;
     if (!name.trim()) { toast.error(lang === "bn" ? "নাম দিন" : "Name required"); return; }
@@ -642,6 +735,8 @@ function ProductFormDialog({
       low_stock_alert: trackStock && lowOn ? (Number(low) || 0) : 0,
       shop_id: shopId,
       description: description.trim() || null,
+      category_id: categoryId,
+      sub_category_id: subCategoryId,
       is_marketplace_published: onlineOn,
       bulk_enabled: bulkOn,
       bulk_price: bulkOn ? (Number(bulkPrice) || 0) : null,
@@ -721,7 +816,14 @@ function ProductFormDialog({
             )}
             <div className="grid gap-1.5">
               <Label>{lang === "bn" ? "ইউনিট" : "Unit"}</Label>
-              <Input value={unit} onChange={(e) => setUnit(e.target.value)} placeholder="pcs / kg / ltr" />
+              <Select value={unit} onValueChange={setUnit}>
+                <SelectTrigger><SelectValue placeholder="Units" /></SelectTrigger>
+                <SelectContent>
+                  {Array.from(new Set([...PREDEFINED_UNITS, unit].filter(Boolean))).map((u) => (
+                    <SelectItem key={u} value={u}>{u}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="grid gap-1.5">
               <Label>{lang === "bn" ? "ক্রয় মূল্য" : "Purchase Price"}</Label>
@@ -736,6 +838,56 @@ function ProductFormDialog({
           <div className="grid gap-1.5">
             <Label>SKU</Label>
             <Input value={sku} onChange={(e) => setSku(e.target.value)} placeholder="Optional" />
+          </div>
+
+          {/* Category & Sub-Category */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="grid gap-1.5">
+              <Label>{lang === "bn" ? "ক্যাটাগরি" : "Category Name"}</Label>
+              <Select
+                value={categoryId ?? ""}
+                onValueChange={(v) => {
+                  if (v === "__add__") { setNewCatName(""); setAddCatOpen(true); return; }
+                  setCategoryId(v || null);
+                  setSubCategoryId(null);
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={lang === "bn" ? "ক্যাটাগরি বাছাই" : "Select category"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {topCats.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                  ))}
+                  <SelectItem value="__add__" className="font-semibold text-primary">
+                    + {lang === "bn" ? "নতুন ক্যাটাগরি" : "Add New Category"}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-1.5">
+              <Label>{lang === "bn" ? "সাব-ক্যাটাগরি" : "Sub-Category Name"}</Label>
+              <Select
+                value={subCategoryId ?? ""}
+                onValueChange={(v) => {
+                  if (v === "__add__") { setNewCatName(""); setAddSubOpen(true); return; }
+                  setSubCategoryId(v || null);
+                }}
+                disabled={!categoryId}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={lang === "bn" ? "সাব-ক্যাটাগরি" : "Select sub-category"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {subCats.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                  ))}
+                  <SelectItem value="__add__" className="font-semibold text-primary">
+                    + {lang === "bn" ? "নতুন সাব-ক্যাটাগরি" : "Add New Sub-Category"}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           <div className="grid gap-1.5">
@@ -866,6 +1018,35 @@ function ProductFormDialog({
             {busy ? "..." : product ? (lang === "bn" ? "আপডেট" : "Update Product") : (lang === "bn" ? "যোগ করুন" : "Add New Product")}
           </Button>
         </SheetFooter>
+
+        <Dialog open={addCatOpen || addSubOpen} onOpenChange={(o) => { if (!o) { setAddCatOpen(false); setAddSubOpen(false); } }}>
+          <DialogContent className="max-w-sm">
+            <DialogHeader>
+              <DialogTitle>
+                {addSubOpen
+                  ? (lang === "bn" ? "নতুন সাব-ক্যাটাগরি" : "New Sub-Category")
+                  : (lang === "bn" ? "নতুন ক্যাটাগরি" : "New Category")}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="grid gap-2">
+              <Label>{lang === "bn" ? "নাম" : "Name"}</Label>
+              <Input
+                value={newCatName}
+                onChange={(e) => setNewCatName(e.target.value)}
+                autoFocus
+                onKeyDown={(e) => { if (e.key === "Enter") addCategory(addSubOpen ? categoryId : null); }}
+              />
+              <div className="mt-2 flex justify-end gap-2">
+                <Button variant="outline" onClick={() => { setAddCatOpen(false); setAddSubOpen(false); }}>
+                  {lang === "bn" ? "বাতিল" : "Cancel"}
+                </Button>
+                <Button onClick={() => addCategory(addSubOpen ? categoryId : null)} disabled={!newCatName.trim()}>
+                  {lang === "bn" ? "সংরক্ষণ" : "Save"}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </SheetContent>
     </Sheet>
   );
