@@ -1,37 +1,54 @@
-## সমস্যা
+# Privacy Policy ও Terms and Conditions পেজ যোগ করা
 
-গ্রাহকের পাঠানো ফর্দ-এ প্রতিটি item-এর পাশে তিনটি action button আছে — **✓ পেয়েছে**, **✗ পায়নি**, **⏳ পরে দিবে**। এই buttons এ click করলে এখন কোনো visible পরিবর্তন হচ্ছে না।
+## যা যা করা হবে
 
-## কারণ
+### ১. দুইটি নতুন পাবলিক পেজ তৈরি
+- **`src/pages/Privacy.tsx`** — Privacy Policy পেজ
+- **`src/pages/Terms.tsx`** — Terms & Conditions পেজ
 
-`src/pages/app/CustomerWishlist.tsx` এর `setFulfillment` function দু'টা সমস্যা নিয়ে আছে:
+দুইটি পেজেরই গঠন main website-এর সাথে consistent থাকবে:
+- উপরে `SiteHeader`
+- মাঝখানে container-এ পরিষ্কার typography (heading, sections, bullet list) — Tally+ব্র্যান্ড style অনুযায়ী
+- নিচে `SiteFooter`
+- `useI18n()` ব্যবহার করে **বাংলা ও English উভয় ভাষায়** content দেখানো হবে (যেভাবে বাকি site কাজ করে)
 
-1. **Silent failure** — `supabase.from(...).update(...).eq("id", it.id)` করার পর result/error check করা হয় না। RLS-এ row match না হলে কোনো error আসে না, শুধু 0 row update হয় — UI তে কোনো feedback ও আসে না।
-2. **Stale UI** — update success হলেও শুধু `detailQ.refetch()` call হয়, কিন্তু কোনো optimistic update নেই; network slow হলে user মনে করে কিছুই হয়নি, আবার click করে — যা আগের state এ ফিরে যায় (toggle logic-এর কারণে)।
-3. **Button-level error surface নেই** — toast ও দেখানো হয় না।
+### ২. Content (Tally+ context অনুযায়ী লেখা হবে)
 
-একই pattern `updateItemPrice / updateItemQty / updateItemUnit` এও আছে।
+**Privacy Policy** — যে topics কভার হবে:
+- কী ধরনের তথ্য সংগ্রহ করা হয় (নাম, mobile, shop info, transaction data)
+- কীভাবে ব্যবহার করা হয়
+- তথ্য সংরক্ষণ ও security
+- Third-party services (Supabase, payment gateway)
+- Cookies
+- User rights (delete, export)
+- যোগাযোগের ঠিকানা
 
-## সমাধান
+**Terms & Conditions** — যে topics কভার হবে:
+- Service-এর পরিচয় ও eligibility
+- Account ও subscription নিয়ম
+- Payment, refund, cancellation policy
+- Acceptable use
+- Intellectual property
+- Liability disclaimer
+- Termination
+- পরিবর্তনের অধিকার ও governing law
 
-`CustomerWishlist.tsx`-এর dialog component-এ:
+### ৩. Routing
+`src/routes.tsx`-এ দুইটি route যোগ:
+- `/privacy` → `Privacy.tsx`
+- `/terms` → `Terms.tsx`
 
-1. **`setFulfillment` রিরাইট করা:**
-   - update query-তে `.select()` চেইন করে actually-updated row পাওয়া হবে।
-   - `error` থাকলে `toast.error(...)` দেখানো হবে।
-   - 0 row update হলে `toast.error("আপডেট করা গেলো না — আবার লগইন করে চেষ্টা করুন")` (RLS / session expiry সংকেত)।
-   - **Optimistic update**: react-query এর `qc.setQueryData(["customer-wishlist", wishlistId], ...)` দিয়ে সাথে সাথে UI আপডেট হবে; success হলে refetch, fail হলে rollback।
+(Lazy loaded, বাকি page-এর pattern অনুযায়ী)
 
-2. **Loading indicator** — যেই button click হয়েছে সেটায় ছোট্ট spinner দেখাবে যতক্ষণ request pending; double-click prevent করবে।
+### ৪. Footer-এ link যোগ
+`src/components/site/SiteFooter.tsx`-এ existing link row-এ দুটি নতুন link বসবে:
+- **Privacy Policy / প্রাইভেসি পলিসি**
+- **Terms & Conditions / শর্তাবলী**
 
-3. **`updateItemPrice / Qty / Unit` ও same pattern এ wrap করা** — silent failure দূর করার জন্য (এগুলোও same RLS path ব্যবহার করে)।
+`Link` component ব্যবহার করে `/privacy` ও `/terms`-এ পাঠাবে, hover style বাকিদের মতই।
 
-4. **Auth check**: dialog open হলে `supabase.auth.getSession()` verify করে session expired হলে user-কে warn করা হবে।
-
-## কোনো DB পরিবর্তন নেই
-
-`fulfillment_status` column, RLS policy, trigger — সব ঠিক আছে (verified)। সমস্যা শুধু client-side error handling এর।
-
-## প্রভাবিত ফাইল
-
-- `src/pages/app/CustomerWishlist.tsx` (single file)
+## পরিবর্তিত/তৈরি হবে যে file গুলো
+- নতুন: `src/pages/Privacy.tsx`
+- নতুন: `src/pages/Terms.tsx`
+- edit: `src/routes.tsx`
+- edit: `src/components/site/SiteFooter.tsx`
