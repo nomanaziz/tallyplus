@@ -258,6 +258,8 @@ function WishlistDetailDialog({
   const open = !!wishlistId;
   const [convertOpen, setConvertOpen] = useState(false);
   const [lumpMap, setLumpMap] = useState<Record<string, boolean>>({});
+  const qcLocal = useQueryClient();
+  const [pendingItemId, setPendingItemId] = useState<string | null>(null);
   const detailQ = useQuery({
     queryKey: ["customer-wishlist", wishlistId],
     queryFn: async () => {
@@ -290,11 +292,41 @@ function WishlistDetailDialog({
   }, [wishlistId, detailQ.data?.wishlist?.id]);
 
   const setFulfillment = async (it: WishlistItem, status: string) => {
-    await supabase
-      .from("customer_wishlist_items")
-      .update({ fulfillment_status: status, done: status === "fulfilled" } as never)
-      .eq("id", it.id);
-    void detailQ.refetch();
+    if (pendingItemId === it.id) return;
+    setPendingItemId(it.id);
+    const key = ["customer-wishlist", wishlistId];
+    const prev = qcLocal.getQueryData(key);
+    // Optimistic update
+    qcLocal.setQueryData(key, (old: { wishlist: Wishlist | null; items: WishlistItem[] } | undefined) => {
+      if (!old) return old;
+      return {
+        ...old,
+        items: old.items.map((x) =>
+          x.id === it.id ? { ...x, fulfillment_status: status, done: status === "fulfilled" } : x,
+        ),
+      };
+    });
+    try {
+      const { data, error } = await supabase
+        .from("customer_wishlist_items")
+        .update({ fulfillment_status: status, done: status === "fulfilled" } as never)
+        .eq("id", it.id)
+        .select("id");
+      if (error) {
+        qcLocal.setQueryData(key, prev);
+        toast.error(error.message);
+      } else if (!data || data.length === 0) {
+        qcLocal.setQueryData(key, prev);
+        toast.error(lang === "bn" ? "আপডেট করা গেলো না — আবার লগইন করে চেষ্টা করুন" : "Update failed — please log in again");
+      } else {
+        void detailQ.refetch();
+      }
+    } catch (e) {
+      qcLocal.setQueryData(key, prev);
+      toast.error((e as Error).message);
+    } finally {
+      setPendingItemId(null);
+    }
   };
 
   const markDone = async () => {
@@ -315,24 +347,33 @@ function WishlistDetailDialog({
     onOpenChange(false);
   };
 
-  const updateItemPrice = async (it: WishlistItem, value: string) => {
-    const v = value.trim() === "" ? null : Number(value);
-    await supabase.from("customer_wishlist_items").update({ price: v } as never).eq("id", it.id);
-    void detailQ.refetch();
-  };
-
-  const updateItemQty = async (it: WishlistItem, value: string) => {
-    const v = value.trim() === "" ? null : Number(value);
-    await supabase.from("customer_wishlist_items").update({ qty: v } as never).eq("id", it.id);
-    void detailQ.refetch();
-  };
-
-  const updateItemUnit = async (it: WishlistItem, value: string) => {
-    await supabase
+  const updateItemField = async (it: WishlistItem, patch: Record<string, unknown>) => {
+    const { data, error } = await supabase
       .from("customer_wishlist_items")
-      .update({ unit: value.trim() || null } as never)
-      .eq("id", it.id);
+      .update(patch as never)
+      .eq("id", it.id)
+      .select("id");
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    if (!data || data.length === 0) {
+      toast.error(lang === "bn" ? "আপডেট করা গেলো না" : "Update failed");
+      return;
+    }
     void detailQ.refetch();
+  };
+
+  const updateItemPrice = (it: WishlistItem, value: string) => {
+    const v = value.trim() === "" ? null : Number(value);
+    return updateItemField(it, { price: v });
+  };
+  const updateItemQty = (it: WishlistItem, value: string) => {
+    const v = value.trim() === "" ? null : Number(value);
+    return updateItemField(it, { qty: v });
+  };
+  const updateItemUnit = (it: WishlistItem, value: string) => {
+    return updateItemField(it, { unit: value.trim() || null });
   };
 
   const wl = detailQ.data?.wishlist;
