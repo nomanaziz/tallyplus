@@ -816,7 +816,14 @@ function ProductFormDialog({
             )}
             <div className="grid gap-1.5">
               <Label>{lang === "bn" ? "ইউনিট" : "Unit"}</Label>
-              <Input value={unit} onChange={(e) => setUnit(e.target.value)} placeholder="pcs / kg / ltr" />
+              <Select value={unit} onValueChange={setUnit}>
+                <SelectTrigger><SelectValue placeholder="Units" /></SelectTrigger>
+                <SelectContent>
+                  {Array.from(new Set([...PREDEFINED_UNITS, unit].filter(Boolean))).map((u) => (
+                    <SelectItem key={u} value={u}>{u}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="grid gap-1.5">
               <Label>{lang === "bn" ? "ক্রয় মূল্য" : "Purchase Price"}</Label>
@@ -831,6 +838,56 @@ function ProductFormDialog({
           <div className="grid gap-1.5">
             <Label>SKU</Label>
             <Input value={sku} onChange={(e) => setSku(e.target.value)} placeholder="Optional" />
+          </div>
+
+          {/* Category & Sub-Category */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="grid gap-1.5">
+              <Label>{lang === "bn" ? "ক্যাটাগরি" : "Category Name"}</Label>
+              <Select
+                value={categoryId ?? ""}
+                onValueChange={(v) => {
+                  if (v === "__add__") { setNewCatName(""); setAddCatOpen(true); return; }
+                  setCategoryId(v || null);
+                  setSubCategoryId(null);
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={lang === "bn" ? "ক্যাটাগরি বাছাই" : "Select category"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {topCats.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                  ))}
+                  <SelectItem value="__add__" className="font-semibold text-primary">
+                    + {lang === "bn" ? "নতুন ক্যাটাগরি" : "Add New Category"}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-1.5">
+              <Label>{lang === "bn" ? "সাব-ক্যাটাগরি" : "Sub-Category Name"}</Label>
+              <Select
+                value={subCategoryId ?? ""}
+                onValueChange={(v) => {
+                  if (v === "__add__") { setNewCatName(""); setAddSubOpen(true); return; }
+                  setSubCategoryId(v || null);
+                }}
+                disabled={!categoryId}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={lang === "bn" ? "সাব-ক্যাটাগরি" : "Select sub-category"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {subCats.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                  ))}
+                  <SelectItem value="__add__" className="font-semibold text-primary">
+                    + {lang === "bn" ? "নতুন সাব-ক্যাটাগরি" : "Add New Sub-Category"}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           <div className="grid gap-1.5">
