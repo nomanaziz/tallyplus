@@ -1,45 +1,57 @@
-# গ্রাহকের প্রিয় দোকান + খোঁজার ফিল্ড একীভূত করা
+# বড় তালিকাগুলোতে Sort/Filter + Pagination যোগ করা
 
-দুটি ছোট কিন্তু কাজের উন্নতি গ্রাহক পোর্টালে।
+স্টক লিস্ট সহ অন্যান্য বড় তালিকাগুলোতে স্ক্রল করতে করতে বিরক্তিকর হয়ে যায়। সমাধান — শক্তিশালী **sort + filter + pagination** একটা পুনঃব্যবহারযোগ্য system হিসেবে যোগ করা।
 
-## ১) প্রিয় দোকান (Save করা দোকান) ⭐
+## ১) প্রোডাক্ট ও স্টক পেজ (`/app/products`) — সর্বোচ্চ অগ্রাধিকার
 
-গ্রাহক একটা দোকানকে "★ প্রিয়" হিসেবে সংরক্ষণ করতে পারবেন। পরের বার ফর্দ পাঠানোর সময় ওই দোকান সবার উপরে এক ক্লিকে দেখা যাবে — কারণ একজন গ্রাহক সাধারণত নিয়মিত একটা দোকান থেকেই কেনাকাটা করেন।
+স্টক লিস্ট এই পেজেই, এখানেই বড় উন্নতি দরকার।
 
-**Database:** `consumer_favourite_shops` table আগেই তৈরি আছে (consumer_id, shop_id, created_at) — শুধু RLS policy ও কোডে ব্যবহার শুরু করতে হবে।
+**নতুন Sort dropdown (toolbar-এ):**
+- নামে (ক-হ / A-Z) — default
+- নামে (হ-ক / Z-A)
+- স্টক (বেশি → কম)
+- স্টক (কম → বেশি) — কম স্টকেরগুলো উপরে দেখার জন্য
+- দাম (বেশি → কম)
+- দাম (কম → বেশি)
+- সর্বশেষ যোগ করা
 
-**নতুন ফর্দ পেজে (`/customer/create-fordo`, Step 2):**
-- সবার উপরে নতুন section: **"⭐ আপনার প্রিয় দোকান"**
-- প্রতিটি প্রিয় দোকানের পাশে star ভরা — click করে সরিয়েও ফেলা যাবে
-- কোনো প্রিয় দোকান না থাকলে section হাইড থাকবে
-- এলাকার দোকান/সার্চ ফলাফলে প্রতিটি ShopRow-এর পাশে ফাঁপা ★ icon — click করলে প্রিয় তালিকায় যোগ হবে (টোস্ট: "✓ প্রিয় তালিকায় যোগ হয়েছে")
-- প্রিয় দোকান হলে ★ ভরা দেখাবে
+**নতুন Filter dropdown (toolbar-এ):**
+- সব প্রোডাক্ট (default)
+- শুধু **স্টক আছে** এমন
+- শুধু **স্টক শেষ** (০)
+- শুধু **কম স্টক** (low_stock_alert এর নিচে)
+- শুধু **অসীম স্টক**
 
-**আমার ফর্দ পেজে (`/customer/my-fordo`):**
-- "সময়সূচী" section-এর উপরে ছোট একটা **"⭐ প্রিয় দোকান"** strip — chip আকারে দোকানের নাম, click করলে সরাসরি `/customer/create-fordo?shopId=xxx` (Step 2-এ ওই দোকান উপরে highlight)
+**Pagination:** প্রতি পেজে ২৫টা (default)। নিচে পেজ navigation: « ‹ 1 2 3 ... › ». পেজ size dropdown: 10 / 25 / 50 / 100।
 
-## ২) দোকান খোঁজার দুটি কার্ড একসাথে করা
+`টোটাল প্রোডাক্ট: ৭০ • দেখাচ্ছে ১-২৫`
 
-বর্তমানে Step 2-এ দুটি আলাদা কার্ড: একটি মোবাইল নম্বরে, আরেকটি দোকানের নামে — অযথা জায়গা নষ্ট।
+## ২) অন্যান্য বড় list page-গুলোতে একই Pagination
 
-**নতুন একক কার্ড — "দোকান খুঁজুন":**
-- একটাই input box
-- Auto-detect: ইনপুটে সংখ্যা থাকলে phone search, না হলে name search
-- Placeholder: `"মোবাইল নম্বর বা দোকানের নাম..."`
-- পাশে একটাই 🔍 button (Enter দিয়েও submit হবে)
+একই `Pagination` component পুনঃব্যবহার করে যোগ হবে:
+- `Contacts` (গ্রাহক/সাপ্লায়ার লিস্ট) — sort: নাম / বকেয়া বেশি→কম
+- `SalesLedger` — sort: তারিখ (নতুন/পুরানো) / টাকা বেশি→কম
+- `PurchaseLedger` — একই
+- `ExpenseLedger` — একই
+- `RecycleBin` — সাধারণ pagination
+- `Assets` — sort: নাম / মূল্য
+- `Cashbox` — তারিখভিত্তিক pagination
 
-## প্রযুক্তিগত পরিবর্তন (টেকনিক্যাল)
+প্রতিটাতে শুধু pagination + ১-২টা sort option। বিস্তারিত filter নয় (Products পেজের মতো নয়), যাতে UI ভারী না হয়।
 
-**Migration (RLS policies for `consumer_favourite_shops`):**
-- Policies already exist ("fav read/insert/delete own") — শুধু verify করা হবে, নতুন migration লাগবে না।
+## ৩) টেকনিক্যাল পরিবর্তন
 
-**ফাইল পরিবর্তন:**
-- `src/pages/customer/CreateFordo.tsx`:
-  - নতুন `favourites` state + load `consumer_favourite_shops` (shop details সহ join)
-  - Step 2-এ নতুন "প্রিয় দোকান" section সবার উপরে
-  - দুই search কার্ড → এক কার্ডে merge, smart `onSubmit` (digit-detection)
-  - `ShopRow` component-এ star toggle button যোগ
-  - `?shopId=xxx` param সাপোর্ট — auto Step 2-তে যাবে ও ওই দোকান highlight হবে
-- `src/pages/customer/MyFordo.tsx`:
-  - উপরে favourite shops chip strip (click করলে create-fordo-এ যাবে shopId সহ)
-- কোনো নতুন route, edge function, বা schema change লাগবে না।
+**নতুন reusable components:**
+- `src/components/app/Pagination.tsx` — প্রথম/আগের/পরের/শেষ button + page numbers + page size selector + "দেখাচ্ছে X-Y / Z" text। Bangla numerals সাপোর্ট।
+- `src/hooks/use-pagination.ts` — `usePagination<T>(items, defaultPageSize)` hook যা `paged`, `page`, `setPage`, `pageSize`, `setPageSize`, `total` return করে। Filter/search পরিবর্তন হলে auto reset to page 1।
+
+**Products.tsx পরিবর্তন:**
+- `DataToolbar`-এর `middleExtra`-তে দুটি `Select`: Sort + Filter
+- `filtered` array-এর পর `sorted` ও `final` (filter-applied) computation
+- `usePagination(final, 25)` দিয়ে paging
+- টেবিলের নিচে `<Pagination />`
+
+**অন্য ৬টি page:**
+- প্রতিটিতে minimal change: `usePagination` hook + `<Pagination />` table-এর নিচে। যেখানে sort প্রয়োজন সেখানে toolbar-এ একটা Select।
+
+কোনো database migration বা edge function পরিবর্তন লাগবে না — সব client-side।
