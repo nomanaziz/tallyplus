@@ -19,6 +19,12 @@ export function SiteFooter() {
           <a href="/#features" className="hover:text-foreground">{t("features")}</a>
           <a href="/#pricing" className="hover:text-foreground">{t("pricing")}</a>
           <a href="/#contact" className="hover:text-foreground">{t("contact")}</a>
+          <Link to="/privacy" className="hover:text-foreground">
+            {lang === "bn" ? "প্রাইভেসি পলিসি" : "Privacy Policy"}
+          </Link>
+          <Link to="/terms" className="hover:text-foreground">
+            {lang === "bn" ? "শর্তাবলী" : "Terms & Conditions"}
+          </Link>
           <Link to="/auth" className="hover:text-foreground">{t("login")}</Link>
           <span className="hidden h-4 w-px bg-border md:inline-block" />
           <ColorThemeButton
