@@ -595,6 +595,14 @@ function ProductFormDialog({
   const [trackStock, setTrackStock] = useState(true);
   const [busy, setBusy] = useState(false);
   const [description, setDescription] = useState("");
+  // Category state
+  const [categoryId, setCategoryId] = useState<string | null>(null);
+  const [subCategoryId, setSubCategoryId] = useState<string | null>(null);
+  type Cat = { id: string; name: string; parent_id: string | null };
+  const [allCats, setAllCats] = useState<Cat[]>([]);
+  const [addCatOpen, setAddCatOpen] = useState(false);
+  const [addSubOpen, setAddSubOpen] = useState(false);
+  const [newCatName, setNewCatName] = useState("");
   // toggles
   const [onlineOn, setOnlineOn] = useState(false);
   const [bulkOn, setBulkOn] = useState(false);
@@ -614,6 +622,47 @@ function ProductFormDialog({
 
   const showSerializedOption = shopTypeCode === "mobile" || shopTypeCode === "electronics";
 
+  const reloadCats = async (sid: string) => {
+    const { data } = await supabase
+      .from("categories")
+      .select("id,name,parent_id")
+      .eq("shop_id", sid)
+      .order("name");
+    setAllCats((data as Cat[] | null) ?? []);
+  };
+
+  // Lazy seed default category tree on first open per shop
+  useEffect(() => {
+    if (!open || !shopId) return;
+    let cancelled = false;
+    (async () => {
+      const { data: existing } = await supabase
+        .from("categories")
+        .select("id,name,parent_id")
+        .eq("shop_id", shopId);
+      if (cancelled) return;
+      const list = (existing as Cat[] | null) ?? [];
+      if (list.length === 0) {
+        for (const top of DEFAULT_CATEGORY_TREE) {
+          const { data: parent } = await supabase
+            .from("categories")
+            .insert({ shop_id: shopId, name: top.name })
+            .select("id")
+            .single();
+          if (parent && top.children?.length) {
+            await supabase.from("categories").insert(
+              top.children.map((c) => ({ shop_id: shopId, name: c, parent_id: parent.id })),
+            );
+          }
+        }
+        await reloadCats(shopId);
+      } else {
+        setAllCats(list);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [open, shopId]);
+
   useEffect(() => {
     if (open) {
       const p = product as (Product & Record<string, unknown>) | null;
@@ -629,6 +678,8 @@ function ProductFormDialog({
       setStock(isUnlimited ? "0" : String(initStock));
       setLow(String(p?.low_stock_alert ?? 5));
       setDescription(String((p?.description as string) ?? ""));
+      setCategoryId((p?.category_id as string | null) ?? null);
+      setSubCategoryId((p?.sub_category_id as string | null) ?? null);
       setOnlineOn(Boolean(p?.is_marketplace_published));
       setBulkOn(Boolean(p?.bulk_enabled));
       setBulkPrice(p?.bulk_price != null ? String(p.bulk_price) : "");
@@ -648,6 +699,27 @@ function ProductFormDialog({
     }
   }, [open, product]);
 
+  const topCats = allCats.filter((c) => !c.parent_id);
+  const subCats = categoryId ? allCats.filter((c) => c.parent_id === categoryId) : [];
+
+  const addCategory = async (parent: string | null) => {
+    if (!shopId || !newCatName.trim()) return;
+    const { data, error } = await supabase
+      .from("categories")
+      .insert({ shop_id: shopId, name: newCatName.trim(), parent_id: parent })
+      .select("id,name,parent_id")
+      .single();
+    if (error) { toast.error(error.message); return; }
+    if (data) {
+      setAllCats((prev) => [...prev, data as Cat]);
+      if (parent) setSubCategoryId((data as Cat).id);
+      else setCategoryId((data as Cat).id);
+    }
+    setNewCatName("");
+    setAddCatOpen(false);
+    setAddSubOpen(false);
+  };
+
   const save = async () => {
     if (!shopId) return;
     if (!name.trim()) { toast.error(lang === "bn" ? "নাম দিন" : "Name required"); return; }
@@ -663,6 +735,8 @@ function ProductFormDialog({
       low_stock_alert: trackStock && lowOn ? (Number(low) || 0) : 0,
       shop_id: shopId,
       description: description.trim() || null,
+      category_id: categoryId,
+      sub_category_id: subCategoryId,
       is_marketplace_published: onlineOn,
       bulk_enabled: bulkOn,
       bulk_price: bulkOn ? (Number(bulkPrice) || 0) : null,
