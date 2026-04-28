@@ -59,6 +59,7 @@ function ExpenseLedgerPage() {
     const q = search.trim().toLowerCase();
     return q ? list.filter((e) => (e.category ?? "").toLowerCase().includes(q) || (e.note ?? "").toLowerCase().includes(q)) : list;
   }, [list, search]);
+  const pg = usePagination(filtered, 25);
 
   const refresh = async () => { await qc.invalidateQueries({ queryKey: ["expenses"] }); await refetch(); };
 
@@ -121,6 +122,7 @@ function ExpenseLedgerPage() {
         {filtered.length === 0 ? (
           <EmptyState icon={<Coins className="h-6 w-6" />} title={lang === "bn" ? "কোনো খরচ নেই" : "No expenses"} />
         ) : (
+          <>
           <Table>
             <TableHeader>
               <TableRow>
@@ -133,7 +135,7 @@ function ExpenseLedgerPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.map((e) => (
+              {pg.paged.map((e) => (
                 <TableRow key={e.id}>
                   <TableCell className="text-xs">{new Date(e.created_at).toLocaleDateString()}</TableCell>
                   <TableCell className="font-medium">{e.category ?? "—"}</TableCell>
@@ -159,6 +161,17 @@ function ExpenseLedgerPage() {
               ))}
             </TableBody>
           </Table>
+          <DataPagination
+            page={pg.page}
+            pageCount={pg.pageCount}
+            pageSize={pg.pageSize}
+            total={pg.total}
+            from={pg.from}
+            to={pg.to}
+            onPageChange={pg.setPage}
+            onPageSizeChange={pg.setPageSize}
+          />
+          </>
         )}
       </div>
 
