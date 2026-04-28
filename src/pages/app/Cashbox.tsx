@@ -13,6 +13,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { DataToolbar } from "@/components/app/DataToolbar";
 import { EmptyState } from "@/components/app/EmptyState";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { DataPagination } from "@/components/app/DataPagination";
+import { usePagination } from "@/hooks/use-pagination";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
@@ -79,6 +81,7 @@ function CashboxPage() {
     const q = search.trim().toLowerCase();
     return q ? movements.filter((m) => (m.note ?? "").toLowerCase().includes(q)) : movements;
   }, [movements, search]);
+  const pg = usePagination(filtered, 25);
 
   const refresh = async () => {
     await qc.invalidateQueries({ queryKey: ["cash"] });
@@ -145,6 +148,7 @@ function CashboxPage() {
             {filtered.length === 0 ? (
               <EmptyState icon={<Wallet className="h-6 w-6" />} title={lang === "bn" ? "কোনো এন্ট্রি নেই" : "No entries"} />
             ) : (
+              <>
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -156,7 +160,7 @@ function CashboxPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filtered.map((m) => {
+                  {pg.paged.map((m) => {
                     const d = (m.denominations || {}) as DenomCounts;
                     const chips = BDT_DENOMS.filter((k) => Number(d[String(k)] || 0) > 0);
                     return (
@@ -197,6 +201,17 @@ function CashboxPage() {
                   })}
                 </TableBody>
               </Table>
+              <DataPagination
+                page={pg.page}
+                pageCount={pg.pageCount}
+                pageSize={pg.pageSize}
+                total={pg.total}
+                from={pg.from}
+                to={pg.to}
+                onPageChange={pg.setPage}
+                onPageSizeChange={pg.setPageSize}
+              />
+              </>
             )}
           </div>
         </TabsContent>
