@@ -32,6 +32,8 @@ import { SampleProductImportSheet } from "@/components/app/SampleProductImportSh
 import { ProductSerialsDialog } from "@/components/app/ProductSerialsDialog";
 import { ProductDetailsDialog, type ProductFull } from "@/components/app/ProductDetailsDialog";
 import { UpdateStockDialog } from "@/components/app/UpdateStockDialog";
+import { DataPagination } from "@/components/app/DataPagination";
+import { usePagination } from "@/hooks/use-pagination";
 
 type Product = {
   id: string;
@@ -62,6 +64,8 @@ function ProductsPage() {
   const qc = useQueryClient();
   const { data: items = [], isLoading: loading, refetch } = useQuery(productsListQuery(current?.id ?? null));
   const [search, setSearch] = useState("");
+  const [sortBy, setSortBy] = useState<string>("name_asc");
+  const [filterBy, setFilterBy] = useState<string>("all");
   const [openForm, setOpenForm] = useState(false);
   const [editing, setEditing] = useState<Product | null>(null);
   const [openImport, setOpenImport] = useState(false);
@@ -90,9 +94,36 @@ function ProductsPage() {
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return items;
-    return items.filter((p) => p.name.toLowerCase().includes(q) || (p.sku ?? "").toLowerCase().includes(q));
-  }, [items, search]);
+    let list = items;
+    if (q) {
+      list = list.filter((p) => p.name.toLowerCase().includes(q) || (p.sku ?? "").toLowerCase().includes(q));
+    }
+    // Filter
+    if (filterBy === "in_stock") list = list.filter((p) => Number(p.stock) > 0);
+    else if (filterBy === "out_of_stock") list = list.filter((p) => Number(p.stock) === 0);
+    else if (filterBy === "low_stock")
+      list = list.filter((p) => {
+        const s = Number(p.stock);
+        const a = p.low_stock_alert == null ? 0 : Number(p.low_stock_alert);
+        return s >= 0 && a > 0 && s <= a;
+      });
+    else if (filterBy === "unlimited") list = list.filter((p) => Number(p.stock) < 0);
+    // Sort
+    const cmp = (a: Product, b: Product) => {
+      switch (sortBy) {
+        case "name_desc": return b.name.localeCompare(a.name, lang === "bn" ? "bn" : undefined);
+        case "stock_desc": return Number(b.stock) - Number(a.stock);
+        case "stock_asc": return Number(a.stock) - Number(b.stock);
+        case "price_desc": return Number(b.sale_price) - Number(a.sale_price);
+        case "price_asc": return Number(a.sale_price) - Number(b.sale_price);
+        case "name_asc":
+        default: return a.name.localeCompare(b.name, lang === "bn" ? "bn" : undefined);
+      }
+    };
+    return [...list].sort(cmp);
+  }, [items, search, filterBy, sortBy, lang]);
+
+  const { paged, page, setPage, pageSize, setPageSize, pageCount, total, from, to } = usePagination(filtered, 25);
 
   const totalStockValue = useMemo(
     () => filtered.reduce((sum, p) => {
@@ -229,7 +260,40 @@ function ProductsPage() {
       <SampleProductImportSheet open={openImport} onOpenChange={setOpenImport} onImported={() => void load()} />
 
       <div className="mt-4">
-        <DataToolbar search={search} onSearch={setSearch} onRefresh={load} />
+        <DataToolbar
+          search={search}
+          onSearch={setSearch}
+          onRefresh={load}
+          middleExtra={
+            <>
+              <Select value={sortBy} onValueChange={setSortBy}>
+                <SelectTrigger className="h-10 w-[170px]">
+                  <SelectValue placeholder={lang === "bn" ? "সাজান" : "Sort"} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="name_asc">{lang === "bn" ? "নাম (ক → হ)" : "Name (A → Z)"}</SelectItem>
+                  <SelectItem value="name_desc">{lang === "bn" ? "নাম (হ → ক)" : "Name (Z → A)"}</SelectItem>
+                  <SelectItem value="stock_asc">{lang === "bn" ? "স্টক কম → বেশি" : "Stock low → high"}</SelectItem>
+                  <SelectItem value="stock_desc">{lang === "bn" ? "স্টক বেশি → কম" : "Stock high → low"}</SelectItem>
+                  <SelectItem value="price_asc">{lang === "bn" ? "দাম কম → বেশি" : "Price low → high"}</SelectItem>
+                  <SelectItem value="price_desc">{lang === "bn" ? "দাম বেশি → কম" : "Price high → low"}</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={filterBy} onValueChange={setFilterBy}>
+                <SelectTrigger className="h-10 w-[160px]">
+                  <SelectValue placeholder={lang === "bn" ? "ফিল্টার" : "Filter"} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{lang === "bn" ? "সব প্রোডাক্ট" : "All products"}</SelectItem>
+                  <SelectItem value="in_stock">{lang === "bn" ? "স্টক আছে" : "In stock"}</SelectItem>
+                  <SelectItem value="out_of_stock">{lang === "bn" ? "স্টক শেষ" : "Out of stock"}</SelectItem>
+                  <SelectItem value="low_stock">{lang === "bn" ? "কম স্টক" : "Low stock"}</SelectItem>
+                  <SelectItem value="unlimited">{lang === "bn" ? "অসীম স্টক" : "Unlimited"}</SelectItem>
+                </SelectContent>
+              </Select>
+            </>
+          }
+        />
       </div>
 
       {editStockMode && (
@@ -274,7 +338,7 @@ function ProductsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filtered.map((p) => {
+                {paged.map((p) => {
                   const stockNum = Number(p.stock);
                   const isUnlimited = stockNum < 0;
                   const stockValue = isUnlimited ? 0 : Number(p.cost_price) * stockNum;
@@ -382,10 +446,17 @@ function ProductsPage() {
                 })}
               </TableBody>
             </Table>
-            <div className="flex flex-wrap items-center justify-between gap-2 border-t px-4 py-3 text-sm">
-              <span className="text-muted-foreground">
-                Showing 1 to {filtered.length} of {filtered.length}
-              </span>
+            <DataPagination
+              page={page}
+              pageCount={pageCount}
+              pageSize={pageSize}
+              total={total}
+              from={from}
+              to={to}
+              onPageChange={setPage}
+              onPageSizeChange={setPageSize}
+            />
+            <div className="flex flex-wrap items-center justify-end gap-2 border-t px-4 py-3 text-sm">
               <span className="font-semibold">
                 {lang === "bn" ? "মোট মজুদ মূল্য:" : "Total stock value:"} {fmtMoney(totalStockValue, lang)}
               </span>
