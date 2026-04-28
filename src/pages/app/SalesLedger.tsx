@@ -99,8 +99,7 @@ function SalesLedgerPage() {
   }, [sales, search, custMap, from, to, paymentFilter]);
 
   const totalAmount = useMemo(() => filtered.reduce((a, s) => a + Number(s.total), 0), [filtered]);
-  const { paged, page, setPage, pageSize, setPageSize, pageCount, total: totalRows, from, to } =
-    usePagination(filtered, 25);
+  const pg = usePagination(filtered, 25);
 
   const refresh = async () => { await qc.invalidateQueries({ queryKey: ["sales"] }); await refetch(); };
 
@@ -235,7 +234,7 @@ function SalesLedgerPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {paged.map((s) => {
+                {pg.paged.map((s) => {
                   const c = custMap[s.customer_id ?? ""];
                   const isPaid = Number(s.due) === 0;
                   return (
@@ -295,14 +294,14 @@ function SalesLedgerPage() {
               </TableBody>
             </Table>
             <DataPagination
-              page={page}
-              pageCount={pageCount}
-              pageSize={pageSize}
-              total={totalRows}
-              from={from}
-              to={to}
-              onPageChange={setPage}
-              onPageSizeChange={setPageSize}
+              page={pg.page}
+              pageCount={pg.pageCount}
+              pageSize={pg.pageSize}
+              total={pg.total}
+              from={pg.from}
+              to={pg.to}
+              onPageChange={pg.setPage}
+              onPageSizeChange={pg.setPageSize}
             />
           </>
         )}
