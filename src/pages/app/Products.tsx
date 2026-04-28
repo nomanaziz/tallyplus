@@ -1018,6 +1018,35 @@ function ProductFormDialog({
             {busy ? "..." : product ? (lang === "bn" ? "আপডেট" : "Update Product") : (lang === "bn" ? "যোগ করুন" : "Add New Product")}
           </Button>
         </SheetFooter>
+
+        <Dialog open={addCatOpen || addSubOpen} onOpenChange={(o) => { if (!o) { setAddCatOpen(false); setAddSubOpen(false); } }}>
+          <DialogContent className="max-w-sm">
+            <DialogHeader>
+              <DialogTitle>
+                {addSubOpen
+                  ? (lang === "bn" ? "নতুন সাব-ক্যাটাগরি" : "New Sub-Category")
+                  : (lang === "bn" ? "নতুন ক্যাটাগরি" : "New Category")}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="grid gap-2">
+              <Label>{lang === "bn" ? "নাম" : "Name"}</Label>
+              <Input
+                value={newCatName}
+                onChange={(e) => setNewCatName(e.target.value)}
+                autoFocus
+                onKeyDown={(e) => { if (e.key === "Enter") addCategory(addSubOpen ? categoryId : null); }}
+              />
+              <div className="mt-2 flex justify-end gap-2">
+                <Button variant="outline" onClick={() => { setAddCatOpen(false); setAddSubOpen(false); }}>
+                  {lang === "bn" ? "বাতিল" : "Cancel"}
+                </Button>
+                <Button onClick={() => addCategory(addSubOpen ? categoryId : null)} disabled={!newCatName.trim()}>
+                  {lang === "bn" ? "সংরক্ষণ" : "Save"}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </SheetContent>
     </Sheet>
   );
