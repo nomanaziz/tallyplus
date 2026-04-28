@@ -1,57 +1,37 @@
-# বড় তালিকাগুলোতে Sort/Filter + Pagination যোগ করা
+## সমস্যা
 
-স্টক লিস্ট সহ অন্যান্য বড় তালিকাগুলোতে স্ক্রল করতে করতে বিরক্তিকর হয়ে যায়। সমাধান — শক্তিশালী **sort + filter + pagination** একটা পুনঃব্যবহারযোগ্য system হিসেবে যোগ করা।
+গ্রাহকের পাঠানো ফর্দ-এ প্রতিটি item-এর পাশে তিনটি action button আছে — **✓ পেয়েছে**, **✗ পায়নি**, **⏳ পরে দিবে**। এই buttons এ click করলে এখন কোনো visible পরিবর্তন হচ্ছে না।
 
-## ১) প্রোডাক্ট ও স্টক পেজ (`/app/products`) — সর্বোচ্চ অগ্রাধিকার
+## কারণ
 
-স্টক লিস্ট এই পেজেই, এখানেই বড় উন্নতি দরকার।
+`src/pages/app/CustomerWishlist.tsx` এর `setFulfillment` function দু'টা সমস্যা নিয়ে আছে:
 
-**নতুন Sort dropdown (toolbar-এ):**
-- নামে (ক-হ / A-Z) — default
-- নামে (হ-ক / Z-A)
-- স্টক (বেশি → কম)
-- স্টক (কম → বেশি) — কম স্টকেরগুলো উপরে দেখার জন্য
-- দাম (বেশি → কম)
-- দাম (কম → বেশি)
-- সর্বশেষ যোগ করা
+1. **Silent failure** — `supabase.from(...).update(...).eq("id", it.id)` করার পর result/error check করা হয় না। RLS-এ row match না হলে কোনো error আসে না, শুধু 0 row update হয় — UI তে কোনো feedback ও আসে না।
+2. **Stale UI** — update success হলেও শুধু `detailQ.refetch()` call হয়, কিন্তু কোনো optimistic update নেই; network slow হলে user মনে করে কিছুই হয়নি, আবার click করে — যা আগের state এ ফিরে যায় (toggle logic-এর কারণে)।
+3. **Button-level error surface নেই** — toast ও দেখানো হয় না।
 
-**নতুন Filter dropdown (toolbar-এ):**
-- সব প্রোডাক্ট (default)
-- শুধু **স্টক আছে** এমন
-- শুধু **স্টক শেষ** (০)
-- শুধু **কম স্টক** (low_stock_alert এর নিচে)
-- শুধু **অসীম স্টক**
+একই pattern `updateItemPrice / updateItemQty / updateItemUnit` এও আছে।
 
-**Pagination:** প্রতি পেজে ২৫টা (default)। নিচে পেজ navigation: « ‹ 1 2 3 ... › ». পেজ size dropdown: 10 / 25 / 50 / 100।
+## সমাধান
 
-`টোটাল প্রোডাক্ট: ৭০ • দেখাচ্ছে ১-২৫`
+`CustomerWishlist.tsx`-এর dialog component-এ:
 
-## ২) অন্যান্য বড় list page-গুলোতে একই Pagination
+1. **`setFulfillment` রিরাইট করা:**
+   - update query-তে `.select()` চেইন করে actually-updated row পাওয়া হবে।
+   - `error` থাকলে `toast.error(...)` দেখানো হবে।
+   - 0 row update হলে `toast.error("আপডেট করা গেলো না — আবার লগইন করে চেষ্টা করুন")` (RLS / session expiry সংকেত)।
+   - **Optimistic update**: react-query এর `qc.setQueryData(["customer-wishlist", wishlistId], ...)` দিয়ে সাথে সাথে UI আপডেট হবে; success হলে refetch, fail হলে rollback।
 
-একই `Pagination` component পুনঃব্যবহার করে যোগ হবে:
-- `Contacts` (গ্রাহক/সাপ্লায়ার লিস্ট) — sort: নাম / বকেয়া বেশি→কম
-- `SalesLedger` — sort: তারিখ (নতুন/পুরানো) / টাকা বেশি→কম
-- `PurchaseLedger` — একই
-- `ExpenseLedger` — একই
-- `RecycleBin` — সাধারণ pagination
-- `Assets` — sort: নাম / মূল্য
-- `Cashbox` — তারিখভিত্তিক pagination
+2. **Loading indicator** — যেই button click হয়েছে সেটায় ছোট্ট spinner দেখাবে যতক্ষণ request pending; double-click prevent করবে।
 
-প্রতিটাতে শুধু pagination + ১-২টা sort option। বিস্তারিত filter নয় (Products পেজের মতো নয়), যাতে UI ভারী না হয়।
+3. **`updateItemPrice / Qty / Unit` ও same pattern এ wrap করা** — silent failure দূর করার জন্য (এগুলোও same RLS path ব্যবহার করে)।
 
-## ৩) টেকনিক্যাল পরিবর্তন
+4. **Auth check**: dialog open হলে `supabase.auth.getSession()` verify করে session expired হলে user-কে warn করা হবে।
 
-**নতুন reusable components:**
-- `src/components/app/Pagination.tsx` — প্রথম/আগের/পরের/শেষ button + page numbers + page size selector + "দেখাচ্ছে X-Y / Z" text। Bangla numerals সাপোর্ট।
-- `src/hooks/use-pagination.ts` — `usePagination<T>(items, defaultPageSize)` hook যা `paged`, `page`, `setPage`, `pageSize`, `setPageSize`, `total` return করে। Filter/search পরিবর্তন হলে auto reset to page 1।
+## কোনো DB পরিবর্তন নেই
 
-**Products.tsx পরিবর্তন:**
-- `DataToolbar`-এর `middleExtra`-তে দুটি `Select`: Sort + Filter
-- `filtered` array-এর পর `sorted` ও `final` (filter-applied) computation
-- `usePagination(final, 25)` দিয়ে paging
-- টেবিলের নিচে `<Pagination />`
+`fulfillment_status` column, RLS policy, trigger — সব ঠিক আছে (verified)। সমস্যা শুধু client-side error handling এর।
 
-**অন্য ৬টি page:**
-- প্রতিটিতে minimal change: `usePagination` hook + `<Pagination />` table-এর নিচে। যেখানে sort প্রয়োজন সেখানে toolbar-এ একটা Select।
+## প্রভাবিত ফাইল
 
-কোনো database migration বা edge function পরিবর্তন লাগবে না — সব client-side।
+- `src/pages/app/CustomerWishlist.tsx` (single file)
