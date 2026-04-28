@@ -15,6 +15,8 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { InvoiceDialog, type InvoiceData } from "@/components/app/InvoiceDialog";
 import { DueDiscountDialog, type DueDiscountSale } from "@/components/app/DueDiscountDialog";
+import { DataPagination } from "@/components/app/DataPagination";
+import { usePagination } from "@/hooks/use-pagination";
 import { toast } from "sonner";
 
 type Sale = {
@@ -97,6 +99,7 @@ function SalesLedgerPage() {
   }, [sales, search, custMap, from, to, paymentFilter]);
 
   const totalAmount = useMemo(() => filtered.reduce((a, s) => a + Number(s.total), 0), [filtered]);
+  const pg = usePagination(filtered, 25);
 
   const refresh = async () => { await qc.invalidateQueries({ queryKey: ["sales"] }); await refetch(); };
 
@@ -231,7 +234,7 @@ function SalesLedgerPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filtered.map((s) => {
+                {pg.paged.map((s) => {
                   const c = custMap[s.customer_id ?? ""];
                   const isPaid = Number(s.due) === 0;
                   return (
@@ -290,9 +293,16 @@ function SalesLedgerPage() {
                 })}
               </TableBody>
             </Table>
-            <div className="border-t px-4 py-2 text-center text-xs text-muted-foreground">
-              Showing 1 to {filtered.length} of {filtered.length} Transactions
-            </div>
+            <DataPagination
+              page={pg.page}
+              pageCount={pg.pageCount}
+              pageSize={pg.pageSize}
+              total={pg.total}
+              from={pg.from}
+              to={pg.to}
+              onPageChange={pg.setPage}
+              onPageSizeChange={pg.setPageSize}
+            />
           </>
         )}
       </div>

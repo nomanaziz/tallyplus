@@ -13,6 +13,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { EmptyState } from "@/components/app/EmptyState";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { DataPagination } from "@/components/app/DataPagination";
+import { usePagination } from "@/hooks/use-pagination";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -60,6 +62,7 @@ function AssetsPage() {
     if (filter === "active") return list.filter((a) => a.status === "active");
     return list.filter((a) => a.status !== "active");
   }, [list, filter]);
+  const pg = usePagination(filtered, 25);
 
   const refresh = async () => { await qc.invalidateQueries({ queryKey: ["assets"] }); await refetch(); };
 
@@ -116,6 +119,7 @@ function AssetsPage() {
         {filtered.length === 0 ? (
           <EmptyState icon={<Package className="h-6 w-6" />} title={lang === "bn" ? "কোনো সম্পদ নেই" : "No assets"} />
         ) : (
+          <>
           <Table>
             <TableHeader>
               <TableRow>
@@ -128,7 +132,7 @@ function AssetsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.map((a) => {
+              {pg.paged.map((a) => {
                 const st = STATUS_LABEL[a.status];
                 return (
                   <TableRow key={a.id}>
@@ -169,6 +173,17 @@ function AssetsPage() {
               })}
             </TableBody>
           </Table>
+          <DataPagination
+            page={pg.page}
+            pageCount={pg.pageCount}
+            pageSize={pg.pageSize}
+            total={pg.total}
+            from={pg.from}
+            to={pg.to}
+            onPageChange={pg.setPage}
+            onPageSizeChange={pg.setPageSize}
+          />
+          </>
         )}
       </div>
 

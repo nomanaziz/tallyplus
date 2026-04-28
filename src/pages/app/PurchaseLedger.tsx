@@ -10,6 +10,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { EmptyState } from "@/components/app/EmptyState";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { DataPagination } from "@/components/app/DataPagination";
+import { usePagination } from "@/hooks/use-pagination";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { InvoiceDialog, type InvoiceData } from "@/components/app/InvoiceDialog";
@@ -94,6 +96,7 @@ function PurchaseLedgerPage() {
   }, [list, search, supMap, from, to, paymentFilter]);
 
   const totalAmount = useMemo(() => filtered.reduce((a, p) => a + Number(p.total), 0), [filtered]);
+  const pg = usePagination(filtered, 25);
 
   const refresh = async () => { await qc.invalidateQueries({ queryKey: ["purchases"] }); await refetch(); };
 
@@ -228,7 +231,7 @@ function PurchaseLedgerPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filtered.map((p) => {
+                {pg.paged.map((p) => {
                   const sup = supMap[p.supplier_id ?? ""];
                   const isPaid = Number(p.due) === 0;
                   return (
@@ -275,9 +278,16 @@ function PurchaseLedgerPage() {
                 })}
               </TableBody>
             </Table>
-            <div className="border-t px-4 py-2 text-center text-xs text-muted-foreground">
-              Showing 1 to {filtered.length} of {filtered.length} Transactions
-            </div>
+            <DataPagination
+              page={pg.page}
+              pageCount={pg.pageCount}
+              pageSize={pg.pageSize}
+              total={pg.total}
+              from={pg.from}
+              to={pg.to}
+              onPageChange={pg.setPage}
+              onPageSizeChange={pg.setPageSize}
+            />
           </>
         )}
       </div>
