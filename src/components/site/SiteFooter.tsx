@@ -14,6 +14,17 @@ export function SiteFooter() {
             {lang === "bn" ? `${t("appName")} হোমে ফিরুন` : `Back to ${t("appName")}`}
           </Link>
           <p>© {new Date().getFullYear()} {t("appName")}. {lang === "bn" ? "সর্বস্বত্ব সংরক্ষিত।" : "All rights reserved."}</p>
+          <p>
+            {lang === "bn" ? "ডেভেলপ করেছে " : "Developed by "}
+            <a
+              href="https://finehost.net"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-semibold text-foreground hover:text-primary"
+            >
+              FineHost.net
+            </a>
+          </p>
         </div>
         <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
           <a href="/#features" className="hover:text-foreground">{t("features")}</a>
