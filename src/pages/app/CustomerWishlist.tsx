@@ -338,7 +338,7 @@ function WishlistDetailDialog({
 
   const remove = async () => {
     if (!wishlistId) return;
-    if (!confirm(lang === "bn" ? "এই ফর্দটি রিসাইকেল বিনে পাঠাবেন?" : "Move this wishlist to recycle bin?")) return;
+    if (!confirm(lang === "bn" ? "এই ফর্দটি রিসাইকেল বিনে পাঠাবেন?" : "Move this fordo to recycle bin?")) return;
     await supabase
       .from("customer_wishlists")
       .update({ deleted_at: new Date().toISOString() } as never)
@@ -384,7 +384,7 @@ function WishlistDetailDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>{wl?.customer_name || (lang === "bn" ? "ফর্দ" : "Wishlist")}</DialogTitle>
+          <DialogTitle>{wl?.customer_name || (lang === "bn" ? "ফর্দ" : "Fordo")}</DialogTitle>
         </DialogHeader>
         {detailQ.isLoading || !wl ? (
           <div className="flex h-40 items-center justify-center">
