@@ -94,6 +94,8 @@ const P84 = lazy(() => import("./pages/admin/PaymentAttempts"));
 const P85 = lazy(() => import("./pages/customer/CreateFordo"));
 const P86 = lazy(() => import("./pages/admin/Locations"));
 const P87 = lazy(() => import("./pages/admin/Ads"));
+const P88 = lazy(() => import("./pages/Privacy"));
+const P89 = lazy(() => import("./pages/Terms"));
 
 export function AppRoutes() {
   return (
@@ -183,6 +185,8 @@ export function AppRoutes() {
       <Route path="my" element={<S><P65 /></S>} />
       </Route>
       <Route path="/pricing" element={<S><P68 /></S>} />
+      <Route path="/privacy" element={<S><P88 /></S>} />
+      <Route path="/terms" element={<S><P89 /></S>} />
       <Route path="/shop" element={<S><P69 /></S>}>
       <Route path="p/:id" element={<S><P70 /></S>} />
       <Route path="s/:slug" element={<S><P71 /></S>} />
