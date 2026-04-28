@@ -1,64 +1,42 @@
-# Fix Fordo Update + Owner/Customer Login Routing + Rename Labels
+## Goal
 
-## Root Cause Analysis
+Admin Settings পেজ-এ একটা নতুন **"Site Contact & Social"** section যোগ করব, যেখান থেকে admin manage করতে পারবে:
 
-**Phone `01922114419` (auth user `cf93f22a-…`) has BOTH:**
-- A `profiles` row → registered as a shop owner (owns 2 shops: "Naeem Store", "File Server")
-- A `consumer_profiles` row → also registered as a customer
+- Facebook page link
+- YouTube channel link
+- WhatsApp contact number (general)
+- Password-reset WhatsApp number (Auth page-এ "PIN ভুলে গেছেন" বাটনে যাবে)
+- Support phone, support email
 
-**Bug in `src/pages/app/AppLayout.tsx` (lines 78–97):** The guard does:
-```
-if (consumer_profiles row exists) → redirect to /customer/dashboard
-```
-It never checks whether the user is also a shop owner. So this dual-role user, even when logging in via the দোকানদার tab and landing on `/app/dashboard`, is immediately bounced to `/customer/dashboard`.
+এই value গুলো main website-এর **Footer**, **Contact section**, এবং **Auth page**-এ live দেখা যাবে।
 
-**Why "Update fordo price" fails:** Same root cause. After the bounce, the user opens the wishlist while their session has no shop selected / they're treated as a consumer. The RLS policy on `customer_wishlist_items` requires `is_shop_member(auth.uid(), w.shop_id)`. The update returns 0 rows → the toast `"আপডেট করা গেলো না"` fires (this is exactly the empty-rows branch in `updateItemField`). Once the routing fix lets the owner stay in the shop portal with an active shop context, RLS passes and price/qty/unit updates succeed.
+## Changes
 
-(Accept/cancel buttons "work" only because we already added the empty-rows handler that shows an error — but they actually fail to persist for this user too, for the same reason.)
+### 1. Database (migration)
+- নতুন columns add করব existing `affiliate_settings` table-এ (single-row config table, ইতিমধ্যে support_phone/support_email আছে):
+  - `facebook_url text`
+  - `youtube_url text`
+  - `whatsapp_number text` (general WhatsApp)
+  - `password_reset_whatsapp text` (PIN reset-এর জন্য আলাদা নম্বর)
+- RLS: admin update করতে পারবে, public read করতে পারবে (already public-readable since Auth page reads it anonymously)।
 
-## Plan
+### 2. Admin UI — `src/pages/admin/Settings.tsx`
+- উপরে নতুন একটা **"Site Contact & Social Links"** Card add করব existing "App Links" card-এর আগে।
+- Form fields: Facebook URL, YouTube URL, WhatsApp number, Password-reset WhatsApp, Support phone, Support email।
+- Save button — single row upsert into `affiliate_settings`।
 
-### 1. Fix the owner/customer routing guard (the main fix)
+### 3. Site Footer — `src/components/site/SiteFooter.tsx`
+- Footer-এ Facebook, YouTube, WhatsApp icon links add করব (Lucide `Facebook`, `Youtube`, `MessageCircle` icons)।
+- Value গুলো `affiliate_settings` থেকে query করে আনব। কোনো URL না থাকলে সে icon hide হবে।
 
-In `src/pages/app/AppLayout.tsx`, change the consumer redirect so it only fires when the user is **purely** a consumer (not also a shop owner / shop member):
+### 4. Contact Section — `src/components/site/ContactSection.tsx`
+- Hardcoded `PHONE`/`EMAIL` সরিয়ে dynamic ভাবে `affiliate_settings` থেকে নিয়ে আসব (fallback বর্তমান value)।
 
-- Query `profiles` and `shop_members` for the user in addition to `consumer_profiles`.
-- Redirect to `/customer/dashboard` ONLY if:
-  - a `consumer_profiles` row exists, AND
-  - the user has no `profiles` row AND no `shop_members` row AND owns no `shops`.
-- Otherwise treat them as an owner and stay in `/app/*`.
+### 5. Auth Page — `src/pages/Auth.tsx`
+- "PIN ভুলে গেছেন? WhatsApp করুন" বাটনের জন্য `password_reset_whatsapp` field পড়ব (fallback: `support_phone`)।
 
-Mirror the inverse on the customer side (`src/pages/customer/CustomerLayout.tsx`): a dual-role user who explicitly logs in from the গ্রাহক tab should be allowed to stay in `/customer/*` — do not bounce them back to `/app/*`. The "intended portal" comes from which login function was called; `Auth.tsx` already navigates to the right destination, so each layout should only block users who genuinely don't belong there, not dual-role users.
+## Notes
 
-### 2. Verify fordo item updates work after the routing fix
-
-No code change needed in `CustomerWishlist.tsx` for the update logic itself — RLS is correct, the function is correct. After fix #1, the owner will retain an active shop context and `updateItemField` (price / qty / unit / fulfillment) will succeed.
-
-Keep the existing "0 rows" toast as a safety net.
-
-### 3. Rename "Customer Wishlist" → "Customer Fordo" (UI labels only)
-
-Change visible English labels (Bangla "গ্রাহক ফর্দ" already correct). Files:
-
-- `src/components/app/AppSidebar.tsx` — sidebar entry `en: "Customer Wishlist"` → `"Customer Fordo"`.
-- `src/pages/app/CustomerWishlist.tsx`:
-  - Header `"Customer Wishlists"` → `"Customer Fordo"`
-  - `"Recent wishlists"` → `"Recent fordo"`
-  - `"No wishlists yet"` → `"No fordo yet"`
-  - Dialog title fallback `"Wishlist"` → `"Fordo"`
-  - Confirm text `"Move this wishlist to recycle bin?"` → `"Move this fordo to recycle bin?"`
-
-File names, route paths (`/app/customer-wishlist`), DB tables, type names stay unchanged — purely a label change.
-
-## Out of Scope
-
-- No DB migrations.
-- No changes to edge functions.
-- No rename of routes or tables.
-
-## Verification After Implementation
-
-1. Log in with `01922114419` from the **দোকানদার** tab → should land and stay on `/app/dashboard` (not bounce to `/customer/dashboard`).
-2. Open Customer Fordo → open an item → edit price → toast "সেভ হলো" / value persists on refetch.
-3. Log in with the same number from the **গ্রাহক** tab → should land and stay on `/customer/dashboard`.
-4. A pure-consumer account (no shop) opening `/app/...` directly → still redirected to `/customer/dashboard` (existing protection preserved).
+- কোনো নতুন table তৈরি হচ্ছে না — existing `affiliate_settings` extend করছি, তাই admin UI এক জায়গায় সব contact settings থাকবে।
+- Public read access ইতিমধ্যে কাজ করছে (Auth page anonymously পড়ছে), তাই RLS-এ extra change লাগবে না।
+- Footer/Contact-এ shared hook বানাব `useSiteContact()` যাতে duplicate query না হয়।
