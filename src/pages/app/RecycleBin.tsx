@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { EmptyState } from "@/components/app/EmptyState";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { DataPagination } from "@/components/app/DataPagination";
+import { usePagination } from "@/hooks/use-pagination";
 import { toast } from "sonner";
 
 type Tab = "products" | "customers" | "suppliers" | "sales" | "purchases" | "expenses" | "customer_wishlists";
@@ -32,6 +34,7 @@ function RecycleBinPage() {
   const [tab, setTab] = useState<Tab>("products");
   const { data: rawData = [], refetch } = useQuery(recycleBinQuery(current?.id ?? null, tab));
   const rows = rawData as unknown as Record<string, unknown>[];
+  const pg = usePagination(rows, 25);
 
   const refresh = async () => { await qc.invalidateQueries({ queryKey: ["recycle"] }); await refetch(); };
 
@@ -77,6 +80,7 @@ function RecycleBinPage() {
         {rows.length === 0 ? (
           <EmptyState icon={<Inbox className="h-6 w-6" />} title={lang === "bn" ? "এই বিন খালি" : "Bin is empty"} />
         ) : (
+          <>
           <Table>
             <TableHeader>
               <TableRow>
@@ -86,7 +90,7 @@ function RecycleBinPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {rows.map((r) => (
+              {pg.paged.map((r) => (
                 <TableRow key={String(r.id)}>
                   {columns.map((c) => (
                     <TableCell key={c.key}>
@@ -112,6 +116,17 @@ function RecycleBinPage() {
               ))}
             </TableBody>
           </Table>
+          <DataPagination
+            page={pg.page}
+            pageCount={pg.pageCount}
+            pageSize={pg.pageSize}
+            total={pg.total}
+            from={pg.from}
+            to={pg.to}
+            onPageChange={pg.setPage}
+            onPageSizeChange={pg.setPageSize}
+          />
+          </>
         )}
       </div>
     </div>
