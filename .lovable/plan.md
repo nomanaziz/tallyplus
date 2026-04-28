@@ -1,42 +1,78 @@
 ## Goal
 
-Admin Settings পেজ-এ একটা নতুন **"Site Contact & Social"** section যোগ করব, যেখান থেকে admin manage করতে পারবে:
+In the **Add / Edit Product** form (`src/pages/app/Products.tsx` → `ProductFormDialog`):
 
-- Facebook page link
-- YouTube channel link
-- WhatsApp contact number (general)
-- Password-reset WhatsApp number (Auth page-এ "PIN ভুলে গেছেন" বাটনে যাবে)
-- Support phone, support email
+1. Replace the free-text **Unit** input with a predefined dropdown.
+2. Add **Category** and **Sub-Category** dropdowns (with "Add new" option).
 
-এই value গুলো main website-এর **Footer**, **Contact section**, এবং **Auth page**-এ live দেখা যাবে।
+These were missing because the form currently only has a free-text `Unit` input and no category fields at all, even though `products.category_id` exists in the DB.
 
-## Changes
+---
 
-### 1. Database (migration)
-- নতুন columns add করব existing `affiliate_settings` table-এ (single-row config table, ইতিমধ্যে support_phone/support_email আছে):
-  - `facebook_url text`
-  - `youtube_url text`
-  - `whatsapp_number text` (general WhatsApp)
-  - `password_reset_whatsapp text` (PIN reset-এর জন্য আলাদা নম্বর)
-- RLS: admin update করতে পারবে, public read করতে পারবে (already public-readable since Auth page reads it anonymously)।
+## 1. Unit — predefined dropdown
 
-### 2. Admin UI — `src/pages/admin/Settings.tsx`
-- উপরে নতুন একটা **"Site Contact & Social Links"** Card add করব existing "App Links" card-এর আগে।
-- Form fields: Facebook URL, YouTube URL, WhatsApp number, Password-reset WhatsApp, Support phone, Support email।
-- Save button — single row upsert into `affiliate_settings`।
+Use a fixed list (matches the reference image):
 
-### 3. Site Footer — `src/components/site/SiteFooter.tsx`
-- Footer-এ Facebook, YouTube, WhatsApp icon links add করব (Lucide `Facebook`, `Youtube`, `MessageCircle` icons)।
-- Value গুলো `affiliate_settings` থেকে query করে আনব। কোনো URL না থাকলে সে icon hide হবে।
+```
+ft, sq.ft, sq.m, kg, gm, piece, km, meter, litre, ml, dozen, pack, box, bottle, bag, pcs
+```
 
-### 4. Contact Section — `src/components/site/ContactSection.tsx`
-- Hardcoded `PHONE`/`EMAIL` সরিয়ে dynamic ভাবে `affiliate_settings` থেকে নিয়ে আসব (fallback বর্তমান value)।
+- Render with the existing `Select` component (already imported).
+- Default value: `pcs`.
+- When a catalog product is picked and brings its own `base_unit`, keep that value selected if it exists in the list; otherwise append it as a custom option for that session.
 
-### 5. Auth Page — `src/pages/Auth.tsx`
-- "PIN ভুলে গেছেন? WhatsApp করুন" বাটনের জন্য `password_reset_whatsapp` field পড়ব (fallback: `support_phone`)।
+## 2. Category & Sub-Category
 
-## Notes
+### Database
 
-- কোনো নতুন table তৈরি হচ্ছে না — existing `affiliate_settings` extend করছি, তাই admin UI এক জায়গায় সব contact settings থাকবে।
-- Public read access ইতিমধ্যে কাজ করছে (Auth page anonymously পড়ছে), তাই RLS-এ extra change লাগবে না।
-- Footer/Contact-এ shared hook বানাব `useSiteContact()` যাতে duplicate query না হয়।
+The current `categories` table only has `id, shop_id, name`. We need a parent → child hierarchy.
+
+Migration:
+- Add `parent_id uuid references categories(id) on delete cascade` to `categories`.
+- Add `sub_category_id uuid references categories(id)` to `products`.
+- Index on `categories(shop_id, parent_id)`.
+
+A category with `parent_id IS NULL` = top-level; with `parent_id` set = sub-category.
+
+### Seed default tree (per shop, lazily on first open)
+
+When the form opens and the shop has zero categories, seed the standard tree once (Bangla + English names stored as one `name` field):
+
+- **Electronics and Gadgets** → Battery, Inverter/EV battery, BMS/Battery Controller, Inverter/EV battery charger, Cable clips/connector/jointer, electrical/electronics service charge, Power Supply/Adapter, Gaming Consoles, Telephones, Headphones and Microphone, Internet/Router and Switches, CCTV Cameras
+- **Home Appliances**
+- **Stationary and Office Appliances**
+- **Clothes**
+- **Shoes**
+- **Fashion Accessories**
+- **Home & Kitchen**
+
+(Top-level entries without children are created empty; user adds sub-categories later.)
+
+### UI in `ProductFormDialog`
+
+Two side-by-side `Select` controls right above **Product Details**:
+
+```text
+[ Category Name ▾ ]   [ Sub-Category Name ▾ ]
+```
+
+- **Category** lists top-level rows for the current `shop_id`.
+- **Sub-Category** lists rows where `parent_id = selectedCategoryId`, disabled until a category is picked.
+- Each dropdown's last item is **"+ Add New Category / + Add New Sub-Category"** which opens a small inline prompt (Dialog with one Input + Save button) and inserts a new row, then auto-selects it.
+- On save, store `category_id` and `sub_category_id` on the product row.
+- On edit, prefill both selects from the loaded product.
+
+## Files to change
+
+- **DB migration** (new file): add `categories.parent_id` + `products.sub_category_id` + index.
+- `src/integrations/supabase/types.ts` — regenerated automatically after migration.
+- `src/pages/app/Products.tsx`:
+  - Replace Unit `<Input>` with a `<Select>` of predefined units (+ keep custom unit if catalog supplies one).
+  - Add `Category` + `Sub-Category` selects with "Add new" inline dialog.
+  - Wire `category_id` and `sub_category_id` into the save payload and the edit prefill.
+  - Lazy-seed the default category tree on first open per shop.
+
+## Out of scope
+
+- Filtering the products list by category (can be a follow-up).
+- Editing/deleting categories from a settings screen (can be a follow-up).
