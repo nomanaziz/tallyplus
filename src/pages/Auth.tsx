@@ -60,10 +60,14 @@ export default function AuthPage() {
   useEffect(() => {
     void supabase
       .from("affiliate_settings")
-      .select("support_phone")
+      .select("support_phone, password_reset_whatsapp")
       .maybeSingle()
       .then(({ data }) => {
-        const p = (data as { support_phone: string | null } | null)?.support_phone;
+        const row = data as {
+          support_phone: string | null;
+          password_reset_whatsapp: string | null;
+        } | null;
+        const p = row?.password_reset_whatsapp || row?.support_phone;
         if (p) setAdminPhone(p.replace(/\D/g, ""));
       });
   }, []);
