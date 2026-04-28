@@ -436,24 +436,27 @@ function WishlistDetailDialog({
                         <button
                           type="button"
                           title="পেয়েছে"
+                          disabled={pendingItemId === it.id}
                           onClick={() => setFulfillment(it, fs === "fulfilled" ? "pending" : "fulfilled")}
-                          className={`flex h-6 w-6 items-center justify-center rounded border text-xs ${fs === "fulfilled" ? "border-success bg-success text-white" : "border-muted-foreground/30 text-muted-foreground hover:bg-success/10"}`}
+                          className={`flex h-6 w-6 items-center justify-center rounded border text-xs disabled:opacity-50 ${fs === "fulfilled" ? "border-success bg-success text-white" : "border-muted-foreground/30 text-muted-foreground hover:bg-success/10"}`}
                         >
                           ✓
                         </button>
                         <button
                           type="button"
                           title="পায়নি"
+                          disabled={pendingItemId === it.id}
                           onClick={() => setFulfillment(it, fs === "unavailable" ? "pending" : "unavailable")}
-                          className={`flex h-6 w-6 items-center justify-center rounded border text-xs ${fs === "unavailable" ? "border-destructive bg-destructive text-white" : "border-muted-foreground/30 text-muted-foreground hover:bg-destructive/10"}`}
+                          className={`flex h-6 w-6 items-center justify-center rounded border text-xs disabled:opacity-50 ${fs === "unavailable" ? "border-destructive bg-destructive text-white" : "border-muted-foreground/30 text-muted-foreground hover:bg-destructive/10"}`}
                         >
                           ✗
                         </button>
                         <button
                           type="button"
                           title="পরে দিবে"
+                          disabled={pendingItemId === it.id}
                           onClick={() => setFulfillment(it, fs === "later" ? "pending" : "later")}
-                          className={`flex h-6 w-6 items-center justify-center rounded border text-xs ${fs === "later" ? "border-amber-500 bg-amber-500 text-white" : "border-muted-foreground/30 text-muted-foreground hover:bg-amber-500/10"}`}
+                          className={`flex h-6 w-6 items-center justify-center rounded border text-xs disabled:opacity-50 ${fs === "later" ? "border-amber-500 bg-amber-500 text-white" : "border-muted-foreground/30 text-muted-foreground hover:bg-amber-500/10"}`}
                         >
                           ⏳
                         </button>
