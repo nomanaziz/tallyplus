@@ -75,18 +75,24 @@ function AppLayout() {
 
   // Guard: if the logged-in user is actually a consumer (গ্রাহক), redirect
   // them to the consumer dashboard. Owners only beyond this point.
+  // Dual-role users (have BOTH a consumer_profiles row AND own/belong to a
+  // shop) must be allowed to stay here — they explicitly logged in via the
+  // shopkeeper tab. Only redirect users who are *purely* consumers.
   const [consumerCheck, setConsumerCheck] = useState<"checking" | "owner" | "consumer">("checking");
   useEffect(() => {
     let cancelled = false;
     if (!user) { setConsumerCheck("checking"); return; }
     (async () => {
-      const { data } = await supabase
-        .from("consumer_profiles")
-        .select("id")
-        .eq("id", user.id)
-        .maybeSingle();
+      const [{ data: consumer }, { data: profile }, { data: ownedShop }, { data: memberRow }] =
+        await Promise.all([
+          supabase.from("consumer_profiles").select("id").eq("id", user.id).maybeSingle(),
+          supabase.from("profiles").select("id").eq("id", user.id).maybeSingle(),
+          supabase.from("shops").select("id").eq("owner_id", user.id).limit(1).maybeSingle(),
+          supabase.from("shop_members").select("shop_id").eq("user_id", user.id).limit(1).maybeSingle(),
+        ]);
       if (cancelled) return;
-      if (data) {
+      const isOwnerOrMember = !!profile || !!ownedShop || !!memberRow;
+      if (consumer && !isOwnerOrMember) {
         setConsumerCheck("consumer");
         nav({ to: "/customer/dashboard", replace: true });
       } else {
