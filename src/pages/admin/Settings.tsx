@@ -31,7 +31,7 @@ import {
 import { toast } from "sonner";
 import { Pencil, Plus, Trash2, ArrowUp, ArrowDown } from "lucide-react";
 
-
+import { useEffect } from "react";
 
 type AppLink = {
   key: string;
@@ -172,6 +172,8 @@ function SettingsPage() {
           Settings menu-র "অন্যান্য" section-এর link গুলো এখান থেকে manage করুন।
         </p>
       </div>
+
+      <SiteContactCard />
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between gap-2">
@@ -377,3 +379,155 @@ function SettingsPage() {
 }
 
 export default SettingsPage;
+
+type ContactForm = {
+  facebook_url: string;
+  youtube_url: string;
+  whatsapp_number: string;
+  password_reset_whatsapp: string;
+  support_phone: string;
+  support_email: string;
+};
+
+const emptyContact: ContactForm = {
+  facebook_url: "",
+  youtube_url: "",
+  whatsapp_number: "",
+  password_reset_whatsapp: "",
+  support_phone: "",
+  support_email: "",
+};
+
+function SiteContactCard() {
+  const qc = useQueryClient();
+  const [form, setForm] = useState<ContactForm>(emptyContact);
+
+  const { data, isLoading } = useQuery({
+    queryKey: ["admin_site_contact"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("affiliate_settings")
+        .select(
+          "facebook_url, youtube_url, whatsapp_number, password_reset_whatsapp, support_phone, support_email"
+        )
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  useEffect(() => {
+    if (data) {
+      setForm({
+        facebook_url: data.facebook_url ?? "",
+        youtube_url: data.youtube_url ?? "",
+        whatsapp_number: data.whatsapp_number ?? "",
+        password_reset_whatsapp: data.password_reset_whatsapp ?? "",
+        support_phone: data.support_phone ?? "",
+        support_email: data.support_email ?? "",
+      });
+    }
+  }, [data]);
+
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      const payload = {
+        id: true,
+        facebook_url: form.facebook_url.trim() || null,
+        youtube_url: form.youtube_url.trim() || null,
+        whatsapp_number: form.whatsapp_number.trim() || null,
+        password_reset_whatsapp: form.password_reset_whatsapp.trim() || null,
+        support_phone: form.support_phone.trim() || null,
+        support_email: form.support_email.trim() || null,
+      };
+      const { error } = await supabase
+        .from("affiliate_settings")
+        .upsert(payload, { onConflict: "id" });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Saved");
+      qc.invalidateQueries({ queryKey: ["admin_site_contact"] });
+      qc.invalidateQueries({ queryKey: ["site_contact"] });
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base">Site Contact & Social Links</CardTitle>
+        <p className="text-xs text-muted-foreground">
+          এই value গুলো main website-এর footer, contact section, এবং login page-এর "PIN ভুলে গেছেন" link-এ ব্যবহার হবে।
+        </p>
+      </CardHeader>
+      <CardContent>
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-1.5">
+            <Label>Facebook page URL</Label>
+            <Input
+              value={form.facebook_url}
+              onChange={(e) => setForm({ ...form, facebook_url: e.target.value })}
+              placeholder="https://facebook.com/yourpage"
+            />
+          </div>
+          <div className="grid gap-1.5">
+            <Label>YouTube channel URL</Label>
+            <Input
+              value={form.youtube_url}
+              onChange={(e) => setForm({ ...form, youtube_url: e.target.value })}
+              placeholder="https://youtube.com/@yourchannel"
+            />
+          </div>
+          <div className="grid gap-1.5">
+            <Label>WhatsApp contact number</Label>
+            <Input
+              value={form.whatsapp_number}
+              onChange={(e) => setForm({ ...form, whatsapp_number: e.target.value })}
+              placeholder="+8801XXXXXXXXX"
+            />
+            <p className="text-[11px] text-muted-foreground">Footer / Contact section-এ দেখাবে।</p>
+          </div>
+          <div className="grid gap-1.5">
+            <Label>Password reset WhatsApp</Label>
+            <Input
+              value={form.password_reset_whatsapp}
+              onChange={(e) =>
+                setForm({ ...form, password_reset_whatsapp: e.target.value })
+              }
+              placeholder="+8801XXXXXXXXX"
+            />
+            <p className="text-[11px] text-muted-foreground">
+              Login page-এ "PIN ভুলে গেছেন? WhatsApp করুন"-এ যাবে। ফাঁকা থাকলে support phone use হবে।
+            </p>
+          </div>
+          <div className="grid gap-1.5">
+            <Label>Support phone</Label>
+            <Input
+              value={form.support_phone}
+              onChange={(e) => setForm({ ...form, support_phone: e.target.value })}
+              placeholder="+8801XXXXXXXXX"
+            />
+          </div>
+          <div className="grid gap-1.5">
+            <Label>Support email</Label>
+            <Input
+              type="email"
+              value={form.support_email}
+              onChange={(e) => setForm({ ...form, support_email: e.target.value })}
+              placeholder="support@example.com"
+            />
+          </div>
+        </div>
+        <div className="mt-4 flex justify-end">
+          <Button
+            onClick={() => saveMutation.mutate()}
+            disabled={isLoading || saveMutation.isPending}
+          >
+            Save Contact Settings
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}

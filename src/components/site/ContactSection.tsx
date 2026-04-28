@@ -1,13 +1,17 @@
 import { useI18n } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { Phone, MessageCircle, Mail, MapPin } from "lucide-react";
+import { useSiteContact, waDigits } from "@/lib/site-contact";
 
-const PHONE = "+8801841577944";
-const PHONE_DIGITS = "8801841577944";
-const EMAIL = "support@tallyplus.app";
+const FALLBACK_PHONE = "+8801841577944";
+const FALLBACK_EMAIL = "support@tallyplus.app";
 
 export function ContactSection() {
   const { lang } = useI18n();
+  const { data: contact } = useSiteContact();
+  const PHONE = contact?.support_phone || FALLBACK_PHONE;
+  const EMAIL = contact?.support_email || FALLBACK_EMAIL;
+  const PHONE_DIGITS = waDigits(contact?.whatsapp_number || contact?.support_phone || FALLBACK_PHONE);
   const items = [
     {
       Icon: Phone,

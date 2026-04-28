@@ -1,10 +1,17 @@
 import { Link } from "@/lib/router";
 import { useI18n } from "@/lib/i18n";
-import { ArrowLeft, Languages } from "lucide-react";
+import { ArrowLeft, Languages, Facebook, Youtube, MessageCircle } from "lucide-react";
 import { ColorThemeButton } from "@/components/app/ColorThemePicker";
+import { useSiteContact, waDigits } from "@/lib/site-contact";
 
 export function SiteFooter() {
   const { t, lang, setLang } = useI18n();
+  const { data: contact } = useSiteContact();
+  const wa = waDigits(contact?.whatsapp_number);
+  const socials: { href: string; label: string; Icon: typeof Facebook }[] = [];
+  if (contact?.facebook_url) socials.push({ href: contact.facebook_url, label: "Facebook", Icon: Facebook });
+  if (contact?.youtube_url) socials.push({ href: contact.youtube_url, label: "YouTube", Icon: Youtube });
+  if (wa) socials.push({ href: `https://wa.me/${wa}`, label: "WhatsApp", Icon: MessageCircle });
   return (
     <footer className="border-t bg-secondary/30">
       <div className="container mx-auto flex flex-col items-center justify-between gap-6 px-4 py-8 text-sm text-muted-foreground md:flex-row">
@@ -25,6 +32,22 @@ export function SiteFooter() {
               FineHost.net
             </a>
           </p>
+          {socials.length > 0 && (
+            <div className="mt-1 flex items-center gap-2">
+              {socials.map(({ href, label, Icon }) => (
+                <a
+                  key={label}
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={label}
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-full border text-muted-foreground transition hover:bg-accent hover:text-foreground"
+                >
+                  <Icon className="h-4 w-4" />
+                </a>
+              ))}
+            </div>
+          )}
         </div>
         <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
           <a href="/#features" className="hover:text-foreground">{t("features")}</a>

@@ -313,49 +313,61 @@ export type Database = {
           agent_override_pct: number
           auto_tier_upgrade: boolean
           default_commission_pct: number
+          facebook_url: string | null
           id: boolean
           is_program_active: boolean
           lifetime_commission_pct: number
           live_chat_url: string | null
           max_withdrawal_per_month: number
           min_withdrawal_amount: number
+          password_reset_whatsapp: string | null
           referee_discount_pct: number
           subscription_pay_enabled: boolean
           support_email: string | null
           support_phone: string | null
           updated_at: string
+          whatsapp_number: string | null
+          youtube_url: string | null
         }
         Insert: {
           agent_override_pct?: number
           auto_tier_upgrade?: boolean
           default_commission_pct?: number
+          facebook_url?: string | null
           id?: boolean
           is_program_active?: boolean
           lifetime_commission_pct?: number
           live_chat_url?: string | null
           max_withdrawal_per_month?: number
           min_withdrawal_amount?: number
+          password_reset_whatsapp?: string | null
           referee_discount_pct?: number
           subscription_pay_enabled?: boolean
           support_email?: string | null
           support_phone?: string | null
           updated_at?: string
+          whatsapp_number?: string | null
+          youtube_url?: string | null
         }
         Update: {
           agent_override_pct?: number
           auto_tier_upgrade?: boolean
           default_commission_pct?: number
+          facebook_url?: string | null
           id?: boolean
           is_program_active?: boolean
           lifetime_commission_pct?: number
           live_chat_url?: string | null
           max_withdrawal_per_month?: number
           min_withdrawal_amount?: number
+          password_reset_whatsapp?: string | null
           referee_discount_pct?: number
           subscription_pay_enabled?: boolean
           support_email?: string | null
           support_phone?: string | null
           updated_at?: string
+          whatsapp_number?: string | null
+          youtube_url?: string | null
         }
         Relationships: []
       }
