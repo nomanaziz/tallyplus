@@ -118,20 +118,24 @@ function Dashboard() {
       {/* Admin-managed banner carousel */}
       <DashboardBannerCarousel />
 
-      {/* 3 main action buttons */}
-      <div className="mt-5 grid grid-cols-3 gap-3">
-        <Link to="/app/purchase" search={{}} className="flex flex-col items-center justify-center gap-2 rounded-2xl border bg-card p-6 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md">
-          <img src={icons.purchase} alt="" className="h-12 w-12" />
-          <span className="text-sm font-bold">{lang === "bn" ? "কেনা" : "Purchase"}</span>
+      {/* 4 main action buttons: Purchase, Sell, Quick Sell, Fordo */}
+      <div className="mt-5 grid grid-cols-4 gap-2 sm:gap-3">
+        <Link to="/app/purchase" search={{}} className="flex flex-col items-center justify-center gap-2 rounded-2xl border bg-card p-3 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md sm:p-5">
+          <img src={icons.purchase} alt="" className="h-9 w-9 sm:h-12 sm:w-12" />
+          <span className="text-[11px] font-bold sm:text-sm">{lang === "bn" ? "কেনা" : "Purchase"}</span>
         </Link>
-        <Link to="/app/sell" search={{}} className="flex flex-col items-center justify-center gap-2 rounded-2xl border bg-card p-6 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md">
-          <img src={icons.sell} alt="" className="h-12 w-12" />
-          <span className="text-sm font-bold">{lang === "bn" ? "বেচা" : "Sell"}</span>
+        <Link to="/app/sell" search={{}} className="flex flex-col items-center justify-center gap-2 rounded-2xl border bg-card p-3 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md sm:p-5">
+          <img src={icons.sell} alt="" className="h-9 w-9 sm:h-12 sm:w-12" />
+          <span className="text-[11px] font-bold sm:text-sm">{lang === "bn" ? "বেচা" : "Sell"}</span>
         </Link>
-        <button type="button" onClick={() => setQuickOpen(true)} className="flex flex-col items-center justify-center gap-2 rounded-2xl border bg-card p-6 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md">
-          <img src={icons.quickSell} alt="" className="h-12 w-12" />
-          <span className="text-sm font-bold">{lang === "bn" ? "দ্রুত বেচা" : "Quick Sell"}</span>
+        <button type="button" onClick={() => setQuickOpen(true)} className="flex flex-col items-center justify-center gap-2 rounded-2xl border bg-card p-3 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md sm:p-5">
+          <img src={icons.quickSell} alt="" className="h-9 w-9 sm:h-12 sm:w-12" />
+          <span className="text-[11px] font-bold sm:text-sm">{lang === "bn" ? "দ্রুত বেচা" : "Quick Sell"}</span>
         </button>
+        <Link to="/app/customer-wishlist" search={{}} className="flex flex-col items-center justify-center gap-2 rounded-2xl border bg-card p-3 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md sm:p-5">
+          <img src={icons.bookmark} alt="" className="h-9 w-9 sm:h-12 sm:w-12" />
+          <span className="text-[11px] font-bold sm:text-sm">{lang === "bn" ? "ফর্দ" : "Fordo"}</span>
+        </Link>
       </div>
       <QuickSellSheet open={quickOpen} onOpenChange={setQuickOpen} />
 
