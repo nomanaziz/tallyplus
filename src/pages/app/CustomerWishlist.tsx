@@ -138,7 +138,7 @@ function CustomerWishlistPage() {
       <div className="mb-2 text-xs text-muted-foreground">Home / গ্রাহক ফর্দ</div>
       <div className="mb-4 flex items-center justify-between gap-2">
         <h1 className="text-xl font-extrabold">
-          {lang === "bn" ? "গ্রাহক ফর্দ" : "Customer Wishlists"}
+          {lang === "bn" ? "গ্রাহক ফর্দ" : "Customer Fordo"}
         </h1>
         <Button variant="outline" size="sm" onClick={() => listQ.refetch()} disabled={listQ.isFetching}>
           <RefreshCw className={`mr-1 h-3.5 w-3.5 ${listQ.isFetching ? "animate-spin" : ""}`} />
@@ -188,7 +188,7 @@ function CustomerWishlistPage() {
       {/* List */}
       <div className="mt-5">
         <h2 className="mb-2 text-sm font-bold text-muted-foreground">
-          {lang === "bn" ? "সদ্য পাওয়া ফর্দ" : "Recent wishlists"}
+          {lang === "bn" ? "সদ্য পাওয়া ফর্দ" : "Recent fordo"}
         </h2>
         {listQ.isLoading ? (
           <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
@@ -200,7 +200,7 @@ function CustomerWishlistPage() {
           <div className="rounded-2xl border border-dashed bg-muted/30 p-8 text-center">
             <ListChecks className="mx-auto h-10 w-10 text-muted-foreground" />
             <p className="mt-2 text-sm font-semibold">
-              {lang === "bn" ? "এখনো কোনো ফর্দ আসেনি" : "No wishlists yet"}
+              {lang === "bn" ? "এখনো কোনো ফর্দ আসেনি" : "No fordo yet"}
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
               {lang === "bn" ? "উপরের লিঙ্কটি গ্রাহকদের সাথে শেয়ার করুন।" : "Share the link above with your customers."}
