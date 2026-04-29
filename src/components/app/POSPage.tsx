@@ -117,6 +117,25 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
     return q ? products.filter((p) => p.name.toLowerCase().includes(q)) : products;
   }, [products, search]);
 
+  const handleScannedCode = (code: string) => {
+    const c = code.trim();
+    if (!c) return;
+    const cl = c.toLowerCase();
+    const match =
+      products.find((p) => (p.barcode ?? "").toLowerCase() === cl) ||
+      products.find((p) => (p.sku ?? "").toLowerCase() === cl);
+    if (match) {
+      addToCart(match);
+      toast.success(lang === "bn" ? `যোগ হয়েছে: ${match.name}` : `Added: ${match.name}`);
+    } else {
+      setSearch(c);
+      toast.error(lang === "bn" ? "এই বারকোডের পণ্য পাওয়া যায়নি" : "No product found for this barcode");
+    }
+  };
+
+  // Listen for keyboard-emulating USB scanners anywhere on the POS page
+  useHardwareScanner(handleScannedCode, { minLength: 4, maxGapMs: 50 });
+
   const addToCart = (p: Product) => {
     // Serialized products: open serial picker instead of direct add
     if (isSell && p.is_serialized) {
@@ -223,9 +242,10 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
                 className="h-10 pl-9"
               />
             </div>
-            <Button variant="outline" size="icon" className="h-10 w-10 flex-none" aria-label="Barcode">
-              <ScanLine className="h-4 w-4" />
-            </Button>
+            <BarcodeScannerButton
+              onDetected={handleScannedCode}
+              className="h-10 w-10 flex-none"
+            />
             <Button size="icon" className="h-10 w-10 flex-none" onClick={() => setQuickOpen(true)} aria-label="Quick add">
               <Plus className="h-4 w-4" />
             </Button>
