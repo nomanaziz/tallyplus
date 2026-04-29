@@ -31,6 +31,7 @@ import { CatalogProductPicker, type CatalogProduct } from "@/components/app/Cata
 import { ensureDefaultCategories } from "@/lib/default-categories";
 import { SampleProductImportSheet } from "@/components/app/SampleProductImportSheet";
 import { ProductSerialsDialog } from "@/components/app/ProductSerialsDialog";
+import { SerialCaptureDialog } from "@/components/app/SerialCaptureDialog";
 import { ProductDetailsDialog, type ProductFull } from "@/components/app/ProductDetailsDialog";
 import { UpdateStockDialog } from "@/components/app/UpdateStockDialog";
 import { DataPagination } from "@/components/app/DataPagination";
@@ -79,6 +80,8 @@ function ProductsPage() {
   const [editing, setEditing] = useState<Product | null>(null);
   const [openImport, setOpenImport] = useState(false);
   const [serialsTarget, setSerialsTarget] = useState<Product | null>(null);
+  // Serial capture (after add stock / new product) — { id, name, qty, cost }
+  const [serialCapture, setSerialCapture] = useState<{ productId: string; name: string; qty: number; cost: number } | null>(null);
 
   // View / Update stock dialogs
   const [details, setDetails] = useState<Product | null>(null);
@@ -264,6 +267,10 @@ function ProductsPage() {
     toast.success(lang === "bn" ? "আপডেট হয়েছে" : "Updated");
     void load();
     void qc.invalidateQueries({ queryKey: ["stock", "history"] });
+    // Trigger serial capture when new units are added to a serialized product
+    if (p.is_serialized && diff > 0) {
+      setSerialCapture({ productId: p.id, name: p.name, qty: diff, cost: Number(p.cost_price) || 0 });
+    }
   };
 
   // Bulk save (inline edit mode)
@@ -616,7 +623,12 @@ function ProductsPage() {
         product={editing}
         shopId={current?.id ?? null}
         shopTypeCode={current?.shop_type_code ?? null}
-        onSaved={load}
+        onSaved={(saved) => {
+          void load();
+          if (saved && saved.is_serialized && saved.stock > 0 && saved.id) {
+            setSerialCapture({ productId: saved.id, name: saved.name, qty: saved.stock, cost: saved.cost_price });
+          }
+        }}
       />
 
       <ProductSerialsDialog
@@ -624,6 +636,16 @@ function ProductsPage() {
         onOpenChange={(v) => { if (!v) setSerialsTarget(null); }}
         productId={serialsTarget?.id ?? null}
         productName={serialsTarget?.name ?? ""}
+      />
+
+      <SerialCaptureDialog
+        open={serialCapture !== null}
+        onOpenChange={(v) => { if (!v) setSerialCapture(null); }}
+        productId={serialCapture?.productId ?? null}
+        productName={serialCapture?.name ?? ""}
+        qty={serialCapture?.qty ?? 0}
+        costPrice={serialCapture?.cost ?? 0}
+        onSaved={() => { setSerialCapture(null); }}
       />
 
       <ProductDetailsDialog
