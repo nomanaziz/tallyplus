@@ -3023,6 +3023,38 @@ export type Database = {
         }
         Relationships: []
       }
+      shop_sms_balance: {
+        Row: {
+          balance: number
+          shop_id: string
+          total_purchased: number
+          total_used: number
+          updated_at: string
+        }
+        Insert: {
+          balance?: number
+          shop_id: string
+          total_purchased?: number
+          total_used?: number
+          updated_at?: string
+        }
+        Update: {
+          balance?: number
+          shop_id?: string
+          total_purchased?: number
+          total_used?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shop_sms_balance_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: true
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shop_types: {
         Row: {
           code: string
@@ -3285,6 +3317,234 @@ export type Database = {
           section?: string
           updated_at?: string
           updated_by?: string | null
+        }
+        Relationships: []
+      }
+      sms_gateways: {
+        Row: {
+          config: Json
+          created_at: string
+          display_name: string
+          id: string
+          is_active: boolean
+          is_primary: boolean
+          provider: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          config?: Json
+          created_at?: string
+          display_name: string
+          id?: string
+          is_active?: boolean
+          is_primary?: boolean
+          provider: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          config?: Json
+          created_at?: string
+          display_name?: string
+          id?: string
+          is_active?: boolean
+          is_primary?: boolean
+          provider?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      sms_history: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          error: string | null
+          gateway_id: string | null
+          id: string
+          message: string
+          provider_message_id: string | null
+          recipient_name: string | null
+          recipient_phone: string
+          shop_id: string
+          sms_count: number
+          status: string
+          template_code: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          error?: string | null
+          gateway_id?: string | null
+          id?: string
+          message: string
+          provider_message_id?: string | null
+          recipient_name?: string | null
+          recipient_phone: string
+          shop_id: string
+          sms_count?: number
+          status?: string
+          template_code?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          error?: string | null
+          gateway_id?: string | null
+          id?: string
+          message?: string
+          provider_message_id?: string | null
+          recipient_name?: string | null
+          recipient_phone?: string
+          shop_id?: string
+          sms_count?: number
+          status?: string
+          template_code?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sms_history_gateway_id_fkey"
+            columns: ["gateway_id"]
+            isOneToOne: false
+            referencedRelation: "sms_gateways"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sms_history_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sms_packages: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          name_bn: string
+          name_en: string
+          price_bdt: number
+          sms_count: number
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name_bn: string
+          name_en: string
+          price_bdt: number
+          sms_count: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name_bn?: string
+          name_en?: string
+          price_bdt?: number
+          sms_count?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      sms_purchase_requests: {
+        Row: {
+          amount_bdt: number
+          approved_at: string | null
+          created_at: string
+          id: string
+          package_id: string | null
+          payment_status: string
+          recharge_id: string | null
+          shop_id: string
+          sms_count: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount_bdt: number
+          approved_at?: string | null
+          created_at?: string
+          id?: string
+          package_id?: string | null
+          payment_status?: string
+          recharge_id?: string | null
+          shop_id: string
+          sms_count: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount_bdt?: number
+          approved_at?: string | null
+          created_at?: string
+          id?: string
+          package_id?: string | null
+          payment_status?: string
+          recharge_id?: string | null
+          shop_id?: string
+          sms_count?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sms_purchase_requests_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "sms_packages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sms_purchase_requests_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sms_templates: {
+        Row: {
+          body_template: string
+          code: string
+          created_at: string
+          id: string
+          is_active: boolean
+          name_bn: string
+          name_en: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          body_template: string
+          code: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name_bn: string
+          name_en: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          body_template?: string
+          code?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name_bn?: string
+          name_en?: string
+          sort_order?: number
+          updated_at?: string
         }
         Relationships: []
       }
@@ -3691,6 +3951,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_credit_sms_balance: {
+        Args: { _count: number; _shop_id: string }
+        Returns: undefined
+      }
       affiliate_pay_subscription: { Args: { _plan_id: string }; Returns: Json }
       affiliate_recalculate_tier: {
         Args: { _aff_id: string }
