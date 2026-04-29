@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { CatalogProductPicker, type CatalogProduct } from "@/components/app/CatalogProductPicker";
+import { ensureDefaultCategories } from "@/lib/default-categories";
 import { SampleProductImportSheet } from "@/components/app/SampleProductImportSheet";
 import { ProductSerialsDialog } from "@/components/app/ProductSerialsDialog";
 import { ProductDetailsDialog, type ProductFull } from "@/components/app/ProductDetailsDialog";
@@ -54,22 +55,6 @@ const PREDEFINED_UNITS = [
   "pcs", "piece", "ft", "sq.ft", "sq.m", "kg", "gm", "km", "meter", "litre", "ml", "dozen", "pack", "box", "bottle", "bag",
 ] as const;
 
-const DEFAULT_CATEGORY_TREE: { name: string; children?: string[] }[] = [
-  {
-    name: "Electronics and Gadgets",
-    children: [
-      "Battery", "Inverter/EV battery", "BMS/Battery Controller", "Inverter/EV battery charger",
-      "Cable clips/connector/jointer", "Electrical/Electronics service charge", "Power Supply/Adapter",
-      "Gaming Consoles", "Telephones", "Headphones and Microphone", "Internet, Router and Switches", "CCTV Cameras",
-    ],
-  },
-  { name: "Home Appliances" },
-  { name: "Stationary and Office Appliances" },
-  { name: "Clothes" },
-  { name: "Shoes" },
-  { name: "Fashion Accessories" },
-  { name: "Home & Kitchen" },
-];
 
 
 
