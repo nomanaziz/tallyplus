@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Plus, Minus, X, Package, ShoppingCart, ChevronDown, MessageSquare, RefreshCw, Search, ScanLine, UserRound } from "lucide-react";
+import { ArrowLeft, Plus, Minus, X, Package, ShoppingCart, ChevronDown, MessageSquare, RefreshCw, Search, UserRound } from "lucide-react";
 import { useNavigate } from "@/lib/router";
 import { supabase } from "@/integrations/supabase/client";
 import { useShop } from "@/lib/shop";
@@ -8,6 +8,8 @@ import { useAuth } from "@/lib/auth";
 import { useI18n, fmtMoney, bnNum } from "@/lib/i18n";
 import { productsLiteQuery } from "@/lib/queries";
 import { SerialPickDialog } from "@/components/app/SerialPickDialog";
+import { BarcodeScannerButton } from "@/components/app/BarcodeScannerButton";
+import { useHardwareScanner } from "@/hooks/useHardwareScanner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -36,6 +38,8 @@ type Product = {
   bulk_price?: number | null;
   bulk_min_qty?: number | null;
   is_serialized?: boolean | null;
+  barcode?: string | null;
+  sku?: string | null;
 };
 
 type CartItem = {
@@ -112,6 +116,25 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
     const q = search.trim().toLowerCase();
     return q ? products.filter((p) => p.name.toLowerCase().includes(q)) : products;
   }, [products, search]);
+
+  const handleScannedCode = (code: string) => {
+    const c = code.trim();
+    if (!c) return;
+    const cl = c.toLowerCase();
+    const match =
+      products.find((p) => (p.barcode ?? "").toLowerCase() === cl) ||
+      products.find((p) => (p.sku ?? "").toLowerCase() === cl);
+    if (match) {
+      addToCart(match);
+      toast.success(lang === "bn" ? `যোগ হয়েছে: ${match.name}` : `Added: ${match.name}`);
+    } else {
+      setSearch(c);
+      toast.error(lang === "bn" ? "এই বারকোডের পণ্য পাওয়া যায়নি" : "No product found for this barcode");
+    }
+  };
+
+  // Listen for keyboard-emulating USB scanners anywhere on the POS page
+  useHardwareScanner(handleScannedCode, { minLength: 4, maxGapMs: 50 });
 
   const addToCart = (p: Product) => {
     // Serialized products: open serial picker instead of direct add
@@ -219,9 +242,10 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
                 className="h-10 pl-9"
               />
             </div>
-            <Button variant="outline" size="icon" className="h-10 w-10 flex-none" aria-label="Barcode">
-              <ScanLine className="h-4 w-4" />
-            </Button>
+            <BarcodeScannerButton
+              onDetected={handleScannedCode}
+              className="h-10 w-10 flex-none"
+            />
             <Button size="icon" className="h-10 w-10 flex-none" onClick={() => setQuickOpen(true)} aria-label="Quick add">
               <Plus className="h-4 w-4" />
             </Button>
