@@ -1,80 +1,59 @@
 ## Goal
-Fix the real cause of the published `Not Found` error so direct links like `/admin/login` and `/pricing` open correctly on `tallyplus.lovable.app`.
 
-## What is actually broken
-The current app is still using a classic Vite SPA setup:
-- `src/main.tsx` mounts `BrowserRouter`
-- routes are defined in `src/routes.tsx`
-- pages live under `src/pages/`
-- there is no TanStack Start router bootstrap (`src/router.tsx`, `src/routes/__root.tsx`, file routes)
+On the Products & Stock page, add a prominent summary card at the top (visible on both mobile and desktop) showing **Total Stock** and **Stock Value**, and improve the **Stock History** popup so the user can pick which products' history to view — matching the two sample screenshots.
 
-Because of that, the published root URL works, but direct subpaths like `/admin/login` and `/pricing` return the platform-level `Not Found` page before React can load.
+## Changes
 
-The `_redirects` and `vercel.json` fallback files are not the right fix for this hosting setup and should not be the long-term solution.
+### 1. Top summary card (mobile + desktop)
+File: `src/pages/app/Products.tsx`
 
-## Implementation plan
-1. Replace the current `BrowserRouter` bootstrap with a TanStack Start router setup.
-   - Create `src/router.tsx`
-   - Create `src/routes/__root.tsx`
-   - Update `src/main.tsx` to render the TanStack router provider instead of `BrowserRouter`
+Add a blue gradient card right under the page title, before the toolbar:
 
-2. Convert the current central route table into file-based routes under `src/routes/`.
-   - Preserve existing public URLs exactly:
-     - `/`
-     - `/auth`
-     - `/pricing`
-     - `/privacy`
-     - `/terms`
-     - `/admin/*`
-     - `/app/*`
-     - `/customer/*`
-     - `/shop/*`
-     - `/affiliate/*`
-     - `/vendor/:username`
-     - `/f/:slug/*`
-   - Reuse the existing page components from `src/pages/` where possible so the visual UI does not need a full rewrite
+```text
+┌───────────────────────────────────────────────┐
+│  ┌──────────────┐    ┌──────────────┐         │
+│  │     128      │    │   39,040 ৳   │         │
+│  │ Total Stock  │    │ Stock Value  │         │
+│  └──────────────┘    └──────────────┘         │
+└───────────────────────────────────────────────┘
+```
 
-3. Rebuild nested sections using layout routes.
-   - `admin` layout route for `Admin.tsx`
-   - `app` layout route for `AppLayout.tsx`
-   - `customer` layout route for `CustomerLayout.tsx`
-   - `shop`, `affiliate`, and other nested areas the same way
-   - Ensure every layout route renders an `Outlet` so child pages display correctly
+- Two stat tiles inside one rounded card with a brand-blue (primary) background.
+- Numbers come from existing computed values:
+  - **Total Stock** = sum of `stock` across `filtered` (skip unlimited / negative).
+  - **Stock Value** = existing `totalStockValue` (already computed).
+- Bilingual labels (bn: "মোট স্টক" / "মজুদ মূল্য").
+- Numbers use `bnNum` when `lang === "bn"`, money via `fmtMoney`.
+- Responsive: `grid-cols-2` always; tighter padding on mobile (`p-3 sm:p-5`), larger numbers on desktop.
+- Remove the duplicate "Total stock value" row that currently sits at the bottom of the table footer (now redundant), keep "Total Products" header inside the table card.
 
-4. Keep the current admin auth behavior, but bind it to the new route system.
-   - `/admin/login` must remain public
-   - `/admin` and child admin pages must still check Supabase auth + `user_roles`
-   - Confirm redirect behavior still sends non-admin users back to `/admin/login`
+### 2. Surface "Stock History" on mobile
+The button exists in the header action row but wraps off-screen on small viewports. Make sure it stays accessible:
 
-5. Add proper global not-found and error handling in the router.
-   - Root `notFoundComponent` for unknown URLs
-   - Router-level default error UI
-   - This prevents broken generic failures after migration and makes route issues easier to diagnose
+- Keep the existing **Stock History** button in the desktop header.
+- Add a compact secondary action row (icon + label) right below the summary card on mobile (`sm:hidden`) with **Stock History** and **Stock Edit** buttons so they are reachable on phones.
 
-6. Remove routing workarounds that do not belong in this stack.
-   - Remove `public/_redirects`
-   - Remove `vercel.json` rewrite workaround if it is no longer needed
-   - Remove any remaining app code that assumes `react-router-dom` is the runtime router
+### 3. Stock History popup with product multi-select
+Replace the current always-show-all `Dialog` body with a two-step UX:
 
-7. Verify the critical published paths after the migration.
-   - `/admin/login`
-   - `/pricing`
-   - `/auth`
-   - `/app/due-ledger`
-   - one nested dynamic route such as `/vendor/:username` or `/shop/p/:id`
-   - Then republish so the frontend changes go live
+**Step A — Product picker (default view when opening the dialog):**
+- Search box at top.
+- Scrollable checklist of all products (name + current stock).
+- "Select all" toggle.
+- Footer: `Cancel` | `Show history (N selected)` button (disabled when none selected).
 
-## Technical details
-- Current evidence confirms the problem is architectural, not just a bad deploy:
-  - `https://tallyplus.lovable.app/` loads
-  - `https://tallyplus.lovable.app/admin/login` returns plain `Not Found`
-  - `https://tallyplus.lovable.app/pricing` also returns plain `Not Found`
-- This means the published host is not resolving those URLs through the app’s current SPA router.
-- The fix is to move to Lovable’s supported routing model, not add more rewrite files.
+**Step B — History view (after pressing Show history):**
+- Header shows chosen product chips with a small `Change` link to go back to Step A.
+- Existing history table (Date / Product / Type / Qty), filtered to `selected` product ids only.
+- "Back" button returns to Step A; closing the dialog resets selection.
 
-## Expected result
-After this migration:
-- direct links to `/admin/login` will open correctly
-- refresh on nested pages will work
-- existing URLs stay unchanged
-- admin login can be used from the published domain instead of only from in-app navigation
+Data source: existing `stockHistoryQuery(current?.id)` already returns all movements; we just filter client-side by `selected` ids. No new query needed.
+
+### 4. Small polish
+- Stock History button: keep `History` icon, make it the brand-outlined style shown in the sample (blue border + blue text) on the page header.
+- Card colors use existing CSS vars (`bg-primary text-primary-foreground`) so it follows the user's theme.
+
+## Files touched
+- `src/pages/app/Products.tsx` — summary card, mobile action row, revamped history dialog (two-step), remove redundant footer total.
+
+No new dependencies, no DB / schema / migration changes.

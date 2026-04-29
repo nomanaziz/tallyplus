@@ -154,10 +154,57 @@ function ProductsPage() {
     [filtered],
   );
 
+  const totalStockCount = useMemo(
+    () => filtered.reduce((sum, p) => {
+      const s = Number(p.stock);
+      if (s < 0) return sum; // unlimited skipped
+      return sum + s;
+    }, 0),
+    [filtered],
+  );
+
   const productMap = useMemo(
     () => Object.fromEntries(items.map((p) => [p.id, p.name])),
     [items],
   );
+
+  // Stock-history product picker
+  const [historyStep, setHistoryStep] = useState<"pick" | "view">("pick");
+  const [historyPicked, setHistoryPicked] = useState<Set<string>>(new Set());
+  const [historyPickerSearch, setHistoryPickerSearch] = useState("");
+
+  const openHistory = () => {
+    setHistoryStep("pick");
+    setHistoryPicked(new Set());
+    setHistoryPickerSearch("");
+    setHistoryOpen(true);
+  };
+  const togglePick = (id: string) => {
+    setHistoryPicked((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+  const pickerProducts = useMemo(() => {
+    const q = historyPickerSearch.trim().toLowerCase();
+    if (!q) return items;
+    return items.filter((p) => p.name.toLowerCase().includes(q) || (p.sku ?? "").toLowerCase().includes(q));
+  }, [items, historyPickerSearch]);
+  const allPickerSelected = pickerProducts.length > 0 && pickerProducts.every((p) => historyPicked.has(p.id));
+  const togglePickAll = () => {
+    setHistoryPicked((prev) => {
+      const next = new Set(prev);
+      if (allPickerSelected) pickerProducts.forEach((p) => next.delete(p.id));
+      else pickerProducts.forEach((p) => next.add(p.id));
+      return next;
+    });
+  };
+  const filteredHistory = useMemo(() => {
+    if (!history) return [];
+    if (historyPicked.size === 0) return history;
+    return history.filter((m) => historyPicked.has(m.product_id));
+  }, [history, historyPicked]);
 
   const onDelete = async (p: Product) => {
     if (!confirm(lang === "bn" ? "ডিলিট করবেন?" : "Delete this product?")) return;
