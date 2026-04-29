@@ -58,7 +58,7 @@ function ReturnDetailsPage() {
         { key: "price", label: lang === "bn" ? "মূল্য" : "Price", align: "right" },
         { key: "total", label: lang === "bn" ? "মোট" : "Total", align: "right" },
       ],
-      rows: data.items.map((it) => ({
+      rows: (data?.items ?? []).map((it) => ({
         name: it.name,
         qty: Number(it.qty),
         price: fmtMoney(Number(it.price), lang),
