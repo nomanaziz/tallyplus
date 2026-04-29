@@ -1,68 +1,107 @@
-## লক্ষ্য
+# SMS API Integration Plan
 
-দুটো আলাদা সমস্যা একসাথে fix করব:
+বাংলাদেশি SMS provider integration — REVE SMS primary, multi-gateway support, template-based sending (custom message বন্ধ), per-shop balance, copy button, এবং buy/history page।
 
-1. **Vercel এর "NOT_FOUND" page** (যেটা refresh এ আসে) → আপনার নিজের সুন্দর 404 page এ redirect হবে
-2. **Custom 404 page redesign** → sample image এর মতো bold, attractive look
+## 1. Database Changes (migration)
 
----
+নতুন tables:
 
-## সমস্যা ১: Vercel deep-link 404
+- **`sms_gateways`** (admin-managed) — multiple SMS provider configs
+  - `id`, `provider` (enum: `reve`, `whatsapp`, `telegram`), `display_name`, `is_active`, `is_primary`, `sort_order`
+  - `config` (jsonb) — username, password, api_key, secret_key, sender_id (masking/non-masking), base_url
+  - `created_at`, `updated_at`
+  - RLS: read/write admin only
 
-### কারণ
-আপনার app একটা SPA (Single Page App) — সব route browser এ JS দিয়ে handle হয়। কিন্তু যখন আপনি direct `tallyplus.xyz/app/dashboard` URL এ refresh দেন, Vercel server এ ওই path এ কোনো file নাই, তাই Vercel তার নিজের platform-level `404: NOT_FOUND` page দেখায় — আপনার React app এমনকি load ই হয় না।
+- **`sms_packages`** (admin-managed) — buy-able SMS packs
+  - `id`, `name_bn`, `name_en`, `sms_count`, `price_bdt`, `is_active`, `sort_order`
+  - RLS: read public, write admin only
 
-Project এ এখন কোনো `vercel.json` নাই — সেজন্য fallback rule নাই।
+- **`shop_sms_balance`** (per-shop SMS quota)
+  - `shop_id` (PK), `balance` (int, default 0), `total_purchased`, `total_used`, `updated_at`
+  - RLS: shop members read, only edge function (service role) writes
 
-### সমাধান
-Project root এ একটা `vercel.json` file create করব যেটা সব unknown path কে `/index.html` এ rewrite করবে। তখন:
-- React app load হবে
-- Router path দেখবে
-- match না পেলে আপনার নিজের সুন্দর `NotFound` page দেখাবে (Vercel এর কুৎসিত page না)
+- **`sms_templates`** (admin-managed allowed templates — user customize করতে পারবে না)
+  - `id`, `code` (`due_reminder`, `payment_received`, `sale_invoice`, `promotional`), `name_bn`, `name_en`, `body_template` (with `{name}`, `{amount}`, `{due}`, `{shop}` placeholders), `is_active`
+  - RLS: read all authenticated, write admin only
 
-```json
-{
-  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
-}
-```
+- **`sms_history`** (sent log per shop)
+  - `id`, `shop_id`, `gateway_id`, `template_code`, `recipient_phone`, `recipient_name`, `message`, `sms_count`, `status` (`pending`/`sent`/`failed`/`copied`), `provider_message_id`, `error`, `created_at`
+  - RLS: shop members read own shop's records, edge function inserts
 
-এর পর Vercel এ next deploy থেকে `/app/dashboard` refresh করলে আর Vercel এর 404 আসবে না — সরাসরি আপনার dashboard load হবে। আর কোনো ভুল URL (যেমন `/abcxyz`) দিলে আপনার নিজের custom 404 দেখাবে।
+- **`sms_purchase_requests`** — uses existing `recharge` gateway pattern (mirrors `subscription_requests`)
+  - `id`, `shop_id`, `package_id`, `sms_count`, `amount_bdt`, `payment_status`, `recharge_id`, `created_at`, `approved_at`
 
----
+## 2. Admin UI — `src/pages/admin/SmsGateways.tsx` (new)
 
-## সমস্যা ২: Custom 404 page আরও সুন্দর করা
+Sidebar এ নতুন entry "SMS Gateways"। Page features:
+- **Gateway tab**: Dropdown menu দিয়ে provider select (REVE / WhatsApp / Telegram), credentials form (provider-specific), Set Primary toggle, Active toggle। Multiple gateway একসাথে enable করা যাবে।
+- **Packages tab**: Add/Edit/Delete SMS packages (name, sms count, price)
+- **Templates tab**: View/edit allowed templates with placeholders preview
 
-বর্তমান `src/pages/NotFound.tsx` ভালোই আছে কিন্তু sample image এর মতো আরও bold করব:
+REVE form fields: Base URL, API Key, Secret Key, Sender ID (callerID), Masking type (Masking/Non-masking dropdown — affects sender ID).
 
-### Sample থেকে যা নেব
-- **বিশাল bold "404"** (gradient text, screen এর majority জুড়ে)
-- **"পেজটি হারিয়ে গেছে!"** — বড় Bangla heading
-- কোন path এ এসেছে সেটা ছোট pill এ দেখাবে (যেমন `/dashboard/faqs`)
-- **৩টা action button** এক সারিতে: "← পেছনে যান" | "🏠 হোমে ফিরুন" | "🔍 খুঁজুন"
-- নিচে **"অথবা এখান থেকে শুরু করুন"** — ৪টা card grid (Home, Marketplace, Dashboard, Pricing) icon সহ
+## 3. Edge Function — `supabase/functions/send-sms/index.ts` (new)
 
-### যা change হবে
-File: `src/pages/NotFound.tsx`
-- Layout আরও center-focused, বড় typography
-- "পেছনে যান" button যোগ (browser history back)
-- বর্তমান path display করা (debug + UX)
-- Popular pages গুলো small pill থেকে বড় card grid এ convert
-- Icon গুলো red/primary tone এ wrap (sample এর মতো)
-- Mobile/desktop দুটোতেই sample এর মতো look
+Server-side SMS dispatcher:
+- Auth: shop member required
+- Input: `{ shop_id, template_code, recipients: [{phone, name, vars}] }`
+- Logic:
+  1. Load primary `sms_gateway` (or specified one)
+  2. Load `sms_template` by code → render with vars + shop signature
+  3. Check `shop_sms_balance` ≥ total SMS count
+  4. For each recipient: call REVE API:
+     `GET {base_url}/sendtext?apikey=...&secretkey=...&callerID=...&toUser=88{phone}&messageContent={msg}`
+  5. Decrement balance, insert `sms_history` rows
+  6. Return per-recipient status
 
----
+Edge function `add-sms-balance` (admin/recharge callback): credits balance after purchase verification।
 
-## Files যা পরিবর্তন হবে
+## 4. Marketing Page Redesign — `src/pages/app/Marketing.tsx`
 
-1. **`vercel.json`** (নতুন create) — SPA fallback rewrite
-2. **`src/pages/NotFound.tsx`** (redesign) — sample image এর style এ
+Screenshot এর exact layout match:
+- Left: Customer/Supplier/Employee tabs with count badge, search, Select All, contact cards with "Add" button
+- Right: Phone input (+88 prefix, manual add), MINUTE/SMS BALANCE pills, Buy buttons, Recipients chips, Message preview area
+- **Template selector dropdown** (custom message disable — only template select করা যাবে)
+- Live preview shows rendered template with shop signature
+- Character/SMS count display
+- **Copy button** (নতুন) — copies full rendered message to clipboard with toast "Copied! Send from your phone"
+- "Send SMS" button → calls `send-sms` edge function (uses balance)
+- "Send Voice Message" — placeholder (coming soon)
 
----
+WhatsApp/Telegram buttons added as additional channel options (placeholder, "coming soon" toast)।
 
-## ফলাফল (deploy এর পর)
+## 5. Buy SMS Page — `src/pages/app/BuySms.tsx` (new, route `/app/buy-sms`)
 
-- `tallyplus.xyz/app/dashboard` refresh → সরাসরি dashboard load হবে (Vercel 404 আর আসবে না)
-- `tallyplus.xyz/random-wrong-url` → আপনার নিজের সুন্দর Bangla 404 page দেখাবে (বড় 404, পেছনে/হোম button, popular pages grid)
-- App এর ভিতরের কোনো broken link হলেও same সুন্দর page দেখাবে
+- Grid of active `sms_packages` cards (sms count, price, savings %)
+- Click "Buy" → creates `sms_purchase_requests` row → calls existing `recharge-create-payment` edge function with package amount
+- On success callback → `sms_purchase_requests.payment_status='paid'` triggers balance credit
+- Current balance display at top
 
-Approve করলে আমি দুটোই implement করে দিব।
+## 6. SMS History Page — `src/pages/app/SmsHistory.tsx` (new, route `/app/sms-history`)
+
+- Date range filter, status filter, template filter, search by phone/name
+- Table: Date, Recipient (name + phone), Template, Message preview, SMS count, Status badge, Gateway used
+- Pagination (use existing `use-pagination` hook)
+- "SMS History" button on Marketing page navigates here
+
+## 7. Routes & Navigation
+
+`src/routes.tsx`: add 3 lazy routes (`/app/buy-sms`, `/app/sms-history`, `/admin/sms-gateways`)
+`src/components/admin/AdminSidebar.tsx`: add "SMS Gateways" link
+`src/components/app/AppSidebar.tsx`: ensure "Marketing" exists (already does)
+
+## 8. Out of Scope (this turn)
+
+- WhatsApp/Telegram actual sending (UI placeholder only — REVE primary)
+- Voice call API (already placeholder)
+- Bulk multi-content REVE endpoint (single-content used; can optimize later)
+
+## Files Created/Modified
+
+**New:** migration, `supabase/functions/send-sms/index.ts`, `supabase/functions/sms-purchase-callback/index.ts`, `src/pages/admin/SmsGateways.tsx`, `src/pages/app/BuySms.tsx`, `src/pages/app/SmsHistory.tsx`
+
+**Edited:** `src/pages/app/Marketing.tsx` (template selector + copy button + real send), `src/routes.tsx`, `src/components/admin/AdminSidebar.tsx`
+
+## After Approval
+
+Approve করলে আমি migration run করব (4-5 tables), admin SMS Gateways page, edge function, এবং তিনটা client page বানাব। Admin → SMS Gateways এ গিয়ে আপনি REVE credentials (API key, secret, callerID) save করলেই SMS send কাজ করবে। Packages এবং templates আপনি admin থেকে নিজে define করবেন।
