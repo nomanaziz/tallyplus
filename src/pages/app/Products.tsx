@@ -934,9 +934,9 @@ function ProductFormDialog({
       discount_type: discountOn ? discountType : null,
       is_serialized: serializedOn,
     };
-    const { error } = product
-      ? await supabase.from("products").update(payload).eq("id", product.id)
-      : await supabase.from("products").insert(payload);
+    const { data: savedRow, error } = product
+      ? await supabase.from("products").update(payload).eq("id", product.id).select("id").maybeSingle()
+      : await supabase.from("products").insert(payload).select("id").maybeSingle();
     setBusy(false);
     if (error) {
       const code = (error as { code?: string }).code;
@@ -951,7 +951,18 @@ function ProductFormDialog({
     }
     toast.success(lang === "bn" ? "সেভ হয়েছে" : "Saved");
     onOpenChange(false);
-    onSaved();
+    const savedId = (savedRow as { id?: string } | null)?.id ?? product?.id ?? null;
+    if (!product && savedId && serializedOn && payload.stock > 0) {
+      onSaved({
+        id: savedId,
+        name: payload.name,
+        stock: payload.stock,
+        cost_price: payload.cost_price,
+        is_serialized: true,
+      });
+    } else {
+      onSaved(null);
+    }
   };
 
   return (
