@@ -10,6 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Loader2, Package, Search, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ensureDefaultCategories } from "@/lib/default-categories";
 
 type CatalogProduct = {
   id: string;
@@ -134,6 +135,9 @@ export function SampleProductImportSheet({
     setImporting(true);
     try {
       const picked = items.filter((p) => selected.has(p.id));
+
+      // Ensure all default categories exist before linking products to them.
+      await ensureDefaultCategories(current.id);
 
       // 1) Ensure categories
       const catNames = Array.from(

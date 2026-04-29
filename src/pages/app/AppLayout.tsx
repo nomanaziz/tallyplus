@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { useShop, ShopProvider } from "@/lib/shop";
 import { PermissionsProvider } from "@/lib/permissions-hook";
+import { ensureDefaultCategories } from "@/lib/default-categories";
 import { useI18n } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -46,7 +47,7 @@ function AppLayoutWithShop() {
 function AppLayout() {
   const { t, lang } = useI18n();
   const { user, loading, ensureProfile } = useAuth();
-  const { shops, refresh: refreshShops, loading: shopsLoading } = useShop();
+  const { shops, current, refresh: refreshShops, loading: shopsLoading } = useShop();
   const nav = useNavigate();
   const [shopName, setShopName] = useState("");
   const [shopTypeCode, setShopTypeCode] = useState<string | null>(null);
@@ -72,6 +73,14 @@ function AppLayout() {
   useEffect(() => {
     if (user) void ensureProfile();
   }, [user, ensureProfile]);
+
+  // Silently seed the default category list for the current shop so that
+  // every shopkeeper has the same predefined catalogue available in the
+  // Product form dropdown without doing anything manually. Idempotent.
+  useEffect(() => {
+    if (!current?.id) return;
+    void ensureDefaultCategories(current.id);
+  }, [current?.id]);
 
   // Guard: if the logged-in user is actually a consumer (গ্রাহক), redirect
   // them to the consumer dashboard. Owners only beyond this point.

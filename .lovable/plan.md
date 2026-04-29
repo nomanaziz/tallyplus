@@ -1,54 +1,54 @@
-# Hero Section: Replace image with inline Login/Signup form
+# Auto-seed all sample-product categories into every shop
 
-ব্যবহারকারী চান হোমপেজের hero এর ডান পাশে যেই দোকানদারের ছবি আছে সেটা সরিয়ে দিয়ে সেখানে একটা সুন্দর login / create-account form বসানো হোক — যাতে গ্রাহক বা দোকানদার সরাসরি homepage থেকেই login/signup করে কাজ শুরু করতে পারেন। `/auth` পেজটা আগের মতই থাকবে।
+## ব্যবহারকারীর চাহিদা
+Sample Product Import-এ যেই ৩০টা category আছে (যেমন: চাল, ডাল, তেল, মসলা, কলম, খাতা/নোটবুক, চার্জার, ইয়ারফোন, পার্সোনাল কেয়ার, ইত্যাদি), সেগুলো সবই **প্রতিটা শপে by default আগে থেকে add করা থাকবে** — তাহলে দোকানদার যখন product import করবে বা manually add করবে, তখন category dropdown-এ সব আগে থেকেই থাকবে। চাইলে নতুন category create করতে পারবে (সেটা যেমন আছে তেমনই থাকবে)।
 
-## What will change
+## বর্তমান অবস্থা
+- `marketplace_products` table-এ ৩১টা unique `category` (single text field) আছে। **Subcategory নেই** sample data-তে।
+- `Products.tsx` এর `DEFAULT_CATEGORY_TREE` শুধু English generic categories (Electronics, Clothes ইত্যাদি) seed করে — sample import-এর actual বাংলা categories-এর সাথে মিলে না। ফলে import করার সময় new categories তৈরি হয়, কিন্তু product form খুললে ভিন্ন (English) category list দেখায় → mismatch.
+- `SampleProductImportSheet` import-এর সময় missing categories on-the-fly create করে, সেটা ঠিকই কাজ করে।
 
-**File: `src/components/site/HeroSection.tsx`**
-- ডান কলামের `<img>` (hero shop image) এবং চারপাশের floating chips সরানো হবে।
-- ওই জায়গায় একটা card-style inline auth widget বসবে — যার design `src/pages/Auth.tsx`-এর form-এর মতই হবে (একই rounded-2xl card, একই tabs)।
+## পরিবর্তন
 
-**Already-logged-in state:**
-- `useAuth()` দিয়ে check করে, যদি user আগে থেকেই login করা থাকে তাহলে form-এর জায়গায় ছোট একটা welcome card দেখাবে: "স্বাগতম, [name]" + "Dashboard-এ যান" button (`/app/dashboard` বা customer হলে `/customer/dashboard`)।
+### 1. একটা shared canonical category list বানানো
+নতুন file: **`src/lib/default-categories.ts`** — যেখানে sample import-এর সব ৩১টা real category থাকবে (বাংলায়, সাথে English alias সহ যাতে dropdown সুন্দর দেখায়)। এটা single source of truth হবে।
 
-## The inline form (new component)
+```
+চাল, ডাল, তেল, আটা/ময়দা, চিনি/লবণ, মসলা, দুধ, ডিম/অন্যান্য,
+চা/কফি, পানীয়, বিস্কুট/স্ন্যাকস, নুডলস/পাস্তা, সস/আচার,
+সাবান/ডিটারজেন্ট, পার্সোনাল কেয়ার,
+কলম, খাতা/নোটবুক, কাগজ, ফাইল/ফোল্ডার, আঠা/টেপ, ক্যালকুলেটর,
+স্টেশনারি একসেসরিজ, অফিস,
+চার্জার, কেবল, ইয়ারফোন, পাওয়ার ব্যাংক, কভার/প্রটেক্টর,
+একসেসরিজ, রিপেয়ার পার্টস, স্টোরেজ
+```
 
-নতুন একটা component বানানো হবে: `src/components/site/HeroAuthCard.tsx` — যাতে HeroSection পরিষ্কার থাকে। এতে থাকবে:
+### 2. একটা reusable seeder helper বানানো
+নতুন function: **`ensureDefaultCategories(shopId)`** in same file। এটা:
+- Shop-এর existing categories load করবে (name দিয়ে set বানাবে)
+- Default list থেকে যে categories missing সেগুলো bulk insert করবে (`shop_id`, `name`, `parent_id: null`)
+- Idempotent — বার বার call করলেও duplicate হবে না
 
-- **Mode toggle** (top): দুটো ছোট tab — "লগইন" / "নতুন Account"
-- **Role tabs**: "দোকানদার" / "গ্রাহক" (Auth.tsx-এর মতই)
-- **Fields:**
-  - Login mode: মোবাইল নম্বর + ৪-সংখ্যার PIN
-  - Signup mode: নাম + (owner হলে) দোকানের নাম + ShopTypePicker + মোবাইল + PIN
-- **Primary button**: লগইন / Account তৈরি করুন
-- **Secondary links**:
-  - "PIN ভুলে গেছেন? WhatsApp করুন" (admin number থেকে — `affiliate_settings.password_reset_whatsapp` বা fallback)
-  - একটা ছোট link "পুরো Login পেজে যান →" → `/auth` (যারা আলাদা পেজে যেতে চান)
+### 3. কোথায় কোথায় seeder call হবে
+- **`Products.tsx`** এর `ProductFormDialog`-এ existing lazy seed effect (line 634) replace হবে — এখন English tree এর বদলে নতুন `ensureDefaultCategories` call করবে। শুধু empty হলে নয়, **প্রতিবার dialog open-এ ensure করবে** যাতে কোনো নতুন default category future-এ যোগ হলেও auto আসে।
+- **`SampleProductImportSheet.tsx`** এর `doImport` শুরুতেই `ensureDefaultCategories(current.id)` call করবে — তারপর existing dedup লজিক চালাবে। ফলে import-এর পরও সব default category থাকবে, শুধু selected ones না।
+- **`AppLayout`/dashboard mount** — যখন user নতুন shop নিয়ে app-এ ঢুকে, একবার background-এ `ensureDefaultCategories(current.id)` চালাবে (silent, non-blocking)। এটাই হলো "by default সবার কাছে add" — দোকানদারের কিছু না করেও সব category আগে থেকেই থাকবে।
 
-## Logic reuse
+### 4. Import flow-এ category linking
+`SampleProductImportSheet.doImport` (line 138-157) এর existing logic ঠিকই আছে — picked products-এর category names থেকে `catIdByName` map বানিয়ে `category_id` set করে। `ensureDefaultCategories` আগে চলায় সব category আগে থেকেই থাকবে, তাই missing-handling code কার্যত skip হবে কিন্তু safety net হিসেবে রাখব।
 
-`Auth.tsx`-এর সব backend logic হুবহু reuse করা হবে — কোনো নতুন edge function লাগবে না:
-- `signup-with-pin` (owner signup)
-- `customer-signup-with-pin` (customer signup)
-- `login-with-pin` (owner login)
-- `customer-login-with-pin` (customer login)
-- Phone normalize, PIN validation, error toasts — সব same।
-- Successful login হলে `useNavigate` দিয়ে owner হলে `/app/dashboard`, customer হলে `/customer/dashboard`-এ পাঠাবে।
-- Owner signup-এ "sample product import" prompt দেখাতে চাইলে আগের মতই localStorage flag set করে dashboard-এ পাঠাবে।
+### 5. Old English tree retire
+`DEFAULT_CATEGORY_TREE` (Products.tsx line 57-72) সরিয়ে দেব — confusion এড়াতে। শুধু নতুন বাংলা list থাকবে।
 
-## Layout / Responsive
+## কোন file-এ কী হবে
+- **নতুন:** `src/lib/default-categories.ts` — list + `ensureDefaultCategories(shopId)` helper
+- **edit:** `src/pages/app/Products.tsx` — old DEFAULT_CATEGORY_TREE সরানো + lazy seed effect-এ helper call
+- **edit:** `src/components/app/SampleProductImportSheet.tsx` — `doImport` শুরুতে helper call
+- **edit:** `src/pages/app/AppLayout.tsx` — current shop change হলে background-এ helper call (one-time per session per shop)
 
-- **Desktop (md+)**: বাম দিকে আগের headline + CTA buttons + stats যেমন আছে তেমনই থাকবে। ডান কলামে hero image এর জায়গায় form card বসবে (max-w-md, একই rounded-3xl shadow look)।
-- **Mobile**: form card headline-এর নিচে full-width স্ট্যাক হবে (আগে যেমন image নিচে যেত)।
-- বাম পাশের "Get Started" button টাও থাকবে — কিন্তু label change হবে "নিচের form-এ Account তৈরি করুন" feel দিতে; অথবা button টা রেখেই দেওয়া যায় যারা scroll করে পুরো features দেখতে চান।
-
-## Files touched
-
-- `src/components/site/HeroSection.tsx` — ডান কলাম replace
-- `src/components/site/HeroAuthCard.tsx` — **নতুন file**, Auth.tsx-এর form logic-এর leaner version
+## DB migration
+**লাগবে না।** `categories` table-এ আগে থেকেই `shop_id`, `name`, `parent_id` সব আছে। শুধু নতুন rows insert হবে — সেটা existing RLS (`is_shop_member`) দিয়ে normal user-ই করতে পারবে।
 
 ## Out of scope
-
-- `/auth` পেজে কোনো change নেই — সেটা আগের মতই থাকবে।
-- নতুন কোনো DB migration বা edge function লাগবে না।
-- Image asset (`hero-shop.jpg`) project-এ থাকবে; শুধু hero থেকে remove হবে।
+- Sub-category — sample data-তে নেই, তাই এই ধাপে seed করছি না। Manual create button আগের মতই কাজ করবে।
+- পুরনো shop-এ যেখানে আগে থেকেই কিছু English category seed হয়ে গেছে — সেগুলো remove হবে না, শুধু পাশাপাশি বাংলা গুলোও যোগ হবে। User চাইলে manually delete করতে পারবে।

@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { CatalogProductPicker, type CatalogProduct } from "@/components/app/CatalogProductPicker";
+import { ensureDefaultCategories } from "@/lib/default-categories";
 import { SampleProductImportSheet } from "@/components/app/SampleProductImportSheet";
 import { ProductSerialsDialog } from "@/components/app/ProductSerialsDialog";
 import { ProductDetailsDialog, type ProductFull } from "@/components/app/ProductDetailsDialog";
@@ -54,22 +55,6 @@ const PREDEFINED_UNITS = [
   "pcs", "piece", "ft", "sq.ft", "sq.m", "kg", "gm", "km", "meter", "litre", "ml", "dozen", "pack", "box", "bottle", "bag",
 ] as const;
 
-const DEFAULT_CATEGORY_TREE: { name: string; children?: string[] }[] = [
-  {
-    name: "Electronics and Gadgets",
-    children: [
-      "Battery", "Inverter/EV battery", "BMS/Battery Controller", "Inverter/EV battery charger",
-      "Cable clips/connector/jointer", "Electrical/Electronics service charge", "Power Supply/Adapter",
-      "Gaming Consoles", "Telephones", "Headphones and Microphone", "Internet, Router and Switches", "CCTV Cameras",
-    ],
-  },
-  { name: "Home Appliances" },
-  { name: "Stationary and Office Appliances" },
-  { name: "Clothes" },
-  { name: "Shoes" },
-  { name: "Fashion Accessories" },
-  { name: "Home & Kitchen" },
-];
 
 
 
@@ -631,34 +616,15 @@ function ProductFormDialog({
     setAllCats((data as Cat[] | null) ?? []);
   };
 
-  // Lazy seed default category tree on first open per shop
+  // Ensure all default sample-import categories exist on every dialog open.
+  // The helper is idempotent and per-session cached, so this is essentially
+  // free after the first call per shop.
   useEffect(() => {
     if (!open || !shopId) return;
     let cancelled = false;
     (async () => {
-      const { data: existing } = await supabase
-        .from("categories")
-        .select("id,name,parent_id")
-        .eq("shop_id", shopId);
-      if (cancelled) return;
-      const list = (existing as Cat[] | null) ?? [];
-      if (list.length === 0) {
-        for (const top of DEFAULT_CATEGORY_TREE) {
-          const { data: parent } = await supabase
-            .from("categories")
-            .insert({ shop_id: shopId, name: top.name })
-            .select("id")
-            .single();
-          if (parent && top.children?.length) {
-            await supabase.from("categories").insert(
-              top.children.map((c) => ({ shop_id: shopId, name: c, parent_id: parent.id })),
-            );
-          }
-        }
-        await reloadCats(shopId);
-      } else {
-        setAllCats(list);
-      }
+      await ensureDefaultCategories(shopId);
+      if (!cancelled) await reloadCats(shopId);
     })();
     return () => { cancelled = true; };
   }, [open, shopId]);
