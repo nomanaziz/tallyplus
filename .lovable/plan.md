@@ -1,59 +1,43 @@
-## Goal
-Polish the existing IMEI / Serial workflow so it matches the user's described flow:
-"যদি serialized হয় → start থেকে end পর্যন্ত sequence; যদি non-serialized (random) হয় → প্রতিটি IMEI আলাদা করে input"; sell-time এ ওই serial দিয়ে sell।
+## সমস্যা
 
-## Current State (already working — keep as-is)
-- `product_serials` table with `serial_no`, `imei2`, `status` (in_stock / sold / returned / damaged), `cost_price`, `warranty_until`, `sale_id`, `sale_item_id`.
-- `is_serialized` boolean on `products`.
-- `SerialCaptureDialog` — opens automatically after creating a serialized product with stock>0 (Range / Manual / Skip tabs).
-- `ProductSerialsDialog` — manage serials per product later.
-- `SerialPickDialog` — POS auto-prompts to pick specific serials when selling a serialized product; on sale, those serials flip to `sold` and are linked to the sale_item.
+SMS Gateway page-এ যে চারটা stat card আছে — **SMS Balance / Today's Send / This Month Send / This Month Failed** — এগুলা এখন **REVE-এর live API থেকে আসছে না**। সব আসছে শুধু আমাদের নিজের database (`shop_sms_balance`, `sms_history`) থেকে। তাই ID/password ঠিক দিলেও সব শূন্য দেখাচ্ছে — কারণ এখানে gateway-এ **API call-ই হচ্ছে না**।
 
-## Changes
+বর্তমান code (`SmsGateways.tsx` লাইন 128-149) শুধু Supabase table query করে; REVE-এর `balance`/`usage` endpoint কখনো hit করে না।
 
-### 1. Show "Serialized" toggle for ALL shop types (Products.tsx)
-Currently `showSerializedOption = shopTypeCode === "mobile" || shopTypeCode === "electronics"`. Remove the gate so any shop (grocery, hardware, jewelry, etc.) can mark a product serialized. Place the toggle in the "Advanced Options" section of the product form labeled:
-- BN: "IMEI / সিরিয়াল ট্র্যাকিং" with help text "প্রতিটি ইউনিটের আলাদা IMEI বা সিরিয়াল নম্বর সেভ করুন"
-- EN: "IMEI / Serial tracking"
+## সমাধান
 
-### 2. Redesign Range tab in `SerialCaptureDialog` to Start → End flow
-Replace the current 3-field (Prefix + Start + Pad) with a clearer **2-field** input that matches what the user described ("001 থেকে 010"):
+REVE-এর live API থেকে balance + usage stats আনার জন্য একটা নতুন edge function বানানো হবে, এবং admin page সেটা call করে real data দেখাবে।
 
-```text
-┌─────────────────────────────────────────────┐
-│ মোড: [● ক্রমিক (Sequential)]  [○ র‍্যান্ডম] │
-├─────────────────────────────────────────────┤
-│  শুরু IMEI/সিরিয়াল                          │
-│  [ 350123456789001       ]                  │
-│                                             │
-│  শেষ IMEI/সিরিয়াল  (auto from quantity)    │
-│  [ 350123456789010       ]                  │
-│                                             │
-│  ✓ ১০টি সিরিয়াল জেনারেট হবে                 │
-│  Preview: ...001, ...002, ...003, ... ...010│
-└─────────────────────────────────────────────┘
-```
+### ১. নতুন edge function: `sms-gateway-stats`
 
-Behavior:
-- User types "350123456789001" in Start. The dialog auto-fills End as `350123456789001 + (qty-1)` preserving the same digit length (auto-detects pad from trailing-numeric length of Start).
-- User can edit End. If End doesn't match `Start + qty - 1`, show inline warning: "Range mismatch: Stock = 10 but range generates 12 serials."
-- Validate Start has a numeric tail. If purely alphabetic, show error and switch to Manual mode.
-- Generation: split Start into `prefix + numericTail`. End must share the same prefix (validate). Generate `[prefix + (start_num+i).toString().padStart(tailLen,'0')]` for i in 0..qty-1.
+- Primary active gateway-এর `config` (api_key, secret_key, base_url) load করবে
+- REVE-এর balance API call করবে:
+  - `GET {base_url}/getBalance?apikey=...&secretkey=...`
+- REVE-এর usage/report API call করবে (today, this month sent, this month failed):
+  - `GET {base_url}/getReportByDate?apikey=...&secretkey=...&fromDate=...&toDate=...`
+  - REVE-এর actual endpoint name documentation থেকে নিশ্চিত করা হবে। যদি usage endpoint না থাকে, fallback হিসেবে আমাদের `sms_history` table থেকে count আসবে (যাতে কখনোই blank না দেখায়)।
+- Response shape:
+  ```json
+  { "balance": 1234, "today": 12, "month": 340, "failed": 5, "source": "reve" | "local" | "mixed" }
+  ```
+- Error হলে graceful fallback: `{ "balance": 0, "today": 0, ..., "error": "...", "fallback": true }` — frontend crash হবে না।
 
-The two **Manual** and **Skip** tabs stay unchanged. Rename **Range** tab → **Sequential** (BN: ক্রমিক), **Manual** → **Random** (BN: র‍্যান্ডম) to match the user's wording ("যদি non-serialized হয় তাহলে random হয়").
+### ২. `SmsGateways.tsx` update
 
-### 3. Stock-quantity coupling
-Already coupled — `qty` prop = product.stock. Just add a clear summary banner at top of dialog: "এই পণ্যের জন্য ১০টি সিরিয়াল প্রয়োজন।"
+- Page load ও gateway save-এর পর `supabase.functions.invoke('sms-gateway-stats')` call হবে
+- Stat card-এ live REVE data দেখাবে
+- Loading state এ skeleton/spinner; API fail হলে stat card-এর নিচে ছোট warning text ("Live data unavailable, showing local stats")
+- "Refresh" button যোগ করা হবে stat card row-এর পাশে যাতে user manually re-fetch করতে পারে
 
-### 4. Verification — no changes needed but re-test
-- `ProductSerialsDialog` Bulk add (already supports paste).
-- POS `SerialPickDialog` — already enforces serial selection on serialized products at sell time.
-- On return/recycle flow — out of scope for this turn.
+### ৩. Debug সাপোর্ট
 
-## Files to modify
-- `src/pages/app/Products.tsx` — remove `showSerializedOption` gate (always show); update label/help text.
-- `src/components/app/SerialCaptureDialog.tsx` — rebuild Range tab as Start+End, rename tabs, add summary banner & validation.
+Edge function-এ verbose console.log রাখা হবে (REVE response status, body snippet) যাতে log থেকে দেখা যায় API call হচ্ছে কি না, কী error দিচ্ছে।
 
-## Files NOT changed
-- DB schema — no migration needed.
-- `SerialPickDialog`, `ProductSerialsDialog`, POS sell flow — already work as user described.
+## Files
+
+- নতুন: `supabase/functions/sms-gateway-stats/index.ts`
+- Edit: `src/pages/admin/SmsGateways.tsx` (stats fetch + Refresh button + fallback display)
+
+## Approve করলে
+
+Implement করে আপনাকে edge function logs link দেব, যেখান থেকে দেখা যাবে REVE call হচ্ছে কি না এবং কী return করছে।
