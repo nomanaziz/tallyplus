@@ -4,7 +4,7 @@ import { useAuth } from "@/lib/auth";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/lib/router";
-import { Loader2, Store, ListChecks, Plus, FileText, CalendarClock, Trash2, Pause, Play, Star } from "lucide-react";
+import { Loader2, Store, ListChecks, Plus, FileText, CalendarClock, Trash2, Pause, Play, Star, Check, X, Clock } from "lucide-react";
 import { toast } from "sonner";
 
 type Wishlist = {
@@ -15,6 +15,18 @@ type Wishlist = {
   status: string;
   note: string | null;
   created_at: string;
+};
+
+type WLItem = {
+  id: string;
+  wishlist_id: string;
+  name: string;
+  qty: number | null;
+  unit: string | null;
+  price: number | null;
+  fulfillment_status: string | null;
+  done: boolean;
+  position: number;
 };
 
 type Shop = { id: string; name: string };
@@ -38,21 +50,51 @@ export default function MyFordo() {
   const [templates, setTemplates] = useState<Template[]>([]);
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [favourites, setFavourites] = useState<Shop[]>([]);
+  const [itemsByWl, setItemsByWl] = useState<Record<string, WLItem[]>>({});
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     if (!user) return;
     let cancelled = false;
     void (async () => {
+      // Load consumer profile to also match by phone (in case some wishlists
+      // were created via the public /f/:slug flow without consumer_user_id).
+      const { data: prof } = await supabase
+        .from("consumer_profiles")
+        .select("phone")
+        .eq("id", user.id)
+        .maybeSingle();
+      const phone = (prof as { phone: string | null } | null)?.phone ?? null;
+
+      const orFilter = phone
+        ? `consumer_user_id.eq.${user.id},customer_phone.eq.${phone}`
+        : `consumer_user_id.eq.${user.id}`;
       const { data: wls } = await supabase
         .from("customer_wishlists")
         .select("id, shop_id, customer_name, customer_phone, status, note, created_at")
-        .eq("consumer_user_id", user.id)
+        .or(orFilter)
         .is("deleted_at", null)
         .order("created_at", { ascending: false })
         .limit(100);
       if (cancelled) return;
       const list = (wls ?? []) as Wishlist[];
       setItems(list);
+
+      // Load items for all wishlists
+      if (list.length > 0) {
+        const ids = list.map((w) => w.id);
+        const { data: itRows } = await supabase
+          .from("customer_wishlist_items")
+          .select("id, wishlist_id, name, qty, unit, price, fulfillment_status, done, position")
+          .in("wishlist_id", ids)
+          .order("position", { ascending: true });
+        const map: Record<string, WLItem[]> = {};
+        for (const it of (itRows ?? []) as WLItem[]) {
+          (map[it.wishlist_id] ||= []).push(it);
+        }
+        if (!cancelled) setItemsByWl(map);
+      }
+
       const [tplRes, schRes] = await Promise.all([
         supabase
           .from("consumer_fordo_templates")
@@ -97,6 +139,23 @@ export default function MyFordo() {
     if (error) return toast.error(error.message);
     setTemplates((t) => t.filter((x) => x.id !== id));
     toast.success("মুছে ফেলা হয়েছে");
+  };
+
+  const wlTotal = (wlId: string) => {
+    const arr = itemsByWl[wlId] ?? [];
+    return arr.reduce((sum, it) => {
+      const q = Number(it.qty) || 0;
+      const pr = Number(it.price) || 0;
+      return sum + (q && pr ? q * pr : pr);
+    }, 0);
+  };
+
+  const fsBadge = (it: WLItem) => {
+    const fs = it.fulfillment_status ?? (it.done ? "fulfilled" : "pending");
+    if (fs === "fulfilled") return <span className="inline-flex items-center gap-0.5 rounded bg-success/15 px-1.5 py-0.5 text-[10px] font-medium text-success"><Check className="h-3 w-3" />পেয়েছে</span>;
+    if (fs === "unavailable") return <span className="inline-flex items-center gap-0.5 rounded bg-destructive/15 px-1.5 py-0.5 text-[10px] font-medium text-destructive"><X className="h-3 w-3" />নাই</span>;
+    if (fs === "later") return <span className="inline-flex items-center gap-0.5 rounded bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-medium text-amber-600"><Clock className="h-3 w-3" />পরে</span>;
+    return null;
   };
 
   const toggleSchedule = async (s: Schedule) => {
@@ -233,27 +292,79 @@ export default function MyFordo() {
         </Card>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2">
-          {items.map((w) => (
-            <Card key={w.id} className="p-4">
-              <div className="flex items-start gap-3">
-                <div className="flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-primary/10 text-primary">
-                  <Store className="h-5 w-5" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="truncate font-semibold">{shops[w.shop_id]?.name ?? "Shop"}</div>
-                  <div className="text-xs text-muted-foreground">
-                    {new Date(w.created_at).toLocaleString("bn-BD")}
+          {items.map((w) => {
+            const wlItems = itemsByWl[w.id] ?? [];
+            const total = wlTotal(w.id);
+            const isOpen = !!expanded[w.id];
+            const statusLabel = w.status === "done" ? "সম্পন্ন" : w.status === "seen" ? "দেখেছে" : "নতুন";
+            const statusCls = w.status === "done" ? "bg-success/15 text-success" : w.status === "seen" ? "bg-muted text-muted-foreground" : "bg-primary/15 text-primary";
+            return (
+              <Card key={w.id} className="p-4">
+                <div className="flex items-start gap-3">
+                  <div className="flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-primary/10 text-primary">
+                    <Store className="h-5 w-5" />
                   </div>
-                  {w.note && (
-                    <p className="mt-2 line-clamp-2 text-xs text-muted-foreground">{w.note}</p>
-                  )}
-                  <div className="mt-2 inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium capitalize">
-                    {w.status}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <div className="truncate font-semibold">{shops[w.shop_id]?.name ?? "Shop"}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {new Date(w.created_at).toLocaleString("bn-BD")}
+                        </div>
+                      </div>
+                      <span className={`inline-flex flex-none items-center rounded-full px-2 py-0.5 text-[11px] font-medium ${statusCls}`}>
+                        {statusLabel}
+                      </span>
+                    </div>
+                    {w.note && (
+                      <p className="mt-2 line-clamp-2 text-xs text-muted-foreground">📝 {w.note}</p>
+                    )}
+                    <div className="mt-2 flex items-center justify-between text-xs">
+                      <span className="text-muted-foreground">{wlItems.length} পণ্য</span>
+                      {total > 0 && (
+                        <span className="font-bold text-primary tabular-nums">৳ {total.toLocaleString("bn-BD", { maximumFractionDigits: 2 })}</span>
+                      )}
+                    </div>
+                    {wlItems.length > 0 && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => setExpanded((m) => ({ ...m, [w.id]: !isOpen }))}
+                          className="mt-2 text-xs font-medium text-primary hover:underline"
+                        >
+                          {isOpen ? "তালিকা লুকান" : "তালিকা দেখুন"}
+                        </button>
+                        {isOpen && (
+                          <ul className="mt-2 divide-y rounded-md border bg-muted/30 text-xs">
+                            {wlItems.map((it) => {
+                              const q = Number(it.qty) || 0;
+                              const pr = Number(it.price) || 0;
+                              const line = q && pr ? q * pr : pr;
+                              const fs = it.fulfillment_status ?? (it.done ? "fulfilled" : "pending");
+                              return (
+                                <li key={it.id} className="flex items-center justify-between gap-2 px-2 py-1.5">
+                                  <div className="min-w-0 flex-1">
+                                    <div className={`truncate font-medium ${fs === "unavailable" ? "text-muted-foreground line-through" : ""}`}>
+                                      {it.name}
+                                      {it.qty ? <span className="text-muted-foreground"> — {it.qty}{it.unit ? ` ${it.unit}` : ""}</span> : null}
+                                    </div>
+                                    <div className="mt-0.5">{fsBadge(it)}</div>
+                                  </div>
+                                  {line > 0 && (
+                                    <span className="flex-none font-semibold tabular-nums text-foreground">৳{line.toLocaleString("bn-BD", { maximumFractionDigits: 2 })}</span>
+                                  )}
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        )}
+                      </>
+                    )}
                   </div>
                 </div>
-              </div>
-            </Card>
-          ))}
+              </Card>
+            );
+          })}
         </div>
       )}
     </div>
