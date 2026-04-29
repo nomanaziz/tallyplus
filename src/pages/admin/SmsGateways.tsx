@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,96 +8,220 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Plus, Pencil, Trash2, Star, Loader2, Save } from "lucide-react";
+import {
+  Plus,
+  Pencil,
+  Trash2,
+  Loader2,
+  Save,
+  Mail,
+  CheckCircle2,
+  Hourglass,
+  XCircle,
+  CheckCircle,
+  MessageSquare,
+  User,
+  KeyRound,
+  ChevronDown,
+} from "lucide-react";
 import { toast } from "sonner";
+
+// ============================================================
+// Provider options shown in the SMS Settings dropdown
+// ============================================================
+type ProviderOption = {
+  key: string;            // unique key e.g. "reve:masking"
+  label: string;          // shown in dropdown + as display_name
+  provider: "reve" | "whatsapp" | "telegram";
+  masking: "masking" | "non-masking";
+  comingSoon?: boolean;
+};
+
+const PROVIDER_OPTIONS: ProviderOption[] = [
+  { key: "reve:masking", label: "REVE SMS (Masking)", provider: "reve", masking: "masking" },
+  { key: "reve:non-masking", label: "REVE SMS (Non-masking)", provider: "reve", masking: "non-masking" },
+  { key: "whatsapp:non-masking", label: "WhatsApp (coming soon)", provider: "whatsapp", masking: "non-masking", comingSoon: true },
+  { key: "telegram:non-masking", label: "Telegram (coming soon)", provider: "telegram", masking: "non-masking", comingSoon: true },
+];
+
+function defaultBaseUrl(provider: string) {
+  if (provider === "reve") return "http://smpp.revesms.com:7788";
+  return "";
+}
 
 type Gateway = {
   id: string;
-  provider: "reve" | "whatsapp" | "telegram" | "other";
+  provider: string;
   display_name: string;
   is_active: boolean;
   is_primary: boolean;
   sort_order: number;
   config: Record<string, any>;
 };
-
 type Pkg = { id: string; name_bn: string; name_en: string; sms_count: number; price_bdt: number; is_active: boolean; sort_order: number };
 type Template = { id: string; code: string; name_bn: string; name_en: string; body_template: string; is_active: boolean; sort_order: number };
 
-const PROVIDERS = [
-  { value: "reve", label: "REVE SMS", masking: true },
-  { value: "whatsapp", label: "WhatsApp", masking: false },
-  { value: "telegram", label: "Telegram", masking: false },
-  { value: "other", label: "Other", masking: false },
-];
-
-function blankGateway(): Omit<Gateway, "id"> {
-  return {
-    provider: "reve",
-    display_name: "REVE SMS",
-    is_active: true,
-    is_primary: false,
-    sort_order: 0,
-    config: { base_url: "http://smpp.revesms.com:7788", api_key: "", secret_key: "", sender_id: "", masking: "non-masking", username: "", password: "" },
-  };
+// ============================================================
+// Stat card
+// ============================================================
+function StatCard({
+  color, icon: Icon, label, value, footer,
+}: { color: string; icon: any; label: string; value: string | number; footer: string }) {
+  return (
+    <div className={`rounded-md text-white shadow-sm ${color}`}>
+      <div className="flex items-center gap-4 p-5">
+        <Icon className="h-12 w-12 opacity-90" strokeWidth={1.5} />
+        <div className="min-w-0">
+          <div className="text-sm font-medium opacity-90">{label}</div>
+          <div className="text-3xl font-extrabold leading-tight">{value}</div>
+        </div>
+      </div>
+      <div className="border-t border-white/20 px-4 py-1.5 text-center text-[11px] font-medium opacity-90">
+        {footer}
+      </div>
+    </div>
+  );
 }
 
+// ============================================================
+// Main page
+// ============================================================
 export default function AdminSmsGateways() {
-  const [tab, setTab] = useState("gateways");
   const [loading, setLoading] = useState(true);
 
-  const [gateways, setGateways] = useState<Gateway[]>([]);
-  const [editingGw, setEditingGw] = useState<(Omit<Gateway, "id"> & { id?: string }) | null>(null);
+  // Stats
+  const [stats, setStats] = useState({ balance: 0, today: 0, month: 0, failed: 0 });
 
+  // Gateways (full list, but only the primary/selected one is edited inline)
+  const [gateways, setGateways] = useState<Gateway[]>([]);
+  const [providerKey, setProviderKey] = useState<string>("reve:non-masking");
+  const [sender, setSender] = useState("");
+  const [userName, setUserName] = useState("");
+  const [password, setPassword] = useState("");
+  const [active, setActive] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  // Secondary tabs
+  const [tab, setTab] = useState<"gateway" | "packages" | "templates">("gateway");
+
+  // Packages & Templates
   const [packages, setPackages] = useState<Pkg[]>([]);
   const [editingPkg, setEditingPkg] = useState<(Omit<Pkg, "id"> & { id?: string }) | null>(null);
-
   const [templates, setTemplates] = useState<Template[]>([]);
   const [editingTpl, setEditingTpl] = useState<(Omit<Template, "id"> & { id?: string }) | null>(null);
 
+  // ========== Load ==========
   const loadAll = async () => {
     setLoading(true);
-    const [{ data: g }, { data: p }, { data: t }] = await Promise.all([
+    const monthStart = new Date();
+    monthStart.setDate(1); monthStart.setHours(0, 0, 0, 0);
+    const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
+
+    const [
+      { data: g },
+      { data: p },
+      { data: t },
+      { data: bal },
+      { count: todaySent },
+      { count: monthSent },
+      { count: monthFailed },
+    ] = await Promise.all([
       supabase.from("sms_gateways").select("*").order("sort_order").order("created_at"),
       supabase.from("sms_packages").select("*").order("sort_order").order("sms_count"),
       supabase.from("sms_templates").select("*").order("sort_order").order("code"),
+      supabase.from("shop_sms_balance").select("balance"),
+      supabase.from("sms_history").select("*", { count: "exact", head: true }).eq("status", "sent").gte("created_at", todayStart.toISOString()),
+      supabase.from("sms_history").select("*", { count: "exact", head: true }).eq("status", "sent").gte("created_at", monthStart.toISOString()),
+      supabase.from("sms_history").select("*", { count: "exact", head: true }).eq("status", "failed").gte("created_at", monthStart.toISOString()),
     ]);
-    setGateways((g as Gateway[]) ?? []);
+
+    const gws = (g as Gateway[]) ?? [];
+    setGateways(gws);
     setPackages((p as Pkg[]) ?? []);
     setTemplates((t as Template[]) ?? []);
+
+    const totalBal = (bal ?? []).reduce((s: number, r: any) => s + Number(r.balance ?? 0), 0);
+    setStats({
+      balance: totalBal,
+      today: todaySent ?? 0,
+      month: monthSent ?? 0,
+      failed: monthFailed ?? 0,
+    });
+
+    // Pick primary gateway as the inline-form value
+    const primary =
+      gws.find((x) => x.is_primary && x.is_active) ||
+      gws.find((x) => x.is_active) ||
+      gws[0];
+    if (primary) {
+      const masking = (primary.config?.masking as string) === "masking" ? "masking" : "non-masking";
+      const key = `${primary.provider}:${masking}`;
+      setProviderKey(PROVIDER_OPTIONS.find((o) => o.key === key)?.key ?? "reve:non-masking");
+      setSender(primary.config?.sender_id ?? "");
+      setUserName(primary.config?.api_key ?? primary.config?.username ?? "");
+      setPassword(primary.config?.secret_key ?? primary.config?.password ?? "");
+      setActive(primary.is_active);
+    }
     setLoading(false);
   };
   useEffect(() => { loadAll(); }, []);
 
-  // Gateway save
-  const saveGw = async () => {
-    if (!editingGw) return;
-    const payload = { ...editingGw };
-    let err;
-    if (editingGw.id) {
-      const { id, ...rest } = payload;
-      ({ error: err } = await supabase.from("sms_gateways").update(rest).eq("id", id!));
-    } else {
-      ({ error: err } = await supabase.from("sms_gateways").insert(payload));
+  // ========== Save settings (single primary gateway) ==========
+  const opt = useMemo(() => PROVIDER_OPTIONS.find((o) => o.key === providerKey)!, [providerKey]);
+
+  const saveSettings = async () => {
+    if (opt.comingSoon) {
+      toast.error(`${opt.label} এখনো support করা হচ্ছে না`);
+      return;
     }
-    if (err) { toast.error(err.message); return; }
-    toast.success("Saved");
-    setEditingGw(null);
-    loadAll();
-  };
-  const delGw = async (id: string) => {
-    if (!confirm("Delete this gateway?")) return;
-    const { error } = await supabase.from("sms_gateways").delete().eq("id", id);
-    if (error) { toast.error(error.message); return; }
-    toast.success("Deleted"); loadAll();
-  };
-  const setPrimary = async (id: string) => {
-    const { error } = await supabase.from("sms_gateways").update({ is_primary: true }).eq("id", id);
-    if (error) { toast.error(error.message); return; }
-    toast.success("Set as primary"); loadAll();
+    setSaving(true);
+    try {
+      // Find existing row for this provider+masking, or create new
+      const existing = gateways.find(
+        (g) => g.provider === opt.provider && (g.config?.masking ?? "non-masking") === opt.masking
+      );
+      const config = {
+        base_url: existing?.config?.base_url || defaultBaseUrl(opt.provider),
+        sender_id: sender.trim(),
+        masking: opt.masking,
+        // Mirror creds in both shapes so REVE works either way
+        api_key: userName.trim(),
+        secret_key: password,
+        username: userName.trim(),
+        password,
+      };
+      const payload = {
+        provider: opt.provider,
+        display_name: opt.label,
+        is_active: active,
+        is_primary: true,
+        sort_order: 0,
+        config,
+      };
+      let err;
+      if (existing) {
+        ({ error: err } = await supabase.from("sms_gateways").update(payload).eq("id", existing.id));
+      } else {
+        ({ error: err } = await supabase.from("sms_gateways").insert(payload));
+      }
+      if (err) throw err;
+
+      // Demote others from primary
+      const otherIds = gateways.filter((g) => g.id !== existing?.id).map((g) => g.id);
+      if (otherIds.length) {
+        await supabase.from("sms_gateways").update({ is_primary: false }).in("id", otherIds);
+      }
+
+      toast.success("Company information updated");
+      loadAll();
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setSaving(false);
+    }
   };
 
-  // Package save
+  // ========== Packages ==========
   const savePkg = async () => {
     if (!editingPkg) return;
     let err;
@@ -117,7 +241,7 @@ export default function AdminSmsGateways() {
     loadAll();
   };
 
-  // Template save
+  // ========== Templates ==========
   const saveTpl = async () => {
     if (!editingTpl) return;
     let err;
@@ -131,152 +255,159 @@ export default function AdminSmsGateways() {
     toast.success("Saved"); setEditingTpl(null); loadAll();
   };
 
-  if (loading) return <div className="flex h-96 items-center justify-center"><Loader2 className="h-6 w-6 animate-spin" /></div>;
+  if (loading)
+    return <div className="flex h-96 items-center justify-center"><Loader2 className="h-6 w-6 animate-spin" /></div>;
 
   return (
-    <div className="container max-w-6xl px-3 py-4 sm:px-4">
-      <h1 className="mb-4 text-2xl font-bold">SMS Gateways & Packages</h1>
+    <div className="min-h-full bg-muted/30">
+      {/* Breadcrumb header */}
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b bg-background px-4 py-3">
+        <div className="flex items-center gap-2 text-sm">
+          <MessageSquare className="h-5 w-5 text-sky-600" />
+          <span className="text-base font-bold text-sky-700">SMS Service</span>
+          <span className="text-xs text-muted-foreground">SMS Gateway Setup</span>
+        </div>
+        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+          <MessageSquare className="h-3.5 w-3.5" /> SMS Service
+          <span className="mx-1">›</span>
+          SMS Gateway Setup
+        </div>
+      </div>
 
-      <Tabs value={tab} onValueChange={setTab}>
-        <TabsList>
-          <TabsTrigger value="gateways">Gateways</TabsTrigger>
-          <TabsTrigger value="packages">Packages</TabsTrigger>
-          <TabsTrigger value="templates">Templates</TabsTrigger>
-        </TabsList>
+      <div className="container max-w-7xl px-3 py-4 sm:px-4">
+        {/* ============== Stat cards ============== */}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <StatCard color="bg-emerald-500" icon={Mail} label="SMS Balance" value={stats.balance.toLocaleString()} footer="Total SMS Remaining Balance" />
+          <StatCard color="bg-sky-500" icon={CheckCircle2} label="Todays Send" value={stats.today.toLocaleString()} footer="Total SMS Send Today" />
+          <StatCard color="bg-amber-500" icon={Hourglass} label="This Month Send" value={stats.month.toLocaleString()} footer="Total SMS Send in This Month" />
+          <StatCard color="bg-rose-500" icon={XCircle} label="This Month Failed" value={stats.failed.toLocaleString()} footer="Total SMS Sending failed in This Month" />
+        </div>
 
-        {/* Gateways */}
-        <TabsContent value="gateways" className="mt-4 space-y-3">
-          <div className="flex justify-end">
-            <Button onClick={() => setEditingGw(blankGateway())} className="gap-1"><Plus className="h-4 w-4" /> Add Gateway</Button>
-          </div>
-          <div className="rounded-xl border bg-background">
-            {gateways.length === 0 ? (
-              <div className="p-8 text-center text-sm text-muted-foreground">No gateways. Add one to start sending SMS.</div>
-            ) : gateways.map((g) => (
-              <div key={g.id} className="flex flex-wrap items-center gap-3 border-b p-3 last:border-b-0">
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold">{g.display_name}</span>
-                    <span className="rounded bg-muted px-2 py-0.5 text-xs uppercase">{g.provider}</span>
-                    {g.is_primary && <span className="inline-flex items-center gap-1 rounded bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700"><Star className="h-3 w-3" />Primary</span>}
-                    {!g.is_active && <span className="rounded bg-rose-100 px-2 py-0.5 text-xs text-rose-700">Disabled</span>}
-                  </div>
-                  <div className="mt-0.5 truncate text-xs text-muted-foreground">
-                    Sender: {g.config?.sender_id || "—"} • {g.config?.masking || "non-masking"} • {g.config?.base_url || ""}
-                  </div>
+        {/* ============== Secondary tabs ============== */}
+        <div className="mt-6">
+          <Tabs value={tab} onValueChange={(v) => setTab(v as any)}>
+            <TabsList>
+              <TabsTrigger value="gateway">Gateway Setup</TabsTrigger>
+              <TabsTrigger value="packages">Packages</TabsTrigger>
+              <TabsTrigger value="templates">Templates</TabsTrigger>
+            </TabsList>
+
+            {/* ===== Gateway Setup form ===== */}
+            <TabsContent value="gateway" className="mt-3">
+              <div className="overflow-hidden rounded-md border bg-background shadow-sm">
+                <div className="flex items-center gap-2 bg-slate-700 px-4 py-3 text-white">
+                  <MessageSquare className="h-4 w-4" />
+                  <span className="text-sm font-semibold">SMS Settings</span>
                 </div>
-                {!g.is_primary && g.is_active && (
-                  <Button size="sm" variant="outline" onClick={() => setPrimary(g.id)} className="gap-1"><Star className="h-3 w-3" />Set Primary</Button>
-                )}
-                <Button size="sm" variant="outline" onClick={() => setEditingGw(g)}><Pencil className="h-4 w-4" /></Button>
-                <Button size="sm" variant="outline" onClick={() => delGw(g.id)} className="text-rose-600"><Trash2 className="h-4 w-4" /></Button>
-              </div>
-            ))}
-          </div>
-        </TabsContent>
+                <div className="p-5">
+                  <div className="grid gap-5 md:grid-cols-2">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Sms Provider</Label>
+                      <div className="relative">
+                        <ChevronDown className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Select value={providerKey} onValueChange={setProviderKey}>
+                          <SelectTrigger className="h-11 pl-9"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            {PROVIDER_OPTIONS.map((o) => (
+                              <SelectItem key={o.key} value={o.key}>{o.label}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
 
-        {/* Packages */}
-        <TabsContent value="packages" className="mt-4 space-y-3">
-          <div className="flex justify-end">
-            <Button onClick={() => setEditingPkg({ name_bn: "", name_en: "", sms_count: 100, price_bdt: 100, is_active: true, sort_order: 0 })} className="gap-1"><Plus className="h-4 w-4" /> Add Package</Button>
-          </div>
-          <div className="rounded-xl border bg-background">
-            {packages.length === 0 ? (
-              <div className="p-8 text-center text-sm text-muted-foreground">No packages yet.</div>
-            ) : packages.map((p) => (
-              <div key={p.id} className="flex flex-wrap items-center gap-3 border-b p-3 last:border-b-0">
-                <div className="min-w-0 flex-1">
-                  <div className="font-semibold">{p.name_bn} <span className="text-xs text-muted-foreground">({p.name_en})</span></div>
-                  <div className="text-sm text-muted-foreground">{p.sms_count} SMS • ৳{p.price_bdt} {!p.is_active && <span className="ml-1 rounded bg-rose-100 px-1.5 text-xs text-rose-700">Disabled</span>}</div>
-                </div>
-                <Button size="sm" variant="outline" onClick={() => setEditingPkg(p)}><Pencil className="h-4 w-4" /></Button>
-                <Button size="sm" variant="outline" onClick={() => delPkg(p.id)} className="text-rose-600"><Trash2 className="h-4 w-4" /></Button>
-              </div>
-            ))}
-          </div>
-        </TabsContent>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">SMS User Name</Label>
+                      <div className="relative">
+                        <User className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input className="h-11 pl-9" value={userName} onChange={(e) => setUserName(e.target.value)} placeholder="API key or Username" />
+                      </div>
+                    </div>
 
-        {/* Templates */}
-        <TabsContent value="templates" className="mt-4 space-y-3">
-          <div className="rounded-md border bg-muted/30 p-3 text-xs text-muted-foreground">
-            Placeholders: <code>{"{name}"}</code>, <code>{"{amount}"}</code>, <code>{"{due}"}</code>. Shop signature is appended automatically.
-          </div>
-          <div className="rounded-xl border bg-background">
-            {templates.map((t) => (
-              <div key={t.id} className="flex flex-wrap items-start gap-3 border-b p-3 last:border-b-0">
-                <div className="min-w-0 flex-1">
-                  <div className="font-semibold">{t.name_bn} <span className="text-xs text-muted-foreground">({t.code})</span></div>
-                  <div className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">{t.body_template}</div>
-                </div>
-                <Button size="sm" variant="outline" onClick={() => setEditingTpl(t)}><Pencil className="h-4 w-4" /></Button>
-              </div>
-            ))}
-          </div>
-        </TabsContent>
-      </Tabs>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">SMS Sender</Label>
+                      <div className="relative">
+                        <User className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input className="h-11 pl-9" value={sender} onChange={(e) => setSender(e.target.value)} placeholder="e.g. nomask_GalaxyNet or 8809612xxxxx" />
+                      </div>
+                    </div>
 
-      {/* Gateway dialog */}
-      <Dialog open={!!editingGw} onOpenChange={(o) => !o && setEditingGw(null)}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader><DialogTitle>{editingGw?.id ? "Edit" : "Add"} SMS Gateway</DialogTitle></DialogHeader>
-          {editingGw && (
-            <div className="space-y-3">
-              <div>
-                <Label>Provider</Label>
-                <Select value={editingGw.provider} onValueChange={(v) => setEditingGw({ ...editingGw, provider: v as any })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {PROVIDERS.map(p => <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Display Name</Label>
-                <Input value={editingGw.display_name} onChange={(e) => setEditingGw({ ...editingGw, display_name: e.target.value })} />
-              </div>
-              {editingGw.provider === "reve" && (
-                <>
-                  <div><Label>Base URL</Label><Input value={editingGw.config.base_url || ""} onChange={(e) => setEditingGw({ ...editingGw, config: { ...editingGw.config, base_url: e.target.value } })} /></div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div><Label>API Key</Label><Input value={editingGw.config.api_key || ""} onChange={(e) => setEditingGw({ ...editingGw, config: { ...editingGw.config, api_key: e.target.value } })} /></div>
-                    <div><Label>Secret Key</Label><Input value={editingGw.config.secret_key || ""} onChange={(e) => setEditingGw({ ...editingGw, config: { ...editingGw.config, secret_key: e.target.value } })} /></div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div><Label>Username (optional)</Label><Input value={editingGw.config.username || ""} onChange={(e) => setEditingGw({ ...editingGw, config: { ...editingGw.config, username: e.target.value } })} /></div>
-                    <div><Label>Password (optional)</Label><Input type="password" value={editingGw.config.password || ""} onChange={(e) => setEditingGw({ ...editingGw, config: { ...editingGw.config, password: e.target.value } })} /></div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div><Label>Sender ID (callerID)</Label><Input value={editingGw.config.sender_id || ""} onChange={(e) => setEditingGw({ ...editingGw, config: { ...editingGw.config, sender_id: e.target.value } })} placeholder="8809612xxxxx" /></div>
-                    <div>
-                      <Label>Type</Label>
-                      <Select value={editingGw.config.masking || "non-masking"} onValueChange={(v) => setEditingGw({ ...editingGw, config: { ...editingGw.config, masking: v } })}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="masking">Masking</SelectItem>
-                          <SelectItem value="non-masking">Non-masking</SelectItem>
-                        </SelectContent>
-                      </Select>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">SMS Password</Label>
+                      <div className="relative">
+                        <KeyRound className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input type="password" className="h-11 pl-9" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Secret key or Password" />
+                      </div>
                     </div>
                   </div>
-                </>
-              )}
-              {editingGw.provider !== "reve" && (
-                <div className="rounded-md border bg-muted/30 p-3 text-xs text-muted-foreground">
-                  {editingGw.provider === "whatsapp" ? "WhatsApp" : editingGw.provider === "telegram" ? "Telegram" : "Other"} provider — coming soon. You can save credentials but sending is not yet implemented.
+
+                  <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+                    <div className="flex items-center gap-2">
+                      <Switch checked={active} onCheckedChange={setActive} />
+                      <Label className="text-sm">Active</Label>
+                    </div>
+                    <Button
+                      onClick={saveSettings}
+                      disabled={saving || opt.comingSoon}
+                      className="h-11 gap-2 bg-slate-700 px-5 text-white hover:bg-slate-800"
+                    >
+                      {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4" />}
+                      Update Company Information
+                    </Button>
+                  </div>
+
+                  {opt.comingSoon && (
+                    <div className="mt-3 rounded-md border bg-amber-50 p-3 text-xs text-amber-800">
+                      {opt.label} — এখনো support করা হচ্ছে না, শীঘ্রই আসছে।
+                    </div>
+                  )}
                 </div>
-              )}
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2"><Switch checked={editingGw.is_active} onCheckedChange={(v) => setEditingGw({ ...editingGw, is_active: v })} /><Label>Active</Label></div>
-                <div className="flex items-center gap-2"><Switch checked={editingGw.is_primary} onCheckedChange={(v) => setEditingGw({ ...editingGw, is_primary: v })} /><Label>Set as Primary</Label></div>
               </div>
-            </div>
-          )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEditingGw(null)}>Cancel</Button>
-            <Button onClick={saveGw} className="gap-1"><Save className="h-4 w-4" />Save</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            </TabsContent>
+
+            {/* ===== Packages ===== */}
+            <TabsContent value="packages" className="mt-3 space-y-3">
+              <div className="flex justify-end">
+                <Button onClick={() => setEditingPkg({ name_bn: "", name_en: "", sms_count: 100, price_bdt: 100, is_active: true, sort_order: 0 })} className="gap-1">
+                  <Plus className="h-4 w-4" /> Add Package
+                </Button>
+              </div>
+              <div className="rounded-xl border bg-background">
+                {packages.length === 0 ? (
+                  <div className="p-8 text-center text-sm text-muted-foreground">No packages yet.</div>
+                ) : packages.map((p) => (
+                  <div key={p.id} className="flex flex-wrap items-center gap-3 border-b p-3 last:border-b-0">
+                    <div className="min-w-0 flex-1">
+                      <div className="font-semibold">{p.name_bn} <span className="text-xs text-muted-foreground">({p.name_en})</span></div>
+                      <div className="text-sm text-muted-foreground">{p.sms_count} SMS • ৳{p.price_bdt}{!p.is_active && <span className="ml-2 rounded bg-rose-100 px-1.5 text-xs text-rose-700">Disabled</span>}</div>
+                    </div>
+                    <Button size="sm" variant="outline" onClick={() => setEditingPkg(p)}><Pencil className="h-4 w-4" /></Button>
+                    <Button size="sm" variant="outline" onClick={() => delPkg(p.id)} className="text-rose-600"><Trash2 className="h-4 w-4" /></Button>
+                  </div>
+                ))}
+              </div>
+            </TabsContent>
+
+            {/* ===== Templates ===== */}
+            <TabsContent value="templates" className="mt-3 space-y-3">
+              <div className="rounded-md border bg-muted/30 p-3 text-xs text-muted-foreground">
+                Placeholders: <code>{"{name}"}</code>, <code>{"{amount}"}</code>, <code>{"{due}"}</code>. Shop signature is appended automatically.
+              </div>
+              <div className="rounded-xl border bg-background">
+                {templates.map((t) => (
+                  <div key={t.id} className="flex flex-wrap items-start gap-3 border-b p-3 last:border-b-0">
+                    <div className="min-w-0 flex-1">
+                      <div className="font-semibold">{t.name_bn} <span className="text-xs text-muted-foreground">({t.code})</span></div>
+                      <div className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">{t.body_template}</div>
+                    </div>
+                    <Button size="sm" variant="outline" onClick={() => setEditingTpl(t)}><Pencil className="h-4 w-4" /></Button>
+                  </div>
+                ))}
+              </div>
+            </TabsContent>
+          </Tabs>
+        </div>
+      </div>
 
       {/* Package dialog */}
       <Dialog open={!!editingPkg} onOpenChange={(o) => !o && setEditingPkg(null)}>
@@ -297,7 +428,7 @@ export default function AdminSmsGateways() {
           )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditingPkg(null)}>Cancel</Button>
-            <Button onClick={savePkg}>Save</Button>
+            <Button onClick={savePkg} className="gap-1"><Save className="h-4 w-4" />Save</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -316,7 +447,7 @@ export default function AdminSmsGateways() {
           )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditingTpl(null)}>Cancel</Button>
-            <Button onClick={saveTpl}>Save</Button>
+            <Button onClick={saveTpl} className="gap-1"><Save className="h-4 w-4" />Save</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
