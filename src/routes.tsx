@@ -97,6 +97,9 @@ const P87 = lazy(() => import("./pages/admin/Ads"));
 const P88 = lazy(() => import("./pages/Privacy"));
 const P89 = lazy(() => import("./pages/Terms"));
 const P90 = lazy(() => import("./pages/app/DueHistory"));
+const P91 = lazy(() => import("./pages/app/BuySms"));
+const P92 = lazy(() => import("./pages/app/SmsHistory"));
+const P93 = lazy(() => import("./pages/admin/SmsGateways"));
 
 export function AppRoutes() {
   return (
@@ -122,6 +125,7 @@ export function AppRoutes() {
       <Route path="users" element={<S><P13 /></S>} />
       <Route path="locations" element={<S><P86 /></S>} />
       <Route path="ads" element={<S><P87 /></S>} />
+      <Route path="sms-gateways" element={<S><P93 /></S>} />
       </Route>
       <Route path="/affiliate" element={<S><P15 /></S>}>
       <Route path="register" element={<S><P14 /></S>} />
@@ -137,6 +141,8 @@ export function AppRoutes() {
       <Route path="dashboard" element={<S><P23 /></S>} />
       <Route path="due-ledger" element={<S><P24 /></S>} />
       <Route path="due-history" element={<S><P90 /></S>} />
+      <Route path="buy-sms" element={<S><P91 /></S>} />
+      <Route path="sms-history" element={<S><P92 /></S>} />
       <Route path="expense-ledger" element={<S><P25 /></S>} />
       <Route path="expiring" element={<S><P26 /></S>} />
       <Route path="fordo-history" element={<S><P27 /></S>} />
