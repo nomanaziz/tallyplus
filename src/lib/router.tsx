@@ -69,22 +69,20 @@ export const Link = forwardRef<HTMLAnchorElement, LinkProps>(function Link(
   ref
 ) {
   const finalTo = buildPath(to, params, search, hash);
-  // Kick off the JS chunk download as soon as the user shows intent to navigate
-  // (hover / touch / keyboard focus). preload defaults to "intent" — pass
-  // preload={false} or preload="none" to opt out.
+  // Only fire prefetch on touchstart (mobile primary signal). Skip hover/focus
+  // wrappers — they triggered re-render churn on big lists. preload={false}
+  // disables entirely.
   const preloadEnabled = preload !== false && preload !== "none";
-  const fire = preloadEnabled ? () => { try { prefetchRoute(finalTo); } catch { /* ignore */ } } : undefined;
   const r = rest as Record<string, unknown>;
-  const userOnMouseEnter = r.onMouseEnter as React.MouseEventHandler<HTMLAnchorElement> | undefined;
   const userOnTouchStart = r.onTouchStart as React.TouchEventHandler<HTMLAnchorElement> | undefined;
-  const userOnFocus = r.onFocus as React.FocusEventHandler<HTMLAnchorElement> | undefined;
-  const onMouseEnter: React.MouseEventHandler<HTMLAnchorElement> = (e) => { if (fire) fire(); if (userOnMouseEnter) userOnMouseEnter(e); };
-  const onTouchStart: React.TouchEventHandler<HTMLAnchorElement> = (e) => { if (fire) fire(); if (userOnTouchStart) userOnTouchStart(e); };
-  const onFocus: React.FocusEventHandler<HTMLAnchorElement> = (e) => { if (fire) fire(); if (userOnFocus) userOnFocus(e); };
+  const onTouchStart: React.TouchEventHandler<HTMLAnchorElement> | undefined = preloadEnabled
+    ? (e) => {
+        try { prefetchRoute(finalTo); } catch { /* ignore */ }
+        if (userOnTouchStart) userOnTouchStart(e);
+      }
+    : userOnTouchStart;
   const restNoHandlers: Record<string, unknown> = { ...r };
-  delete restNoHandlers.onMouseEnter;
-  delete restNoHandlers.onTouchStart;
-  delete restNoHandlers.onFocus;
+  if (preloadEnabled) delete restNoHandlers.onTouchStart;
   if (activeProps || inactiveProps) {
     return (
       <NavLink
@@ -100,9 +98,7 @@ export const Link = forwardRef<HTMLAnchorElement, LinkProps>(function Link(
           ...(typeof style === "object" && style ? style : {}),
           ...(isActive ? activeProps?.style : inactiveProps?.style),
         })}
-        onMouseEnter={onMouseEnter}
         onTouchStart={onTouchStart}
-        onFocus={onFocus}
         {...restNoHandlers}
       >
         {children}
@@ -115,9 +111,7 @@ export const Link = forwardRef<HTMLAnchorElement, LinkProps>(function Link(
       to={finalTo}
       className={className}
       style={style}
-      onMouseEnter={onMouseEnter}
       onTouchStart={onTouchStart}
-      onFocus={onFocus}
       {...restNoHandlers}
     >
       {children}

@@ -3729,6 +3729,7 @@ export type Database = {
         Returns: boolean
       }
       my_account: { Args: never; Returns: Json }
+      my_account_resolve: { Args: never; Returns: Json }
       my_shop_perms: { Args: { _shop_id: string }; Returns: Json }
       notify_shop_members: {
         Args: {
