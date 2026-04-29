@@ -1240,7 +1240,10 @@ function ProductFormDialog({
           >
             <div className="grid gap-1.5">
               <Label>{lang === "bn" ? "বারকোড" : "Barcode"}</Label>
-              <Input value={barcode} onChange={(e) => setBarcode(e.target.value)} />
+              <div className="flex gap-2">
+                <Input value={barcode} onChange={(e) => setBarcode(e.target.value)} />
+                <BarcodeScannerButton onDetected={(code) => setBarcode(code)} />
+              </div>
             </div>
           </ToggleSection>
         </div>
