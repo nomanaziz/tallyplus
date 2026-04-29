@@ -64,13 +64,13 @@ function OwnerReportPage() {
         actions={
           <>
             <DateRangePicker value={range} onChange={setRange} />
-            <Button size="sm" variant="outline" onClick={() => refetch()} disabled={isFetching}>
+            <Button variant="outline" className="h-10 gap-2" onClick={() => refetch()} disabled={isFetching}>
               <RefreshCw className={"h-4 w-4 " + (isFetching ? "animate-spin" : "")} />
-              <span className="ml-1 text-xs">{lang === "bn" ? "রিফ্রেশ" : "Refresh"}</span>
+              {lang === "bn" ? "রিফ্রেশ" : "Refresh"}
             </Button>
-            <Button size="sm" className="bg-foreground text-background hover:bg-foreground/90" onClick={onPrint}>
+            <Button className="h-10 gap-2" onClick={onPrint}>
               <Printer className="h-4 w-4" />
-              <span className="ml-1 text-xs">{lang === "bn" ? "ডাউনলোড/প্রিন্ট" : "Download/Print"}</span>
+              {lang === "bn" ? "ডাউনলোড/প্রিন্ট" : "Download/Print"}
             </Button>
           </>
         }

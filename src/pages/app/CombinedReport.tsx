@@ -141,14 +141,14 @@ function CombinedReportPage() {
         }
         actions={
           <>
-            <Button size="sm" className="bg-foreground text-background hover:bg-foreground/90" onClick={onPrint}>
+            <Button className="h-10 gap-2" onClick={onPrint}>
               <Printer className="h-4 w-4" />
-              <span className="ml-1 hidden text-xs sm:inline">{lang === "bn" ? "ডাউনলোড/প্রিন্ট" : "Download/Print"}</span>
+              <span className="hidden sm:inline">{lang === "bn" ? "ডাউনলোড/প্রিন্ট" : "Download/Print"}</span>
             </Button>
 
             <Popover>
               <PopoverTrigger asChild>
-                <Button size="sm" variant="outline" className="h-9 gap-2">
+                <Button variant="outline" className="h-10 gap-2">
                   <Store className="h-4 w-4" />
                   <span className="hidden text-xs sm:inline">
                     {lang === "bn"

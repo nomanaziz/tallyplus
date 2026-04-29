@@ -79,11 +79,11 @@ function DueLedgerPage() {
           <span className="rounded-full border bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-700">
             {lang === "bn" ? "মোট দিবো:" : "Payable:"} {fmtMoney(totals.payable, lang)}
           </span>
-          <Button variant="outline" size="sm" className="gap-1.5" onClick={() => nav({ to: "/app/due-history" })}>
+          <Button variant="outline" className="h-10 gap-2" onClick={() => nav({ to: "/app/due-history" })}>
             <History className="h-4 w-4" />
             {lang === "bn" ? "বাকির ইতিহাস" : "History"}
           </Button>
-          <Button onClick={() => setPickerOpen(true)} size="sm" className="gap-1.5 bg-foreground text-background hover:bg-foreground/90">
+          <Button className="h-10 gap-2" onClick={() => setPickerOpen(true)}>
             <Plus className="h-4 w-4" />
             {lang === "bn" ? "নতুন বাকি" : "New Due"}
           </Button>
