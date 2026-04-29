@@ -369,7 +369,14 @@ function ProductsPage() {
                 <Sparkles className="h-4 w-4 text-primary" />
                 {lang === "bn" ? "স্যাম্পল ইম্পোর্ট" : "Import Sample"}
               </Button>
-              <Button className="h-10 gap-2" onClick={() => { setEditing(null); setOpenForm(true); }}>
+              <Button className="h-10 gap-2" onClick={() => {
+                if (!current?.id) {
+                  toast.error(lang === "bn" ? "আগে দোকান নির্বাচন করুন" : "Select a shop first");
+                  return;
+                }
+                setEditing(null);
+                setOpenForm(true);
+              }}>
                 <Plus className="h-4 w-4" />
                 {lang === "bn" ? "প্রোডাক্ট যুক্ত করুন" : "Add Product"}
               </Button>
