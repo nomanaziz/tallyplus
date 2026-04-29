@@ -13,6 +13,8 @@ export default function SubscribeCallback() {
   const navigate = useNavigate();
   const [state, setState] = useState<State>("loading");
   const [msg, setMsg] = useState<string>("");
+  const [autoRedirect, setAutoRedirect] = useState(true);
+  const [countdown, setCountdown] = useState(4);
 
   const status = params.get("status");
   const transactionId = params.get("transactionId");
@@ -81,6 +83,18 @@ export default function SubscribeCallback() {
     return () => clearTimeout(t);
   }, [state, navigate]);
 
+  // Auto-redirect to subscribe page 4s after failed/cancelled
+  useEffect(() => {
+    if (state !== "failed" || !autoRedirect) return;
+    setCountdown(4);
+    const tick = setInterval(() => setCountdown((c) => (c > 0 ? c - 1 : 0)), 1000);
+    const t = setTimeout(() => navigate("/app/subscribe", { replace: true }), 4000);
+    return () => {
+      clearTimeout(t);
+      clearInterval(tick);
+    };
+  }, [state, autoRedirect, navigate]);
+
   return (
     <div className="container mx-auto max-w-md px-4 py-10">
       <div className="rounded-2xl border bg-card p-8 text-center shadow-sm">
@@ -141,12 +155,29 @@ export default function SubscribeCallback() {
                 ? "এই attempt টি admin-এর কাছে log হয়েছে — প্রয়োজনে admin আপনার সাথে যোগাযোগ করবেন। আপনি চাইলে আবার চেষ্টা করুন বা manual payment বেছে নিন।"
                 : "This attempt has been logged for admin — they may contact you. You can try again or choose manual payment."}
             </p>
+            {autoRedirect && (
+              <p className="mt-3 text-xs font-medium text-primary">
+                {lang === "bn"
+                  ? `${countdown} সেকেন্ডে Subscribe page-এ ফিরে যাচ্ছি...`
+                  : `Redirecting to Subscribe page in ${countdown}s...`}
+              </p>
+            )}
             <div className="mt-6 grid gap-2">
-              <Button asChild className="w-full">
-                <Link to="/app/subscribe">{lang === "bn" ? "আবার চেষ্টা করুন" : "Try again"}</Link>
+              <Button
+                className="w-full"
+                onClick={() => navigate("/app/subscribe", { replace: true })}
+              >
+                {lang === "bn" ? "এখনই আবার চেষ্টা করুন" : "Try again now"}
               </Button>
-              <Button asChild variant="outline" className="w-full">
-                <Link to="/app/dashboard">{lang === "bn" ? "ড্যাশবোর্ডে যান" : "Go to Dashboard"}</Link>
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => {
+                  setAutoRedirect(false);
+                  navigate("/app/dashboard", { replace: true });
+                }}
+              >
+                {lang === "bn" ? "ড্যাশবোর্ডে যান" : "Go to Dashboard"}
               </Button>
             </div>
           </>
