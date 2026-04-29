@@ -135,6 +135,9 @@ export function SampleProductImportSheet({
     try {
       const picked = items.filter((p) => selected.has(p.id));
 
+      // Ensure all default categories exist before linking products to them.
+      await ensureDefaultCategories(current.id);
+
       // 1) Ensure categories
       const catNames = Array.from(
         new Set(picked.map((p) => p.category).filter((c): c is string => !!c && c.trim().length > 0)),
