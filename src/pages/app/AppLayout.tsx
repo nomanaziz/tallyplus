@@ -30,13 +30,63 @@ const SettingsSheet = lazy(() =>
 function AppLayoutWithShop() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const [boot, setBoot] = useState<{
+    checked: boolean;
+    isPureConsumer: boolean;
+    shops: import("@/lib/shop").Shop[];
+  }>({ checked: false, isPureConsumer: false, shops: [] });
+
   useEffect(() => {
     if (location.pathname === "/app" || location.pathname === "/app/") {
       navigate({ to: "/app/dashboard", replace: true });
     }
   }, [location.pathname, navigate]);
+
+  // ONE round-trip boot: replaces 4 parallel queries (consumer/profile/shop/member)
+  // + ShopProvider's separate shops fetch. Major first-paint speedup.
+  useEffect(() => {
+    let cancelled = false;
+    if (!user) { setBoot({ checked: false, isPureConsumer: false, shops: [] }); return; }
+    (async () => {
+      const { data, error } = await supabase.rpc("my_account_resolve");
+      if (cancelled) return;
+      if (error || !data) {
+        // Fail open: continue, downstream guards still work.
+        setBoot({ checked: true, isPureConsumer: false, shops: [] });
+        return;
+      }
+      const d = data as {
+        is_consumer?: boolean;
+        has_profile?: boolean;
+        owns_shop?: boolean;
+        is_member?: boolean;
+        shops?: import("@/lib/shop").Shop[];
+      };
+      const isOwnerOrMember = !!d.has_profile || !!d.owns_shop || !!d.is_member;
+      setBoot({
+        checked: true,
+        isPureConsumer: !!d.is_consumer && !isOwnerOrMember,
+        shops: Array.isArray(d.shops) ? d.shops : [],
+      });
+      if (!!d.is_consumer && !isOwnerOrMember) {
+        navigate({ to: "/customer/dashboard", replace: true });
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [user, navigate]);
+
+  if (!user || !boot.checked || boot.isPureConsumer) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-background text-sm text-muted-foreground">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+        <div>Loading...</div>
+      </div>
+    );
+  }
+
   return (
-    <ShopProvider>
+    <ShopProvider initialShops={boot.shops}>
       <PermissionsProvider>
         <AppLayout />
       </PermissionsProvider>
@@ -82,69 +132,21 @@ function AppLayout() {
     void ensureDefaultCategories(current.id);
   }, [current?.id]);
 
-  // Guard: if the logged-in user is actually a consumer (গ্রাহক), redirect
-  // them to the consumer dashboard. Owners only beyond this point.
-  // Dual-role users (have BOTH a consumer_profiles row AND own/belong to a
-  // shop) must be allowed to stay here — they explicitly logged in via the
-  // shopkeeper tab. Only redirect users who are *purely* consumers.
-  const [consumerCheck, setConsumerCheck] = useState<"checking" | "owner" | "consumer">("checking");
-  useEffect(() => {
-    let cancelled = false;
-    if (!user) { setConsumerCheck("checking"); return; }
-    (async () => {
-      const [{ data: consumer }, { data: profile }, { data: ownedShop }, { data: memberRow }] =
-        await Promise.all([
-          supabase.from("consumer_profiles").select("id").eq("id", user.id).maybeSingle(),
-          supabase.from("profiles").select("id").eq("id", user.id).maybeSingle(),
-          supabase.from("shops").select("id").eq("owner_id", user.id).limit(1).maybeSingle(),
-          supabase.from("shop_members").select("shop_id").eq("user_id", user.id).limit(1).maybeSingle(),
-        ]);
-      if (cancelled) return;
-      const isOwnerOrMember = !!profile || !!ownedShop || !!memberRow;
-      if (consumer && !isOwnerOrMember) {
-        setConsumerCheck("consumer");
-        nav({ to: "/customer/dashboard", replace: true });
-      } else {
-        setConsumerCheck("owner");
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [user, nav]);
-
-  // Idle-prefetch the most-used route chunks so the FIRST navigation
-  // (e.g., dashboard → sell) doesn't have to wait for the chunk download.
+  // Idle-prefetch ONLY the 3 most-used routes. Hover/touch will prefetch the rest
+  // on demand (see router.tsx Link). Previously this preloaded 18 chunks which
+  // saturated mobile bandwidth and slowed actual navigations.
   useEffect(() => {
     if (!user) return;
     const idle = (cb: () => void) => {
       type IdleWin = Window & { requestIdleCallback?: (cb: () => void) => number };
       const w = window as IdleWin;
       if (typeof w.requestIdleCallback === "function") w.requestIdleCallback(cb);
-      else setTimeout(cb, 1500);
+      else setTimeout(cb, 2500);
     };
     idle(() => {
-      // Core daily-use pages
-      void import("@/pages/app/Sell");
-      void import("@/pages/app/Purchase");
       void import("@/pages/app/Dashboard");
+      void import("@/pages/app/Sell");
       void import("@/pages/app/Products");
-      void import("@/pages/app/QuickOrder");
-      void import("@/components/app/POSPage");
-      // Ledgers
-      void import("@/pages/app/SalesLedger");
-      void import("@/pages/app/PurchaseLedger");
-      void import("@/pages/app/DueLedger");
-      void import("@/pages/app/DueHistory");
-      void import("@/pages/app/ExpenseLedger");
-      void import("@/pages/app/OwnerLedger");
-      // Operations
-      void import("@/pages/app/Returns");
-      void import("@/pages/app/Contacts");
-      void import("@/pages/app/Cashbox");
-      void import("@/pages/app/CustomerWishlist");
-      void import("@/pages/app/FordoHistory");
-      void import("@/pages/app/Reports");
-      void import("@/pages/app/Warranty");
-      void import("@/pages/app/Expiring");
     });
   }, [user]);
 
@@ -201,15 +203,6 @@ function AppLayout() {
       <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-background text-sm text-muted-foreground">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
         <div>{lang === "bn" ? "লগইন পেজে যাচ্ছি..." : "Redirecting to login..."}</div>
-      </div>
-    );
-  }
-
-  if (consumerCheck !== "owner") {
-    return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-background text-sm text-muted-foreground">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-        <div>{lang === "bn" ? "লোড হচ্ছে..." : "Loading..."}</div>
       </div>
     );
   }
