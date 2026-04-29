@@ -1,0 +1,1 @@
+CREATE INDEX IF NOT EXISTS idx_ps_shop_serial ON public.product_serials (shop_id, serial_no);

@@ -204,9 +204,9 @@ function MarketingPage() {
           </span>
         }
         actions={
-          <Button size="sm" className="bg-foreground text-background hover:bg-foreground/90">
+          <Button className="h-10 gap-2">
             <History className="h-4 w-4" />
-            <span className="ml-1 text-xs">{lang === "bn" ? "SMS হিস্টোরি" : "SMS History"}</span>
+            {lang === "bn" ? "SMS হিস্টোরি" : "SMS History"}
           </Button>
         }
       />
