@@ -66,8 +66,21 @@ export default function MyFordo() {
         .maybeSingle();
       const phone = (prof as { phone: string | null } | null)?.phone ?? null;
 
-      const orFilter = phone
-        ? `consumer_user_id.eq.${user.id},customer_phone.eq.${phone}`
+      // Build phone variants so we match wishlists saved in any common format
+      // (e.g. "+8801841577944", "8801841577944", "01841577944", "1841577944").
+      const phoneVariants: string[] = [];
+      if (phone) {
+        const digits = phone.replace(/\D/g, "");
+        const last10 = digits.slice(-10); // e.g. "1841577944"
+        const local = last10 ? "0" + last10 : ""; // e.g. "01841577944"
+        const intl = last10 ? "88" + last10 : ""; // e.g. "8801841577944"
+        const intlPlus = intl ? "+" + intl : ""; // e.g. "+8801841577944"
+        for (const v of [phone, digits, last10, local, intl, intlPlus]) {
+          if (v && !phoneVariants.includes(v)) phoneVariants.push(v);
+        }
+      }
+      const orFilter = phoneVariants.length > 0
+        ? `consumer_user_id.eq.${user.id},customer_phone.in.(${phoneVariants.map((v) => `"${v}"`).join(",")})`
         : `consumer_user_id.eq.${user.id}`;
       const { data: wls } = await supabase
         .from("customer_wishlists")
