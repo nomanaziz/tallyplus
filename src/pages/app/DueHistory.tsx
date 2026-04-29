@@ -228,7 +228,7 @@ function DueHistoryPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {pg.pageItems.length === 0 ? (
+            {pg.paged.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={6} className="py-10 text-center text-sm text-muted-foreground">
                   {loading
@@ -239,7 +239,7 @@ function DueHistoryPage() {
                 </TableCell>
               </TableRow>
             ) : (
-              pg.pageItems.map((v) => (
+              pg.paged.map((v: View) => (
                 <TableRow key={v.id}>
                   <TableCell className="font-medium">{v.name}</TableCell>
                   <TableCell>{v.phone ?? "—"}</TableCell>
@@ -260,9 +260,18 @@ function DueHistoryPage() {
             )}
           </TableBody>
         </Table>
-        {pg.pageItems.length > 0 && (
+        {pg.paged.length > 0 && (
           <div className="border-t p-2">
-            <DataPagination pg={pg} />
+            <DataPagination
+              page={pg.page}
+              pageCount={pg.pageCount}
+              pageSize={pg.pageSize}
+              total={pg.total}
+              from={pg.from}
+              to={pg.to}
+              onPageChange={pg.setPage}
+              onPageSizeChange={pg.setPageSize}
+            />
           </div>
         )}
       </div>
