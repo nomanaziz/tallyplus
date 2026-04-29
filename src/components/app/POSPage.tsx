@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Plus, Minus, X, Package, ShoppingCart, ChevronDown, MessageSquare, RefreshCw, Search, ScanLine, UserRound } from "lucide-react";
+import { ArrowLeft, Plus, Minus, X, Package, ShoppingCart, ChevronDown, MessageSquare, RefreshCw, Search, UserRound } from "lucide-react";
 import { useNavigate } from "@/lib/router";
 import { supabase } from "@/integrations/supabase/client";
 import { useShop } from "@/lib/shop";
@@ -8,6 +8,8 @@ import { useAuth } from "@/lib/auth";
 import { useI18n, fmtMoney, bnNum } from "@/lib/i18n";
 import { productsLiteQuery } from "@/lib/queries";
 import { SerialPickDialog } from "@/components/app/SerialPickDialog";
+import { BarcodeScannerButton } from "@/components/app/BarcodeScannerButton";
+import { useHardwareScanner } from "@/hooks/useHardwareScanner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -36,6 +38,8 @@ type Product = {
   bulk_price?: number | null;
   bulk_min_qty?: number | null;
   is_serialized?: boolean | null;
+  barcode?: string | null;
+  sku?: string | null;
 };
 
 type CartItem = {
