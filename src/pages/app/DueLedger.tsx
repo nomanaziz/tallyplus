@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "@/lib/router";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -20,6 +21,7 @@ type Contact = { id: string; name: string; phone: string | null; due_balance: nu
 function DueLedgerPage() {
   const { lang } = useI18n();
   const { current } = useShop();
+  const nav = useNavigate();
   const [tab, setTab] = useState<PartyTab>("customer");
   const [search, setSearch] = useState("");
   const [contacts, setContacts] = useState<Contact[]>([]);
@@ -77,7 +79,7 @@ function DueLedgerPage() {
           <span className="rounded-full border bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-700">
             {lang === "bn" ? "মোট দিবো:" : "Payable:"} {fmtMoney(totals.payable, lang)}
           </span>
-          <Button variant="outline" size="sm" className="gap-1.5">
+          <Button variant="outline" size="sm" className="gap-1.5" onClick={() => nav({ to: "/app/due-history" })}>
             <History className="h-4 w-4" />
             {lang === "bn" ? "বাকির ইতিহাস" : "History"}
           </Button>
