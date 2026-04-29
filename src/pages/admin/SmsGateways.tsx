@@ -76,7 +76,7 @@ export default function AdminSmsGateways() {
     let err;
     if (editingGw.id) {
       const { id, ...rest } = payload;
-      ({ error: err } = await supabase.from("sms_gateways").update(rest).eq("id", id));
+      ({ error: err } = await supabase.from("sms_gateways").update(rest).eq("id", id!));
     } else {
       ({ error: err } = await supabase.from("sms_gateways").insert(payload));
     }
@@ -103,7 +103,7 @@ export default function AdminSmsGateways() {
     let err;
     if (editingPkg.id) {
       const { id, ...rest } = editingPkg;
-      ({ error: err } = await supabase.from("sms_packages").update(rest).eq("id", id));
+      ({ error: err } = await supabase.from("sms_packages").update(rest).eq("id", id!));
     } else {
       ({ error: err } = await supabase.from("sms_packages").insert(editingPkg));
     }
@@ -123,7 +123,7 @@ export default function AdminSmsGateways() {
     let err;
     if (editingTpl.id) {
       const { id, ...rest } = editingTpl;
-      ({ error: err } = await supabase.from("sms_templates").update(rest).eq("id", id));
+      ({ error: err } = await supabase.from("sms_templates").update(rest).eq("id", id!));
     } else {
       ({ error: err } = await supabase.from("sms_templates").insert(editingTpl));
     }
