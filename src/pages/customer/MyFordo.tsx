@@ -57,56 +57,32 @@ export default function MyFordo() {
     if (!user) return;
     let cancelled = false;
     void (async () => {
-      // Load consumer profile to also match by phone (in case some wishlists
-      // were created via the public /f/:slug flow without consumer_user_id).
-      const { data: prof } = await supabase
-        .from("consumer_profiles")
-        .select("phone")
-        .eq("id", user.id)
-        .maybeSingle();
-      const phone = (prof as { phone: string | null } | null)?.phone ?? null;
-
-      // Build phone variants so we match wishlists saved in any common format
-      // (e.g. "+8801841577944", "8801841577944", "01841577944", "1841577944").
-      const phoneVariants: string[] = [];
-      if (phone) {
-        const digits = phone.replace(/\D/g, "");
-        const last10 = digits.slice(-10); // e.g. "1841577944"
-        const local = last10 ? "0" + last10 : ""; // e.g. "01841577944"
-        const intl = last10 ? "88" + last10 : ""; // e.g. "8801841577944"
-        const intlPlus = intl ? "+" + intl : ""; // e.g. "+8801841577944"
-        for (const v of [phone, digits, last10, local, intl, intlPlus]) {
-          if (v && !phoneVariants.includes(v)) phoneVariants.push(v);
-        }
-      }
-      const orFilter = phoneVariants.length > 0
-        ? `consumer_user_id.eq.${user.id},customer_phone.in.(${phoneVariants.map((v) => `"${v}"`).join(",")})`
-        : `consumer_user_id.eq.${user.id}`;
-      const { data: wls } = await supabase
-        .from("customer_wishlists")
-        .select("id, shop_id, customer_name, customer_phone, status, note, created_at")
-        .or(orFilter)
-        .is("deleted_at", null)
-        .order("created_at", { ascending: false })
-        .limit(100);
+      // Use a server-side unified resolver. It matches by consumer_user_id,
+      // wishlist_customer_id (linked via phone) and customer_phone variants,
+      // so fordo sent through the public link flow also shows up here.
+      const { data: hist, error: histErr } = await supabase.functions.invoke(
+        "consumer-fordo-history",
+        { body: {} },
+      );
       if (cancelled) return;
-      const list = (wls ?? []) as Wishlist[];
-      setItems(list);
-
-      // Load items for all wishlists
-      if (list.length > 0) {
-        const ids = list.map((w) => w.id);
-        const { data: itRows } = await supabase
-          .from("customer_wishlist_items")
-          .select("id, wishlist_id, name, qty, unit, price, fulfillment_status, done, position")
-          .in("wishlist_id", ids)
-          .order("position", { ascending: true });
-        const map: Record<string, WLItem[]> = {};
-        for (const it of (itRows ?? []) as WLItem[]) {
-          (map[it.wishlist_id] ||= []).push(it);
-        }
-        if (!cancelled) setItemsByWl(map);
+      const histAny = (hist ?? {}) as {
+        wishlists?: Wishlist[];
+        items?: WLItem[];
+        shops?: Array<{ id: string; name: string }>;
+      };
+      const list = (histAny.wishlists ?? []) as Wishlist[];
+      const itemsRows = (histAny.items ?? []) as WLItem[];
+      const fnShops = (histAny.shops ?? []) as Array<{ id: string; name: string }>;
+      if (histErr) {
+        // Soft-fail: still show empty list rather than blocking the page.
+        console.warn("consumer-fordo-history failed", histErr);
       }
+      setItems(list);
+      const map: Record<string, WLItem[]> = {};
+      for (const it of itemsRows) {
+        (map[it.wishlist_id] ||= []).push(it);
+      }
+      setItemsByWl(map);
 
       const [tplRes, schRes] = await Promise.all([
         supabase
@@ -129,18 +105,18 @@ export default function MyFordo() {
         .select("shop_id")
         .eq("consumer_id", user.id);
       const favShopIds = (favRows ?? []).map((r) => r.shop_id as string);
-      const ids = Array.from(new Set([
-        ...list.map((w) => w.shop_id),
+      const shopMap: Record<string, Shop> = {};
+      for (const s of fnShops) shopMap[s.id] = s as Shop;
+      const extraIds = Array.from(new Set([
         ...((schRes.data ?? []) as Schedule[]).map((s) => s.shop_id),
         ...favShopIds,
-      ]));
-      if (ids.length > 0) {
-        const { data: ss } = await supabase.from("shops").select("id, name").in("id", ids);
-        const map: Record<string, Shop> = {};
-        for (const s of (ss ?? []) as Shop[]) map[s.id] = s;
-        setShops(map);
-        setFavourites(favShopIds.map((id) => map[id]).filter(Boolean));
+      ])).filter((id) => !shopMap[id]);
+      if (extraIds.length > 0) {
+        const { data: ss } = await supabase.from("shops").select("id, name").in("id", extraIds);
+        for (const s of (ss ?? []) as Shop[]) shopMap[s.id] = s;
       }
+      setShops(shopMap);
+      setFavourites(favShopIds.map((id) => shopMap[id]).filter(Boolean));
       setLoading(false);
     })();
     return () => { cancelled = true; };
