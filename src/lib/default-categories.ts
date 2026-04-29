@@ -65,26 +65,17 @@ export async function ensureDefaultCategories(
   if (!opts.force && seededShops.has(shopId)) return;
 
   try {
-    const { data: existing, error } = await supabase
-      .from("categories")
-      .select("name")
-      .eq("shop_id", shopId);
+    // Server-side seeder bypasses client-side RLS race conditions and
+    // silently no-ops when the caller isn't a shop member.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase as any).rpc("ensure_default_categories", {
+      _shop_id: shopId,
+      _names: DEFAULT_CATEGORIES,
+    });
     if (error) throw error;
-
-    const have = new Set((existing ?? []).map((r) => (r as { name: string }).name));
-    const missing = DEFAULT_CATEGORIES.filter((n) => !have.has(n));
-
-    if (missing.length > 0) {
-      const { error: insErr } = await supabase
-        .from("categories")
-        .insert(missing.map((name) => ({ shop_id: shopId, name, parent_id: null })));
-      if (insErr) throw insErr;
-    }
-
     seededShops.add(shopId);
   } catch (e) {
-    // Non-fatal: log only, never block the UI.
-    // eslint-disable-next-line no-console
-    console.warn("ensureDefaultCategories failed", e);
+    // Non-fatal: silent. Categories can still be created manually.
+    void e;
   }
 }
