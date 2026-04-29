@@ -77,7 +77,7 @@ export function InvoiceDialog({
         </div>
 
         {/* Invoice body */}
-        <div id="invoice-print-area" className="px-6 py-5 text-sm text-foreground">
+        <div id="invoice-print-area" className="px-6 py-5 text-sm text-foreground print:px-0 print:py-0">
           {/* Shop block */}
           <div className="flex items-start gap-3">
             <div className="h-12 w-12 shrink-0 rounded-md border bg-muted flex items-center justify-center overflow-hidden">
