@@ -1,48 +1,64 @@
-## কী যোগ হবে
+আমি যা পেয়েছি
 
-Product **add** (`Products.tsx`), **sell** এবং **purchase** (`POSPage.tsx`) — তিন জায়গাতেই barcode scan support। দুই ধরনের scanner:
+- `https://tallyplus.lovable.app/` root page খুলছে, কিন্তু direct URL যেমন `/admin/login`, `/pricing`, `/app/due-ledger` — সবগুলোতেই `Not Found` আসছে.
+- কোডে এই route-গুলো আছে: `src/routes.tsx`-এ `/admin/login` সহ admin/app route define করা আছে.
+- app এখন `src/main.tsx`-এ `BrowserRouter` দিয়ে চলছে.
+- repo-তে `vercel.json` rewrite আছে, কিন্তু Lovable hosting এই setup-এ সেটা ধরে deep-link fallback দিচ্ছে না.
+- preview URL-এ `/admin/login` গেলে `Authenticating...` দেখা যাচ্ছে, মানে preview link access-protected; এটা route-missing error না, preview auth layer.
 
-1. **Camera scanner** — phone/laptop-এর camera দিয়ে barcode/QR scan
-2. **Hardware scanner** — USB barcode gun (কীবোর্ডের মতো type করে + Enter দেয়) — এটার জন্য আলাদা কোনো setup লাগে না, শুধু input field-এ auto-focus + Enter handle করলেই হবে
+Plan
 
-## ১. Reusable component: `BarcodeScannerButton`
+1. Routing layer-টা Lovable-supported structure-এ নিয়ে যাওয়া
+- current `BrowserRouter`-based SPA routing থেকে supported file-based/TanStack Start routing-এ migrate করব
+- existing page components (`src/pages/...`) যতটা সম্ভব reuse করব, যাতে UI/logic আবার নতুন করে লিখতে না হয়
 
-`src/components/app/BarcodeScannerButton.tsx`
+2. Existing URL map preserve করা
+- `/admin/login`
+- `/admin/*`
+- `/app/*`
+- `/auth`, `/pricing`, `/privacy`, `/terms`
+- marketplace / customer / affiliate / vendor / shop routes
+সব পুরনো URL একই রাখব, যাতে link break না হয়
 
-- ছোট button (icon)। ক্লিক করলে dialog খোলে দুটো tab নিয়ে:
-  - **📷 Camera** tab — live camera feed, একবার barcode পেলে auto-detect করে `onDetected(code)` call করে dialog বন্ধ হয়
-  - **⌨️ Hardware** tab — একটা auto-focused input field, scanner gun-এর Enter এ trigger হয়
-- **Library**: `@zxing/browser` (lightweight, EAN/UPC/Code128/QR সবই support করে, pure JS, Worker-compatible না হলেও client-only বলে সমস্যা নেই)
-- Camera permission না থাকলে clear error message + Hardware tab-এ fallback suggestion
-- Beep sound on successful scan
-- Mobile-friendly: rear camera default, torch toggle if available
+3. Admin flow ঠিকভাবে wire করা
+- `Admin.tsx` layout + `src/pages/admin/Login.tsx` route binding ঠিক রাখব
+- direct-load, refresh, bookmark, published domain — সব ক্ষেত্রেই `/admin/login` কাজ করছে কি না verify করব
+- admin না হলে redirect behavior আগের মতোই থাকবে
 
-## ২. POSPage এ integration (Sell + Purchase)
+4. Publish-path verification
+- published domain-এ অন্তত এই path গুলো direct খুলে test করব:
+  - `/admin/login`
+  - `/pricing`
+  - `/app/due-ledger`
+- preview/auth behavior আর published behavior আলাদা করে confirm করব
 
-বর্তমানে লাইন 222-224 এ একটা placeholder ScanLine button আছে যেটা কিছু করে না। সেটাকে `BarcodeScannerButton` দিয়ে replace করা হবে।
+5. Git issue আলাদা করে clear করা
+- Git disconnect/push issue app code-এর route bug না
+- এটা Lovable connector-level problem
+- implementation শেষে আমি আপনাকে exact checklist দেব:
+  - Connectors → GitHub status check
+  - GitHub App authorization revoke/reconnect
+  - repo permission mismatch আছে কি না
+  - project linked repo stale হলে reconnect path
 
-Scan flow:
-- Code পেলে → products list-এ `barcode` field ম্যাচ খুঁজবে
-- ম্যাচ পেলে → সরাসরি `addToCart(p)` call (serialized হলে SerialPickDialog খুলবে — current behavior)
-- ম্যাচ না পেলে → toast "এই barcode-এর পণ্য পাওয়া যায়নি" + scanned code টা search box এ বসিয়ে দিবে যাতে user manually যোগ করতে পারে
+Technical details
 
-এছাড়া search input-এ **global hardware scanner listener** — page যখন POS-এ আছে, hardware gun যেকোনো জায়গায় type করলেও কাজ করবে (rapid keystroke detection: <50ms gap + Enter)।
+```text
+Current state
+Published domain request to /admin/login
+-> hosting looks for physical route
+-> no server-side route fallback
+-> returns Not Found
 
-## ৩. Products page এ integration
+After fix
+Published domain request to /admin/login
+-> TanStack/Lovable route resolves path
+-> app renders AdminLoginPage
+-> supabase auth check runs normally
+```
 
-`Products.tsx` — barcode toggle on করলে input field-এর পাশে scan button দেখাবে। স্ক্যান করলে input-এ value বসে যাবে।
+নোট
 
-## ৪. Files
-
-- নতুন: `src/components/app/BarcodeScannerButton.tsx`
-- নতুন: `src/hooks/useHardwareScanner.ts` (rapid-keystroke + Enter detection)
-- Edit: `src/components/app/POSPage.tsx` (button replace + scan handler + global listener)
-- Edit: `src/pages/app/Products.tsx` (barcode field-এর পাশে scan button)
-- Dependency: `bun add @zxing/browser @zxing/library`
-
-## ৫. UX details
-
-- Camera dialog খোলার সময় explicit permission prompt
-- iOS Safari এ camera access HTTPS-only — preview/published দুটোই HTTPS, OK
-- Hardware tab-এ একটা hint: "USB scanner connect করে barcode-এ trigger চাপুন"
-- Beep + visual flash on successful detect
+- Git disconnect button app-এর ভিতরে code change করে আনা যাবে না; এটা Lovable platform setting.
+- কিন্তু `/admin/login` not found issue codebase-level routing fix দিয়েই সমাধান করা যাবে.
+- এই plan approve করলে আমি routing migration + admin route fix implement করব, তারপর কোন URL কাজ করছে সেটা final check দিয়ে জানাব.
