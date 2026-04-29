@@ -10,6 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Loader2, Package, Search, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ensureDefaultCategories } from "@/lib/default-categories";
 
 type CatalogProduct = {
   id: string;
