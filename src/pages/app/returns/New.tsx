@@ -208,7 +208,7 @@ function NewReturnPage() {
                 <div className="text-sm font-bold">{pickedSale.invoice_no ?? pickedSale.id.slice(0, 6)}</div>
                 <div className="text-xs text-muted-foreground">{fmtMoney(Number(pickedSale.total ?? 0), lang)} · {new Date(pickedSale.created_at).toLocaleDateString("en-GB")}</div>
               </div>
-              <Button size="sm" variant="ghost" onClick={clearSale}>{lang === "bn" ? "মুছুন" : "Clear"}</Button>
+              <Button variant="ghost" className="h-9 gap-2" onClick={clearSale}>{lang === "bn" ? "মুছুন" : "Clear"}</Button>
             </div>
           ) : (
             <>
@@ -234,7 +234,7 @@ function NewReturnPage() {
         <div className="rounded-xl border bg-background p-3 md:p-4">
           <div className="mb-2 flex items-center justify-between">
             <Label className="text-sm font-bold">{lang === "bn" ? "ফেরত আসা পণ্য" : "Returned items"}</Label>
-            <Button size="sm" variant="outline" onClick={addBlankRow}><Plus className="mr-1 h-4 w-4" />{lang === "bn" ? "যোগ" : "Add"}</Button>
+            <Button variant="outline" className="h-10 gap-2" onClick={addBlankRow}><Plus className="h-4 w-4" />{lang === "bn" ? "যোগ" : "Add"}</Button>
           </div>
           {items.length === 0 ? (
             <div className="py-4 text-center text-xs text-muted-foreground">{lang === "bn" ? "কোনো পণ্য নেই" : "No items"}</div>
@@ -345,8 +345,12 @@ function NewReturnPage() {
         </div>
 
         <div className="flex items-center justify-end gap-2">
-          <Button variant="outline" onClick={() => nav({ to: "/app/returns" })}>{lang === "bn" ? "বাতিল" : "Cancel"}</Button>
-          <Button onClick={onSave} disabled={saving} className="bg-foreground text-background hover:bg-foreground/90">{saving ? "…" : (lang === "bn" ? "সংরক্ষণ" : "Save")}</Button>
+          <Button variant="outline" className="h-10 gap-2 flex-1 sm:flex-none" onClick={() => nav({ to: "/app/returns" })}>
+            {lang === "bn" ? "বাতিল" : "Cancel"}
+          </Button>
+          <Button className="h-10 gap-2 flex-1 sm:flex-none" onClick={onSave} disabled={saving}>
+            {saving ? "…" : (lang === "bn" ? "সংরক্ষণ" : "Save")}
+          </Button>
         </div>
         <ChevronDown className="hidden" />
       </div>

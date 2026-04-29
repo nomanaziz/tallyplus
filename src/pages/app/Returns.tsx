@@ -180,21 +180,21 @@ function ReturnsListPage() {
         title={lang === "bn" ? "প্রোডাক্ট রিটার্ন" : "Product Return"}
         actions={
           <div className="flex flex-wrap items-center gap-2">
-            <Button size="sm" variant="outline" onClick={handleDownload}>
+            <Button variant="outline" className="h-10 gap-2" onClick={handleDownload}>
               <Download className="h-4 w-4" />
-              <span className="ml-1 text-xs">{lang === "bn" ? "ডাউনলোড" : "Download"}</span>
+              {lang === "bn" ? "ডাউনলোড" : "Download"}
             </Button>
-            <Button size="sm" variant="outline" onClick={() => handlePrint(true)}>
+            <Button variant="outline" className="h-10 gap-2" onClick={() => handlePrint(true)}>
               <FileText className="h-4 w-4" />
-              <span className="ml-1 text-xs">{lang === "bn" ? "রিপোর্ট" : "Report"}</span>
+              {lang === "bn" ? "রিপোর্ট" : "Report"}
             </Button>
-            <Button size="sm" variant="outline" onClick={() => handlePrint(false)}>
+            <Button variant="outline" className="h-10 gap-2" onClick={() => handlePrint(false)}>
               <Printer className="h-4 w-4" />
-              <span className="ml-1 text-xs">{lang === "bn" ? "প্রিন্ট" : "Print"}</span>
+              {lang === "bn" ? "প্রিন্ট" : "Print"}
             </Button>
-            <Button size="sm" className="bg-foreground text-background hover:bg-foreground/90" onClick={() => nav({ to: "/app/returns/new" })}>
+            <Button className="h-10 gap-2" onClick={() => nav({ to: "/app/returns/new" })}>
               <Plus className="h-4 w-4" />
-              <span className="ml-1 text-xs">{lang === "bn" ? "নতুন রিটার্ন" : "New return"}</span>
+              {lang === "bn" ? "নতুন রিটার্ন" : "New return"}
             </Button>
           </div>
         }
@@ -234,7 +234,7 @@ function ReturnsListPage() {
             <EmptyState
               icon={<Undo2 className="h-8 w-8" />}
               title={lang === "bn" ? "এখনো কোনো রিটার্ন নেই" : "No returns yet"}
-              action={<Button onClick={() => nav({ to: "/app/returns/new" })}><Plus className="mr-1 h-4 w-4" />{lang === "bn" ? "নতুন রিটার্ন" : "New return"}</Button>}
+              action={<Button className="h-10 gap-2" onClick={() => nav({ to: "/app/returns/new" })}><Plus className="h-4 w-4" />{lang === "bn" ? "নতুন রিটার্ন" : "New return"}</Button>}
             />
           ) : (
             <ul className="divide-y">

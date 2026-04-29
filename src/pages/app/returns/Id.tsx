@@ -75,8 +75,14 @@ function ReturnDetailsPage() {
         title={r.return_no ?? id.slice(0, 6)}
         actions={
           <>
-            <Button size="sm" variant="outline" onClick={() => nav({ to: "/app/returns" })}><ArrowLeft className="h-4 w-4" /></Button>
-            <Button size="sm" variant="outline" onClick={onPrint}><Printer className="h-4 w-4" /></Button>
+            <Button variant="outline" className="h-10 gap-2" onClick={() => nav({ to: "/app/returns" })}>
+              <ArrowLeft className="h-4 w-4" />
+              {lang === "bn" ? "ফিরে যান" : "Back"}
+            </Button>
+            <Button variant="outline" className="h-10 gap-2" onClick={onPrint}>
+              <Printer className="h-4 w-4" />
+              {lang === "bn" ? "প্রিন্ট" : "Print"}
+            </Button>
           </>
         }
       />
