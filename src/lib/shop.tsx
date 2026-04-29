@@ -28,11 +28,11 @@ const ShopCtx = createContext<{
   loading: true,
 });
 
-export function ShopProvider({ children }: { children: ReactNode }) {
+export function ShopProvider({ children, initialShops }: { children: ReactNode; initialShops?: Shop[] }) {
   const { user } = useAuth();
-  const [shops, setShops] = useState<Shop[]>([]);
+  const [shops, setShops] = useState<Shop[]>(initialShops ?? []);
   const [current, setCurrentState] = useState<Shop | null>(null);
-  const [hasLoaded, setHasLoaded] = useState(false);
+  const [hasLoaded, setHasLoaded] = useState<boolean>(!!initialShops);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -76,6 +76,22 @@ export function ShopProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
+    // If parent already seeded shops via initialShops, skip the duplicate fetch.
+    if (initialShops && initialShops.length >= 0 && !hasLoaded) {
+      // hasLoaded is already true via initial state, but keep guard explicit.
+      return;
+    }
+    if (initialShops) {
+      // Pick current from cached id without refetching.
+      const savedId = typeof window !== "undefined" ? localStorage.getItem("tp_shop_id") : null;
+      const found = initialShops.find((s) => s.id === savedId) ?? initialShops[0] ?? null;
+      setCurrentState(found);
+      if (typeof window !== "undefined" && found) {
+        localStorage.setItem("tp_shop_id", found.id);
+        localStorage.setItem("tp_shop_current", JSON.stringify(found));
+      }
+      return;
+    }
     void refresh();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
