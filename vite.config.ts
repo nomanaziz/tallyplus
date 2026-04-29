@@ -31,22 +31,28 @@ export default defineConfig(({ mode }) => ({
   build: {
     target: "es2022",
     sourcemap: false,
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          "react-vendor": ["react", "react-dom", "react-router-dom"],
-          "supabase": ["@supabase/supabase-js"],
-          "query": ["@tanstack/react-query"],
-          "radix": [
-            "@radix-ui/react-dialog",
-            "@radix-ui/react-dropdown-menu",
-            "@radix-ui/react-popover",
-            "@radix-ui/react-select",
-            "@radix-ui/react-tabs",
-            "@radix-ui/react-tooltip",
-          ],
-          "charts": ["recharts"],
-          "icons": ["lucide-react"],
+  },
+  environments: {
+    client: {
+      build: {
+        rollupOptions: {
+          output: {
+            manualChunks: {
+              "react-vendor": ["react", "react-dom", "react-router-dom"],
+              "supabase": ["@supabase/supabase-js"],
+              "query": ["@tanstack/react-query"],
+              "radix": [
+                "@radix-ui/react-dialog",
+                "@radix-ui/react-dropdown-menu",
+                "@radix-ui/react-popover",
+                "@radix-ui/react-select",
+                "@radix-ui/react-tabs",
+                "@radix-ui/react-tooltip",
+              ],
+              "charts": ["recharts"],
+              "icons": ["lucide-react"],
+            },
+          },
         },
       },
     },
