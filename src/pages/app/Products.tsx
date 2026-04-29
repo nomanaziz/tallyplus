@@ -767,32 +767,119 @@ function ProductsPage() {
       <Dialog open={historyOpen} onOpenChange={setHistoryOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>{lang === "bn" ? "স্টকের ইতিহাস" : "Stock history"}</DialogTitle>
+            <DialogTitle>
+              {historyStep === "pick"
+                ? (lang === "bn" ? "প্রোডাক্ট নির্বাচন করুন" : "Select products")
+                : (lang === "bn" ? "স্টকের ইতিহাস" : "Stock history")}
+            </DialogTitle>
           </DialogHeader>
-          {history && history.length === 0 ? (
-            <EmptyState title={lang === "bn" ? "কোনো রেকর্ড নেই" : "No records"} />
+          {historyStep === "pick" ? (
+            <div className="space-y-3">
+              <Input
+                value={historyPickerSearch}
+                onChange={(e) => setHistoryPickerSearch(e.target.value)}
+                placeholder={lang === "bn" ? "প্রোডাক্ট খুঁজুন" : "Search products"}
+                className="h-10"
+              />
+              <label className="flex items-center gap-2 border-b pb-2 text-sm font-semibold">
+                <Checkbox checked={allPickerSelected} onCheckedChange={togglePickAll} />
+                {lang === "bn" ? "সব নির্বাচন করুন" : "Select all"}
+                <span className="ml-auto text-xs font-normal text-muted-foreground">
+                  {lang === "bn"
+                    ? `${bnNum(historyPicked.size)} নির্বাচিত`
+                    : `${historyPicked.size} selected`}
+                </span>
+              </label>
+              <div className="max-h-[50vh] space-y-1 overflow-auto">
+                {pickerProducts.length === 0 ? (
+                  <EmptyState title={lang === "bn" ? "কোনো প্রোডাক্ট নেই" : "No products"} />
+                ) : (
+                  pickerProducts.map((p) => (
+                    <label
+                      key={p.id}
+                      className="flex cursor-pointer items-center gap-3 rounded-md px-2 py-2 hover:bg-accent"
+                    >
+                      <Checkbox
+                        checked={historyPicked.has(p.id)}
+                        onCheckedChange={() => togglePick(p.id)}
+                      />
+                      <span className="flex-1 truncate text-sm font-medium">{p.name}</span>
+                      <span className="text-xs text-muted-foreground tabular-nums">
+                        {Number(p.stock) < 0
+                          ? (lang === "bn" ? "অসীম" : "Unlimited")
+                          : (lang === "bn" ? bnNum(Number(p.stock)) : Number(p.stock))}
+                      </span>
+                    </label>
+                  ))
+                )}
+              </div>
+              <div className="flex justify-end gap-2 border-t pt-3">
+                <Button variant="outline" onClick={() => setHistoryOpen(false)}>
+                  {lang === "bn" ? "ক্যানসেল" : "Cancel"}
+                </Button>
+                <Button
+                  disabled={historyPicked.size === 0}
+                  onClick={() => setHistoryStep("view")}
+                >
+                  {lang === "bn"
+                    ? `ইতিহাস দেখুন (${bnNum(historyPicked.size)})`
+                    : `Show history (${historyPicked.size})`}
+                </Button>
+              </div>
+            </div>
           ) : (
-            <div className="max-h-[60vh] overflow-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{lang === "bn" ? "তারিখ" : "Date"}</TableHead>
-                    <TableHead>{lang === "bn" ? "পণ্য" : "Product"}</TableHead>
-                    <TableHead>{lang === "bn" ? "ধরন" : "Type"}</TableHead>
-                    <TableHead className="text-right">{lang === "bn" ? "পরিমাণ" : "Qty"}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {history?.map((m) => (
-                    <TableRow key={m.id}>
-                      <TableCell className="text-xs">{new Date(m.created_at).toLocaleString()}</TableCell>
-                      <TableCell>{productMap[m.product_id] ?? "—"}</TableCell>
-                      <TableCell><span className={m.type === "in" ? "text-emerald-600" : "text-destructive"}>{m.type}</span></TableCell>
-                      <TableCell className="text-right">{lang === "bn" ? bnNum(m.qty) : m.qty}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+            <div className="space-y-3">
+              <div className="flex flex-wrap items-center gap-1 rounded-md bg-muted/40 p-2 text-xs">
+                {Array.from(historyPicked).slice(0, 6).map((id) => (
+                  <span key={id} className="rounded bg-background px-2 py-0.5 font-medium">
+                    {productMap[id] ?? "—"}
+                  </span>
+                ))}
+                {historyPicked.size > 6 && (
+                  <span className="text-muted-foreground">+{historyPicked.size - 6}</span>
+                )}
+                <button
+                  type="button"
+                  className="ml-auto text-xs font-semibold text-primary underline-offset-2 hover:underline"
+                  onClick={() => setHistoryStep("pick")}
+                >
+                  {lang === "bn" ? "পরিবর্তন" : "Change"}
+                </button>
+              </div>
+              {filteredHistory.length === 0 ? (
+                <EmptyState title={lang === "bn" ? "কোনো রেকর্ড নেই" : "No records"} />
+              ) : (
+                <div className="max-h-[55vh] overflow-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>{lang === "bn" ? "তারিখ" : "Date"}</TableHead>
+                        <TableHead>{lang === "bn" ? "পণ্য" : "Product"}</TableHead>
+                        <TableHead>{lang === "bn" ? "ধরন" : "Type"}</TableHead>
+                        <TableHead className="text-right">{lang === "bn" ? "পরিমাণ" : "Qty"}</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredHistory.map((m) => (
+                        <TableRow key={m.id}>
+                          <TableCell className="text-xs">{new Date(m.created_at).toLocaleString()}</TableCell>
+                          <TableCell>{productMap[m.product_id] ?? "—"}</TableCell>
+                          <TableCell><span className={m.type === "in" ? "text-emerald-600" : "text-destructive"}>{m.type}</span></TableCell>
+                          <TableCell className="text-right tabular-nums">{lang === "bn" ? bnNum(m.qty) : m.qty}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+              <div className="flex justify-end gap-2 border-t pt-3">
+                <Button variant="outline" onClick={() => setHistoryStep("pick")}>
+                  {lang === "bn" ? "পিছনে" : "Back"}
+                </Button>
+                <Button onClick={() => setHistoryOpen(false)}>
+                  {lang === "bn" ? "বন্ধ করুন" : "Close"}
+                </Button>
+              </div>
             </div>
           )}
         </DialogContent>
