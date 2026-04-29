@@ -10,8 +10,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { EmptyState } from "@/components/app/EmptyState";
-import { Plus, Search, Eye, Trash2, Undo2 } from "lucide-react";
+import { Plus, Search, Eye, Trash2, Undo2, Download, FileText, Printer } from "lucide-react";
 import { toast } from "sonner";
+import { printTableReport } from "@/lib/print-report";
 
 
 
@@ -95,6 +96,77 @@ function ReturnsListPage() {
     refetch();
   }
 
+  function buildExportRows() {
+    return filtered.map((r) => {
+      const cust = r.customer_id ? custMap[r.customer_id] : null;
+      return {
+        date: new Date(r.created_at).toLocaleDateString("en-GB"),
+        return_no: r.return_no ?? r.id.slice(0, 6),
+        customer: cust?.name ?? (lang === "bn" ? "ওয়াক-ইন" : "Walk-in"),
+        reason: r.reason ?? "—",
+        total: fmtMoney(Number(r.total ?? 0), lang),
+        refund: fmtMoney(Number(r.refund_amount ?? 0), lang),
+        status: r.refund_status,
+      };
+    });
+  }
+
+  function handleDownload() {
+    if (filtered.length === 0) {
+      toast.error(lang === "bn" ? "ডাউনলোড করার মতো কিছু নেই" : "Nothing to download");
+      return;
+    }
+    const headers = ["Date", "Return No", "Customer", "Reason", "Total", "Refund", "Status"];
+    const rows = buildExportRows().map((r) => [r.date, r.return_no, r.customer, r.reason, r.total, r.refund, r.status]);
+    const csv = [headers, ...rows]
+      .map((row) => row.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(","))
+      .join("\n");
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `product-returns-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function handlePrint(asReport: boolean) {
+    if (filtered.length === 0) {
+      toast.error(lang === "bn" ? "প্রিন্ট করার মতো কিছু নেই" : "Nothing to print");
+      return;
+    }
+    const today = new Date().toISOString().slice(0, 10);
+    const dates = filtered.map((r) => r.created_at).sort();
+    const start = dates.length ? new Date(dates[0]).toISOString().slice(0, 10) : today;
+    const end = dates.length ? new Date(dates[dates.length - 1]).toISOString().slice(0, 10) : today;
+    const exportRows = buildExportRows();
+    const footer = asReport
+      ? `${lang === "bn" ? "মোট রিটার্ন" : "Total returns"}: ${totals.count}  •  ${lang === "bn" ? "মোট মূল্য" : "Total"}: ${fmtMoney(totals.value, lang)}  •  ${lang === "bn" ? "ফেরত" : "Refunded"}: ${fmtMoney(totals.refunded, lang)}  •  ${lang === "bn" ? "অপেক্ষমান" : "Pending"}: ${fmtMoney(totals.pending, lang)}`
+      : undefined;
+    printTableReport({
+      shopName: current?.name ?? "",
+      shopAddress: (current as { address?: string | null } | null)?.address ?? null,
+      shopPhone: (current as { phone?: string | null } | null)?.phone ?? null,
+      title: lang === "bn"
+        ? (asReport ? "প্রোডাক্ট রিটার্ন রিপোর্ট" : "প্রোডাক্ট রিটার্ন")
+        : (asReport ? "Product Return Report" : "Product Returns"),
+      startDate: start,
+      endDate: end,
+      lang,
+      columns: [
+        { key: "date", label: lang === "bn" ? "তারিখ" : "Date" },
+        { key: "return_no", label: lang === "bn" ? "রিটার্ন নং" : "Return No" },
+        { key: "customer", label: lang === "bn" ? "কাস্টমার" : "Customer" },
+        { key: "reason", label: lang === "bn" ? "কারণ" : "Reason" },
+        { key: "total", label: lang === "bn" ? "মোট" : "Total", align: "right" },
+        { key: "refund", label: lang === "bn" ? "ফেরত" : "Refund", align: "right" },
+        { key: "status", label: lang === "bn" ? "অবস্থা" : "Status" },
+      ],
+      rows: exportRows,
+      footer,
+    });
+  }
+
   const statusBadge = (s: string) => {
     if (s === "refunded") return <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-semibold text-emerald-700">{lang === "bn" ? "ফেরত দেওয়া" : "Refunded"}</span>;
     if (s === "adjusted_to_due") return <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-700">{lang === "bn" ? "বাকিতে সমন্বয়" : "Adjusted"}</span>;
@@ -107,10 +179,24 @@ function ReturnsListPage() {
         breadcrumb={lang === "bn" ? "প্রোডাক্ট রিটার্ন" : "Product Return"}
         title={lang === "bn" ? "প্রোডাক্ট রিটার্ন" : "Product Return"}
         actions={
-          <Button size="sm" className="bg-foreground text-background hover:bg-foreground/90" onClick={() => nav({ to: "/app/returns/new" })}>
-            <Plus className="h-4 w-4" />
-            <span className="ml-1 text-xs">{lang === "bn" ? "নতুন রিটার্ন" : "New return"}</span>
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button size="sm" variant="outline" onClick={handleDownload}>
+              <Download className="h-4 w-4" />
+              <span className="ml-1 text-xs">{lang === "bn" ? "ডাউনলোড" : "Download"}</span>
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => handlePrint(true)}>
+              <FileText className="h-4 w-4" />
+              <span className="ml-1 text-xs">{lang === "bn" ? "রিপোর্ট" : "Report"}</span>
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => handlePrint(false)}>
+              <Printer className="h-4 w-4" />
+              <span className="ml-1 text-xs">{lang === "bn" ? "প্রিন্ট" : "Print"}</span>
+            </Button>
+            <Button size="sm" className="bg-foreground text-background hover:bg-foreground/90" onClick={() => nav({ to: "/app/returns/new" })}>
+              <Plus className="h-4 w-4" />
+              <span className="ml-1 text-xs">{lang === "bn" ? "নতুন রিটার্ন" : "New return"}</span>
+            </Button>
+          </div>
         }
       />
 
