@@ -1,43 +1,48 @@
-## সমস্যা
+## কী যোগ হবে
 
-SMS Gateway page-এ যে চারটা stat card আছে — **SMS Balance / Today's Send / This Month Send / This Month Failed** — এগুলা এখন **REVE-এর live API থেকে আসছে না**। সব আসছে শুধু আমাদের নিজের database (`shop_sms_balance`, `sms_history`) থেকে। তাই ID/password ঠিক দিলেও সব শূন্য দেখাচ্ছে — কারণ এখানে gateway-এ **API call-ই হচ্ছে না**।
+Product **add** (`Products.tsx`), **sell** এবং **purchase** (`POSPage.tsx`) — তিন জায়গাতেই barcode scan support। দুই ধরনের scanner:
 
-বর্তমান code (`SmsGateways.tsx` লাইন 128-149) শুধু Supabase table query করে; REVE-এর `balance`/`usage` endpoint কখনো hit করে না।
+1. **Camera scanner** — phone/laptop-এর camera দিয়ে barcode/QR scan
+2. **Hardware scanner** — USB barcode gun (কীবোর্ডের মতো type করে + Enter দেয়) — এটার জন্য আলাদা কোনো setup লাগে না, শুধু input field-এ auto-focus + Enter handle করলেই হবে
 
-## সমাধান
+## ১. Reusable component: `BarcodeScannerButton`
 
-REVE-এর live API থেকে balance + usage stats আনার জন্য একটা নতুন edge function বানানো হবে, এবং admin page সেটা call করে real data দেখাবে।
+`src/components/app/BarcodeScannerButton.tsx`
 
-### ১. নতুন edge function: `sms-gateway-stats`
+- ছোট button (icon)। ক্লিক করলে dialog খোলে দুটো tab নিয়ে:
+  - **📷 Camera** tab — live camera feed, একবার barcode পেলে auto-detect করে `onDetected(code)` call করে dialog বন্ধ হয়
+  - **⌨️ Hardware** tab — একটা auto-focused input field, scanner gun-এর Enter এ trigger হয়
+- **Library**: `@zxing/browser` (lightweight, EAN/UPC/Code128/QR সবই support করে, pure JS, Worker-compatible না হলেও client-only বলে সমস্যা নেই)
+- Camera permission না থাকলে clear error message + Hardware tab-এ fallback suggestion
+- Beep sound on successful scan
+- Mobile-friendly: rear camera default, torch toggle if available
 
-- Primary active gateway-এর `config` (api_key, secret_key, base_url) load করবে
-- REVE-এর balance API call করবে:
-  - `GET {base_url}/getBalance?apikey=...&secretkey=...`
-- REVE-এর usage/report API call করবে (today, this month sent, this month failed):
-  - `GET {base_url}/getReportByDate?apikey=...&secretkey=...&fromDate=...&toDate=...`
-  - REVE-এর actual endpoint name documentation থেকে নিশ্চিত করা হবে। যদি usage endpoint না থাকে, fallback হিসেবে আমাদের `sms_history` table থেকে count আসবে (যাতে কখনোই blank না দেখায়)।
-- Response shape:
-  ```json
-  { "balance": 1234, "today": 12, "month": 340, "failed": 5, "source": "reve" | "local" | "mixed" }
-  ```
-- Error হলে graceful fallback: `{ "balance": 0, "today": 0, ..., "error": "...", "fallback": true }` — frontend crash হবে না।
+## ২. POSPage এ integration (Sell + Purchase)
 
-### ২. `SmsGateways.tsx` update
+বর্তমানে লাইন 222-224 এ একটা placeholder ScanLine button আছে যেটা কিছু করে না। সেটাকে `BarcodeScannerButton` দিয়ে replace করা হবে।
 
-- Page load ও gateway save-এর পর `supabase.functions.invoke('sms-gateway-stats')` call হবে
-- Stat card-এ live REVE data দেখাবে
-- Loading state এ skeleton/spinner; API fail হলে stat card-এর নিচে ছোট warning text ("Live data unavailable, showing local stats")
-- "Refresh" button যোগ করা হবে stat card row-এর পাশে যাতে user manually re-fetch করতে পারে
+Scan flow:
+- Code পেলে → products list-এ `barcode` field ম্যাচ খুঁজবে
+- ম্যাচ পেলে → সরাসরি `addToCart(p)` call (serialized হলে SerialPickDialog খুলবে — current behavior)
+- ম্যাচ না পেলে → toast "এই barcode-এর পণ্য পাওয়া যায়নি" + scanned code টা search box এ বসিয়ে দিবে যাতে user manually যোগ করতে পারে
 
-### ৩. Debug সাপোর্ট
+এছাড়া search input-এ **global hardware scanner listener** — page যখন POS-এ আছে, hardware gun যেকোনো জায়গায় type করলেও কাজ করবে (rapid keystroke detection: <50ms gap + Enter)।
 
-Edge function-এ verbose console.log রাখা হবে (REVE response status, body snippet) যাতে log থেকে দেখা যায় API call হচ্ছে কি না, কী error দিচ্ছে।
+## ৩. Products page এ integration
 
-## Files
+`Products.tsx` — barcode toggle on করলে input field-এর পাশে scan button দেখাবে। স্ক্যান করলে input-এ value বসে যাবে।
 
-- নতুন: `supabase/functions/sms-gateway-stats/index.ts`
-- Edit: `src/pages/admin/SmsGateways.tsx` (stats fetch + Refresh button + fallback display)
+## ৪. Files
 
-## Approve করলে
+- নতুন: `src/components/app/BarcodeScannerButton.tsx`
+- নতুন: `src/hooks/useHardwareScanner.ts` (rapid-keystroke + Enter detection)
+- Edit: `src/components/app/POSPage.tsx` (button replace + scan handler + global listener)
+- Edit: `src/pages/app/Products.tsx` (barcode field-এর পাশে scan button)
+- Dependency: `bun add @zxing/browser @zxing/library`
 
-Implement করে আপনাকে edge function logs link দেব, যেখান থেকে দেখা যাবে REVE call হচ্ছে কি না এবং কী return করছে।
+## ৫. UX details
+
+- Camera dialog খোলার সময় explicit permission prompt
+- iOS Safari এ camera access HTTPS-only — preview/published দুটোই HTTPS, OK
+- Hardware tab-এ একটা hint: "USB scanner connect করে barcode-এ trigger চাপুন"
+- Beep + visual flash on successful detect
