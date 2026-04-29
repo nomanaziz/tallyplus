@@ -846,7 +846,17 @@ function ProductFormDialog({
       .insert({ shop_id: shopId, name: newCatName.trim(), parent_id: parent })
       .select("id,name,parent_id")
       .single();
-    if (error) { toast.error(error.message); return; }
+    if (error) {
+      const code = (error as { code?: string }).code;
+      if (code === "42501") {
+        toast.error(lang === "bn"
+          ? "এই দোকানে ক্যাটাগরি যোগ করার অনুমতি নেই"
+          : "You don't have permission to add categories in this shop");
+      } else {
+        toast.error(error.message);
+      }
+      return;
+    }
     if (data) {
       setAllCats((prev) => [...prev, data as Cat]);
       if (parent) setSubCategoryId((data as Cat).id);
@@ -892,7 +902,17 @@ function ProductFormDialog({
       ? await supabase.from("products").update(payload).eq("id", product.id)
       : await supabase.from("products").insert(payload);
     setBusy(false);
-    if (error) { toast.error(error.message); return; }
+    if (error) {
+      const code = (error as { code?: string }).code;
+      if (code === "42501") {
+        toast.error(lang === "bn"
+          ? "এই দোকানে প্রোডাক্ট যোগ করার অনুমতি নেই"
+          : "You don't have permission to add products in this shop");
+      } else {
+        toast.error(error.message);
+      }
+      return;
+    }
     toast.success(lang === "bn" ? "সেভ হয়েছে" : "Saved");
     onOpenChange(false);
     onSaved();
