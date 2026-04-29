@@ -96,6 +96,7 @@ const P86 = lazy(() => import("./pages/admin/Locations"));
 const P87 = lazy(() => import("./pages/admin/Ads"));
 const P88 = lazy(() => import("./pages/Privacy"));
 const P89 = lazy(() => import("./pages/Terms"));
+const P90 = lazy(() => import("./pages/app/DueHistory"));
 
 export function AppRoutes() {
   return (
@@ -135,6 +136,7 @@ export function AppRoutes() {
       <Route path="customer-wishlist" element={<S><P22 /></S>} />
       <Route path="dashboard" element={<S><P23 /></S>} />
       <Route path="due-ledger" element={<S><P24 /></S>} />
+      <Route path="due-history" element={<S><P90 /></S>} />
       <Route path="expense-ledger" element={<S><P25 /></S>} />
       <Route path="expiring" element={<S><P26 /></S>} />
       <Route path="fordo-history" element={<S><P27 /></S>} />
