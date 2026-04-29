@@ -807,7 +807,9 @@ function ProductFormDialog({
   const [barcodeOn, setBarcodeOn] = useState(false);
   const [serializedOn, setSerializedOn] = useState(false);
 
-  const showSerializedOption = shopTypeCode === "mobile" || shopTypeCode === "electronics";
+  // IMEI/Serial tracking is available for all shop types — any product
+  // (jewelry, hardware, furniture, etc.) can opt in to per-unit serial tracking.
+  void shopTypeCode;
 
   const reloadCats = async (sid: string) => {
     const { data } = await supabase
@@ -1220,19 +1222,17 @@ function ProductFormDialog({
             </div>
           </ToggleSection>
 
-          {showSerializedOption && (
-            <ToggleSection
-              title={lang === "bn" ? "সিরিয়ালাইজড পণ্য (IMEI/সিরিয়াল)" : "Serialized product (IMEI/Serial)"}
-              checked={serializedOn}
-              onChange={setSerializedOn}
-            >
-              <p className="text-xs text-muted-foreground">
-                {lang === "bn"
-                  ? "প্রতিটি পিস আলাদা IMEI/সিরিয়াল নম্বরে track হবে। প্রোডাক্ট save করার পর 'সিরিয়াল ম্যানেজ' বাটন থেকে যোগ করুন।"
-                  : "Each unit will be tracked by a unique IMEI/Serial. Use the 'Manage Serials' button after saving."}
-              </p>
-            </ToggleSection>
-          )}
+          <ToggleSection
+            title={lang === "bn" ? "IMEI / সিরিয়াল ট্র্যাকিং" : "IMEI / Serial tracking"}
+            checked={serializedOn}
+            onChange={setSerializedOn}
+          >
+            <p className="text-xs text-muted-foreground">
+              {lang === "bn"
+                ? "প্রতিটি ইউনিটের আলাদা IMEI বা সিরিয়াল নম্বর সেভ করুন। সেভ করার সাথে সাথে সিরিয়াল যোগ করার window আসবে — ক্রমিক (sequential) অথবা র‍্যান্ডম যেভাবে চান দিতে পারবেন।"
+                : "Track each unit by a unique IMEI or Serial. After saving, you'll be prompted to enter serials — sequential range or random one-by-one."}
+            </p>
+          </ToggleSection>
 
           <ToggleSection
             title={lang === "bn" ? "বারকোড" : "Barcode"}
