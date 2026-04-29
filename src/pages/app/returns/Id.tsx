@@ -2,10 +2,12 @@ import { useNavigate, useParams } from "@/lib/router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useI18n, fmtMoney } from "@/lib/i18n";
+import { useShop } from "@/lib/shop";
 import { PageHeader } from "@/components/app/PageHeader";
 import { RequirePerm } from "@/components/app/RequirePerm";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Printer } from "lucide-react";
+import { printTableReport } from "@/lib/print-report";
 
 
 
@@ -13,6 +15,7 @@ function ReturnDetailsPage() {
   const { lang } = useI18n();
   const { id } = useParams();
   const nav = useNavigate();
+  const { current } = useShop();
 
   const { data, isLoading } = useQuery({
     queryKey: ["return-details", id],
@@ -39,6 +42,32 @@ function ReturnDetailsPage() {
     : r.refund_status === "adjusted_to_due" ? (lang === "bn" ? "বাকিতে সমন্বয়" : "Adjusted to due")
     : (lang === "bn" ? "অপেক্ষমান" : "Pending");
 
+  function onPrint() {
+    const created = new Date(r.created_at).toISOString().slice(0, 10);
+    printTableReport({
+      shopName: current?.name ?? "",
+      shopAddress: (current as { address?: string | null } | null)?.address ?? null,
+      shopPhone: (current as { phone?: string | null } | null)?.phone ?? null,
+      title: `${lang === "bn" ? "রিটার্ন" : "Return"} ${r.return_no ?? id.slice(0, 6)}`,
+      startDate: created,
+      endDate: created,
+      lang,
+      columns: [
+        { key: "name", label: lang === "bn" ? "পণ্য" : "Item" },
+        { key: "qty", label: lang === "bn" ? "পরিমাণ" : "Qty", align: "right" },
+        { key: "price", label: lang === "bn" ? "মূল্য" : "Price", align: "right" },
+        { key: "total", label: lang === "bn" ? "মোট" : "Total", align: "right" },
+      ],
+      rows: (data?.items ?? []).map((it) => ({
+        name: it.name,
+        qty: Number(it.qty),
+        price: fmtMoney(Number(it.price), lang),
+        total: fmtMoney(Number(it.total), lang),
+      })),
+      footer: `${lang === "bn" ? "মোট" : "Total"}: ${fmtMoney(Number(r.total), lang)}  •  ${lang === "bn" ? "ফেরত" : "Refunded"} (${r.refund_method}): ${fmtMoney(Number(r.refund_amount), lang)}  •  ${lang === "bn" ? "অবস্থা" : "Status"}: ${statusLabel}`,
+    });
+  }
+
   return (
     <div className="min-h-full bg-muted/30">
       <PageHeader
@@ -47,7 +76,7 @@ function ReturnDetailsPage() {
         actions={
           <>
             <Button size="sm" variant="outline" onClick={() => nav({ to: "/app/returns" })}><ArrowLeft className="h-4 w-4" /></Button>
-            <Button size="sm" variant="outline" onClick={() => window.print()}><Printer className="h-4 w-4" /></Button>
+            <Button size="sm" variant="outline" onClick={onPrint}><Printer className="h-4 w-4" /></Button>
           </>
         }
       />

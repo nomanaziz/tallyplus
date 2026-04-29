@@ -3707,6 +3707,10 @@ export type Database = {
         }[]
       }
       ensure_affiliate_wallet: { Args: { _aff_id: string }; Returns: undefined }
+      ensure_default_categories: {
+        Args: { _names: string[]; _shop_id: string }
+        Returns: undefined
+      }
       has_active_subscription: { Args: { _user_id: string }; Returns: boolean }
       has_role: {
         Args: {

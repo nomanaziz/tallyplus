@@ -316,8 +316,19 @@ function WishlistDetailDialog({
         qcLocal.setQueryData(key, prev);
         toast.error(error.message);
       } else if (!data || data.length === 0) {
-        qcLocal.setQueryData(key, prev);
-        toast.error(lang === "bn" ? "আপডেট করা গেলো না — আবার লগইন করে চেষ্টা করুন" : "Update failed — please log in again");
+        // One quick retry to absorb the occasional RLS / replication race.
+        await new Promise((r) => setTimeout(r, 400));
+        const retry = await supabase
+          .from("customer_wishlist_items")
+          .update({ fulfillment_status: status, done: status === "fulfilled" } as never)
+          .eq("id", it.id)
+          .select("id");
+        if (retry.error || !retry.data || retry.data.length === 0) {
+          qcLocal.setQueryData(key, prev);
+          toast.error(lang === "bn" ? "আপডেট করা গেলো না — আবার চেষ্টা করুন" : "Update failed — please try again");
+        } else {
+          void detailQ.refetch();
+        }
       } else {
         void detailQ.refetch();
       }

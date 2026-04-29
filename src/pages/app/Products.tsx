@@ -369,7 +369,14 @@ function ProductsPage() {
                 <Sparkles className="h-4 w-4 text-primary" />
                 {lang === "bn" ? "স্যাম্পল ইম্পোর্ট" : "Import Sample"}
               </Button>
-              <Button className="h-10 gap-2" onClick={() => { setEditing(null); setOpenForm(true); }}>
+              <Button className="h-10 gap-2" onClick={() => {
+                if (!current?.id) {
+                  toast.error(lang === "bn" ? "আগে দোকান নির্বাচন করুন" : "Select a shop first");
+                  return;
+                }
+                setEditing(null);
+                setOpenForm(true);
+              }}>
                 <Plus className="h-4 w-4" />
                 {lang === "bn" ? "প্রোডাক্ট যুক্ত করুন" : "Add Product"}
               </Button>
@@ -846,7 +853,17 @@ function ProductFormDialog({
       .insert({ shop_id: shopId, name: newCatName.trim(), parent_id: parent })
       .select("id,name,parent_id")
       .single();
-    if (error) { toast.error(error.message); return; }
+    if (error) {
+      const code = (error as { code?: string }).code;
+      if (code === "42501") {
+        toast.error(lang === "bn"
+          ? "এই দোকানে ক্যাটাগরি যোগ করার অনুমতি নেই"
+          : "You don't have permission to add categories in this shop");
+      } else {
+        toast.error(error.message);
+      }
+      return;
+    }
     if (data) {
       setAllCats((prev) => [...prev, data as Cat]);
       if (parent) setSubCategoryId((data as Cat).id);
@@ -892,7 +909,17 @@ function ProductFormDialog({
       ? await supabase.from("products").update(payload).eq("id", product.id)
       : await supabase.from("products").insert(payload);
     setBusy(false);
-    if (error) { toast.error(error.message); return; }
+    if (error) {
+      const code = (error as { code?: string }).code;
+      if (code === "42501") {
+        toast.error(lang === "bn"
+          ? "এই দোকানে প্রোডাক্ট যোগ করার অনুমতি নেই"
+          : "You don't have permission to add products in this shop");
+      } else {
+        toast.error(error.message);
+      }
+      return;
+    }
     toast.success(lang === "bn" ? "সেভ হয়েছে" : "Saved");
     onOpenChange(false);
     onSaved();
