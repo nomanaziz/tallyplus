@@ -1134,6 +1134,36 @@ function ProductFormDialog({
             </div>
           </ToggleSection>
 
+          <div className="rounded-lg border bg-background p-3">
+            <div className="mb-2 text-sm font-semibold">
+              {lang === "bn" ? "উৎপাদন ও মেয়াদ" : "Manufacturing & Expiry"}
+            </div>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className="grid gap-1.5">
+                <Label>{lang === "bn" ? "উৎপাদনের তারিখ" : "Manufacturing date"}</Label>
+                <Input
+                  type="date"
+                  value={mfgDate}
+                  onChange={(e) => setMfgDate(e.target.value)}
+                />
+              </div>
+              <div className="grid gap-1.5">
+                <Label>{lang === "bn" ? "মেয়াদ শেষের তারিখ" : "Expiry date"}</Label>
+                <Input
+                  type="date"
+                  value={expDate}
+                  onChange={(e) => setExpDate(e.target.value)}
+                  min={mfgDate || undefined}
+                />
+                <p className="text-[11px] text-muted-foreground">
+                  {lang === "bn"
+                    ? "মেয়াদ এক মাসের কম থাকলে পণ্যটি \"শীঘ্রই মেয়াদোত্তীর্ণ\" পেজে দেখাবে।"
+                    : "If expiry is within one month, the product will appear on the \"Expire Soon\" page."}
+                </p>
+              </div>
+            </div>
+          </div>
+
           <ToggleSection
             title={lang === "bn" ? "ডিসকাউন্ট" : "Discount"}
             checked={discountOn} onChange={setDiscountOn}
