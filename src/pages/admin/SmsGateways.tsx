@@ -23,6 +23,8 @@ import {
   User,
   KeyRound,
   ChevronDown,
+  RefreshCw,
+  AlertTriangle,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -91,6 +93,8 @@ export default function AdminSmsGateways() {
 
   // Stats
   const [stats, setStats] = useState({ balance: 0, today: 0, month: 0, failed: 0 });
+  const [statsLoading, setStatsLoading] = useState(false);
+  const [statsMeta, setStatsMeta] = useState<{ source?: string; provider_error?: string | null; gateway_configured?: boolean } | null>(null);
 
   // Gateways (full list, but only the primary/selected one is edited inline)
   const [gateways, setGateways] = useState<Gateway[]>([]);
@@ -113,40 +117,20 @@ export default function AdminSmsGateways() {
   // ========== Load ==========
   const loadAll = async () => {
     setLoading(true);
-    const monthStart = new Date();
-    monthStart.setDate(1); monthStart.setHours(0, 0, 0, 0);
-    const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
-
     const [
       { data: g },
       { data: p },
       { data: t },
-      { data: bal },
-      { count: todaySent },
-      { count: monthSent },
-      { count: monthFailed },
     ] = await Promise.all([
       supabase.from("sms_gateways").select("*").order("sort_order").order("created_at"),
       supabase.from("sms_packages").select("*").order("sort_order").order("sms_count"),
       supabase.from("sms_templates").select("*").order("sort_order").order("code"),
-      supabase.from("shop_sms_balance").select("balance"),
-      supabase.from("sms_history").select("*", { count: "exact", head: true }).eq("status", "sent").gte("created_at", todayStart.toISOString()),
-      supabase.from("sms_history").select("*", { count: "exact", head: true }).eq("status", "sent").gte("created_at", monthStart.toISOString()),
-      supabase.from("sms_history").select("*", { count: "exact", head: true }).eq("status", "failed").gte("created_at", monthStart.toISOString()),
     ]);
 
     const gws = (g as Gateway[]) ?? [];
     setGateways(gws);
     setPackages((p as Pkg[]) ?? []);
     setTemplates((t as Template[]) ?? []);
-
-    const totalBal = (bal ?? []).reduce((s: number, r: any) => s + Number(r.balance ?? 0), 0);
-    setStats({
-      balance: totalBal,
-      today: todaySent ?? 0,
-      month: monthSent ?? 0,
-      failed: monthFailed ?? 0,
-    });
 
     // Pick primary gateway as the inline-form value
     const primary =
@@ -163,8 +147,33 @@ export default function AdminSmsGateways() {
       setActive(primary.is_active);
     }
     setLoading(false);
+    // Fetch live stats (REVE balance + local usage)
+    refreshStats();
   };
   useEffect(() => { loadAll(); }, []);
+
+  const refreshStats = async () => {
+    setStatsLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("sms-gateway-stats", { body: {} });
+      if (error) throw error;
+      setStats({
+        balance: Number(data?.balance ?? 0),
+        today: Number(data?.today ?? 0),
+        month: Number(data?.month ?? 0),
+        failed: Number(data?.failed ?? 0),
+      });
+      setStatsMeta({
+        source: data?.source,
+        provider_error: data?.provider_error,
+        gateway_configured: data?.gateway_configured,
+      });
+    } catch (e) {
+      setStatsMeta({ source: "local", provider_error: (e as Error).message });
+    } finally {
+      setStatsLoading(false);
+    }
+  };
 
   // ========== Save settings (single primary gateway) ==========
   const opt = useMemo(() => PROVIDER_OPTIONS.find((o) => o.key === providerKey)!, [providerKey]);
@@ -276,12 +285,33 @@ export default function AdminSmsGateways() {
 
       <div className="container max-w-7xl px-3 py-4 sm:px-4">
         {/* ============== Stat cards ============== */}
+        <div className="mb-2 flex items-center justify-between">
+          <div className="text-xs text-muted-foreground">
+            {statsLoading ? "Live data refresh হচ্ছে..." : (
+              statsMeta?.source === "reve" || statsMeta?.source === "mixed"
+                ? <span className="text-emerald-600">● Live REVE balance</span>
+                : <span className="text-amber-600">● Local data only</span>
+            )}
+          </div>
+          <Button size="sm" variant="outline" onClick={refreshStats} disabled={statsLoading} className="h-8 gap-1">
+            <RefreshCw className={`h-3.5 w-3.5 ${statsLoading ? "animate-spin" : ""}`} /> Refresh
+          </Button>
+        </div>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard color="bg-emerald-500" icon={Mail} label="SMS Balance" value={stats.balance.toLocaleString()} footer="Total SMS Remaining Balance" />
           <StatCard color="bg-sky-500" icon={CheckCircle2} label="Todays Send" value={stats.today.toLocaleString()} footer="Total SMS Send Today" />
           <StatCard color="bg-amber-500" icon={Hourglass} label="This Month Send" value={stats.month.toLocaleString()} footer="Total SMS Send in This Month" />
           <StatCard color="bg-rose-500" icon={XCircle} label="This Month Failed" value={stats.failed.toLocaleString()} footer="Total SMS Sending failed in This Month" />
         </div>
+        {statsMeta?.provider_error && (
+          <div className="mt-2 flex items-start gap-2 rounded-md border border-amber-300 bg-amber-50 p-2 text-xs text-amber-800">
+            <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+            <div>
+              <strong>Live API issue:</strong> {statsMeta.provider_error}
+              <div className="opacity-75">Balance card local DB থেকে দেখাচ্ছে। API key/secret check করুন বা Edge Function logs দেখুন।</div>
+            </div>
+          </div>
+        )}
 
         {/* ============== Secondary tabs ============== */}
         <div className="mt-6">
