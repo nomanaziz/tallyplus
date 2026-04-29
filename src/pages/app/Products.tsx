@@ -777,6 +777,8 @@ function ProductFormDialog({
   const [warrantyOn, setWarrantyOn] = useState(false);
   const [warrantyValue, setWarrantyValue] = useState("");
   const [warrantyUnit, setWarrantyUnit] = useState<"day"|"week"|"month"|"year">("month");
+  const [mfgDate, setMfgDate] = useState("");
+  const [expDate, setExpDate] = useState("");
   const [discountOn, setDiscountOn] = useState(false);
   const [discountValue, setDiscountValue] = useState("");
   const [discountType, setDiscountType] = useState<"percent"|"flat">("percent");
@@ -834,6 +836,9 @@ function ProductFormDialog({
       setWarrantyOn(Boolean(p?.warranty_enabled));
       setWarrantyValue(p?.warranty_value != null ? String(p.warranty_value) : "");
       setWarrantyUnit(((p?.warranty_unit as "day"|"week"|"month"|"year") ?? "month"));
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      setMfgDate(((p as any)?.manufacturing_date as string | null) ?? "");
+      setExpDate(((p as any)?.expiry_date as string | null) ?? "");
       setDiscountOn(Boolean(p?.discount_enabled));
       setDiscountValue(p?.discount_value != null ? String(p.discount_value) : "");
       setDiscountType(((p?.discount_type as "percent"|"flat") ?? "percent"));
@@ -900,6 +905,8 @@ function ProductFormDialog({
       warranty_enabled: warrantyOn,
       warranty_value: warrantyOn ? (Number(warrantyValue) || 0) : null,
       warranty_unit: warrantyOn ? warrantyUnit : null,
+      manufacturing_date: mfgDate || null,
+      expiry_date: expDate || null,
       discount_enabled: discountOn,
       discount_value: discountOn ? (Number(discountValue) || 0) : null,
       discount_type: discountOn ? discountType : null,
@@ -1127,11 +1134,42 @@ function ProductFormDialog({
             </div>
           </ToggleSection>
 
+          <div className="rounded-lg border bg-background p-3">
+            <div className="mb-2 text-sm font-semibold">
+              {lang === "bn" ? "উৎপাদন ও মেয়াদ" : "Manufacturing & Expiry"}
+            </div>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className="grid gap-1.5">
+                <Label>{lang === "bn" ? "উৎপাদনের তারিখ" : "Manufacturing date"}</Label>
+                <Input
+                  type="date"
+                  value={mfgDate}
+                  onChange={(e) => setMfgDate(e.target.value)}
+                />
+              </div>
+              <div className="grid gap-1.5">
+                <Label>{lang === "bn" ? "মেয়াদ শেষের তারিখ" : "Expiry date"}</Label>
+                <Input
+                  type="date"
+                  value={expDate}
+                  onChange={(e) => setExpDate(e.target.value)}
+                  min={mfgDate || undefined}
+                />
+                <p className="text-[11px] text-muted-foreground">
+                  {lang === "bn"
+                    ? "মেয়াদ এক মাসের কম থাকলে পণ্যটি \"শীঘ্রই মেয়াদোত্তীর্ণ\" পেজে দেখাবে।"
+                    : "If expiry is within one month, the product will appear on the \"Expire Soon\" page."}
+                </p>
+              </div>
+            </div>
+          </div>
+
           <ToggleSection
             title={lang === "bn" ? "ডিসকাউন্ট" : "Discount"}
             checked={discountOn} onChange={setDiscountOn}
           >
             <div className="grid grid-cols-[1fr_120px] gap-3">
+
               <div className="grid gap-1.5">
                 <Label>{lang === "bn" ? "ডিসকাউন্ট" : "Discount"}</Label>
                 <Input type="number" value={discountValue} onChange={(e) => setDiscountValue(e.target.value)} />

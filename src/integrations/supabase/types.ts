@@ -2099,6 +2099,7 @@ export type Database = {
           is_marketplace_published: boolean
           is_serialized: boolean
           low_stock_alert: number | null
+          manufacturing_date: string | null
           name: string
           sale_price: number
           shop_id: string
@@ -2133,6 +2134,7 @@ export type Database = {
           is_marketplace_published?: boolean
           is_serialized?: boolean
           low_stock_alert?: number | null
+          manufacturing_date?: string | null
           name: string
           sale_price?: number
           shop_id: string
@@ -2167,6 +2169,7 @@ export type Database = {
           is_marketplace_published?: boolean
           is_serialized?: boolean
           low_stock_alert?: number | null
+          manufacturing_date?: string | null
           name?: string
           sale_price?: number
           shop_id?: string
