@@ -4,7 +4,7 @@ import { SiteHeader } from "@/components/site/SiteHeader";
 import { SiteFooter } from "@/components/site/SiteFooter";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
-import { Home, LayoutDashboard, Store, Tag, ArrowLeft, Search, LayoutGrid } from "lucide-react";
+import { Home, LayoutDashboard, Store, Tag, ArrowLeft, Search } from "lucide-react";
 
 export default function NotFound() {
   const { user } = useAuth();
