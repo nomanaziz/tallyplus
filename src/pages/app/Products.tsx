@@ -616,34 +616,15 @@ function ProductFormDialog({
     setAllCats((data as Cat[] | null) ?? []);
   };
 
-  // Lazy seed default category tree on first open per shop
+  // Ensure all default sample-import categories exist on every dialog open.
+  // The helper is idempotent and per-session cached, so this is essentially
+  // free after the first call per shop.
   useEffect(() => {
     if (!open || !shopId) return;
     let cancelled = false;
     (async () => {
-      const { data: existing } = await supabase
-        .from("categories")
-        .select("id,name,parent_id")
-        .eq("shop_id", shopId);
-      if (cancelled) return;
-      const list = (existing as Cat[] | null) ?? [];
-      if (list.length === 0) {
-        for (const top of DEFAULT_CATEGORY_TREE) {
-          const { data: parent } = await supabase
-            .from("categories")
-            .insert({ shop_id: shopId, name: top.name })
-            .select("id")
-            .single();
-          if (parent && top.children?.length) {
-            await supabase.from("categories").insert(
-              top.children.map((c) => ({ shop_id: shopId, name: c, parent_id: parent.id })),
-            );
-          }
-        }
-        await reloadCats(shopId);
-      } else {
-        setAllCats(list);
-      }
+      await ensureDefaultCategories(shopId);
+      if (!cancelled) await reloadCats(shopId);
     })();
     return () => { cancelled = true; };
   }, [open, shopId]);
