@@ -700,11 +700,6 @@ function ProductsPage() {
               onPageChange={setPage}
               onPageSizeChange={setPageSize}
             />
-            <div className="flex flex-wrap items-center justify-end gap-2 border-t px-4 py-3 text-sm">
-              <span className="font-semibold">
-                {lang === "bn" ? "মোট মজুদ মূল্য:" : "Total stock value:"} {fmtMoney(totalStockValue, lang)}
-              </span>
-            </div>
           </>
         )}
       </div>
