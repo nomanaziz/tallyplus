@@ -681,6 +681,45 @@ function ProductsPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      <Dialog open={confirmOpen} onOpenChange={(o) => { setConfirmOpen(o); if (!o) setConfirmText(""); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-destructive">
+              {lang === "bn" ? "প্রোডাক্ট ডিলিট নিশ্চিত করুন" : "Confirm bulk delete"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 text-sm">
+            <p>
+              {lang === "bn"
+                ? `আপনি ${selected.size}টি প্রোডাক্ট ডিলিট করতে যাচ্ছেন। এই কাজটি করতে নিচের ঘরে`
+                : `You are about to delete ${selected.size} products. To confirm, type`}{" "}
+              <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">delete</code>{" "}
+              {lang === "bn" ? "লিখুন।" : "below."}
+            </p>
+            <Input
+              autoFocus
+              value={confirmText}
+              onChange={(e) => setConfirmText(e.target.value)}
+              placeholder="delete"
+            />
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" onClick={() => setConfirmOpen(false)}>
+                {lang === "bn" ? "ক্যানসেল" : "Cancel"}
+              </Button>
+              <Button
+                variant="destructive"
+                disabled={confirmText.trim().toLowerCase() !== "delete" || bulkDeleting}
+                onClick={confirmBulkDelete}
+              >
+                {bulkDeleting
+                  ? "..."
+                  : lang === "bn" ? "ডিলিট করুন" : "Delete"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
