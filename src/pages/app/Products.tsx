@@ -31,6 +31,7 @@ import { CatalogProductPicker, type CatalogProduct } from "@/components/app/Cata
 import { ensureDefaultCategories } from "@/lib/default-categories";
 import { SampleProductImportSheet } from "@/components/app/SampleProductImportSheet";
 import { ProductSerialsDialog } from "@/components/app/ProductSerialsDialog";
+import { BarcodeScannerButton } from "@/components/app/BarcodeScannerButton";
 import { SerialCaptureDialog } from "@/components/app/SerialCaptureDialog";
 import { ProductDetailsDialog, type ProductFull } from "@/components/app/ProductDetailsDialog";
 import { UpdateStockDialog } from "@/components/app/UpdateStockDialog";
@@ -1242,7 +1243,7 @@ function ProductFormDialog({
               <Label>{lang === "bn" ? "বারকোড" : "Barcode"}</Label>
               <div className="flex gap-2">
                 <Input value={barcode} onChange={(e) => setBarcode(e.target.value)} />
-                <BarcodeScannerButton onDetected={(code) => setBarcode(code)} />
+                <BarcodeScannerButton onDetected={(code: string) => setBarcode(code)} />
               </div>
             </div>
           </ToggleSection>
