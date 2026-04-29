@@ -2,9 +2,8 @@ import { Link } from "@/lib/router";
 import { useI18n, bnNum } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
-import heroImg from "@/assets/hero-shop.jpg";
-import { icons } from "@/lib/icons";
 import { TrendingUp, MessageCircle, ArrowRight } from "lucide-react";
+import { HeroAuthCard } from "./HeroAuthCard";
 
 export function HeroSection() {
   const { t, lang } = useI18n();
@@ -53,21 +52,8 @@ export function HeroSection() {
           </div>
         </div>
         <div className="relative">
-          <div className="absolute inset-0 -z-10 mx-auto my-auto h-[85%] w-[85%] rounded-full bg-primary" aria-hidden />
-          <img src={heroImg} alt={lang === "bn" ? "দোকানদার টালি প্লাস ব্যবহার করছেন" : "Shop owner using Tally Plus"} className="relative mx-auto rounded-3xl shadow-2xl ring-4 ring-background" width={1280} height={960} />
-          {/* Floating chips with real icons */}
-          <div className="absolute left-2 top-6 hidden rounded-2xl bg-card p-2 shadow-xl md:flex md:items-center md:gap-2">
-            <img src={icons.businessReport} alt="" className="h-8 w-8" />
-            <span className="pr-2 text-xs font-semibold">{lang === "bn" ? "ব্যবসার রিপোর্ট" : "Reports"}</span>
-          </div>
-          <div className="absolute right-0 top-16 hidden rounded-2xl bg-card p-2 shadow-xl md:flex md:items-center md:gap-2">
-            <img src={icons.stock} alt="" className="h-8 w-8" />
-            <span className="pr-2 text-xs font-semibold">{lang === "bn" ? "স্টকের হিসাব" : "Stock"}</span>
-          </div>
-          <div className="absolute bottom-10 left-0 hidden rounded-2xl bg-card p-2 shadow-xl md:flex md:items-center md:gap-2">
-            <img src={icons.due} alt="" className="h-8 w-8" />
-            <span className="pr-2 text-xs font-semibold">{lang === "bn" ? "বাড়তি আয়" : "Extra income"}</span>
-          </div>
+          <div className="absolute inset-0 -z-10 mx-auto my-auto h-[90%] w-[90%] rounded-[2.5rem] bg-gradient-to-br from-primary/30 via-primary/10 to-transparent blur-2xl" aria-hidden />
+          <HeroAuthCard />
         </div>
       </div>
     </section>
