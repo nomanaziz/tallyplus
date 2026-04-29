@@ -441,6 +441,50 @@ function ProductsPage() {
       </div>
       <SampleProductImportSheet open={openImport} onOpenChange={setOpenImport} onImported={() => void load()} />
 
+      {/* Summary card — Total Stock & Stock Value */}
+      <div className="mt-4 rounded-2xl bg-primary p-3 text-primary-foreground shadow-sm sm:p-5">
+        <div className="grid grid-cols-2 gap-2 sm:gap-4">
+          <div className="rounded-xl bg-primary-foreground/15 px-3 py-3 text-center sm:py-4">
+            <div className="text-2xl font-extrabold tabular-nums sm:text-3xl">
+              {lang === "bn" ? bnNum(totalStockCount) : totalStockCount.toLocaleString()}
+            </div>
+            <div className="mt-1 text-xs font-semibold sm:text-sm">
+              {lang === "bn" ? "মোট স্টক" : "Total Stock"}
+            </div>
+          </div>
+          <div className="rounded-xl bg-primary-foreground/15 px-3 py-3 text-center sm:py-4">
+            <div className="text-2xl font-extrabold tabular-nums sm:text-3xl">
+              {fmtMoney(totalStockValue, lang)}
+            </div>
+            <div className="mt-1 text-xs font-semibold sm:text-sm">
+              {lang === "bn" ? "মজুদ মূল্য" : "Stock Value"}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile-only quick actions (Stock History + Stock Edit) */}
+      {!editStockMode && (
+        <div className="mt-3 flex gap-2 sm:hidden">
+          <Button
+            variant="outline"
+            className="h-10 flex-1 gap-2 border-primary text-primary hover:bg-primary/10"
+            onClick={openHistory}
+          >
+            <History className="h-4 w-4" />
+            {lang === "bn" ? "স্টকের ইতিহাস" : "Stock History"}
+          </Button>
+          <Button
+            variant="outline"
+            className="h-10 flex-1 gap-2"
+            onClick={() => setEditStockMode(true)}
+          >
+            <ListOrdered className="h-4 w-4" />
+            {lang === "bn" ? "স্টক এডিট" : "Stock Edit"}
+          </Button>
+        </div>
+      )}
+
       <div className="mt-4">
         <DataToolbar
           search={search}
