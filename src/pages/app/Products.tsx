@@ -386,7 +386,7 @@ function ProductsPage() {
             </>
           ) : (
             <>
-              <Button variant="outline" className="h-10 gap-2" onClick={() => setHistoryOpen(true)}>
+              <Button variant="outline" className="h-10 gap-2 border-primary text-primary hover:bg-primary/10" onClick={openHistory}>
                 <History className="h-4 w-4" />
                 {lang === "bn" ? "স্টকের ইতিহাস" : "Stock history"}
               </Button>
