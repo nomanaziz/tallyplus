@@ -122,14 +122,29 @@ function AppLayout() {
       else setTimeout(cb, 1500);
     };
     idle(() => {
+      // Core daily-use pages
       void import("@/pages/app/Sell");
       void import("@/pages/app/Purchase");
       void import("@/pages/app/Dashboard");
+      void import("@/pages/app/Products");
+      void import("@/pages/app/QuickOrder");
+      void import("@/components/app/POSPage");
+      // Ledgers
       void import("@/pages/app/SalesLedger");
       void import("@/pages/app/PurchaseLedger");
       void import("@/pages/app/DueLedger");
-      void import("@/pages/app/Products");
-      void import("@/components/app/POSPage");
+      void import("@/pages/app/DueHistory");
+      void import("@/pages/app/ExpenseLedger");
+      void import("@/pages/app/OwnerLedger");
+      // Operations
+      void import("@/pages/app/Returns");
+      void import("@/pages/app/Contacts");
+      void import("@/pages/app/Cashbox");
+      void import("@/pages/app/CustomerWishlist");
+      void import("@/pages/app/FordoHistory");
+      void import("@/pages/app/Reports");
+      void import("@/pages/app/Warranty");
+      void import("@/pages/app/Expiring");
     });
   }, [user]);
 

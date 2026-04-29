@@ -14,6 +14,7 @@ import {
   type LinkProps as RRLinkProps,
 } from "react-router-dom";
 import { forwardRef, type ReactNode, type AnchorHTMLAttributes } from "react";
+import { prefetchRoute } from "@/lib/route-prefetch";
 
 export { RROutlet as Outlet };
 
@@ -64,10 +65,26 @@ function buildPath(
 }
 
 export const Link = forwardRef<HTMLAnchorElement, LinkProps>(function Link(
-  { to, params, search, hash, activeProps, inactiveProps, preload, preloadDelay, resetScroll, className, style, children, ...rest },
+  { to, params, search, hash, activeProps, inactiveProps, preload, preloadDelay: _preloadDelay, resetScroll: _resetScroll, className, style, children, ...rest },
   ref
 ) {
   const finalTo = buildPath(to, params, search, hash);
+  // Kick off the JS chunk download as soon as the user shows intent to navigate
+  // (hover / touch / keyboard focus). preload defaults to "intent" — pass
+  // preload={false} or preload="none" to opt out.
+  const preloadEnabled = preload !== false && preload !== "none";
+  const fire = preloadEnabled ? () => { try { prefetchRoute(finalTo); } catch { /* ignore */ } } : undefined;
+  const r = rest as Record<string, unknown>;
+  const userOnMouseEnter = r.onMouseEnter as React.MouseEventHandler<HTMLAnchorElement> | undefined;
+  const userOnTouchStart = r.onTouchStart as React.TouchEventHandler<HTMLAnchorElement> | undefined;
+  const userOnFocus = r.onFocus as React.FocusEventHandler<HTMLAnchorElement> | undefined;
+  const onMouseEnter: React.MouseEventHandler<HTMLAnchorElement> = (e) => { if (fire) fire(); if (userOnMouseEnter) userOnMouseEnter(e); };
+  const onTouchStart: React.TouchEventHandler<HTMLAnchorElement> = (e) => { if (fire) fire(); if (userOnTouchStart) userOnTouchStart(e); };
+  const onFocus: React.FocusEventHandler<HTMLAnchorElement> = (e) => { if (fire) fire(); if (userOnFocus) userOnFocus(e); };
+  const restNoHandlers: Record<string, unknown> = { ...r };
+  delete restNoHandlers.onMouseEnter;
+  delete restNoHandlers.onTouchStart;
+  delete restNoHandlers.onFocus;
   if (activeProps || inactiveProps) {
     return (
       <NavLink
@@ -83,14 +100,26 @@ export const Link = forwardRef<HTMLAnchorElement, LinkProps>(function Link(
           ...(typeof style === "object" && style ? style : {}),
           ...(isActive ? activeProps?.style : inactiveProps?.style),
         })}
-        {...rest}
+        onMouseEnter={onMouseEnter}
+        onTouchStart={onTouchStart}
+        onFocus={onFocus}
+        {...restNoHandlers}
       >
         {children}
       </NavLink>
     );
   }
   return (
-    <RRLink ref={ref as never} to={finalTo} className={className} style={style} {...rest}>
+    <RRLink
+      ref={ref as never}
+      to={finalTo}
+      className={className}
+      style={style}
+      onMouseEnter={onMouseEnter}
+      onTouchStart={onTouchStart}
+      onFocus={onFocus}
+      {...restNoHandlers}
+    >
       {children}
     </RRLink>
   );
