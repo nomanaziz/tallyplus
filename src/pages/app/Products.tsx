@@ -35,6 +35,9 @@ import { ProductDetailsDialog, type ProductFull } from "@/components/app/Product
 import { UpdateStockDialog } from "@/components/app/UpdateStockDialog";
 import { DataPagination } from "@/components/app/DataPagination";
 import { usePagination } from "@/hooks/use-pagination";
+import { Checkbox } from "@/components/ui/checkbox";
+import { CheckSquare } from "lucide-react";
+import { printTableReport } from "@/lib/print-report";
 
 type Product = {
   id: string;
