@@ -1,64 +1,59 @@
 ## Goal
-Simplify the **Admin → SMS Gateways** page to match the provided screenshot. Remove extra fields/clutter; show only what's needed.
+Polish the existing IMEI / Serial workflow so it matches the user's described flow:
+"যদি serialized হয় → start থেকে end পর্যন্ত sequence; যদি non-serialized (random) হয় → প্রতিটি IMEI আলাদা করে input"; sell-time এ ওই serial দিয়ে sell।
 
-## New Page Layout
+## Current State (already working — keep as-is)
+- `product_serials` table with `serial_no`, `imei2`, `status` (in_stock / sold / returned / damaged), `cost_price`, `warranty_until`, `sale_id`, `sale_item_id`.
+- `is_serialized` boolean on `products`.
+- `SerialCaptureDialog` — opens automatically after creating a serialized product with stock>0 (Range / Manual / Skip tabs).
+- `ProductSerialsDialog` — manage serials per product later.
+- `SerialPickDialog` — POS auto-prompts to pick specific serials when selling a serialized product; on sale, those serials flip to `sold` and are linked to the sale_item.
+
+## Changes
+
+### 1. Show "Serialized" toggle for ALL shop types (Products.tsx)
+Currently `showSerializedOption = shopTypeCode === "mobile" || shopTypeCode === "electronics"`. Remove the gate so any shop (grocery, hardware, jewelry, etc.) can mark a product serialized. Place the toggle in the "Advanced Options" section of the product form labeled:
+- BN: "IMEI / সিরিয়াল ট্র্যাকিং" with help text "প্রতিটি ইউনিটের আলাদা IMEI বা সিরিয়াল নম্বর সেভ করুন"
+- EN: "IMEI / Serial tracking"
+
+### 2. Redesign Range tab in `SerialCaptureDialog` to Start → End flow
+Replace the current 3-field (Prefix + Start + Pad) with a clearer **2-field** input that matches what the user described ("001 থেকে 010"):
 
 ```text
-┌─────────────────────────────────────────────────────────────────────────┐
-│  SMS Service  ›  SMS Gateway Setup                                      │
-├──────────────┬──────────────┬──────────────┬──────────────────────────┤
-│ SMS Balance  │ Today's Send │ Month Send   │ Month Failed             │
-│ (green)      │ (blue)       │ (orange)     │ (red)                    │
-│ 1968.77      │ 46           │ 9143         │ 23                       │
-└──────────────┴──────────────┴──────────────┴──────────────────────────┘
-┌─────────────────────────────────────────────────────────────────────────┐
-│  ▰ SMS Settings                                                         │
-├─────────────────────────────────────────────────────────────────────────┤
-│  SMS Provider [dropdown]              SMS User Name [input]             │
-│  SMS Sender   [input]                 SMS Password  [input password]    │
-│                                            [ Update Company Information ]│
-└─────────────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────┐
+│ মোড: [● ক্রমিক (Sequential)]  [○ র‍্যান্ডম] │
+├─────────────────────────────────────────────┤
+│  শুরু IMEI/সিরিয়াল                          │
+│  [ 350123456789001       ]                  │
+│                                             │
+│  শেষ IMEI/সিরিয়াল  (auto from quantity)    │
+│  [ 350123456789010       ]                  │
+│                                             │
+│  ✓ ১০টি সিরিয়াল জেনারেট হবে                 │
+│  Preview: ...001, ...002, ...003, ... ...010│
+└─────────────────────────────────────────────┘
 ```
 
-### Stats cards (top, 4 colored cards)
-- **SMS Balance** (green) — sum of `shop_sms_balance.balance` across all shops (platform-wide)
-- **Today's Send** — count from `sms_history` where `status='sent'` and date = today
-- **This Month Send** — count from `sms_history` where `status='sent'` and within current month
-- **This Month Failed** — count from `sms_history` where `status='failed'` and within current month
+Behavior:
+- User types "350123456789001" in Start. The dialog auto-fills End as `350123456789001 + (qty-1)` preserving the same digit length (auto-detects pad from trailing-numeric length of Start).
+- User can edit End. If End doesn't match `Start + qty - 1`, show inline warning: "Range mismatch: Stock = 10 but range generates 12 serials."
+- Validate Start has a numeric tail. If purely alphabetic, show error and switch to Manual mode.
+- Generation: split Start into `prefix + numericTail`. End must share the same prefix (validate). Generate `[prefix + (start_num+i).toString().padStart(tailLen,'0')]` for i in 0..qty-1.
 
-Icons: Mail / Check / Hourglass / X. Match screenshot colors (emerald-500, sky-500, amber-500, rose-500).
+The two **Manual** and **Skip** tabs stay unchanged. Rename **Range** tab → **Sequential** (BN: ক্রমিক), **Manual** → **Random** (BN: র‍্যান্ডম) to match the user's wording ("যদি non-serialized হয় তাহলে random হয়").
 
-### SMS Settings form (single primary gateway editor)
-Only **4 fields** visible to admin:
-1. **SMS Provider** (dropdown) — options:
-   - `REVE SMS (Masking)` → provider=reve, masking=masking
-   - `REVE SMS (Non-masking)` → provider=reve, masking=non-masking
-   - `WhatsApp` (placeholder, "coming soon")
-   - `Telegram` (placeholder, "coming soon")
-2. **SMS Sender** (text) — maps to `config.sender_id` (callerID, e.g. `nomask_GalaxyNet` or `8809612xxxxx`)
-3. **SMS User Name** (text) — maps to `config.api_key` **OR** `config.username` (whichever the user fills — both stored)
-4. **SMS Password** (password) — maps to `config.secret_key` **OR** `config.password`
+### 3. Stock-quantity coupling
+Already coupled — `qty` prop = product.stock. Just add a clear summary banner at top of dialog: "এই পণ্যের জন্য ১০টি সিরিয়াল প্রয়োজন।"
 
-One **"Update Company Information"** button (right-aligned, dark navy like screenshot) → upserts the active primary gateway row for the selected provider+masking combo, sets `is_active=true`, `is_primary=true`.
-
-Behind the scenes both `api_key`/`secret_key` AND `username`/`password` are written with the same values so the edge function works whichever auth REVE expects. `base_url` defaults to `http://smpp.revesms.com:7788` (hidden).
-
-### Removed from current page
-- Tabs (Gateways / Packages / Templates) — keep them but move to **separate sub-pages or a small secondary tab strip below the main settings card**, since the screenshot only shows Gateway Setup. (Default view = Gateway Setup; Packages & Templates accessible via small tab buttons under stats.)
-- Per-gateway list view, "Add Gateway" button, primary toggles, multi-row editor — all replaced by the single inline form.
-- Separate Base URL, API Key, Secret Key, Username, Password, Type/Masking dropdown — consolidated into the 4 fields above.
-- "Display Name" field — auto-derived from provider selection.
-
-## Edge function compatibility
-`send-sms/index.ts` already reads `cfg.api_key`, `cfg.secret_key`, `cfg.sender_id`, `cfg.base_url`. Since we'll write the User Name → `api_key` and Password → `secret_key` (and mirror to `username`/`password`), no edge function changes needed.
+### 4. Verification — no changes needed but re-test
+- `ProductSerialsDialog` Bulk add (already supports paste).
+- POS `SerialPickDialog` — already enforces serial selection on serialized products at sell time.
+- On return/recycle flow — out of scope for this turn.
 
 ## Files to modify
-- `src/pages/admin/SmsGateways.tsx` — full redesign
-  - Add stats query (4 metrics via Supabase)
-  - Replace tab/list UI with single settings card + colored stats
-  - Keep Packages & Templates as a small secondary tab below (collapsed/secondary)
+- `src/pages/app/Products.tsx` — remove `showSerializedOption` gate (always show); update label/help text.
+- `src/components/app/SerialCaptureDialog.tsx` — rebuild Range tab as Start+End, rename tabs, add summary banner & validation.
 
 ## Files NOT changed
-- DB schema — no migration needed
-- `supabase/functions/send-sms/index.ts` — no change
-- Marketing/BuySms/SmsHistory pages — no change
+- DB schema — no migration needed.
+- `SerialPickDialog`, `ProductSerialsDialog`, POS sell flow — already work as user described.

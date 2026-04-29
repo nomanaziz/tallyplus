@@ -8,7 +8,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useI18n } from "@/lib/i18n";
 import { useShop } from "@/lib/shop";
-import { Hash, Sparkles, X, Save, ChevronLeft, ChevronRight } from "lucide-react";
+import { Hash, Sparkles, Shuffle, X, Save, ChevronLeft, ChevronRight, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 
 const BATCH_LIMIT = 50;
@@ -24,6 +24,18 @@ type Props = {
   onSaved?: (count: number) => void;
 };
 
+/** Split a serial like "350123456789001" into ("350123456789", "001"). */
+function splitTrailingDigits(s: string): { prefix: string; tail: string } {
+  const m = s.match(/^(.*?)(\d+)$/);
+  if (!m) return { prefix: s, tail: "" };
+  return { prefix: m[1], tail: m[2] };
+}
+
+/** Build serial from prefix + numeric value padded to tailLen. */
+function buildSerial(prefix: string, num: number, tailLen: number): string {
+  return `${prefix}${String(num).padStart(tailLen, "0")}`;
+}
+
 export function SerialCaptureDialog({
   open, onOpenChange, productId, productName, qty,
   costPrice = 0, warrantyUntil = null, onSaved,
@@ -31,12 +43,12 @@ export function SerialCaptureDialog({
   const { lang } = useI18n();
   const { current } = useShop();
 
-  // Range mode
-  const [prefix, setPrefix] = useState("");
-  const [start, setStart] = useState("1");
-  const [pad, setPad] = useState("2");
+  // ===== Sequential mode (Start → End) =====
+  const [startSerial, setStartSerial] = useState("");
+  const [endSerial, setEndSerial] = useState("");
+  const [endTouched, setEndTouched] = useState(false);
 
-  // Manual mode (paginated batches of 50)
+  // ===== Random mode (one-by-one, paginated batches of 50) =====
   const [manualVals, setManualVals] = useState<string[]>([]);
   const [batchIdx, setBatchIdx] = useState(0);
 
@@ -44,27 +56,61 @@ export function SerialCaptureDialog({
 
   useEffect(() => {
     if (open) {
-      setPrefix(""); setStart("1"); setPad("2");
+      setStartSerial(""); setEndSerial(""); setEndTouched(false);
       setManualVals(Array.from({ length: qty }, () => ""));
       setBatchIdx(0);
     }
   }, [open, qty]);
 
-  const totalBatches = Math.max(1, Math.ceil(qty / BATCH_LIMIT));
-  const batchStart = batchIdx * BATCH_LIMIT;
-  const batchEnd = Math.min(qty, batchStart + BATCH_LIMIT);
+  // Auto-fill End from Start whenever Start changes (until user manually edits End)
+  useEffect(() => {
+    if (endTouched) return;
+    const { prefix, tail } = splitTrailingDigits(startSerial.trim());
+    if (!tail) { setEndSerial(""); return; }
+    const startNum = parseInt(tail, 10);
+    const endNum = startNum + Math.max(0, qty - 1);
+    setEndSerial(buildSerial(prefix, endNum, tail.length));
+  }, [startSerial, qty, endTouched]);
 
-  const rangePreview = useMemo(() => {
-    const s = Number(start) || 0;
-    const p = Math.max(1, Number(pad) || 1);
-    return Array.from({ length: Math.min(qty, 5) }, (_, i) =>
-      `${prefix}${String(s + i).padStart(p, "0")}`
-    );
-  }, [prefix, start, pad, qty]);
+  // ===== Sequential validation =====
+  const seqInfo = useMemo(() => {
+    const startTrim = startSerial.trim();
+    const endTrim = endSerial.trim();
+    if (!startTrim) return { ok: false, error: null as string | null, count: 0, preview: [] as string[] };
 
+    const { prefix: pStart, tail: tStart } = splitTrailingDigits(startTrim);
+    if (!tStart) {
+      return { ok: false, error: lang === "bn"
+        ? "শুরু সিরিয়ালের শেষে অন্তত কয়েকটি সংখ্যা থাকতে হবে (যেমন: ABC001)"
+        : "Start serial must end with digits (e.g. ABC001)", count: 0, preview: [] };
+    }
+    if (!endTrim) {
+      return { ok: false, error: lang === "bn" ? "শেষ সিরিয়াল দিন" : "Enter end serial", count: 0, preview: [] };
+    }
+    const { prefix: pEnd, tail: tEnd } = splitTrailingDigits(endTrim);
+    if (pStart !== pEnd) {
+      return { ok: false, error: lang === "bn"
+        ? `প্রিফিক্স মেলেনি — দুটোই "${pStart}" দিয়ে শুরু হতে হবে`
+        : `Prefix mismatch — both must start with "${pStart}"`, count: 0, preview: [] };
+    }
+    const sNum = parseInt(tStart, 10);
+    const eNum = parseInt(tEnd, 10);
+    if (eNum < sNum) {
+      return { ok: false, error: lang === "bn" ? "শেষ নম্বর শুরুর চেয়ে বড় হতে হবে" : "End must be greater than start", count: 0, preview: [] };
+    }
+    const count = eNum - sNum + 1;
+    const tailLen = Math.max(tStart.length, tEnd.length);
+    const previewCount = Math.min(count, 4);
+    const preview = Array.from({ length: previewCount }, (_, i) => buildSerial(pStart, sNum + i, tailLen));
+    if (count > previewCount) preview.push("…", buildSerial(pStart, eNum, tailLen));
+    return { ok: true, error: null, count, preview, prefix: pStart, startNum: sNum, endNum: eNum, tailLen };
+  }, [startSerial, endSerial, lang]);
+
+  const qtyMismatch = seqInfo.ok && seqInfo.count !== qty;
+
+  // ===== Persistence =====
   async function bulkInsert(serials: string[]) {
-    if (!current || !productId) return;
-    // chunked insert (200 per call) to keep payloads sane
+    if (!current || !productId) return 0;
     const chunks: string[][] = [];
     for (let i = 0; i < serials.length; i += 200) chunks.push(serials.slice(i, i + 200));
     let inserted = 0;
@@ -84,32 +130,37 @@ export function SerialCaptureDialog({
     return inserted;
   }
 
-  async function saveRange() {
-    if (!prefix.trim() && !start.trim()) {
-      toast.error(lang === "bn" ? "প্রিফিক্স অথবা শুরু নম্বর দিন" : "Enter prefix or start number");
+  async function saveSequential() {
+    if (!seqInfo.ok || seqInfo.count === 0) {
+      toast.error(seqInfo.error || (lang === "bn" ? "সঠিক রেঞ্জ দিন" : "Enter a valid range"));
       return;
     }
-    const s = Number(start) || 0;
-    const p = Math.max(1, Number(pad) || 1);
-    const serials = Array.from({ length: qty }, (_, i) => `${prefix}${String(s + i).padStart(p, "0")}`);
+    if (qtyMismatch) {
+      const proceed = confirm(lang === "bn"
+        ? `স্টক ${qty} কিন্তু রেঞ্জ ${seqInfo.count}টি সিরিয়াল তৈরি করবে। চালিয়ে যাবেন?`
+        : `Stock is ${qty} but range will create ${seqInfo.count} serials. Continue?`);
+      if (!proceed) return;
+    }
+    const serials = Array.from({ length: seqInfo.count! }, (_, i) =>
+      buildSerial(seqInfo.prefix!, seqInfo.startNum! + i, seqInfo.tailLen!)
+    );
     setBusy(true);
     try {
       const n = await bulkInsert(serials);
       toast.success(lang === "bn" ? `${n}টি সিরিয়াল সেভ হয়েছে` : `${n} serials saved`);
-      onSaved?.(n ?? 0);
+      onSaved?.(n);
       onOpenChange(false);
     } catch (e) {
       toast.error((e as Error).message);
     } finally { setBusy(false); }
   }
 
-  async function saveManual() {
+  async function saveRandom() {
     const cleaned = manualVals.map((s) => s.trim()).filter(Boolean);
     if (cleaned.length === 0) {
       toast.error(lang === "bn" ? "অন্তত একটি সিরিয়াল দিন" : "Enter at least one serial");
       return;
     }
-    // dedupe
     const seen = new Set<string>();
     const dups: string[] = [];
     for (const s of cleaned) { if (seen.has(s)) dups.push(s); seen.add(s); }
@@ -121,7 +172,7 @@ export function SerialCaptureDialog({
     try {
       const n = await bulkInsert(Array.from(seen));
       toast.success(lang === "bn" ? `${n}টি সিরিয়াল সেভ হয়েছে` : `${n} serials saved`);
-      onSaved?.(n ?? 0);
+      onSaved?.(n);
       onOpenChange(false);
     } catch (e) {
       toast.error((e as Error).message);
@@ -139,6 +190,10 @@ export function SerialCaptureDialog({
     });
   }
 
+  const totalBatches = Math.max(1, Math.ceil(qty / BATCH_LIMIT));
+  const batchStart = batchIdx * BATCH_LIMIT;
+  const batchEnd = Math.min(qty, batchStart + BATCH_LIMIT);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -152,61 +207,105 @@ export function SerialCaptureDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs defaultValue="range" className="w-full">
+        {/* Quantity reminder banner */}
+        <div className="rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-900">
+          {lang === "bn"
+            ? `এই পণ্যের জন্য ${qty}টি IMEI/সিরিয়াল প্রয়োজন।`
+            : `This product needs ${qty} IMEI/Serial entries.`}
+        </div>
+
+        <Tabs defaultValue="sequential" className="w-full">
           <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="range">
+            <TabsTrigger value="sequential">
               <Sparkles className="mr-1 h-3.5 w-3.5" />
-              {lang === "bn" ? "রেঞ্জ" : "Range"}
+              {lang === "bn" ? "ক্রমিক" : "Sequential"}
             </TabsTrigger>
-            <TabsTrigger value="manual">{lang === "bn" ? "ম্যানুয়াল" : "Manual"}</TabsTrigger>
+            <TabsTrigger value="random">
+              <Shuffle className="mr-1 h-3.5 w-3.5" />
+              {lang === "bn" ? "র‍্যান্ডম" : "Random"}
+            </TabsTrigger>
             <TabsTrigger value="skip">{lang === "bn" ? "পরে" : "Skip"}</TabsTrigger>
           </TabsList>
 
-          {/* Range mode */}
-          <TabsContent value="range" className="space-y-3 pt-3">
+          {/* ============ Sequential (Start → End) ============ */}
+          <TabsContent value="sequential" className="space-y-3 pt-3">
             <p className="text-xs text-muted-foreground">
               {lang === "bn"
-                ? "একই প্রিফিক্স, শুধু শেষের কয়েক ডিজিট পরিবর্তন হয়। উদাহরণ: 354897109876541, 542, 543…"
-                : "Same prefix, last digits change. e.g. 354897109876541, 542, 543…"}
+                ? "একই প্রিফিক্স দিয়ে ক্রমিক সিরিয়াল। উদাহরণ: 001 → 010 দিলে দশটি ক্রমিক সিরিয়াল তৈরি হবে।"
+                : "Sequential serials sharing a prefix. e.g. 001 → 010 generates ten consecutive serials."}
             </p>
-            <div className="grid gap-2">
-              <Label className="text-xs">{lang === "bn" ? "প্রিফিক্স (একই অংশ)" : "Prefix (common part)"}</Label>
-              <Input value={prefix} onChange={(e) => setPrefix(e.target.value)} placeholder="3548971098765" className="font-mono" />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="grid gap-2">
-                <Label className="text-xs">{lang === "bn" ? "শুরু নম্বর" : "Start number"}</Label>
-                <Input value={start} onChange={(e) => setStart(e.target.value)} placeholder="41" className="font-mono" />
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="grid gap-1.5">
+                <Label className="text-xs">{lang === "bn" ? "শুরু IMEI / সিরিয়াল" : "Start IMEI / Serial"}</Label>
+                <Input
+                  value={startSerial}
+                  onChange={(e) => setStartSerial(e.target.value)}
+                  placeholder="350123456789001"
+                  className="font-mono"
+                />
+                <p className="text-[10px] text-muted-foreground">
+                  {lang === "bn" ? "শেষে সংখ্যা থাকতে হবে (যেমন 001)" : "Must end with digits (e.g. 001)"}
+                </p>
               </div>
-              <div className="grid gap-2">
-                <Label className="text-xs">{lang === "bn" ? "প্যাড দৈর্ঘ্য" : "Pad length"}</Label>
-                <Input value={pad} onChange={(e) => setPad(e.target.value)} placeholder="2" className="font-mono" />
+              <div className="grid gap-1.5">
+                <Label className="text-xs">{lang === "bn" ? "শেষ IMEI / সিরিয়াল" : "End IMEI / Serial"}</Label>
+                <Input
+                  value={endSerial}
+                  onChange={(e) => { setEndSerial(e.target.value); setEndTouched(true); }}
+                  placeholder="350123456789010"
+                  className="font-mono"
+                />
+                <p className="text-[10px] text-muted-foreground">
+                  {endTouched
+                    ? (lang === "bn" ? "ম্যানুয়ালি সম্পাদিত" : "Manually edited")
+                    : (lang === "bn" ? "স্টক অনুযায়ী auto-filled" : "Auto-filled from stock qty")}
+                </p>
               </div>
             </div>
-            <div className="rounded border bg-muted/30 p-2">
-              <div className="text-[11px] font-bold text-muted-foreground">{lang === "bn" ? "প্রিভিউ" : "Preview"}</div>
-              <ul className="mt-1 space-y-0.5 font-mono text-xs">
-                {rangePreview.map((s, i) => <li key={i}>{i + 1}. {s}</li>)}
-                {qty > 5 && <li className="text-muted-foreground">… +{qty - 5} {lang === "bn" ? "আরও" : "more"}</li>}
-              </ul>
-            </div>
+
+            {/* Validation feedback */}
+            {seqInfo.error && (
+              <div className="flex items-start gap-2 rounded-md border border-rose-200 bg-rose-50 p-2 text-xs text-rose-800">
+                <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                <span>{seqInfo.error}</span>
+              </div>
+            )}
+            {seqInfo.ok && (
+              <div className={`flex items-start gap-2 rounded-md border p-2 text-xs ${qtyMismatch ? "border-amber-300 bg-amber-50 text-amber-900" : "border-emerald-200 bg-emerald-50 text-emerald-800"}`}>
+                {qtyMismatch ? <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" /> : <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0" />}
+                <div className="min-w-0">
+                  <div className="font-semibold">
+                    {qtyMismatch
+                      ? (lang === "bn"
+                          ? `স্টক ${qty} কিন্তু রেঞ্জ ${seqInfo.count}টি তৈরি করবে`
+                          : `Stock is ${qty} but range produces ${seqInfo.count}`)
+                      : (lang === "bn"
+                          ? `${seqInfo.count}টি সিরিয়াল তৈরি হবে ✓`
+                          : `${seqInfo.count} serials will be generated ✓`)}
+                  </div>
+                  <div className="mt-0.5 truncate font-mono text-[11px] opacity-80">{seqInfo.preview.join(", ")}</div>
+                </div>
+              </div>
+            )}
+
             <DialogFooter className="gap-2 sm:gap-2">
               <Button variant="outline" className="h-10 gap-2 flex-1 sm:flex-none" onClick={() => onOpenChange(false)}>
                 <X className="h-4 w-4" />{lang === "bn" ? "বাতিল" : "Cancel"}
               </Button>
-              <Button className="h-10 gap-2 flex-1 sm:flex-none" onClick={saveRange} disabled={busy}>
-                <Save className="h-4 w-4" />{busy ? "…" : (lang === "bn" ? `${qty}টি জেনারেট করুন` : `Generate ${qty}`)}
+              <Button className="h-10 gap-2 flex-1 sm:flex-none" onClick={saveSequential} disabled={busy || !seqInfo.ok}>
+                <Save className="h-4 w-4" />{busy ? "…" : (lang === "bn" ? `${seqInfo.count || qty}টি জেনারেট` : `Generate ${seqInfo.count || qty}`)}
               </Button>
             </DialogFooter>
           </TabsContent>
 
-          {/* Manual mode */}
-          <TabsContent value="manual" className="space-y-3 pt-3">
+          {/* ============ Random (one-by-one) ============ */}
+          <TabsContent value="random" className="space-y-3 pt-3">
             <div className="flex items-center justify-between">
               <p className="text-xs text-muted-foreground">
                 {lang === "bn"
-                  ? `প্রতিটির আলাদা সিরিয়াল লিখুন। ব্যাচ ${batchIdx + 1}/${totalBatches} (${batchStart + 1}–${batchEnd})`
-                  : `Enter each serial. Batch ${batchIdx + 1}/${totalBatches} (${batchStart + 1}–${batchEnd})`}
+                  ? `প্রতিটির আলাদা IMEI/সিরিয়াল লিখুন। ব্যাচ ${batchIdx + 1}/${totalBatches} (${batchStart + 1}–${batchEnd})`
+                  : `Enter each IMEI/Serial separately. Batch ${batchIdx + 1}/${totalBatches} (${batchStart + 1}–${batchEnd})`}
               </p>
               {totalBatches > 1 && (
                 <div className="flex items-center gap-1">
@@ -250,13 +349,13 @@ export function SerialCaptureDialog({
               <Button variant="outline" className="h-10 gap-2 flex-1 sm:flex-none" onClick={() => onOpenChange(false)}>
                 <X className="h-4 w-4" />{lang === "bn" ? "বাতিল" : "Cancel"}
               </Button>
-              <Button className="h-10 gap-2 flex-1 sm:flex-none" onClick={saveManual} disabled={busy}>
+              <Button className="h-10 gap-2 flex-1 sm:flex-none" onClick={saveRandom} disabled={busy}>
                 <Save className="h-4 w-4" />{busy ? "…" : (lang === "bn" ? "সংরক্ষণ" : "Save all")}
               </Button>
             </DialogFooter>
           </TabsContent>
 
-          {/* Skip */}
+          {/* ============ Skip ============ */}
           <TabsContent value="skip" className="space-y-3 pt-3">
             <p className="text-sm">
               {lang === "bn"
