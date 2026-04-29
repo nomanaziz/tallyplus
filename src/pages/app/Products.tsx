@@ -766,7 +766,7 @@ function ProductFormDialog({
   product: Product | null;
   shopId: string | null;
   shopTypeCode?: string | null;
-  onSaved: () => void;
+  onSaved: (saved?: { id: string; name: string; stock: number; cost_price: number; is_serialized: boolean } | null) => void;
 }) {
   const { lang } = useI18n();
   const [name, setName] = useState("");
