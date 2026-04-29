@@ -1,5 +1,5 @@
 import { useNavigate } from "@/lib/router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   Search,
@@ -12,6 +12,8 @@ import {
   Plus,
   ArrowLeft,
   ArrowRight,
+  Copy,
+  Loader2,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useShop } from "@/lib/shop";
@@ -20,6 +22,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { PageHeader } from "@/components/app/PageHeader";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 
 
@@ -38,13 +41,43 @@ function MarketingPage() {
   const [q, setQ] = useState("");
   const [phoneInput, setPhoneInput] = useState("");
   const [recipients, setRecipients] = useState<string[]>([]);
-  const [message, setMessage] = useState("");
+  const [templateCode, setTemplateCode] = useState<string>("");
+  const [sending, setSending] = useState(false);
 
-  const minuteBalance = 3;
-  const smsBalance = 30;
+  const minuteBalance = 0;
+
+  const { data: balance } = useQuery({
+    queryKey: ["sms_balance", current?.id],
+    enabled: !!current?.id,
+    queryFn: async () => {
+      const { data } = await supabase.from("shop_sms_balance").select("balance").eq("shop_id", current!.id).maybeSingle();
+      return data?.balance ?? 0;
+    },
+  });
+  const smsBalance = balance ?? 0;
+
+  const { data: templates = [] } = useQuery({
+    queryKey: ["sms_templates"],
+    queryFn: async () => {
+      const { data } = await supabase.from("sms_templates").select("*").eq("is_active", true).order("sort_order");
+      return data ?? [];
+    },
+  });
+  useEffect(() => {
+    if (templates.length > 0 && !templateCode) setTemplateCode(templates[0].code);
+  }, [templates, templateCode]);
+  const selectedTemplate = templates.find((t: any) => t.code === templateCode);
 
   const signature = current?.name && current?.phone ? `\n- ${current.name}(${current.phone})` : "";
-  const fullMessage = (message || "") + signature;
+  // Render template with sample placeholders for preview
+  const previewBody = useMemo(() => {
+    if (!selectedTemplate) return "";
+    return selectedTemplate.body_template
+      .replaceAll("{name}", lang === "bn" ? "গ্রাহক" : "Customer")
+      .replaceAll("{amount}", "0")
+      .replaceAll("{due}", "0");
+  }, [selectedTemplate, lang]);
+  const fullMessage = previewBody + signature;
   const charCount = fullMessage.length;
   const smsCount = Math.max(1, Math.ceil(charCount / SMS_PER_SEGMENT));
 
@@ -143,28 +176,71 @@ function MarketingPage() {
     );
   };
 
-  const sendSms = () => {
+  const sendSms = async () => {
     if (recipients.length === 0) {
       toast.error(lang === "bn" ? "কোনো প্রাপক নেই" : "No recipients");
       return;
     }
-    if (!message.trim()) {
-      toast.error(lang === "bn" ? "বার্তা লিখুন" : "Type a message");
+    if (!templateCode) {
+      toast.error(lang === "bn" ? "Template নির্বাচন করুন" : "Select a template");
       return;
     }
-    if (smsCount > smsBalance) {
+    if (!current?.id) return;
+    const totalNeeded = recipients.length * smsCount;
+    if (totalNeeded > smsBalance) {
       toast.error(
         lang === "bn"
-          ? "SMS balance কম। কিনুন → Buy SMS"
-          : "Insufficient SMS balance. Please Buy SMS.",
+          ? `SMS balance কম (${smsBalance})। কিনুন → Buy SMS`
+          : `Insufficient SMS balance (${smsBalance}). Please Buy SMS.`,
       );
       return;
     }
-    // No SMS gateway integrated yet — open device sms: link with all recipients.
-    const numbers = recipients.map((p) => `+88${p}`).join(",");
-    const body = encodeURIComponent(fullMessage);
-    window.open(`sms:${numbers}?body=${body}`, "_blank");
-    toast.success(lang === "bn" ? "SMS পাঠানোর জন্য খোলা হলো" : "Opened SMS app");
+    setSending(true);
+    try {
+      // Build per-recipient list with name lookup from contacts cache
+      const recList = recipients.map((p) => {
+        const c = contacts.find((c) => normalizePhone(c.phone ?? "") === p);
+        return { phone: p, name: c?.name ?? "" };
+      });
+      const { data, error } = await supabase.functions.invoke("send-sms", {
+        body: { shop_id: current.id, template_code: templateCode, recipients: recList },
+      });
+      if (error) throw error;
+      const sent = (data?.results ?? []).filter((r: any) => r.status === "sent").length;
+      const failed = (data?.results ?? []).filter((r: any) => r.status === "failed").length;
+      if (sent > 0) toast.success(lang === "bn" ? `${sent}টি SMS পাঠানো হয়েছে` : `${sent} SMS sent`);
+      if (failed > 0) toast.error(lang === "bn" ? `${failed}টি ব্যর্থ` : `${failed} failed`);
+      setRecipients([]);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Send failed");
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const copyMessage = async () => {
+    if (!fullMessage.trim()) {
+      toast.error(lang === "bn" ? "বার্তা নেই" : "No message");
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(fullMessage);
+      toast.success(lang === "bn" ? "কপি হয়েছে! মোবাইল থেকে পাঠান" : "Copied! Send from your phone");
+      // Log copied entries to history if recipients selected
+      if (current?.id && recipients.length > 0) {
+        const rows = recipients.map((p) => {
+          const c = contacts.find((c) => normalizePhone(c.phone ?? "") === p);
+          return {
+            shop_id: current.id, template_code: templateCode || null,
+            recipient_phone: p, recipient_name: c?.name ?? null,
+            message: fullMessage, sms_count: smsCount, status: "copied" as const,
+          };
+        });
+        await supabase.from("sms_history").insert(rows as any);
+      }
+    } catch {
+      toast.error("Clipboard not available");
+    }
   };
 
   const sendVoice = () => {
@@ -204,7 +280,7 @@ function MarketingPage() {
           </span>
         }
         actions={
-          <Button className="h-10 gap-2">
+          <Button className="h-10 gap-2" onClick={() => nav({ to: "/app/sms-history" })}>
             <History className="h-4 w-4" />
             {lang === "bn" ? "SMS হিস্টোরি" : "SMS History"}
           </Button>
@@ -357,6 +433,7 @@ function MarketingPage() {
                     size="sm"
                     variant="outline"
                     className="h-8 border-amber-300 text-amber-700 hover:bg-amber-50"
+                    onClick={() => toast.info(lang === "bn" ? "শীঘ্রই আসছে" : "Coming soon")}
                   >
                     {lang === "bn" ? "মিনিট কিনুন" : "Buy Minutes"}
                     <ArrowRight className="ml-1 h-3 w-3" />
@@ -364,6 +441,7 @@ function MarketingPage() {
                   <Button
                     size="sm"
                     className="h-8 bg-amber-500 text-white hover:bg-amber-600"
+                    onClick={() => nav({ to: "/app/buy-sms" })}
                   >
                     {lang === "bn" ? "SMS কিনুন" : "Buy SMS"}
                     <ArrowRight className="ml-1 h-3 w-3" />
@@ -405,17 +483,28 @@ function MarketingPage() {
               </div>
             </div>
 
-            {/* Message */}
+            {/* Template selector + preview */}
             <div className="rounded-xl border bg-background p-4">
               <label className="mb-2 block text-sm font-semibold">
-                {lang === "bn" ? "বার্তা লিখুন" : "Write your message"}
+                {lang === "bn" ? "টেমপ্লেট নির্বাচন করুন" : "Choose Template"}
               </label>
+              <Select value={templateCode} onValueChange={setTemplateCode}>
+                <SelectTrigger className="mb-2 h-10"><SelectValue placeholder={lang === "bn" ? "টেমপ্লেট" : "Template"} /></SelectTrigger>
+                <SelectContent>
+                  {templates.map((t: any) => (
+                    <SelectItem key={t.code} value={t.code}>{lang === "bn" ? t.name_bn : t.name_en}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <div className="rounded-md border bg-muted/30 p-2 text-xs text-muted-foreground">
+                {lang === "bn"
+                  ? "Custom message অনুমোদিত নয়। Admin-approved টেমপ্লেট ব্যবহার করুন।"
+                  : "Custom messages are not allowed. Use admin-approved templates only."}
+              </div>
               <Textarea
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                placeholder={lang === "bn" ? "যেমন: আমাদের নতুন অফার..." : "e.g. Our new offer..."}
-                className="min-h-[140px] resize-none"
-                maxLength={1000}
+                value={previewBody}
+                readOnly
+                className="mt-2 min-h-[110px] resize-none bg-muted/20"
               />
               {signature && (
                 <div className="mt-1 text-right text-xs text-muted-foreground whitespace-pre">
@@ -428,14 +517,23 @@ function MarketingPage() {
             </div>
 
             {/* Send buttons */}
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid gap-3 sm:grid-cols-3">
+              <Button
+                variant="outline"
+                onClick={copyMessage}
+                className="h-11 border-2 border-emerald-500 text-emerald-700 hover:bg-emerald-50"
+              >
+                <Copy className="mr-2 h-4 w-4" />
+                {lang === "bn" ? "কপি করুন" : "Copy Message"}
+              </Button>
               <Button
                 variant="outline"
                 onClick={sendSms}
+                disabled={sending}
                 className="h-11 border-2 border-blue-500 text-blue-600 hover:bg-blue-50"
               >
                 {lang === "bn" ? "SMS পাঠান" : "Send SMS"}
-                <Send className="ml-2 h-4 w-4" />
+                {sending ? <Loader2 className="ml-2 h-4 w-4 animate-spin" /> : <Send className="ml-2 h-4 w-4" />}
               </Button>
               <Button
                 onClick={sendVoice}
