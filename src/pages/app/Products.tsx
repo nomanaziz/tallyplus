@@ -96,6 +96,13 @@ function ProductsPage() {
   const [updates, setUpdates] = useState<Record<string, number>>({});
   const [savingStock, setSavingStock] = useState(false);
 
+  // Bulk select / delete mode
+  const [selectMode, setSelectMode] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmText, setConfirmText] = useState("");
+  const [bulkDeleting, setBulkDeleting] = useState(false);
+
   const load = async () => {
     await qc.invalidateQueries({ queryKey: ["products"] });
     await refetch();
@@ -155,6 +162,88 @@ function ProductsPage() {
     toast.success(lang === "bn" ? "ডিলিট হয়েছে" : "Deleted");
     setDetails(null);
     void load();
+  };
+
+  const toggleSelect = (id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+  const toggleSelectAllPage = () => {
+    const ids = paged.map((p) => p.id);
+    const allSelected = ids.every((id) => selected.has(id));
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (allSelected) ids.forEach((id) => next.delete(id));
+      else ids.forEach((id) => next.add(id));
+      return next;
+    });
+  };
+  const cancelSelect = () => {
+    setSelectMode(false);
+    setSelected(new Set());
+  };
+  const confirmBulkDelete = async () => {
+    if (confirmText.trim().toLowerCase() !== "delete") return;
+    const ids = Array.from(selected);
+    if (ids.length === 0) return;
+    setBulkDeleting(true);
+    const { error } = await supabase
+      .from("products")
+      .update({ deleted_at: new Date().toISOString() })
+      .in("id", ids);
+    setBulkDeleting(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success(
+      lang === "bn"
+        ? `${ids.length}টি প্রোডাক্ট ডিলিট হয়েছে`
+        : `${ids.length} products deleted`,
+    );
+    setConfirmOpen(false);
+    setConfirmText("");
+    cancelSelect();
+    void load();
+  };
+
+  const handlePrintProducts = () => {
+    printTableReport({
+      shopName: current?.name ?? "",
+      shopAddress: (current as { address?: string | null } | null)?.address ?? null,
+      shopPhone: (current as { phone?: string | null } | null)?.phone ?? null,
+      title: lang === "bn" ? "প্রোডাক্ট তালিকা" : "Products List",
+      startDate: new Date().toISOString().slice(0, 10),
+      endDate: new Date().toISOString().slice(0, 10),
+      lang,
+      columns: [
+        { key: "idx", label: "#" },
+        { key: "name", label: lang === "bn" ? "পণ্যের নাম" : "Name" },
+        { key: "sku", label: "SKU" },
+        { key: "stock", label: lang === "bn" ? "স্টক" : "Stock", align: "right" },
+        { key: "cost", label: lang === "bn" ? "দর" : "Cost", align: "right" },
+        { key: "sale", label: lang === "bn" ? "বিক্রয় মূল্য" : "Sale Price", align: "right" },
+        { key: "value", label: lang === "bn" ? "মজুদ মূল্য" : "Stock Value", align: "right" },
+      ],
+      rows: filtered.map((p, i) => {
+        const s = Number(p.stock);
+        const isUnlimited = s < 0;
+        const value = isUnlimited ? "—" : fmtMoney(Number(p.cost_price) * s, lang);
+        return {
+          idx: String(i + 1),
+          name: p.name,
+          sku: p.sku ?? "—",
+          stock: isUnlimited ? (lang === "bn" ? "অসীম" : "Unlimited") : (lang === "bn" ? bnNum(s) : s),
+          cost: fmtMoney(Number(p.cost_price), lang),
+          sale: fmtMoney(Number(p.sale_price), lang),
+          value,
+        };
+      }),
+    });
   };
 
   // Adjust stock from "Update Stock" dialog (single product)
