@@ -167,10 +167,9 @@ export function AppRoutes() {
       <Route path="quick-order" element={<S><P49 /></S>} />
       <Route path="recycle-bin" element={<S><P50 /></S>} />
       <Route path="reports" element={<S><P51 /></S>} />
-      <Route path="returns" element={<S><P54 /></S>}>
-      <Route path=":id" element={<S><P52 /></S>} />
-      <Route path="new" element={<S><P53 /></S>} />
-      </Route>
+      <Route path="returns" element={<S><P54 /></S>} />
+      <Route path="returns/new" element={<S><P53 /></S>} />
+      <Route path="returns/:id" element={<S><P52 /></S>} />
       <Route path="sales-ledger" element={<S><P55 /></S>} />
       <Route path="sell" element={<S><P56 /></S>} />
       <Route path="shops" element={<S><P57 /></S>} />

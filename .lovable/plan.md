@@ -1,125 +1,59 @@
-## Goal
+## কী ঠিক করা হবে
 
-Two things in one round:
+আমি দুইটা আলাদা সমস্যা একসাথে ঠিক করব:
 
-1. **Unify every action button across the whole app** — same size, same look, same icon spacing — so Products, Returns, Sales, Purchase, Contacts, Reports etc. all look like one system.
-2. **Add a real Serial / IMEI capture flow** for electronics & mobile shops, with three modes (Range / Manual / None) right when stock is added — not as an after-thought.
+1. **প্রোডাক্ট রিটার্ন কাজ না করা**
+2. **আমার ফর্দ-এ পাঠানো ফর্দ না দেখা**, বিশেষ করে `+8801841577944`-এর মতো কেস যেখানে ফর্দ দোকানদারের কাছে আছে কিন্তু গ্রাহকের তালিকায় নেই
 
----
+## কেন সমস্যা হচ্ছে
 
-## Part 1 — Unified Action Button System
+### 1) Product Return
+`/app/returns/new` আর `/app/returns/:id` রুটগুলো `returns` রুটের নিচে nested আছে, কিন্তু parent page (`Returns.tsx`) child route render করার জন্য outlet দেয় না। ফলে “নতুন রিটার্ন” বা details page ঠিকমতো খুলে না। এটাই return feature “not working” লাগার প্রধান কারণ।
 
-### The standard (one rule for the whole app)
+### 2) আমার ফর্দ
+এখন `MyFordo.tsx` সরাসরি `customer_wishlists` আর `customer_wishlist_items` টেবিল query করছে। কিন্তু public wishlist link (`/f/:slug`) দিয়ে পাঠানো ফর্দগুলো `wishlist_customer_id`-এর মাধ্যমে সংরক্ষিত হয়, আর logged-in app flow (`customer-create-wishlist`) `consumer_user_id` দিয়ে সংরক্ষণ করে। ফলে data দুইভাবে জমা হচ্ছে, কিন্তু `MyFordo` সবগুলোকে নির্ভরযোগ্যভাবে একসাথে তুলতে পারছে না।
 
-| Button role | Variant | Size | Icon |
-|---|---|---|---|
-| Primary action (Save / Add new / Submit) | `default` | `h-10 px-4` | left, 16px |
-| Secondary (Print / Download / Import / History / Filter toggle) | `outline` | `h-10 px-4` | left, 16px |
-| Destructive (Delete / Bulk delete) | `destructive` | `h-10 px-4` | left, 16px |
-| Cancel (in toolbar / dialog footer) | `outline` | `h-10 px-4` | left, 16px |
-| Row icon-only (Eye / Edit / Trash inside a table row) | `ghost` | `h-8 w-8` icon | center, 16px |
-| Dialog footer pair | `outline` + `default`, both `h-10`, equal width on mobile | | |
+এছাড়া customer-side direct table query-র ওপর ভরসা করলে RLS-এর কারণে কিছু ফর্দ emptyও আসতে পারে। তাই একই জিনিস বারবার চেষ্টা করতে হচ্ছে।
 
-All of them use the existing `<Button>` component with `className="h-10 gap-2"` (or `h-8 w-8` for row icons). No more `size="sm"` toolbars on Returns while Products uses `h-10`.
+## implementation plan
 
-### What gets fixed
+### Step 1 — Product Return route fix
+- `src/routes.tsx`-এ returns routes flatten করব:
+  - `/app/returns`
+  - `/app/returns/new`
+  - `/app/returns/:id`
+- দরকার হলে return pages-এ permission wrapper consistent করব, যাতে route fix-এর পরে access behaviorও ঠিক থাকে।
 
-Pages I will sweep and normalize (the pattern is identical, so this is mechanical):
+### Step 2 — My Fordo-র জন্য secure unified data source
+- নতুন server-side endpoint/function বানাব যা logged-in consumer authenticate করে
+- সেখানে দুই source একসাথে load করব:
+  - `consumer_user_id = current user`
+  - `wishlist_customer_id` linked records, phone-normalized matching সহ
+- response-এ wishlist, item, shop info একসাথে ফেরত দেব
+- duplicate wishlist dedupe করে newest-first সাজাব
+- `src/pages/customer/MyFordo.tsx`-কে direct table query থেকে এই unified source-এ switch করব
 
-- `src/pages/app/Returns.tsx` — currently `size="sm"`, switch toolbar to `h-10` outline + primary (matches Products).
-- `src/pages/app/returns/Id.tsx` — back/print buttons → `h-10` outline (not `size="sm"`).
-- `src/pages/app/returns/New.tsx` — Save/Cancel footer pair → standard pair; remove the hand-rolled `bg-foreground text-background` color override (use plain `default`).
-- `src/pages/app/Sell.tsx`, `src/pages/app/Purchase.tsx`, `src/pages/app/PurchaseLedger.tsx`, `src/pages/app/SalesLedger.tsx`, `src/pages/app/DueLedger.tsx`, `src/pages/app/DueHistory.tsx`, `src/pages/app/ExpenseLedger.tsx`, `src/pages/app/Cashbox.tsx`, `src/pages/app/Contacts.tsx`, `src/pages/app/Assets.tsx`, `src/pages/app/Reports.tsx`, `src/pages/app/Expiring.tsx`, `src/pages/app/Warranty.tsx`, `src/pages/app/CustomerWishlist.tsx`, `src/pages/app/FordoHistory.tsx`, `src/pages/app/RecycleBin.tsx`, `src/pages/app/Marketing.tsx`, `src/pages/app/OnlineShop.tsx` and its sub-pages — apply same toolbar pattern (`h-10 gap-2`, correct variant, icon left).
-- All dialog/sheet footers (Save / Cancel pair) get `flex gap-2`, both buttons `h-10`, equal width on mobile (`flex-1 sm:flex-none`).
-- Row icon buttons everywhere → `variant="ghost" size="icon" className="h-8 w-8"` (Returns list already correct, others get matched).
+### Step 3 — Future data mismatch বন্ধ করা
+- `supabase/functions/customer-create-wishlist/index.ts` আপডেট করব যাতে logged-in flow-তেও সম্ভব হলে `wishlist_customer_id` set হয়
+- এতে app flow আর public link flow একই customer identity-তে bind হবে
+- ভবিষ্যতে একই customer-এর ফর্দ আর আলাদা portal/data shape-এ split হয়ে যাবে না
 
-I will **not** rewrite logic — only swap variant / size / className on `<Button>` usages.
+## expected result
 
-### Optional polish
+- “নতুন রিটার্ন” button চাপলে page ঠিকমতো খুলবে
+- return details page কাজ করবে
+- দোকানে পাঠানো কিন্তু customer list-এ না দেখা ফর্দগুলো “আমার ফর্দ” এ দেখা যাবে
+- একই issue-তে বারবার retry করে credit নষ্ট হবে না
+- পুরনো public-link wishlist আর logged-in wishlist একই জায়গা থেকে দেখা যাবে
 
-Add two semantic class helpers in `src/lib/utils.ts`:
+## technical details
 
-```ts
-export const btnToolbar = "h-10 gap-2";     // toolbar action
-export const btnRowIcon = "h-8 w-8";         // row-level icon button
-```
+- Files to update:
+  - `src/routes.tsx`
+  - `src/pages/customer/MyFordo.tsx`
+  - `supabase/functions/customer-create-wishlist/index.ts`
+  - new server-side function/endpoint for unified customer fordo history
+- I will avoid broad public RLS loosening; the missing-foro fix will be done through **authenticated server-side resolution**, which is safer for customer data.
+- If needed, I will also add a small normalization layer for phone matching so `018...`, `880...`, and `+880...` formats map correctly.
 
-So future pages stay consistent without thinking.
-
----
-
-## Part 2 — Smart Serial / IMEI System
-
-### What already exists
-
-- `products.is_serialized` boolean column ✓
-- `product_serials` table (id, shop_id, product_id, serial_no, imei2, status, cost_price, warranty_until) ✓
-- `ProductSerialsDialog` (manual bulk paste — works) ✓
-- `SerialPickDialog` (pick at sell time) ✓
-- Toggle "Serialized product (IMEI/Serial)" on Add Product form (only shown for mobile / electronics shops) ✓
-
-What's **missing**: when the shopkeeper adds new stock (purchase / update stock), there is no smart way to enter the new serials. Today they have to open "Manage Serials" separately and paste them. We will fix that.
-
-### New concept: Serial Capture Modes
-
-When `is_serialized = true` and the user adds stock (qty N), a new step appears: **"Serial / IMEI কীভাবে যোগ করবেন?"** with three modes:
-
-**Mode 1 — Range / Sequential** (perfect for "10 pcs, IMEIs differ only at the end")
-- Inputs: **Prefix** (locked common part, e.g. `35489710987654`) + **Start number** (e.g. `1`) + **Pad length** (auto-detected)
-- Live preview of all N serials before save: `354897109876541`, `…42`, `…43` …
-- One-click **Generate** → all N serials inserted in one call.
-
-**Mode 2 — Manual / Random** (each unit has its own serial)
-- Shows N input rows (one per unit being added).
-- Supports paste-from-clipboard: paste a list with newlines/commas → auto-fills all rows.
-- Each row validated for duplicates against existing serials in this shop.
-
-**Mode 3 — Skip for now**
-- Stock count goes up, but no serials are created. The user can fill them later from "Manage Serials". Useful for the case "I'll do it tonight".
-
-### The 50-at-a-time safeguard (your concern about 1000-row hangs)
-
-- Hard cap **N ≤ 50 per single capture**. If qty > 50, the dialog splits into pages: "Batch 1 of 4 (1–50)", "Batch 2 of 4 (51–100)" etc.
-- Each batch saves independently (single `insert` of up to 50 rows), so no big payload, no UI freeze.
-- Range mode has no cap — generating 1000 sequential IMEIs is cheap (it's just math + one bulk insert chunked at 200/call).
-- Inputs are virtualized in Manual mode for batches — only the current 50 render.
-
-### Where it plugs in
-
-Two entry points, both already exist — we just inject the Serial Capture step:
-
-1. **Add Product form** (`Products.tsx` `ProductForm`): when serialized toggle is ON and initial `stock > 0`, after Save show `<SerialCaptureDialog qty={stock} mode-picker />`.
-2. **Update Stock dialog** (`UpdateStockDialog.tsx`): when adding stock (positive delta) on a serialized product, after save show the same dialog with `qty=delta`. When reducing stock on a serialized product, show `SerialPickDialog` (already exists) so the user marks which specific serials left.
-3. **Purchase flow** (`Purchase.tsx`): same — after each line of a serialized product is saved, queue a SerialCaptureDialog.
-
-### New component
-
-`src/components/app/SerialCaptureDialog.tsx` — single dialog with the 3-tab mode picker, batch pagination, validation, bulk insert into `product_serials`.
-
-### Database
-
-Schema is already in place. No new tables. Just use `product_serials` with `status='in_stock'` for newly captured units.
-
-We will add **one supporting index** for fast duplicate-check:
-```
-CREATE INDEX IF NOT EXISTS idx_ps_shop_serial ON product_serials (shop_id, serial_no);
-```
-(table already has UNIQUE (shop_id, serial_no), so this just makes the lookup explicit.)
-
-### UX detail
-
-- Range mode auto-detects the prefix from a single sample IMEI: paste `354897109876541`, set qty=10, set "last 2 digits change" → prefix = `3548971098765`, start=`41`, pad=`2`, preview shows 10 serials.
-- All serials get the same `cost_price` (taken from purchase line if from purchase, else from product cost), and `warranty_until` (auto-computed from product's warranty setting + today).
-- After capture, a green confirmation: "X serial saved ✓" + link "Manage Serials" to view/edit.
-
----
-
-## Files touched
-
-**Part 1 (button standardization):** `src/pages/app/Returns.tsx`, `src/pages/app/returns/Id.tsx`, `src/pages/app/returns/New.tsx`, `src/pages/app/Sell.tsx`, `src/pages/app/Purchase.tsx`, `src/pages/app/PurchaseLedger.tsx`, `src/pages/app/SalesLedger.tsx`, `src/pages/app/DueLedger.tsx`, `src/pages/app/DueHistory.tsx`, `src/pages/app/ExpenseLedger.tsx`, `src/pages/app/Cashbox.tsx`, `src/pages/app/Contacts.tsx`, `src/pages/app/Assets.tsx`, `src/pages/app/Reports.tsx`, `src/pages/app/Expiring.tsx`, `src/pages/app/Warranty.tsx`, `src/pages/app/CustomerWishlist.tsx`, `src/pages/app/FordoHistory.tsx`, `src/pages/app/RecycleBin.tsx`, `src/pages/app/Marketing.tsx`, `src/pages/app/OnlineShop.tsx`, `src/lib/utils.ts`.
-
-**Part 2 (serial capture):** new `src/components/app/SerialCaptureDialog.tsx`; edits to `src/pages/app/Products.tsx`, `src/components/app/UpdateStockDialog.tsx`, `src/pages/app/Purchase.tsx`; one tiny migration for the supporting index.
-
----
-
-Approve and I'll implement both parts in one pass.
+Approve করলে আমি এগুলো implement করব।

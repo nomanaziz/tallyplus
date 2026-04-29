@@ -77,6 +77,31 @@ Deno.serve(async (req) => {
   const customer_phone = (prof?.phone ?? user.phone ?? "").slice(0, 20);
   const customer_address = prof?.address ?? null;
 
+  // Try to also link to a per-shop wishlist_customer record by phone, so the
+  // logged-in flow and the public /f/:slug flow stay unified.
+  let wishlist_customer_id: string | null = null;
+  if (customer_phone) {
+    const digits = customer_phone.replace(/\D/g, "");
+    const last10 = digits.slice(-10);
+    const variants = Array.from(new Set([
+      customer_phone,
+      digits,
+      last10,
+      last10 ? "0" + last10 : "",
+      last10 ? "88" + last10 : "",
+      last10 ? "+88" + last10 : "",
+    ].filter(Boolean)));
+    if (variants.length > 0) {
+      const { data: wc } = await admin
+        .from("wishlist_customers")
+        .select("id")
+        .eq("shop_id", shop_id)
+        .in("phone", variants)
+        .maybeSingle();
+      wishlist_customer_id = (wc as { id: string } | null)?.id ?? null;
+    }
+  }
+
   const { data: wl, error: wErr } = await admin
     .from("customer_wishlists")
     .insert({
@@ -86,6 +111,7 @@ Deno.serve(async (req) => {
       customer_address,
       note: body.note ? String(body.note).trim().slice(0, 500) : null,
       consumer_user_id: user.id,
+      wishlist_customer_id,
       status: "new",
     })
     .select("id")
