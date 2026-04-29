@@ -339,7 +339,29 @@ function ProductsPage() {
                 <ListOrdered className="h-4 w-4" />
                 {lang === "bn" ? "স্টক এডিট" : "Stock edit"}
               </Button>
-              <Button variant="outline" className="h-10 gap-2">
+              <Button
+                variant={selectMode ? "default" : "outline"}
+                className="h-10 gap-2"
+                onClick={() => (selectMode ? cancelSelect() : setSelectMode(true))}
+              >
+                <CheckSquare className="h-4 w-4" />
+                {selectMode
+                  ? lang === "bn" ? "ক্যানসেল" : "Cancel"
+                  : lang === "bn" ? "নির্বাচন" : "Select"}
+              </Button>
+              {selectMode && selected.size > 0 && (
+                <Button
+                  variant="destructive"
+                  className="h-10 gap-2"
+                  onClick={() => { setConfirmText(""); setConfirmOpen(true); }}
+                >
+                  <Trash2 className="h-4 w-4" />
+                  {lang === "bn"
+                    ? `${selected.size}টি ডিলিট`
+                    : `Delete (${selected.size})`}
+                </Button>
+              )}
+              <Button variant="outline" className="h-10 gap-2" onClick={handlePrintProducts}>
                 <Download className="h-4 w-4" />
                 {lang === "bn" ? "ডাউনলোড/প্রিন্ট" : "Download/Print"}
               </Button>
