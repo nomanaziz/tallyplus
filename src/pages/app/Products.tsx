@@ -1138,6 +1138,7 @@ function ProductFormDialog({
             title={lang === "bn" ? "ডিসকাউন্ট" : "Discount"}
             checked={discountOn} onChange={setDiscountOn}
           >
+
             <div className="grid grid-cols-[1fr_120px] gap-3">
               <div className="grid gap-1.5">
                 <Label>{lang === "bn" ? "ডিসকাউন্ট" : "Discount"}</Label>
