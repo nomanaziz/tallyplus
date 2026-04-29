@@ -1,87 +1,148 @@
-## আগে সরাসরি সত্যি কথা
+## Honest recommendation
 
-ভাই, **codebase ফেলে দেওয়ার দরকার নেই**। নতুন করে শুরু করলে একই জিনিস আবার হবে — কারণ slowness-এর কারণ code quality না, কারণ হলো **architecture decisions যেগুলো একসাথে জমেছে**। নতুন project করলে আবার ২০০-৩০০ credit খরচ হবে এবং আগের সব feature হারাবেন। বরং চলুন আসল bottleneck গুলো একবারে fix করি।
+Yes — I think you should stop building on this exact frontend as-is.
 
-## আসল slowness-এর কারণ (diagnosis)
+But I do **not** think you should throw away the whole project.
 
-আপনার project file গুলো আমি পড়লাম। যেগুলো এখন slow করছে:
+The right move is:
+- **stop feature work on the current codebase**
+- **keep the database, auth, edge functions, and business rules**
+- **rebuild the frontend shell in a clean supported structure**
 
-### 1) Heavy provider stack on every page
-`main.tsx`-এ stack: BrowserRouter → QueryClient → I18nProvider → ThemeProvider → AuthProvider → RefCaptureProvider → App. প্রতিটি route change-এ এদের context consumers re-evaluate হয়। সমস্যা না, কিন্তু সাথে নিচের জিনিসগুলো যোগ হয়ে slow করে।
+So টাকা পুরোপুরি নষ্ট না। The reusable part is your backend/data model. The unstable part is mainly the current frontend architecture.
 
-### 2) AppLayout-এ প্রতি login-এ ৪টা parallel DB query
-`AppLayout.tsx` লাইন 95-101: প্রতি app load-এ `consumer_profiles`, `profiles`, `shops`, `shop_members` — ৪টা query চালাচ্ছে শুধু "user owner কিনা consumer কিনা" check-এর জন্য। ShopProvider আলাদা query চালায়। PermissionsProvider আবার query চালায়। এক page load-এ ৭-১০টা serial+parallel query।
+## Why I’m recommending this
 
-### 3) Idle prefetch ১৮টা chunk একসাথে download করছে
-`AppLayout.tsx` লাইন 124-148: login-এর পর idle হলে ১৮টা page chunk একসাথে download শুরু করে। Mobile/slow network-এ এটাই network saturate করে দেয়, ফলে actual page navigation slow লাগে।
+The current codebase shows structural fragility, not just one small bug:
 
-### 4) React Router DOM v7 + custom shim
-`src/lib/router.tsx` — TanStack Router-এর API কে react-router-dom দিয়ে emulate করা compatibility shim। প্রতি `<Link>` render-এ extra wrapper logic + prefetch handler attach হচ্ছে। বড় list এ (Products, Sales) এটা noticeable।
+1. **Routing is brittle**
+   - `src/routes.tsx` contains a very large hand-maintained route table with `P0...P90` lazy imports.
+   - `src/lib/route-prefetch.ts` is a second hand-maintained/generated route map.
+   - If these two get out of sync, builds fail again — exactly the kind of issue you already saw.
 
-### 5) Routes file-এ ১০০টা lazy import top-level declared
-`src/routes.tsx`-এ P0 থেকে P90 পর্যন্ত lazy declaration একই file-এ। প্রতিটি `lazy()` call module-load time-এ execute হয় — chunk download না হলেও lazy wrapper তৈরি হয়।
+2. **Custom router shim adds risk**
+   - `src/lib/router.tsx` is emulating another router API on top of `react-router-dom`.
+   - That means extra abstraction, more edge cases, and harder debugging.
 
-### 6) Supabase Cloud instance size
-এটা **সবচেয়ে বড় suspect**। আপনার project-এ অনেক table, RLS policy, edge function। যদি default (smallest) instance চলে, প্রতি query-তে latency বেশি — বিশেষ করে যখন একসাথে ৭-১০টা query যায়। এটা code-এ fix হবে না, এটা Cloud setting।
+3. **Real performance is currently poor**
+   - On `/customer/dashboard`, browser profiling shows roughly:
+     - First Paint: ~8.5s
+     - First Contentful Paint: ~10.7s
+     - 80+ script requests
+   - That is not acceptable for a production business app.
 
-### 7) QueryClient default fine, কিন্তু invalidation pattern নেই
-প্রতি navigation-এ অনেক component fresh query করছে cached data না নিয়ে, কারণ key গুলো সব শপ-id-নির্ভর এবং shop switch হলে cache invalidate হয়।
+4. **Data loading is still too page-local**
+   - Some optimizations were added, but many pages still fetch directly inside components.
+   - This makes performance uneven and future maintenance harder.
 
-## যা আমি fix করব (এক plan, multiple bottleneck)
+5. **Build stability is not trustworthy enough**
+   - The earlier `Ads` import failure appears fixed now, so the current problem is not one missing file.
+   - The deeper issue is that the code structure makes these regressions likely to happen again.
 
-### Step 1 — AppLayout-এর login boot query একটায় নামানো
-- ৪টা parallel query সরিয়ে একটি RPC `my_account_resolve()` বানাব যা return করবে: is_consumer, is_owner, has_shop_member, shops list — সব এক round-trip-এ।
-- ShopProvider সেই same response থেকে shops নেবে, আলাদা query করবে না।
-- এতে login-পরবর্তী first paint ~৩-৫x faster হবে।
+## Decision
 
-### Step 2 — Idle prefetch বন্ধ করব / drastically কমাব
-- ১৮টা chunk auto-download বন্ধ। শুধু `Sell`, `Dashboard`, `Products` — ৩টা রাখব।
-- বাকি গুলো hover/touch-এ এমনিতেই prefetch হয় (router.tsx-এ এটা আছে already)।
-- এতে initial load-এর পর network free থাকবে, navigation দ্রুত feel হবে।
+### Recommended decision: stop this frontend, not the whole product
 
-### Step 3 — Cloud instance upgrade prompt
-- আমি Cloud → Overview → Advanced settings থেকে instance size বাড়ানোর জন্য নির্দেশনা দেব। এটা **আপনাকে নিজে click করে করতে হবে** — আমি code থেকে পারব না।
-- এটা সবচেয়ে বড় single improvement হবে।
+Do **not** continue adding more features to this exact frontend.
 
-### Step 4 — QueryClient tuning
-- `staleTime` বাড়িয়ে 5 min করব (এখন 1 min) — অনেক "এক page থেকে আরেক page গিয়ে আবার ফেরত আসলে আবার লোড" বন্ধ হবে।
-- shop-scoped query key-গুলো consistent করে refetch কমাব।
+Do **not** delete your Supabase project, tables, auth, or edge functions.
 
-### Step 5 — Link component lighten করা
-- `src/lib/router.tsx`-এর Link থেকে অপ্রয়োজনীয় hover-prefetch overhead সরাব heavy list pages-এর জন্য। বড় list-এ `preload={false}` default করব।
+Instead, do a **controlled rebuild**:
 
-### Step 6 — 404 page redesign + extra options remove (আগের পেন্ডিং কাজ)
-- পুরনো request অনুযায়ী সুন্দর 404 page + Home button যোগ করব।
-- `+8801841577944` issue-টা গত step-এ already fix হয়েছে, এটা verify করব।
+```text
+Keep:
+- Supabase database
+- Auth users
+- Migrations / RPCs
+- Edge functions
+- Core business logic
+- Existing data
 
-## যা **করব না** এবং কেন
+Replace:
+- Frontend app shell
+- Routing structure
+- Navigation/prefetch system
+- Page boot logic
+- Query organization
+```
 
-- **পুরো project recreate** — না। এতে credit আরও যাবে, সব data integration আবার করতে হবে, একই architecture mistake আবার হবে।
-- **TanStack Start-এ migrate** — এটা huge refactor, ১০০+ file পরিবর্তন, সব route restructure। 500+ credit লাগবে এবং নতুন bug আসবে। আপনার current React Router v7 setup ঠিকঠাক কাজ করতে পারে।
-- **UI library replace** — Radix/shadcn বদলানো অর্থহীন, এগুলো fast।
+## Rebuild plan
 
-## প্রত্যাশিত ফল
+### Phase 1 — Foundation rebuild
+Create a new clean frontend with:
+- one routing system only
+- one app shell only
+- clean auth bootstrap
+- clean query patterns
+- no duplicated route metadata
 
-- Login → Dashboard: এখন ~৬-৮s → হবে ~১.৫-২.৫s (Cloud upgrade-সহ)
-- Page-to-page navigation: এখন ~১.৫-৩s → হবে ~৩০০-৬০০ms
-- Re-visit a page: instant (cache hit)
+Deliver only these first:
+- login/auth
+- app layout
+- shop selection
+- customer dashboard
+- basic navigation
 
-## আপনার জন্য একটা স্পষ্ট কাজ
+### Phase 2 — Core business flows only
+Move the most important pages first:
+- Dashboard
+- Products
+- Sell
+- Purchase
+- Fordo / wishlist history
+- Customer area
 
-আমি code fix করার পাশাপাশি, **আপনি নিজে** একটা কাজ করবেন:
-1. Lovable dashboard → Cloud → Overview → Advanced settings → Instance size বড় করুন (Micro হলে Small/Medium)।
-2. ২ মিনিট অপেক্ষা করুন।
-3. App reload করুন।
+These are the pages that matter to daily operations.
 
-এটাই একটা single change যা সবচেয়ে বড় difference আনবে — কোনো credit খরচ ছাড়াই।
+### Phase 3 — Secondary modules
+Move the less critical parts later:
+- admin extras
+- ads
+- training
+- promotional pages
+- online-shop advanced sections
 
-## Files to change
-- `src/pages/app/AppLayout.tsx` (query consolidate + prefetch reduce)
-- `src/main.tsx` (QueryClient tuning)
-- `src/lib/router.tsx` (Link prefetch lighten)
-- `src/pages/NotFound.tsx` (redesign + Home button)
-- New SQL migration: `my_account_resolve()` RPC
+If some modules are low value, leave them out entirely.
 
----
+## What I would intentionally not carry over
 
-**Approve করলে আমি এক shot-এ পুরোটা implement করব। আর পুরনো project recreate করার চিন্তা মাথা থেকে বাদ দিন — দরকার নেই।**
+I would not copy these patterns into the rebuild:
+- `src/lib/router.tsx` shim approach
+- giant numbered lazy import file in `src/routes.tsx`
+- separate `route-prefetch.ts` map
+- broad automatic prefetching
+- page components doing ad hoc direct fetches everywhere
+
+## Success criteria for the rebuild
+
+The rebuilt app should meet these minimum standards before more features are added:
+- clean production build consistently passes
+- no manual route map duplication
+- first visible paint in normal pages is fast
+- app opens core pages without multi-second waiting
+- one clear data-loading pattern across pages
+- only core modules shipped first
+
+## Practical business advice
+
+If you are emotionally done with this exact codebase, that feeling is valid.
+
+But from a technical and business point of view, the best move is **not to abandon the product idea**.
+The best move is to **salvage the backend and rebuild the frontend cleanly**.
+
+That gives you:
+- much lower future debugging cost
+- lower chance of repeated build failures
+- faster live performance
+- less credit waste going forward
+
+## If you approve this direction
+
+I will prepare the rebuild plan in a strict order:
+1. define what to preserve from the current project
+2. define the new minimal app architecture
+3. map old pages to new phases
+4. identify what should be rebuilt now vs dropped
+5. then implement the clean foundation first
+
+This is the safest path forward.
