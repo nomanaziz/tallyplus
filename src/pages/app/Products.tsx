@@ -777,6 +777,8 @@ function ProductFormDialog({
   const [warrantyOn, setWarrantyOn] = useState(false);
   const [warrantyValue, setWarrantyValue] = useState("");
   const [warrantyUnit, setWarrantyUnit] = useState<"day"|"week"|"month"|"year">("month");
+  const [mfgDate, setMfgDate] = useState("");
+  const [expDate, setExpDate] = useState("");
   const [discountOn, setDiscountOn] = useState(false);
   const [discountValue, setDiscountValue] = useState("");
   const [discountType, setDiscountType] = useState<"percent"|"flat">("percent");
@@ -834,6 +836,9 @@ function ProductFormDialog({
       setWarrantyOn(Boolean(p?.warranty_enabled));
       setWarrantyValue(p?.warranty_value != null ? String(p.warranty_value) : "");
       setWarrantyUnit(((p?.warranty_unit as "day"|"week"|"month"|"year") ?? "month"));
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      setMfgDate(((p as any)?.manufacturing_date as string | null) ?? "");
+      setExpDate(((p as any)?.expiry_date as string | null) ?? "");
       setDiscountOn(Boolean(p?.discount_enabled));
       setDiscountValue(p?.discount_value != null ? String(p.discount_value) : "");
       setDiscountType(((p?.discount_type as "percent"|"flat") ?? "percent"));
@@ -900,6 +905,8 @@ function ProductFormDialog({
       warranty_enabled: warrantyOn,
       warranty_value: warrantyOn ? (Number(warrantyValue) || 0) : null,
       warranty_unit: warrantyOn ? warrantyUnit : null,
+      manufacturing_date: mfgDate || null,
+      expiry_date: expDate || null,
       discount_enabled: discountOn,
       discount_value: discountOn ? (Number(discountValue) || 0) : null,
       discount_type: discountOn ? discountType : null,
