@@ -1,84 +1,125 @@
+## Goal
 
-## Plan — Fix 4 reported issues
+Two things in one round:
 
-### Issue 1 — Product Return: top action buttons + functional flow
+1. **Unify every action button across the whole app** — same size, same look, same icon spacing — so Products, Returns, Sales, Purchase, Contacts, Reports etc. all look like one system.
+2. **Add a real Serial / IMEI capture flow** for electronics & mobile shops, with three modes (Range / Manual / None) right when stock is added — not as an after-thought.
 
-The Returns list page (`src/pages/app/Returns.tsx`) currently only has a "New return" button. Add three top action buttons matching the rest of the app's pattern: **Download / Report / Print**.
+---
 
-- Add `Download` (CSV export of filtered returns), `Report` (re-uses `printTableReport` from `src/lib/print-report.ts` with totals summary), and `Print` (same helper, no totals box) buttons next to "New return".
-- Columns for printout: Date, Return No, Customer, Reason, Total, Refund Amount, Status.
-- On `src/pages/app/returns/Id.tsx`, replace the placeholder `window.print()` with `printTableReport` so the per-return invoice prints in the standard tabular header format (shop info left, title + dates right).
-- Verify `New.tsx` save flow already inserts into `sale_returns` + `sale_return_items` and refunds correctly — keep as is, only confirm the navigation back to `/app/returns` works.
+## Part 1 — Unified Action Button System
 
-### Issue 2 — Fordo update misleading "please log in again" toast
+### The standard (one rule for the whole app)
 
-In `src/pages/app/CustomerWishlist.tsx` (line 320), when `setFulfillment` returns 0 rows the toast says *"Update failed — please log in again"*. This is wrong — the user is logged in; the row simply wasn't returned (often a transient RLS / replication delay or an item from a different shop context).
+| Button role | Variant | Size | Icon |
+|---|---|---|---|
+| Primary action (Save / Add new / Submit) | `default` | `h-10 px-4` | left, 16px |
+| Secondary (Print / Download / Import / History / Filter toggle) | `outline` | `h-10 px-4` | left, 16px |
+| Destructive (Delete / Bulk delete) | `destructive` | `h-10 px-4` | left, 16px |
+| Cancel (in toolbar / dialog footer) | `outline` | `h-10 px-4` | left, 16px |
+| Row icon-only (Eye / Edit / Trash inside a table row) | `ghost` | `h-8 w-8` icon | center, 16px |
+| Dialog footer pair | `outline` + `default`, both `h-10`, equal width on mobile | | |
 
-- Change the message to: BN `"আপডেট করা গেলো না — আবার চেষ্টা করুন"`, EN `"Update failed — please try again"`.
-- Add an automatic single retry after 400ms before showing the error toast (covers the common race where `current.shop` just switched).
-- Same wording fix for any other `"please log in again"` occurrence found in this file.
+All of them use the existing `<Button>` component with `className="h-10 gap-2"` (or `h-8 w-8` for row icons). No more `size="sm"` toolbars on Returns while Products uses `h-10`.
 
-### Issue 3 — `new row violates row-level security policy for table "categories"` (also affects "Add Product")
+### What gets fixed
 
-Investigation:
-- The `categories` table policies are correct (`is_shop_member(auth.uid(), shop_id)` for ALL).
-- `is_shop_member` returns true for shop owners.
-- The console error fires from `ensureDefaultCategories` in `src/lib/default-categories.ts` when called immediately after a shop is selected but before `useShop().current.id` matches a shop the auth.uid actually owns (e.g. during the initial shop-context bootstrap, or right after `AddShopDialog` creates a new shop and the trigger hasn't visibly returned yet).
-- The Add Product dialog also triggers this on open.
+Pages I will sweep and normalize (the pattern is identical, so this is mechanical):
 
-Fix:
-1. **Guard `ensureDefaultCategories`**: before inserting, do a one-shot ownership check (`select id from shops where id = shopId and (owner_id = auth.uid() or member exists)`). If not confirmed, skip — never throw, never log noisy warnings.
-2. **Make the seeder server-authoritative**: create a Supabase RPC `ensure_default_categories(_shop_id uuid, _names text[])` (`security definer`, `set search_path = public`) that:
-   - verifies `is_shop_member(auth.uid(), _shop_id)`,
-   - inserts only the missing names (`on conflict (shop_id, name) where parent_id is null do nothing` — also adds the missing unique constraint).
-   - Replace the client-side bulk insert with `supabase.rpc('ensure_default_categories', …)`.
-3. **`addCategory` (Products.tsx line 842) & sub-category create**: surface a friendlier toast — if the error code is `42501`, show BN `"এই দোকানে ক্যাটাগরি যোগ করার অনুমতি নেই"` / EN `"You don't have permission to add categories in this shop"` instead of the raw Postgres message.
-4. **Add Product save**: same friendlier message mapping for `42501` so the user understands why "Add Product" silently failed when they're on a shop they don't own.
+- `src/pages/app/Returns.tsx` — currently `size="sm"`, switch toolbar to `h-10` outline + primary (matches Products).
+- `src/pages/app/returns/Id.tsx` — back/print buttons → `h-10` outline (not `size="sm"`).
+- `src/pages/app/returns/New.tsx` — Save/Cancel footer pair → standard pair; remove the hand-rolled `bg-foreground text-background` color override (use plain `default`).
+- `src/pages/app/Sell.tsx`, `src/pages/app/Purchase.tsx`, `src/pages/app/PurchaseLedger.tsx`, `src/pages/app/SalesLedger.tsx`, `src/pages/app/DueLedger.tsx`, `src/pages/app/DueHistory.tsx`, `src/pages/app/ExpenseLedger.tsx`, `src/pages/app/Cashbox.tsx`, `src/pages/app/Contacts.tsx`, `src/pages/app/Assets.tsx`, `src/pages/app/Reports.tsx`, `src/pages/app/Expiring.tsx`, `src/pages/app/Warranty.tsx`, `src/pages/app/CustomerWishlist.tsx`, `src/pages/app/FordoHistory.tsx`, `src/pages/app/RecycleBin.tsx`, `src/pages/app/Marketing.tsx`, `src/pages/app/OnlineShop.tsx` and its sub-pages — apply same toolbar pattern (`h-10 gap-2`, correct variant, icon left).
+- All dialog/sheet footers (Save / Cancel pair) get `flex gap-2`, both buttons `h-10`, equal width on mobile (`flex-1 sm:flex-none`).
+- Row icon buttons everywhere → `variant="ghost" size="icon" className="h-8 w-8"` (Returns list already correct, others get matched).
 
-### Issue 4 — "Cannot create / Add New Product"
+I will **not** rewrite logic — only swap variant / size / className on `<Button>` usages.
 
-Root cause is the same RLS path as #3: when the active shop in `useShop()` doesn't match a shop the user owns/belongs to, `products` insert is rejected by RLS but the dialog just shows the raw error. After fix #3 the message becomes actionable, plus:
+### Optional polish
 
-- In `Products.tsx`, before opening the Add-Product dialog, verify `current?.id` is set; if not, show toast BN `"আগে দোকান নির্বাচন করুন"` / EN `"Select a shop first"` and abort.
-- After successful save, if no row is returned (RLS silent failure), show the friendly permission message instead of a generic success.
+Add two semantic class helpers in `src/lib/utils.ts`:
 
-### Database migration (for fix #3)
-
-```sql
--- 1. Ensure uniqueness for top-level category names per shop
-create unique index if not exists categories_shop_toplevel_name_uniq
-  on public.categories (shop_id, name)
-  where parent_id is null;
-
--- 2. Server-side seeder
-create or replace function public.ensure_default_categories(
-  _shop_id uuid,
-  _names   text[]
-) returns void
-language plpgsql
-security definer
-set search_path = public
-as $$
-begin
-  if not public.is_shop_member(auth.uid(), _shop_id) then
-    return; -- silently no-op for non-members
-  end if;
-  insert into public.categories (shop_id, name, parent_id)
-  select _shop_id, n, null from unnest(_names) as n
-  on conflict (shop_id, name) where parent_id is null do nothing;
-end $$;
-
-grant execute on function public.ensure_default_categories(uuid, text[]) to authenticated;
+```ts
+export const btnToolbar = "h-10 gap-2";     // toolbar action
+export const btnRowIcon = "h-8 w-8";         // row-level icon button
 ```
 
-### Files to change
+So future pages stay consistent without thinking.
 
-- `src/pages/app/Returns.tsx` — add Download/Report/Print buttons, wire to `printTableReport` + CSV export.
-- `src/pages/app/returns/Id.tsx` — replace `window.print()` with `printTableReport`.
-- `src/pages/app/CustomerWishlist.tsx` — fix misleading toast + add single retry.
-- `src/lib/default-categories.ts` — switch to RPC + ownership pre-check, silent no-op on permission denial.
-- `src/pages/app/Products.tsx` — friendly RLS-error mapping in `addCategory` and `save`; guard "Add Product" when no shop selected.
-- New migration file as above.
+---
 
-### Out of scope
-No design/UX changes elsewhere; existing print layout standard from `printTableReport` is reused as-is.
+## Part 2 — Smart Serial / IMEI System
+
+### What already exists
+
+- `products.is_serialized` boolean column ✓
+- `product_serials` table (id, shop_id, product_id, serial_no, imei2, status, cost_price, warranty_until) ✓
+- `ProductSerialsDialog` (manual bulk paste — works) ✓
+- `SerialPickDialog` (pick at sell time) ✓
+- Toggle "Serialized product (IMEI/Serial)" on Add Product form (only shown for mobile / electronics shops) ✓
+
+What's **missing**: when the shopkeeper adds new stock (purchase / update stock), there is no smart way to enter the new serials. Today they have to open "Manage Serials" separately and paste them. We will fix that.
+
+### New concept: Serial Capture Modes
+
+When `is_serialized = true` and the user adds stock (qty N), a new step appears: **"Serial / IMEI কীভাবে যোগ করবেন?"** with three modes:
+
+**Mode 1 — Range / Sequential** (perfect for "10 pcs, IMEIs differ only at the end")
+- Inputs: **Prefix** (locked common part, e.g. `35489710987654`) + **Start number** (e.g. `1`) + **Pad length** (auto-detected)
+- Live preview of all N serials before save: `354897109876541`, `…42`, `…43` …
+- One-click **Generate** → all N serials inserted in one call.
+
+**Mode 2 — Manual / Random** (each unit has its own serial)
+- Shows N input rows (one per unit being added).
+- Supports paste-from-clipboard: paste a list with newlines/commas → auto-fills all rows.
+- Each row validated for duplicates against existing serials in this shop.
+
+**Mode 3 — Skip for now**
+- Stock count goes up, but no serials are created. The user can fill them later from "Manage Serials". Useful for the case "I'll do it tonight".
+
+### The 50-at-a-time safeguard (your concern about 1000-row hangs)
+
+- Hard cap **N ≤ 50 per single capture**. If qty > 50, the dialog splits into pages: "Batch 1 of 4 (1–50)", "Batch 2 of 4 (51–100)" etc.
+- Each batch saves independently (single `insert` of up to 50 rows), so no big payload, no UI freeze.
+- Range mode has no cap — generating 1000 sequential IMEIs is cheap (it's just math + one bulk insert chunked at 200/call).
+- Inputs are virtualized in Manual mode for batches — only the current 50 render.
+
+### Where it plugs in
+
+Two entry points, both already exist — we just inject the Serial Capture step:
+
+1. **Add Product form** (`Products.tsx` `ProductForm`): when serialized toggle is ON and initial `stock > 0`, after Save show `<SerialCaptureDialog qty={stock} mode-picker />`.
+2. **Update Stock dialog** (`UpdateStockDialog.tsx`): when adding stock (positive delta) on a serialized product, after save show the same dialog with `qty=delta`. When reducing stock on a serialized product, show `SerialPickDialog` (already exists) so the user marks which specific serials left.
+3. **Purchase flow** (`Purchase.tsx`): same — after each line of a serialized product is saved, queue a SerialCaptureDialog.
+
+### New component
+
+`src/components/app/SerialCaptureDialog.tsx` — single dialog with the 3-tab mode picker, batch pagination, validation, bulk insert into `product_serials`.
+
+### Database
+
+Schema is already in place. No new tables. Just use `product_serials` with `status='in_stock'` for newly captured units.
+
+We will add **one supporting index** for fast duplicate-check:
+```
+CREATE INDEX IF NOT EXISTS idx_ps_shop_serial ON product_serials (shop_id, serial_no);
+```
+(table already has UNIQUE (shop_id, serial_no), so this just makes the lookup explicit.)
+
+### UX detail
+
+- Range mode auto-detects the prefix from a single sample IMEI: paste `354897109876541`, set qty=10, set "last 2 digits change" → prefix = `3548971098765`, start=`41`, pad=`2`, preview shows 10 serials.
+- All serials get the same `cost_price` (taken from purchase line if from purchase, else from product cost), and `warranty_until` (auto-computed from product's warranty setting + today).
+- After capture, a green confirmation: "X serial saved ✓" + link "Manage Serials" to view/edit.
+
+---
+
+## Files touched
+
+**Part 1 (button standardization):** `src/pages/app/Returns.tsx`, `src/pages/app/returns/Id.tsx`, `src/pages/app/returns/New.tsx`, `src/pages/app/Sell.tsx`, `src/pages/app/Purchase.tsx`, `src/pages/app/PurchaseLedger.tsx`, `src/pages/app/SalesLedger.tsx`, `src/pages/app/DueLedger.tsx`, `src/pages/app/DueHistory.tsx`, `src/pages/app/ExpenseLedger.tsx`, `src/pages/app/Cashbox.tsx`, `src/pages/app/Contacts.tsx`, `src/pages/app/Assets.tsx`, `src/pages/app/Reports.tsx`, `src/pages/app/Expiring.tsx`, `src/pages/app/Warranty.tsx`, `src/pages/app/CustomerWishlist.tsx`, `src/pages/app/FordoHistory.tsx`, `src/pages/app/RecycleBin.tsx`, `src/pages/app/Marketing.tsx`, `src/pages/app/OnlineShop.tsx`, `src/lib/utils.ts`.
+
+**Part 2 (serial capture):** new `src/components/app/SerialCaptureDialog.tsx`; edits to `src/pages/app/Products.tsx`, `src/components/app/UpdateStockDialog.tsx`, `src/pages/app/Purchase.tsx`; one tiny migration for the supporting index.
+
+---
+
+Approve and I'll implement both parts in one pass.
