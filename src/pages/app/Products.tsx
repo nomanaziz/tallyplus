@@ -445,6 +445,15 @@ function ProductsPage() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  {selectMode && (
+                    <TableHead className="w-10">
+                      <Checkbox
+                        checked={paged.length > 0 && paged.every((p) => selected.has(p.id))}
+                        onCheckedChange={() => toggleSelectAllPage()}
+                        aria-label="select all"
+                      />
+                    </TableHead>
+                  )}
                   <TableHead>{lang === "bn" ? "পণ্যের নাম" : "Product"}</TableHead>
                   <TableHead className="text-right">{lang === "bn" ? "বর্তমান মজুদ" : "In stock"}</TableHead>
                   <TableHead className="text-right hidden sm:table-cell">{lang === "bn" ? "দর" : "Cost"}</TableHead>
@@ -466,6 +475,15 @@ function ProductsPage() {
                   const changed = updates[p.id] != null && updates[p.id] !== stockNum;
                   return (
                     <TableRow key={p.id} className={editStockMode && changed ? "bg-amber-50/60 hover:bg-amber-50" : undefined}>
+                      {selectMode && (
+                        <TableCell className="w-10">
+                          <Checkbox
+                            checked={selected.has(p.id)}
+                            onCheckedChange={() => toggleSelect(p.id)}
+                            aria-label={`select ${p.name}`}
+                          />
+                        </TableCell>
+                      )}
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <div className="flex h-8 w-8 flex-none items-center justify-center rounded-md bg-muted">
