@@ -35,6 +35,9 @@ import { ProductDetailsDialog, type ProductFull } from "@/components/app/Product
 import { UpdateStockDialog } from "@/components/app/UpdateStockDialog";
 import { DataPagination } from "@/components/app/DataPagination";
 import { usePagination } from "@/hooks/use-pagination";
+import { Checkbox } from "@/components/ui/checkbox";
+import { CheckSquare } from "lucide-react";
+import { printTableReport } from "@/lib/print-report";
 
 type Product = {
   id: string;
@@ -92,6 +95,13 @@ function ProductsPage() {
   const [editStockMode, setEditStockMode] = useState(false);
   const [updates, setUpdates] = useState<Record<string, number>>({});
   const [savingStock, setSavingStock] = useState(false);
+
+  // Bulk select / delete mode
+  const [selectMode, setSelectMode] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmText, setConfirmText] = useState("");
+  const [bulkDeleting, setBulkDeleting] = useState(false);
 
   const load = async () => {
     await qc.invalidateQueries({ queryKey: ["products"] });
@@ -152,6 +162,88 @@ function ProductsPage() {
     toast.success(lang === "bn" ? "ডিলিট হয়েছে" : "Deleted");
     setDetails(null);
     void load();
+  };
+
+  const toggleSelect = (id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+  const toggleSelectAllPage = () => {
+    const ids = paged.map((p) => p.id);
+    const allSelected = ids.every((id) => selected.has(id));
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (allSelected) ids.forEach((id) => next.delete(id));
+      else ids.forEach((id) => next.add(id));
+      return next;
+    });
+  };
+  const cancelSelect = () => {
+    setSelectMode(false);
+    setSelected(new Set());
+  };
+  const confirmBulkDelete = async () => {
+    if (confirmText.trim().toLowerCase() !== "delete") return;
+    const ids = Array.from(selected);
+    if (ids.length === 0) return;
+    setBulkDeleting(true);
+    const { error } = await supabase
+      .from("products")
+      .update({ deleted_at: new Date().toISOString() })
+      .in("id", ids);
+    setBulkDeleting(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success(
+      lang === "bn"
+        ? `${ids.length}টি প্রোডাক্ট ডিলিট হয়েছে`
+        : `${ids.length} products deleted`,
+    );
+    setConfirmOpen(false);
+    setConfirmText("");
+    cancelSelect();
+    void load();
+  };
+
+  const handlePrintProducts = () => {
+    printTableReport({
+      shopName: current?.name ?? "",
+      shopAddress: (current as { address?: string | null } | null)?.address ?? null,
+      shopPhone: (current as { phone?: string | null } | null)?.phone ?? null,
+      title: lang === "bn" ? "প্রোডাক্ট তালিকা" : "Products List",
+      startDate: new Date().toISOString().slice(0, 10),
+      endDate: new Date().toISOString().slice(0, 10),
+      lang,
+      columns: [
+        { key: "idx", label: "#" },
+        { key: "name", label: lang === "bn" ? "পণ্যের নাম" : "Name" },
+        { key: "sku", label: "SKU" },
+        { key: "stock", label: lang === "bn" ? "স্টক" : "Stock", align: "right" },
+        { key: "cost", label: lang === "bn" ? "দর" : "Cost", align: "right" },
+        { key: "sale", label: lang === "bn" ? "বিক্রয় মূল্য" : "Sale Price", align: "right" },
+        { key: "value", label: lang === "bn" ? "মজুদ মূল্য" : "Stock Value", align: "right" },
+      ],
+      rows: filtered.map((p, i) => {
+        const s = Number(p.stock);
+        const isUnlimited = s < 0;
+        const value = isUnlimited ? "—" : fmtMoney(Number(p.cost_price) * s, lang);
+        return {
+          idx: String(i + 1),
+          name: p.name,
+          sku: p.sku ?? "—",
+          stock: isUnlimited ? (lang === "bn" ? "অসীম" : "Unlimited") : (lang === "bn" ? bnNum(s) : s),
+          cost: fmtMoney(Number(p.cost_price), lang),
+          sale: fmtMoney(Number(p.sale_price), lang),
+          value,
+        };
+      }),
+    });
   };
 
   // Adjust stock from "Update Stock" dialog (single product)
@@ -247,7 +339,29 @@ function ProductsPage() {
                 <ListOrdered className="h-4 w-4" />
                 {lang === "bn" ? "স্টক এডিট" : "Stock edit"}
               </Button>
-              <Button variant="outline" className="h-10 gap-2">
+              <Button
+                variant={selectMode ? "default" : "outline"}
+                className="h-10 gap-2"
+                onClick={() => (selectMode ? cancelSelect() : setSelectMode(true))}
+              >
+                <CheckSquare className="h-4 w-4" />
+                {selectMode
+                  ? lang === "bn" ? "ক্যানসেল" : "Cancel"
+                  : lang === "bn" ? "নির্বাচন" : "Select"}
+              </Button>
+              {selectMode && selected.size > 0 && (
+                <Button
+                  variant="destructive"
+                  className="h-10 gap-2"
+                  onClick={() => { setConfirmText(""); setConfirmOpen(true); }}
+                >
+                  <Trash2 className="h-4 w-4" />
+                  {lang === "bn"
+                    ? `${selected.size}টি ডিলিট`
+                    : `Delete (${selected.size})`}
+                </Button>
+              )}
+              <Button variant="outline" className="h-10 gap-2" onClick={handlePrintProducts}>
                 <Download className="h-4 w-4" />
                 {lang === "bn" ? "ডাউনলোড/প্রিন্ট" : "Download/Print"}
               </Button>
@@ -331,6 +445,15 @@ function ProductsPage() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  {selectMode && (
+                    <TableHead className="w-10">
+                      <Checkbox
+                        checked={paged.length > 0 && paged.every((p) => selected.has(p.id))}
+                        onCheckedChange={() => toggleSelectAllPage()}
+                        aria-label="select all"
+                      />
+                    </TableHead>
+                  )}
                   <TableHead>{lang === "bn" ? "পণ্যের নাম" : "Product"}</TableHead>
                   <TableHead className="text-right">{lang === "bn" ? "বর্তমান মজুদ" : "In stock"}</TableHead>
                   <TableHead className="text-right hidden sm:table-cell">{lang === "bn" ? "দর" : "Cost"}</TableHead>
@@ -352,6 +475,15 @@ function ProductsPage() {
                   const changed = updates[p.id] != null && updates[p.id] !== stockNum;
                   return (
                     <TableRow key={p.id} className={editStockMode && changed ? "bg-amber-50/60 hover:bg-amber-50" : undefined}>
+                      {selectMode && (
+                        <TableCell className="w-10">
+                          <Checkbox
+                            checked={selected.has(p.id)}
+                            onCheckedChange={() => toggleSelect(p.id)}
+                            aria-label={`select ${p.name}`}
+                          />
+                        </TableCell>
+                      )}
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <div className="flex h-8 w-8 flex-none items-center justify-center rounded-md bg-muted">
@@ -547,6 +679,45 @@ function ProductsPage() {
               </Table>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={confirmOpen} onOpenChange={(o) => { setConfirmOpen(o); if (!o) setConfirmText(""); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-destructive">
+              {lang === "bn" ? "প্রোডাক্ট ডিলিট নিশ্চিত করুন" : "Confirm bulk delete"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 text-sm">
+            <p>
+              {lang === "bn"
+                ? `আপনি ${selected.size}টি প্রোডাক্ট ডিলিট করতে যাচ্ছেন। এই কাজটি করতে নিচের ঘরে`
+                : `You are about to delete ${selected.size} products. To confirm, type`}{" "}
+              <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">delete</code>{" "}
+              {lang === "bn" ? "লিখুন।" : "below."}
+            </p>
+            <Input
+              autoFocus
+              value={confirmText}
+              onChange={(e) => setConfirmText(e.target.value)}
+              placeholder="delete"
+            />
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" onClick={() => setConfirmOpen(false)}>
+                {lang === "bn" ? "ক্যানসেল" : "Cancel"}
+              </Button>
+              <Button
+                variant="destructive"
+                disabled={confirmText.trim().toLowerCase() !== "delete" || bulkDeleting}
+                onClick={confirmBulkDelete}
+              >
+                {bulkDeleting
+                  ? "..."
+                  : lang === "bn" ? "ডিলিট করুন" : "Delete"}
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

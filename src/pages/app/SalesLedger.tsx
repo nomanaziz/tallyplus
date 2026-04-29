@@ -18,6 +18,7 @@ import { DueDiscountDialog, type DueDiscountSale } from "@/components/app/DueDis
 import { DataPagination } from "@/components/app/DataPagination";
 import { usePagination } from "@/hooks/use-pagination";
 import { toast } from "sonner";
+import { printTableReport } from "@/lib/print-report";
 
 type Sale = {
   id: string;
@@ -148,9 +149,37 @@ function SalesLedgerPage() {
   };
 
   const printAll = () => {
-    document.body.classList.add("invoice-printing");
-    window.print();
-    setTimeout(() => document.body.classList.remove("invoice-printing"), 500);
+    printTableReport({
+      shopName: current?.name ?? "",
+      shopAddress: (current as { address?: string | null } | null)?.address ?? null,
+      shopPhone: (current as { phone?: string | null } | null)?.phone ?? null,
+      title: lang === "bn" ? "লেনদেনের ইতিহাস" : "Transaction History",
+      startDate: from,
+      endDate: to,
+      lang,
+      columns: [
+        { key: "idx", label: "#" },
+        { key: "name", label: lang === "bn" ? "নাম" : "Name" },
+        { key: "contact", label: lang === "bn" ? "ফোন" : "Contact" },
+        { key: "items", label: lang === "bn" ? "আইটেম" : "Items", align: "right" },
+        { key: "amount", label: lang === "bn" ? "পরিমাণ" : "Amount", align: "right" },
+        { key: "date", label: lang === "bn" ? "তারিখ" : "Date" },
+        { key: "status", label: lang === "bn" ? "পেমেন্ট" : "Payment Status" },
+      ],
+      rows: filtered.map((s, i) => {
+        const c = custMap[s.customer_id ?? ""];
+        const due = Number(s.due);
+        return {
+          idx: String(i + 1),
+          name: c?.name ?? "—",
+          contact: c?.phone ?? "—",
+          items: itemCounts[s.id] ?? 0,
+          amount: fmtMoney(Number(s.total), lang),
+          date: fmtDate(s.created_at),
+          status: due > 0 ? (lang === "bn" ? "বাকি" : "Due") : (lang === "bn" ? "পরিশোধিত" : "Paid"),
+        };
+      }),
+    });
   };
 
   const fmtDate = (iso: string) => {

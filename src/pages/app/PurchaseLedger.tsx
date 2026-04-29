@@ -16,6 +16,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { InvoiceDialog, type InvoiceData } from "@/components/app/InvoiceDialog";
 import { toast } from "sonner";
+import { printTableReport } from "@/lib/print-report";
 
 type Purchase = {
   id: string;
@@ -144,9 +145,37 @@ function PurchaseLedgerPage() {
   };
 
   const printAll = () => {
-    document.body.classList.add("invoice-printing");
-    window.print();
-    setTimeout(() => document.body.classList.remove("invoice-printing"), 500);
+    printTableReport({
+      shopName: current?.name ?? "",
+      shopAddress: (current as { address?: string | null } | null)?.address ?? null,
+      shopPhone: (current as { phone?: string | null } | null)?.phone ?? null,
+      title: lang === "bn" ? "ক্রয়ের ইতিহাস" : "Purchase History",
+      startDate: from,
+      endDate: to,
+      lang,
+      columns: [
+        { key: "idx", label: "#" },
+        { key: "name", label: lang === "bn" ? "সাপ্লায়ার" : "Supplier" },
+        { key: "contact", label: lang === "bn" ? "ফোন" : "Contact" },
+        { key: "items", label: lang === "bn" ? "আইটেম" : "Items", align: "right" },
+        { key: "amount", label: lang === "bn" ? "পরিমাণ" : "Amount", align: "right" },
+        { key: "date", label: lang === "bn" ? "তারিখ" : "Date" },
+        { key: "status", label: lang === "bn" ? "পেমেন্ট" : "Payment Status" },
+      ],
+      rows: filtered.map((p, i) => {
+        const sup = supMap[p.supplier_id ?? ""];
+        const due = Number(p.due);
+        return {
+          idx: String(i + 1),
+          name: sup?.name ?? "—",
+          contact: sup?.phone ?? "—",
+          items: itemCounts[p.id] ?? 0,
+          amount: fmtMoney(Number(p.total), lang),
+          date: fmtDate(p.created_at),
+          status: due > 0 ? (lang === "bn" ? "বাকি" : "Due") : (lang === "bn" ? "পরিশোধিত" : "Paid"),
+        };
+      }),
+    });
   };
 
   const fmtDate = (iso: string) => {

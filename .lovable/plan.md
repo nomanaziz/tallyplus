@@ -1,54 +1,88 @@
-# Auto-seed all sample-product categories into every shop
+## Goals
 
-## ব্যবহারকারীর চাহিদা
-Sample Product Import-এ যেই ৩০টা category আছে (যেমন: চাল, ডাল, তেল, মসলা, কলম, খাতা/নোটবুক, চার্জার, ইয়ারফোন, পার্সোনাল কেয়ার, ইত্যাদি), সেগুলো সবই **প্রতিটা শপে by default আগে থেকে add করা থাকবে** — তাহলে দোকানদার যখন product import করবে বা manually add করবে, তখন category dropdown-এ সব আগে থেকেই থাকবে। চাইলে নতুন category create করতে পারবে (সেটা যেমন আছে তেমনই থাকবে)।
+1. **Bulk product selection + bulk delete** with a typed "delete" confirmation.
+2. **Unified tabular print header** on every ledger/list page, matching the uploaded Hybrid Technology mockups (shop info on left, title + Start/End date on right, then a real columnar table — not the receipt-style layout used today).
+3. **Due History page** wired up from the "History" button on Due Ledger, with a back button and a print button using the same header format.
+4. Wire up the **Products → Download/Print** button (currently a dead button) and other ledger print buttons that aren't yet hooked up.
 
-## বর্তমান অবস্থা
-- `marketplace_products` table-এ ৩১টা unique `category` (single text field) আছে। **Subcategory নেই** sample data-তে।
-- `Products.tsx` এর `DEFAULT_CATEGORY_TREE` শুধু English generic categories (Electronics, Clothes ইত্যাদি) seed করে — sample import-এর actual বাংলা categories-এর সাথে মিলে না। ফলে import করার সময় new categories তৈরি হয়, কিন্তু product form খুললে ভিন্ন (English) category list দেখায় → mismatch.
-- `SampleProductImportSheet` import-এর সময় missing categories on-the-fly create করে, সেটা ঠিকই কাজ করে।
+---
 
-## পরিবর্তন
+## 1. Bulk select + bulk delete on Products (`src/pages/app/Products.tsx`)
 
-### 1. একটা shared canonical category list বানানো
-নতুন file: **`src/lib/default-categories.ts`** — যেখানে sample import-এর সব ৩১টা real category থাকবে (বাংলায়, সাথে English alias সহ যাতে dropdown সুন্দর দেখায়)। এটা single source of truth হবে।
+- Add a "Select" toggle button in the toolbar (next to Stock edit / Download/Print). Activating it shows checkboxes in the table.
+- Add a header checkbox to select/deselect all rows on the current page (and a "select all filtered" link when some are selected).
+- When ≥1 row is selected, show a sticky bulk-action bar at the bottom (or inline near the title) with:
+  - Selection count
+  - "Delete selected" button (destructive)
+  - "Cancel" button
+- **Confirmation dialog** (shadcn `Dialog`):
+  - Shows the count of products to be deleted.
+  - Has a text `Input` where the user must type exactly `delete` (case-insensitive).
+  - The Delete button stays disabled until the typed value matches.
+  - On confirm: soft-delete all selected products in one Supabase call (`update({ deleted_at }) .in("id", ids)`), invalidate the `products` query, toast success, exit select mode.
 
-```
-চাল, ডাল, তেল, আটা/ময়দা, চিনি/লবণ, মসলা, দুধ, ডিম/অন্যান্য,
-চা/কফি, পানীয়, বিস্কুট/স্ন্যাকস, নুডলস/পাস্তা, সস/আচার,
-সাবান/ডিটারজেন্ট, পার্সোনাল কেয়ার,
-কলম, খাতা/নোটবুক, কাগজ, ফাইল/ফোল্ডার, আঠা/টেপ, ক্যালকুলেটর,
-স্টেশনারি একসেসরিজ, অফিস,
-চার্জার, কেবল, ইয়ারফোন, পাওয়ার ব্যাংক, কভার/প্রটেক্টর,
-একসেসরিজ, রিপেয়ার পার্টস, স্টোরেজ
-```
+## 2. Unified printable report layout (`src/lib/print-report.ts`)
 
-### 2. একটা reusable seeder helper বানানো
-নতুন function: **`ensureDefaultCategories(shopId)`** in same file। এটা:
-- Shop-এর existing categories load করবে (name দিয়ে set বানাবে)
-- Default list থেকে যে categories missing সেগুলো bulk insert করবে (`shop_id`, `name`, `parent_id: null`)
-- Idempotent — বার বার call করলেও duplicate হবে না
+The current `printReport` helper renders a receipt-style key/value list. The user wants a true table layout matching the uploaded screenshots. Add a new helper without breaking existing callers:
 
-### 3. কোথায় কোথায় seeder call হবে
-- **`Products.tsx`** এর `ProductFormDialog`-এ existing lazy seed effect (line 634) replace হবে — এখন English tree এর বদলে নতুন `ensureDefaultCategories` call করবে। শুধু empty হলে নয়, **প্রতিবার dialog open-এ ensure করবে** যাতে কোনো নতুন default category future-এ যোগ হলেও auto আসে।
-- **`SampleProductImportSheet.tsx`** এর `doImport` শুরুতেই `ensureDefaultCategories(current.id)` call করবে — তারপর existing dedup লজিক চালাবে। ফলে import-এর পরও সব default category থাকবে, শুধু selected ones না।
-- **`AppLayout`/dashboard mount** — যখন user নতুন shop নিয়ে app-এ ঢুকে, একবার background-এ `ensureDefaultCategories(current.id)` চালাবে (silent, non-blocking)। এটাই হলো "by default সবার কাছে add" — দোকানদারের কিছু না করেও সব category আগে থেকেই থাকবে।
+- Add `printTableReport(opts)` with shape:
+  ```ts
+  {
+    shopName, shopAddress?, shopPhone?,
+    title,                    // e.g. "Due History", "Transaction History"
+    startDate, endDate,       // yyyy-mm-dd; supports lang for Bengali numerals
+    columns: { key, label, align? }[],
+    rows: Record<string, string>[],
+    footer?,                  // defaults to "Powered By : Hishabee Business Manager."
+    lang?: "bn" | "en",
+  }
+  ```
+- HTML output mirrors the screenshots:
+  - Header: shop name (bold), address, phone on the left; title (bold) and `Start Date: …` / `End Date: …` on the right.
+  - Thin horizontal rule under the header.
+  - Bold uppercase column headers, then data rows with light row dividers.
+  - Centered footer line.
+  - Auto-`window.print()` on load (same pattern as today).
+- Keep the existing `printReport` export untouched so existing report pages keep working; new pages and the rewrites below use `printTableReport`.
 
-### 4. Import flow-এ category linking
-`SampleProductImportSheet.doImport` (line 138-157) এর existing logic ঠিকই আছে — picked products-এর category names থেকে `catIdByName` map বানিয়ে `category_id` set করে। `ensureDefaultCategories` আগে চলায় সব category আগে থেকেই থাকবে, তাই missing-handling code কার্যত skip হবে কিন্তু safety net হিসেবে রাখব।
+## 3. Wire print buttons across pages
 
-### 5. Old English tree retire
-`DEFAULT_CATEGORY_TREE` (Products.tsx line 57-72) সরিয়ে দেব — confusion এড়াতে। শুধু নতুন বাংলা list থাকবে।
+Use `printTableReport` from `src/lib/print-report.ts` so every page shares the same header.
 
-## কোন file-এ কী হবে
-- **নতুন:** `src/lib/default-categories.ts` — list + `ensureDefaultCategories(shopId)` helper
-- **edit:** `src/pages/app/Products.tsx` — old DEFAULT_CATEGORY_TREE সরানো + lazy seed effect-এ helper call
-- **edit:** `src/components/app/SampleProductImportSheet.tsx` — `doImport` শুরুতে helper call
-- **edit:** `src/pages/app/AppLayout.tsx` — current shop change হলে background-এ helper call (one-time per session per shop)
+| Page | File | Columns |
+|------|------|---------|
+| Products list (Download/Print) | `src/pages/app/Products.tsx` | #, Name, SKU, Stock, Cost, Sale Price, Stock Value |
+| Due Ledger contacts | `src/pages/app/DueLedger.tsx` (small printer icon already exists at line 109) | #, Contact Name, Phone, Type, Amount |
+| Due History (new page, see §4) | `src/pages/app/DueHistory.tsx` | #, Entries, Name, Contact, Contact Type, Amount |
+| Sales Ledger | `src/pages/app/SalesLedger.tsx` (replace `printAll` which currently calls `window.print()` on the whole DOM) | #, Name, Contact, Items, Amount, Date, Payment Status |
+| Purchase Ledger | `src/pages/app/PurchaseLedger.tsx` (same — replace `window.print()`) | #, Supplier, Contact, Items, Amount, Date, Payment Status |
+| Quick Order | `src/pages/app/QuickOrder.tsx` (replace `window.print()` if used for list export) | #, Customer, Items, Amount, Date, Status |
 
-## DB migration
-**লাগবে না।** `categories` table-এ আগে থেকেই `shop_id`, `name`, `parent_id` সব আছে। শুধু নতুন rows insert হবে — সেটা existing RLS (`is_shop_member`) দিয়ে normal user-ই করতে পারবে।
+Each page passes its current shop (`current.name`, `address`, `phone`), the active date range (or "All" if none), and the filtered rows.
 
-## Out of scope
-- Sub-category — sample data-তে নেই, তাই এই ধাপে seed করছি না। Manual create button আগের মতই কাজ করবে।
-- পুরনো shop-এ যেখানে আগে থেকেই কিছু English category seed হয়ে গেছে — সেগুলো remove হবে না, শুধু পাশাপাশি বাংলা গুলোও যোগ হবে। User চাইলে manually delete করতে পারবে।
+## 4. New Due History page
+
+- **Route**: add `due-history` to `src/routes.tsx` and lazy-import `./pages/app/DueHistory`.
+- **Sidebar/Breadcrumb**: not added to the sidebar; this page is reached from the "History" button on Due Ledger and shows a breadcrumb `Due / Due History` matching the uploaded screenshot.
+- **Wire the History button**: in `src/pages/app/DueLedger.tsx` (line ~80) add `onClick={() => nav({ to: "/app/due-history" })}` using the shared router hook.
+- **Page contents** (`src/pages/app/DueHistory.tsx`):
+  - Top bar: back arrow + "Due History" title.
+  - Right side: Download/Print button (uses `printTableReport`), Date range picker (default last 30 days), per-page select, Refresh.
+  - Table columns matching the screenshot: Contact Name, Phone, Contact Type (customer/supplier/employee), Amount, Status (paid/due), Date & Time.
+  - Empty state: `Showing 1 to 0 of 0 Transactions`.
+  - Data source: read from `due_transactions` (or whatever table holds due history — confirmed during implementation by querying the schema; falls back to joining `customer_dues` / `supplier_dues` if no single table exists).
+
+## 5. Files to touch
+
+- **New**: `src/pages/app/DueHistory.tsx`
+- **Edit**: `src/lib/print-report.ts` (add `printTableReport` helper)
+- **Edit**: `src/routes.tsx` (register `/app/due-history`)
+- **Edit**: `src/pages/app/Products.tsx` (bulk select, confirm dialog, wire Download/Print)
+- **Edit**: `src/pages/app/DueLedger.tsx` (wire History button + small printer icon)
+- **Edit**: `src/pages/app/SalesLedger.tsx` (swap `window.print()` → `printTableReport`)
+- **Edit**: `src/pages/app/PurchaseLedger.tsx` (same)
+- **Edit**: `src/pages/app/QuickOrder.tsx` (same, if its print button targets the list)
+
+## Open implementation note
+
+Before wiring the Due History data source I'll inspect the database to choose the right table (`due_transactions` vs joining `customer_dues`/`supplier_dues`/`employee_dues`). If no transaction-level table exists yet, the page initially renders the contacts' due_balance entries (matching the same column layout) and we can revisit if you want a true ledger of every due movement.
