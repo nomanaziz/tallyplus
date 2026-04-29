@@ -1,0 +1,456 @@
+import { useEffect, useMemo, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Plus,
+  Pencil,
+  Trash2,
+  Loader2,
+  Save,
+  Mail,
+  CheckCircle2,
+  Hourglass,
+  XCircle,
+  CheckCircle,
+  MessageSquare,
+  User,
+  KeyRound,
+  ChevronDown,
+} from "lucide-react";
+import { toast } from "sonner";
+
+// ============================================================
+// Provider options shown in the SMS Settings dropdown
+// ============================================================
+type ProviderOption = {
+  key: string;            // unique key e.g. "reve:masking"
+  label: string;          // shown in dropdown + as display_name
+  provider: "reve" | "whatsapp" | "telegram";
+  masking: "masking" | "non-masking";
+  comingSoon?: boolean;
+};
+
+const PROVIDER_OPTIONS: ProviderOption[] = [
+  { key: "reve:masking", label: "REVE SMS (Masking)", provider: "reve", masking: "masking" },
+  { key: "reve:non-masking", label: "REVE SMS (Non-masking)", provider: "reve", masking: "non-masking" },
+  { key: "whatsapp:non-masking", label: "WhatsApp (coming soon)", provider: "whatsapp", masking: "non-masking", comingSoon: true },
+  { key: "telegram:non-masking", label: "Telegram (coming soon)", provider: "telegram", masking: "non-masking", comingSoon: true },
+];
+
+function defaultBaseUrl(provider: string) {
+  if (provider === "reve") return "http://smpp.revesms.com:7788";
+  return "";
+}
+
+type Gateway = {
+  id: string;
+  provider: string;
+  display_name: string;
+  is_active: boolean;
+  is_primary: boolean;
+  sort_order: number;
+  config: Record<string, any>;
+};
+type Pkg = { id: string; name_bn: string; name_en: string; sms_count: number; price_bdt: number; is_active: boolean; sort_order: number };
+type Template = { id: string; code: string; name_bn: string; name_en: string; body_template: string; is_active: boolean; sort_order: number };
+
+// ============================================================
+// Stat card
+// ============================================================
+function StatCard({
+  color, icon: Icon, label, value, footer,
+}: { color: string; icon: any; label: string; value: string | number; footer: string }) {
+  return (
+    <div className={`rounded-md text-white shadow-sm ${color}`}>
+      <div className="flex items-center gap-4 p-5">
+        <Icon className="h-12 w-12 opacity-90" strokeWidth={1.5} />
+        <div className="min-w-0">
+          <div className="text-sm font-medium opacity-90">{label}</div>
+          <div className="text-3xl font-extrabold leading-tight">{value}</div>
+        </div>
+      </div>
+      <div className="border-t border-white/20 px-4 py-1.5 text-center text-[11px] font-medium opacity-90">
+        {footer}
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// Main page
+// ============================================================
+export default function AdminSmsGateways() {
+  const [loading, setLoading] = useState(true);
+
+  // Stats
+  const [stats, setStats] = useState({ balance: 0, today: 0, month: 0, failed: 0 });
+
+  // Gateways (full list, but only the primary/selected one is edited inline)
+  const [gateways, setGateways] = useState<Gateway[]>([]);
+  const [providerKey, setProviderKey] = useState<string>("reve:non-masking");
+  const [sender, setSender] = useState("");
+  const [userName, setUserName] = useState("");
+  const [password, setPassword] = useState("");
+  const [active, setActive] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  // Secondary tabs
+  const [tab, setTab] = useState<"gateway" | "packages" | "templates">("gateway");
+
+  // Packages & Templates
+  const [packages, setPackages] = useState<Pkg[]>([]);
+  const [editingPkg, setEditingPkg] = useState<(Omit<Pkg, "id"> & { id?: string }) | null>(null);
+  const [templates, setTemplates] = useState<Template[]>([]);
+  const [editingTpl, setEditingTpl] = useState<(Omit<Template, "id"> & { id?: string }) | null>(null);
+
+  // ========== Load ==========
+  const loadAll = async () => {
+    setLoading(true);
+    const monthStart = new Date();
+    monthStart.setDate(1); monthStart.setHours(0, 0, 0, 0);
+    const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
+
+    const [
+      { data: g },
+      { data: p },
+      { data: t },
+      { data: bal },
+      { count: todaySent },
+      { count: monthSent },
+      { count: monthFailed },
+    ] = await Promise.all([
+      supabase.from("sms_gateways").select("*").order("sort_order").order("created_at"),
+      supabase.from("sms_packages").select("*").order("sort_order").order("sms_count"),
+      supabase.from("sms_templates").select("*").order("sort_order").order("code"),
+      supabase.from("shop_sms_balance").select("balance"),
+      supabase.from("sms_history").select("*", { count: "exact", head: true }).eq("status", "sent").gte("created_at", todayStart.toISOString()),
+      supabase.from("sms_history").select("*", { count: "exact", head: true }).eq("status", "sent").gte("created_at", monthStart.toISOString()),
+      supabase.from("sms_history").select("*", { count: "exact", head: true }).eq("status", "failed").gte("created_at", monthStart.toISOString()),
+    ]);
+
+    const gws = (g as Gateway[]) ?? [];
+    setGateways(gws);
+    setPackages((p as Pkg[]) ?? []);
+    setTemplates((t as Template[]) ?? []);
+
+    const totalBal = (bal ?? []).reduce((s: number, r: any) => s + Number(r.balance ?? 0), 0);
+    setStats({
+      balance: totalBal,
+      today: todaySent ?? 0,
+      month: monthSent ?? 0,
+      failed: monthFailed ?? 0,
+    });
+
+    // Pick primary gateway as the inline-form value
+    const primary =
+      gws.find((x) => x.is_primary && x.is_active) ||
+      gws.find((x) => x.is_active) ||
+      gws[0];
+    if (primary) {
+      const masking = (primary.config?.masking as string) === "masking" ? "masking" : "non-masking";
+      const key = `${primary.provider}:${masking}`;
+      setProviderKey(PROVIDER_OPTIONS.find((o) => o.key === key)?.key ?? "reve:non-masking");
+      setSender(primary.config?.sender_id ?? "");
+      setUserName(primary.config?.api_key ?? primary.config?.username ?? "");
+      setPassword(primary.config?.secret_key ?? primary.config?.password ?? "");
+      setActive(primary.is_active);
+    }
+    setLoading(false);
+  };
+  useEffect(() => { loadAll(); }, []);
+
+  // ========== Save settings (single primary gateway) ==========
+  const opt = useMemo(() => PROVIDER_OPTIONS.find((o) => o.key === providerKey)!, [providerKey]);
+
+  const saveSettings = async () => {
+    if (opt.comingSoon) {
+      toast.error(`${opt.label} এখনো support করা হচ্ছে না`);
+      return;
+    }
+    setSaving(true);
+    try {
+      // Find existing row for this provider+masking, or create new
+      const existing = gateways.find(
+        (g) => g.provider === opt.provider && (g.config?.masking ?? "non-masking") === opt.masking
+      );
+      const config = {
+        base_url: existing?.config?.base_url || defaultBaseUrl(opt.provider),
+        sender_id: sender.trim(),
+        masking: opt.masking,
+        // Mirror creds in both shapes so REVE works either way
+        api_key: userName.trim(),
+        secret_key: password,
+        username: userName.trim(),
+        password,
+      };
+      const payload = {
+        provider: opt.provider,
+        display_name: opt.label,
+        is_active: active,
+        is_primary: true,
+        sort_order: 0,
+        config,
+      };
+      let err;
+      if (existing) {
+        ({ error: err } = await supabase.from("sms_gateways").update(payload).eq("id", existing.id));
+      } else {
+        ({ error: err } = await supabase.from("sms_gateways").insert(payload));
+      }
+      if (err) throw err;
+
+      // Demote others from primary
+      const otherIds = gateways.filter((g) => g.id !== existing?.id).map((g) => g.id);
+      if (otherIds.length) {
+        await supabase.from("sms_gateways").update({ is_primary: false }).in("id", otherIds);
+      }
+
+      toast.success("Company information updated");
+      loadAll();
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // ========== Packages ==========
+  const savePkg = async () => {
+    if (!editingPkg) return;
+    let err;
+    if (editingPkg.id) {
+      const { id, ...rest } = editingPkg;
+      ({ error: err } = await supabase.from("sms_packages").update(rest).eq("id", id!));
+    } else {
+      ({ error: err } = await supabase.from("sms_packages").insert(editingPkg));
+    }
+    if (err) { toast.error(err.message); return; }
+    toast.success("Saved"); setEditingPkg(null); loadAll();
+  };
+  const delPkg = async (id: string) => {
+    if (!confirm("Delete this package?")) return;
+    const { error } = await supabase.from("sms_packages").delete().eq("id", id);
+    if (error) { toast.error(error.message); return; }
+    loadAll();
+  };
+
+  // ========== Templates ==========
+  const saveTpl = async () => {
+    if (!editingTpl) return;
+    let err;
+    if (editingTpl.id) {
+      const { id, ...rest } = editingTpl;
+      ({ error: err } = await supabase.from("sms_templates").update(rest).eq("id", id!));
+    } else {
+      ({ error: err } = await supabase.from("sms_templates").insert(editingTpl));
+    }
+    if (err) { toast.error(err.message); return; }
+    toast.success("Saved"); setEditingTpl(null); loadAll();
+  };
+
+  if (loading)
+    return <div className="flex h-96 items-center justify-center"><Loader2 className="h-6 w-6 animate-spin" /></div>;
+
+  return (
+    <div className="min-h-full bg-muted/30">
+      {/* Breadcrumb header */}
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b bg-background px-4 py-3">
+        <div className="flex items-center gap-2 text-sm">
+          <MessageSquare className="h-5 w-5 text-sky-600" />
+          <span className="text-base font-bold text-sky-700">SMS Service</span>
+          <span className="text-xs text-muted-foreground">SMS Gateway Setup</span>
+        </div>
+        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+          <MessageSquare className="h-3.5 w-3.5" /> SMS Service
+          <span className="mx-1">›</span>
+          SMS Gateway Setup
+        </div>
+      </div>
+
+      <div className="container max-w-7xl px-3 py-4 sm:px-4">
+        {/* ============== Stat cards ============== */}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <StatCard color="bg-emerald-500" icon={Mail} label="SMS Balance" value={stats.balance.toLocaleString()} footer="Total SMS Remaining Balance" />
+          <StatCard color="bg-sky-500" icon={CheckCircle2} label="Todays Send" value={stats.today.toLocaleString()} footer="Total SMS Send Today" />
+          <StatCard color="bg-amber-500" icon={Hourglass} label="This Month Send" value={stats.month.toLocaleString()} footer="Total SMS Send in This Month" />
+          <StatCard color="bg-rose-500" icon={XCircle} label="This Month Failed" value={stats.failed.toLocaleString()} footer="Total SMS Sending failed in This Month" />
+        </div>
+
+        {/* ============== Secondary tabs ============== */}
+        <div className="mt-6">
+          <Tabs value={tab} onValueChange={(v) => setTab(v as any)}>
+            <TabsList>
+              <TabsTrigger value="gateway">Gateway Setup</TabsTrigger>
+              <TabsTrigger value="packages">Packages</TabsTrigger>
+              <TabsTrigger value="templates">Templates</TabsTrigger>
+            </TabsList>
+
+            {/* ===== Gateway Setup form ===== */}
+            <TabsContent value="gateway" className="mt-3">
+              <div className="overflow-hidden rounded-md border bg-background shadow-sm">
+                <div className="flex items-center gap-2 bg-slate-700 px-4 py-3 text-white">
+                  <MessageSquare className="h-4 w-4" />
+                  <span className="text-sm font-semibold">SMS Settings</span>
+                </div>
+                <div className="p-5">
+                  <div className="grid gap-5 md:grid-cols-2">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Sms Provider</Label>
+                      <div className="relative">
+                        <ChevronDown className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Select value={providerKey} onValueChange={setProviderKey}>
+                          <SelectTrigger className="h-11 pl-9"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            {PROVIDER_OPTIONS.map((o) => (
+                              <SelectItem key={o.key} value={o.key}>{o.label}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">SMS User Name</Label>
+                      <div className="relative">
+                        <User className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input className="h-11 pl-9" value={userName} onChange={(e) => setUserName(e.target.value)} placeholder="API key or Username" />
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">SMS Sender</Label>
+                      <div className="relative">
+                        <User className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input className="h-11 pl-9" value={sender} onChange={(e) => setSender(e.target.value)} placeholder="e.g. nomask_GalaxyNet or 8809612xxxxx" />
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">SMS Password</Label>
+                      <div className="relative">
+                        <KeyRound className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input type="password" className="h-11 pl-9" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Secret key or Password" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+                    <div className="flex items-center gap-2">
+                      <Switch checked={active} onCheckedChange={setActive} />
+                      <Label className="text-sm">Active</Label>
+                    </div>
+                    <Button
+                      onClick={saveSettings}
+                      disabled={saving || opt.comingSoon}
+                      className="h-11 gap-2 bg-slate-700 px-5 text-white hover:bg-slate-800"
+                    >
+                      {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4" />}
+                      Update Company Information
+                    </Button>
+                  </div>
+
+                  {opt.comingSoon && (
+                    <div className="mt-3 rounded-md border bg-amber-50 p-3 text-xs text-amber-800">
+                      {opt.label} — এখনো support করা হচ্ছে না, শীঘ্রই আসছে।
+                    </div>
+                  )}
+                </div>
+              </div>
+            </TabsContent>
+
+            {/* ===== Packages ===== */}
+            <TabsContent value="packages" className="mt-3 space-y-3">
+              <div className="flex justify-end">
+                <Button onClick={() => setEditingPkg({ name_bn: "", name_en: "", sms_count: 100, price_bdt: 100, is_active: true, sort_order: 0 })} className="gap-1">
+                  <Plus className="h-4 w-4" /> Add Package
+                </Button>
+              </div>
+              <div className="rounded-xl border bg-background">
+                {packages.length === 0 ? (
+                  <div className="p-8 text-center text-sm text-muted-foreground">No packages yet.</div>
+                ) : packages.map((p) => (
+                  <div key={p.id} className="flex flex-wrap items-center gap-3 border-b p-3 last:border-b-0">
+                    <div className="min-w-0 flex-1">
+                      <div className="font-semibold">{p.name_bn} <span className="text-xs text-muted-foreground">({p.name_en})</span></div>
+                      <div className="text-sm text-muted-foreground">{p.sms_count} SMS • ৳{p.price_bdt}{!p.is_active && <span className="ml-2 rounded bg-rose-100 px-1.5 text-xs text-rose-700">Disabled</span>}</div>
+                    </div>
+                    <Button size="sm" variant="outline" onClick={() => setEditingPkg(p)}><Pencil className="h-4 w-4" /></Button>
+                    <Button size="sm" variant="outline" onClick={() => delPkg(p.id)} className="text-rose-600"><Trash2 className="h-4 w-4" /></Button>
+                  </div>
+                ))}
+              </div>
+            </TabsContent>
+
+            {/* ===== Templates ===== */}
+            <TabsContent value="templates" className="mt-3 space-y-3">
+              <div className="rounded-md border bg-muted/30 p-3 text-xs text-muted-foreground">
+                Placeholders: <code>{"{name}"}</code>, <code>{"{amount}"}</code>, <code>{"{due}"}</code>. Shop signature is appended automatically.
+              </div>
+              <div className="rounded-xl border bg-background">
+                {templates.map((t) => (
+                  <div key={t.id} className="flex flex-wrap items-start gap-3 border-b p-3 last:border-b-0">
+                    <div className="min-w-0 flex-1">
+                      <div className="font-semibold">{t.name_bn} <span className="text-xs text-muted-foreground">({t.code})</span></div>
+                      <div className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">{t.body_template}</div>
+                    </div>
+                    <Button size="sm" variant="outline" onClick={() => setEditingTpl(t)}><Pencil className="h-4 w-4" /></Button>
+                  </div>
+                ))}
+              </div>
+            </TabsContent>
+          </Tabs>
+        </div>
+      </div>
+
+      {/* Package dialog */}
+      <Dialog open={!!editingPkg} onOpenChange={(o) => !o && setEditingPkg(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>{editingPkg?.id ? "Edit" : "Add"} Package</DialogTitle></DialogHeader>
+          {editingPkg && (
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-2">
+                <div><Label>Name (Bangla)</Label><Input value={editingPkg.name_bn} onChange={(e) => setEditingPkg({ ...editingPkg, name_bn: e.target.value })} /></div>
+                <div><Label>Name (English)</Label><Input value={editingPkg.name_en} onChange={(e) => setEditingPkg({ ...editingPkg, name_en: e.target.value })} /></div>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div><Label>SMS Count</Label><Input type="number" min={1} value={editingPkg.sms_count} onChange={(e) => setEditingPkg({ ...editingPkg, sms_count: Number(e.target.value) })} /></div>
+                <div><Label>Price (৳)</Label><Input type="number" min={0} step="0.01" value={editingPkg.price_bdt} onChange={(e) => setEditingPkg({ ...editingPkg, price_bdt: Number(e.target.value) })} /></div>
+              </div>
+              <div className="flex items-center gap-2"><Switch checked={editingPkg.is_active} onCheckedChange={(v) => setEditingPkg({ ...editingPkg, is_active: v })} /><Label>Active</Label></div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditingPkg(null)}>Cancel</Button>
+            <Button onClick={savePkg} className="gap-1"><Save className="h-4 w-4" />Save</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Template dialog */}
+      <Dialog open={!!editingTpl} onOpenChange={(o) => !o && setEditingTpl(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>Edit Template</DialogTitle></DialogHeader>
+          {editingTpl && (
+            <div className="space-y-3">
+              <div><Label>Code</Label><Input value={editingTpl.code} disabled /></div>
+              <div><Label>Name (Bangla)</Label><Input value={editingTpl.name_bn} onChange={(e) => setEditingTpl({ ...editingTpl, name_bn: e.target.value })} /></div>
+              <div><Label>Body</Label><Textarea rows={4} value={editingTpl.body_template} onChange={(e) => setEditingTpl({ ...editingTpl, body_template: e.target.value })} /></div>
+              <div className="flex items-center gap-2"><Switch checked={editingTpl.is_active} onCheckedChange={(v) => setEditingTpl({ ...editingTpl, is_active: v })} /><Label>Active</Label></div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditingTpl(null)}>Cancel</Button>
+            <Button onClick={saveTpl} className="gap-1"><Save className="h-4 w-4" />Save</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
