@@ -38,7 +38,7 @@ export default defineConfig(({ mode }) => ({
         rollupOptions: {
           output: {
             manualChunks: {
-              "react-vendor": ["react", "react-dom", "react-router-dom"],
+              "react-vendor": ["react", "react-dom"],
               "supabase": ["@supabase/supabase-js"],
               "query": ["@tanstack/react-query"],
               "radix": [
