@@ -360,12 +360,12 @@ function ProductsPage() {
   };
 
   return (
-    <div className="container px-4 py-4">
-      <div className="mb-1 text-xs text-muted-foreground">
+    <div className="container px-3 py-2 sm:px-4 sm:py-4">
+      <div className="mb-1 hidden text-xs text-muted-foreground sm:block">
         {lang === "bn" ? "প্রোডাক্ট ও স্টক ব্যবস্থাপনা" : "Products & Stock Management"}
       </div>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-xl font-extrabold md:text-2xl">
+        <h1 className="text-base font-bold sm:text-xl md:text-2xl">
           {lang === "bn" ? "প্রোডাক্ট ও স্টক" : "Products & Stock"}
         </h1>
         <div className="flex flex-wrap items-center gap-2">
@@ -386,17 +386,17 @@ function ProductsPage() {
             </>
           ) : (
             <>
-              <Button variant="outline" className="h-10 gap-2 border-primary text-primary hover:bg-primary/10" onClick={openHistory}>
+              <Button variant="outline" className="hidden sm:inline-flex h-10 gap-2 border-primary text-primary hover:bg-primary/10" onClick={openHistory}>
                 <History className="h-4 w-4" />
                 {lang === "bn" ? "স্টকের ইতিহাস" : "Stock history"}
               </Button>
-              <Button variant="outline" className="h-10 gap-2" onClick={() => setEditStockMode(true)}>
+              <Button variant="outline" className="hidden sm:inline-flex h-10 gap-2" onClick={() => setEditStockMode(true)}>
                 <ListOrdered className="h-4 w-4" />
                 {lang === "bn" ? "স্টক এডিট" : "Stock edit"}
               </Button>
               <Button
                 variant={selectMode ? "default" : "outline"}
-                className="h-10 gap-2"
+                className="hidden sm:inline-flex h-10 gap-2"
                 onClick={() => (selectMode ? cancelSelect() : setSelectMode(true))}
               >
                 <CheckSquare className="h-4 w-4" />
@@ -416,15 +416,15 @@ function ProductsPage() {
                     : `Delete (${selected.size})`}
                 </Button>
               )}
-              <Button variant="outline" className="h-10 gap-2" onClick={handlePrintProducts}>
+              <Button variant="outline" className="hidden sm:inline-flex h-10 gap-2" onClick={handlePrintProducts}>
                 <Download className="h-4 w-4" />
                 {lang === "bn" ? "ডাউনলোড/প্রিন্ট" : "Download/Print"}
               </Button>
-              <Button variant="outline" className="h-10 gap-2" onClick={() => setOpenImport(true)}>
+              <Button variant="outline" className="hidden sm:inline-flex h-10 gap-2" onClick={() => setOpenImport(true)}>
                 <Sparkles className="h-4 w-4 text-primary" />
                 {lang === "bn" ? "স্যাম্পল ইম্পোর্ট" : "Import Sample"}
               </Button>
-              <Button className="h-10 gap-2" onClick={() => {
+              <Button className="h-9 gap-1.5 px-3 sm:h-10 sm:gap-2 sm:px-4" onClick={() => {
                 if (!current?.id) {
                   toast.error(lang === "bn" ? "আগে দোকান নির্বাচন করুন" : "Select a shop first");
                   return;
@@ -433,8 +433,31 @@ function ProductsPage() {
                 setOpenForm(true);
               }}>
                 <Plus className="h-4 w-4" />
-                {lang === "bn" ? "প্রোডাক্ট যুক্ত করুন" : "Add Product"}
+                <span className="sm:hidden">{lang === "bn" ? "যোগ" : "Add"}</span>
+                <span className="hidden sm:inline">{lang === "bn" ? "প্রোডাক্ট যুক্ত করুন" : "Add Product"}</span>
               </Button>
+              {/* Mobile-only More menu */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="icon" className="h-9 w-9 sm:hidden" aria-label="More">
+                    <MoreVertical className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => (selectMode ? cancelSelect() : setSelectMode(true))}>
+                    <CheckSquare className="mr-2 h-4 w-4" />
+                    {selectMode ? (lang === "bn" ? "ক্যানসেল" : "Cancel select") : (lang === "bn" ? "নির্বাচন" : "Select")}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handlePrintProducts}>
+                    <Download className="mr-2 h-4 w-4" />
+                    {lang === "bn" ? "ডাউনলোড/প্রিন্ট" : "Download/Print"}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setOpenImport(true)}>
+                    <Sparkles className="mr-2 h-4 w-4 text-primary" />
+                    {lang === "bn" ? "স্যাম্পল ইম্পোর্ট" : "Import Sample"}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </>
           )}
         </div>
@@ -442,21 +465,21 @@ function ProductsPage() {
       <SampleProductImportSheet open={openImport} onOpenChange={setOpenImport} onImported={() => void load()} />
 
       {/* Summary card — Total Stock & Stock Value */}
-      <div className="mt-4 rounded-2xl bg-primary p-3 text-primary-foreground shadow-sm sm:p-5">
-        <div className="grid grid-cols-2 gap-2 sm:gap-4">
-          <div className="rounded-xl bg-primary-foreground/15 px-3 py-3 text-center sm:py-4">
-            <div className="text-2xl font-extrabold tabular-nums sm:text-3xl">
+      <div className="mt-2 rounded-2xl bg-primary p-2 text-primary-foreground shadow-sm sm:mt-4 sm:p-5">
+        <div className="grid grid-cols-2 gap-1.5 sm:gap-4">
+          <div className="rounded-xl bg-primary-foreground/15 px-2 py-1.5 text-center sm:px-3 sm:py-4">
+            <div className="text-base font-extrabold tabular-nums sm:text-3xl">
               {lang === "bn" ? bnNum(totalStockCount) : totalStockCount.toLocaleString()}
             </div>
-            <div className="mt-1 text-xs font-semibold sm:text-sm">
+            <div className="mt-0 text-[10px] font-semibold sm:mt-1 sm:text-sm">
               {lang === "bn" ? "মোট স্টক" : "Total Stock"}
             </div>
           </div>
-          <div className="rounded-xl bg-primary-foreground/15 px-3 py-3 text-center sm:py-4">
-            <div className="text-2xl font-extrabold tabular-nums sm:text-3xl">
+          <div className="rounded-xl bg-primary-foreground/15 px-2 py-1.5 text-center sm:px-3 sm:py-4">
+            <div className="text-base font-extrabold tabular-nums sm:text-3xl">
               {fmtMoney(totalStockValue, lang)}
             </div>
-            <div className="mt-1 text-xs font-semibold sm:text-sm">
+            <div className="mt-0 text-[10px] font-semibold sm:mt-1 sm:text-sm">
               {lang === "bn" ? "মজুদ মূল্য" : "Stock Value"}
             </div>
           </div>
@@ -465,35 +488,35 @@ function ProductsPage() {
 
       {/* Mobile-only quick actions (Stock History + Stock Edit) */}
       {!editStockMode && (
-        <div className="mt-3 flex gap-2 sm:hidden">
+        <div className="mt-2 flex gap-1.5 sm:hidden">
           <Button
             variant="outline"
-            className="h-10 flex-1 gap-2 border-primary text-primary hover:bg-primary/10"
+            className="h-9 flex-1 gap-1.5 text-xs border-primary text-primary hover:bg-primary/10"
             onClick={openHistory}
           >
-            <History className="h-4 w-4" />
+            <History className="h-3.5 w-3.5" />
             {lang === "bn" ? "স্টকের ইতিহাস" : "Stock History"}
           </Button>
           <Button
             variant="outline"
-            className="h-10 flex-1 gap-2"
+            className="h-9 flex-1 gap-1.5 text-xs"
             onClick={() => setEditStockMode(true)}
           >
-            <ListOrdered className="h-4 w-4" />
+            <ListOrdered className="h-3.5 w-3.5" />
             {lang === "bn" ? "স্টক এডিট" : "Stock Edit"}
           </Button>
         </div>
       )}
 
-      <div className="mt-4">
+      <div className="mt-2 sm:mt-4 [&_input]:h-9 sm:[&_input]:h-10 [&_button]:h-9 sm:[&_button]:h-10">
         <DataToolbar
           search={search}
           onSearch={setSearch}
           onRefresh={load}
           middleExtra={
-            <>
+            <div className="flex w-full gap-1.5 sm:contents">
               <Select value={sortBy} onValueChange={setSortBy}>
-                <SelectTrigger className="h-10 w-[170px]">
+                <SelectTrigger className="h-9 flex-1 text-xs sm:h-10 sm:w-[170px] sm:flex-none sm:text-sm">
                   <SelectValue placeholder={lang === "bn" ? "সাজান" : "Sort"} />
                 </SelectTrigger>
                 <SelectContent>
@@ -506,7 +529,7 @@ function ProductsPage() {
                 </SelectContent>
               </Select>
               <Select value={filterBy} onValueChange={setFilterBy}>
-                <SelectTrigger className="h-10 w-[160px]">
+                <SelectTrigger className="h-9 flex-1 text-xs sm:h-10 sm:w-[160px] sm:flex-none sm:text-sm">
                   <SelectValue placeholder={lang === "bn" ? "ফিল্টার" : "Filter"} />
                 </SelectTrigger>
                 <SelectContent>
@@ -517,7 +540,7 @@ function ProductsPage() {
                   <SelectItem value="unlimited">{lang === "bn" ? "অসীম স্টক" : "Unlimited"}</SelectItem>
                 </SelectContent>
               </Select>
-            </>
+            </div>
           }
         />
       </div>
@@ -530,8 +553,8 @@ function ProductsPage() {
         </div>
       )}
 
-      <div className="mt-4 rounded-xl border bg-card">
-        <div className="border-b px-4 py-3 text-sm font-semibold">
+      <div className="mt-2 rounded-xl border bg-card sm:mt-4">
+        <div className="border-b px-3 py-2 text-xs font-semibold sm:px-4 sm:py-3 sm:text-sm">
           {lang === "bn" ? "মোট প্রোডাক্ট:" : "Total Products:"} {lang === "bn" ? bnNum(filtered.length) : filtered.length}
         </div>
         {loading ? (
