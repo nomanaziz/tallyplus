@@ -1,38 +1,77 @@
 /**
- * Router compatibility shim.
- * Provides a stable API (Link, useNavigate, useParams, useSearch, useLocation,
- * Outlet, useRouter, redirect, notFound) backed by @tanstack/react-router.
- *
- * The rest of the codebase imports from "@/lib/router" — this file lets us
- * migrate the underlying router without touching every call site.
+ * Router compatibility shim — backed by react-router-dom v6.
+ * Provides Link, useNavigate, useParams, useSearch, useLocation, Outlet,
+ * useRouter, redirect, notFound — the API the rest of the codebase already uses.
  */
 import {
-  Link as TLink,
-  Outlet as TOutlet,
-  useLocation as useTLocation,
-  useNavigate as useTNavigate,
-  useParams as useTParams,
-  useRouter as useTRouter,
-  useSearch as useTSearch,
-  redirect as tRedirect,
-  notFound as tNotFound,
-} from "@tanstack/react-router";
-import { forwardRef, type ReactNode, type AnchorHTMLAttributes, type CSSProperties } from "react";
+  Link as RLink,
+  Outlet as ROutlet,
+  useLocation as useRLocation,
+  useNavigate as useRNavigate,
+  useParams as useRParams,
+  useSearchParams,
+  type LinkProps as RLinkProps,
+} from "react-router-dom";
+import {
+  forwardRef,
+  useCallback,
+  useMemo,
+  type AnchorHTMLAttributes,
+  type CSSProperties,
+  type ReactNode,
+} from "react";
 
-export const Outlet = TOutlet;
+export const Outlet = ROutlet;
 
-type NavOpts = {
-  to?: string;
-  params?: Record<string, string | number | undefined>;
-  search?: Record<string, unknown> | string | ((prev: Record<string, string>) => Record<string, unknown>);
+type ParamMap = Record<string, string | number | undefined>;
+type SearchInput =
+  | Record<string, unknown>
+  | string
+  | ((prev: Record<string, string>) => Record<string, unknown>);
+
+/** Replace ":param" or "$param" placeholders in a path with values from params. */
+function applyParams(path: string, params?: ParamMap): string {
+  if (!params) return path;
+  return path
+    .replace(/\$([A-Za-z_][A-Za-z0-9_]*)/g, (_, k) =>
+      params[k] != null ? String(params[k]) : `$${k}`,
+    )
+    .replace(/:([A-Za-z_][A-Za-z0-9_]*)/g, (_, k) =>
+      params[k] != null ? String(params[k]) : `:${k}`,
+    );
+}
+
+function searchToString(search: SearchInput | undefined): string {
+  if (search == null) return "";
+  if (typeof search === "function") return ""; // resolved later via useNavigate
+  if (typeof search === "string") return search.startsWith("?") ? search : `?${search}`;
+  const usp = new URLSearchParams();
+  for (const [k, v] of Object.entries(search)) {
+    if (v == null) continue;
+    usp.set(k, String(v));
+  }
+  const s = usp.toString();
+  return s ? `?${s}` : "";
+}
+
+function buildTo(opts: {
+  to: string;
+  params?: ParamMap;
+  search?: SearchInput;
   hash?: string;
-  replace?: boolean;
-};
+}): string {
+  const path = applyParams(opts.to, opts.params);
+  const qs = typeof opts.search === "string" || (opts.search && typeof opts.search === "object")
+    ? searchToString(opts.search)
+    : "";
+  const hash = opts.hash ? (opts.hash.startsWith("#") ? opts.hash : `#${opts.hash}`) : "";
+  return `${path}${qs}${hash}`;
+}
 
 type ExtraLinkProps = {
   to: string;
-  params?: Record<string, string | number | undefined>;
-  search?: Record<string, unknown> | string;
+  params?: ParamMap;
+  search?: SearchInput;
   hash?: string;
   activeProps?: { className?: string; style?: CSSProperties };
   inactiveProps?: { className?: string; style?: CSSProperties };
@@ -42,22 +81,8 @@ type ExtraLinkProps = {
   replace?: boolean;
 };
 
-type LinkProps = AnchorHTMLAttributes<HTMLAnchorElement> &
+type LinkProps = Omit<AnchorHTMLAttributes<HTMLAnchorElement>, "href"> &
   ExtraLinkProps & { children?: ReactNode };
-
-/** Convert search input into the object form TanStack expects. */
-function normalizeSearch(search?: Record<string, unknown> | string):
-  | Record<string, unknown>
-  | undefined {
-  if (search == null) return undefined;
-  if (typeof search === "string") {
-    const usp = new URLSearchParams(search.startsWith("?") ? search.slice(1) : search);
-    const out: Record<string, string> = {};
-    usp.forEach((v, k) => { out[k] = v; });
-    return out;
-  }
-  return search;
-}
 
 export const Link = forwardRef<HTMLAnchorElement, LinkProps>(function Link(
   {
@@ -69,7 +94,7 @@ export const Link = forwardRef<HTMLAnchorElement, LinkProps>(function Link(
     inactiveProps,
     preload: _preload,
     preloadDelay: _preloadDelay,
-    resetScroll,
+    resetScroll: _resetScroll,
     replace,
     className,
     style,
@@ -78,93 +103,121 @@ export const Link = forwardRef<HTMLAnchorElement, LinkProps>(function Link(
   },
   ref,
 ) {
-  // Map ":id" style to TanStack "$id" style for safety; TanStack natively uses $.
-  const tanstackTo = to.replace(/:([A-Za-z_][A-Za-z0-9_]*)/g, "$$$1");
+  const href = buildTo({ to, params, search, hash });
+  const location = useRLocation();
+  const targetPath = href.split("?")[0].split("#")[0];
+  const isActive = location.pathname === targetPath;
+
+  const cls = [
+    className,
+    isActive ? activeProps?.className : inactiveProps?.className,
+  ]
+    .filter(Boolean)
+    .join(" ");
+  const sty = { ...(style ?? {}), ...((isActive ? activeProps?.style : inactiveProps?.style) ?? {}) };
+
+  const linkProps: RLinkProps = {
+    to: href,
+    replace,
+    className: cls || undefined,
+    style: sty,
+  };
   return (
-    <TLink
-      ref={ref}
-      to={tanstackTo as never}
-      params={params as never}
-      search={normalizeSearch(search) as never}
-      hash={hash}
-      replace={replace}
-      resetScroll={resetScroll}
-      className={className as never}
-      style={style as never}
-      activeProps={activeProps as never}
-      inactiveProps={inactiveProps as never}
-      {...(rest as Record<string, unknown>)}
-    >
-      {children as never}
-    </TLink>
+    <RLink ref={ref} {...linkProps} {...(rest as Record<string, unknown>)}>
+      {children}
+    </RLink>
   );
 });
 
 export function useNavigate() {
-  const nav = useTNavigate();
-  return (opts: string | NavOpts, extra?: { replace?: boolean }) => {
-    if (typeof opts === "string") {
-      const tanstackTo = opts.replace(/:([A-Za-z_][A-Za-z0-9_]*)/g, "$$$1");
-      return nav({ to: tanstackTo as never, replace: extra?.replace });
-    }
-    let search = opts.search;
-    if (typeof search === "function") {
-      const sp = new URLSearchParams(typeof window !== "undefined" ? window.location.search : "");
-      const cur: Record<string, string> = {};
-      sp.forEach((v, k) => { cur[k] = v; });
-      search = (search as (p: Record<string, string>) => Record<string, unknown>)(cur);
-    }
-    const tanstackTo = (opts.to ?? ".").replace(/:([A-Za-z_][A-Za-z0-9_]*)/g, "$$$1");
-    return nav({
-      to: tanstackTo as never,
-      params: opts.params as never,
-      search: normalizeSearch(search as Record<string, unknown> | string | undefined) as never,
-      hash: opts.hash,
-      replace: opts.replace ?? extra?.replace,
+  const nav = useRNavigate();
+  return useCallback(
+    (
+      opts:
+        | string
+        | {
+            to?: string;
+            params?: ParamMap;
+            search?: SearchInput;
+            hash?: string;
+            replace?: boolean;
+          },
+      extra?: { replace?: boolean },
+    ) => {
+      if (typeof opts === "string") {
+        return nav(applyParams(opts), { replace: extra?.replace });
+      }
+      let search = opts.search;
+      if (typeof search === "function") {
+        const sp = new URLSearchParams(typeof window !== "undefined" ? window.location.search : "");
+        const cur: Record<string, string> = {};
+        sp.forEach((v, k) => {
+          cur[k] = v;
+        });
+        search = (search as (p: Record<string, string>) => Record<string, unknown>)(cur);
+      }
+      const href = buildTo({
+        to: opts.to ?? ".",
+        params: opts.params,
+        search: search as SearchInput | undefined,
+        hash: opts.hash,
+      });
+      return nav(href, { replace: opts.replace ?? extra?.replace });
+    },
+    [nav],
+  );
+}
+
+export function useParams<T extends Record<string, string> = Record<string, string>>(): T {
+  return useRParams() as unknown as T;
+}
+
+export function useSearch<T extends Record<string, string> = Record<string, string>>(): T {
+  const [sp] = useSearchParams();
+  return useMemo(() => {
+    const o: Record<string, string> = {};
+    sp.forEach((v, k) => {
+      o[k] = v;
     });
-  };
-}
-
-export function useParams<T extends Record<string, string> = Record<string, string>>(
-  _opts?: { strict?: boolean },
-): T {
-  // strict: false returns all params from current matches.
-  return useTParams({ strict: false }) as unknown as T;
-}
-
-export function useSearch<T extends Record<string, string> = Record<string, string>>(
-  _opts?: { strict?: boolean },
-): T {
-  return useTSearch({ strict: false }) as unknown as T;
+    return o as unknown as T;
+  }, [sp]);
 }
 
 export function useLocation() {
-  return useTLocation();
+  return useRLocation();
 }
 
 export function useRouter() {
-  const router = useTRouter();
   const navigate = useNavigate();
   return {
     navigate: (opts: Parameters<ReturnType<typeof useNavigate>>[0]) => navigate(opts),
-    invalidate: () => router.invalidate(),
+    invalidate: () => Promise.resolve(),
     history: {
-      back: () => router.history.back(),
-      forward: () => router.history.forward(),
+      back: () => window.history.back(),
+      forward: () => window.history.forward(),
     },
   };
 }
 
-export function useRouterState<T = unknown>(_opts?: { select?: (s: unknown) => T }): T {
+export function useRouterState<T = unknown>(): T {
   return false as unknown as T;
 }
 
+/**
+ * In TanStack, redirect() throws. With react-router-dom there's no equivalent,
+ * so we navigate via the history API and throw to halt the calling code path.
+ */
 export function redirect(opts: { to: string; hash?: string; replace?: boolean }): never {
-  const tanstackTo = opts.to.replace(/:([A-Za-z_][A-Za-z0-9_]*)/g, "$$$1");
-  // tRedirect throws internally.
-  throw tRedirect({ to: tanstackTo as never, hash: opts.hash, replace: opts.replace });
+  const href = buildTo({ to: opts.to, hash: opts.hash });
+  if (typeof window !== "undefined") {
+    if (opts.replace) window.history.replaceState({}, "", href);
+    else window.history.pushState({}, "", href);
+    window.dispatchEvent(new PopStateEvent("popstate"));
+  }
+  // eslint-disable-next-line @typescript-eslint/only-throw-error
+  throw { __redirect: true, to: href };
 }
 
 export function notFound(): Error {
-  return tNotFound() as unknown as Error;
+  return new Error("Not found");
 }
