@@ -79,7 +79,7 @@ export function printReport(opts: PrintReportOptions) {
     </div>
   </div>
   ${body}
-  <div class="footer">${escapeHtml(opts.footer ?? "Powered By : Hishabee Business Manager.")}</div>
+  <div class="footer">${escapeHtml(opts.footer ?? "Powered By : tallyplus.xyz")}</div>
   <script>window.addEventListener('load',()=>{setTimeout(()=>window.print(),200)});</script>
 </body></html>`;
 
@@ -177,7 +177,7 @@ export function printTableReport(opts: PrintTableReportOptions) {
     <thead><tr>${head}</tr></thead>
     <tbody>${body}</tbody>
   </table>
-  <div class="footer">${escapeHtml(opts.footer ?? "Powered By : Hishabee Business Manager.")}</div>
+  <div class="footer">${escapeHtml(opts.footer ?? "Powered By : tallyplus.xyz")}</div>
   <script>window.addEventListener('load',()=>{setTimeout(()=>window.print(),200)});</script>
 </body></html>`;
 
