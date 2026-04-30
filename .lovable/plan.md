@@ -1,82 +1,57 @@
-## কী হচ্ছে আসলে (Root Cause)
+## Goal
+Make `/app/products` mobile-friendly so the product list shows higher on the screen. Reduce the height of the top header block (title + actions + summary card + duplicate quick actions + toolbar) significantly on mobile (≤640px), while keeping desktop layout mostly the same.
 
-আপনার app টা একসাথে **দুইটা router** চালাচ্ছে — এটাই সব error-এর মূল কারণ।
+## Changes (only `src/pages/app/Products.tsx`)
 
-1. **TanStack Start router** (Lovable-এর জন্য বাধ্যতামূলক) — `src/router.tsx`, `src/routes/__root.tsx`, `src/routes/index.tsx`, `src/routes/$.tsx`
-2. **react-router-dom-এর BrowserRouter** — `src/App.tsx` ভিতরে, যেটা আবার পুরো `src/routes.tsx`-এ ১০০+ route চালাচ্ছে
+### 1. Title row — keep compact on mobile
+- Remove the redundant breadcrumb text "Products & Stock Management" on mobile (`hidden sm:block`).
+- Make the H1 smaller on mobile: `text-base font-bold sm:text-xl md:text-2xl`.
+- Tighten container padding: `px-3 py-2 sm:px-4 sm:py-4`.
 
-এখন যা ঘটে:
-- `src/routes/index.tsx` এবং `src/routes/$.tsx` দুজনেই `App.tsx` কে lazy-load করে
-- `App.tsx` মাউন্ট করে `<BrowserRouter>` — TanStack-এর ভিতরে আরেকটা router
-- দুই router একই URL দখলের চেষ্টা করে → SSR crash → **502 / "Internal Server Error"**
-- "Vercel 404 NOT_FOUND" আসলে Vercel না — এটা Lovable-এর Cloudflare worker fallback page যখন SSR fail করে
+### 2. Action buttons — collapse into "More" menu on mobile
+Currently 6 buttons (Stock history, Stock edit, Select, Download/Print, Import Sample, Add Product) wrap into 3 rows on mobile.
 
-আগের সব ফিক্স (BrowserRouter mount delay, hydration guard, package downgrade) এই core conflict-টা ছোঁয়নি — তাই বারবার ফিরে আসছে।
+New behavior:
+- **Mobile (`sm:hidden`)**: show only the primary **+ Add Product** button (icon + short label) and a **kebab "More" dropdown** containing: Select, Download/Print, Import Sample. Stock history & Stock edit are already duplicated below as the mobile quick-action row, so they don't need to appear in the top action row on mobile — hide them with `hidden sm:inline-flex`.
+- **Desktop (`hidden sm:flex`)**: keep current full button row unchanged.
+- Buttons inside the mobile More dropdown reuse the same handlers (`handlePrintProducts`, `setOpenImport`, `setSelectMode`).
 
-আর `vite.config.ts`-এ `manualChunks` `react-router-dom`-কে আলাদা vendor chunk করছে, যেটা `react-router-dom` সরালে ভেঙে যায় — তাই এটাও পরিষ্কার করতে হবে।
+### 3. Summary card (Total Stock / Stock Value) — slim down
+- Reduce padding: `p-2 sm:p-5`, inner tiles `py-2 sm:py-4`.
+- Reduce number size on mobile: `text-base sm:text-3xl`.
+- Reduce label size: `text-[10px] sm:text-sm`, drop `mt-1` to `mt-0.5` on mobile.
+- Net effect: card height roughly halves on mobile.
 
-## সমাধান (One-Time Architecture Fix)
+### 4. Mobile quick-action row (Stock History + Stock Edit)
+- Reduce button height from `h-10` to `h-9` and tighten gap to `gap-1.5`.
+- Reduce top margin `mt-3` → `mt-2`.
 
-পুরো codebase কে **শুধুমাত্র TanStack Start file-based routing**-এ migrate করব। `react-router-dom` সম্পূর্ণ remove। এতেই Internal Server Error, 404, build fail — সব এক ফিক্সে যাবে।
+### 5. Filter / Search / Sort / Refresh — compact toolbar on mobile
+Currently `DataToolbar` produces 3 visual rows on mobile (search+barcode, sort+filter, refresh).
 
-### Step 1 — Router shim কে TanStack-এ rewire
-`src/lib/router.tsx` এখন react-router-dom-এর উপর basis. এটাকে TanStack-এর `Link`, `useNavigate`, `useParams`, `useSearch`, `useLocation`, `Outlet`-এর উপর rewrite করব — same export names রাখব, যাতে app-জুড়ে ১০০+ call site অপরিবর্তিত থাকে। এতে TanStack-এর type-safe routing পাবেন কিন্তু component code বদলাতে হবে না।
+New mobile layout (still uses `DataToolbar` so we keep the shared component, but wrap selects so they sit on one compact row):
+- Wrap the two `Select` triggers with `className="h-9 w-full sm:w-[170px] text-xs sm:text-sm"` so they shrink and share a single row.
+- Pass a custom `middleExtra` wrapper `<div className="flex w-full gap-1.5 sm:contents">` so on mobile the two selects sit on a single second row, and on desktop they remain inline as today (`sm:contents` flattens the wrapper).
+- Reduce search input + barcode height by overriding via container (already h-10 in DataToolbar — we keep, but reduce wrapping margin `mt-4` → `mt-2`).
+- Refresh button: on mobile, change the rendered label to icon-only by passing a custom `rightExtra` and not relying on DataToolbar's built-in Refresh — pass `onRefresh={undefined}` and instead render a compact icon-only refresh button in `rightExtra` with `className="h-9 w-9 sm:h-10 sm:w-auto sm:px-3"` showing label only on `sm:`.
 
-### Step 2 — App.tsx + routes.tsx সরানো
-`src/App.tsx` এবং `src/routes.tsx` delete। সব route TanStack-এর file-based system-এ যাবে।
+(If overriding DataToolbar internals proves awkward, alternative: wrap DataToolbar in a `<div className="[&_button]:h-9 sm:[&_button]:h-10 [&_input]:h-9 sm:[&_input]:h-10">` to force compact heights on mobile without editing the shared component.)
 
-### Step 3 — সব page-কে TanStack route file বানানো
-`src/routes.tsx`-এ থাকা প্রতিটা path-এর জন্য `src/routes/`-এ মিল রেখে file তৈরি করব (flat dot-separated naming):
+### 6. Margins between blocks
+- Summary card: `mt-2 sm:mt-4`
+- Toolbar wrapper: `mt-2 sm:mt-4`
+- "Total Products: N" header inside table card: `px-3 py-2 text-xs sm:px-4 sm:py-3 sm:text-sm`.
 
-```text
-src/routes/
-  index.tsx                      -> /  (landing)
-  auth.tsx                       -> /auth
-  pricing.tsx, privacy.tsx, terms.tsx
-  admin.tsx                      -> /admin (layout)
-  admin.index.tsx, admin.users.tsx, admin.plans.tsx, ... (২২টা)
-  app.tsx                        -> /app  (layout = AppLayout)
-  app.dashboard.tsx, app.sell.tsx, app.products.tsx, ... (৪০+টা)
-  app.online-shop.tsx            -> /app/online-shop (nested layout)
-  app.online-shop.products.tsx, ... (১৪টা)
-  app.returns.$id.tsx, app.returns.new.tsx
-  affiliate.tsx, affiliate.register.tsx
-  customer.tsx, customer.dashboard.tsx, ...
-  shop.tsx, shop.p.$id.tsx, shop.s.$slug.tsx
-  vendor.$username.tsx
-  f.$slug.tsx, f.$slug.my.tsx
-```
+## Out of scope
+- No changes to the table rows themselves.
+- No changes to `DataToolbar.tsx` shared component (keep changes local to Products page via wrapper class overrides).
+- No changes to other pages.
 
-প্রতিটা file খুবই ছোট হবে — শুধু `createFileRoute(...)` + existing page component import। page গুলো নিজেরাই (Sell.tsx, Dashboard.tsx ইত্যাদি) অপরিবর্তিত থাকবে।
+## Files touched
+- `src/pages/app/Products.tsx` only.
 
-### Step 4 — Splat route ও legacy fallback সরানো
-`src/routes/$.tsx` (যেটা App.tsx লোড করে) delete। বদলে `__root.tsx`-এ proper `notFoundComponent` থাকবে — Lovable-এর hosting auto-handle করবে deep-link 404।
-
-### Step 5 — package.json + vite.config পরিষ্কার
-- `react-router-dom` dependency সরাব
-- `vite.config.ts`-এর `manualChunks` থেকে `"react-router-dom"` সরাব
-- `bun.lockb` regenerate
-
-### Step 6 — Error/NotFound boundaries
-TanStack-এর rule অনুযায়ী `__root.tsx`-এ `notFoundComponent`, `router.tsx`-এ `defaultErrorComponent` যোগ করব — যেগুলো এখন missing।
-
-## কেন এবার আর fail হবে না
-
-| সমস্যা | পুরানো কারণ | এই ফিক্সের পরে |
-|---|---|---|
-| Internal Server Error (502) | দুই router conflict, SSR crash | একটাই router (TanStack) |
-| Vercel 404 NOT_FOUND | Worker fallback page | Lovable hosting native TanStack handle করে |
-| বারবার build fail | mixed types, lock file conflict | শুধু TanStack types, react-router-dom নেই |
-| `zod` peer conflict (আগের error) | npm install Vercel-এ; এখন bun ব্যবহার | bun.lockb regenerate, npm install আর লাগবে না |
-| Refresh-এ blank page | BrowserRouter SSR-এ window নেই | TanStack file-based SSR-safe |
-
-## Scope ও Risk
-
-- **প্রায় ৯০টা route file** তৈরি হবে — কিন্তু প্রতিটাই ৫-৮ লাইনের boilerplate
-- কোনো page-এর internal logic, UI, Supabase call **পরিবর্তন হবে না**
-- `@/lib/router` থেকে যারা import করছে (sidebar, header, প্রতিটা page) — সব unchanged, কারণ shim same API দেবে
-- বড় migration, কিন্তু এটাই এই বারবার-fail হওয়ার একমাত্র permanent ফিক্স। Patch দিয়ে আর কাজ হবে না — আগে ৩-৪ বার চেষ্টা হয়েছে।
-
-## অনুমোদন চাই
-
-এটা বড় কাজ (~২ ঘণ্টার AI work) কিন্তু এর পরে আপনার deployment স্থির হবে। **Approve করলে** আমি step-by-step এগোব এবং প্রতিটা stage-এর পর build verify করে যাব।
+## Expected result on 390px viewport
+- Header block (everything above the product list) reduces from ~480px to ~230px.
+- Filter / search / sort / refresh occupy 2 compact rows instead of 3 tall ones.
+- Action buttons occupy 1 row on mobile (Add Product + kebab) instead of 3.
+- Product list becomes visible without scrolling on most phones.
