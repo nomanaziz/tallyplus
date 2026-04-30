@@ -1,4 +1,4 @@
-import { createRootRoute, HeadContent, Outlet, Scripts } from "@tanstack/react-router";
+import { createRootRoute, HeadContent, Link, Outlet, Scripts } from "@tanstack/react-router";
 import { StrictMode } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { I18nProvider } from "@/lib/i18n";
@@ -33,8 +33,18 @@ export const Route = createRootRoute({
   }),
   shellComponent: RootShell,
   component: RootComponent,
-  notFoundComponent: () => null,
+  notFoundComponent: GlobalNotFound,
 });
+
+function GlobalNotFound() {
+  return (
+    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 24, fontFamily: "system-ui, sans-serif" }}>
+      <h1 style={{ fontSize: 64, margin: 0 }}>404</h1>
+      <p style={{ marginTop: 8, opacity: 0.7 }}>পেজটি খুঁজে পাওয়া যায়নি</p>
+      <Link to="/" style={{ marginTop: 16, color: "#16a34a", textDecoration: "underline" }}>হোমে ফিরুন</Link>
+    </div>
+  );
+}
 
 function RootShell({ children }: { children: React.ReactNode }) {
   return (
