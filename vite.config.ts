@@ -9,11 +9,7 @@ import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 
 export default defineConfig(({ mode }) => ({
   plugins: [
-    tanstackStart({
-      router: {
-        autoCodeSplitting: true,
-      },
-    }),
+    tanstackStart(),
     react(),
     tailwindcss(),
     tsconfigPaths(),
