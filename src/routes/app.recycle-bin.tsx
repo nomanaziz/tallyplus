@@ -1,5 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
-import Page from "@/pages/app/RecycleBin";
+import { createFileRoute, lazyRouteComponent } from "@tanstack/react-router";
+const Page = lazyRouteComponent(() => import("@/pages/app/RecycleBin"));
 
 export const Route = createFileRoute("/app/recycle-bin")({
   ssr: false,

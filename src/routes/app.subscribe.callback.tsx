@@ -1,5 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
-import Page from "@/pages/app/SubscribeCallback";
+import { createFileRoute, lazyRouteComponent } from "@tanstack/react-router";
+const Page = lazyRouteComponent(() => import("@/pages/app/SubscribeCallback"));
 
 export const Route = createFileRoute("/app/subscribe/callback")({
   ssr: false,
