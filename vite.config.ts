@@ -5,11 +5,9 @@ import tsconfigPaths from "vite-tsconfig-paths";
 import { componentTagger } from "lovable-tagger";
 import path from "node:path";
 import pkg from "./package.json" with { type: "json" };
-import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 
 export default defineConfig(({ mode }) => ({
   plugins: [
-    tanstackStart(),
     react(),
     tailwindcss(),
     tsconfigPaths(),
