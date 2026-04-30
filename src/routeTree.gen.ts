@@ -83,6 +83,8 @@ import { Route as AdminLandingRouteImport } from './routes/admin.landing'
 import { Route as AdminBannersRouteImport } from './routes/admin.banners'
 import { Route as AdminAffiliatesRouteImport } from './routes/admin.affiliates'
 import { Route as AdminAdsRouteImport } from './routes/admin.ads'
+import { Route as FRouteImport } from './routes/f.'
+import { Route as AppOnlineShopIndexRouteImport } from './routes/app.online-shop.index'
 import { Route as ShopSSlugRouteImport } from './routes/shop.s.$slug'
 import { Route as ShopPIdRouteImport } from './routes/shop.p.$id'
 import { Route as FSlugMyRouteImport } from './routes/f.$slug.my'
@@ -473,6 +475,16 @@ const AdminAdsRoute = AdminAdsRouteImport.update({
   path: '/ads',
   getParentRoute: () => AdminRoute,
 } as any)
+const FRoute = FRouteImport.update({
+  id: '/f/',
+  path: '/f/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppOnlineShopIndexRoute = AppOnlineShopIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppOnlineShopRoute,
+} as any)
 const ShopSSlugRoute = ShopSSlugRouteImport.update({
   id: '/s/$slug',
   path: '/s/$slug',
@@ -576,6 +588,7 @@ export interface FileRoutesByFullPath {
   '/privacy': typeof PrivacyRoute
   '/shop': typeof ShopRouteWithChildren
   '/terms': typeof TermsRoute
+  '/f/': typeof FRoute
   '/admin/ads': typeof AdminAdsRoute
   '/admin/affiliates': typeof AdminAffiliatesRoute
   '/admin/banners': typeof AdminBannersRoute
@@ -657,6 +670,7 @@ export interface FileRoutesByFullPath {
   '/f/$slug/my': typeof FSlugMyRoute
   '/shop/p/$id': typeof ShopPIdRoute
   '/shop/s/$slug': typeof ShopSSlugRoute
+  '/app/online-shop/': typeof AppOnlineShopIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -669,6 +683,7 @@ export interface FileRoutesByTo {
   '/privacy': typeof PrivacyRoute
   '/shop': typeof ShopRouteWithChildren
   '/terms': typeof TermsRoute
+  '/f': typeof FRoute
   '/admin/ads': typeof AdminAdsRoute
   '/admin/affiliates': typeof AdminAffiliatesRoute
   '/admin/banners': typeof AdminBannersRoute
@@ -704,7 +719,6 @@ export interface FileRoutesByTo {
   '/app/expiring': typeof AppExpiringRoute
   '/app/fordo-history': typeof AppFordoHistoryRoute
   '/app/marketing': typeof AppMarketingRoute
-  '/app/online-shop': typeof AppOnlineShopRouteWithChildren
   '/app/owner-ledger': typeof AppOwnerLedgerRoute
   '/app/owner-report': typeof AppOwnerReportRoute
   '/app/printer': typeof AppPrinterRoute
@@ -750,6 +764,7 @@ export interface FileRoutesByTo {
   '/f/$slug/my': typeof FSlugMyRoute
   '/shop/p/$id': typeof ShopPIdRoute
   '/shop/s/$slug': typeof ShopSSlugRoute
+  '/app/online-shop': typeof AppOnlineShopIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -764,6 +779,7 @@ export interface FileRoutesById {
   '/privacy': typeof PrivacyRoute
   '/shop': typeof ShopRouteWithChildren
   '/terms': typeof TermsRoute
+  '/f/': typeof FRoute
   '/admin/ads': typeof AdminAdsRoute
   '/admin/affiliates': typeof AdminAffiliatesRoute
   '/admin/banners': typeof AdminBannersRoute
@@ -845,6 +861,7 @@ export interface FileRoutesById {
   '/f/$slug/my': typeof FSlugMyRoute
   '/shop/p/$id': typeof ShopPIdRoute
   '/shop/s/$slug': typeof ShopSSlugRoute
+  '/app/online-shop/': typeof AppOnlineShopIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -860,6 +877,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/shop'
     | '/terms'
+    | '/f/'
     | '/admin/ads'
     | '/admin/affiliates'
     | '/admin/banners'
@@ -941,6 +959,7 @@ export interface FileRouteTypes {
     | '/f/$slug/my'
     | '/shop/p/$id'
     | '/shop/s/$slug'
+    | '/app/online-shop/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -953,6 +972,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/shop'
     | '/terms'
+    | '/f'
     | '/admin/ads'
     | '/admin/affiliates'
     | '/admin/banners'
@@ -988,7 +1008,6 @@ export interface FileRouteTypes {
     | '/app/expiring'
     | '/app/fordo-history'
     | '/app/marketing'
-    | '/app/online-shop'
     | '/app/owner-ledger'
     | '/app/owner-report'
     | '/app/printer'
@@ -1034,6 +1053,7 @@ export interface FileRouteTypes {
     | '/f/$slug/my'
     | '/shop/p/$id'
     | '/shop/s/$slug'
+    | '/app/online-shop'
   id:
     | '__root__'
     | '/'
@@ -1047,6 +1067,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/shop'
     | '/terms'
+    | '/f/'
     | '/admin/ads'
     | '/admin/affiliates'
     | '/admin/banners'
@@ -1128,6 +1149,7 @@ export interface FileRouteTypes {
     | '/f/$slug/my'
     | '/shop/p/$id'
     | '/shop/s/$slug'
+    | '/app/online-shop/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -1142,6 +1164,7 @@ export interface RootRouteChildren {
   PrivacyRoute: typeof PrivacyRoute
   ShopRoute: typeof ShopRouteWithChildren
   TermsRoute: typeof TermsRoute
+  FRoute: typeof FRoute
   FSlugRoute: typeof FSlugRouteWithChildren
   VendorUsernameRoute: typeof VendorUsernameRoute
 }
@@ -1666,6 +1689,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminAdsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/f/': {
+      id: '/f/'
+      path: '/f'
+      fullPath: '/f/'
+      preLoaderRoute: typeof FRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/app/online-shop/': {
+      id: '/app/online-shop/'
+      path: '/'
+      fullPath: '/app/online-shop/'
+      preLoaderRoute: typeof AppOnlineShopIndexRouteImport
+      parentRoute: typeof AppOnlineShopRoute
+    }
     '/shop/s/$slug': {
       id: '/shop/s/$slug'
       path: '/s/$slug'
@@ -1868,6 +1905,7 @@ interface AppOnlineShopRouteChildren {
   AppOnlineShopPromoCodesRoute: typeof AppOnlineShopPromoCodesRoute
   AppOnlineShopSettingsRoute: typeof AppOnlineShopSettingsRoute
   AppOnlineShopThemesRoute: typeof AppOnlineShopThemesRoute
+  AppOnlineShopIndexRoute: typeof AppOnlineShopIndexRoute
 }
 
 const AppOnlineShopRouteChildren: AppOnlineShopRouteChildren = {
@@ -1883,6 +1921,7 @@ const AppOnlineShopRouteChildren: AppOnlineShopRouteChildren = {
   AppOnlineShopPromoCodesRoute: AppOnlineShopPromoCodesRoute,
   AppOnlineShopSettingsRoute: AppOnlineShopSettingsRoute,
   AppOnlineShopThemesRoute: AppOnlineShopThemesRoute,
+  AppOnlineShopIndexRoute: AppOnlineShopIndexRoute,
 }
 
 const AppOnlineShopRouteWithChildren = AppOnlineShopRoute._addFileChildren(
@@ -2047,6 +2086,7 @@ const rootRouteChildren: RootRouteChildren = {
   PrivacyRoute: PrivacyRoute,
   ShopRoute: ShopRouteWithChildren,
   TermsRoute: TermsRoute,
+  FRoute: FRoute,
   FSlugRoute: FSlugRouteWithChildren,
   VendorUsernameRoute: VendorUsernameRoute,
 }
