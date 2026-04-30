@@ -83,9 +83,8 @@ export const Link = forwardRef<HTMLAnchorElement, LinkProps>(function Link(
   return (
     <TLink
       ref={ref}
-      to={tanstackTo}
-      // @ts-expect-error - dynamic params; codebase relies on loose typing.
-      params={params}
+      to={tanstackTo as never}
+      params={params as never}
       search={normalizeSearch(search) as never}
       hash={hash}
       replace={replace}
@@ -103,10 +102,10 @@ export const Link = forwardRef<HTMLAnchorElement, LinkProps>(function Link(
 
 export function useNavigate() {
   const nav = useTNavigate();
-  return (opts: string | NavOpts) => {
+  return (opts: string | NavOpts, extra?: { replace?: boolean }) => {
     if (typeof opts === "string") {
       const tanstackTo = opts.replace(/:([A-Za-z_][A-Za-z0-9_]*)/g, "$$$1");
-      return nav({ to: tanstackTo as never });
+      return nav({ to: tanstackTo as never, replace: extra?.replace });
     }
     let search = opts.search;
     if (typeof search === "function") {
@@ -118,11 +117,10 @@ export function useNavigate() {
     const tanstackTo = (opts.to ?? ".").replace(/:([A-Za-z_][A-Za-z0-9_]*)/g, "$$$1");
     return nav({
       to: tanstackTo as never,
-      // @ts-expect-error - loose params
-      params: opts.params,
+      params: opts.params as never,
       search: normalizeSearch(search as Record<string, unknown> | string | undefined) as never,
       hash: opts.hash,
-      replace: opts.replace,
+      replace: opts.replace ?? extra?.replace,
     });
   };
 }
