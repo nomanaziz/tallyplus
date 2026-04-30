@@ -9,6 +9,7 @@ import { RefCaptureProvider } from "@/lib/referral";
 import { Toaster } from "@/components/ui/sonner";
 import { InstallAppPrompt } from "@/components/app/InstallAppPrompt";
 import { appRoutes } from "@/lib/app-routes";
+import { startRoutePreloading } from "@/lib/preload-routes";
 import "@/styles.css";
 
 const queryClient = new QueryClient({
@@ -47,3 +48,6 @@ createRoot(document.getElementById("root")!).render(
     </BrowserRouter>
   </StrictMode>,
 );
+
+// After initial paint, quietly preload heavy routes in the background.
+startRoutePreloading();
