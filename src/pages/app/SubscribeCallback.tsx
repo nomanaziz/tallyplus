@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useSearchParams, Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearch } from "@/lib/router";
 import { supabase } from "@/integrations/supabase/client";
 import { useI18n } from "@/lib/i18n";
 import { Loader2, CheckCircle2, XCircle, Clock } from "lucide-react";
@@ -9,19 +9,19 @@ type State = "loading" | "success" | "pending" | "failed";
 
 export default function SubscribeCallback() {
   const { lang } = useI18n();
-  const [params] = useSearchParams();
+  const params = useSearch() as Record<string, string>;
   const navigate = useNavigate();
   const [state, setState] = useState<State>("loading");
   const [msg, setMsg] = useState<string>("");
   const [autoRedirect, setAutoRedirect] = useState(true);
   const [countdown, setCountdown] = useState(4);
 
-  const status = params.get("status");
-  const transactionId = params.get("transactionId");
-  const localId = params.get("local_id");
-  const paidAmount = params.get("paymentAmount");
-  const paymentMethod = params.get("paymentMethod");
-  const paymentFee = params.get("paymentFee");
+  const status = params.status;
+  const transactionId = params.transactionId;
+  const localId = params.local_id;
+  const paidAmount = params.paymentAmount;
+  const paymentMethod = params.paymentMethod;
+  const paymentFee = params.paymentFee;
 
   useEffect(() => {
     void (async () => {

@@ -1,5 +1,4 @@
-import { Link } from "@/lib/router";
-import { useLocation } from "react-router-dom";
+import { Link, useLocation } from "@/lib/router";
 import { SiteHeader } from "@/components/site/SiteHeader";
 import { SiteFooter } from "@/components/site/SiteFooter";
 import { useAuth } from "@/lib/auth";

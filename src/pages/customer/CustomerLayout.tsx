@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { Outlet, useNavigate, NavLink } from "react-router-dom";
+import { Outlet, useNavigate, Link } from "@/lib/router";
 import { useAuth } from "@/lib/auth";
 import { SiteHeader } from "@/components/site/SiteHeader";
 import { SiteFooter } from "@/components/site/SiteFooter";
@@ -45,19 +45,16 @@ export default function CustomerLayout() {
           <aside className="hidden md:block">
             <div className="sticky top-24 space-y-1 rounded-2xl border bg-card p-2 shadow-sm">
               {NAV.map(({ to, label, Icon }) => (
-                <NavLink
+                <Link
                   key={to}
                   to={to}
-                  end
-                  className={({ isActive }) =>
-                    `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition ${
-                      isActive ? "bg-primary text-primary-foreground" : "text-foreground hover:bg-accent"
-                    }`
-                  }
+                  activeProps={{ className: "bg-primary text-primary-foreground" }}
+                  inactiveProps={{ className: "text-foreground hover:bg-accent" }}
+                  className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition"
                 >
                   <Icon className="h-4 w-4" />
                   {label}
-                </NavLink>
+                </Link>
               ))}
               <div className="pt-1">
                 <Button
@@ -90,19 +87,16 @@ export default function CustomerLayout() {
       <nav className="fixed inset-x-0 bottom-0 z-30 border-t bg-background/95 backdrop-blur md:hidden">
         <div className="grid grid-cols-5">
           {NAV.map(({ to, label, Icon }) => (
-            <NavLink
+            <Link
               key={to}
               to={to}
-              end
-              className={({ isActive }) =>
-                `flex flex-col items-center justify-center gap-0.5 py-2 text-[10px] font-medium ${
-                  isActive ? "text-primary" : "text-muted-foreground"
-                }`
-              }
+              activeProps={{ className: "text-primary" }}
+              inactiveProps={{ className: "text-muted-foreground" }}
+              className="flex flex-col items-center justify-center gap-0.5 py-2 text-[10px] font-medium"
             >
               <Icon className="h-4 w-4" />
               <span className="truncate">{label}</span>
-            </NavLink>
+            </Link>
           ))}
         </div>
       </nav>

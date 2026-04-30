@@ -1,62 +1,82 @@
-## Goal
-Stop the repeated deployment/build failures by aligning the project’s package management and dependency versions so the install step is deterministic on the hosting platform.
+## কী হচ্ছে আসলে (Root Cause)
 
-## What’s causing the failure
-There are two overlapping problems in the repo right now:
+আপনার app টা একসাথে **দুইটা router** চালাচ্ছে — এটাই সব error-এর মূল কারণ।
 
-1. `package.json` declares `zod: ^4.3.6` and `openai: ^4.52.5`.
-2. The deployed environment is running `npm install`, while the project also contains a Bun lockfile (`bun.lockb`) and an npm lockfile (`package-lock.json`).
-3. The current `package-lock.json` is stale and still records `zod` as `^3.24.2`, while the live `package.json` requests Zod 4.
-4. `openai@4.x` has a peer-optional expectation for `zod@^3.23.8`, so npm’s stricter peer resolution is rejecting the install when it sees Zod 4.
-5. The codebase appears to use `zod` directly in app code, but there is no actual runtime use of the `openai` package in `src/` or `supabase/` right now.
+1. **TanStack Start router** (Lovable-এর জন্য বাধ্যতামূলক) — `src/router.tsx`, `src/routes/__root.tsx`, `src/routes/index.tsx`, `src/routes/$.tsx`
+2. **react-router-dom-এর BrowserRouter** — `src/App.tsx` ভিতরে, যেটা আবার পুরো `src/routes.tsx`-এ ১০০+ route চালাচ্ছে
 
-That combination makes installs fragile and is why the codebase keeps “randomly” failing on build/deploy.
+এখন যা ঘটে:
+- `src/routes/index.tsx` এবং `src/routes/$.tsx` দুজনেই `App.tsx` কে lazy-load করে
+- `App.tsx` মাউন্ট করে `<BrowserRouter>` — TanStack-এর ভিতরে আরেকটা router
+- দুই router একই URL দখলের চেষ্টা করে → SSR crash → **502 / "Internal Server Error"**
+- "Vercel 404 NOT_FOUND" আসলে Vercel না — এটা Lovable-এর Cloudflare worker fallback page যখন SSR fail করে
 
-## Plan
+আগের সব ফিক্স (BrowserRouter mount delay, hydration guard, package downgrade) এই core conflict-টা ছোঁয়নি — তাই বারবার ফিরে আসছে।
 
-### 1. Make dependency resolution consistent
-Pick one package-manager path for the repo and make the manifests match it so the host does not resolve a different tree than local development.
+আর `vite.config.ts`-এ `manualChunks` `react-router-dom`-কে আলাদা vendor chunk করছে, যেটা `react-router-dom` সরালে ভেঙে যায় — তাই এটাও পরিষ্কার করতে হবে।
 
-I will:
-- inspect whether this project should standardize on npm or Bun for deployment
-- remove the ambiguity that comes from having both `bun.lockb` and `package-lock.json` driving different dependency graphs
-- add an explicit `packageManager` declaration in `package.json` if helpful for deploy consistency
+## সমাধান (One-Time Architecture Fix)
 
-### 2. Fix the Zod/OpenAI conflict at the source
-Since the app imports `zod` directly and there is no current code usage of the `openai` SDK, the safest fix is:
-- remove `openai` from `package.json` if it is unused
-- regenerate the lockfile(s) from the corrected dependency set
+পুরো codebase কে **শুধুমাত্র TanStack Start file-based routing**-এ migrate করব। `react-router-dom` সম্পূর্ণ remove। এতেই Internal Server Error, 404, build fail — সব এক ফিক্সে যাবে।
 
-Fallback only if needed:
-- if `openai` must stay, pin a version compatible with Zod 4 or move the project back to Zod 3 everywhere consistently
+### Step 1 — Router shim কে TanStack-এ rewire
+`src/lib/router.tsx` এখন react-router-dom-এর উপর basis. এটাকে TanStack-এর `Link`, `useNavigate`, `useParams`, `useSearch`, `useLocation`, `Outlet`-এর উপর rewrite করব — same export names রাখব, যাতে app-জুড়ে ১০০+ call site অপরিবর্তিত থাকে। এতে TanStack-এর type-safe routing পাবেন কিন্তু component code বদলাতে হবে না।
 
-Preferred direction: keep Zod 4 and remove unused OpenAI, because that is the smallest, safest change.
+### Step 2 — App.tsx + routes.tsx সরানো
+`src/App.tsx` এবং `src/routes.tsx` delete। সব route TanStack-এর file-based system-এ যাবে।
 
-### 3. Verify related version drift
-There is also evidence of manifest drift in TanStack package versions between the repo files and older lockfile entries. I will:
-- reconcile the resolved lockfile with the current `package.json`
-- make sure the dependency tree reflects the current TanStack Start setup instead of older transitive versions lingering in `package-lock.json`
+### Step 3 — সব page-কে TanStack route file বানানো
+`src/routes.tsx`-এ থাকা প্রতিটা path-এর জন্য `src/routes/`-এ মিল রেখে file তৈরি করব (flat dot-separated naming):
 
-### 4. Deliver a clean deploy path
-After the dependency cleanup, I will:
-- ensure the repo has one authoritative dependency graph
-- confirm the install step should succeed in hosting without `--legacy-peer-deps`
-- tell you exactly whether you need to republish only, or whether no extra manual step is needed
+```text
+src/routes/
+  index.tsx                      -> /  (landing)
+  auth.tsx                       -> /auth
+  pricing.tsx, privacy.tsx, terms.tsx
+  admin.tsx                      -> /admin (layout)
+  admin.index.tsx, admin.users.tsx, admin.plans.tsx, ... (২২টা)
+  app.tsx                        -> /app  (layout = AppLayout)
+  app.dashboard.tsx, app.sell.tsx, app.products.tsx, ... (৪০+টা)
+  app.online-shop.tsx            -> /app/online-shop (nested layout)
+  app.online-shop.products.tsx, ... (১৪টা)
+  app.returns.$id.tsx, app.returns.new.tsx
+  affiliate.tsx, affiliate.register.tsx
+  customer.tsx, customer.dashboard.tsx, ...
+  shop.tsx, shop.p.$id.tsx, shop.s.$slug.tsx
+  vendor.$username.tsx
+  f.$slug.tsx, f.$slug.my.tsx
+```
 
-## Files to update
-- `package.json`
-- lockfile(s): likely `package-lock.json` and possibly `bun.lockb`
+প্রতিটা file খুবই ছোট হবে — শুধু `createFileRoute(...)` + existing page component import। page গুলো নিজেরাই (Sell.tsx, Dashboard.tsx ইত্যাদি) অপরিবর্তিত থাকবে।
 
-## Technical details
-Current evidence from the repo:
-- `package.json` has `openai: ^4.52.5` and `zod: ^4.3.6`
-- `package-lock.json` still records Zod 3 (`zod: ^3.24.2` and resolved `zod-3.25.76`)
-- TanStack tooling inside the lockfile also depends on Zod 3 transitively, which is fine, but npm is failing specifically on the root-level OpenAI/Zod peer expectation
-- app code imports `zod` in `src/components/app/AddShopDialog.tsx`
-- no actual imports of `openai` were found in `src/` or `supabase/`
+### Step 4 — Splat route ও legacy fallback সরানো
+`src/routes/$.tsx` (যেটা App.tsx লোড করে) delete। বদলে `__root.tsx`-এ proper `notFoundComponent` থাকবে — Lovable-এর hosting auto-handle করবে deep-link 404।
 
-## Expected outcome
-After this cleanup:
-- installs stop failing on the peer dependency conflict
-- deployments stop breaking because of stale lockfile/package-manager mismatch
-- the project becomes much more stable for future edits instead of failing repeatedly on dependency resolution
+### Step 5 — package.json + vite.config পরিষ্কার
+- `react-router-dom` dependency সরাব
+- `vite.config.ts`-এর `manualChunks` থেকে `"react-router-dom"` সরাব
+- `bun.lockb` regenerate
+
+### Step 6 — Error/NotFound boundaries
+TanStack-এর rule অনুযায়ী `__root.tsx`-এ `notFoundComponent`, `router.tsx`-এ `defaultErrorComponent` যোগ করব — যেগুলো এখন missing।
+
+## কেন এবার আর fail হবে না
+
+| সমস্যা | পুরানো কারণ | এই ফিক্সের পরে |
+|---|---|---|
+| Internal Server Error (502) | দুই router conflict, SSR crash | একটাই router (TanStack) |
+| Vercel 404 NOT_FOUND | Worker fallback page | Lovable hosting native TanStack handle করে |
+| বারবার build fail | mixed types, lock file conflict | শুধু TanStack types, react-router-dom নেই |
+| `zod` peer conflict (আগের error) | npm install Vercel-এ; এখন bun ব্যবহার | bun.lockb regenerate, npm install আর লাগবে না |
+| Refresh-এ blank page | BrowserRouter SSR-এ window নেই | TanStack file-based SSR-safe |
+
+## Scope ও Risk
+
+- **প্রায় ৯০টা route file** তৈরি হবে — কিন্তু প্রতিটাই ৫-৮ লাইনের boilerplate
+- কোনো page-এর internal logic, UI, Supabase call **পরিবর্তন হবে না**
+- `@/lib/router` থেকে যারা import করছে (sidebar, header, প্রতিটা page) — সব unchanged, কারণ shim same API দেবে
+- বড় migration, কিন্তু এটাই এই বারবার-fail হওয়ার একমাত্র permanent ফিক্স। Patch দিয়ে আর কাজ হবে না — আগে ৩-৪ বার চেষ্টা হয়েছে।
+
+## অনুমোদন চাই
+
+এটা বড় কাজ (~২ ঘণ্টার AI work) কিন্তু এর পরে আপনার deployment স্থির হবে। **Approve করলে** আমি step-by-step এগোব এবং প্রতিটা stage-এর পর build verify করে যাব।

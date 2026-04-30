@@ -1,191 +1,170 @@
 /**
  * Router compatibility shim.
- * Provides TanStack-Router-like API names backed by react-router-dom v7.
- * Lets the codebase keep its existing import call sites with minimal change.
+ * Provides a stable API (Link, useNavigate, useParams, useSearch, useLocation,
+ * Outlet, useRouter, redirect, notFound) backed by @tanstack/react-router.
+ *
+ * The rest of the codebase imports from "@/lib/router" — this file lets us
+ * migrate the underlying router without touching every call site.
  */
 import {
-  Link as RRLink,
-  NavLink,
-  Outlet as RROutlet,
-  useLocation as useRRLocation,
-  useNavigate as useRRNavigate,
-  useParams as useRRParams,
-  useSearchParams,
-  type LinkProps as RRLinkProps,
-} from "react-router-dom";
-import { forwardRef, type ReactNode, type AnchorHTMLAttributes } from "react";
-import { prefetchRoute } from "@/lib/route-prefetch";
+  Link as TLink,
+  Outlet as TOutlet,
+  useLocation as useTLocation,
+  useNavigate as useTNavigate,
+  useParams as useTParams,
+  useRouter as useTRouter,
+  useSearch as useTSearch,
+  redirect as tRedirect,
+  notFound as tNotFound,
+} from "@tanstack/react-router";
+import { forwardRef, type ReactNode, type AnchorHTMLAttributes, type CSSProperties } from "react";
 
-export { RROutlet as Outlet };
+export const Outlet = TOutlet;
+
+type NavOpts = {
+  to?: string;
+  params?: Record<string, string | number | undefined>;
+  search?: Record<string, unknown> | string | ((prev: Record<string, string>) => Record<string, unknown>);
+  hash?: string;
+  replace?: boolean;
+};
 
 type ExtraLinkProps = {
   to: string;
   params?: Record<string, string | number | undefined>;
   search?: Record<string, unknown> | string;
   hash?: string;
-  activeProps?: { className?: string; style?: React.CSSProperties };
-  inactiveProps?: { className?: string; style?: React.CSSProperties };
+  activeProps?: { className?: string; style?: CSSProperties };
+  inactiveProps?: { className?: string; style?: CSSProperties };
   preload?: unknown;
   preloadDelay?: number;
   resetScroll?: boolean;
+  replace?: boolean;
 };
 
-type LinkProps = Omit<RRLinkProps, "to"> &
-  AnchorHTMLAttributes<HTMLAnchorElement> &
+type LinkProps = AnchorHTMLAttributes<HTMLAnchorElement> &
   ExtraLinkProps & { children?: ReactNode };
 
-function buildPath(
-  to: string,
-  params?: Record<string, string | number | undefined>,
-  search?: Record<string, unknown> | string,
-  hash?: string
-): string {
-  let path = to;
-  if (params) {
-    for (const [k, v] of Object.entries(params)) {
-      // tanstack uses $param style; react-router uses :param. Support both.
-      path = path.replace(new RegExp(`\\$${k}|:${k}`, "g"), encodeURIComponent(String(v ?? "")));
-    }
+/** Convert search input into the object form TanStack expects. */
+function normalizeSearch(search?: Record<string, unknown> | string):
+  | Record<string, unknown>
+  | undefined {
+  if (search == null) return undefined;
+  if (typeof search === "string") {
+    const usp = new URLSearchParams(search.startsWith("?") ? search.slice(1) : search);
+    const out: Record<string, string> = {};
+    usp.forEach((v, k) => { out[k] = v; });
+    return out;
   }
-  let qs = "";
-  if (search) {
-    if (typeof search === "string") {
-      qs = search.startsWith("?") ? search : `?${search}`;
-    } else {
-      const usp = new URLSearchParams();
-      for (const [k, v] of Object.entries(search)) {
-        if (v === undefined || v === null) continue;
-        usp.set(k, String(v));
-      }
-      const s = usp.toString();
-      if (s) qs = `?${s}`;
-    }
-  }
-  return path + qs + (hash ? (hash.startsWith("#") ? hash : `#${hash}`) : "");
+  return search;
 }
 
 export const Link = forwardRef<HTMLAnchorElement, LinkProps>(function Link(
-  { to, params, search, hash, activeProps, inactiveProps, preload, preloadDelay: _preloadDelay, resetScroll: _resetScroll, className, style, children, ...rest },
-  ref
+  {
+    to,
+    params,
+    search,
+    hash,
+    activeProps,
+    inactiveProps,
+    preload: _preload,
+    preloadDelay: _preloadDelay,
+    resetScroll,
+    replace,
+    className,
+    style,
+    children,
+    ...rest
+  },
+  ref,
 ) {
-  const finalTo = buildPath(to, params, search, hash);
-  // Only fire prefetch on touchstart (mobile primary signal). Skip hover/focus
-  // wrappers — they triggered re-render churn on big lists. preload={false}
-  // disables entirely.
-  const preloadEnabled = preload !== false && preload !== "none";
-  const r = rest as Record<string, unknown>;
-  const userOnTouchStart = r.onTouchStart as React.TouchEventHandler<HTMLAnchorElement> | undefined;
-  const onTouchStart: React.TouchEventHandler<HTMLAnchorElement> | undefined = preloadEnabled
-    ? (e) => {
-        try { prefetchRoute(finalTo); } catch { /* ignore */ }
-        if (userOnTouchStart) userOnTouchStart(e);
-      }
-    : userOnTouchStart;
-  const restNoHandlers: Record<string, unknown> = { ...r };
-  if (preloadEnabled) delete restNoHandlers.onTouchStart;
-  if (activeProps || inactiveProps) {
-    return (
-      <NavLink
-        ref={ref as never}
-        to={finalTo}
-        end={to === "/"}
-        className={({ isActive }) => {
-          const base = typeof className === "string" ? className : "";
-          const extra = isActive ? activeProps?.className ?? "" : inactiveProps?.className ?? "";
-          return [base, extra].filter(Boolean).join(" ");
-        }}
-        style={({ isActive }) => ({
-          ...(typeof style === "object" && style ? style : {}),
-          ...(isActive ? activeProps?.style : inactiveProps?.style),
-        })}
-        onTouchStart={onTouchStart}
-        {...restNoHandlers}
-      >
-        {children}
-      </NavLink>
-    );
-  }
+  // Map ":id" style to TanStack "$id" style for safety; TanStack natively uses $.
+  const tanstackTo = to.replace(/:([A-Za-z_][A-Za-z0-9_]*)/g, "$$$1");
   return (
-    <RRLink
-      ref={ref as never}
-      to={finalTo}
-      className={className}
-      style={style}
-      onTouchStart={onTouchStart}
-      {...restNoHandlers}
+    <TLink
+      ref={ref}
+      to={tanstackTo as never}
+      params={params as never}
+      search={normalizeSearch(search) as never}
+      hash={hash}
+      replace={replace}
+      resetScroll={resetScroll}
+      className={className as never}
+      style={style as never}
+      activeProps={activeProps as never}
+      inactiveProps={inactiveProps as never}
+      {...(rest as Record<string, unknown>)}
     >
-      {children}
-    </RRLink>
+      {children as never}
+    </TLink>
   );
 });
 
-/** Tanstack-style useNavigate returning a function that takes { to, params, search, replace, hash } */
 export function useNavigate() {
-  const nav = useRRNavigate();
-  return (opts: string | { to?: string; params?: Record<string, string | number | undefined>; search?: Record<string, unknown> | string | ((prev: Record<string, string>) => Record<string, unknown>); hash?: string; replace?: boolean }) => {
-    if (typeof opts === "string") return nav(opts);
-    const to = opts.to ?? window.location.pathname;
+  const nav = useTNavigate();
+  return (opts: string | NavOpts, extra?: { replace?: boolean }) => {
+    if (typeof opts === "string") {
+      const tanstackTo = opts.replace(/:([A-Za-z_][A-Za-z0-9_]*)/g, "$$$1");
+      return nav({ to: tanstackTo as never, replace: extra?.replace });
+    }
     let search = opts.search;
     if (typeof search === "function") {
-      const sp = new URLSearchParams(window.location.search);
+      const sp = new URLSearchParams(typeof window !== "undefined" ? window.location.search : "");
       const cur: Record<string, string> = {};
       sp.forEach((v, k) => { cur[k] = v; });
       search = (search as (p: Record<string, string>) => Record<string, unknown>)(cur);
     }
-    const path = buildPath(to, opts.params, search as Record<string, unknown> | string | undefined, opts.hash);
-    return nav(path, { replace: opts.replace });
+    const tanstackTo = (opts.to ?? ".").replace(/:([A-Za-z_][A-Za-z0-9_]*)/g, "$$$1");
+    return nav({
+      to: tanstackTo as never,
+      params: opts.params as never,
+      search: normalizeSearch(search as Record<string, unknown> | string | undefined) as never,
+      hash: opts.hash,
+      replace: opts.replace ?? extra?.replace,
+    });
   };
 }
 
-export function useParams<T extends Record<string, string> = Record<string, string>>(_opts?: { strict?: boolean }) {
-  return useRRParams() as T;
+export function useParams<T extends Record<string, string> = Record<string, string>>(
+  _opts?: { strict?: boolean },
+): T {
+  // strict: false returns all params from current matches.
+  return useTParams({ strict: false }) as unknown as T;
 }
 
-export function useSearch<T extends Record<string, string> = Record<string, string>>(_opts?: { strict?: boolean }): T {
-  const [sp] = useSearchParams();
-  const out: Record<string, string> = {};
-  sp.forEach((v, k) => {
-    out[k] = v;
-  });
-  return out as T;
+export function useSearch<T extends Record<string, string> = Record<string, string>>(
+  _opts?: { strict?: boolean },
+): T {
+  return useTSearch({ strict: false }) as unknown as T;
 }
 
 export function useLocation() {
-  return useRRLocation();
+  return useTLocation();
 }
 
-/** Minimal useRouter shim — just enough for the few call sites. */
 export function useRouter() {
+  const router = useTRouter();
   const navigate = useNavigate();
   return {
     navigate: (opts: Parameters<ReturnType<typeof useNavigate>>[0]) => navigate(opts),
-    invalidate: () => {
-      // SPA: caller usually wants to refresh data. No-op; queries are cached by TanStack Query.
-    },
+    invalidate: () => router.invalidate(),
     history: {
-      back: () => window.history.back(),
-      forward: () => window.history.forward(),
+      back: () => router.history.back(),
+      forward: () => router.history.forward(),
     },
   };
 }
 
-/** Minimal stub. SPA loads instantly; router state used only for transition bars. */
-export function useRouterState<T = unknown>(_opts?: { select?: (s: { isLoading: boolean; isTransitioning: boolean; location: ReturnType<typeof useRRLocation> }) => T }): T {
+export function useRouterState<T = unknown>(_opts?: { select?: (s: unknown) => T }): T {
   return false as unknown as T;
 }
 
-/** No-op stubs kept for source compatibility with TanStack Router code paths. */
 export function redirect(opts: { to: string; hash?: string; replace?: boolean }): never {
-  // In SPA migration, throw a marker error; callers should use useEffect+useNavigate instead.
-  // Provided here only so leftover imports don't break the build.
-  const url = (opts.to || "/") + (opts.hash ? (opts.hash.startsWith("#") ? opts.hash : "#" + opts.hash) : "");
-  if (typeof window !== "undefined") {
-    if (opts.replace) window.location.replace(url);
-    else window.location.href = url;
-  }
-  throw new Error("__redirect__:" + url);
+  const tanstackTo = opts.to.replace(/:([A-Za-z_][A-Za-z0-9_]*)/g, "$$$1");
+  // tRedirect throws internally.
+  throw tRedirect({ to: tanstackTo as never, hash: opts.hash, replace: opts.replace });
 }
 
 export function notFound(): Error {
-  return new Error("Not Found");
+  return tNotFound() as unknown as Error;
 }

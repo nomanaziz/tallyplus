@@ -9,12 +9,144 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as SplatRouteImport } from './routes/$'
+import { Route as TermsRouteImport } from './routes/terms'
+import { Route as ShopRouteImport } from './routes/shop'
+import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as PricingRouteImport } from './routes/pricing'
+import { Route as CustomerRouteImport } from './routes/customer'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AppRouteImport } from './routes/app'
+import { Route as AffiliateRouteImport } from './routes/affiliate'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as VendorUsernameRouteImport } from './routes/vendor.$username'
+import { Route as FSlugRouteImport } from './routes/f.$slug'
+import { Route as CustomerProfileRouteImport } from './routes/customer.profile'
+import { Route as CustomerNotesRouteImport } from './routes/customer.notes'
+import { Route as CustomerMyFordoRouteImport } from './routes/customer.my-fordo'
+import { Route as CustomerMoneyRouteImport } from './routes/customer.money'
+import { Route as CustomerDashboardRouteImport } from './routes/customer.dashboard'
+import { Route as CustomerCreateFordoRouteImport } from './routes/customer.create-fordo'
+import { Route as AppWarrantyRouteImport } from './routes/app.warranty'
+import { Route as AppUsageLimitsRouteImport } from './routes/app.usage-limits'
+import { Route as AppTrainingRouteImport } from './routes/app.training'
+import { Route as AppSubscribeRouteImport } from './routes/app.subscribe'
+import { Route as AppStockEditRouteImport } from './routes/app.stock-edit'
+import { Route as AppStockRouteImport } from './routes/app.stock'
+import { Route as AppSmsHistoryRouteImport } from './routes/app.sms-history'
+import { Route as AppShopsRouteImport } from './routes/app.shops'
+import { Route as AppSellRouteImport } from './routes/app.sell'
+import { Route as AppSalesLedgerRouteImport } from './routes/app.sales-ledger'
+import { Route as AppReturnsRouteImport } from './routes/app.returns'
+import { Route as AppReportsRouteImport } from './routes/app.reports'
+import { Route as AppRecycleBinRouteImport } from './routes/app.recycle-bin'
+import { Route as AppQuickOrderRouteImport } from './routes/app.quick-order'
+import { Route as AppPurchaseLedgerRouteImport } from './routes/app.purchase-ledger'
+import { Route as AppPurchaseRouteImport } from './routes/app.purchase'
+import { Route as AppProductsRouteImport } from './routes/app.products'
+import { Route as AppPrinterRouteImport } from './routes/app.printer'
+import { Route as AppOwnerReportRouteImport } from './routes/app.owner-report'
+import { Route as AppOwnerLedgerRouteImport } from './routes/app.owner-ledger'
+import { Route as AppOnlineShopRouteImport } from './routes/app.online-shop'
+import { Route as AppMarketingRouteImport } from './routes/app.marketing'
+import { Route as AppFordoHistoryRouteImport } from './routes/app.fordo-history'
+import { Route as AppExpiringRouteImport } from './routes/app.expiring'
+import { Route as AppExpenseLedgerRouteImport } from './routes/app.expense-ledger'
+import { Route as AppDueLedgerRouteImport } from './routes/app.due-ledger'
+import { Route as AppDueHistoryRouteImport } from './routes/app.due-history'
+import { Route as AppDashboardRouteImport } from './routes/app.dashboard'
+import { Route as AppCustomerWishlistRouteImport } from './routes/app.customer-wishlist'
+import { Route as AppContactsRouteImport } from './routes/app.contacts'
+import { Route as AppCombinedReportRouteImport } from './routes/app.combined-report'
+import { Route as AppCashboxRouteImport } from './routes/app.cashbox'
+import { Route as AppBuySmsRouteImport } from './routes/app.buy-sms'
+import { Route as AppAssetsRouteImport } from './routes/app.assets'
+import { Route as AppAffiliateRouteImport } from './routes/app.affiliate'
+import { Route as AppAccessRouteImport } from './routes/app.access'
+import { Route as AffiliateRegisterRouteImport } from './routes/affiliate.register'
+import { Route as AdminUsersRouteImport } from './routes/admin.users'
+import { Route as AdminUsageLimitsRouteImport } from './routes/admin.usage-limits'
+import { Route as AdminTrainingRouteImport } from './routes/admin.training'
+import { Route as AdminSubscriptionsRouteImport } from './routes/admin.subscriptions'
+import { Route as AdminSubscriptionRequestsRouteImport } from './routes/admin.subscription-requests'
+import { Route as AdminSmsGatewaysRouteImport } from './routes/admin.sms-gateways'
+import { Route as AdminShopTypesRouteImport } from './routes/admin.shop-types'
+import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
+import { Route as AdminPromoPopupsRouteImport } from './routes/admin.promo-popups'
+import { Route as AdminPlansRouteImport } from './routes/admin.plans'
+import { Route as AdminPaymentGatewayRouteImport } from './routes/admin.payment-gateway'
+import { Route as AdminPaymentAttemptsRouteImport } from './routes/admin.payment-attempts'
+import { Route as AdminMarketplaceRouteImport } from './routes/admin.marketplace'
+import { Route as AdminLoginRouteImport } from './routes/admin.login'
+import { Route as AdminLocationsRouteImport } from './routes/admin.locations'
+import { Route as AdminLandingRouteImport } from './routes/admin.landing'
+import { Route as AdminBannersRouteImport } from './routes/admin.banners'
+import { Route as AdminAffiliatesRouteImport } from './routes/admin.affiliates'
+import { Route as AdminAdsRouteImport } from './routes/admin.ads'
+import { Route as AppOnlineShopIndexRouteImport } from './routes/app.online-shop.index'
+import { Route as ShopSSlugRouteImport } from './routes/shop.s.$slug'
+import { Route as ShopPIdRouteImport } from './routes/shop.p.$id'
+import { Route as FSlugMyRouteImport } from './routes/f.$slug.my'
+import { Route as AppSubscribeCallbackRouteImport } from './routes/app.subscribe.callback'
+import { Route as AppReturnsNewRouteImport } from './routes/app.returns.new'
+import { Route as AppReturnsIdRouteImport } from './routes/app.returns.$id'
+import { Route as AppOnlineShopThemesRouteImport } from './routes/app.online-shop.themes'
+import { Route as AppOnlineShopSettingsRouteImport } from './routes/app.online-shop.settings'
+import { Route as AppOnlineShopPromoCodesRouteImport } from './routes/app.online-shop.promo-codes'
+import { Route as AppOnlineShopProductsRouteImport } from './routes/app.online-shop.products'
+import { Route as AppOnlineShopPolicyRouteImport } from './routes/app.online-shop.policy'
+import { Route as AppOnlineShopOrdersRouteImport } from './routes/app.online-shop.orders'
+import { Route as AppOnlineShopMessagesRouteImport } from './routes/app.online-shop.messages'
+import { Route as AppOnlineShopMarketingRouteImport } from './routes/app.online-shop.marketing'
+import { Route as AppOnlineShopFraudCheckRouteImport } from './routes/app.online-shop.fraud-check'
+import { Route as AppOnlineShopFeaturedRouteImport } from './routes/app.online-shop.featured'
+import { Route as AppOnlineShopDeliveryRouteImport } from './routes/app.online-shop.delivery'
+import { Route as AppOnlineShopCustomizeRouteImport } from './routes/app.online-shop.customize'
 
-const SplatRoute = SplatRouteImport.update({
-  id: '/$',
-  path: '/$',
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ShopRoute = ShopRouteImport.update({
+  id: '/shop',
+  path: '/shop',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PricingRoute = PricingRouteImport.update({
+  id: '/pricing',
+  path: '/pricing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CustomerRoute = CustomerRouteImport.update({
+  id: '/customer',
+  path: '/customer',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppRoute = AppRouteImport.update({
+  id: '/app',
+  path: '/app',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AffiliateRoute = AffiliateRouteImport.update({
+  id: '/affiliate',
+  path: '/affiliate',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -22,40 +154,1082 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRoute,
+} as any)
+const VendorUsernameRoute = VendorUsernameRouteImport.update({
+  id: '/vendor/$username',
+  path: '/vendor/$username',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FSlugRoute = FSlugRouteImport.update({
+  id: '/f/$slug',
+  path: '/f/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CustomerProfileRoute = CustomerProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => CustomerRoute,
+} as any)
+const CustomerNotesRoute = CustomerNotesRouteImport.update({
+  id: '/notes',
+  path: '/notes',
+  getParentRoute: () => CustomerRoute,
+} as any)
+const CustomerMyFordoRoute = CustomerMyFordoRouteImport.update({
+  id: '/my-fordo',
+  path: '/my-fordo',
+  getParentRoute: () => CustomerRoute,
+} as any)
+const CustomerMoneyRoute = CustomerMoneyRouteImport.update({
+  id: '/money',
+  path: '/money',
+  getParentRoute: () => CustomerRoute,
+} as any)
+const CustomerDashboardRoute = CustomerDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => CustomerRoute,
+} as any)
+const CustomerCreateFordoRoute = CustomerCreateFordoRouteImport.update({
+  id: '/create-fordo',
+  path: '/create-fordo',
+  getParentRoute: () => CustomerRoute,
+} as any)
+const AppWarrantyRoute = AppWarrantyRouteImport.update({
+  id: '/warranty',
+  path: '/warranty',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppUsageLimitsRoute = AppUsageLimitsRouteImport.update({
+  id: '/usage-limits',
+  path: '/usage-limits',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppTrainingRoute = AppTrainingRouteImport.update({
+  id: '/training',
+  path: '/training',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSubscribeRoute = AppSubscribeRouteImport.update({
+  id: '/subscribe',
+  path: '/subscribe',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppStockEditRoute = AppStockEditRouteImport.update({
+  id: '/stock-edit',
+  path: '/stock-edit',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppStockRoute = AppStockRouteImport.update({
+  id: '/stock',
+  path: '/stock',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSmsHistoryRoute = AppSmsHistoryRouteImport.update({
+  id: '/sms-history',
+  path: '/sms-history',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppShopsRoute = AppShopsRouteImport.update({
+  id: '/shops',
+  path: '/shops',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSellRoute = AppSellRouteImport.update({
+  id: '/sell',
+  path: '/sell',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSalesLedgerRoute = AppSalesLedgerRouteImport.update({
+  id: '/sales-ledger',
+  path: '/sales-ledger',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppReturnsRoute = AppReturnsRouteImport.update({
+  id: '/returns',
+  path: '/returns',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppReportsRoute = AppReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppRecycleBinRoute = AppRecycleBinRouteImport.update({
+  id: '/recycle-bin',
+  path: '/recycle-bin',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppQuickOrderRoute = AppQuickOrderRouteImport.update({
+  id: '/quick-order',
+  path: '/quick-order',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppPurchaseLedgerRoute = AppPurchaseLedgerRouteImport.update({
+  id: '/purchase-ledger',
+  path: '/purchase-ledger',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppPurchaseRoute = AppPurchaseRouteImport.update({
+  id: '/purchase',
+  path: '/purchase',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppProductsRoute = AppProductsRouteImport.update({
+  id: '/products',
+  path: '/products',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppPrinterRoute = AppPrinterRouteImport.update({
+  id: '/printer',
+  path: '/printer',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppOwnerReportRoute = AppOwnerReportRouteImport.update({
+  id: '/owner-report',
+  path: '/owner-report',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppOwnerLedgerRoute = AppOwnerLedgerRouteImport.update({
+  id: '/owner-ledger',
+  path: '/owner-ledger',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppOnlineShopRoute = AppOnlineShopRouteImport.update({
+  id: '/online-shop',
+  path: '/online-shop',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppMarketingRoute = AppMarketingRouteImport.update({
+  id: '/marketing',
+  path: '/marketing',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppFordoHistoryRoute = AppFordoHistoryRouteImport.update({
+  id: '/fordo-history',
+  path: '/fordo-history',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppExpiringRoute = AppExpiringRouteImport.update({
+  id: '/expiring',
+  path: '/expiring',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppExpenseLedgerRoute = AppExpenseLedgerRouteImport.update({
+  id: '/expense-ledger',
+  path: '/expense-ledger',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppDueLedgerRoute = AppDueLedgerRouteImport.update({
+  id: '/due-ledger',
+  path: '/due-ledger',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppDueHistoryRoute = AppDueHistoryRouteImport.update({
+  id: '/due-history',
+  path: '/due-history',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppDashboardRoute = AppDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppCustomerWishlistRoute = AppCustomerWishlistRouteImport.update({
+  id: '/customer-wishlist',
+  path: '/customer-wishlist',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppContactsRoute = AppContactsRouteImport.update({
+  id: '/contacts',
+  path: '/contacts',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppCombinedReportRoute = AppCombinedReportRouteImport.update({
+  id: '/combined-report',
+  path: '/combined-report',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppCashboxRoute = AppCashboxRouteImport.update({
+  id: '/cashbox',
+  path: '/cashbox',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppBuySmsRoute = AppBuySmsRouteImport.update({
+  id: '/buy-sms',
+  path: '/buy-sms',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAssetsRoute = AppAssetsRouteImport.update({
+  id: '/assets',
+  path: '/assets',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAffiliateRoute = AppAffiliateRouteImport.update({
+  id: '/affiliate',
+  path: '/affiliate',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAccessRoute = AppAccessRouteImport.update({
+  id: '/access',
+  path: '/access',
+  getParentRoute: () => AppRoute,
+} as any)
+const AffiliateRegisterRoute = AffiliateRegisterRouteImport.update({
+  id: '/register',
+  path: '/register',
+  getParentRoute: () => AffiliateRoute,
+} as any)
+const AdminUsersRoute = AdminUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminUsageLimitsRoute = AdminUsageLimitsRouteImport.update({
+  id: '/usage-limits',
+  path: '/usage-limits',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminTrainingRoute = AdminTrainingRouteImport.update({
+  id: '/training',
+  path: '/training',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminSubscriptionsRoute = AdminSubscriptionsRouteImport.update({
+  id: '/subscriptions',
+  path: '/subscriptions',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminSubscriptionRequestsRoute =
+  AdminSubscriptionRequestsRouteImport.update({
+    id: '/subscription-requests',
+    path: '/subscription-requests',
+    getParentRoute: () => AdminRoute,
+  } as any)
+const AdminSmsGatewaysRoute = AdminSmsGatewaysRouteImport.update({
+  id: '/sms-gateways',
+  path: '/sms-gateways',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminShopTypesRoute = AdminShopTypesRouteImport.update({
+  id: '/shop-types',
+  path: '/shop-types',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminSettingsRoute = AdminSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminPromoPopupsRoute = AdminPromoPopupsRouteImport.update({
+  id: '/promo-popups',
+  path: '/promo-popups',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminPlansRoute = AdminPlansRouteImport.update({
+  id: '/plans',
+  path: '/plans',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminPaymentGatewayRoute = AdminPaymentGatewayRouteImport.update({
+  id: '/payment-gateway',
+  path: '/payment-gateway',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminPaymentAttemptsRoute = AdminPaymentAttemptsRouteImport.update({
+  id: '/payment-attempts',
+  path: '/payment-attempts',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminMarketplaceRoute = AdminMarketplaceRouteImport.update({
+  id: '/marketplace',
+  path: '/marketplace',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminLoginRoute = AdminLoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminLocationsRoute = AdminLocationsRouteImport.update({
+  id: '/locations',
+  path: '/locations',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminLandingRoute = AdminLandingRouteImport.update({
+  id: '/landing',
+  path: '/landing',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminBannersRoute = AdminBannersRouteImport.update({
+  id: '/banners',
+  path: '/banners',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminAffiliatesRoute = AdminAffiliatesRouteImport.update({
+  id: '/affiliates',
+  path: '/affiliates',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminAdsRoute = AdminAdsRouteImport.update({
+  id: '/ads',
+  path: '/ads',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AppOnlineShopIndexRoute = AppOnlineShopIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppOnlineShopRoute,
+} as any)
+const ShopSSlugRoute = ShopSSlugRouteImport.update({
+  id: '/s/$slug',
+  path: '/s/$slug',
+  getParentRoute: () => ShopRoute,
+} as any)
+const ShopPIdRoute = ShopPIdRouteImport.update({
+  id: '/p/$id',
+  path: '/p/$id',
+  getParentRoute: () => ShopRoute,
+} as any)
+const FSlugMyRoute = FSlugMyRouteImport.update({
+  id: '/my',
+  path: '/my',
+  getParentRoute: () => FSlugRoute,
+} as any)
+const AppSubscribeCallbackRoute = AppSubscribeCallbackRouteImport.update({
+  id: '/callback',
+  path: '/callback',
+  getParentRoute: () => AppSubscribeRoute,
+} as any)
+const AppReturnsNewRoute = AppReturnsNewRouteImport.update({
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => AppReturnsRoute,
+} as any)
+const AppReturnsIdRoute = AppReturnsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AppReturnsRoute,
+} as any)
+const AppOnlineShopThemesRoute = AppOnlineShopThemesRouteImport.update({
+  id: '/themes',
+  path: '/themes',
+  getParentRoute: () => AppOnlineShopRoute,
+} as any)
+const AppOnlineShopSettingsRoute = AppOnlineShopSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AppOnlineShopRoute,
+} as any)
+const AppOnlineShopPromoCodesRoute = AppOnlineShopPromoCodesRouteImport.update({
+  id: '/promo-codes',
+  path: '/promo-codes',
+  getParentRoute: () => AppOnlineShopRoute,
+} as any)
+const AppOnlineShopProductsRoute = AppOnlineShopProductsRouteImport.update({
+  id: '/products',
+  path: '/products',
+  getParentRoute: () => AppOnlineShopRoute,
+} as any)
+const AppOnlineShopPolicyRoute = AppOnlineShopPolicyRouteImport.update({
+  id: '/policy',
+  path: '/policy',
+  getParentRoute: () => AppOnlineShopRoute,
+} as any)
+const AppOnlineShopOrdersRoute = AppOnlineShopOrdersRouteImport.update({
+  id: '/orders',
+  path: '/orders',
+  getParentRoute: () => AppOnlineShopRoute,
+} as any)
+const AppOnlineShopMessagesRoute = AppOnlineShopMessagesRouteImport.update({
+  id: '/messages',
+  path: '/messages',
+  getParentRoute: () => AppOnlineShopRoute,
+} as any)
+const AppOnlineShopMarketingRoute = AppOnlineShopMarketingRouteImport.update({
+  id: '/marketing',
+  path: '/marketing',
+  getParentRoute: () => AppOnlineShopRoute,
+} as any)
+const AppOnlineShopFraudCheckRoute = AppOnlineShopFraudCheckRouteImport.update({
+  id: '/fraud-check',
+  path: '/fraud-check',
+  getParentRoute: () => AppOnlineShopRoute,
+} as any)
+const AppOnlineShopFeaturedRoute = AppOnlineShopFeaturedRouteImport.update({
+  id: '/featured',
+  path: '/featured',
+  getParentRoute: () => AppOnlineShopRoute,
+} as any)
+const AppOnlineShopDeliveryRoute = AppOnlineShopDeliveryRouteImport.update({
+  id: '/delivery',
+  path: '/delivery',
+  getParentRoute: () => AppOnlineShopRoute,
+} as any)
+const AppOnlineShopCustomizeRoute = AppOnlineShopCustomizeRouteImport.update({
+  id: '/customize',
+  path: '/customize',
+  getParentRoute: () => AppOnlineShopRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/$': typeof SplatRoute
+  '/admin': typeof AdminRouteWithChildren
+  '/affiliate': typeof AffiliateRouteWithChildren
+  '/app': typeof AppRouteWithChildren
+  '/auth': typeof AuthRoute
+  '/customer': typeof CustomerRouteWithChildren
+  '/pricing': typeof PricingRoute
+  '/privacy': typeof PrivacyRoute
+  '/shop': typeof ShopRouteWithChildren
+  '/terms': typeof TermsRoute
+  '/admin/ads': typeof AdminAdsRoute
+  '/admin/affiliates': typeof AdminAffiliatesRoute
+  '/admin/banners': typeof AdminBannersRoute
+  '/admin/landing': typeof AdminLandingRoute
+  '/admin/locations': typeof AdminLocationsRoute
+  '/admin/login': typeof AdminLoginRoute
+  '/admin/marketplace': typeof AdminMarketplaceRoute
+  '/admin/payment-attempts': typeof AdminPaymentAttemptsRoute
+  '/admin/payment-gateway': typeof AdminPaymentGatewayRoute
+  '/admin/plans': typeof AdminPlansRoute
+  '/admin/promo-popups': typeof AdminPromoPopupsRoute
+  '/admin/settings': typeof AdminSettingsRoute
+  '/admin/shop-types': typeof AdminShopTypesRoute
+  '/admin/sms-gateways': typeof AdminSmsGatewaysRoute
+  '/admin/subscription-requests': typeof AdminSubscriptionRequestsRoute
+  '/admin/subscriptions': typeof AdminSubscriptionsRoute
+  '/admin/training': typeof AdminTrainingRoute
+  '/admin/usage-limits': typeof AdminUsageLimitsRoute
+  '/admin/users': typeof AdminUsersRoute
+  '/affiliate/register': typeof AffiliateRegisterRoute
+  '/app/access': typeof AppAccessRoute
+  '/app/affiliate': typeof AppAffiliateRoute
+  '/app/assets': typeof AppAssetsRoute
+  '/app/buy-sms': typeof AppBuySmsRoute
+  '/app/cashbox': typeof AppCashboxRoute
+  '/app/combined-report': typeof AppCombinedReportRoute
+  '/app/contacts': typeof AppContactsRoute
+  '/app/customer-wishlist': typeof AppCustomerWishlistRoute
+  '/app/dashboard': typeof AppDashboardRoute
+  '/app/due-history': typeof AppDueHistoryRoute
+  '/app/due-ledger': typeof AppDueLedgerRoute
+  '/app/expense-ledger': typeof AppExpenseLedgerRoute
+  '/app/expiring': typeof AppExpiringRoute
+  '/app/fordo-history': typeof AppFordoHistoryRoute
+  '/app/marketing': typeof AppMarketingRoute
+  '/app/online-shop': typeof AppOnlineShopRouteWithChildren
+  '/app/owner-ledger': typeof AppOwnerLedgerRoute
+  '/app/owner-report': typeof AppOwnerReportRoute
+  '/app/printer': typeof AppPrinterRoute
+  '/app/products': typeof AppProductsRoute
+  '/app/purchase': typeof AppPurchaseRoute
+  '/app/purchase-ledger': typeof AppPurchaseLedgerRoute
+  '/app/quick-order': typeof AppQuickOrderRoute
+  '/app/recycle-bin': typeof AppRecycleBinRoute
+  '/app/reports': typeof AppReportsRoute
+  '/app/returns': typeof AppReturnsRouteWithChildren
+  '/app/sales-ledger': typeof AppSalesLedgerRoute
+  '/app/sell': typeof AppSellRoute
+  '/app/shops': typeof AppShopsRoute
+  '/app/sms-history': typeof AppSmsHistoryRoute
+  '/app/stock': typeof AppStockRoute
+  '/app/stock-edit': typeof AppStockEditRoute
+  '/app/subscribe': typeof AppSubscribeRouteWithChildren
+  '/app/training': typeof AppTrainingRoute
+  '/app/usage-limits': typeof AppUsageLimitsRoute
+  '/app/warranty': typeof AppWarrantyRoute
+  '/customer/create-fordo': typeof CustomerCreateFordoRoute
+  '/customer/dashboard': typeof CustomerDashboardRoute
+  '/customer/money': typeof CustomerMoneyRoute
+  '/customer/my-fordo': typeof CustomerMyFordoRoute
+  '/customer/notes': typeof CustomerNotesRoute
+  '/customer/profile': typeof CustomerProfileRoute
+  '/f/$slug': typeof FSlugRouteWithChildren
+  '/vendor/$username': typeof VendorUsernameRoute
+  '/admin/': typeof AdminIndexRoute
+  '/app/online-shop/customize': typeof AppOnlineShopCustomizeRoute
+  '/app/online-shop/delivery': typeof AppOnlineShopDeliveryRoute
+  '/app/online-shop/featured': typeof AppOnlineShopFeaturedRoute
+  '/app/online-shop/fraud-check': typeof AppOnlineShopFraudCheckRoute
+  '/app/online-shop/marketing': typeof AppOnlineShopMarketingRoute
+  '/app/online-shop/messages': typeof AppOnlineShopMessagesRoute
+  '/app/online-shop/orders': typeof AppOnlineShopOrdersRoute
+  '/app/online-shop/policy': typeof AppOnlineShopPolicyRoute
+  '/app/online-shop/products': typeof AppOnlineShopProductsRoute
+  '/app/online-shop/promo-codes': typeof AppOnlineShopPromoCodesRoute
+  '/app/online-shop/settings': typeof AppOnlineShopSettingsRoute
+  '/app/online-shop/themes': typeof AppOnlineShopThemesRoute
+  '/app/returns/$id': typeof AppReturnsIdRoute
+  '/app/returns/new': typeof AppReturnsNewRoute
+  '/app/subscribe/callback': typeof AppSubscribeCallbackRoute
+  '/f/$slug/my': typeof FSlugMyRoute
+  '/shop/p/$id': typeof ShopPIdRoute
+  '/shop/s/$slug': typeof ShopSSlugRoute
+  '/app/online-shop/': typeof AppOnlineShopIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/$': typeof SplatRoute
+  '/affiliate': typeof AffiliateRouteWithChildren
+  '/app': typeof AppRouteWithChildren
+  '/auth': typeof AuthRoute
+  '/customer': typeof CustomerRouteWithChildren
+  '/pricing': typeof PricingRoute
+  '/privacy': typeof PrivacyRoute
+  '/shop': typeof ShopRouteWithChildren
+  '/terms': typeof TermsRoute
+  '/admin/ads': typeof AdminAdsRoute
+  '/admin/affiliates': typeof AdminAffiliatesRoute
+  '/admin/banners': typeof AdminBannersRoute
+  '/admin/landing': typeof AdminLandingRoute
+  '/admin/locations': typeof AdminLocationsRoute
+  '/admin/login': typeof AdminLoginRoute
+  '/admin/marketplace': typeof AdminMarketplaceRoute
+  '/admin/payment-attempts': typeof AdminPaymentAttemptsRoute
+  '/admin/payment-gateway': typeof AdminPaymentGatewayRoute
+  '/admin/plans': typeof AdminPlansRoute
+  '/admin/promo-popups': typeof AdminPromoPopupsRoute
+  '/admin/settings': typeof AdminSettingsRoute
+  '/admin/shop-types': typeof AdminShopTypesRoute
+  '/admin/sms-gateways': typeof AdminSmsGatewaysRoute
+  '/admin/subscription-requests': typeof AdminSubscriptionRequestsRoute
+  '/admin/subscriptions': typeof AdminSubscriptionsRoute
+  '/admin/training': typeof AdminTrainingRoute
+  '/admin/usage-limits': typeof AdminUsageLimitsRoute
+  '/admin/users': typeof AdminUsersRoute
+  '/affiliate/register': typeof AffiliateRegisterRoute
+  '/app/access': typeof AppAccessRoute
+  '/app/affiliate': typeof AppAffiliateRoute
+  '/app/assets': typeof AppAssetsRoute
+  '/app/buy-sms': typeof AppBuySmsRoute
+  '/app/cashbox': typeof AppCashboxRoute
+  '/app/combined-report': typeof AppCombinedReportRoute
+  '/app/contacts': typeof AppContactsRoute
+  '/app/customer-wishlist': typeof AppCustomerWishlistRoute
+  '/app/dashboard': typeof AppDashboardRoute
+  '/app/due-history': typeof AppDueHistoryRoute
+  '/app/due-ledger': typeof AppDueLedgerRoute
+  '/app/expense-ledger': typeof AppExpenseLedgerRoute
+  '/app/expiring': typeof AppExpiringRoute
+  '/app/fordo-history': typeof AppFordoHistoryRoute
+  '/app/marketing': typeof AppMarketingRoute
+  '/app/owner-ledger': typeof AppOwnerLedgerRoute
+  '/app/owner-report': typeof AppOwnerReportRoute
+  '/app/printer': typeof AppPrinterRoute
+  '/app/products': typeof AppProductsRoute
+  '/app/purchase': typeof AppPurchaseRoute
+  '/app/purchase-ledger': typeof AppPurchaseLedgerRoute
+  '/app/quick-order': typeof AppQuickOrderRoute
+  '/app/recycle-bin': typeof AppRecycleBinRoute
+  '/app/reports': typeof AppReportsRoute
+  '/app/returns': typeof AppReturnsRouteWithChildren
+  '/app/sales-ledger': typeof AppSalesLedgerRoute
+  '/app/sell': typeof AppSellRoute
+  '/app/shops': typeof AppShopsRoute
+  '/app/sms-history': typeof AppSmsHistoryRoute
+  '/app/stock': typeof AppStockRoute
+  '/app/stock-edit': typeof AppStockEditRoute
+  '/app/subscribe': typeof AppSubscribeRouteWithChildren
+  '/app/training': typeof AppTrainingRoute
+  '/app/usage-limits': typeof AppUsageLimitsRoute
+  '/app/warranty': typeof AppWarrantyRoute
+  '/customer/create-fordo': typeof CustomerCreateFordoRoute
+  '/customer/dashboard': typeof CustomerDashboardRoute
+  '/customer/money': typeof CustomerMoneyRoute
+  '/customer/my-fordo': typeof CustomerMyFordoRoute
+  '/customer/notes': typeof CustomerNotesRoute
+  '/customer/profile': typeof CustomerProfileRoute
+  '/f/$slug': typeof FSlugRouteWithChildren
+  '/vendor/$username': typeof VendorUsernameRoute
+  '/admin': typeof AdminIndexRoute
+  '/app/online-shop/customize': typeof AppOnlineShopCustomizeRoute
+  '/app/online-shop/delivery': typeof AppOnlineShopDeliveryRoute
+  '/app/online-shop/featured': typeof AppOnlineShopFeaturedRoute
+  '/app/online-shop/fraud-check': typeof AppOnlineShopFraudCheckRoute
+  '/app/online-shop/marketing': typeof AppOnlineShopMarketingRoute
+  '/app/online-shop/messages': typeof AppOnlineShopMessagesRoute
+  '/app/online-shop/orders': typeof AppOnlineShopOrdersRoute
+  '/app/online-shop/policy': typeof AppOnlineShopPolicyRoute
+  '/app/online-shop/products': typeof AppOnlineShopProductsRoute
+  '/app/online-shop/promo-codes': typeof AppOnlineShopPromoCodesRoute
+  '/app/online-shop/settings': typeof AppOnlineShopSettingsRoute
+  '/app/online-shop/themes': typeof AppOnlineShopThemesRoute
+  '/app/returns/$id': typeof AppReturnsIdRoute
+  '/app/returns/new': typeof AppReturnsNewRoute
+  '/app/subscribe/callback': typeof AppSubscribeCallbackRoute
+  '/f/$slug/my': typeof FSlugMyRoute
+  '/shop/p/$id': typeof ShopPIdRoute
+  '/shop/s/$slug': typeof ShopSSlugRoute
+  '/app/online-shop': typeof AppOnlineShopIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/$': typeof SplatRoute
+  '/admin': typeof AdminRouteWithChildren
+  '/affiliate': typeof AffiliateRouteWithChildren
+  '/app': typeof AppRouteWithChildren
+  '/auth': typeof AuthRoute
+  '/customer': typeof CustomerRouteWithChildren
+  '/pricing': typeof PricingRoute
+  '/privacy': typeof PrivacyRoute
+  '/shop': typeof ShopRouteWithChildren
+  '/terms': typeof TermsRoute
+  '/admin/ads': typeof AdminAdsRoute
+  '/admin/affiliates': typeof AdminAffiliatesRoute
+  '/admin/banners': typeof AdminBannersRoute
+  '/admin/landing': typeof AdminLandingRoute
+  '/admin/locations': typeof AdminLocationsRoute
+  '/admin/login': typeof AdminLoginRoute
+  '/admin/marketplace': typeof AdminMarketplaceRoute
+  '/admin/payment-attempts': typeof AdminPaymentAttemptsRoute
+  '/admin/payment-gateway': typeof AdminPaymentGatewayRoute
+  '/admin/plans': typeof AdminPlansRoute
+  '/admin/promo-popups': typeof AdminPromoPopupsRoute
+  '/admin/settings': typeof AdminSettingsRoute
+  '/admin/shop-types': typeof AdminShopTypesRoute
+  '/admin/sms-gateways': typeof AdminSmsGatewaysRoute
+  '/admin/subscription-requests': typeof AdminSubscriptionRequestsRoute
+  '/admin/subscriptions': typeof AdminSubscriptionsRoute
+  '/admin/training': typeof AdminTrainingRoute
+  '/admin/usage-limits': typeof AdminUsageLimitsRoute
+  '/admin/users': typeof AdminUsersRoute
+  '/affiliate/register': typeof AffiliateRegisterRoute
+  '/app/access': typeof AppAccessRoute
+  '/app/affiliate': typeof AppAffiliateRoute
+  '/app/assets': typeof AppAssetsRoute
+  '/app/buy-sms': typeof AppBuySmsRoute
+  '/app/cashbox': typeof AppCashboxRoute
+  '/app/combined-report': typeof AppCombinedReportRoute
+  '/app/contacts': typeof AppContactsRoute
+  '/app/customer-wishlist': typeof AppCustomerWishlistRoute
+  '/app/dashboard': typeof AppDashboardRoute
+  '/app/due-history': typeof AppDueHistoryRoute
+  '/app/due-ledger': typeof AppDueLedgerRoute
+  '/app/expense-ledger': typeof AppExpenseLedgerRoute
+  '/app/expiring': typeof AppExpiringRoute
+  '/app/fordo-history': typeof AppFordoHistoryRoute
+  '/app/marketing': typeof AppMarketingRoute
+  '/app/online-shop': typeof AppOnlineShopRouteWithChildren
+  '/app/owner-ledger': typeof AppOwnerLedgerRoute
+  '/app/owner-report': typeof AppOwnerReportRoute
+  '/app/printer': typeof AppPrinterRoute
+  '/app/products': typeof AppProductsRoute
+  '/app/purchase': typeof AppPurchaseRoute
+  '/app/purchase-ledger': typeof AppPurchaseLedgerRoute
+  '/app/quick-order': typeof AppQuickOrderRoute
+  '/app/recycle-bin': typeof AppRecycleBinRoute
+  '/app/reports': typeof AppReportsRoute
+  '/app/returns': typeof AppReturnsRouteWithChildren
+  '/app/sales-ledger': typeof AppSalesLedgerRoute
+  '/app/sell': typeof AppSellRoute
+  '/app/shops': typeof AppShopsRoute
+  '/app/sms-history': typeof AppSmsHistoryRoute
+  '/app/stock': typeof AppStockRoute
+  '/app/stock-edit': typeof AppStockEditRoute
+  '/app/subscribe': typeof AppSubscribeRouteWithChildren
+  '/app/training': typeof AppTrainingRoute
+  '/app/usage-limits': typeof AppUsageLimitsRoute
+  '/app/warranty': typeof AppWarrantyRoute
+  '/customer/create-fordo': typeof CustomerCreateFordoRoute
+  '/customer/dashboard': typeof CustomerDashboardRoute
+  '/customer/money': typeof CustomerMoneyRoute
+  '/customer/my-fordo': typeof CustomerMyFordoRoute
+  '/customer/notes': typeof CustomerNotesRoute
+  '/customer/profile': typeof CustomerProfileRoute
+  '/f/$slug': typeof FSlugRouteWithChildren
+  '/vendor/$username': typeof VendorUsernameRoute
+  '/admin/': typeof AdminIndexRoute
+  '/app/online-shop/customize': typeof AppOnlineShopCustomizeRoute
+  '/app/online-shop/delivery': typeof AppOnlineShopDeliveryRoute
+  '/app/online-shop/featured': typeof AppOnlineShopFeaturedRoute
+  '/app/online-shop/fraud-check': typeof AppOnlineShopFraudCheckRoute
+  '/app/online-shop/marketing': typeof AppOnlineShopMarketingRoute
+  '/app/online-shop/messages': typeof AppOnlineShopMessagesRoute
+  '/app/online-shop/orders': typeof AppOnlineShopOrdersRoute
+  '/app/online-shop/policy': typeof AppOnlineShopPolicyRoute
+  '/app/online-shop/products': typeof AppOnlineShopProductsRoute
+  '/app/online-shop/promo-codes': typeof AppOnlineShopPromoCodesRoute
+  '/app/online-shop/settings': typeof AppOnlineShopSettingsRoute
+  '/app/online-shop/themes': typeof AppOnlineShopThemesRoute
+  '/app/returns/$id': typeof AppReturnsIdRoute
+  '/app/returns/new': typeof AppReturnsNewRoute
+  '/app/subscribe/callback': typeof AppSubscribeCallbackRoute
+  '/f/$slug/my': typeof FSlugMyRoute
+  '/shop/p/$id': typeof ShopPIdRoute
+  '/shop/s/$slug': typeof ShopSSlugRoute
+  '/app/online-shop/': typeof AppOnlineShopIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/$'
+  fullPaths:
+    | '/'
+    | '/admin'
+    | '/affiliate'
+    | '/app'
+    | '/auth'
+    | '/customer'
+    | '/pricing'
+    | '/privacy'
+    | '/shop'
+    | '/terms'
+    | '/admin/ads'
+    | '/admin/affiliates'
+    | '/admin/banners'
+    | '/admin/landing'
+    | '/admin/locations'
+    | '/admin/login'
+    | '/admin/marketplace'
+    | '/admin/payment-attempts'
+    | '/admin/payment-gateway'
+    | '/admin/plans'
+    | '/admin/promo-popups'
+    | '/admin/settings'
+    | '/admin/shop-types'
+    | '/admin/sms-gateways'
+    | '/admin/subscription-requests'
+    | '/admin/subscriptions'
+    | '/admin/training'
+    | '/admin/usage-limits'
+    | '/admin/users'
+    | '/affiliate/register'
+    | '/app/access'
+    | '/app/affiliate'
+    | '/app/assets'
+    | '/app/buy-sms'
+    | '/app/cashbox'
+    | '/app/combined-report'
+    | '/app/contacts'
+    | '/app/customer-wishlist'
+    | '/app/dashboard'
+    | '/app/due-history'
+    | '/app/due-ledger'
+    | '/app/expense-ledger'
+    | '/app/expiring'
+    | '/app/fordo-history'
+    | '/app/marketing'
+    | '/app/online-shop'
+    | '/app/owner-ledger'
+    | '/app/owner-report'
+    | '/app/printer'
+    | '/app/products'
+    | '/app/purchase'
+    | '/app/purchase-ledger'
+    | '/app/quick-order'
+    | '/app/recycle-bin'
+    | '/app/reports'
+    | '/app/returns'
+    | '/app/sales-ledger'
+    | '/app/sell'
+    | '/app/shops'
+    | '/app/sms-history'
+    | '/app/stock'
+    | '/app/stock-edit'
+    | '/app/subscribe'
+    | '/app/training'
+    | '/app/usage-limits'
+    | '/app/warranty'
+    | '/customer/create-fordo'
+    | '/customer/dashboard'
+    | '/customer/money'
+    | '/customer/my-fordo'
+    | '/customer/notes'
+    | '/customer/profile'
+    | '/f/$slug'
+    | '/vendor/$username'
+    | '/admin/'
+    | '/app/online-shop/customize'
+    | '/app/online-shop/delivery'
+    | '/app/online-shop/featured'
+    | '/app/online-shop/fraud-check'
+    | '/app/online-shop/marketing'
+    | '/app/online-shop/messages'
+    | '/app/online-shop/orders'
+    | '/app/online-shop/policy'
+    | '/app/online-shop/products'
+    | '/app/online-shop/promo-codes'
+    | '/app/online-shop/settings'
+    | '/app/online-shop/themes'
+    | '/app/returns/$id'
+    | '/app/returns/new'
+    | '/app/subscribe/callback'
+    | '/f/$slug/my'
+    | '/shop/p/$id'
+    | '/shop/s/$slug'
+    | '/app/online-shop/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/$'
-  id: '__root__' | '/' | '/$'
+  to:
+    | '/'
+    | '/affiliate'
+    | '/app'
+    | '/auth'
+    | '/customer'
+    | '/pricing'
+    | '/privacy'
+    | '/shop'
+    | '/terms'
+    | '/admin/ads'
+    | '/admin/affiliates'
+    | '/admin/banners'
+    | '/admin/landing'
+    | '/admin/locations'
+    | '/admin/login'
+    | '/admin/marketplace'
+    | '/admin/payment-attempts'
+    | '/admin/payment-gateway'
+    | '/admin/plans'
+    | '/admin/promo-popups'
+    | '/admin/settings'
+    | '/admin/shop-types'
+    | '/admin/sms-gateways'
+    | '/admin/subscription-requests'
+    | '/admin/subscriptions'
+    | '/admin/training'
+    | '/admin/usage-limits'
+    | '/admin/users'
+    | '/affiliate/register'
+    | '/app/access'
+    | '/app/affiliate'
+    | '/app/assets'
+    | '/app/buy-sms'
+    | '/app/cashbox'
+    | '/app/combined-report'
+    | '/app/contacts'
+    | '/app/customer-wishlist'
+    | '/app/dashboard'
+    | '/app/due-history'
+    | '/app/due-ledger'
+    | '/app/expense-ledger'
+    | '/app/expiring'
+    | '/app/fordo-history'
+    | '/app/marketing'
+    | '/app/owner-ledger'
+    | '/app/owner-report'
+    | '/app/printer'
+    | '/app/products'
+    | '/app/purchase'
+    | '/app/purchase-ledger'
+    | '/app/quick-order'
+    | '/app/recycle-bin'
+    | '/app/reports'
+    | '/app/returns'
+    | '/app/sales-ledger'
+    | '/app/sell'
+    | '/app/shops'
+    | '/app/sms-history'
+    | '/app/stock'
+    | '/app/stock-edit'
+    | '/app/subscribe'
+    | '/app/training'
+    | '/app/usage-limits'
+    | '/app/warranty'
+    | '/customer/create-fordo'
+    | '/customer/dashboard'
+    | '/customer/money'
+    | '/customer/my-fordo'
+    | '/customer/notes'
+    | '/customer/profile'
+    | '/f/$slug'
+    | '/vendor/$username'
+    | '/admin'
+    | '/app/online-shop/customize'
+    | '/app/online-shop/delivery'
+    | '/app/online-shop/featured'
+    | '/app/online-shop/fraud-check'
+    | '/app/online-shop/marketing'
+    | '/app/online-shop/messages'
+    | '/app/online-shop/orders'
+    | '/app/online-shop/policy'
+    | '/app/online-shop/products'
+    | '/app/online-shop/promo-codes'
+    | '/app/online-shop/settings'
+    | '/app/online-shop/themes'
+    | '/app/returns/$id'
+    | '/app/returns/new'
+    | '/app/subscribe/callback'
+    | '/f/$slug/my'
+    | '/shop/p/$id'
+    | '/shop/s/$slug'
+    | '/app/online-shop'
+  id:
+    | '__root__'
+    | '/'
+    | '/admin'
+    | '/affiliate'
+    | '/app'
+    | '/auth'
+    | '/customer'
+    | '/pricing'
+    | '/privacy'
+    | '/shop'
+    | '/terms'
+    | '/admin/ads'
+    | '/admin/affiliates'
+    | '/admin/banners'
+    | '/admin/landing'
+    | '/admin/locations'
+    | '/admin/login'
+    | '/admin/marketplace'
+    | '/admin/payment-attempts'
+    | '/admin/payment-gateway'
+    | '/admin/plans'
+    | '/admin/promo-popups'
+    | '/admin/settings'
+    | '/admin/shop-types'
+    | '/admin/sms-gateways'
+    | '/admin/subscription-requests'
+    | '/admin/subscriptions'
+    | '/admin/training'
+    | '/admin/usage-limits'
+    | '/admin/users'
+    | '/affiliate/register'
+    | '/app/access'
+    | '/app/affiliate'
+    | '/app/assets'
+    | '/app/buy-sms'
+    | '/app/cashbox'
+    | '/app/combined-report'
+    | '/app/contacts'
+    | '/app/customer-wishlist'
+    | '/app/dashboard'
+    | '/app/due-history'
+    | '/app/due-ledger'
+    | '/app/expense-ledger'
+    | '/app/expiring'
+    | '/app/fordo-history'
+    | '/app/marketing'
+    | '/app/online-shop'
+    | '/app/owner-ledger'
+    | '/app/owner-report'
+    | '/app/printer'
+    | '/app/products'
+    | '/app/purchase'
+    | '/app/purchase-ledger'
+    | '/app/quick-order'
+    | '/app/recycle-bin'
+    | '/app/reports'
+    | '/app/returns'
+    | '/app/sales-ledger'
+    | '/app/sell'
+    | '/app/shops'
+    | '/app/sms-history'
+    | '/app/stock'
+    | '/app/stock-edit'
+    | '/app/subscribe'
+    | '/app/training'
+    | '/app/usage-limits'
+    | '/app/warranty'
+    | '/customer/create-fordo'
+    | '/customer/dashboard'
+    | '/customer/money'
+    | '/customer/my-fordo'
+    | '/customer/notes'
+    | '/customer/profile'
+    | '/f/$slug'
+    | '/vendor/$username'
+    | '/admin/'
+    | '/app/online-shop/customize'
+    | '/app/online-shop/delivery'
+    | '/app/online-shop/featured'
+    | '/app/online-shop/fraud-check'
+    | '/app/online-shop/marketing'
+    | '/app/online-shop/messages'
+    | '/app/online-shop/orders'
+    | '/app/online-shop/policy'
+    | '/app/online-shop/products'
+    | '/app/online-shop/promo-codes'
+    | '/app/online-shop/settings'
+    | '/app/online-shop/themes'
+    | '/app/returns/$id'
+    | '/app/returns/new'
+    | '/app/subscribe/callback'
+    | '/f/$slug/my'
+    | '/shop/p/$id'
+    | '/shop/s/$slug'
+    | '/app/online-shop/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  SplatRoute: typeof SplatRoute
+  AdminRoute: typeof AdminRouteWithChildren
+  AffiliateRoute: typeof AffiliateRouteWithChildren
+  AppRoute: typeof AppRouteWithChildren
+  AuthRoute: typeof AuthRoute
+  CustomerRoute: typeof CustomerRouteWithChildren
+  PricingRoute: typeof PricingRoute
+  PrivacyRoute: typeof PrivacyRoute
+  ShopRoute: typeof ShopRouteWithChildren
+  TermsRoute: typeof TermsRoute
+  FSlugRoute: typeof FSlugRouteWithChildren
+  VendorUsernameRoute: typeof VendorUsernameRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/$': {
-      id: '/$'
-      path: '/$'
-      fullPath: '/$'
-      preLoaderRoute: typeof SplatRouteImport
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/shop': {
+      id: '/shop'
+      path: '/shop'
+      fullPath: '/shop'
+      preLoaderRoute: typeof ShopRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pricing': {
+      id: '/pricing'
+      path: '/pricing'
+      fullPath: '/pricing'
+      preLoaderRoute: typeof PricingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/customer': {
+      id: '/customer'
+      path: '/customer'
+      fullPath: '/customer'
+      preLoaderRoute: typeof CustomerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/app': {
+      id: '/app'
+      path: '/app'
+      fullPath: '/app'
+      preLoaderRoute: typeof AppRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/affiliate': {
+      id: '/affiliate'
+      path: '/affiliate'
+      fullPath: '/affiliate'
+      preLoaderRoute: typeof AffiliateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -65,12 +1239,856 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/': {
+      id: '/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/vendor/$username': {
+      id: '/vendor/$username'
+      path: '/vendor/$username'
+      fullPath: '/vendor/$username'
+      preLoaderRoute: typeof VendorUsernameRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/f/$slug': {
+      id: '/f/$slug'
+      path: '/f/$slug'
+      fullPath: '/f/$slug'
+      preLoaderRoute: typeof FSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/customer/profile': {
+      id: '/customer/profile'
+      path: '/profile'
+      fullPath: '/customer/profile'
+      preLoaderRoute: typeof CustomerProfileRouteImport
+      parentRoute: typeof CustomerRoute
+    }
+    '/customer/notes': {
+      id: '/customer/notes'
+      path: '/notes'
+      fullPath: '/customer/notes'
+      preLoaderRoute: typeof CustomerNotesRouteImport
+      parentRoute: typeof CustomerRoute
+    }
+    '/customer/my-fordo': {
+      id: '/customer/my-fordo'
+      path: '/my-fordo'
+      fullPath: '/customer/my-fordo'
+      preLoaderRoute: typeof CustomerMyFordoRouteImport
+      parentRoute: typeof CustomerRoute
+    }
+    '/customer/money': {
+      id: '/customer/money'
+      path: '/money'
+      fullPath: '/customer/money'
+      preLoaderRoute: typeof CustomerMoneyRouteImport
+      parentRoute: typeof CustomerRoute
+    }
+    '/customer/dashboard': {
+      id: '/customer/dashboard'
+      path: '/dashboard'
+      fullPath: '/customer/dashboard'
+      preLoaderRoute: typeof CustomerDashboardRouteImport
+      parentRoute: typeof CustomerRoute
+    }
+    '/customer/create-fordo': {
+      id: '/customer/create-fordo'
+      path: '/create-fordo'
+      fullPath: '/customer/create-fordo'
+      preLoaderRoute: typeof CustomerCreateFordoRouteImport
+      parentRoute: typeof CustomerRoute
+    }
+    '/app/warranty': {
+      id: '/app/warranty'
+      path: '/warranty'
+      fullPath: '/app/warranty'
+      preLoaderRoute: typeof AppWarrantyRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/usage-limits': {
+      id: '/app/usage-limits'
+      path: '/usage-limits'
+      fullPath: '/app/usage-limits'
+      preLoaderRoute: typeof AppUsageLimitsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/training': {
+      id: '/app/training'
+      path: '/training'
+      fullPath: '/app/training'
+      preLoaderRoute: typeof AppTrainingRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/subscribe': {
+      id: '/app/subscribe'
+      path: '/subscribe'
+      fullPath: '/app/subscribe'
+      preLoaderRoute: typeof AppSubscribeRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/stock-edit': {
+      id: '/app/stock-edit'
+      path: '/stock-edit'
+      fullPath: '/app/stock-edit'
+      preLoaderRoute: typeof AppStockEditRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/stock': {
+      id: '/app/stock'
+      path: '/stock'
+      fullPath: '/app/stock'
+      preLoaderRoute: typeof AppStockRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/sms-history': {
+      id: '/app/sms-history'
+      path: '/sms-history'
+      fullPath: '/app/sms-history'
+      preLoaderRoute: typeof AppSmsHistoryRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/shops': {
+      id: '/app/shops'
+      path: '/shops'
+      fullPath: '/app/shops'
+      preLoaderRoute: typeof AppShopsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/sell': {
+      id: '/app/sell'
+      path: '/sell'
+      fullPath: '/app/sell'
+      preLoaderRoute: typeof AppSellRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/sales-ledger': {
+      id: '/app/sales-ledger'
+      path: '/sales-ledger'
+      fullPath: '/app/sales-ledger'
+      preLoaderRoute: typeof AppSalesLedgerRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/returns': {
+      id: '/app/returns'
+      path: '/returns'
+      fullPath: '/app/returns'
+      preLoaderRoute: typeof AppReturnsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/reports': {
+      id: '/app/reports'
+      path: '/reports'
+      fullPath: '/app/reports'
+      preLoaderRoute: typeof AppReportsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/recycle-bin': {
+      id: '/app/recycle-bin'
+      path: '/recycle-bin'
+      fullPath: '/app/recycle-bin'
+      preLoaderRoute: typeof AppRecycleBinRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/quick-order': {
+      id: '/app/quick-order'
+      path: '/quick-order'
+      fullPath: '/app/quick-order'
+      preLoaderRoute: typeof AppQuickOrderRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/purchase-ledger': {
+      id: '/app/purchase-ledger'
+      path: '/purchase-ledger'
+      fullPath: '/app/purchase-ledger'
+      preLoaderRoute: typeof AppPurchaseLedgerRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/purchase': {
+      id: '/app/purchase'
+      path: '/purchase'
+      fullPath: '/app/purchase'
+      preLoaderRoute: typeof AppPurchaseRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/products': {
+      id: '/app/products'
+      path: '/products'
+      fullPath: '/app/products'
+      preLoaderRoute: typeof AppProductsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/printer': {
+      id: '/app/printer'
+      path: '/printer'
+      fullPath: '/app/printer'
+      preLoaderRoute: typeof AppPrinterRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/owner-report': {
+      id: '/app/owner-report'
+      path: '/owner-report'
+      fullPath: '/app/owner-report'
+      preLoaderRoute: typeof AppOwnerReportRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/owner-ledger': {
+      id: '/app/owner-ledger'
+      path: '/owner-ledger'
+      fullPath: '/app/owner-ledger'
+      preLoaderRoute: typeof AppOwnerLedgerRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/online-shop': {
+      id: '/app/online-shop'
+      path: '/online-shop'
+      fullPath: '/app/online-shop'
+      preLoaderRoute: typeof AppOnlineShopRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/marketing': {
+      id: '/app/marketing'
+      path: '/marketing'
+      fullPath: '/app/marketing'
+      preLoaderRoute: typeof AppMarketingRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/fordo-history': {
+      id: '/app/fordo-history'
+      path: '/fordo-history'
+      fullPath: '/app/fordo-history'
+      preLoaderRoute: typeof AppFordoHistoryRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/expiring': {
+      id: '/app/expiring'
+      path: '/expiring'
+      fullPath: '/app/expiring'
+      preLoaderRoute: typeof AppExpiringRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/expense-ledger': {
+      id: '/app/expense-ledger'
+      path: '/expense-ledger'
+      fullPath: '/app/expense-ledger'
+      preLoaderRoute: typeof AppExpenseLedgerRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/due-ledger': {
+      id: '/app/due-ledger'
+      path: '/due-ledger'
+      fullPath: '/app/due-ledger'
+      preLoaderRoute: typeof AppDueLedgerRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/due-history': {
+      id: '/app/due-history'
+      path: '/due-history'
+      fullPath: '/app/due-history'
+      preLoaderRoute: typeof AppDueHistoryRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/dashboard': {
+      id: '/app/dashboard'
+      path: '/dashboard'
+      fullPath: '/app/dashboard'
+      preLoaderRoute: typeof AppDashboardRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/customer-wishlist': {
+      id: '/app/customer-wishlist'
+      path: '/customer-wishlist'
+      fullPath: '/app/customer-wishlist'
+      preLoaderRoute: typeof AppCustomerWishlistRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/contacts': {
+      id: '/app/contacts'
+      path: '/contacts'
+      fullPath: '/app/contacts'
+      preLoaderRoute: typeof AppContactsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/combined-report': {
+      id: '/app/combined-report'
+      path: '/combined-report'
+      fullPath: '/app/combined-report'
+      preLoaderRoute: typeof AppCombinedReportRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/cashbox': {
+      id: '/app/cashbox'
+      path: '/cashbox'
+      fullPath: '/app/cashbox'
+      preLoaderRoute: typeof AppCashboxRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/buy-sms': {
+      id: '/app/buy-sms'
+      path: '/buy-sms'
+      fullPath: '/app/buy-sms'
+      preLoaderRoute: typeof AppBuySmsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/assets': {
+      id: '/app/assets'
+      path: '/assets'
+      fullPath: '/app/assets'
+      preLoaderRoute: typeof AppAssetsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/affiliate': {
+      id: '/app/affiliate'
+      path: '/affiliate'
+      fullPath: '/app/affiliate'
+      preLoaderRoute: typeof AppAffiliateRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/access': {
+      id: '/app/access'
+      path: '/access'
+      fullPath: '/app/access'
+      preLoaderRoute: typeof AppAccessRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/affiliate/register': {
+      id: '/affiliate/register'
+      path: '/register'
+      fullPath: '/affiliate/register'
+      preLoaderRoute: typeof AffiliateRegisterRouteImport
+      parentRoute: typeof AffiliateRoute
+    }
+    '/admin/users': {
+      id: '/admin/users'
+      path: '/users'
+      fullPath: '/admin/users'
+      preLoaderRoute: typeof AdminUsersRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/usage-limits': {
+      id: '/admin/usage-limits'
+      path: '/usage-limits'
+      fullPath: '/admin/usage-limits'
+      preLoaderRoute: typeof AdminUsageLimitsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/training': {
+      id: '/admin/training'
+      path: '/training'
+      fullPath: '/admin/training'
+      preLoaderRoute: typeof AdminTrainingRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/subscriptions': {
+      id: '/admin/subscriptions'
+      path: '/subscriptions'
+      fullPath: '/admin/subscriptions'
+      preLoaderRoute: typeof AdminSubscriptionsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/subscription-requests': {
+      id: '/admin/subscription-requests'
+      path: '/subscription-requests'
+      fullPath: '/admin/subscription-requests'
+      preLoaderRoute: typeof AdminSubscriptionRequestsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/sms-gateways': {
+      id: '/admin/sms-gateways'
+      path: '/sms-gateways'
+      fullPath: '/admin/sms-gateways'
+      preLoaderRoute: typeof AdminSmsGatewaysRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/shop-types': {
+      id: '/admin/shop-types'
+      path: '/shop-types'
+      fullPath: '/admin/shop-types'
+      preLoaderRoute: typeof AdminShopTypesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/settings': {
+      id: '/admin/settings'
+      path: '/settings'
+      fullPath: '/admin/settings'
+      preLoaderRoute: typeof AdminSettingsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/promo-popups': {
+      id: '/admin/promo-popups'
+      path: '/promo-popups'
+      fullPath: '/admin/promo-popups'
+      preLoaderRoute: typeof AdminPromoPopupsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/plans': {
+      id: '/admin/plans'
+      path: '/plans'
+      fullPath: '/admin/plans'
+      preLoaderRoute: typeof AdminPlansRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/payment-gateway': {
+      id: '/admin/payment-gateway'
+      path: '/payment-gateway'
+      fullPath: '/admin/payment-gateway'
+      preLoaderRoute: typeof AdminPaymentGatewayRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/payment-attempts': {
+      id: '/admin/payment-attempts'
+      path: '/payment-attempts'
+      fullPath: '/admin/payment-attempts'
+      preLoaderRoute: typeof AdminPaymentAttemptsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/marketplace': {
+      id: '/admin/marketplace'
+      path: '/marketplace'
+      fullPath: '/admin/marketplace'
+      preLoaderRoute: typeof AdminMarketplaceRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/login': {
+      id: '/admin/login'
+      path: '/login'
+      fullPath: '/admin/login'
+      preLoaderRoute: typeof AdminLoginRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/locations': {
+      id: '/admin/locations'
+      path: '/locations'
+      fullPath: '/admin/locations'
+      preLoaderRoute: typeof AdminLocationsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/landing': {
+      id: '/admin/landing'
+      path: '/landing'
+      fullPath: '/admin/landing'
+      preLoaderRoute: typeof AdminLandingRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/banners': {
+      id: '/admin/banners'
+      path: '/banners'
+      fullPath: '/admin/banners'
+      preLoaderRoute: typeof AdminBannersRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/affiliates': {
+      id: '/admin/affiliates'
+      path: '/affiliates'
+      fullPath: '/admin/affiliates'
+      preLoaderRoute: typeof AdminAffiliatesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/ads': {
+      id: '/admin/ads'
+      path: '/ads'
+      fullPath: '/admin/ads'
+      preLoaderRoute: typeof AdminAdsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/app/online-shop/': {
+      id: '/app/online-shop/'
+      path: '/'
+      fullPath: '/app/online-shop/'
+      preLoaderRoute: typeof AppOnlineShopIndexRouteImport
+      parentRoute: typeof AppOnlineShopRoute
+    }
+    '/shop/s/$slug': {
+      id: '/shop/s/$slug'
+      path: '/s/$slug'
+      fullPath: '/shop/s/$slug'
+      preLoaderRoute: typeof ShopSSlugRouteImport
+      parentRoute: typeof ShopRoute
+    }
+    '/shop/p/$id': {
+      id: '/shop/p/$id'
+      path: '/p/$id'
+      fullPath: '/shop/p/$id'
+      preLoaderRoute: typeof ShopPIdRouteImport
+      parentRoute: typeof ShopRoute
+    }
+    '/f/$slug/my': {
+      id: '/f/$slug/my'
+      path: '/my'
+      fullPath: '/f/$slug/my'
+      preLoaderRoute: typeof FSlugMyRouteImport
+      parentRoute: typeof FSlugRoute
+    }
+    '/app/subscribe/callback': {
+      id: '/app/subscribe/callback'
+      path: '/callback'
+      fullPath: '/app/subscribe/callback'
+      preLoaderRoute: typeof AppSubscribeCallbackRouteImport
+      parentRoute: typeof AppSubscribeRoute
+    }
+    '/app/returns/new': {
+      id: '/app/returns/new'
+      path: '/new'
+      fullPath: '/app/returns/new'
+      preLoaderRoute: typeof AppReturnsNewRouteImport
+      parentRoute: typeof AppReturnsRoute
+    }
+    '/app/returns/$id': {
+      id: '/app/returns/$id'
+      path: '/$id'
+      fullPath: '/app/returns/$id'
+      preLoaderRoute: typeof AppReturnsIdRouteImport
+      parentRoute: typeof AppReturnsRoute
+    }
+    '/app/online-shop/themes': {
+      id: '/app/online-shop/themes'
+      path: '/themes'
+      fullPath: '/app/online-shop/themes'
+      preLoaderRoute: typeof AppOnlineShopThemesRouteImport
+      parentRoute: typeof AppOnlineShopRoute
+    }
+    '/app/online-shop/settings': {
+      id: '/app/online-shop/settings'
+      path: '/settings'
+      fullPath: '/app/online-shop/settings'
+      preLoaderRoute: typeof AppOnlineShopSettingsRouteImport
+      parentRoute: typeof AppOnlineShopRoute
+    }
+    '/app/online-shop/promo-codes': {
+      id: '/app/online-shop/promo-codes'
+      path: '/promo-codes'
+      fullPath: '/app/online-shop/promo-codes'
+      preLoaderRoute: typeof AppOnlineShopPromoCodesRouteImport
+      parentRoute: typeof AppOnlineShopRoute
+    }
+    '/app/online-shop/products': {
+      id: '/app/online-shop/products'
+      path: '/products'
+      fullPath: '/app/online-shop/products'
+      preLoaderRoute: typeof AppOnlineShopProductsRouteImport
+      parentRoute: typeof AppOnlineShopRoute
+    }
+    '/app/online-shop/policy': {
+      id: '/app/online-shop/policy'
+      path: '/policy'
+      fullPath: '/app/online-shop/policy'
+      preLoaderRoute: typeof AppOnlineShopPolicyRouteImport
+      parentRoute: typeof AppOnlineShopRoute
+    }
+    '/app/online-shop/orders': {
+      id: '/app/online-shop/orders'
+      path: '/orders'
+      fullPath: '/app/online-shop/orders'
+      preLoaderRoute: typeof AppOnlineShopOrdersRouteImport
+      parentRoute: typeof AppOnlineShopRoute
+    }
+    '/app/online-shop/messages': {
+      id: '/app/online-shop/messages'
+      path: '/messages'
+      fullPath: '/app/online-shop/messages'
+      preLoaderRoute: typeof AppOnlineShopMessagesRouteImport
+      parentRoute: typeof AppOnlineShopRoute
+    }
+    '/app/online-shop/marketing': {
+      id: '/app/online-shop/marketing'
+      path: '/marketing'
+      fullPath: '/app/online-shop/marketing'
+      preLoaderRoute: typeof AppOnlineShopMarketingRouteImport
+      parentRoute: typeof AppOnlineShopRoute
+    }
+    '/app/online-shop/fraud-check': {
+      id: '/app/online-shop/fraud-check'
+      path: '/fraud-check'
+      fullPath: '/app/online-shop/fraud-check'
+      preLoaderRoute: typeof AppOnlineShopFraudCheckRouteImport
+      parentRoute: typeof AppOnlineShopRoute
+    }
+    '/app/online-shop/featured': {
+      id: '/app/online-shop/featured'
+      path: '/featured'
+      fullPath: '/app/online-shop/featured'
+      preLoaderRoute: typeof AppOnlineShopFeaturedRouteImport
+      parentRoute: typeof AppOnlineShopRoute
+    }
+    '/app/online-shop/delivery': {
+      id: '/app/online-shop/delivery'
+      path: '/delivery'
+      fullPath: '/app/online-shop/delivery'
+      preLoaderRoute: typeof AppOnlineShopDeliveryRouteImport
+      parentRoute: typeof AppOnlineShopRoute
+    }
+    '/app/online-shop/customize': {
+      id: '/app/online-shop/customize'
+      path: '/customize'
+      fullPath: '/app/online-shop/customize'
+      preLoaderRoute: typeof AppOnlineShopCustomizeRouteImport
+      parentRoute: typeof AppOnlineShopRoute
+    }
   }
 }
 
+interface AdminRouteChildren {
+  AdminAdsRoute: typeof AdminAdsRoute
+  AdminAffiliatesRoute: typeof AdminAffiliatesRoute
+  AdminBannersRoute: typeof AdminBannersRoute
+  AdminLandingRoute: typeof AdminLandingRoute
+  AdminLocationsRoute: typeof AdminLocationsRoute
+  AdminLoginRoute: typeof AdminLoginRoute
+  AdminMarketplaceRoute: typeof AdminMarketplaceRoute
+  AdminPaymentAttemptsRoute: typeof AdminPaymentAttemptsRoute
+  AdminPaymentGatewayRoute: typeof AdminPaymentGatewayRoute
+  AdminPlansRoute: typeof AdminPlansRoute
+  AdminPromoPopupsRoute: typeof AdminPromoPopupsRoute
+  AdminSettingsRoute: typeof AdminSettingsRoute
+  AdminShopTypesRoute: typeof AdminShopTypesRoute
+  AdminSmsGatewaysRoute: typeof AdminSmsGatewaysRoute
+  AdminSubscriptionRequestsRoute: typeof AdminSubscriptionRequestsRoute
+  AdminSubscriptionsRoute: typeof AdminSubscriptionsRoute
+  AdminTrainingRoute: typeof AdminTrainingRoute
+  AdminUsageLimitsRoute: typeof AdminUsageLimitsRoute
+  AdminUsersRoute: typeof AdminUsersRoute
+  AdminIndexRoute: typeof AdminIndexRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminAdsRoute: AdminAdsRoute,
+  AdminAffiliatesRoute: AdminAffiliatesRoute,
+  AdminBannersRoute: AdminBannersRoute,
+  AdminLandingRoute: AdminLandingRoute,
+  AdminLocationsRoute: AdminLocationsRoute,
+  AdminLoginRoute: AdminLoginRoute,
+  AdminMarketplaceRoute: AdminMarketplaceRoute,
+  AdminPaymentAttemptsRoute: AdminPaymentAttemptsRoute,
+  AdminPaymentGatewayRoute: AdminPaymentGatewayRoute,
+  AdminPlansRoute: AdminPlansRoute,
+  AdminPromoPopupsRoute: AdminPromoPopupsRoute,
+  AdminSettingsRoute: AdminSettingsRoute,
+  AdminShopTypesRoute: AdminShopTypesRoute,
+  AdminSmsGatewaysRoute: AdminSmsGatewaysRoute,
+  AdminSubscriptionRequestsRoute: AdminSubscriptionRequestsRoute,
+  AdminSubscriptionsRoute: AdminSubscriptionsRoute,
+  AdminTrainingRoute: AdminTrainingRoute,
+  AdminUsageLimitsRoute: AdminUsageLimitsRoute,
+  AdminUsersRoute: AdminUsersRoute,
+  AdminIndexRoute: AdminIndexRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
+interface AffiliateRouteChildren {
+  AffiliateRegisterRoute: typeof AffiliateRegisterRoute
+}
+
+const AffiliateRouteChildren: AffiliateRouteChildren = {
+  AffiliateRegisterRoute: AffiliateRegisterRoute,
+}
+
+const AffiliateRouteWithChildren = AffiliateRoute._addFileChildren(
+  AffiliateRouteChildren,
+)
+
+interface AppOnlineShopRouteChildren {
+  AppOnlineShopCustomizeRoute: typeof AppOnlineShopCustomizeRoute
+  AppOnlineShopDeliveryRoute: typeof AppOnlineShopDeliveryRoute
+  AppOnlineShopFeaturedRoute: typeof AppOnlineShopFeaturedRoute
+  AppOnlineShopFraudCheckRoute: typeof AppOnlineShopFraudCheckRoute
+  AppOnlineShopMarketingRoute: typeof AppOnlineShopMarketingRoute
+  AppOnlineShopMessagesRoute: typeof AppOnlineShopMessagesRoute
+  AppOnlineShopOrdersRoute: typeof AppOnlineShopOrdersRoute
+  AppOnlineShopPolicyRoute: typeof AppOnlineShopPolicyRoute
+  AppOnlineShopProductsRoute: typeof AppOnlineShopProductsRoute
+  AppOnlineShopPromoCodesRoute: typeof AppOnlineShopPromoCodesRoute
+  AppOnlineShopSettingsRoute: typeof AppOnlineShopSettingsRoute
+  AppOnlineShopThemesRoute: typeof AppOnlineShopThemesRoute
+  AppOnlineShopIndexRoute: typeof AppOnlineShopIndexRoute
+}
+
+const AppOnlineShopRouteChildren: AppOnlineShopRouteChildren = {
+  AppOnlineShopCustomizeRoute: AppOnlineShopCustomizeRoute,
+  AppOnlineShopDeliveryRoute: AppOnlineShopDeliveryRoute,
+  AppOnlineShopFeaturedRoute: AppOnlineShopFeaturedRoute,
+  AppOnlineShopFraudCheckRoute: AppOnlineShopFraudCheckRoute,
+  AppOnlineShopMarketingRoute: AppOnlineShopMarketingRoute,
+  AppOnlineShopMessagesRoute: AppOnlineShopMessagesRoute,
+  AppOnlineShopOrdersRoute: AppOnlineShopOrdersRoute,
+  AppOnlineShopPolicyRoute: AppOnlineShopPolicyRoute,
+  AppOnlineShopProductsRoute: AppOnlineShopProductsRoute,
+  AppOnlineShopPromoCodesRoute: AppOnlineShopPromoCodesRoute,
+  AppOnlineShopSettingsRoute: AppOnlineShopSettingsRoute,
+  AppOnlineShopThemesRoute: AppOnlineShopThemesRoute,
+  AppOnlineShopIndexRoute: AppOnlineShopIndexRoute,
+}
+
+const AppOnlineShopRouteWithChildren = AppOnlineShopRoute._addFileChildren(
+  AppOnlineShopRouteChildren,
+)
+
+interface AppReturnsRouteChildren {
+  AppReturnsIdRoute: typeof AppReturnsIdRoute
+  AppReturnsNewRoute: typeof AppReturnsNewRoute
+}
+
+const AppReturnsRouteChildren: AppReturnsRouteChildren = {
+  AppReturnsIdRoute: AppReturnsIdRoute,
+  AppReturnsNewRoute: AppReturnsNewRoute,
+}
+
+const AppReturnsRouteWithChildren = AppReturnsRoute._addFileChildren(
+  AppReturnsRouteChildren,
+)
+
+interface AppSubscribeRouteChildren {
+  AppSubscribeCallbackRoute: typeof AppSubscribeCallbackRoute
+}
+
+const AppSubscribeRouteChildren: AppSubscribeRouteChildren = {
+  AppSubscribeCallbackRoute: AppSubscribeCallbackRoute,
+}
+
+const AppSubscribeRouteWithChildren = AppSubscribeRoute._addFileChildren(
+  AppSubscribeRouteChildren,
+)
+
+interface AppRouteChildren {
+  AppAccessRoute: typeof AppAccessRoute
+  AppAffiliateRoute: typeof AppAffiliateRoute
+  AppAssetsRoute: typeof AppAssetsRoute
+  AppBuySmsRoute: typeof AppBuySmsRoute
+  AppCashboxRoute: typeof AppCashboxRoute
+  AppCombinedReportRoute: typeof AppCombinedReportRoute
+  AppContactsRoute: typeof AppContactsRoute
+  AppCustomerWishlistRoute: typeof AppCustomerWishlistRoute
+  AppDashboardRoute: typeof AppDashboardRoute
+  AppDueHistoryRoute: typeof AppDueHistoryRoute
+  AppDueLedgerRoute: typeof AppDueLedgerRoute
+  AppExpenseLedgerRoute: typeof AppExpenseLedgerRoute
+  AppExpiringRoute: typeof AppExpiringRoute
+  AppFordoHistoryRoute: typeof AppFordoHistoryRoute
+  AppMarketingRoute: typeof AppMarketingRoute
+  AppOnlineShopRoute: typeof AppOnlineShopRouteWithChildren
+  AppOwnerLedgerRoute: typeof AppOwnerLedgerRoute
+  AppOwnerReportRoute: typeof AppOwnerReportRoute
+  AppPrinterRoute: typeof AppPrinterRoute
+  AppProductsRoute: typeof AppProductsRoute
+  AppPurchaseRoute: typeof AppPurchaseRoute
+  AppPurchaseLedgerRoute: typeof AppPurchaseLedgerRoute
+  AppQuickOrderRoute: typeof AppQuickOrderRoute
+  AppRecycleBinRoute: typeof AppRecycleBinRoute
+  AppReportsRoute: typeof AppReportsRoute
+  AppReturnsRoute: typeof AppReturnsRouteWithChildren
+  AppSalesLedgerRoute: typeof AppSalesLedgerRoute
+  AppSellRoute: typeof AppSellRoute
+  AppShopsRoute: typeof AppShopsRoute
+  AppSmsHistoryRoute: typeof AppSmsHistoryRoute
+  AppStockRoute: typeof AppStockRoute
+  AppStockEditRoute: typeof AppStockEditRoute
+  AppSubscribeRoute: typeof AppSubscribeRouteWithChildren
+  AppTrainingRoute: typeof AppTrainingRoute
+  AppUsageLimitsRoute: typeof AppUsageLimitsRoute
+  AppWarrantyRoute: typeof AppWarrantyRoute
+}
+
+const AppRouteChildren: AppRouteChildren = {
+  AppAccessRoute: AppAccessRoute,
+  AppAffiliateRoute: AppAffiliateRoute,
+  AppAssetsRoute: AppAssetsRoute,
+  AppBuySmsRoute: AppBuySmsRoute,
+  AppCashboxRoute: AppCashboxRoute,
+  AppCombinedReportRoute: AppCombinedReportRoute,
+  AppContactsRoute: AppContactsRoute,
+  AppCustomerWishlistRoute: AppCustomerWishlistRoute,
+  AppDashboardRoute: AppDashboardRoute,
+  AppDueHistoryRoute: AppDueHistoryRoute,
+  AppDueLedgerRoute: AppDueLedgerRoute,
+  AppExpenseLedgerRoute: AppExpenseLedgerRoute,
+  AppExpiringRoute: AppExpiringRoute,
+  AppFordoHistoryRoute: AppFordoHistoryRoute,
+  AppMarketingRoute: AppMarketingRoute,
+  AppOnlineShopRoute: AppOnlineShopRouteWithChildren,
+  AppOwnerLedgerRoute: AppOwnerLedgerRoute,
+  AppOwnerReportRoute: AppOwnerReportRoute,
+  AppPrinterRoute: AppPrinterRoute,
+  AppProductsRoute: AppProductsRoute,
+  AppPurchaseRoute: AppPurchaseRoute,
+  AppPurchaseLedgerRoute: AppPurchaseLedgerRoute,
+  AppQuickOrderRoute: AppQuickOrderRoute,
+  AppRecycleBinRoute: AppRecycleBinRoute,
+  AppReportsRoute: AppReportsRoute,
+  AppReturnsRoute: AppReturnsRouteWithChildren,
+  AppSalesLedgerRoute: AppSalesLedgerRoute,
+  AppSellRoute: AppSellRoute,
+  AppShopsRoute: AppShopsRoute,
+  AppSmsHistoryRoute: AppSmsHistoryRoute,
+  AppStockRoute: AppStockRoute,
+  AppStockEditRoute: AppStockEditRoute,
+  AppSubscribeRoute: AppSubscribeRouteWithChildren,
+  AppTrainingRoute: AppTrainingRoute,
+  AppUsageLimitsRoute: AppUsageLimitsRoute,
+  AppWarrantyRoute: AppWarrantyRoute,
+}
+
+const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
+
+interface CustomerRouteChildren {
+  CustomerCreateFordoRoute: typeof CustomerCreateFordoRoute
+  CustomerDashboardRoute: typeof CustomerDashboardRoute
+  CustomerMoneyRoute: typeof CustomerMoneyRoute
+  CustomerMyFordoRoute: typeof CustomerMyFordoRoute
+  CustomerNotesRoute: typeof CustomerNotesRoute
+  CustomerProfileRoute: typeof CustomerProfileRoute
+}
+
+const CustomerRouteChildren: CustomerRouteChildren = {
+  CustomerCreateFordoRoute: CustomerCreateFordoRoute,
+  CustomerDashboardRoute: CustomerDashboardRoute,
+  CustomerMoneyRoute: CustomerMoneyRoute,
+  CustomerMyFordoRoute: CustomerMyFordoRoute,
+  CustomerNotesRoute: CustomerNotesRoute,
+  CustomerProfileRoute: CustomerProfileRoute,
+}
+
+const CustomerRouteWithChildren = CustomerRoute._addFileChildren(
+  CustomerRouteChildren,
+)
+
+interface ShopRouteChildren {
+  ShopPIdRoute: typeof ShopPIdRoute
+  ShopSSlugRoute: typeof ShopSSlugRoute
+}
+
+const ShopRouteChildren: ShopRouteChildren = {
+  ShopPIdRoute: ShopPIdRoute,
+  ShopSSlugRoute: ShopSSlugRoute,
+}
+
+const ShopRouteWithChildren = ShopRoute._addFileChildren(ShopRouteChildren)
+
+interface FSlugRouteChildren {
+  FSlugMyRoute: typeof FSlugMyRoute
+}
+
+const FSlugRouteChildren: FSlugRouteChildren = {
+  FSlugMyRoute: FSlugMyRoute,
+}
+
+const FSlugRouteWithChildren = FSlugRoute._addFileChildren(FSlugRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  SplatRoute: SplatRoute,
+  AdminRoute: AdminRouteWithChildren,
+  AffiliateRoute: AffiliateRouteWithChildren,
+  AppRoute: AppRouteWithChildren,
+  AuthRoute: AuthRoute,
+  CustomerRoute: CustomerRouteWithChildren,
+  PricingRoute: PricingRoute,
+  PrivacyRoute: PrivacyRoute,
+  ShopRoute: ShopRouteWithChildren,
+  TermsRoute: TermsRoute,
+  FSlugRoute: FSlugRouteWithChildren,
+  VendorUsernameRoute: VendorUsernameRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
