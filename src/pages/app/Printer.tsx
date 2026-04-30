@@ -237,7 +237,7 @@ function BluetoothGuide({ lang: _lang }: { lang: string }) {
       <h3 className="mb-1 flex items-center gap-2 text-sm font-bold"><Bluetooth className="h-4 w-4" /> প্রিন্টার সেটআপ গাইড</h3>
       <Step no="১" title="পাওয়ার অন করুন এবং ব্লুটুথ চালু করুন" body="আপনার POS প্রিন্টার চালু করুন এবং ব্লুটুথ সক্রিয় করুন। প্রিন্টারের ব্লুটুথ ইন্ডিকেটর লাইট দেখুন।" />
       <Step no="২" title="ডিভাইসের সাথে পেয়ার করুন" body="আপনার ডিভাইসের ব্লুটুথ সেটিংস খুলুন, ডিভাইসগুলো স্ক্যান করুন এবং আপনার POS প্রিন্টার নির্বাচন করুন। প্রয়োজন হলে PIN কোড দিন (সাধারণত '0000' অথবা '1234')।" />
-      <Step no="৩" title="প্রিন্টার সেটিংস কনফিগার করুন" body="Hishabee Web App এ Printer Settings এ যান এবং প্রিন্টার টাইপ হিসেবে 'POS_BLUETOOTH' সেট করুন।" />
+      <Step no="৩" title="প্রিন্টার সেটিংস কনফিগার করুন" body="Tally Plus Web App এ Printer Settings এ যান এবং প্রিন্টার টাইপ হিসেবে 'POS_BLUETOOTH' সেট করুন।" />
       <Step no="৪" title="টেস্ট প্রিন্ট" body="একটি নমুনা রসিদ প্রিন্ট করুন যাতে নিশ্চিত হওয়া যায় আপনার POS প্রিন্টার সঠিকভাবে কাজ করছে।" />
       <Note>নোট: POS প্রিন্টিং Web Serial API ব্যবহার করে, যা সব ব্রাউজারে সমর্থিত নয়। সেরা ফলাফলের জন্য ডেস্কটপে Chrome বা Edge এর সর্বশেষ সংস্করণ ব্যবহার করুন।</Note>
     </div>
@@ -251,16 +251,16 @@ function UsbGuide({ lang: _lang }: { lang: string }) {
       <Step no="১" title="USB কেবল সংযুক্ত করুন" body="আপনার POS প্রিন্টারের USB কেবল কম্পিউটার বা POS টার্মিনালে সংযুক্ত করুন।" />
       <Step no="২" title="ড্রাইভার ইনস্টল করুন" body="আপনার POS প্রিন্টারের মডেল অনুযায়ী ড্রাইভার ইনস্টল করুন। সর্বশেষ ড্রাইভার প্রস্তুতকারকের ওয়েবসাইট থেকে ডাউনলোড করুন।" />
       <div className="rounded-md border bg-background px-4 py-3">
-        <div className="text-sm font-bold">ধাপ ৩: Hishabee Print Manager ইনস্টল করুন</div>
+        <div className="text-sm font-bold">ধাপ ৩: Tally Plus Print Manager ইনস্টল করুন</div>
         <div className="mt-1 text-xs text-muted-foreground">
-          Hishabee Print Manager ডেস্কটপ অ্যাপ ডাউনলোড ও ইনস্টল করুন{" "}
+          Tally Plus Print Manager ডেস্কটপ অ্যাপ ডাউনলোড ও ইনস্টল করুন{" "}
           <a className="text-sky-600 underline" href="#"><Download className="inline h-3 w-3" /> Download Print Manager</a>। Print Manager ইনস্টল না করলে USB প্রিন্টিং কাজ করবে না।
         </div>
       </div>
-      <Step no="৪" title="Hishabee Web App-এ প্রিন্টার কনফিগার করুন" body="Hishabee Web App-এ Printer Settings এ যান এবং প্রিন্টার টাইপ হিসেবে 'POS USB' (Usb Printer) সিলেক্ট করুন।" />
+      <Step no="৪" title="Tally Plus Web App-এ প্রিন্টার কনফিগার করুন" body="Tally Plus Web App-এ Printer Settings এ যান এবং প্রিন্টার টাইপ হিসেবে 'POS USB' (Usb Printer) সিলেক্ট করুন।" />
       <Step no="৫" title="কাগজের আকার সেট করুন" body="রশিদ কাগজের আকার অনুযায়ী (সাধারণত 54mm বা 80mm থার্মাল পেপার) সঠিকভাবে সেট করুন।" />
       <Step no="৬" title="টেস্ট কনফিগারেশন" body="একটি টেস্ট রসিদ প্রিন্ট করুন এবং নিশ্চিত করুন যে সবকিছু সঠিকভাবে কাজ করছে।" />
-      <Note>নোট: POS USB প্রিন্টার ব্যবহার করার জন্য, আপনার Hishabee Print Manager ইনস্টল করতে হবে। প্রিন্ট ম্যানেজার ইনস্টল না করলে, USB প্রিন্টিং কাজ করবে না। সেরা ফলাফলের জন্য ডেস্কটপে Chrome বা Edge এর সর্বশেষ সংস্করণ ব্যবহার করুন।</Note>
+      <Note>নোট: POS USB প্রিন্টার ব্যবহার করার জন্য, আপনার Tally Plus Print Manager ইনস্টল করতে হবে। প্রিন্ট ম্যানেজার ইনস্টল না করলে, USB প্রিন্টিং কাজ করবে না। সেরা ফলাফলের জন্য ডেস্কটপে Chrome বা Edge এর সর্বশেষ সংস্করণ ব্যবহার করুন।</Note>
     </div>
   );
 }
