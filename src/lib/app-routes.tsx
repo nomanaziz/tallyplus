@@ -4,11 +4,11 @@ import { RouteFallback } from "@/components/RouteFallback";
 import NotFound from "@/pages/NotFound";
 
 const L0 = lazy(() => import("@/pages/Index"));
-const L1 = lazy(() => import("@/pages/admin/Index"));
-const L2 = lazy(() => import("@/pages/Admin"));
-const L3 = lazy(() => import("@/pages/admin/Ads"));
-const L4 = lazy(() => import("@/pages/admin/Affiliates"));
-const L5 = lazy(() => import("@/pages/admin/Banners"));
+const L1 = lazy(() => import("@/pages/Admin"));
+const L2 = lazy(() => import("@/pages/admin/Ads"));
+const L3 = lazy(() => import("@/pages/admin/Affiliates"));
+const L4 = lazy(() => import("@/pages/admin/Banners"));
+const L5 = lazy(() => import("@/pages/admin/Index"));
 const L6 = lazy(() => import("@/pages/admin/Landing"));
 const L7 = lazy(() => import("@/pages/admin/Locations"));
 const L8 = lazy(() => import("@/pages/admin/Login"));
@@ -43,62 +43,47 @@ const L36 = lazy(() => import("@/pages/app/ExpenseLedger"));
 const L37 = lazy(() => import("@/pages/app/Expiring"));
 const L38 = lazy(() => import("@/pages/app/FordoHistory"));
 const L39 = lazy(() => import("@/pages/app/Marketing"));
-const L40 = lazy(() => import("@/pages/app/online-shop/Index"));
-const L41 = lazy(() => import("@/pages/app/OnlineShop"));
-const L42 = lazy(() => import("@/pages/app/online-shop/Customize"));
-const L43 = lazy(() => import("@/pages/app/online-shop/Delivery"));
-const L44 = lazy(() => import("@/pages/app/online-shop/Featured"));
-const L45 = lazy(() => import("@/pages/app/online-shop/FraudCheck"));
-const L46 = lazy(() => import("@/pages/app/online-shop/Marketing"));
-const L47 = lazy(() => import("@/pages/app/online-shop/Messages"));
-const L48 = lazy(() => import("@/pages/app/online-shop/Orders"));
-const L49 = lazy(() => import("@/pages/app/online-shop/Policy"));
-const L50 = lazy(() => import("@/pages/app/online-shop/Products"));
-const L51 = lazy(() => import("@/pages/app/online-shop/PromoCodes"));
-const L52 = lazy(() => import("@/pages/app/online-shop/Settings"));
-const L53 = lazy(() => import("@/pages/app/online-shop/Themes"));
-const L54 = lazy(() => import("@/pages/app/OwnerLedger"));
-const L55 = lazy(() => import("@/pages/app/OwnerReport"));
-const L56 = lazy(() => import("@/pages/app/Printer"));
-const L57 = lazy(() => import("@/pages/app/Products"));
-const L58 = lazy(() => import("@/pages/app/PurchaseLedger"));
-const L59 = lazy(() => import("@/pages/app/Purchase"));
-const L60 = lazy(() => import("@/pages/app/QuickOrder"));
-const L61 = lazy(() => import("@/pages/app/RecycleBin"));
-const L62 = lazy(() => import("@/pages/app/Reports"));
-const L63 = lazy(() => import("@/pages/app/Returns"));
-const L64 = lazy(() => import("@/pages/app/returns/Id"));
-const L65 = lazy(() => import("@/pages/app/returns/New"));
-const L66 = lazy(() => import("@/pages/app/SalesLedger"));
-const L67 = lazy(() => import("@/pages/app/Sell"));
-const L68 = lazy(() => import("@/pages/app/Shops"));
-const L69 = lazy(() => import("@/pages/app/SmsHistory"));
-const L70 = lazy(() => import("@/pages/app/Subscribe"));
-const L71 = lazy(() => import("@/pages/app/SubscribeCallback"));
-const L72 = lazy(() => import("@/pages/app/Training"));
-const L73 = lazy(() => import("@/pages/app/UsageLimits"));
-const L74 = lazy(() => import("@/pages/app/Warranty"));
-const L75 = lazy(() => import("@/pages/Auth"));
-const L76 = lazy(() => import("@/pages/customer/CustomerLayout"));
-const L77 = lazy(() => import("@/pages/customer/CreateFordo"));
-const L78 = lazy(() => import("@/pages/customer/Dashboard"));
-const L79 = lazy(() => import("@/pages/customer/Money"));
-const L80 = lazy(() => import("@/pages/customer/MyFordo"));
-const L81 = lazy(() => import("@/pages/customer/Notes"));
-const L82 = lazy(() => import("@/pages/customer/Profile"));
-const L83 = lazy(() => import("@/pages/Pricing"));
-const L84 = lazy(() => import("@/pages/Privacy"));
-const L85 = lazy(() => import("@/pages/shop/Index"));
-const L86 = lazy(() => import("@/pages/Terms"));
+const L40 = lazy(() => import("@/pages/app/OwnerLedger"));
+const L41 = lazy(() => import("@/pages/app/OwnerReport"));
+const L42 = lazy(() => import("@/pages/app/Printer"));
+const L43 = lazy(() => import("@/pages/app/Products"));
+const L44 = lazy(() => import("@/pages/app/PurchaseLedger"));
+const L45 = lazy(() => import("@/pages/app/Purchase"));
+const L46 = lazy(() => import("@/pages/app/QuickOrder"));
+const L47 = lazy(() => import("@/pages/app/RecycleBin"));
+const L48 = lazy(() => import("@/pages/app/Reports"));
+const L49 = lazy(() => import("@/pages/app/SalesLedger"));
+const L50 = lazy(() => import("@/pages/app/Sell"));
+const L51 = lazy(() => import("@/pages/app/Shops"));
+const L52 = lazy(() => import("@/pages/app/SmsHistory"));
+const L53 = lazy(() => import("@/pages/app/Training"));
+const L54 = lazy(() => import("@/pages/app/UsageLimits"));
+const L55 = lazy(() => import("@/pages/app/Warranty"));
+const L56 = lazy(() => import("@/pages/Auth"));
+const L57 = lazy(() => import("@/pages/customer/CustomerLayout"));
+const L58 = lazy(() => import("@/pages/customer/CreateFordo"));
+const L59 = lazy(() => import("@/pages/customer/Dashboard"));
+const L60 = lazy(() => import("@/pages/customer/Money"));
+const L61 = lazy(() => import("@/pages/customer/MyFordo"));
+const L62 = lazy(() => import("@/pages/customer/Notes"));
+const L63 = lazy(() => import("@/pages/customer/Profile"));
+const L64 = lazy(() => import("@/pages/f/Slug"));
+const L65 = lazy(() => import("@/pages/f/slug/My"));
+const L66 = lazy(() => import("@/pages/Pricing"));
+const L67 = lazy(() => import("@/pages/Privacy"));
+const L68 = lazy(() => import("@/pages/shop/Index"));
+const L69 = lazy(() => import("@/pages/shop/p/Id"));
+const L70 = lazy(() => import("@/pages/shop/s/Slug"));
+const L71 = lazy(() => import("@/pages/Terms"));
+const L72 = lazy(() => import("@/pages/vendor/Username"));
 
 export const appRoutes: RouteObject[] = [
 { index: true, element: <Suspense fallback={<RouteFallback/>}><L0/></Suspense> },
-{ index: true, element: <Suspense fallback={<RouteFallback/>}><L1/></Suspense> },
-{ path: "admin", element: <Suspense fallback={<RouteFallback/>}><L2/></Suspense>, children: [
-{ path: "ads", element: <Suspense fallback={<RouteFallback/>}><L3/></Suspense> },
-{ path: "affiliates", element: <Suspense fallback={<RouteFallback/>}><L4/></Suspense> },
-{ path: "banners", element: <Suspense fallback={<RouteFallback/>}><L5/></Suspense> },
-{ index: true, element: <Suspense fallback={<RouteFallback/>}><L1/></Suspense> },
+{ path: "admin", element: <Suspense fallback={<RouteFallback/>}><L1/></Suspense>, children: [
+{ path: "ads", element: <Suspense fallback={<RouteFallback/>}><L2/></Suspense> },
+{ path: "affiliates", element: <Suspense fallback={<RouteFallback/>}><L3/></Suspense> },
+{ path: "banners", element: <Suspense fallback={<RouteFallback/>}><L4/></Suspense> },
+{ index: true, element: <Suspense fallback={<RouteFallback/>}><L5/></Suspense> },
 { path: "landing", element: <Suspense fallback={<RouteFallback/>}><L6/></Suspense> },
 { path: "locations", element: <Suspense fallback={<RouteFallback/>}><L7/></Suspense> },
 { path: "login", element: <Suspense fallback={<RouteFallback/>}><L8/></Suspense> },
@@ -135,60 +120,44 @@ export const appRoutes: RouteObject[] = [
 { path: "expiring", element: <Suspense fallback={<RouteFallback/>}><L37/></Suspense> },
 { path: "fordo-history", element: <Suspense fallback={<RouteFallback/>}><L38/></Suspense> },
 { path: "marketing", element: <Suspense fallback={<RouteFallback/>}><L39/></Suspense> },
-{ index: true, element: <Suspense fallback={<RouteFallback/>}><L40/></Suspense> },
-{ path: "online-shop", element: <Suspense fallback={<RouteFallback/>}><L41/></Suspense>, children: [
-{ path: "customize", element: <Suspense fallback={<RouteFallback/>}><L42/></Suspense> },
-{ path: "delivery", element: <Suspense fallback={<RouteFallback/>}><L43/></Suspense> },
-{ path: "featured", element: <Suspense fallback={<RouteFallback/>}><L44/></Suspense> },
-{ path: "fraud-check", element: <Suspense fallback={<RouteFallback/>}><L45/></Suspense> },
-{ index: true, element: <Suspense fallback={<RouteFallback/>}><L40/></Suspense> },
-{ path: "marketing", element: <Suspense fallback={<RouteFallback/>}><L46/></Suspense> },
-{ path: "messages", element: <Suspense fallback={<RouteFallback/>}><L47/></Suspense> },
-{ path: "orders", element: <Suspense fallback={<RouteFallback/>}><L48/></Suspense> },
-{ path: "policy", element: <Suspense fallback={<RouteFallback/>}><L49/></Suspense> },
-{ path: "products", element: <Suspense fallback={<RouteFallback/>}><L50/></Suspense> },
-{ path: "promo-codes", element: <Suspense fallback={<RouteFallback/>}><L51/></Suspense> },
-{ path: "settings", element: <Suspense fallback={<RouteFallback/>}><L52/></Suspense> },
-{ path: "themes", element: <Suspense fallback={<RouteFallback/>}><L53/></Suspense> }
-] },
-{ path: "owner-ledger", element: <Suspense fallback={<RouteFallback/>}><L54/></Suspense> },
-{ path: "owner-report", element: <Suspense fallback={<RouteFallback/>}><L55/></Suspense> },
-{ path: "printer", element: <Suspense fallback={<RouteFallback/>}><L56/></Suspense> },
-{ path: "products", element: <Suspense fallback={<RouteFallback/>}><L57/></Suspense> },
-{ path: "purchase-ledger", element: <Suspense fallback={<RouteFallback/>}><L58/></Suspense> },
-{ path: "purchase", element: <Suspense fallback={<RouteFallback/>}><L59/></Suspense> },
-{ path: "quick-order", element: <Suspense fallback={<RouteFallback/>}><L60/></Suspense> },
-{ path: "recycle-bin", element: <Suspense fallback={<RouteFallback/>}><L61/></Suspense> },
-{ path: "reports", element: <Suspense fallback={<RouteFallback/>}><L62/></Suspense> },
-{ path: "returns", element: <Suspense fallback={<RouteFallback/>}><L63/></Suspense>, children: [
-{ path: ":id", element: <Suspense fallback={<RouteFallback/>}><L64/></Suspense> },
-{ path: "new", element: <Suspense fallback={<RouteFallback/>}><L65/></Suspense> }
-] },
-{ path: "sales-ledger", element: <Suspense fallback={<RouteFallback/>}><L66/></Suspense> },
-{ path: "sell", element: <Suspense fallback={<RouteFallback/>}><L67/></Suspense> },
-{ path: "shops", element: <Suspense fallback={<RouteFallback/>}><L68/></Suspense> },
-{ path: "sms-history", element: <Suspense fallback={<RouteFallback/>}><L69/></Suspense> },
+{ path: "owner-ledger", element: <Suspense fallback={<RouteFallback/>}><L40/></Suspense> },
+{ path: "owner-report", element: <Suspense fallback={<RouteFallback/>}><L41/></Suspense> },
+{ path: "printer", element: <Suspense fallback={<RouteFallback/>}><L42/></Suspense> },
+{ path: "products", element: <Suspense fallback={<RouteFallback/>}><L43/></Suspense> },
+{ path: "purchase-ledger", element: <Suspense fallback={<RouteFallback/>}><L44/></Suspense> },
+{ path: "purchase", element: <Suspense fallback={<RouteFallback/>}><L45/></Suspense> },
+{ path: "quick-order", element: <Suspense fallback={<RouteFallback/>}><L46/></Suspense> },
+{ path: "recycle-bin", element: <Suspense fallback={<RouteFallback/>}><L47/></Suspense> },
+{ path: "reports", element: <Suspense fallback={<RouteFallback/>}><L48/></Suspense> },
+{ path: "sales-ledger", element: <Suspense fallback={<RouteFallback/>}><L49/></Suspense> },
+{ path: "sell", element: <Suspense fallback={<RouteFallback/>}><L50/></Suspense> },
+{ path: "shops", element: <Suspense fallback={<RouteFallback/>}><L51/></Suspense> },
+{ path: "sms-history", element: <Suspense fallback={<RouteFallback/>}><L52/></Suspense> },
 { path: "stock-edit", element: <Navigate to="/app/products" replace /> },
 { path: "stock", element: <Navigate to="/app/products" replace /> },
-{ path: "subscribe", element: <Suspense fallback={<RouteFallback/>}><L70/></Suspense>, children: [
-{ path: "callback", element: <Suspense fallback={<RouteFallback/>}><L71/></Suspense> }
+{ path: "training", element: <Suspense fallback={<RouteFallback/>}><L53/></Suspense> },
+{ path: "usage-limits", element: <Suspense fallback={<RouteFallback/>}><L54/></Suspense> },
+{ path: "warranty", element: <Suspense fallback={<RouteFallback/>}><L55/></Suspense> }
 ] },
-{ path: "training", element: <Suspense fallback={<RouteFallback/>}><L72/></Suspense> },
-{ path: "usage-limits", element: <Suspense fallback={<RouteFallback/>}><L73/></Suspense> },
-{ path: "warranty", element: <Suspense fallback={<RouteFallback/>}><L74/></Suspense> }
+{ path: "auth", element: <Suspense fallback={<RouteFallback/>}><L56/></Suspense> },
+{ path: "customer", element: <Suspense fallback={<RouteFallback/>}><L57/></Suspense>, children: [
+{ path: "create-fordo", element: <Suspense fallback={<RouteFallback/>}><L58/></Suspense> },
+{ path: "dashboard", element: <Suspense fallback={<RouteFallback/>}><L59/></Suspense> },
+{ path: "money", element: <Suspense fallback={<RouteFallback/>}><L60/></Suspense> },
+{ path: "my-fordo", element: <Suspense fallback={<RouteFallback/>}><L61/></Suspense> },
+{ path: "notes", element: <Suspense fallback={<RouteFallback/>}><L62/></Suspense> },
+{ path: "profile", element: <Suspense fallback={<RouteFallback/>}><L63/></Suspense> }
 ] },
-{ path: "auth", element: <Suspense fallback={<RouteFallback/>}><L75/></Suspense> },
-{ path: "customer", element: <Suspense fallback={<RouteFallback/>}><L76/></Suspense>, children: [
-{ path: "create-fordo", element: <Suspense fallback={<RouteFallback/>}><L77/></Suspense> },
-{ path: "dashboard", element: <Suspense fallback={<RouteFallback/>}><L78/></Suspense> },
-{ path: "money", element: <Suspense fallback={<RouteFallback/>}><L79/></Suspense> },
-{ path: "my-fordo", element: <Suspense fallback={<RouteFallback/>}><L80/></Suspense> },
-{ path: "notes", element: <Suspense fallback={<RouteFallback/>}><L81/></Suspense> },
-{ path: "profile", element: <Suspense fallback={<RouteFallback/>}><L82/></Suspense> }
+{ path: "f/:slug", element: <Suspense fallback={<RouteFallback/>}><L64/></Suspense>, children: [
+{ path: "my", element: <Suspense fallback={<RouteFallback/>}><L65/></Suspense> }
 ] },
-{ path: "pricing", element: <Suspense fallback={<RouteFallback/>}><L83/></Suspense> },
-{ path: "privacy", element: <Suspense fallback={<RouteFallback/>}><L84/></Suspense> },
-{ path: "shop", element: <Suspense fallback={<RouteFallback/>}><L85/></Suspense> },
-{ path: "terms", element: <Suspense fallback={<RouteFallback/>}><L86/></Suspense> },
+{ path: "pricing", element: <Suspense fallback={<RouteFallback/>}><L66/></Suspense> },
+{ path: "privacy", element: <Suspense fallback={<RouteFallback/>}><L67/></Suspense> },
+{ path: "shop", element: <Suspense fallback={<RouteFallback/>}><L68/></Suspense>, children: [
+{ path: "p/:id", element: <Suspense fallback={<RouteFallback/>}><L69/></Suspense> },
+{ path: "s/:slug", element: <Suspense fallback={<RouteFallback/>}><L70/></Suspense> }
+] },
+{ path: "terms", element: <Suspense fallback={<RouteFallback/>}><L71/></Suspense> },
+{ path: "vendor/:username", element: <Suspense fallback={<RouteFallback/>}><L72/></Suspense> },
 { path: "*", element: <NotFound /> }
 ];
