@@ -1,59 +1,62 @@
 ## Goal
+Stop the repeated deployment/build failures by aligning the project’s package management and dependency versions so the install step is deterministic on the hosting platform.
 
-On the Products & Stock page, add a prominent summary card at the top (visible on both mobile and desktop) showing **Total Stock** and **Stock Value**, and improve the **Stock History** popup so the user can pick which products' history to view — matching the two sample screenshots.
+## What’s causing the failure
+There are two overlapping problems in the repo right now:
 
-## Changes
+1. `package.json` declares `zod: ^4.3.6` and `openai: ^4.52.5`.
+2. The deployed environment is running `npm install`, while the project also contains a Bun lockfile (`bun.lockb`) and an npm lockfile (`package-lock.json`).
+3. The current `package-lock.json` is stale and still records `zod` as `^3.24.2`, while the live `package.json` requests Zod 4.
+4. `openai@4.x` has a peer-optional expectation for `zod@^3.23.8`, so npm’s stricter peer resolution is rejecting the install when it sees Zod 4.
+5. The codebase appears to use `zod` directly in app code, but there is no actual runtime use of the `openai` package in `src/` or `supabase/` right now.
 
-### 1. Top summary card (mobile + desktop)
-File: `src/pages/app/Products.tsx`
+That combination makes installs fragile and is why the codebase keeps “randomly” failing on build/deploy.
 
-Add a blue gradient card right under the page title, before the toolbar:
+## Plan
 
-```text
-┌───────────────────────────────────────────────┐
-│  ┌──────────────┐    ┌──────────────┐         │
-│  │     128      │    │   39,040 ৳   │         │
-│  │ Total Stock  │    │ Stock Value  │         │
-│  └──────────────┘    └──────────────┘         │
-└───────────────────────────────────────────────┘
-```
+### 1. Make dependency resolution consistent
+Pick one package-manager path for the repo and make the manifests match it so the host does not resolve a different tree than local development.
 
-- Two stat tiles inside one rounded card with a brand-blue (primary) background.
-- Numbers come from existing computed values:
-  - **Total Stock** = sum of `stock` across `filtered` (skip unlimited / negative).
-  - **Stock Value** = existing `totalStockValue` (already computed).
-- Bilingual labels (bn: "মোট স্টক" / "মজুদ মূল্য").
-- Numbers use `bnNum` when `lang === "bn"`, money via `fmtMoney`.
-- Responsive: `grid-cols-2` always; tighter padding on mobile (`p-3 sm:p-5`), larger numbers on desktop.
-- Remove the duplicate "Total stock value" row that currently sits at the bottom of the table footer (now redundant), keep "Total Products" header inside the table card.
+I will:
+- inspect whether this project should standardize on npm or Bun for deployment
+- remove the ambiguity that comes from having both `bun.lockb` and `package-lock.json` driving different dependency graphs
+- add an explicit `packageManager` declaration in `package.json` if helpful for deploy consistency
 
-### 2. Surface "Stock History" on mobile
-The button exists in the header action row but wraps off-screen on small viewports. Make sure it stays accessible:
+### 2. Fix the Zod/OpenAI conflict at the source
+Since the app imports `zod` directly and there is no current code usage of the `openai` SDK, the safest fix is:
+- remove `openai` from `package.json` if it is unused
+- regenerate the lockfile(s) from the corrected dependency set
 
-- Keep the existing **Stock History** button in the desktop header.
-- Add a compact secondary action row (icon + label) right below the summary card on mobile (`sm:hidden`) with **Stock History** and **Stock Edit** buttons so they are reachable on phones.
+Fallback only if needed:
+- if `openai` must stay, pin a version compatible with Zod 4 or move the project back to Zod 3 everywhere consistently
 
-### 3. Stock History popup with product multi-select
-Replace the current always-show-all `Dialog` body with a two-step UX:
+Preferred direction: keep Zod 4 and remove unused OpenAI, because that is the smallest, safest change.
 
-**Step A — Product picker (default view when opening the dialog):**
-- Search box at top.
-- Scrollable checklist of all products (name + current stock).
-- "Select all" toggle.
-- Footer: `Cancel` | `Show history (N selected)` button (disabled when none selected).
+### 3. Verify related version drift
+There is also evidence of manifest drift in TanStack package versions between the repo files and older lockfile entries. I will:
+- reconcile the resolved lockfile with the current `package.json`
+- make sure the dependency tree reflects the current TanStack Start setup instead of older transitive versions lingering in `package-lock.json`
 
-**Step B — History view (after pressing Show history):**
-- Header shows chosen product chips with a small `Change` link to go back to Step A.
-- Existing history table (Date / Product / Type / Qty), filtered to `selected` product ids only.
-- "Back" button returns to Step A; closing the dialog resets selection.
+### 4. Deliver a clean deploy path
+After the dependency cleanup, I will:
+- ensure the repo has one authoritative dependency graph
+- confirm the install step should succeed in hosting without `--legacy-peer-deps`
+- tell you exactly whether you need to republish only, or whether no extra manual step is needed
 
-Data source: existing `stockHistoryQuery(current?.id)` already returns all movements; we just filter client-side by `selected` ids. No new query needed.
+## Files to update
+- `package.json`
+- lockfile(s): likely `package-lock.json` and possibly `bun.lockb`
 
-### 4. Small polish
-- Stock History button: keep `History` icon, make it the brand-outlined style shown in the sample (blue border + blue text) on the page header.
-- Card colors use existing CSS vars (`bg-primary text-primary-foreground`) so it follows the user's theme.
+## Technical details
+Current evidence from the repo:
+- `package.json` has `openai: ^4.52.5` and `zod: ^4.3.6`
+- `package-lock.json` still records Zod 3 (`zod: ^3.24.2` and resolved `zod-3.25.76`)
+- TanStack tooling inside the lockfile also depends on Zod 3 transitively, which is fine, but npm is failing specifically on the root-level OpenAI/Zod peer expectation
+- app code imports `zod` in `src/components/app/AddShopDialog.tsx`
+- no actual imports of `openai` were found in `src/` or `supabase/`
 
-## Files touched
-- `src/pages/app/Products.tsx` — summary card, mobile action row, revamped history dialog (two-step), remove redundant footer total.
-
-No new dependencies, no DB / schema / migration changes.
+## Expected outcome
+After this cleanup:
+- installs stop failing on the peer dependency conflict
+- deployments stop breaking because of stale lockfile/package-manager mismatch
+- the project becomes much more stable for future edits instead of failing repeatedly on dependency resolution
