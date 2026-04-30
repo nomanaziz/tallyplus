@@ -168,6 +168,14 @@ export function PricingSection() {
                       <span className="text-sm text-muted-foreground line-through">{fmtMoney(p.old_price_bdt, lang)}</span>
                     )}
                   </div>
+                  {p.old_price_bdt && p.old_price_bdt > fp && (
+                    <div className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-xs font-bold text-emerald-700 dark:text-emerald-400">
+                      {lang === "bn" ? "সাশ্রয়" : "Save"} {fmtMoney(p.old_price_bdt - fp, lang)}
+                      <span className="opacity-80">
+                        {" "}({Math.round(((p.old_price_bdt - fp) / p.old_price_bdt) * 100)}%)
+                      </span>
+                    </div>
+                  )}
                   <p className="mt-1 text-xs text-muted-foreground">
                     {isLifetime
                       ? (lang === "bn" ? "এককালীন পেমেন্ট — আজীবন!" : "One-time — forever!")

@@ -235,6 +235,16 @@ export default function Subscribe() {
                   <div className="text-sm text-muted-foreground line-through">{fmtMoney(p.old_price_bdt, lang)}</div>
                 )}
               </div>
+              {p.old_price_bdt && p.old_price_bdt > fp && (
+                <div className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-xs font-bold text-emerald-700 dark:text-emerald-400">
+                  {lang === "bn" ? "সাশ্রয়" : "Save"} {fmtMoney(p.old_price_bdt - fp, lang)}
+                  {p.old_price_bdt > 0 && (
+                    <span className="opacity-80">
+                      {" "}({Math.round(((p.old_price_bdt - fp) / p.old_price_bdt) * 100)}%)
+                    </span>
+                  )}
+                </div>
+              )}
               <div className="mt-1 text-xs text-muted-foreground">
                 {isLifetime
                   ? (lang === "bn" ? "এককালীন" : "One-time")
