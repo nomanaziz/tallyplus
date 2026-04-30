@@ -32,6 +32,8 @@ import { Route as AppWarrantyRouteImport } from './routes/app.warranty'
 import { Route as AppUsageLimitsRouteImport } from './routes/app.usage-limits'
 import { Route as AppTrainingRouteImport } from './routes/app.training'
 import { Route as AppSubscribeRouteImport } from './routes/app.subscribe'
+import { Route as AppStockEditRouteImport } from './routes/app.stock-edit'
+import { Route as AppStockRouteImport } from './routes/app.stock'
 import { Route as AppSmsHistoryRouteImport } from './routes/app.sms-history'
 import { Route as AppShopsRouteImport } from './routes/app.shops'
 import { Route as AppSellRouteImport } from './routes/app.sell'
@@ -216,6 +218,16 @@ const AppTrainingRoute = AppTrainingRouteImport.update({
 const AppSubscribeRoute = AppSubscribeRouteImport.update({
   id: '/subscribe',
   path: '/subscribe',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppStockEditRoute = AppStockEditRouteImport.update({
+  id: '/stock-edit',
+  path: '/stock-edit',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppStockRoute = AppStockRouteImport.update({
+  id: '/stock',
+  path: '/stock',
   getParentRoute: () => AppRoute,
 } as any)
 const AppSmsHistoryRoute = AppSmsHistoryRouteImport.update({
@@ -632,6 +644,8 @@ export interface FileRoutesByFullPath {
   '/app/sell': typeof AppSellRoute
   '/app/shops': typeof AppShopsRoute
   '/app/sms-history': typeof AppSmsHistoryRoute
+  '/app/stock': typeof AppStockRoute
+  '/app/stock-edit': typeof AppStockEditRoute
   '/app/subscribe': typeof AppSubscribeRouteWithChildren
   '/app/training': typeof AppTrainingRoute
   '/app/usage-limits': typeof AppUsageLimitsRoute
@@ -725,6 +739,8 @@ export interface FileRoutesByTo {
   '/app/sell': typeof AppSellRoute
   '/app/shops': typeof AppShopsRoute
   '/app/sms-history': typeof AppSmsHistoryRoute
+  '/app/stock': typeof AppStockRoute
+  '/app/stock-edit': typeof AppStockEditRoute
   '/app/subscribe': typeof AppSubscribeRouteWithChildren
   '/app/training': typeof AppTrainingRoute
   '/app/usage-limits': typeof AppUsageLimitsRoute
@@ -821,6 +837,8 @@ export interface FileRoutesById {
   '/app/sell': typeof AppSellRoute
   '/app/shops': typeof AppShopsRoute
   '/app/sms-history': typeof AppSmsHistoryRoute
+  '/app/stock': typeof AppStockRoute
+  '/app/stock-edit': typeof AppStockEditRoute
   '/app/subscribe': typeof AppSubscribeRouteWithChildren
   '/app/training': typeof AppTrainingRoute
   '/app/usage-limits': typeof AppUsageLimitsRoute
@@ -918,6 +936,8 @@ export interface FileRouteTypes {
     | '/app/sell'
     | '/app/shops'
     | '/app/sms-history'
+    | '/app/stock'
+    | '/app/stock-edit'
     | '/app/subscribe'
     | '/app/training'
     | '/app/usage-limits'
@@ -1011,6 +1031,8 @@ export interface FileRouteTypes {
     | '/app/sell'
     | '/app/shops'
     | '/app/sms-history'
+    | '/app/stock'
+    | '/app/stock-edit'
     | '/app/subscribe'
     | '/app/training'
     | '/app/usage-limits'
@@ -1106,6 +1128,8 @@ export interface FileRouteTypes {
     | '/app/sell'
     | '/app/shops'
     | '/app/sms-history'
+    | '/app/stock'
+    | '/app/stock-edit'
     | '/app/subscribe'
     | '/app/training'
     | '/app/usage-limits'
@@ -1317,6 +1341,20 @@ declare module '@tanstack/react-router' {
       path: '/subscribe'
       fullPath: '/app/subscribe'
       preLoaderRoute: typeof AppSubscribeRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/stock-edit': {
+      id: '/app/stock-edit'
+      path: '/stock-edit'
+      fullPath: '/app/stock-edit'
+      preLoaderRoute: typeof AppStockEditRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/stock': {
+      id: '/app/stock'
+      path: '/stock'
+      fullPath: '/app/stock'
+      preLoaderRoute: typeof AppStockRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/sms-history': {
@@ -1965,6 +2003,8 @@ interface AppRouteChildren {
   AppSellRoute: typeof AppSellRoute
   AppShopsRoute: typeof AppShopsRoute
   AppSmsHistoryRoute: typeof AppSmsHistoryRoute
+  AppStockRoute: typeof AppStockRoute
+  AppStockEditRoute: typeof AppStockEditRoute
   AppSubscribeRoute: typeof AppSubscribeRouteWithChildren
   AppTrainingRoute: typeof AppTrainingRoute
   AppUsageLimitsRoute: typeof AppUsageLimitsRoute
@@ -2002,6 +2042,8 @@ const AppRouteChildren: AppRouteChildren = {
   AppSellRoute: AppSellRoute,
   AppShopsRoute: AppShopsRoute,
   AppSmsHistoryRoute: AppSmsHistoryRoute,
+  AppStockRoute: AppStockRoute,
+  AppStockEditRoute: AppStockEditRoute,
   AppSubscribeRoute: AppSubscribeRouteWithChildren,
   AppTrainingRoute: AppTrainingRoute,
   AppUsageLimitsRoute: AppUsageLimitsRoute,
