@@ -84,7 +84,6 @@ import { Route as AdminLandingRouteImport } from './routes/admin.landing'
 import { Route as AdminBannersRouteImport } from './routes/admin.banners'
 import { Route as AdminAffiliatesRouteImport } from './routes/admin.affiliates'
 import { Route as AdminAdsRouteImport } from './routes/admin.ads'
-import { Route as FRouteImport } from './routes/f.'
 import { Route as AppOnlineShopIndexRouteImport } from './routes/app.online-shop.index'
 import { Route as ShopSSlugRouteImport } from './routes/shop.s.$slug'
 import { Route as ShopPIdRouteImport } from './routes/shop.p.$id'
@@ -481,11 +480,6 @@ const AdminAdsRoute = AdminAdsRouteImport.update({
   path: '/ads',
   getParentRoute: () => AdminRoute,
 } as any)
-const FRoute = FRouteImport.update({
-  id: '/f/',
-  path: '/f/',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AppOnlineShopIndexRoute = AppOnlineShopIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -593,7 +587,6 @@ export interface FileRoutesByFullPath {
   '/privacy': typeof PrivacyRoute
   '/shop': typeof ShopRouteWithChildren
   '/terms': typeof TermsRoute
-  '/f/': typeof FRoute
   '/admin/ads': typeof AdminAdsRoute
   '/admin/affiliates': typeof AdminAffiliatesRoute
   '/admin/banners': typeof AdminBannersRoute
@@ -689,7 +682,6 @@ export interface FileRoutesByTo {
   '/privacy': typeof PrivacyRoute
   '/shop': typeof ShopRouteWithChildren
   '/terms': typeof TermsRoute
-  '/f': typeof FRoute
   '/admin/ads': typeof AdminAdsRoute
   '/admin/affiliates': typeof AdminAffiliatesRoute
   '/admin/banners': typeof AdminBannersRoute
@@ -786,7 +778,6 @@ export interface FileRoutesById {
   '/privacy': typeof PrivacyRoute
   '/shop': typeof ShopRouteWithChildren
   '/terms': typeof TermsRoute
-  '/f/': typeof FRoute
   '/admin/ads': typeof AdminAdsRoute
   '/admin/affiliates': typeof AdminAffiliatesRoute
   '/admin/banners': typeof AdminBannersRoute
@@ -885,7 +876,6 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/shop'
     | '/terms'
-    | '/f/'
     | '/admin/ads'
     | '/admin/affiliates'
     | '/admin/banners'
@@ -981,7 +971,6 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/shop'
     | '/terms'
-    | '/f'
     | '/admin/ads'
     | '/admin/affiliates'
     | '/admin/banners'
@@ -1077,7 +1066,6 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/shop'
     | '/terms'
-    | '/f/'
     | '/admin/ads'
     | '/admin/affiliates'
     | '/admin/banners'
@@ -1175,7 +1163,6 @@ export interface RootRouteChildren {
   PrivacyRoute: typeof PrivacyRoute
   ShopRoute: typeof ShopRouteWithChildren
   TermsRoute: typeof TermsRoute
-  FRoute: typeof FRoute
   FSlugRoute: typeof FSlugRouteWithChildren
   VendorUsernameRoute: typeof VendorUsernameRoute
 }
@@ -1707,13 +1694,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminAdsRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/f/': {
-      id: '/f/'
-      path: '/f'
-      fullPath: '/f/'
-      preLoaderRoute: typeof FRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/app/online-shop/': {
       id: '/app/online-shop/'
       path: '/'
@@ -2107,7 +2087,6 @@ const rootRouteChildren: RootRouteChildren = {
   PrivacyRoute: PrivacyRoute,
   ShopRoute: ShopRouteWithChildren,
   TermsRoute: TermsRoute,
-  FRoute: FRoute,
   FSlugRoute: FSlugRouteWithChildren,
   VendorUsernameRoute: VendorUsernameRoute,
 }
