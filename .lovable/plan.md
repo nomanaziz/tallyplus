@@ -1,75 +1,65 @@
-## লক্ষ্য
+## Goal
 
-গ্রাহকের ফর্দ পেইজে তিনটা feature:
-1. **Save** — ফর্দ template হিসেবে সংরক্ষণ (যেখানে নেই)
-2. **Duplicate** — পুরোনো ফর্দ থেকে hubohu নতুন ফর্দ বানানো, edit করে নিজের তালিকায় রাখা
-3. **Month filter** — কোন মাসে কয়টা ফর্দ পাঠানো হয়েছে, মাস ধরে filter
+Reports পেজে ১৩টা সাব-রিপোর্ট কার্ড আছে — এর মধ্যে শুধু ৩টা (Owner Ledger, Shop Assets, Owner Report) কাজ করে। বাকি ১০টা "শীঘ্রই আসছে" দেখায়। এই ১০টা রিপোর্ট পেজ তৈরি করতে হবে।
 
-দুইটা পেইজ আছে — দুইটাতেই কাজ করতে হবে:
-- `/customer/my-fordo` (login করা গ্রাহকের নিজের সব দোকানের ফর্দ)
-- `/f/:slug/my` (একটা দোকানের public link এ PIN দিয়ে ঢোকা গ্রাহকের ফর্দ)
+## Good news
 
----
+`src/lib/queries.ts`-এ ১০টা রিপোর্টের জন্য **ডেটা queries আগে থেকেই লেখা আছে** (`salesReportQuery`, `purchaseReportQuery`, `stockReportQuery`, `productReportQuery`, `topCustomersQuery`, `topEmployeesQuery`, `expenseReportQuery`, `supplierReportQuery`, `incomeReportQuery`)। শুধু UI পেজ + রাউট লাগবে। Profit & Loss-এর জন্য existing `businessReportQuery` থেকেই হিসাব হবে।
 
-## বর্তমান অবস্থা (যা ইতিমধ্যে আছে)
+## Pages to build (10)
 
-- **`/customer/my-fordo`**: টেমপ্লেট save আছে (CreateFordo পেইজে), template থেকে নতুন ফর্দ load হয়। কিন্তু পাঠানো ফর্দ থেকে সরাসরি "save as template" বা "duplicate" নাই। মাস filter নাই।
-- **`/f/:slug/my`**: "এই ফর্দ আবার পাঠান" button আছে (reuseWishlist) — এটাই duplicate এর কাছাকাছি, কিন্তু "save as template" নাই (templates শুধু shopkeeper বানায়)। মাস filter নাই।
+| # | পেজ | Route | Query |
+|---|---|---|---|
+| 1 | বিক্রির রিপোর্ট | `/app/sales-report` | `salesReportQuery` |
+| 2 | ক্রয়ের রিপোর্ট | `/app/purchase-report` | `purchaseReportQuery` |
+| 3 | স্টকের রিপোর্ট | `/app/stock-report` | `stockReportQuery` |
+| 4 | পণ্যের রিপোর্ট | `/app/product-report` | `productReportQuery` |
+| 5 | সেরা কাস্টমার | `/app/top-customers` | `topCustomersQuery` |
+| 6 | সেরা কর্মচারী | `/app/top-employees` | `topEmployeesQuery` |
+| 7 | লাভ-ক্ষতি রিপোর্ট | `/app/profit-loss` | `businessReportQuery` (productProfit + balance) |
+| 8 | খরচের রিপোর্ট | `/app/expense-report` | `expenseReportQuery` |
+| 9 | সাপ্লায়ার রিপোর্ট | `/app/supplier-report` | `supplierReportQuery` |
+| 10 | আয়ের রিপোর্ট | `/app/income-report` | `incomeReportQuery` |
 
-DB tables ঠিক আছে: `consumer_fordo_templates` (auth user এর জন্য), `wishlist_templates` (shop-link customer এর জন্য) — দুইটাই jsonb items সহ।
+## Common pattern (every page)
 
----
+প্রত্যেক পেজে একই layout — `OwnerReport.tsx` কে template হিসেবে follow করব:
 
-## কী বানাবো
+- `PageHeader` + breadcrumb + title (Bengali/English via `useI18n`)
+- `DateRangePicker` (default: এই মাসের শুরু → আজ)
+- Refresh button + Print/Download button (`printReport` থেকে)
+- Summary tiles (টপে total, count ইত্যাদি)
+- Detail table (sortable, mobile responsive — ছোট স্ক্রিনে card, বড়তে table)
+- Empty state + loading skeleton
+- `RequirePerm group="report"` দিয়ে wrap
+- Bengali money formatting (`fmtMoney`)
 
-### A. `/customer/my-fordo` (auth গ্রাহক)
+## Specific contents
 
-**1. মাস filter bar** — পাঠানো ফর্দ section এর উপরে:
-- চলতি মাস default
-- dropdown / chips: গত ১২ মাস + "সব মাস"
-- প্রতি option এ count badge: `নভেম্বর ২০২৫ (৫)`
-- filter অনুযায়ী wishlists list filter হবে; খালি হলে "এই মাসে কোনো ফর্দ নেই"
+1. **বিক্রির রিপোর্ট** — Total sales, cash, due summary tiles + invoice table (invoice no, customer, items, total, paid, due, method, date)
+2. **ক্রয়ের রিপোর্ট** — একই pattern, supplier dimension সহ
+3. **স্টকের রিপোর্ট** — Per-product in/out qty + amount; total in/out summary
+4. **পণ্যের রিপোর্ট** — Per-product sold qty, revenue, profit (sorted by revenue); top performers
+5. **সেরা কাস্টমার** — Ranked list: name, phone, orders, total purchase, due
+6. **সেরা কর্মচারী** — Ranked: name, sales count, total amount
+7. **লাভ-ক্ষতি** — Tile grid: total revenue, total cost, gross profit, expense, net profit (color-coded)
+8. **খরচের রিপোর্ট** — Per-category aggregation: count, amount, %; pie/bar friendly
+9. **সাপ্লায়ার রিপোর্ট** — Ranked: name, phone, total purchase, paid, due
+10. **আয়ের রিপোর্ট** — List of other income entries: source, amount, paid_via, date, note + total
 
-**2. প্রতি wishlist card এ দুইটা নতুন button** (expand-এর মধ্যে):
-- **"টেমপ্লেট হিসেবে সংরক্ষণ"** → ছোট dialog এ template name নিয়ে `consumer_fordo_templates` এ insert (items + note copy)
-- **"আবার পাঠান (duplicate)"** → এই wishlist এর items + note নিয়ে `/customer/create-fordo` এ navigate, prefill (sessionStorage এ পাঠাবো)
+## Wiring
 
-**3. CreateFordo page** এ sessionStorage থেকে prefill support যোগ (templateId এর মতো `?duplicateFrom=<wishlistId>` flow)
+- `src/pages/app/`-এ ১০টা নতুন file create
+- `src/lib/app-routes.tsx` — ১০টা lazy import + ১০টা route entry
+- `src/pages/app/Reports.tsx` — `subReports` array-তে ১০টা item-এ `to: "/app/..."` add করব এবং "শীঘ্রই আসছে" placeholder লাইনটা সরাব। ক্লিক করলে `nav(to)` দিয়ে navigate করবে।
+- `src/lib/preload-routes.ts` — heavy report chunks-কে low-priority preload list-এ যোগ করব (optional, for snappy nav)
 
-### B. `/f/:slug/my` (public shop link)
+## Out of scope
 
-**1. মাস filter bar** — wishlists section এর উপরে, একই pattern (এই দোকানের পাঠানো ফর্দ গুলো মাস ধরে)
+- নতুন database column বা edge function লাগবে না — সব data already available
+- Charts (Recharts) — শুরুতে শুধু tiles + tables, পরে চাইলে chart যোগ করা যাবে
+- CSV export — শুধু `printReport` (PDF/print) থাকবে এই round-এ
 
-**2. Save as template button** — প্রতি wishlist card এর expanded view এ:
-- নতুন edge function `save-wishlist-template` ইতিমধ্যে আছে (already saw the file)
-- token + name + items পাঠাবো, dialog দিয়ে name নেবো
+## Estimated impact
 
-**3. Duplicate** — `reuseWishlist` ইতিমধ্যে আছে কিন্তু button label কে স্পষ্ট করবো: "নতুন করে পাঠান (এই ফর্দের নকল)"। কাজ একই থাকবে।
-
----
-
-## Technical details
-
-- **Month grouping**: client-side। `wishlists.created_at` থেকে `YYYY-MM` key বের করে `Map<string, count>` বানাবো, options sorted desc।
-- **Bengali month names**: `["জানুয়ারি",...,"ডিসেম্বর"]` array, year সহ display।
-- **Duplicate flow (auth side)**: 
-  ```
-  sessionStorage.setItem(`fordo-dup-${wlId}`, JSON.stringify({ items, note }));
-  navigate to /customer/create-fordo?duplicateFrom=<wlId>
-  ```
-  CreateFordo এ existing `templateId` useEffect এর মতো নতুন `duplicateFrom` useEffect।
-- **Save template (auth side)**: `supabase.from("consumer_fordo_templates").insert({ consumer_user_id, name, items, note })`
-- **Save template (public side)**: existing `save-wishlist-template` edge function কল।
-- কোন DB migration লাগবে না — সব tables already আছে।
-
----
-
-## ফাইল পরিবর্তন
-
-```text
-src/pages/customer/MyFordo.tsx         — month filter + 2 buttons per card + small dialog
-src/pages/customer/CreateFordo.tsx     — duplicateFrom prefill support
-src/pages/f/slug/My.tsx                — month filter + save-as-template dialog + button label
-```
-
-কোনো নতুন ফাইল বা edge function নাই (সব ইতিমধ্যে আছে)।
+১০টা নতুন পেজ + ১টা routes ফাইল edit + ১টা Reports.tsx edit। সব পেজ একই কাঠামো, তাই দ্রুত শেষ হবে।
