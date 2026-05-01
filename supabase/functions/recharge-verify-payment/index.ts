@@ -104,6 +104,55 @@ Deno.serve(async (req) => {
       });
     }
 
+    // SMS package purchase: credit shop_sms_balance
+    if (isPaid && tx?.sms_package_id && tx?.shop_id) {
+      const { data: pkg } = await admin
+        .from("sms_packages")
+        .select("sms_count, price_bdt")
+        .eq("id", tx.sms_package_id)
+        .maybeSingle();
+      const smsCount = Number(pkg?.sms_count ?? 0);
+      if (smsCount > 0) {
+        // Upsert balance
+        const { data: bal } = await admin
+          .from("shop_sms_balance")
+          .select("balance, total_purchased")
+          .eq("shop_id", tx.shop_id)
+          .maybeSingle();
+        if (bal) {
+          await admin
+            .from("shop_sms_balance")
+            .update({
+              balance: Number(bal.balance ?? 0) + smsCount,
+              total_purchased: Number(bal.total_purchased ?? 0) + smsCount,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("shop_id", tx.shop_id);
+        } else {
+          await admin.from("shop_sms_balance").insert({
+            shop_id: tx.shop_id,
+            balance: smsCount,
+            total_purchased: smsCount,
+          });
+        }
+        // Mark the related sms_purchase_request (if any) approved
+        await admin
+          .from("sms_purchase_requests")
+          .insert({
+            shop_id: tx.shop_id,
+            user_id: user.id,
+            package_id: tx.sms_package_id,
+            sms_count: smsCount,
+            amount_bdt: Number(pkg?.price_bdt ?? tx.amount ?? 0),
+            payment_status: "approved",
+            payment_method: "online",
+            payment_provider: "recharge_server",
+            payment_session_id: transactionId,
+            txn_id: transactionId,
+          });
+      }
+    }
+
     return json({ ok: true, status: newStatus, paid: isPaid, details: rsData });
   } catch (e) {
     return json({ error: (e as Error).message }, 500);

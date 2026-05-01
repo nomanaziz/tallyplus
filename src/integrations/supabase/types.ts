@@ -1962,10 +1962,13 @@ export type Database = {
           created_at: string
           failure_reason: string | null
           id: string
+          kind: string | null
           payment_method: string | null
           plan_id: string | null
           provider: string
           raw_response: Json
+          shop_id: string | null
+          sms_package_id: string | null
           status: string
           transaction_id: string | null
           updated_at: string
@@ -1976,10 +1979,13 @@ export type Database = {
           created_at?: string
           failure_reason?: string | null
           id?: string
+          kind?: string | null
           payment_method?: string | null
           plan_id?: string | null
           provider?: string
           raw_response?: Json
+          shop_id?: string | null
+          sms_package_id?: string | null
           status?: string
           transaction_id?: string | null
           updated_at?: string
@@ -1990,10 +1996,13 @@ export type Database = {
           created_at?: string
           failure_reason?: string | null
           id?: string
+          kind?: string | null
           payment_method?: string | null
           plan_id?: string | null
           provider?: string
           raw_response?: Json
+          shop_id?: string | null
+          sms_package_id?: string | null
           status?: string
           transaction_id?: string | null
           updated_at?: string
@@ -2005,6 +2014,20 @@ export type Database = {
             columns: ["plan_id"]
             isOneToOne: false
             referencedRelation: "subscription_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_transactions_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_transactions_sms_package_id_fkey"
+            columns: ["sms_package_id"]
+            isOneToOne: false
+            referencedRelation: "sms_packages"
             referencedColumns: ["id"]
           },
         ]
@@ -3508,41 +3531,56 @@ export type Database = {
       }
       sms_purchase_requests: {
         Row: {
+          admin_note: string | null
           amount_bdt: number
           approved_at: string | null
           created_at: string
           id: string
           package_id: string | null
+          payment_method: string | null
+          payment_provider: string | null
+          payment_session_id: string | null
           payment_status: string
           recharge_id: string | null
           shop_id: string
           sms_count: number
+          txn_id: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          admin_note?: string | null
           amount_bdt: number
           approved_at?: string | null
           created_at?: string
           id?: string
           package_id?: string | null
+          payment_method?: string | null
+          payment_provider?: string | null
+          payment_session_id?: string | null
           payment_status?: string
           recharge_id?: string | null
           shop_id: string
           sms_count: number
+          txn_id?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          admin_note?: string | null
           amount_bdt?: number
           approved_at?: string | null
           created_at?: string
           id?: string
           package_id?: string | null
+          payment_method?: string | null
+          payment_provider?: string | null
+          payment_session_id?: string | null
           payment_status?: string
           recharge_id?: string | null
           shop_id?: string
           sms_count?: number
+          txn_id?: string | null
           updated_at?: string
           user_id?: string
         }

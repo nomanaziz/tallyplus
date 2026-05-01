@@ -424,11 +424,37 @@ function ContactDialog({
       return;
     }
     const payload = { name: name.trim(), phone: phone.trim() || null, address: address.trim() || null, shop_id: current.id };
+    // Pre-insert duplicate check by phone within same shop
+    if (!editing && payload.phone) {
+      const { data: existing } = await supabase
+        .from(table)
+        .select("id, name")
+        .eq("shop_id", current.id)
+        .eq("phone", payload.phone)
+        .is("deleted_at", null)
+        .maybeSingle();
+      if (existing) {
+        setBusy(false);
+        toast.error(
+          lang === "bn"
+            ? `এই ফোন নম্বরে ইতিমধ্যেই "${(existing as { name: string }).name}" আছে`
+            : `A contact "${(existing as { name: string }).name}" with this phone already exists`,
+        );
+        return;
+      }
+    }
     const { error } = editing
       ? await supabase.from(table).update(payload).eq("id", editing.id)
       : await supabase.from(table).insert(payload);
     setBusy(false);
-    if (error) { toast.error(error.message); return; }
+    if (error) {
+      // Catch unique-index violation as a friendly message
+      const msg = error.message.includes("customers_shop_phone_unique") || error.message.includes("suppliers_shop_phone_unique")
+        ? (lang === "bn" ? "এই ফোন নম্বরে আগেই একজন আছেন" : "Someone with this phone already exists")
+        : error.message;
+      toast.error(msg);
+      return;
+    }
     toast.success(lang === "bn" ? "সেভ হয়েছে" : "Saved");
     onOpenChange(false);
     onSaved();
