@@ -1,80 +1,131 @@
-## Goal
+## Overview
 
-Improve Admin Portal: shrink the Overview page into a tight summary, make the whole admin UI mobile-friendly, add a "Platform Admins" management section (create platform admin team users with role-based permissions), and add file-upload for marketplace product images.
+চারটি কাজ একসাথে করব:
 
-## 1. Overview — compact, denser, mobile-friendly
+1. **2-Device Login Limit** — শপ owner/employee সর্বোচ্চ 2 ডিভাইসে একসাথে লগইন
+2. **Marketplace Subcategory** — admin থেকে subcategory add/manage (marketplace catalog)
+3. **Online Product → Marketplace Bug Fix** — product online করলে marketplace-এ দেখা যাচ্ছে না, ঠিক করা
+4. **Multi-Shop Delivery Charge** — একই দোকান হলে এক charge, ভিন্ন দোকান হলে আলাদা charge
 
-Rewrite `src/pages/admin/Index.tsx` so the dashboard fits on a phone without scrolling forever, and shows the operational numbers an admin actually checks:
+---
 
-**Top stat strip (2 cols mobile / 4 cols desktop, small tiles):**
-- Total Users (`profiles` count)
-- Active Shops
-- Active Subscriptions (`status='active' AND expires_at > now()`)
-- Pending Subscription Requests
+## 1) Two-Device Login Limit
 
-**Subscription summary block** (the "subscription active user" breakdown the user asked for):
-- Active subscribers grouped by plan: name, count, MRR-style monthly revenue
-  - Query: `subscriptions` joined to `subscription_plans`, group by plan name, count and sum `price_bdt`
-- Expiring in 7 days count
-- Total revenue (sum of `price_bdt` for all active subs)
-- This-month new subscriptions count
+### Database (new table)
+```sql
+CREATE TABLE public.user_active_sessions (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL,
+  device_id text NOT NULL,        -- localStorage UUID per device
+  user_agent text,
+  last_seen_at timestamptz DEFAULT now(),
+  created_at timestamptz DEFAULT now(),
+  UNIQUE(user_id, device_id)
+);
+-- RLS: user can only see/delete their own sessions
+```
 
-**Marketplace mini-strip:**
-- Marketplace Products total + Active count
-- Listings total
+### Logic
+- প্রতি browser-এ `localStorage.tp_device_id` (UUID) generate করব
+- Login সফল হলে `register-device` server function কল করে row insert/upsert
+- যদি user-এর active sessions > 2 হয়, সবচেয়ে পুরোনোটা delete করব এবং সেই device-এ heartbeat fail হলে force sign-out
+- Auth context-এ একটি heartbeat (প্রতি 60s) চলবে, যা session validate করে; না পেলে `supabase.auth.signOut()`
+- Settings page-এ "Active devices" list + "Log out other devices" button
 
-**Layout:** condensed cards with `text-xl` numbers (not `text-3xl`), `p-3` padding, `gap-2`, no big paragraphs. Single `max-w-6xl mx-auto p-3 sm:p-6 space-y-4` container. Each block is a `<Card>` with a tight header and a small grid inside.
+### Files
+- New migration: `user_active_sessions` table + RLS
+- New: `supabase/functions/register-device/index.ts`, `supabase/functions/heartbeat-device/index.ts`
+- Edited: `src/lib/auth.tsx` (device id, heartbeat, registration on sign-in)
+- New: `src/components/app/ActiveDevicesDialog.tsx` (Settings থেকে দেখা যাবে)
 
-## 2. Admin chrome — mobile friendly polish
+---
 
-In `src/pages/admin/Marketplace.tsx`, `Users.tsx`, `Subscriptions.tsx`, `SubscriptionRequests.tsx`, `Plans.tsx`:
-- Replace fixed `p-6` outer wrapper with `p-3 sm:p-6`.
-- Wrap wide tables in `overflow-x-auto`.
-- Stack toolbar filters: `flex flex-wrap gap-2` (already partly done) and let inputs become full-width on mobile (`w-full sm:w-44`).
-- Reduce header text sizes: `text-xl sm:text-2xl`.
+## 2) Admin-Managed Marketplace Subcategories
 
-(Light, surgical tweaks — not full rewrites.)
+বর্তমানে `marketplace_products.category` শুধু free text। Admin থেকে structured category + subcategory লাগবে।
 
-## 3. Platform Admin team — admin can add other admins
+### Database
+```sql
+CREATE TABLE public.marketplace_categories (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  parent_id uuid REFERENCES public.marketplace_categories(id) ON DELETE CASCADE,
+  name_bn text NOT NULL,
+  name_en text NOT NULL,
+  slug text UNIQUE NOT NULL,
+  sort_order int DEFAULT 0,
+  is_active boolean DEFAULT true,
+  created_at timestamptz DEFAULT now()
+);
+ALTER TABLE public.marketplace_products
+  ADD COLUMN category_id uuid REFERENCES public.marketplace_categories(id),
+  ADD COLUMN subcategory_id uuid REFERENCES public.marketplace_categories(id);
+-- RLS: public SELECT, admin-only INSERT/UPDATE/DELETE (uses has_role)
+```
 
-New page `src/pages/admin/PlatformAdmins.tsx` and sidebar entry `Admin Team` (icon: `ShieldCheck`).
+### UI
+- New admin page: `src/pages/admin/MarketplaceCategories.tsx` — tree view, add/edit/delete category এবং তার under subcategory
+- Edited: `src/pages/admin/Marketplace.tsx` — product create/edit-এ Category + Subcategory dropdown
+- Edited: `src/pages/shop/Index.tsx` (marketplace) — left filter-এ Category → Subcategory dropdown
+- Edited: `supabase/functions/marketplace-public/index.ts` — `category_id`/`subcategory_id` filter support
+- Sidebar: `src/components/admin/AdminSidebar.tsx` + `src/lib/app-routes.tsx` register
 
-**Functionality:**
-- Lists every user in `profiles` who has `user_roles.role = 'admin'` (full name, phone, joined date, action: Revoke).
-- "Add admin team member" button opens a dialog to create a new admin: phone + full name + 4-digit PIN.
-  - Reuses the existing `create-employee-user` edge function (already creates user + sets PIN).
-  - After it returns `user_id`, insert into `user_roles` `{ user_id, role: 'admin' }`.
-- "Revoke" deletes the `admin` row from `user_roles`.
-- Reuse existing UI primitives (Card, Table, Dialog, Input, Button, toast).
+---
 
-**Note on permissions:** the `app_role` enum currently has `admin`, `owner`, `consumer`, plus shop-member roles. The simplest, safest scope per request is "all admin team members get full admin access". The existing `is_admin()` SECURITY DEFINER function and RLS policies already gate everything by this role, so no DB changes are required for v1. Granular sub-admin permissions can be a future iteration.
+## 3) Fix: Online Product Not Showing in Marketplace
 
-Add a small "Admins" stat card to the Overview block (count of users with `role='admin'`).
+### Cause
+`marketplace-public` listing query শুধু সেই shop-এর listing দেখায় যেখানে `shops.marketplace_enabled = true`। কিন্তু প্রথমবার product online করলে shop flag টা auto enable হয় না, তাই listing থাকা সত্ত্বেও দেখায় না।
 
-## 4. Marketplace product image upload
+### Fix
+- `src/pages/app/online-shop/Products.tsx` `togglePublish`-এ first publish হলে `shops.marketplace_enabled = true` set করব (যদি owner-permission থাকে)
+- Same fix `src/pages/app/Products.tsx` save flow-এ যেখানে `is_marketplace_published` toggle হয় — listing upsert করতে হবে (এখন সেখানে শুধু products row update হয়, listing create হয় না)
+- নতুন helper: `src/lib/marketplace-publish.ts` — `publishProductToMarketplace(product)` function যা একসাথে: (1) shop.marketplace_enabled = true, (2) marketplace_listings upsert করে
+- Products page এবং Online Shop > Products — দুই জায়গাতেই এই helper কল করব, যাতে দুই route থেকে publish করলে একই behavior হয়
 
-In `src/pages/admin/Marketplace.tsx` Edit/New product dialog (around line 479), replace the plain "Image URL" input with an upload-or-URL combo:
+---
 
-- File input → upload to existing public bucket `product-images`:
-  ```ts
-  const path = `marketplace/${crypto.randomUUID()}.${ext}`;
-  await supabase.storage.from("product-images").upload(path, file, { upsert: false });
-  const { data } = supabase.storage.from("product-images").getPublicUrl(path);
-  setEditing({ ...editing, image_url: data.publicUrl });
-  ```
-- Show preview thumbnail of the current `image_url`.
-- Keep the URL field as a fallback so an external URL still works.
-- Add an "Upload" button next to it, with a `Loader2` while uploading (mirror the pattern in `src/pages/admin/Banners.tsx` line 44–57).
+## 4) Multi-Shop Delivery Charge in Checkout
 
-Storage bucket `product-images` is already public — no migration needed. Drivers/sellers reading `marketplace_products.image_url` will automatically see the new uploaded images.
+বর্তমানে cart একাধিক shop-এর product রাখতে পারে (`consumer-cart.ts` এ shop_id আছে), কিন্তু checkout flow নেই / single delivery charge ধরা হয়।
 
-## 5. Files to change / create
+### UI Changes
+- New: `src/pages/shop/Checkout.tsx` (route `/shop/checkout`)
+- Cart icon header-এ আনব (`src/components/site/SiteHeader.tsx`-এ cart count badge + drawer)
+- Checkout page logic:
+  - Cart items shop-wise group করব
+  - প্রতিটা shop-এর জন্য সেই shop-এর delivery zone select করার dropdown (zones come from `shop_delivery_zones`)
+  - প্রতি shop-এর subtotal + সেই zone-এর `charge` (free_shipping_min মেনে) আলাদা দেখাব
+  - Grand total = Σ (shop subtotal + shop delivery)
+  - Place order এ প্রতি shop-এর জন্য আলাদা `marketplace_orders` row তৈরি হবে (shop_id different বলে already separate)
 
-- `src/pages/admin/Index.tsx` — rewrite to compact dashboard with subscription-by-plan summary.
-- `src/pages/admin/PlatformAdmins.tsx` — new page.
-- `src/components/admin/AdminSidebar.tsx` — add "Admin Team" entry.
-- `src/lib/app-routes.tsx` (or wherever admin routes live) — register `/admin/admins` route.
-- `src/pages/admin/Marketplace.tsx` — add upload widget in product dialog; add `p-3 sm:p-6` wrapper.
-- Light `p-3 sm:p-6` / `overflow-x-auto` tweaks in `Users.tsx`, `Subscriptions.tsx`, `SubscriptionRequests.tsx`, `Plans.tsx`.
+### Database
+```sql
+ALTER TABLE public.marketplace_orders
+  ADD COLUMN delivery_zone_id uuid REFERENCES public.shop_delivery_zones(id),
+  ADD COLUMN delivery_charge numeric DEFAULT 0,
+  ADD COLUMN subtotal numeric DEFAULT 0;
+```
 
-No DB migrations and no new edge functions required (re-uses `create-employee-user`).
+### Files
+- New: `src/pages/shop/Checkout.tsx`, route in `src/lib/app-routes.tsx`
+- Edited: `src/components/site/SiteHeader.tsx` (cart icon)
+- New: `src/components/marketplace/CartDrawer.tsx`
+- Edited: `src/lib/consumer-cart.ts` (helper: `groupByShop()`)
+- New edge function: `supabase/functions/place-marketplace-order/index.ts` — atomic per-shop order creation with delivery breakdown
+
+---
+
+## Order of Implementation
+
+1. Marketplace publish bug fix (smallest, immediate value)
+2. Marketplace subcategories (admin + filter)
+3. Multi-shop checkout with per-shop delivery
+4. 2-device login limit (largest, touches auth)
+
+প্রতিটা step-এ migration + UI আলাদা করে test করব।
+
+---
+
+## Approval
+
+Approve করলে এই 4-টি feature implement করব। কোনো অংশ skip বা পরে করতে চাইলে জানালে adjust করব।
