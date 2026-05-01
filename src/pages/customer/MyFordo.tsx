@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "@/lib/router";
 import {
   Loader2, Store, ListChecks, Plus, FileText, CalendarClock,
-  Trash2, Pause, Play, Star, Check, X, Clock, Save, Copy, Calendar,
+  Trash2, Pause, Play, Star, Check, X, Clock, Save, Copy, Calendar, Wallet,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -70,6 +70,9 @@ export default function MyFordo() {
   const [saveWlId, setSaveWlId] = useState<string | null>(null);
   const [saveName, setSaveName] = useState("");
   const [saving, setSaving] = useState(false);
+  // Track which wishlists already pushed to expense (loaded from consumer_transactions.source_wishlist_id)
+  const [expensedIds, setExpensedIds] = useState<Set<string>>(new Set());
+  const [pushingId, setPushingId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -135,6 +138,15 @@ export default function MyFordo() {
       }
       setShops(shopMap);
       setFavourites(favShopIds.map((id) => shopMap[id]).filter(Boolean));
+      // Load already-expensed wishlist IDs
+      const { data: txRows } = await supabase
+        .from("consumer_transactions")
+        .select("source_wishlist_id")
+        .eq("user_id", user.id)
+        .not("source_wishlist_id", "is", null);
+      if (!cancelled) {
+        setExpensedIds(new Set(((txRows ?? []) as Array<{ source_wishlist_id: string }>).map((r) => r.source_wishlist_id)));
+      }
       setLoading(false);
     })();
     return () => { cancelled = true; };
@@ -155,6 +167,35 @@ export default function MyFordo() {
       const pr = Number(it.price) || 0;
       return sum + (q && pr ? q * pr : pr);
     }, 0);
+  };
+
+  const pushToExpense = async (w: Wishlist) => {
+    if (!user) return;
+    const total = wlTotal(w.id);
+    if (total <= 0) return toast.error("দাম যোগ হওয়া পণ্য নেই");
+    if (expensedIds.has(w.id)) return toast.info("এই ফর্দ ইতিমধ্যে খরচে যোগ করা আছে");
+    const shopName = shops[w.shop_id]?.name ?? "দোকান";
+    if (!confirm(`এই ফর্দের ৳${total.toLocaleString("bn-BD")} খরচে যোগ করবেন?`)) return;
+    setPushingId(w.id);
+    const { error } = await supabase.from("consumer_transactions").insert({
+      user_id: user.id,
+      type: "expense",
+      amount: total,
+      category: "বাজার/খাবার",
+      note: `ফর্দ থেকে: ${shopName}`,
+      tx_date: new Date(w.created_at).toISOString().slice(0, 10),
+      source_wishlist_id: w.id,
+    });
+    setPushingId(null);
+    if (error) {
+      if (error.code === "23505") {
+        setExpensedIds((s) => new Set(s).add(w.id));
+        return toast.info("আগেই যোগ করা আছে");
+      }
+      return toast.error(error.message);
+    }
+    setExpensedIds((s) => new Set(s).add(w.id));
+    toast.success("আয়-ব্যয়ে যোগ হয়েছে");
   };
 
   const fsBadge = (it: WLItem) => {
@@ -480,6 +521,22 @@ export default function MyFordo() {
                             <Button size="sm" variant="outline" onClick={() => openSaveTemplate(w)}>
                               <Save className="mr-1 h-3.5 w-3.5" /> টেমপ্লেট সংরক্ষণ
                             </Button>
+                            {total > 0 && (
+                              <Button
+                                size="sm"
+                                variant={expensedIds.has(w.id) ? "ghost" : "outline"}
+                                disabled={expensedIds.has(w.id) || pushingId === w.id}
+                                onClick={() => pushToExpense(w)}
+                                className={expensedIds.has(w.id) ? "text-success" : "border-rose-500/30 text-rose-600 hover:bg-rose-500/10"}
+                              >
+                                {pushingId === w.id ? (
+                                  <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
+                                ) : (
+                                  <Wallet className="mr-1 h-3.5 w-3.5" />
+                                )}
+                                {expensedIds.has(w.id) ? "✓ খরচে যোগ আছে" : "খরচে যোগ করুন"}
+                              </Button>
+                            )}
                           </div>
                         )}
                       </>
