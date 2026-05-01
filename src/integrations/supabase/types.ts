@@ -4056,6 +4056,18 @@ export type Database = {
         }
         Returns: undefined
       }
+      resolve_shop_by_handle: {
+        Args: { _handle: string }
+        Returns: {
+          id: string
+          logo_url: string
+          name: string
+          phone: string
+          slug: string
+          username: string
+          wishlist_slug: string
+        }[]
+      }
       shop_role: {
         Args: { _shop_id: string; _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
