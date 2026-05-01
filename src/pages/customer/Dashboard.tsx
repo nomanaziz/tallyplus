@@ -27,16 +27,15 @@ export default function CustomerDashboard() {
       monthStart.setDate(1);
       monthStart.setHours(0, 0, 0, 0);
       const since = monthStart.toISOString().slice(0, 10);
-      const [tx, fordo, notes] = await Promise.all([
+      const [tx, fordoRes, notes] = await Promise.all([
         supabase
           .from("consumer_transactions")
           .select("type, amount")
           .eq("user_id", user.id)
           .gte("tx_date", since),
-        supabase
-          .from("customer_wishlists")
-          .select("id", { count: "exact", head: true })
-          .eq("consumer_user_id", user.id),
+        // Use the same unified resolver as MyFordo so phone-matched fordos
+        // (sent via the public shop link before login) are also counted.
+        supabase.functions.invoke("consumer-fordo-history", { body: {} }),
         supabase
           .from("consumer_notes")
           .select("id", { count: "exact", head: true })
@@ -52,7 +51,10 @@ export default function CustomerDashboard() {
       }
       setIncome(inc);
       setExpense(exp);
-      setFordoCount(fordo.count ?? 0);
+      const fordoData = (fordoRes.data ?? {}) as { wishlists?: Array<{ id: string; deleted_at?: string | null }> };
+      const fordoList = fordoData.wishlists ?? [];
+      const activeFordoCount = fordoList.filter((w) => !w.deleted_at).length;
+      setFordoCount(activeFordoCount);
       setNoteCount(notes.count ?? 0);
       setLoading(false);
     })();
