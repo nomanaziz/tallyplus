@@ -1,113 +1,32 @@
+## সমস্যা
 
-## লক্ষ্য
+Customer dashboard ও money/fordo/notes পেজে card-গুলো `sm:grid-cols-2` / `sm:grid-cols-3` ব্যবহার করছে — মানে mobile (`<640px`) এ এক rowয়ে **একটা মাত্র** card দেখাচ্ছে, ফলে অনেক scroll লাগছে এবং single view-তে সব দেখা যাচ্ছে না। Owner dashboard ইতিমধ্যে `grid-cols-3 / grid-cols-4` ব্যবহার করে mobile-friendly।
 
-1. Facebook-এর মতো — সাইটে ঢুকলে যদি logged-out থাকে → সরাসরি Login/Signup স্ক্রিন (ছোট sidebar/menu সহ), Landing নয়।
-2. Logged-out user যদি landing দেখতে চায় → একটা button "টালি প্লাস সম্পর্কে জানুন" / "Learn about Tally Plus" → `/about` route এ পুরো landing page দেখাবে।
-3. Logged-in user যখন Home/Logo এ click করবে → role অনুযায়ী automatic dashboard এ যাবে (owner → `/app/dashboard`, customer → `/customer/dashboard`)।
-4. Landing page এর content update — শুধু দোকানদার নয়, এখন **Personal/গ্রাহক** ও **দোকান** দুই ব্যবহার দেখাতে হবে। Auth role label-ও "personal/গ্রাহক" এবং "দোকান/দোকানদার" হিসেবে স্পষ্ট করতে হবে।
+## সমাধান
 
----
+Mobile থেকেই multi-column grid চালু করব — `sm:` prefix বাদ দিয়ে base ক্লাসে cols সংখ্যা সরাসরি দেব এবং card-এর padding/font ছোট করব যাতে narrow screen-এ ঠিকঠাক fit হয়।
 
-## পরিবর্তন বিস্তারিত
+### ১. `src/pages/customer/Dashboard.tsx`
 
-### 1) Route-level home behavior (`src/pages/Index.tsx`)
+- **আয় / ব্যয় / ব্যালেন্স row**: `grid gap-3 sm:grid-cols-3` → `grid grid-cols-3 gap-2 sm:gap-3`। Card padding `p-4` → `p-3`, amount text `text-2xl` → `text-base sm:text-2xl`, label কে `truncate` করব যাতে narrow phone-এ overflow না হয়।
+- **আমার ফর্দ / নোট / পাব / দেব row**: `grid gap-3 sm:grid-cols-2` → `grid grid-cols-2 gap-2 sm:gap-3`। Icon circle ছোট (`h-8 w-8` mobile, `sm:h-10 sm:w-10`), title `text-sm sm:text-base`, sub-text `text-[10px] sm:text-xs`। Layout vertical (icon উপরে, text নিচে) করব mobile-এ যাতে narrow card-এ পাশাপাশি দু'টা ভালো দেখায়; `sm:` থেকে আবার horizontal।
 
-`Index.tsx` কে একটি "smart entry" বানাব:
+### ২. `src/pages/customer/Money.tsx`
 
-- `useAuth()` থেকে user/role দেখব।
-- **Logged-in হলে**: `useEffect` দিয়ে `Navigate` করব —
-  - role = `owner` → `/app/dashboard`
-  - role = `customer` → `/customer/dashboard`
-  - role যদি load হতে দেরি করে → `RouteFallback` দেখাব।
-- **Logged-out হলে**: পুরো landing page না দেখিয়ে নতুন `<AuthEntry />` component দেখাব (Facebook-style)।
-- পুরোনো landing sections (HeroSection, FeatureRows, CompareTable ইত্যাদি) `Index.tsx` থেকে সরিয়ে নতুন `src/pages/About.tsx` route এ move করব। Route registration: `app-routes.tsx` এ `{ path: "about", element: <Lazy About /> }`।
+- Summary row (line 211): `grid gap-3 sm:grid-cols-3` → `grid grid-cols-3 gap-2 sm:gap-3`। Stat card padding/text shrink।
 
-### 2) New `AuthEntry` component (`src/components/site/AuthEntry.tsx`)
+### ৩. `src/pages/customer/MyFordo.tsx`
 
-Facebook-এর first-screen এর মতো minimal layout —
+- লাইন 364, 396 (item lists), 449 (footer summary): `sm:grid-cols-2` → `grid-cols-2`। Spacing/font মাঝারিভাবে কমাব।
 
-```
-+-----------------------------------------------+
-| [Logo] Tally Plus              [BN/EN] [☾]    |  ← compact top bar
-+--------------------+--------------------------+
-| Brand pitch (left) | Login/Signup card (right)|
-| - "টালি প্লাস:     | - Phone + PIN form       |
-|   ব্যক্তিগত হিসাব  | - Tabs: লগইন | সাইন-আপ   |
-|   ও দোকান একসাথে" | - Role toggle: গ্রাহক /   |
-| - 2-3 bullet      |   দোকান                  |
-|                   | - "টালি প্লাস সম্পর্কে    |
-|                   |   বিস্তারিত জানুন →"      |
-|                   |   (link to /about)        |
-+-----------------------------------------------+
-| Footer: Privacy · Terms · Pricing · Marketplace|
-+-----------------------------------------------+
-```
+### ৪. `src/pages/customer/Notes.tsx`
 
-- বিদ্যমান `HeroAuthCard` form logic পুনরায় ব্যবহার করব (rewire করে এখানে বসাব), যাতে phone+PIN auth flow ঠিক থাকে।
-- Mobile-এ stacked: উপরে brand, নিচে form।
-- নিচে ছোট link-row (sidebar/menu equivalent): মার্কেটপ্লেস · মূল্য · গোপনীয়তা · শর্তাবলী · এক্সপার্টের সাথে কথা বলুন (WhatsApp)।
-- প্রধান CTA button: **"টালি প্লাস সম্পর্কে জানুন"** → `/about`।
+- Notes grid (line 126): `sm:grid-cols-2` → `grid-cols-2` mobile থেকে। Note card-এর padding ও title text size হালকা কমাব।
 
-### 3) New `About` page (`src/pages/About.tsx`)
+## ফলাফল
 
-- সম্পূর্ণ পুরোনো landing — `SiteHeader`, `HeroSection`, `FeatureRows`, `PainAndSolutions`, `CompareTable`, `BusinessTypes`, `Testimonials`, `PricingSection`, `ContactSection`, `StatsStrip`, `FinalCta`, `SiteFooter` — এখানে move হবে।
-- উপরে একটা "← লগইন/সাইন-আপ এ ফিরে যান" link থাকবে।
+Mobile-এ customer dashboard একবার দেখলেই — ৩টা summary stat (আয়/ব্যয়/ব্যালেন্স) এক row-এ, এবং ফর্দ/নোট/পাব/দেব ২×২ grid-এ — সব key info scroll না করে দেখা যাবে। Tablet/desktop-এ বর্তমান behavior অপরিবর্তিত।
 
-### 4) Landing copy update (Personal + দোকান dual-positioning)
+## Owner dashboard
 
-নিম্ন components এ bilingual (bn/en) copy update:
-
-- **HeroSection.tsx**: 
-  - Tagline: "টালি প্লাস — আপনার **ব্যক্তিগত হিসাব** ও **দোকানের হিসাব**, এক অ্যাপেই" / "Tally Plus — Your **personal finances** and **shop accounting**, in one app"।
-  - Sub: ব্যক্তিগত আয়-ব্যয়, দেনা-পাওনা, ফর্দ; এবং পূর্ণাঙ্গ দোকান POS — দুটোই।
-  - দুটো CTA: "ব্যক্তিগত হিসাবে শুরু করুন" এবং "দোকানের জন্য শুরু করুন" — দুটোই `/auth?role=customer` / `/auth?role=owner`।
-- **BusinessTypes.tsx** এর উপরে নতুন `<UseCases />` block: দুই কলাম —
-  - **Personal / গ্রাহক**: আয়-ব্যয়, দেনা-পাওনা, মাসিক report, ফর্দ ও wishlist, সাবস্ক্রিপশনে দীর্ঘমেয়াদি history।
-  - **দোকান / Owner**: POS, stock, customer due, SMS marketing, multi-shop, employee, reports।
-- **CompareTable.tsx**: "ব্যক্তিগত" column যোগ — গ্রাহক features কোনগুলো free/premium।
-- **PricingSection.tsx**: "ব্যক্তিগত প্ল্যান" আলাদা group দেখানো (consumer_history_1y/5y/10y এসব plan ইতিমধ্যে DB তে আছে)।
-
-### 5) Auth role label update (`src/pages/Auth.tsx` + `HeroAuthCard`)
-
-- বর্তমানে `Role = "owner" | "customer"` — UI label দ্বিভাষিক করব:
-  - `customer` → "ব্যক্তিগত (গ্রাহক)" / "Personal (Customer)"
-  - `owner` → "দোকান (দোকানদার)" / "Shop (Owner)"
-- সংক্ষিপ্ত helper text: কোনটা বেছে নিলে কী পাবে।
-- URL param `?role=customer|owner` সমর্থন → প্রি-সিলেক্ট।
-- Login সফল হলে redirect:
-  - owner → `/app/dashboard`
-  - customer → `/customer/dashboard` (বর্তমানে সব `/app/dashboard` এ যায় — fix)।
-
-### 6) `SiteHeader` (About page এর জন্য) ও global Logo behavior
-
-- Logo/Home click সবখানে একই helper `goHome()` ব্যবহার করবে:
-  - logged-out → `/` (AuthEntry)
-  - owner → `/app/dashboard`
-  - customer → `/customer/dashboard`
-- Header-এর "Home" link এই helper দিয়ে রিপ্লেস।
-
-### 7) Routes (`src/lib/app-routes.tsx`)
-
-- `{ path: "about", element: <Lazy About /> }` যোগ।
-- `index` রুট এখনও `Index.tsx` (smart entry) থাকবে।
-
-### 8) i18n strings (`src/lib/i18n` dictionaries)
-
-নতুন keys যোগ: `learnAboutTallyPlus`, `personalUse`, `shopUse`, `personalUseHint`, `shopUseHint`, `backToLogin` ইত্যাদি — bn ও en দুটোতেই।
-
----
-
-## Out of scope (এই plan এ নয়)
-
-- Database/SQL change লাগবে না।
-- বিদ্যমান `HeroAuthCard` এর actual auth call flow অপরিবর্তিত — শুধু placement/label বদলাবে।
-- `/about` পেজে existing landing components-এর styling এ বড় ভাঙচুর হবে না, শুধু copy update।
-
----
-
-## ফাইল পরিবর্তন সারাংশ
-
-- **Modified**: `src/pages/Index.tsx`, `src/pages/Auth.tsx`, `src/components/site/SiteHeader.tsx`, `src/components/site/HeroSection.tsx`, `src/components/site/CompareTable.tsx`, `src/components/site/BusinessTypes.tsx`, `src/components/site/PricingSection.tsx`, `src/components/site/HeroAuthCard.tsx`, `src/lib/app-routes.tsx`, `src/lib/i18n` dictionary file।
-- **New**: `src/pages/About.tsx`, `src/components/site/AuthEntry.tsx`, `src/components/site/UseCases.tsx`, `src/lib/home-redirect.ts` (goHome helper)।
-
-অনুমোদন দিলে এই অনুযায়ী implement করব।
+Owner dashboard (`src/pages/app/Dashboard.tsx`) ইতিমধ্যে `grid-cols-3` ও `grid-cols-4` mobile থেকেই ব্যবহার করছে, তাই সেখানে পরিবর্তন প্রয়োজন নেই। যদি আপনি বলেন owner dashboard-এও কোনো নির্দিষ্ট জায়গায় সমস্যা হচ্ছে, সেটা আলাদা করে বলুন।

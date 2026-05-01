@@ -208,24 +208,24 @@ export default function CustomerMoney() {
           )}
 
           {/* Summary tiles - always visible */}
-          <div className="grid gap-3 sm:grid-cols-3">
-            <Card className="p-4">
-              <div className="flex items-center justify-between text-xs text-muted-foreground">
-                <span>আয়</span><TrendingUp className="h-4 w-4 text-emerald-600" />
+          <div className="grid grid-cols-3 gap-2 sm:gap-3">
+            <Card className="p-3 sm:p-4">
+              <div className="flex items-center justify-between gap-1 text-[11px] text-muted-foreground sm:text-xs">
+                <span className="truncate">আয়</span><TrendingUp className="h-3.5 w-3.5 shrink-0 text-emerald-600 sm:h-4 sm:w-4" />
               </div>
-              <div className="mt-1 text-xl font-bold text-emerald-600">{bdt(summary.inc)}</div>
+              <div className="mt-1 text-base font-bold text-emerald-600 sm:text-xl">{bdt(summary.inc)}</div>
             </Card>
-            <Card className="p-4">
-              <div className="flex items-center justify-between text-xs text-muted-foreground">
-                <span>ব্যয়</span><TrendingDown className="h-4 w-4 text-rose-600" />
+            <Card className="p-3 sm:p-4">
+              <div className="flex items-center justify-between gap-1 text-[11px] text-muted-foreground sm:text-xs">
+                <span className="truncate">ব্যয়</span><TrendingDown className="h-3.5 w-3.5 shrink-0 text-rose-600 sm:h-4 sm:w-4" />
               </div>
-              <div className="mt-1 text-xl font-bold text-rose-600">{bdt(summary.exp)}</div>
+              <div className="mt-1 text-base font-bold text-rose-600 sm:text-xl">{bdt(summary.exp)}</div>
             </Card>
-            <Card className="p-4">
-              <div className="flex items-center justify-between text-xs text-muted-foreground">
-                <span>ব্যালেন্স</span><Wallet className="h-4 w-4 text-primary" />
+            <Card className="p-3 sm:p-4">
+              <div className="flex items-center justify-between gap-1 text-[11px] text-muted-foreground sm:text-xs">
+                <span className="truncate">ব্যালেন্স</span><Wallet className="h-3.5 w-3.5 shrink-0 text-primary sm:h-4 sm:w-4" />
               </div>
-              <div className={`mt-1 text-xl font-bold ${summary.balance >= 0 ? "text-foreground" : "text-rose-600"}`}>{bdt(summary.balance)}</div>
+              <div className={`mt-1 text-base font-bold sm:text-xl ${summary.balance >= 0 ? "text-foreground" : "text-rose-600"}`}>{bdt(summary.balance)}</div>
             </Card>
           </div>
 
