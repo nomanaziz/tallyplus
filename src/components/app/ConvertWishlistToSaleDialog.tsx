@@ -187,7 +187,7 @@ export function ConvertWishlistToSaleDialog({
         });
       }
 
-      toast.success(`বেচা তৈরি হয়েছে — মোট ৳${finalTotal.toLocaleString("bn-BD")}`);
+      toast.success(`বিক্রয় তৈরি হয়েছে — মোট ৳${finalTotal.toLocaleString("bn-BD")}`);
       onConverted();
       onOpenChange(false);
     } catch (e) {
@@ -203,7 +203,7 @@ export function ConvertWishlistToSaleDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Receipt className="h-5 w-5 text-primary" />
-            বেচায় রূপান্তর
+            বিক্রয়ে রূপান্তর
           </DialogTitle>
         </DialogHeader>
 
@@ -318,7 +318,7 @@ export function ConvertWishlistToSaleDialog({
           </Button>
           <Button onClick={handleConvert} disabled={submitting || sellable.length === 0}>
             {submitting && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
-            বেচা তৈরি করুন
+            বিক্রয় তৈরি করুন
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -24,8 +24,8 @@ export const SECTIONS: SidebarSection[] = [
     bn: "লেনদেন",
     en: "Transactions",
     items: [
-      { to: "/app/purchase", bn: "কেনা", en: "Purchase", icon: icons.purchase, perm: "purchase" },
-      { to: "/app/sell", bn: "বেচা", en: "Sell", icon: icons.sell, perm: "sell" },
+      { to: "/app/purchase", bn: "ক্রয়", en: "Purchase", icon: icons.purchase, perm: "purchase" },
+      { to: "/app/sell", bn: "বিক্রয়", en: "Sell", icon: icons.sell, perm: "sell" },
       { to: "/app/cashbox", bn: "ক্যাশবক্স", en: "Cashbox", icon: icons.cashbox },
     ],
   },
@@ -34,8 +34,8 @@ export const SECTIONS: SidebarSection[] = [
     bn: "হিসাবের খাতা",
     en: "Ledgers",
     items: [
-      { to: "/app/purchase-ledger", bn: "কেনার খাতা", en: "Purchase Ledger", icon: icons.purchaseList, perm: "purchase" },
-      { to: "/app/sales-ledger", bn: "বেচার খাতা", en: "Sales Ledger", icon: icons.salesList, perm: "sell" },
+      { to: "/app/purchase-ledger", bn: "ক্রয়ের খাতা", en: "Purchase Ledger", icon: icons.purchaseList, perm: "purchase" },
+      { to: "/app/sales-ledger", bn: "বিক্রয়ের খাতা", en: "Sales Ledger", icon: icons.salesList, perm: "sell" },
       { to: "/app/due-ledger", bn: "বাকির খাতা", en: "Due Ledger", icon: icons.due, perm: "due" },
       { to: "/app/expense-ledger", bn: "খরচের খাতা", en: "Expense Ledger", icon: icons.expense, perm: "expense" },
       { to: "/app/owner-ledger", bn: "মালিকের লেনদেন", en: "Owner Ledger", icon: icons.cashbox, perm: "expense" },

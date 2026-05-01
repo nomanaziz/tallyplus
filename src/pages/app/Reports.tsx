@@ -30,14 +30,14 @@ function ReportsPage() {
   const onPrint = () => {
     const rows: PrintRow[] = [
       { kind: "section", label: lang === "bn" ? "আইটেম" : "Item" },
-      { kind: "row", label: "নগদ বেচা", sub: "(কাস্টমার বাকি বাদে)", value: fmtMoney(s.cashSales, lang), tone: "success" },
+      { kind: "row", label: "নগদ বিক্রয়", sub: "(কাস্টমার বাকি বাদে)", value: fmtMoney(s.cashSales, lang), tone: "success" },
       { kind: "row", label: "কাস্টমার থেকে বাকির টাকা পেয়েছেন", value: fmtMoney(s.dueReceived, lang), tone: "success" },
       { kind: "row", label: "অন্যান্য আয়", value: fmtMoney(s.otherIncome, lang), tone: "success" },
-      { kind: "row", label: "নগদ কেনা", sub: "(সাপ্লায়ার বাকি বাদে)", value: fmtMoney(s.cashPurchase, lang), tone: "danger" },
+      { kind: "row", label: "নগদ ক্রয়", sub: "(সাপ্লায়ার বাকি বাদে)", value: fmtMoney(s.cashPurchase, lang), tone: "danger" },
       { kind: "row", label: "সাপ্লায়ারকে বাকির টাকা দিয়েছেন", value: fmtMoney(s.duePaid, lang), tone: "danger" },
       { kind: "row", label: "অন্যান্য খরচ", value: fmtMoney(s.otherExpense, lang), tone: "danger" },
       { kind: "divider" },
-      { kind: "row", label: "সর্বমোট ব্যালেন্স", sub: "(মোট বিক্রি + কাস্টমারের বাকির টাকা + অন্যান্য আয়) - (মোট কেনা + সাপ্লায়ারকে বাকির টাকা + অন্যান্য খরচ)", value: fmtMoney(balance, lang), tone: balance >= 0 ? "success" : "danger" },
+      { kind: "row", label: "সর্বমোট ব্যালেন্স", sub: "(মোট বিক্রি + কাস্টমারের বাকির টাকা + অন্যান্য আয়) - (মোট ক্রয় + সাপ্লায়ারকে বাকির টাকা + অন্যান্য খরচ)", value: fmtMoney(balance, lang), tone: balance >= 0 ? "success" : "danger" },
       { kind: "row", label: "মোট লাভ/ক্ষতি", sub: "(বিক্রিত পণ্যের বিক্রয় - ক্রয় মূল্য)", value: fmtMoney(s.productProfit, lang), tone: s.productProfit >= 0 ? "success" : "danger" },
     ];
     printReport({
@@ -94,21 +94,21 @@ function ReportsPage() {
           {/* Mobile: 2-column compact tiles. Desktop: stacked rows like before. */}
           <div className="grid grid-cols-2 gap-2 md:hidden">
             <Tile label="মোট বিক্রি" value={fmtMoney(s.totalSales, lang)} tone="primary" />
-            <Tile label="নগদ বেচা" sub="(কাস্টমার বাকি বাদে)" value={fmtMoney(s.cashSales, lang)} tone="success" />
+            <Tile label="নগদ বিক্রয়" sub="(কাস্টমার বাকি বাদে)" value={fmtMoney(s.cashSales, lang)} tone="success" />
             <Tile label="কাস্টমার থেকে বাকি পেয়েছেন" value={fmtMoney(s.dueReceived, lang)} tone="success" />
-            <Tile label="নগদ কেনা" sub="(সাপ্লায়ার বাকি বাদে)" value={fmtMoney(s.cashPurchase, lang)} tone="danger" />
+            <Tile label="নগদ ক্রয়" sub="(সাপ্লায়ার বাকি বাদে)" value={fmtMoney(s.cashPurchase, lang)} tone="danger" />
             <Tile label="সাপ্লায়ারকে বাকি দিয়েছেন" value={fmtMoney(s.duePaid, lang)} tone="danger" />
           </div>
           <div className="hidden gap-2 md:grid">
             <Row label="মোট বিক্রি" value={fmtMoney(s.totalSales, lang)} tone="primary" />
-            <Row label="নগদ বেচা" sub="(কাস্টমার বাকি বাদে)" value={fmtMoney(s.cashSales, lang)} tone="success" />
+            <Row label="নগদ বিক্রয়" sub="(কাস্টমার বাকি বাদে)" value={fmtMoney(s.cashSales, lang)} tone="success" />
             <Row label="কাস্টমার থেকে বাকির টাকা পেয়েছেন" value={fmtMoney(s.dueReceived, lang)} tone="success" />
-            <Row label="নগদ কেনা" sub="(সাপ্লায়ার বাকি বাদে)" value={fmtMoney(s.cashPurchase, lang)} tone="danger" />
+            <Row label="নগদ ক্রয়" sub="(সাপ্লায়ার বাকি বাদে)" value={fmtMoney(s.cashPurchase, lang)} tone="danger" />
             <Row label="সাপ্লায়ারকে বাকির টাকা দিয়েছেন" value={fmtMoney(s.duePaid, lang)} tone="danger" />
           </div>
           <div className="my-2 border-t md:my-3" />
           <div className="grid gap-2">
-            <Row big label="সর্বমোট ব্যালেন্স" sub="(মোট বিক্রি + কাস্টমারের বাকির টাকা + অন্যান্য আয়) - (মোট কেনা + সাপ্লায়ারকে বাকির টাকা + অন্যান্য খরচ)" value={fmtMoney(balance, lang)} tone={balance >= 0 ? "success" : "danger"} />
+            <Row big label="সর্বমোট ব্যালেন্স" sub="(মোট বিক্রি + কাস্টমারের বাকির টাকা + অন্যান্য আয়) - (মোট ক্রয় + সাপ্লায়ারকে বাকির টাকা + অন্যান্য খরচ)" value={fmtMoney(balance, lang)} tone={balance >= 0 ? "success" : "danger"} />
             <Row big label="পণ্য বিক্রি থেকে লাভ" sub="(বিক্রিত পণ্যের বিক্রয় - ক্রয় মূল্য)" value={fmtMoney(s.productProfit, lang)} tone={s.productProfit >= 0 ? "success" : "danger"} />
           </div>
         </div>

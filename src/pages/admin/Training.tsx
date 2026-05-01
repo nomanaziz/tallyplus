@@ -32,7 +32,7 @@ type Video = {
 const CATEGORIES = [
   { value: "general", label: "General / সাধারণ" },
   { value: "sell", label: "Sell / বিক্রি" },
-  { value: "purchase", label: "Purchase / কেনা" },
+  { value: "purchase", label: "Purchase / ক্রয়" },
   { value: "stock", label: "Stock / স্টক" },
   { value: "expense", label: "Expense / খরচ" },
   { value: "contacts", label: "Contacts / যোগাযোগ" },

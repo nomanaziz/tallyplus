@@ -102,7 +102,7 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
   const [serialPick, setSerialPick] = useState<Product | null>(null);
 
   const isSell = mode === "sell";
-  const titleBn = isSell ? "বেচা" : "কেনা";
+  const titleBn = isSell ? "বিক্রয়" : "ক্রয়";
   const titleEn = isSell ? "Sell" : "Purchase";
   const partyLabelBn = isSell ? "কাস্টমার" : "সাপ্লায়ার";
   const partyLabelEn = isSell ? "Customer" : "Supplier";
@@ -854,7 +854,7 @@ function PaymentDialog(props: {
         <div className="grid gap-3">
           <div className="grid grid-cols-2 gap-3">
             <div className="grid gap-1.5">
-              <Label>{isSell ? (lang === "bn" ? "বিক্রির তারিখঃ" : "Sale date") : (lang === "bn" ? "কেনার তারিখঃ" : "Purchase date")}</Label>
+              <Label>{isSell ? (lang === "bn" ? "বিক্রির তারিখঃ" : "Sale date") : (lang === "bn" ? "ক্রয়ের তারিখঃ" : "Purchase date")}</Label>
               <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
             </div>
             <div className="grid gap-1.5">

@@ -24,15 +24,15 @@ export const FEATURE_GROUPS: FeatureGroup[] = [
   },
   {
     key: "purchase",
-    title_bn: "কেনা",
+    title_bn: "ক্রয়",
     title_en: "Purchase",
     icon: "🛒",
     items: [
-      { key: "buy", label_bn: "কেনা", label_en: "Purchase" },
+      { key: "buy", label_bn: "ক্রয়", label_en: "Purchase" },
       { key: "cart_edit", label_bn: "কার্ট এডিট", label_en: "Cart edit" },
       { key: "discount", label_bn: "ডিসকাউন্ট", label_en: "Discount" },
       { key: "delivery", label_bn: "ডেলিভারী চার্জ", label_en: "Delivery" },
-      { key: "ledger", label_bn: "কেনার খাতা", label_en: "Ledger" },
+      { key: "ledger", label_bn: "ক্রয়ের খাতা", label_en: "Ledger" },
       { key: "edit", label_bn: "এডিট করুন", label_en: "Edit" },
       { key: "delete", label_bn: "মুছে ফেলুন", label_en: "Delete" },
     ],
@@ -227,7 +227,7 @@ export const FEATURE_GROUPS: FeatureGroup[] = [
     items: [
       { key: "view", label_bn: "ব্যবসার রিপোর্ট", label_en: "Business report" },
       { key: "sales_report", label_bn: "বিক্রির রিপোর্ট", label_en: "Sales report" },
-      { key: "purchase_report", label_bn: "কেনার রিপোর্ট", label_en: "Purchase report" },
+      { key: "purchase_report", label_bn: "ক্রয়ের রিপোর্ট", label_en: "Purchase report" },
       { key: "stock_report", label_bn: "স্টক রিপোর্ট", label_en: "Stock report" },
       { key: "product_report", label_bn: "প্রোডাক্ট রিপোর্ট", label_en: "Product report" },
       { key: "expense_report", label_bn: "খরচ রিপোর্ট", label_en: "Expense report" },

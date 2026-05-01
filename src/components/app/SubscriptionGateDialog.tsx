@@ -19,7 +19,7 @@ export function SubscriptionGateDialog({
     {
       title: isBn ? "কম্বাইন্ড সেলস রিপোর্ট" : "Combined Sales Report",
       desc: isBn
-        ? "সব দোকানের মোট কেনা, বেচা ও বাকি একসাথে দেখুন"
+        ? "সব দোকানের মোট ক্রয়, বিক্রয় ও বাকি একসাথে দেখুন"
         : "View total purchases, sales, and outstanding dues across all shops",
     },
     {

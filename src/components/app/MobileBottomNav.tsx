@@ -7,7 +7,7 @@ type Tab = { to: string; bn: string; en: string; Icon: typeof Home; matchPrefix?
 
 const TABS: Tab[] = [
   { to: "/app/dashboard", bn: "হোম", en: "Home", Icon: Home },
-  { to: "/app/sell", bn: "বেচা", en: "Sell", Icon: ShoppingCart, matchPrefix: "/app/sell" },
+  { to: "/app/sell", bn: "বিক্রয়", en: "Sell", Icon: ShoppingCart, matchPrefix: "/app/sell" },
   { to: "/app/returns", bn: "রিটার্ন", en: "Return", Icon: Undo2, matchPrefix: "/app/returns" },
   { to: "/app/reports", bn: "রিপোর্ট", en: "Report", Icon: BarChart3, matchPrefix: "/app/reports" },
 ];

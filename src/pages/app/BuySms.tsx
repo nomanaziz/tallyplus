@@ -216,7 +216,7 @@ export default function BuySmsPage() {
             </div>
           </div>
           <div className="text-xs text-muted-foreground">
-            {lang === "bn" ? "মোট কেনা" : "Total purchased"}: {bal?.total_purchased ?? 0} • {lang === "bn" ? "ব্যবহৃত" : "Used"}: {bal?.total_used ?? 0}
+            {lang === "bn" ? "মোট ক্রয়" : "Total purchased"}: {bal?.total_purchased ?? 0} • {lang === "bn" ? "ব্যবহৃত" : "Used"}: {bal?.total_used ?? 0}
           </div>
         </div>
 

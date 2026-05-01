@@ -133,7 +133,7 @@ function CustomerWishlistPage() {
   const shareWA = () => {
     if (!shareUrl) return;
     const msg = encodeURIComponent(
-      `${current?.name ?? "আমাদের দোকান"} — আপনার কেনাকাটার ফর্দ পাঠাতে এই লিঙ্কে ক্লিক করুন:\n${shareUrl}`,
+      `${current?.name ?? "আমাদের দোকান"} — আপনার ক্রয়ের ফর্দ পাঠাতে এই লিঙ্কে ক্লিক করুন:\n${shareUrl}`,
     );
     window.open(`https://wa.me/?text=${msg}`, "_blank");
   };
@@ -562,7 +562,7 @@ function WishlistDetailDialog({
               <Check className="mr-1 h-4 w-4" /> সম্পন্ন
             </Button>
             <Button size="sm" onClick={() => setConvertOpen(true)} disabled={!wl}>
-              <Receipt className="mr-1 h-4 w-4" /> বেচায় রূপান্তর
+              <Receipt className="mr-1 h-4 w-4" /> বিক্রয়ে রূপান্তর
             </Button>
           </div>
         </DialogFooter>

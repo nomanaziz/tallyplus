@@ -27,15 +27,15 @@ export function MobileBackBar() {
   // Derive a friendly label from the path.
   const seg = loc.pathname.replace(/^\/app\/?/, "").split("/")[0] || "";
   const labelMap: Record<string, { bn: string; en: string }> = {
-    sell: { bn: "বেচা", en: "Sell" },
-    purchase: { bn: "কেনা", en: "Purchase" },
+    sell: { bn: "বিক্রয়", en: "Sell" },
+    purchase: { bn: "ক্রয়", en: "Purchase" },
     products: { bn: "পণ্য", en: "Products" },
     stock: { bn: "স্টক", en: "Stock" },
     contacts: { bn: "যোগাযোগ", en: "Contacts" },
     reports: { bn: "ব্যবসার রিপোর্ট", en: "Business Report" },
     "due-ledger": { bn: "বাকির খাতা", en: "Due Ledger" },
-    "sales-ledger": { bn: "বেচার খাতা", en: "Sales Ledger" },
-    "purchase-ledger": { bn: "কেনার খাতা", en: "Purchase Ledger" },
+    "sales-ledger": { bn: "বিক্রয়ের খাতা", en: "Sales Ledger" },
+    "purchase-ledger": { bn: "ক্রয়ের খাতা", en: "Purchase Ledger" },
     "expense-ledger": { bn: "খরচের খাতা", en: "Expense Ledger" },
     "online-shop": { bn: "অনলাইন শপ", en: "Online Shop" },
     cashbox: { bn: "ক্যাশবক্স", en: "Cashbox" },

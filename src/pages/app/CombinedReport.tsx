@@ -56,9 +56,9 @@ function CombinedReportPage() {
 
   const sections: { key: SectionKey | "balance"; bn: string; en: string; tone: "success" | "danger" | "neutral" }[] = [
     { key: "totalSales", bn: "মোট বিক্রি", en: "Total Sales", tone: "success" },
-    { key: "cashSales", bn: "নগদ বেচা (কাস্টমার বাকি বাদে)", en: "Cash Sales", tone: "success" },
+    { key: "cashSales", bn: "নগদ বিক্রয় (কাস্টমার বাকি বাদে)", en: "Cash Sales", tone: "success" },
     { key: "dueReceived", bn: "কাস্টমার থেকে বাকির টাকা পেয়েছেন", en: "Due Received", tone: "success" },
-    { key: "cashPurchase", bn: "নগদ কেনা (সাপ্লায়ার বাকি বাদে)", en: "Cash Purchase", tone: "danger" },
+    { key: "cashPurchase", bn: "নগদ ক্রয় (সাপ্লায়ার বাকি বাদে)", en: "Cash Purchase", tone: "danger" },
     { key: "duePaid", bn: "সাপ্লায়ারকে বাকির টাকা দিয়েছেন", en: "Due Paid", tone: "danger" },
     { key: "balance", bn: "সর্বমোট ব্যালেন্স", en: "Total Balance", tone: balance >= 0 ? "success" : "danger" },
     { key: "productProfit", bn: "পণ্য বিক্রি থেকে লাভ", en: "Product Profit", tone: "success" },

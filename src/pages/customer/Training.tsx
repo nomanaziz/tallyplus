@@ -22,7 +22,7 @@ type Video = {
 const CATEGORY_LABELS: Record<string, { bn: string; en: string }> = {
   general: { bn: "সাধারণ", en: "General" },
   sell: { bn: "বিক্রি", en: "Sell" },
-  purchase: { bn: "কেনা", en: "Purchase" },
+  purchase: { bn: "ক্রয়", en: "Purchase" },
   stock: { bn: "স্টক", en: "Stock" },
   expense: { bn: "খরচ", en: "Expense" },
   contacts: { bn: "যোগাযোগ", en: "Contacts" },
