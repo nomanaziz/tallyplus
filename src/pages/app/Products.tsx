@@ -365,8 +365,8 @@ function ProductsPage() {
       <div className="mb-1 hidden text-xs text-muted-foreground sm:block">
         {lang === "bn" ? "প্রোডাক্ট ও স্টক ব্যবস্থাপনা" : "Products & Stock Management"}
       </div>
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-base font-bold sm:text-xl md:text-2xl">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h1 className="text-sm font-bold sm:text-lg md:text-2xl">
           {lang === "bn" ? "প্রোডাক্ট ও স্টক" : "Products & Stock"}
         </h1>
         <div className="flex flex-wrap items-center gap-2">
