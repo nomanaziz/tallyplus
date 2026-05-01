@@ -309,11 +309,11 @@ function QuickOrderInner() {
 
   return (
     <div className="container max-w-3xl px-4 py-4">
-      <div className="mb-2 text-xs text-muted-foreground">Home / {lang === "bn" ? "দ্রুত ফর্দ" : "Quick Order"}</div>
+      <div className="mb-2 text-xs text-muted-foreground">Home / {lang === "bn" ? "দ্রুত বিক্রি" : "Quick Sell"}</div>
       <div className="mb-4 flex items-center justify-between gap-2">
         <h1 className="flex items-center gap-2 text-xl font-extrabold">
           <ReceiptText className="h-5 w-5 text-primary" />
-          {lang === "bn" ? "দ্রুত ফর্দ" : "Quick Order"}
+          {lang === "bn" ? "দ্রুত বিক্রি" : "Quick Sell"}
         </h1>
         <label className="flex items-center gap-2 rounded-lg border bg-card px-3 py-1.5 text-xs">
           <Switch checked={allowExternal} onCheckedChange={setAllowExternal} />
@@ -437,19 +437,27 @@ function QuickOrderInner() {
                       )}
                     </div>
                   </div>
-                  {/* Price */}
+                  {/* Cost */}
                   <div className="col-span-2">
-                    {r.isExternal ? (
-                      <Input
-                        type="number"
-                        value={r.price || ""}
-                        onChange={(e) => updateRow(r.tempId, { price: Number(e.target.value) || 0 })}
-                        className="h-9 text-right"
-                        placeholder="৳"
-                      />
-                    ) : (
-                      <div className="text-right text-sm font-semibold">৳{r.price.toFixed(0)}</div>
-                    )}
+                    <Input
+                      type="number"
+                      value={r.cost || ""}
+                      onChange={(e) => updateRow(r.tempId, { cost: Number(e.target.value) || 0 })}
+                      className="h-9 text-right"
+                      placeholder={lang === "bn" ? "ক্রয়" : "Cost"}
+                      title={lang === "bn" ? "ক্রয় মূল্য" : "Cost price"}
+                    />
+                  </div>
+                  {/* Sell price */}
+                  <div className="col-span-2">
+                    <Input
+                      type="number"
+                      value={r.price || ""}
+                      onChange={(e) => updateRow(r.tempId, { price: Number(e.target.value) || 0 })}
+                      className="h-9 text-right"
+                      placeholder={lang === "bn" ? "বিক্রয়" : "Sell"}
+                      title={lang === "bn" ? "বিক্রয় মূল্য" : "Sell price"}
+                    />
                   </div>
                   {/* Qty */}
                   <div className="col-span-2">
@@ -462,17 +470,25 @@ function QuickOrderInner() {
                     />
                   </div>
                   {/* Unit */}
-                  <div className="col-span-2">
+                  <div className="col-span-12 -mt-1 flex items-center justify-between gap-2 text-[11px]">
                     {r.isExternal ? (
                       <Input
                         value={r.unit}
                         onChange={(e) => updateRow(r.tempId, { unit: e.target.value })}
-                        className="h-9"
+                        className="h-7 w-20"
                         maxLength={10}
                       />
                     ) : (
-                      <div className="text-center text-xs text-muted-foreground">{r.unit}</div>
+                      <div className="text-xs text-muted-foreground">{r.unit}</div>
                     )}
+                    <div className="text-right">
+                      <span className="text-muted-foreground">{lang === "bn" ? "লাভ" : "Profit"}: </span>
+                      <span className={`font-semibold ${(r.price - r.cost) * r.qty >= 0 ? "text-success" : "text-destructive"}`}>
+                        ৳{((r.price - r.cost) * r.qty).toFixed(0)}
+                      </span>
+                      <span className="ml-2 text-muted-foreground">{lang === "bn" ? "মোট" : "Total"}: </span>
+                      <span className="font-semibold">৳{(r.price * r.qty).toFixed(0)}</span>
+                    </div>
                   </div>
                 </div>
                 <button
@@ -489,9 +505,19 @@ function QuickOrderInner() {
         )}
 
         {rows.length > 0 && (
-          <div className="flex items-center justify-between border-t px-4 py-3">
-            <span className="text-sm font-semibold">{lang === "bn" ? "মোট" : "Total"}</span>
-            <span className="text-lg font-extrabold">৳ {total.toFixed(2)}</span>
+          <div className="border-t px-4 py-3 space-y-1">
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span>{lang === "bn" ? "মোট ক্রয়" : "Total cost"}</span>
+              <span>৳ {totalCost.toFixed(2)}</span>
+            </div>
+            <div className="flex items-center justify-between text-sm">
+              <span className="font-semibold">{lang === "bn" ? "মোট লাভ" : "Total profit"}</span>
+              <span className={`font-bold ${totalProfit >= 0 ? "text-success" : "text-destructive"}`}>৳ {totalProfit.toFixed(2)}</span>
+            </div>
+            <div className="flex items-center justify-between border-t pt-1.5">
+              <span className="text-sm font-semibold">{lang === "bn" ? "মোট বিক্রয়" : "Total sell"}</span>
+              <span className="text-lg font-extrabold">৳ {total.toFixed(2)}</span>
+            </div>
           </div>
         )}
       </div>
