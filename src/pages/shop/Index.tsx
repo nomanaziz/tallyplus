@@ -413,11 +413,17 @@ function MarketplacePage() {
                   <div className="mb-3 text-sm text-muted-foreground">{vendorTotal} টি দোকান</div>
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                     {vendors.map((s) => {
+                      // Prefer the clean handle (username → slug → wishlist_slug fallback)
                       const rawSlug = s.wishlist_slug;
-                      const fordoSlug =
+                      const wishlistFallback =
                         typeof rawSlug === "string" && rawSlug.trim().length > 0
                           ? rawSlug.trim()
                           : null;
+                      const fordoHandle =
+                        (s.username && s.username.trim()) ||
+                        (s.slug && s.slug.trim()) ||
+                        wishlistFallback;
+                      const fordoIsLegacy = fordoHandle === wishlistFallback && fordoHandle !== null;
                       return (
                         <div
                           key={s.id}
@@ -459,10 +465,10 @@ function MarketplacePage() {
                             </div>
                           </Link>
                           <div className="mt-3 flex gap-2">
-                            {fordoSlug ? (
+                            {fordoHandle ? (
                               <Link
-                                to="/f/$slug"
-                                params={{ slug: fordoSlug }}
+                                to={fordoIsLegacy ? "/f/$slug" : "/$slug/forward"}
+                                params={{ slug: fordoHandle }}
                                 className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-bold text-primary-foreground shadow-sm hover:bg-primary/90"
                               >
                                 <FileText className="h-3.5 w-3.5" />
