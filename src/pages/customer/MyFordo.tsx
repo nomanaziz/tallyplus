@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "@/lib/router";
 import {
   Loader2, Store, ListChecks, Plus, FileText, CalendarClock,
-  Trash2, Pause, Play, Star, Check, X, Clock, Save, Copy, Calendar,
+  Trash2, Pause, Play, Star, Check, X, Clock, Save, Copy, Calendar, Wallet,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -70,6 +70,9 @@ export default function MyFordo() {
   const [saveWlId, setSaveWlId] = useState<string | null>(null);
   const [saveName, setSaveName] = useState("");
   const [saving, setSaving] = useState(false);
+  // Track which wishlists already pushed to expense (loaded from consumer_transactions.source_wishlist_id)
+  const [expensedIds, setExpensedIds] = useState<Set<string>>(new Set());
+  const [pushingId, setPushingId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
