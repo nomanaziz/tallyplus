@@ -46,7 +46,7 @@ async function callFn(name: string, body: unknown) {
 export function LoginCard() {
   const { ensureProfile } = useAuth();
   const navigate = useNavigate();
-  const search = useSearch<{ role?: string; mode?: string; phone?: string }>();
+  const search = useSearch<{ role?: string; mode?: string; phone?: string; redirect?: string }>();
 
   const [mode, setMode] = useState<Mode>("login");
   const [role, setRole] = useState<Role>("owner");
@@ -144,7 +144,11 @@ export function LoginCard() {
           await setSession(r.access_token, r.refresh_token);
           await ensureProfile();
           toast.success("Customer account তৈরি");
-          navigate({ to: "/customer/dashboard", replace: true });
+          if (search.redirect && search.redirect.startsWith("/")) {
+            navigate({ to: search.redirect, replace: true });
+          } else {
+            navigate({ to: "/customer/dashboard", replace: true });
+          }
         }
       } else {
         if (role === "owner") {
@@ -195,7 +199,11 @@ export function LoginCard() {
           await ensureProfile();
           setShowForgotPin(false);
           toast.success("লগইন সফল");
-          navigate({ to: "/customer/dashboard", replace: true });
+          if (search.redirect && search.redirect.startsWith("/")) {
+            navigate({ to: search.redirect, replace: true });
+          } else {
+            navigate({ to: "/customer/dashboard", replace: true });
+          }
         }
       }
     } catch (e) {

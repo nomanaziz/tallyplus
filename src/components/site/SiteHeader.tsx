@@ -47,7 +47,7 @@ export function SiteHeader() {
             <span>{marketLabel}</span>
           </Link>
           <Link
-            to="/customer/my-fordo"
+            to="/fordo"
             activeProps={{ className: "bg-primary/10 text-primary" }}
             className="inline-flex items-center gap-2 rounded-full px-3 py-2 hover:bg-accent"
           >
@@ -107,7 +107,7 @@ export function SiteHeader() {
                 </SheetClose>
                 <SheetClose asChild>
                   <Link
-                    to="/customer/my-fordo"
+                    to="/fordo"
                     className="flex items-center gap-3 rounded-md px-3 py-2.5 hover:bg-accent"
                   >
                     <ScrollText className="h-4 w-4 text-primary" />

@@ -1,85 +1,87 @@
-## Problem 1: `/vendor/file-server` shows "দোকান পাওয়া যায়নি"
+# সংক্ষিপ্ত ফর্দ Flow — Plan
 
-**Root cause:** `src/pages/vendor/Username.tsx` queries the `shops` and `products` tables directly with the regular supabase client (anon role). RLS on `public.shops` only allows owners/members/admins to SELECT — there is no public policy. Same for `products`. So anonymous shoppers cannot load the public storefront, even though the shop `file-server` exists and is `marketplace_enabled = true`.
+Goal: Header-এর "ফর্দ" বোতামে ক্লিক করলে যে কেউ (login ছাড়াই) সরাসরি একটা ফর্দ বানাবে → নাম + mobile + 4-digit PIN দিয়ে "Create account & Send" → একসাথে account তৈরি + ফর্দ দোকানদারের কাছে চলে যাবে। Phone যদি আগে থেকেই থাকে → login page-এ পাঠানো হবে কিন্তু ফর্দটা draft হিসাবে save থাকবে; login-এর পরে একই ফর্দ পেজে items pre-filled অবস্থায় ফিরে এসে user "Send" ক্লিক করবে।
 
-The marketplace listing/grid works because `marketplace_listings` does have a public read policy and the marketplace browse pages call the `marketplace-public` edge function (which uses the service-role admin client and bypasses RLS).
+## 1. Header navigation change
 
-**Fix:** Switch `Username.tsx` to load shop + listings + products through the existing `marketplace-public` edge function using `action: "shop-by-username"` (already implemented at line 250) and a new `action: "shop-products"` (or extend `shop-by-username` to return products in one round-trip).
+`src/components/site/SiteHeader.tsx`:
+- "ফর্দ" link এখন `/customer/my-fordo` এ যায় (login-required) — পরিবর্তন করে `/fordo` (নতুন public route) এ পাঠাতে হবে।
+- Mobile sheet-এও একই পরিবর্তন।
+- Logged-in user-দের জন্য একটা ছোট "আমার ফর্দ" sub-link বা history button অপরিবর্তিত থাকবে (page header-এ)।
 
-- Update `marketplace-public/index.ts` so `shop-by-username` returns `{ shop, listings, products }` (mirrors the `shop` action).
-- Refactor `Username.tsx` to call the function and stop using the anon `supabase.from("shops")` / `supabase.from("products")` queries.
-- Same fix applied where needed in `src/pages/shop/p/Id.tsx` (already uses the function — verify) and `src/pages/shop/s/Slug.tsx` (likely the same RLS bug).
+## 2. New public page: `/fordo` (`src/pages/fordo/Index.tsx`)
 
-## Problem 2: Convert public storefront into a real e-commerce flow with cart + checkout + consumer accounts
+একটাই compact page, তিন ভাগে:
 
-Today there is a localStorage `consumer-cart` and "Add to list" buttons on cards, but no cart page, no checkout, and no order submission tied to a consumer account. Orders table (`marketplace_orders` + `marketplace_order_items`) already exists with delivery_charge, subtotal, status, etc.
+**(a) Items section** (top)
+- Simple row list: "নাম, পরিমাণ, একক" (existing simple-mode UX থেকে নেওয়া)
+- Voice mic button (existing `VoiceFordoMic` reuse)
+- "+ আরেকটি যোগ করুন"
 
-### What we'll build
+**(b) Shop picker** (middle)
+- Search box + nearby/popular shops list (CreateFordo-এর pattern reuse — search → `find-shops-by-name` edge function, nearby → marketplace-public)
+- Selected shop chip দেখানো হবে
 
-**1. Cart page — `/cart`**
-- Lists items grouped by shop (since each shop has its own delivery, payment, policies).
-- Qty +/- and remove controls (uses `consumer-cart.ts`).
-- Per-shop subtotal; "Checkout this shop" button.
+**(c) Account + Send** (bottom — single card)
+- নাম, মোবাইল, 4-digit PIN
+- Single button: **"Account তৈরি করে ফর্দ পাঠান"**
 
-**2. Checkout page — `/checkout/$shopId`**
-- Shows items belonging to that shop only (multi-shop carts checkout one shop at a time — matches how `marketplace_orders` is shop-scoped).
-- Consumer must be logged in. If not authenticated as a consumer:
-  - Show inline auth panel with two tabs: **Login** and **Register**.
-  - Both use phone + PIN (existing `customer-signup-with-pin` and `customer-login-with-pin` edge functions, used by the `/customer` portal).
-  - On success, account is `consumer` role; the page proceeds to checkout.
-- Form: Name (prefilled from `consumer_profiles`), Phone (prefilled, read-only), Address, optional Note, payment method (Cash on Delivery default).
-- Delivery zones: fetch from `delivery_zones` for that shop (if table exists; otherwise omit charge).
-- "Place order" → inserts into `marketplace_orders` + `marketplace_order_items`, clears cart for that shop, redirects to `/orders/$orderNo` with a success screen.
+### Submit logic (frontend)
 
-**3. Order success/tracking page — `/orders/$orderNo`**
-- Read-only order summary, status, shop contact.
+1. Validate items + shop + name + phone + pin
+2. Save draft to `localStorage` key `fordo-draft` (items, shopId, name, phone, note) — survives navigation
+3. Try `customer-signup-with-pin` edge function:
+   - **Success** → setSession → call new `submit-authenticated-fordo` action (or reuse `submit-wishlist` with logged-in user) → success screen → clear draft
+   - **`phone_exists` (409)** → toast "এই নম্বরে account আছে — login করুন" → navigate to `/login?redirect=/fordo` (draft stays in localStorage)
+4. On `/fordo` mount: if `user` is now logged-in AND `fordo-draft` exists → restore items/shop/name/phone, hide PIN field, show single "Send" button. User clicks → submit using authenticated session → clear draft.
 
-**4. Header cart badge**
-- Add a cart icon with item-count badge to `SiteHeader` (visible on storefront/marketplace pages) linking to `/cart`.
+## 3. Backend: send authenticated ফর্দ
 
-**5. Consumer auth context check**
-- Reuse existing `customer-login-with-pin` / `customer-signup-with-pin` edge functions.
-- Add a tiny `useConsumerSession` hook that wraps `supabase.auth.getUser()` + checks the `consumer` role via `is_consumer` (already in DB).
+Reuse the existing `customer_wishlists` + `customer_wishlist_items` tables (same that `submit-wishlist` writes to).
 
-### Database
+Add a new action in `marketplace-public` edge function (or extend `submit-wishlist`) that accepts an authenticated consumer's bearer token and writes the wishlist with `wishlist_customer_id` linked to a `wishlist_customers` row (auto-create/lookup by `(shop_id, phone)`).
 
-`marketplace_orders` already supports anonymous orders (no FK to consumer). We will additionally store the consumer's `user_id` for "My orders" history.
+Simpler approach: keep using `submit-wishlist` (it already auto-creates `wishlist_customers` from phone, and works without auth). For the logged-in-then-send case we just call the same `submit-wishlist` with the user's name/phone and skip the issued-PIN screen.
 
-Migration:
-```sql
-ALTER TABLE public.marketplace_orders
-  ADD COLUMN IF NOT EXISTS consumer_user_id uuid REFERENCES auth.users(id) ON DELETE SET NULL;
+No DB migration required.
 
--- Public insert policy for marketplace orders (already may exist — verify)
--- Allow consumers to read their own orders:
-CREATE POLICY "consumer reads own orders" ON public.marketplace_orders
-  FOR SELECT USING (consumer_user_id = auth.uid());
+## 4. Login page redirect support
+
+Login flow should already honour a `?redirect=` query (verify in `src/pages/Index.tsx` / login card). If not, add a small redirect handler so `/login?redirect=/fordo` returns to `/fordo` after successful auth — that triggers the auto-restore logic above.
+
+## 5. Files
+
+**New:**
+- `src/pages/fordo/Index.tsx` — the unified page
+- `src/lib/fordo-draft.ts` — tiny localStorage helper (`saveDraft`, `loadDraft`, `clearDraft`)
+
+**Modified:**
+- `src/components/site/SiteHeader.tsx` — point "ফর্দ" link + mobile sheet to `/fordo`
+- `src/lib/app-routes.tsx` — register `/fordo` as a public route
+- `src/components/site/LoginCard.tsx` (or wherever main login lives) — honour `?redirect=` after successful PIN login
+- (Optional) extend `submit-wishlist` edge function to accept an authenticated consumer (no breaking change)
+
+## 6. Out of scope
+
+- Existing `/f/:slug` per-shop public link page stays as-is (deep-link entry still works)
+- Existing `/customer/my-fordo` history page stays for logged-in users
+- No DB schema changes
+
+## ASCII flow
+
+```text
+[Header → ফর্দ]
+      │
+      ▼
+   /fordo  ──── items + shop + name+phone+PIN ──── [Create & Send]
+      │                                                │
+      │                                          ┌─────┴─────┐
+      │                                          ▼           ▼
+      │                                       success     phone_exists
+      │                                       screen      (draft saved)
+      │                                                       │
+      │                                                       ▼
+      │                                               /login?redirect=/fordo
+      │                                                       │
+      └───────────────── back to /fordo (draft restored, items pre-filled, only "Send")
 ```
-
-(Existing public-insert policy will be checked first; only added if missing.)
-
-### Files to create / change
-
-**Edge function**
-- `supabase/functions/marketplace-public/index.ts` — extend `shop-by-username` to also return `listings` + `products`. Add `place-order` action that validates stock, creates the order with admin client, and links `consumer_user_id` from the JWT.
-
-**New pages**
-- `src/pages/shop/Cart.tsx` (route `/cart`)
-- `src/pages/shop/Checkout.tsx` (route `/checkout/:shopId`)
-- `src/pages/shop/OrderSuccess.tsx` (route `/orders/:orderNo`)
-- `src/components/shop/ConsumerAuthPanel.tsx` — phone + PIN login/register tabs.
-- `src/lib/consumer-session.ts` — small hook returning `{ user, isConsumer, profile }`.
-
-**Edits**
-- `src/pages/vendor/Username.tsx` — switch to edge-function fetch.
-- `src/pages/shop/s/Slug.tsx` — same fix if needed.
-- `src/components/site/SiteHeader.tsx` — add cart icon + badge.
-- `src/lib/app-routes.tsx` — register `/cart`, `/checkout/:shopId`, `/orders/:orderNo`.
-- `src/lib/consumer-cart.ts` — add `getCartByShop`, `clearShopCart`, `useCart` (full list hook).
-
-### Out of scope (can be added later if you want)
-- Online payments (current plan: Cash on Delivery only).
-- Reviews / ratings.
-- Wishlist sync to server.
-
-Confirm and I'll implement.
