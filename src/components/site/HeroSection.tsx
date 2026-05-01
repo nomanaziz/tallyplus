@@ -3,7 +3,7 @@ import { useI18n, bnNum } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { TrendingUp, MessageCircle, ArrowRight } from "lucide-react";
-import { HeroAuthCard } from "./HeroAuthCard";
+import { LoginCard } from "./LoginCard";
 
 export function HeroSection() {
   const { t, lang } = useI18n();
@@ -62,7 +62,9 @@ export function HeroSection() {
         </div>
         <div className="relative">
           <div className="absolute inset-0 -z-10 mx-auto my-auto h-[90%] w-[90%] rounded-[2.5rem] bg-gradient-to-br from-primary/30 via-primary/10 to-transparent blur-2xl" aria-hidden />
-          <HeroAuthCard />
+          <div className="mx-auto flex justify-center">
+            <LoginCard />
+          </div>
         </div>
       </div>
     </section>
