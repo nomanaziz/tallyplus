@@ -12,13 +12,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { InstallAppButton } from "./InstallAppPrompt";
-import { ColorThemeButton } from "./ColorThemePicker";
 import { NotificationBell } from "./NotificationBell";
-import { Settings, MessageCircle, ChevronDown, LogOut, Languages, Zap, ArrowLeftRight, LayoutDashboard } from "lucide-react";
+import { Settings, ChevronDown, LogOut, Languages, ArrowLeftRight, LayoutDashboard } from "lucide-react";
 
-const QuickSellSheet = lazy(() =>
-  import("./QuickSellSheet").then((m) => ({ default: m.QuickSellSheet }))
-);
 const SettingsSheet = lazy(() =>
   import("./SettingsSheet").then((m) => ({ default: m.SettingsSheet }))
 );
@@ -28,7 +24,6 @@ export function AppTopbar() {
   const { current } = useShop();
   const { lang, setLang } = useI18n();
   const nav = useNavigate();
-  const [quickOpen, setQuickOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
 
   const initials = (profile?.full_name || current?.name || "FS")
@@ -48,25 +43,7 @@ export function AppTopbar() {
       </div>
 
       <div className="flex items-center gap-1.5">
-        <Button
-          onClick={() => setQuickOpen(true)}
-          size="sm"
-          className="h-9 gap-1.5 bg-emerald-600 px-3 font-semibold text-white shadow-sm hover:bg-emerald-700"
-        >
-          <Zap className="h-4 w-4" />
-          <span className="hidden sm:inline">{lang === "bn" ? "দ্রুত বেচা" : "Quick Sell"}</span>
-        </Button>
-        <a
-          href="https://wa.me/8801841577944"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground hover:bg-accent"
-          aria-label="WhatsApp"
-        >
-          <MessageCircle className="h-5 w-5" />
-        </a>
         <NotificationBell />
-        <ColorThemeButton />
         <InstallAppButton />
         <button
           onClick={() => setLang(lang === "bn" ? "en" : "bn")}
@@ -119,11 +96,6 @@ export function AppTopbar() {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-      {quickOpen && (
-        <Suspense fallback={null}>
-          <QuickSellSheet open={quickOpen} onOpenChange={setQuickOpen} />
-        </Suspense>
-      )}
       {settingsOpen && (
         <Suspense fallback={null}>
           <SettingsSheet open={settingsOpen} onOpenChange={setSettingsOpen} />
