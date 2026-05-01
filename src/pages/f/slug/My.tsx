@@ -632,6 +632,29 @@ function MyWishlistPage() {
           <Plus className="h-4 w-4" /> নতুন ফর্দ পাঠান
         </Link>
       </div>
+
+      <Dialog open={saveOpen} onOpenChange={setSaveOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>টেমপ্লেট হিসেবে সংরক্ষণ</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label>টেমপ্লেটের নাম</Label>
+            <Input
+              value={saveName}
+              onChange={(e) => setSaveName(e.target.value)}
+              placeholder="যেমন: মাসিক বাজার"
+              maxLength={80}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSaveOpen(false)}>বাতিল</Button>
+            <Button disabled={saving} onClick={confirmSaveTemplate}>
+              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "সংরক্ষণ"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
