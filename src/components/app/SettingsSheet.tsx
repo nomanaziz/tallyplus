@@ -33,7 +33,6 @@ import {
   Youtube,
   BookOpen,
   Mail,
-  Smartphone as SmartphoneIcon,
 } from "lucide-react";
 
 const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -294,7 +293,7 @@ export function SettingsSheet({ open, onOpenChange }: { open: boolean; onOpenCha
               onClick={() => go("/app/training")}
             />
             <Row
-              icon={<SmartphoneIcon className="h-4 w-4" />}
+              icon={<Smartphone className="h-4 w-4" />}
               label={lang === "bn" ? "সক্রিয় device সমূহ (max ২)" : "Active devices (max 2)"}
               onClick={() => setDevicesOpen(true)}
             />
