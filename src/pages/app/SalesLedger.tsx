@@ -141,7 +141,7 @@ function SalesLedgerPage() {
   };
 
   const softDelete = async (s: Sale) => {
-    if (!confirm(lang === "bn" ? "এই বেচাটি মুছে ফেলবেন?" : "Delete this sale?")) return;
+    if (!confirm(lang === "bn" ? "এই বিক্রয়টি মুছে ফেলবেন?" : "Delete this sale?")) return;
     const { error } = await supabase
       .from("sales")
       .update({ deleted_at: new Date().toISOString() })
@@ -211,7 +211,7 @@ function SalesLedgerPage() {
           </div>
           <Button variant="outline" className="h-10 gap-2" onClick={() => nav({ to: "/app/sell" })}>
             <Plus className="h-4 w-4" />
-            {lang === "bn" ? "নতুন বেচা" : "New"}
+            {lang === "bn" ? "নতুন বিক্রয়" : "New"}
           </Button>
         </div>
       </div>
@@ -250,7 +250,7 @@ function SalesLedgerPage() {
       {/* Table */}
       <div className="mt-4 rounded-xl border bg-card" id="invoice-print-area">
         {filtered.length === 0 ? (
-          <EmptyState icon={<FileText className="h-6 w-6" />} title={lang === "bn" ? "কোনো বেচা নেই" : "No sales"} />
+          <EmptyState icon={<FileText className="h-6 w-6" />} title={lang === "bn" ? "কোনো বিক্রয় নেই" : "No sales"} />
         ) : (
           <>
             <Table>

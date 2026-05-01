@@ -20,8 +20,8 @@ const tabLabels: Record<Tab, { bn: string; en: string }> = {
   products: { bn: "প্রোডাক্ট", en: "Products" },
   customers: { bn: "কাস্টমার", en: "Customers" },
   suppliers: { bn: "সাপ্লায়ার", en: "Suppliers" },
-  sales: { bn: "বেচা", en: "Sales" },
-  purchases: { bn: "কেনা", en: "Purchases" },
+  sales: { bn: "বিক্রয়", en: "Sales" },
+  purchases: { bn: "ক্রয়", en: "Purchases" },
   expenses: { bn: "খরচ", en: "Expenses" },
   customer_wishlists: { bn: "গ্রাহক ফর্দ", en: "Wishlists" },
 };

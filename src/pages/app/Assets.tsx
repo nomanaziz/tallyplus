@@ -251,7 +251,7 @@ function AssetDialog({ open, onOpenChange, editing, onSaved }: { open: boolean; 
         shop_id: current.id,
         amount: p,
         direction: "out",
-        note: `সম্পদ কেনা — ${name.trim()}`,
+        note: `সম্পদ ক্রয় — ${name.trim()}`,
         ref_table: "assets",
         ref_id: result.data?.id ?? null,
         created_by: user.id,

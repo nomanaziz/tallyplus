@@ -234,7 +234,7 @@ function CashboxPage() {
 function sourceLabel(ref: string | null, lang: string) {
   const map: Record<string, { bn: string; en: string }> = {
     sales: { bn: "বিক্রি", en: "Sale" },
-    purchases: { bn: "কেনা", en: "Purchase" },
+    purchases: { bn: "ক্রয়", en: "Purchase" },
     expenses: { bn: "খরচ", en: "Expense" },
     payments: { bn: "পেমেন্ট", en: "Payment" },
     other_income: { bn: "অন্যান্য আয়", en: "Income" },

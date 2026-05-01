@@ -307,7 +307,7 @@ function ContactsPage() {
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead>{tab === "customers" ? (lang === "bn" ? "বিক্রির রিপোর্ট" : "Sale #") : (lang === "bn" ? "কেনার রিপোর্ট" : "Purchase #")}</TableHead>
+                          <TableHead>{tab === "customers" ? (lang === "bn" ? "বিক্রির রিপোর্ট" : "Sale #") : (lang === "bn" ? "ক্রয়ের রিপোর্ট" : "Purchase #")}</TableHead>
                           <TableHead>{lang === "bn" ? "সময়" : "Time"}</TableHead>
                           <TableHead>{lang === "bn" ? "তথ্য" : "Info"}</TableHead>
                           <TableHead className="text-right">{lang === "bn" ? "লেনদেনের ধরন" : "Type"}</TableHead>

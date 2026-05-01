@@ -93,7 +93,7 @@ function Dashboard() {
         </div>
         <div className="grid grid-cols-3 divide-x">
           <Stat label={lang === "bn" ? "আজকের বিক্রি" : "Sales"} value={fmtMoney(stats.sales, lang)} tone="primary" />
-          <Stat label={lang === "bn" ? "আজকের কেনা" : "Purchase"} value={fmtMoney(stats.purchases, lang)} tone="primary" />
+          <Stat label={lang === "bn" ? "আজকের ক্রয়" : "Purchase"} value={fmtMoney(stats.purchases, lang)} tone="primary" />
           <Stat label={lang === "bn" ? "আজকের খরচ" : "Expense"} value={fmtMoney(stats.expenses, lang)} tone="danger" />
         </div>
         <div className="grid grid-cols-3 divide-x border-t">

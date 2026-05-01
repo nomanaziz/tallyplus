@@ -62,7 +62,7 @@ export function QuickSellSheet({ open, onOpenChange }: { open: boolean; onOpenCh
         created_at: new Date(date).toISOString(),
       });
       if (error) throw error;
-      toast.success(lang === "bn" ? "বেচা সম্পন্ন" : "Sale recorded");
+      toast.success(lang === "bn" ? "বিক্রয় সম্পন্ন" : "Sale recorded");
       reset();
       onOpenChange(false);
     } catch (e: unknown) {
