@@ -523,9 +523,52 @@ function ProductsPage() {
           search={search}
           onSearch={setSearch}
           middleExtra={
-            <div className="flex w-full gap-1.5 sm:contents">
+            <>
+              {/* Mobile: collapse Sort + Filter into a single popover */}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="icon" className="h-9 w-9 flex-none sm:hidden" aria-label={lang === "bn" ? "সাজান ও ফিল্টার" : "Sort & filter"}>
+                    <SlidersHorizontal className="h-4 w-4" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent align="end" className="w-64 space-y-3 p-3">
+                  <div className="space-y-1">
+                    <div className="text-xs font-semibold text-muted-foreground">{lang === "bn" ? "সাজান" : "Sort"}</div>
+                    <Select value={sortBy} onValueChange={setSortBy}>
+                      <SelectTrigger className="h-9 w-full text-xs">
+                        <SelectValue placeholder={lang === "bn" ? "সাজান" : "Sort"} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="name_asc">{lang === "bn" ? "নাম (ক → হ)" : "Name (A → Z)"}</SelectItem>
+                        <SelectItem value="name_desc">{lang === "bn" ? "নাম (হ → ক)" : "Name (Z → A)"}</SelectItem>
+                        <SelectItem value="stock_asc">{lang === "bn" ? "স্টক কম → বেশি" : "Stock low → high"}</SelectItem>
+                        <SelectItem value="stock_desc">{lang === "bn" ? "স্টক বেশি → কম" : "Stock high → low"}</SelectItem>
+                        <SelectItem value="price_asc">{lang === "bn" ? "দাম কম → বেশি" : "Price low → high"}</SelectItem>
+                        <SelectItem value="price_desc">{lang === "bn" ? "দাম বেশি → কম" : "Price high → low"}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1">
+                    <div className="text-xs font-semibold text-muted-foreground">{lang === "bn" ? "ফিল্টার" : "Filter"}</div>
+                    <Select value={filterBy} onValueChange={setFilterBy}>
+                      <SelectTrigger className="h-9 w-full text-xs">
+                        <SelectValue placeholder={lang === "bn" ? "ফিল্টার" : "Filter"} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">{lang === "bn" ? "সব প্রোডাক্ট" : "All products"}</SelectItem>
+                        <SelectItem value="in_stock">{lang === "bn" ? "স্টক আছে" : "In stock"}</SelectItem>
+                        <SelectItem value="out_of_stock">{lang === "bn" ? "স্টক শেষ" : "Out of stock"}</SelectItem>
+                        <SelectItem value="low_stock">{lang === "bn" ? "কম স্টক" : "Low stock"}</SelectItem>
+                        <SelectItem value="unlimited">{lang === "bn" ? "অসীম স্টক" : "Unlimited"}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </PopoverContent>
+              </Popover>
+
+              {/* Desktop: inline selects */}
               <Select value={sortBy} onValueChange={setSortBy}>
-                <SelectTrigger className="h-9 flex-1 text-xs sm:h-10 sm:w-[170px] sm:flex-none sm:text-sm">
+                <SelectTrigger className="hidden sm:flex h-10 w-[170px] text-sm">
                   <SelectValue placeholder={lang === "bn" ? "সাজান" : "Sort"} />
                 </SelectTrigger>
                 <SelectContent>
@@ -538,7 +581,7 @@ function ProductsPage() {
                 </SelectContent>
               </Select>
               <Select value={filterBy} onValueChange={setFilterBy}>
-                <SelectTrigger className="h-9 flex-1 text-xs sm:h-10 sm:w-[160px] sm:flex-none sm:text-sm">
+                <SelectTrigger className="hidden sm:flex h-10 w-[160px] text-sm">
                   <SelectValue placeholder={lang === "bn" ? "ফিল্টার" : "Filter"} />
                 </SelectTrigger>
                 <SelectContent>
@@ -549,7 +592,7 @@ function ProductsPage() {
                   <SelectItem value="unlimited">{lang === "bn" ? "অসীম স্টক" : "Unlimited"}</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
+            </>
           }
         />
       </div>
