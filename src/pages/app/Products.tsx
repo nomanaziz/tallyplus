@@ -521,7 +521,6 @@ function ProductsPage() {
         <DataToolbar
           search={search}
           onSearch={setSearch}
-          onRefresh={load}
           middleExtra={
             <div className="flex w-full gap-1.5 sm:contents">
               <Select value={sortBy} onValueChange={setSortBy}>
