@@ -3,9 +3,20 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Link } from "@/lib/router";
-import { Loader2, Store, ListChecks, Plus, FileText, CalendarClock, Trash2, Pause, Play, Star, Check, X, Clock } from "lucide-react";
+import { Link, useNavigate } from "@/lib/router";
+import {
+  Loader2, Store, ListChecks, Plus, FileText, CalendarClock,
+  Trash2, Pause, Play, Star, Check, X, Clock, Save, Copy, Calendar,
+} from "lucide-react";
 import { toast } from "sonner";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 
 type Wishlist = {
   id: string;
@@ -44,6 +55,7 @@ type Schedule = {
 
 export default function MyFordo() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [items, setItems] = useState<Wishlist[]>([]);
   const [shops, setShops] = useState<Record<string, Shop>>({});
@@ -52,6 +64,12 @@ export default function MyFordo() {
   const [favourites, setFavourites] = useState<Shop[]>([]);
   const [itemsByWl, setItemsByWl] = useState<Record<string, WLItem[]>>({});
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const [monthFilter, setMonthFilter] = useState<string>("all");
+  // Save-as-template dialog state
+  const [saveOpen, setSaveOpen] = useState(false);
+  const [saveWlId, setSaveWlId] = useState<string | null>(null);
+  const [saveName, setSaveName] = useState("");
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -171,6 +189,89 @@ export default function MyFordo() {
       return `প্রতি ${days[s.day_of_week ?? 0]}বার`;
     }
     return "একবার";
+  };
+
+  // ----- Month filter helpers -----
+  const BN_MONTHS = [
+    "জানুয়ারি", "ফেব্রুয়ারি", "মার্চ", "এপ্রিল", "মে", "জুন",
+    "জুলাই", "আগস্ট", "সেপ্টেম্বর", "অক্টোবর", "নভেম্বর", "ডিসেম্বর",
+  ];
+  const monthKey = (iso: string) => {
+    const d = new Date(iso);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  };
+  const monthLabel = (key: string) => {
+    const [y, m] = key.split("-");
+    return `${BN_MONTHS[Number(m) - 1]} ${y}`;
+  };
+  const monthCounts: Record<string, number> = {};
+  for (const w of items) {
+    const k = monthKey(w.created_at);
+    monthCounts[k] = (monthCounts[k] || 0) + 1;
+  }
+  const monthOptions = Object.keys(monthCounts).sort((a, b) => (a < b ? 1 : -1));
+  const filteredItems =
+    monthFilter === "all" ? items : items.filter((w) => monthKey(w.created_at) === monthFilter);
+
+  // ----- Save as template -----
+  const openSaveTemplate = (w: Wishlist) => {
+    const wlItems = itemsByWl[w.id] ?? [];
+    if (wlItems.length === 0) return toast.error("এই ফর্দে কোনো পণ্য নেই");
+    setSaveWlId(w.id);
+    const shopName = shops[w.shop_id]?.name ?? "ফর্দ";
+    const dt = new Date(w.created_at);
+    setSaveName(`${shopName} — ${dt.toLocaleDateString("bn-BD", { day: "numeric", month: "short" })}`);
+    setSaveOpen(true);
+  };
+  const confirmSaveTemplate = async () => {
+    if (!user || !saveWlId) return;
+    const name = saveName.trim();
+    if (!name) return toast.error("একটি নাম দিন");
+    const w = items.find((x) => x.id === saveWlId);
+    const wlItems = itemsByWl[saveWlId] ?? [];
+    const tplItems = wlItems.map((it) => ({
+      name: it.name,
+      qty: it.qty,
+      unit: it.unit,
+      price: it.price,
+    }));
+    setSaving(true);
+    const { data, error } = await supabase
+      .from("consumer_fordo_templates")
+      .insert({
+        consumer_user_id: user.id,
+        name,
+        note: w?.note ?? null,
+        items: tplItems,
+      } as never)
+      .select("id,name,items,created_at")
+      .single();
+    setSaving(false);
+    if (error) return toast.error(error.message);
+    if (data) setTemplates((t) => [data as Template, ...t]);
+    toast.success("টেমপ্লেট সংরক্ষণ করা হয়েছে");
+    setSaveOpen(false);
+  };
+
+  // ----- Duplicate (reuse) -----
+  const duplicateWishlist = (w: Wishlist) => {
+    const wlItems = itemsByWl[w.id] ?? [];
+    if (wlItems.length === 0) return toast.error("এই ফর্দে কোনো পণ্য নেই");
+    const payload = {
+      items: wlItems.map((it) => ({
+        name: it.name,
+        qty: it.qty != null ? String(it.qty) : "",
+        unit: it.unit ?? "",
+      })),
+      note: w.note ?? "",
+      shopId: w.shop_id,
+    };
+    try {
+      sessionStorage.setItem(`fordo-dup-${w.id}`, JSON.stringify(payload));
+    } catch {
+      // ignore
+    }
+    navigate({ to: `/customer/create-fordo?duplicateFrom=${w.id}` });
   };
 
   if (loading) {
