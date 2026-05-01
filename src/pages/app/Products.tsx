@@ -694,22 +694,22 @@ function ProductsPage() {
                       <TableCell className="text-right hidden sm:table-cell tabular-nums">
                         {fmtMoney(Number(p.cost_price), lang)}
                       </TableCell>
-                      <TableCell className="text-right tabular-nums">{fmtMoney(Number(p.sale_price), lang)}</TableCell>
+                      <TableCell className={"text-right tabular-nums " + (editStockMode ? "hidden sm:table-cell" : "")}>{fmtMoney(Number(p.sale_price), lang)}</TableCell>
                       <TableCell className="text-right hidden md:table-cell font-semibold tabular-nums">
                         {isUnlimited ? "—" : fmtMoney(stockValue, lang)}
                       </TableCell>
                       {editStockMode ? (
-                        <TableCell onClick={(e) => e.stopPropagation()}>
+                        <TableCell className="px-1 sm:px-2" onClick={(e) => e.stopPropagation()}>
                           {isUnlimited ? (
                             <div className="text-center text-xs text-muted-foreground">
                               {lang === "bn" ? "অসীম" : "Unlimited"}
                             </div>
                           ) : (
-                            <div className="mx-auto flex w-[240px] items-center gap-2">
+                            <div className="mx-auto flex w-full max-w-[240px] items-center gap-1 sm:gap-2">
                               <Button
                                 variant="outline"
                                 size="icon"
-                                className="h-9 w-10 rounded-md bg-rose-100 text-rose-600 hover:bg-rose-200 border-rose-200"
+                                className="h-9 w-9 sm:w-10 flex-none rounded-md bg-rose-100 text-rose-600 hover:bg-rose-200 border-rose-200"
                                 onClick={() => setQty(p.id, Math.max(0, cur - 1))}
                               >
                                 <Minus className="h-4 w-4" />
@@ -718,12 +718,12 @@ function ProductsPage() {
                                 type="number"
                                 value={cur}
                                 onChange={(e) => setQty(p.id, Math.max(0, Number(e.target.value) || 0))}
-                                className={"h-9 text-center text-sm font-semibold tabular-nums " + (changed ? "border-b-2 border-b-blue-500 focus-visible:ring-blue-500" : "")}
+                                className={"h-9 min-w-0 flex-1 text-center text-sm font-semibold tabular-nums " + (changed ? "border-b-2 border-b-blue-500 focus-visible:ring-blue-500" : "")}
                               />
                               <Button
                                 variant="outline"
                                 size="icon"
-                                className="h-9 w-10 rounded-md bg-emerald-500 text-white hover:bg-emerald-600 border-emerald-500"
+                                className="h-9 w-9 sm:w-10 flex-none rounded-md bg-emerald-500 text-white hover:bg-emerald-600 border-emerald-500"
                                 onClick={() => setQty(p.id, cur + 1)}
                               >
                                 <Plus className="h-4 w-4" />
