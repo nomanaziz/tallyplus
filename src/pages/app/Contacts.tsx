@@ -401,12 +401,14 @@ function ContactDialog({
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
   const [busy, setBusy] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   useEffect(() => {
     if (open) {
       setName(editing?.name ?? "");
       setPhone(editing?.phone ?? "");
       setAddress(editing?.address ?? "");
+      setPickerOpen(false);
     }
   }, [open, editing]);
 
@@ -471,6 +473,17 @@ function ContactDialog({
           </DialogTitle>
         </DialogHeader>
         <div className="grid gap-3">
+          {!editing && (
+            <Button
+              type="button"
+              variant="secondary"
+              className="h-11 w-full gap-2 rounded-full"
+              onClick={() => setPickerOpen(true)}
+            >
+              <BookUser className="h-4 w-4" />
+              {lang === "bn" ? "ফোনবুক থেকে যোগ করি" : "Add from phonebook"}
+            </Button>
+          )}
           <div className="grid gap-1.5">
             <Label>{lang === "bn" ? "নাম" : "Name"}</Label>
             <Input value={name} onChange={(e) => setName(e.target.value)} />
@@ -488,6 +501,14 @@ function ContactDialog({
           <Button variant="ghost" onClick={() => onOpenChange(false)}>{lang === "bn" ? "বাতিল" : "Cancel"}</Button>
           <Button onClick={save} disabled={busy}>{busy ? "..." : lang === "bn" ? "সেভ" : "Save"}</Button>
         </DialogFooter>
+        <PhonebookPickerDialog
+          open={pickerOpen}
+          onOpenChange={setPickerOpen}
+          onPick={(c) => {
+            setName(c.name || "");
+            setPhone((c.phone || "").replace(/\s+/g, ""));
+          }}
+        />
       </DialogContent>
     </Dialog>
   );
