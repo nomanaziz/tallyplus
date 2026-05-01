@@ -116,6 +116,8 @@ export const appRoutes: RouteObject[] = [
 { path: "training", element: <Suspense fallback={<RouteFallback/>}><L19/></Suspense> },
 { path: "usage-limits", element: <Suspense fallback={<RouteFallback/>}><L20/></Suspense> },
 { path: "users", element: <Suspense fallback={<RouteFallback/>}><L21/></Suspense> }
+,
+{ path: "admins", element: <Suspense fallback={<RouteFallback/>}><LPlatformAdmins/></Suspense> }
 ] },
 { path: "affiliate", element: <Suspense fallback={<RouteFallback/>}><L22/></Suspense>, children: [
 { path: "register", element: <Suspense fallback={<RouteFallback/>}><L23/></Suspense> }
