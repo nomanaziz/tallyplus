@@ -333,5 +333,7 @@ export function SettingsSheet({ open, onOpenChange }: { open: boolean; onOpenCha
         </div>
       </SheetContent>
     </Sheet>
+    <ActiveDevicesDialog open={devicesOpen} onOpenChange={setDevicesOpen} />
+    </>
   );
 }
