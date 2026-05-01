@@ -138,6 +138,15 @@ export default function MyFordo() {
       }
       setShops(shopMap);
       setFavourites(favShopIds.map((id) => shopMap[id]).filter(Boolean));
+      // Load already-expensed wishlist IDs
+      const { data: txRows } = await supabase
+        .from("consumer_transactions")
+        .select("source_wishlist_id")
+        .eq("user_id", user.id)
+        .not("source_wishlist_id", "is", null);
+      if (!cancelled) {
+        setExpensedIds(new Set(((txRows ?? []) as Array<{ source_wishlist_id: string }>).map((r) => r.source_wishlist_id)));
+      }
       setLoading(false);
     })();
     return () => { cancelled = true; };
@@ -158,6 +167,35 @@ export default function MyFordo() {
       const pr = Number(it.price) || 0;
       return sum + (q && pr ? q * pr : pr);
     }, 0);
+  };
+
+  const pushToExpense = async (w: Wishlist) => {
+    if (!user) return;
+    const total = wlTotal(w.id);
+    if (total <= 0) return toast.error("দাম যোগ হওয়া পণ্য নেই");
+    if (expensedIds.has(w.id)) return toast.info("এই ফর্দ ইতিমধ্যে খরচে যোগ করা আছে");
+    const shopName = shops[w.shop_id]?.name ?? "দোকান";
+    if (!confirm(`এই ফর্দের ৳${total.toLocaleString("bn-BD")} খরচে যোগ করবেন?`)) return;
+    setPushingId(w.id);
+    const { error } = await supabase.from("consumer_transactions").insert({
+      user_id: user.id,
+      type: "expense",
+      amount: total,
+      category: "বাজার/খাবার",
+      note: `ফর্দ থেকে: ${shopName}`,
+      tx_date: new Date(w.created_at).toISOString().slice(0, 10),
+      source_wishlist_id: w.id,
+    });
+    setPushingId(null);
+    if (error) {
+      if (error.code === "23505") {
+        setExpensedIds((s) => new Set(s).add(w.id));
+        return toast.info("আগেই যোগ করা আছে");
+      }
+      return toast.error(error.message);
+    }
+    setExpensedIds((s) => new Set(s).add(w.id));
+    toast.success("আয়-ব্যয়ে যোগ হয়েছে");
   };
 
   const fsBadge = (it: WLItem) => {
