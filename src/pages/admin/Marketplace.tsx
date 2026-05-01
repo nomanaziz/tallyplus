@@ -84,6 +84,7 @@ function ProductsTab() {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<Partial<Product> | null>(null);
   const [saving, setSaving] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [shopTypes, setShopTypes] = useState<ShopTypeOpt[]>([]);
   const [categories, setCategories] = useState<{ name: string; count: number }[]>([]);
 
