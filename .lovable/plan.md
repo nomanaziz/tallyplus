@@ -1,58 +1,31 @@
-## লক্ষ্য
+## Goal
 
-"PIN ভুলে গেছেন? WhatsApp করুন" link টা এখন সবসময় দেখায়। এটা শুধুমাত্র তখনই আসবে যখন:
-- ফোন নম্বর সঠিক ভাবে দেওয়া আছে (valid মোবাইল নম্বর), **এবং**
-- ওই নম্বরে account আছে (login-with-pin / customer-login-with-pin → `wrong_pin` বা `no_pin_set` error দিয়েছে — মানে account exists কিন্তু PIN মেলেনি)।
+Products page-এ দুটো ছোট improvement:
+1. "রিফ্রেশ" button উপরে header এ নিয়ে যাওয়া (DataToolbar থেকে সরিয়ে title এর পাশে)
+2. Summary card ("মোট স্টক" / "মজুদ মূল্য") আরেকটু compact করা — বিশেষত mobile-এ
 
-যদি account না থাকে (`no_account`) বা ফোন না দেওয়া হয়, তখন WhatsApp link দেখাবে না — সরাসরি toast এ message আসবে।
+## Changes
 
-## বর্তমান অবস্থা (`src/components/site/LoginCard.tsx`)
+### 1. `src/pages/app/Products.tsx` — Refresh button উপরে
 
-- Login mode এ phone + PIN field এর নিচে সবসময় একটি static WhatsApp link থাকে।
-- Login submit করলে edge function (`login-with-pin` / `customer-login-with-pin`) ৩ ধরনের error দেয়: `wrong_pin`, `no_account`, `no_pin_set` — toast এ দেখানো হয়, কিন্তু WhatsApp link এর visibility এর সাথে যুক্ত নয়।
+- Title row ("প্রোডাক্ট ও স্টক") এর action group এ একটা ছোট Refresh button যোগ করা — icon-only mobile-এ, icon+text desktop-এ। Existing `load()` function call করবে।
+- Position: action buttons এর শুরুতে (Stock history / Stock edit এর আগে), এবং mobile-এ "Add" button এর পাশে দেখা যাবে যেন miss না হয়।
+- `DataToolbar` থেকে `onRefresh={load}` prop টা remove করা — যাতে duplicate না হয়।
+- Import: `RefreshCw` icon `lucide-react` থেকে যোগ করা।
 
-## পরিবর্তন (শুধু `LoginCard.tsx`)
+### 2. Summary card ছোট করা (lines 467–487)
 
-### ১. নতুন state
-`const [showForgotPin, setShowForgotPin] = useState(false);`
-এটা track করবে user এর জন্য "PIN ভুলে গেছেন?" option দেখানো উচিত কি না।
+বর্তমানে mobile-এ number `text-base` (16px) এবং desktop-এ `text-3xl` — একে কমানো:
 
-### ২. Login submit এর behaviour update
-`handleSubmit` এর login branch এ:
-- `wrong_pin` বা `no_pin_set` → `setShowForgotPin(true)` + আগের মত toast।
-- `no_account` → `setShowForgotPin(false)` + toast "এই নম্বরে account নেই — সাইনআপ করুন"।
-- success → state reset।
+- Outer card: `p-2 sm:p-5` → `p-1.5 sm:p-3`, `mt-2 sm:mt-4` → `mt-2 sm:mt-3`, `rounded-2xl` → `rounded-xl`
+- Inner tiles: `px-2 py-1.5 sm:px-3 sm:py-4` → `px-2 py-1 sm:px-3 sm:py-2`
+- Number: `text-base sm:text-3xl` → `text-sm sm:text-xl`
+- Label: `text-[10px] sm:text-sm` → `text-[10px] sm:text-xs`
+- Gap: `gap-1.5 sm:gap-4` → `gap-1.5 sm:gap-3`
 
-Phone বা PIN field edit করলে `showForgotPin` reset হয়ে যাবে (নতুন চেষ্টা)। mode/role switch করলেও reset।
+ফলাফল: card-টা প্রায় অর্ধেক উচ্চতার হবে, কিন্তু পড়তে সমস্যা হবে না।
 
-### ৩. WhatsApp link conditional render
-শুধু তখনই দেখাবে যখন:
-- `mode === "login"`, **এবং**
-- `showForgotPin === true`, **এবং**
-- `normalizePhone(phone)` valid (≥ 10 digit)।
+## Out of scope
 
-Validation এ phone না থাকলে button disabled থাকবে / link হাইড থাকবে। `waUrl()` এ phone fallback string টা সরিয়ে শুধু আসল ফোন থাকবে (যেহেতু এখন phone নিশ্চিত)।
-
-WhatsApp message format — এখন phone টা সবসময় থাকবে, যেমন:
-```
-আসসালামু আলাইকুম, আমার Tally Plus account এর PIN ভুলে গেছি।
-Phone: +8801XXXXXXXXX
-দয়া করে PIN reset/সাহায্য করুন।
-```
-
-### ৪. UX detail
-- WhatsApp box এর উপরে ছোট হিন্ট: "PIN মনে নেই? নিচের button থেকে WhatsApp এ admin কে জানান।"
-- Signup mode বা role tab switch করলে `showForgotPin` সবসময় false হবে।
-
-## ফলাফল
-
-- একদম প্রথমে login screen এ WhatsApp link দেখা যাবে না — পরিষ্কার UI।
-- ফোন না দিয়ে কেউ WhatsApp করতে পারবে না।
-- `no_account` হলে শুধু toast — sign up করতে বলবে, WhatsApp link আসবে না (কারণ account ই নাই)।
-- শুধু "account আছে কিন্তু PIN ভুল / PIN সেট নাই" — এই দুই case এ WhatsApp করার option আসবে, এবং সেই WhatsApp message এ user এর ফোন নম্বর অটো বসানো থাকবে।
-
-## ফাইল
-
-```text
-বদল: src/components/site/LoginCard.tsx
-```
+- "মোট স্টক" / "মজুদ মূল্য" labels বা values এর logic — অপরিবর্তিত।
+- DataToolbar component নিজে — শুধু prop পাস করা বন্ধ; অন্য page যারা use করে তাদের refresh আগের মতই থাকবে।

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Plus, Download, MoreVertical, Package, Pencil, Trash2, Sparkles, Hash,
-  Eye, History, Save, X, Minus, ListOrdered,
+  Eye, History, Save, X, Minus, ListOrdered, RefreshCw,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useShop } from "@/lib/shop";
@@ -386,6 +386,15 @@ function ProductsPage() {
             </>
           ) : (
             <>
+              <Button
+                variant="outline"
+                className="h-9 gap-1.5 px-2 sm:h-10 sm:gap-2 sm:px-3"
+                onClick={load}
+                aria-label={lang === "bn" ? "রিফ্রেশ" : "Refresh"}
+              >
+                <RefreshCw className="h-4 w-4" />
+                <span className="hidden sm:inline">{lang === "bn" ? "রিফ্রেশ" : "Refresh"}</span>
+              </Button>
               <Button variant="outline" className="hidden sm:inline-flex h-10 gap-2 border-primary text-primary hover:bg-primary/10" onClick={openHistory}>
                 <History className="h-4 w-4" />
                 {lang === "bn" ? "স্টকের ইতিহাস" : "Stock history"}
@@ -465,21 +474,21 @@ function ProductsPage() {
       <SampleProductImportSheet open={openImport} onOpenChange={setOpenImport} onImported={() => void load()} />
 
       {/* Summary card — Total Stock & Stock Value */}
-      <div className="mt-2 rounded-2xl bg-primary p-2 text-primary-foreground shadow-sm sm:mt-4 sm:p-5">
-        <div className="grid grid-cols-2 gap-1.5 sm:gap-4">
-          <div className="rounded-xl bg-primary-foreground/15 px-2 py-1.5 text-center sm:px-3 sm:py-4">
-            <div className="text-base font-extrabold tabular-nums sm:text-3xl">
+      <div className="mt-2 rounded-xl bg-primary p-1.5 text-primary-foreground shadow-sm sm:mt-3 sm:p-3">
+        <div className="grid grid-cols-2 gap-1.5 sm:gap-3">
+          <div className="rounded-lg bg-primary-foreground/15 px-2 py-1 text-center sm:px-3 sm:py-2">
+            <div className="text-sm font-extrabold tabular-nums sm:text-xl">
               {lang === "bn" ? bnNum(totalStockCount) : totalStockCount.toLocaleString()}
             </div>
-            <div className="mt-0 text-[10px] font-semibold sm:mt-1 sm:text-sm">
+            <div className="mt-0 text-[10px] font-semibold sm:text-xs">
               {lang === "bn" ? "মোট স্টক" : "Total Stock"}
             </div>
           </div>
-          <div className="rounded-xl bg-primary-foreground/15 px-2 py-1.5 text-center sm:px-3 sm:py-4">
-            <div className="text-base font-extrabold tabular-nums sm:text-3xl">
+          <div className="rounded-lg bg-primary-foreground/15 px-2 py-1 text-center sm:px-3 sm:py-2">
+            <div className="text-sm font-extrabold tabular-nums sm:text-xl">
               {fmtMoney(totalStockValue, lang)}
             </div>
-            <div className="mt-0 text-[10px] font-semibold sm:mt-1 sm:text-sm">
+            <div className="mt-0 text-[10px] font-semibold sm:text-xs">
               {lang === "bn" ? "মজুদ মূল্য" : "Stock Value"}
             </div>
           </div>
@@ -512,7 +521,6 @@ function ProductsPage() {
         <DataToolbar
           search={search}
           onSearch={setSearch}
-          onRefresh={load}
           middleExtra={
             <div className="flex w-full gap-1.5 sm:contents">
               <Select value={sortBy} onValueChange={setSortBy}>
