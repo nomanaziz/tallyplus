@@ -6,12 +6,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useCart, clearShopCart } from "@/lib/consumer-cart";
 import { useConsumerSession } from "@/lib/consumer-session";
 import { ConsumerAuthPanel } from "@/components/shop/ConsumerAuthPanel";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Loader2, ShoppingBag } from "lucide-react";
+
+type Zone = { id: string; name: string; charge: number; free_shipping_min: number | null; sort_order: number };
 
 export default function CheckoutPage() {
   const { shopId } = useParams<{ shopId: string }>();
@@ -28,6 +31,8 @@ export default function CheckoutPage() {
   const [address, setAddress] = useState("");
   const [note, setNote] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [zones, setZones] = useState<Zone[]>([]);
+  const [zoneId, setZoneId] = useState<string>("");
 
   useEffect(() => {
     if (profile) {
@@ -36,6 +41,29 @@ export default function CheckoutPage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile?.id]);
+
+  useEffect(() => {
+    if (!shopId) return;
+    let alive = true;
+    (async () => {
+      const { data } = await supabase.functions.invoke("marketplace-public", {
+        body: { action: "delivery-zones", shop_id: shopId },
+      });
+      if (!alive) return;
+      const zs = ((data as { zones?: Zone[] } | null)?.zones ?? []) as Zone[];
+      setZones(zs);
+      if (zs[0]) setZoneId(zs[0].id);
+    })();
+    return () => { alive = false; };
+  }, [shopId]);
+
+  const selectedZone = zones.find((z) => z.id === zoneId) ?? null;
+  const deliveryCharge = selectedZone
+    ? selectedZone.free_shipping_min !== null && subtotal >= Number(selectedZone.free_shipping_min)
+      ? 0
+      : Number(selectedZone.charge)
+    : 0;
+  const total = subtotal + deliveryCharge;
 
   if (items.length === 0 && !submitting) {
     return (
@@ -56,6 +84,10 @@ export default function CheckoutPage() {
       toast.error("নাম, ফোন ও ঠিকানা পূরণ করুন");
       return;
     }
+    if (zones.length > 0 && !zoneId) {
+      toast.error("ডেলিভারি এলাকা select করুন");
+      return;
+    }
     setSubmitting(true);
     const { data, error } = await supabase.functions.invoke("marketplace-public", {
       body: {
@@ -67,6 +99,7 @@ export default function CheckoutPage() {
         customer_address: address.trim(),
         note: note.trim(),
         payment_method: "cod",
+        delivery_zone_id: zoneId || null,
       },
     });
     setSubmitting(false);
@@ -110,6 +143,31 @@ export default function CheckoutPage() {
                 <Label>ঠিকানা *</Label>
                 <Textarea value={address} onChange={(e) => setAddress(e.target.value)} rows={2} />
               </div>
+              {zones.length > 0 && (
+                <div>
+                  <Label className="mb-2 block">ডেলিভারি এলাকা *</Label>
+                  <RadioGroup value={zoneId} onValueChange={setZoneId} className="space-y-2">
+                    {zones.map((z) => {
+                      const isFree = z.free_shipping_min !== null && subtotal >= Number(z.free_shipping_min);
+                      return (
+                        <label
+                          key={z.id}
+                          htmlFor={`zone-${z.id}`}
+                          className="flex cursor-pointer items-center justify-between rounded-md border p-3 hover:bg-accent/40"
+                        >
+                          <div className="flex items-center gap-2">
+                            <RadioGroupItem id={`zone-${z.id}`} value={z.id} />
+                            <span className="font-medium">{z.name}</span>
+                          </div>
+                          <span className="text-sm font-semibold">
+                            {isFree ? "ফ্রি" : `৳${Number(z.charge).toFixed(0)}`}
+                          </span>
+                        </label>
+                      );
+                    })}
+                  </RadioGroup>
+                </div>
+              )}
               <div>
                 <Label>নোট (ঐচ্ছিক)</Label>
                 <Textarea value={note} onChange={(e) => setNote(e.target.value)} rows={2} />
@@ -120,7 +178,7 @@ export default function CheckoutPage() {
               </div>
               <Button onClick={placeOrder} disabled={submitting} className="w-full">
                 {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Order Confirm করুন (৳{subtotal.toFixed(0)})
+                Order Confirm করুন (৳{total.toFixed(0)})
               </Button>
             </div>
           )}
@@ -141,10 +199,11 @@ export default function CheckoutPage() {
               <span>Subtotal</span><span>৳{subtotal.toFixed(0)}</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span>Delivery</span><span>To be confirmed</span>
+              <span>Delivery {selectedZone ? `(${selectedZone.name})` : ""}</span>
+              <span>{deliveryCharge === 0 ? (selectedZone ? "ফ্রি" : "৳0") : `৳${deliveryCharge.toFixed(0)}`}</span>
             </div>
             <div className="mt-1 flex justify-between border-t pt-2 text-base font-bold">
-              <span>Total</span><span>৳{subtotal.toFixed(0)}</span>
+              <span>Total</span><span>৳{total.toFixed(0)}</span>
             </div>
           </div>
         </aside>
