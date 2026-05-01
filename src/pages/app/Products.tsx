@@ -699,7 +699,7 @@ function ProductsPage() {
                         {isUnlimited ? "—" : fmtMoney(stockValue, lang)}
                       </TableCell>
                       {editStockMode ? (
-                        <TableCell>
+                        <TableCell onClick={(e) => e.stopPropagation()}>
                           {isUnlimited ? (
                             <div className="text-center text-xs text-muted-foreground">
                               {lang === "bn" ? "অসীম" : "Unlimited"}
