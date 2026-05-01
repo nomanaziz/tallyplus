@@ -1017,6 +1017,54 @@ export type Database = {
         }
         Relationships: []
       }
+      consumer_loans: {
+        Row: {
+          amount: number
+          created_at: string
+          due_date: string | null
+          id: string
+          is_settled: boolean
+          loan_date: string
+          note: string | null
+          party_name: string
+          party_phone: string | null
+          settled_at: string | null
+          type: Database["public"]["Enums"]["loan_type"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          is_settled?: boolean
+          loan_date?: string
+          note?: string | null
+          party_name: string
+          party_phone?: string | null
+          settled_at?: string | null
+          type: Database["public"]["Enums"]["loan_type"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          is_settled?: boolean
+          loan_date?: string
+          note?: string | null
+          party_name?: string
+          party_phone?: string | null
+          settled_at?: string | null
+          type?: Database["public"]["Enums"]["loan_type"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       consumer_notes: {
         Row: {
           content: string | null
@@ -1129,6 +1177,7 @@ export type Database = {
           created_at: string
           id: string
           note: string | null
+          source_wishlist_id: string | null
           tx_date: string
           type: string
           updated_at: string
@@ -1140,6 +1189,7 @@ export type Database = {
           created_at?: string
           id?: string
           note?: string | null
+          source_wishlist_id?: string | null
           tx_date?: string
           type: string
           updated_at?: string
@@ -1151,6 +1201,7 @@ export type Database = {
           created_at?: string
           id?: string
           note?: string | null
+          source_wishlist_id?: string | null
           tx_date?: string
           type?: string
           updated_at?: string
@@ -4016,6 +4067,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "owner" | "manager" | "cashier" | "buyer" | "consumer"
+      loan_type: "lent" | "borrowed"
       payment_method:
         | "cash"
         | "bkash"
@@ -4157,6 +4209,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "owner", "manager", "cashier", "buyer", "consumer"],
+      loan_type: ["lent", "borrowed"],
       payment_method: [
         "cash",
         "bkash",
