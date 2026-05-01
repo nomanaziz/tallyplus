@@ -168,10 +168,10 @@ function PublicShopPage() {
                 সরাসরি লিখুন বা মাইক চেপে কথা বলে ফর্দ বানান। ১ মিনিটেই পাঠানো শেষ।
               </p>
             </div>
-            {wishlistSlug ? (
+            {fordoHandle ? (
               <Link
-                to="/f/$slug"
-                params={{ slug: wishlistSlug }}
+                to="/$slug/forward"
+                params={{ slug: fordoHandle }}
                 className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-bold text-primary-foreground shadow-md hover:bg-primary/90 sm:text-base"
               >
                 <FileText className="h-4 w-4" />
