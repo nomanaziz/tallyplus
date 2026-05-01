@@ -7,8 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Loader2, LogOut } from "lucide-react";
-import { icons } from "@/lib/icons";
+import { Loader2, LogOut, ListChecks, ShoppingBag, Heart, Wallet, StickyNote, GraduationCap } from "lucide-react";
 import { LocationPicker, type LocationValue } from "@/components/LocationPicker";
 
 type Consumer = {
@@ -91,21 +90,22 @@ export default function CustomerProfilePage() {
 
   return (
     <div className="mx-auto w-full max-w-2xl space-y-6">
-      <div className="grid grid-cols-3 gap-2 sm:grid-cols-5 sm:gap-3">
+      <div className="grid grid-cols-3 gap-2 sm:grid-cols-6 sm:gap-3">
         {[
-          { to: "/customer/my-fordo", label: "ফর্দ", icon: icons.productList },
-          { to: "/customer/my-orders", label: "অর্ডার", icon: icons.salesList },
-          { to: "/customer/money", label: "আয়-ব্যয়", icon: icons.cashbox },
-          { to: "/customer/notes", label: "নোট", icon: icons.bookmark },
-          { to: "/customer/training", label: "ট্রেনিং", icon: icons.training },
-        ].map(({ to, label, icon }) => (
+          { to: "/customer/my-fordo", label: "ফর্দ", Icon: ListChecks, tone: "bg-violet-100 text-violet-700" },
+          { to: "/customer/my-orders", label: "অর্ডার", Icon: ShoppingBag, tone: "bg-indigo-100 text-indigo-700" },
+          { to: "/customer/favorite-shops", label: "প্রিয় দোকান", Icon: Heart, tone: "bg-rose-100 text-rose-700" },
+          { to: "/customer/money", label: "আয়-ব্যয়", Icon: Wallet, tone: "bg-emerald-100 text-emerald-700" },
+          { to: "/customer/notes", label: "নোট", Icon: StickyNote, tone: "bg-amber-100 text-amber-700" },
+          { to: "/customer/training", label: "ট্রেনিং", Icon: GraduationCap, tone: "bg-sky-100 text-sky-700" },
+        ].map(({ to, label, Icon, tone }) => (
           <Link
             key={to}
             to={to}
             className="flex flex-col items-center gap-1.5 rounded-2xl border bg-card p-3 text-center shadow-sm transition hover:border-primary/40"
           >
-            <div className="flex h-12 w-12 items-center justify-center">
-              <img src={icon} alt="" className="h-full w-full object-contain" />
+            <div className={`flex h-12 w-12 items-center justify-center rounded-2xl ${tone}`}>
+              <Icon className="h-6 w-6" />
             </div>
             <div className="text-[11px] font-semibold leading-tight">{label}</div>
           </Link>
