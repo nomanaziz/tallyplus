@@ -135,6 +135,7 @@ export function SettingsSheet({ open, onOpenChange }: { open: boolean; onOpenCha
   };
 
   return (
+    <>
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="flex w-full flex-col gap-0 p-0 sm:max-w-md">
         <SheetHeader className="flex-none border-b px-4 py-3">
