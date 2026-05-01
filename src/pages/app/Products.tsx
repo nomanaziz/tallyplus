@@ -732,12 +732,12 @@ function ProductsPage() {
                           )}
                         </TableCell>
                       ) : (
-                        <TableCell className="text-right">
+                        <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                           <div className="flex items-center justify-end gap-1">
                             <Button
                               size="sm"
                               variant="outline"
-                              className="h-8 w-8 p-0"
+                              className="hidden sm:inline-flex h-8 w-8 p-0"
                               onClick={() => setDetails(p)}
                               title={lang === "bn" ? "বিস্তারিত" : "View"}
                             >
