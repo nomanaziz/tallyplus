@@ -21,7 +21,7 @@ export default function CustomerLayout() {
 
   useEffect(() => {
     if (loading) return;
-    if (!session?.user) navigate("/auth", { replace: true });
+    if (!session?.user) navigate("/", { replace: true });
   }, [session, loading, navigate]);
 
   if (loading || !session?.user) {

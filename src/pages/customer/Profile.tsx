@@ -34,7 +34,7 @@ export default function CustomerProfilePage() {
   useEffect(() => {
     if (authLoading) return;
     if (!session?.user) {
-      navigate({ to: "/auth", replace: true });
+      navigate({ to: "/", replace: true });
       return;
     }
     void supabase

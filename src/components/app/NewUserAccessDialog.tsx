@@ -140,7 +140,7 @@ export function NewUserAccessDialog({
 
       // 3) Build the shareable login link (phone digits, login screen)
       const localPhone = normalizedPhone.replace(/^\+?880/, "0");
-      const loginUrl = `${window.location.origin}/auth?phone=${encodeURIComponent(localPhone)}`;
+      const loginUrl = `${window.location.origin}/?phone=${encodeURIComponent(localPhone)}`;
       setShare({ phone: localPhone, pin, loginUrl });
       onSaved();
       toast.success(lang === "bn" ? "ইউজার তৈরি হয়েছে" : "User created");

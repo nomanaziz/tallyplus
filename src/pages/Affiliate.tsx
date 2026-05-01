@@ -29,7 +29,7 @@ function AffiliateLanding() {
           <Link to="/" className="text-base font-extrabold">Tally Plus <span className="text-primary">Growth Partner</span></Link>
           <div className="flex items-center gap-2">
             <Link to="/affiliate/register" className="text-sm font-semibold text-primary hover:underline">রেজিস্ট্রেশন</Link>
-            <Link to="/auth"><Button size="sm" variant="outline">লগইন</Button></Link>
+            <Link to="/"><Button size="sm" variant="outline">লগইন</Button></Link>
           </div>
         </div>
       </header>
