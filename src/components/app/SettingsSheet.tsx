@@ -295,7 +295,7 @@ export function SettingsSheet({ open, onOpenChange }: { open: boolean; onOpenCha
             />
             <Row
               icon={<Smartphone className="h-4 w-4" />}
-              label={lang === "bn" ? "সক্রিয় device সমূহ (max ২)" : "Active devices (max 2)"}
+              label={lang === "bn" ? "লগইন device সমূহ ও লগআউট" : "Logged-in devices & sign out"}
               onClick={() => setDevicesOpen(true)}
             />
           </div>

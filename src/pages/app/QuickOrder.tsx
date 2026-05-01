@@ -43,6 +43,15 @@ function tid() {
   return Math.random().toString(36).slice(2, 10);
 }
 
+function FieldBox({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="rounded-md border bg-background px-2 py-1">
+      <div className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">{label}</div>
+      {children}
+    </div>
+  );
+}
+
 function QuickOrderPage() {
   return (
     <RequirePerm group="sell">
@@ -410,97 +419,108 @@ function QuickOrderInner() {
           </div>
         ) : (
           <ul className="divide-y">
-            {rows.map((r, idx) => (
-              <li key={r.tempId} className="flex items-start gap-2 px-3 py-2.5">
-                <div className="mt-1.5 w-5 select-none text-center text-xs font-semibold text-muted-foreground">
-                  {idx + 1}.
-                </div>
-                <div className="grid flex-1 grid-cols-12 items-center gap-1.5">
-                  {/* Name */}
-                  <div className="col-span-6 min-w-0">
-                    {r.isExternal ? (
-                      <Input
-                        value={r.name}
-                        onChange={(e) => updateRow(r.tempId, { name: e.target.value })}
-                        className="h-9"
-                      />
-                    ) : (
-                      <div className="truncate font-medium">{r.name}</div>
-                    )}
-                    <div className="mt-0.5">
+            {rows.map((r, idx) => {
+              const lineTotal = (Number(r.price) || 0) * (Number(r.qty) || 0);
+              const lineProfit = ((Number(r.price) || 0) - (Number(r.cost) || 0)) * (Number(r.qty) || 0);
+              return (
+                <li key={r.tempId} className="px-3 py-3">
+                  {/* Top row: name + delete */}
+                  <div className="flex items-start gap-2">
+                    <div className="mt-1 w-5 select-none text-center text-xs font-semibold text-muted-foreground">
+                      {idx + 1}.
+                    </div>
+                    <div className="min-w-0 flex-1">
                       {r.isExternal ? (
-                        <Badge variant="secondary" className="text-[10px]">External</Badge>
+                        <Input
+                          value={r.name}
+                          onChange={(e) => updateRow(r.tempId, { name: e.target.value })}
+                          className="h-9 text-sm font-medium"
+                          placeholder={lang === "bn" ? "পণ্যের নাম" : "Product name"}
+                        />
                       ) : (
-                        <span className="inline-flex items-center gap-0.5 text-[10px] text-success">
-                          <Check className="h-3 w-3" /> {lang === "bn" ? "দোকানের পণ্য" : "in store"}
-                        </span>
+                        <div className="line-clamp-2 break-words text-sm font-semibold">{r.name}</div>
                       )}
+                      <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                        {r.isExternal ? (
+                          <Badge variant="secondary" className="text-[10px]">External</Badge>
+                        ) : (
+                          <span className="inline-flex items-center gap-0.5 text-[10px] text-success">
+                            <Check className="h-3 w-3" /> {lang === "bn" ? "দোকানের পণ্য" : "in store"}
+                          </span>
+                        )}
+                        {r.isExternal ? (
+                          <Input
+                            value={r.unit}
+                            onChange={(e) => updateRow(r.tempId, { unit: e.target.value })}
+                            className="h-6 w-16 text-[11px]"
+                            maxLength={10}
+                            placeholder={lang === "bn" ? "একক" : "Unit"}
+                          />
+                        ) : (
+                          <span className="text-[11px] text-muted-foreground">/{r.unit}</span>
+                        )}
+                      </div>
                     </div>
+                    <button
+                      type="button"
+                      onClick={() => removeRow(r.tempId)}
+                      className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-destructive"
+                      aria-label="remove"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
                   </div>
-                  {/* Cost */}
-                  <div className="col-span-2">
-                    <Input
-                      type="number"
-                      value={r.cost || ""}
-                      onChange={(e) => updateRow(r.tempId, { cost: Number(e.target.value) || 0 })}
-                      className="h-9 text-right"
-                      placeholder={lang === "bn" ? "ক্রয়" : "Cost"}
-                      title={lang === "bn" ? "ক্রয় মূল্য" : "Cost price"}
-                    />
-                  </div>
-                  {/* Sell price */}
-                  <div className="col-span-2">
-                    <Input
-                      type="number"
-                      value={r.price || ""}
-                      onChange={(e) => updateRow(r.tempId, { price: Number(e.target.value) || 0 })}
-                      className="h-9 text-right"
-                      placeholder={lang === "bn" ? "বিক্রয়" : "Sell"}
-                      title={lang === "bn" ? "বিক্রয় মূল্য" : "Sell price"}
-                    />
-                  </div>
-                  {/* Qty */}
-                  <div className="col-span-2">
-                    <Input
-                      type="number"
-                      value={r.qty}
-                      onChange={(e) => updateRow(r.tempId, { qty: Number(e.target.value) || 0 })}
-                      className="h-9 text-center"
-                      min={0}
-                    />
-                  </div>
-                  {/* Unit */}
-                  <div className="col-span-12 -mt-1 flex items-center justify-between gap-2 text-[11px]">
-                    {r.isExternal ? (
+
+                  {/* Inputs row: labelled boxes for ক্রয় / বিক্রয় / পরিমাণ */}
+                  <div className="mt-2 grid grid-cols-3 gap-2">
+                    <FieldBox label={lang === "bn" ? "ক্রয়" : "Cost"}>
                       <Input
-                        value={r.unit}
-                        onChange={(e) => updateRow(r.tempId, { unit: e.target.value })}
-                        className="h-7 w-20"
-                        maxLength={10}
+                        type="number"
+                        inputMode="decimal"
+                        value={r.cost || ""}
+                        onChange={(e) => updateRow(r.tempId, { cost: Number(e.target.value) || 0 })}
+                        className="h-9 border-0 bg-transparent px-0 text-right text-sm shadow-none focus-visible:ring-0"
+                        placeholder="0"
                       />
-                    ) : (
-                      <div className="text-xs text-muted-foreground">{r.unit}</div>
-                    )}
-                    <div className="text-right">
-                      <span className="text-muted-foreground">{lang === "bn" ? "লাভ" : "Profit"}: </span>
-                      <span className={`font-semibold ${(r.price - r.cost) * r.qty >= 0 ? "text-success" : "text-destructive"}`}>
-                        ৳{((r.price - r.cost) * r.qty).toFixed(0)}
-                      </span>
-                      <span className="ml-2 text-muted-foreground">{lang === "bn" ? "মোট" : "Total"}: </span>
-                      <span className="font-semibold">৳{(r.price * r.qty).toFixed(0)}</span>
-                    </div>
+                    </FieldBox>
+                    <FieldBox label={lang === "bn" ? "বিক্রয়" : "Sell"}>
+                      <Input
+                        type="number"
+                        inputMode="decimal"
+                        value={r.price || ""}
+                        onChange={(e) => updateRow(r.tempId, { price: Number(e.target.value) || 0 })}
+                        className="h-9 border-0 bg-transparent px-0 text-right text-sm shadow-none focus-visible:ring-0"
+                        placeholder="0"
+                      />
+                    </FieldBox>
+                    <FieldBox label={lang === "bn" ? "পরিমাণ" : "Qty"}>
+                      <Input
+                        type="number"
+                        inputMode="decimal"
+                        value={r.qty}
+                        onChange={(e) => updateRow(r.tempId, { qty: Number(e.target.value) || 0 })}
+                        className="h-9 border-0 bg-transparent px-0 text-right text-sm shadow-none focus-visible:ring-0"
+                        min={0}
+                      />
+                    </FieldBox>
                   </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => removeRow(r.tempId)}
-                  className="mt-1 rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-destructive"
-                  aria-label="remove"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              </li>
-            ))}
+
+                  {/* Line summary */}
+                  <div className="mt-2 flex items-center justify-between text-[11px]">
+                    <span className="text-muted-foreground">
+                      {lang === "bn" ? "লাভ" : "Profit"}:{" "}
+                      <span className={`font-semibold ${lineProfit >= 0 ? "text-success" : "text-destructive"}`}>
+                        ৳{lineProfit.toFixed(0)}
+                      </span>
+                    </span>
+                    <span className="text-muted-foreground">
+                      {lang === "bn" ? "মোট" : "Total"}:{" "}
+                      <span className="text-sm font-bold text-foreground">৳{lineTotal.toFixed(0)}</span>
+                    </span>
+                  </div>
+                </li>
+              );
+            })}
           </ul>
         )}
 

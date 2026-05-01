@@ -161,33 +161,65 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!session?.user) return;
     const deviceId = getDeviceId();
     let cancelled = false;
+    let registered = false;
+    let warned = false;
+    let consecutiveMisses = 0;
 
     const register = async () => {
       try {
-        await supabase.rpc("register_active_device", {
+        const { error } = await supabase.rpc("register_active_device", {
           _device_id: deviceId,
           _user_agent: getDeviceLabel(),
         });
+        if (!error) registered = true;
       } catch { /* ignore */ }
     };
     void register();
 
     const tick = async () => {
       if (cancelled) return;
+      // Don't heartbeat until we successfully registered, otherwise the
+      // server will (correctly) report "not allowed" and we'd kick the user.
+      if (!registered) {
+        await register();
+        return;
+      }
+      // Skip when tab is hidden — saves churn and avoids racing with another
+      // tab on the same device that just registered.
+      if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
       try {
         const { data, error } = await supabase.rpc("heartbeat_active_device", { _device_id: deviceId });
         if (cancelled) return;
+        if (error) return;
         const allowed = (data as { ok?: boolean; allowed?: boolean } | null)?.allowed;
-        if (!error && allowed === false) {
-          toast.error("অন্য device থেকে এই session শেষ করা হয়েছে");
+        if (allowed === false) {
+          consecutiveMisses += 1;
+          // Require two consecutive misses before evicting, so a transient
+          // race (e.g. another tab re-registering) doesn't kick the user.
+          if (consecutiveMisses < 2) {
+            // Try to re-register defensively — maybe our row got cleaned.
+            registered = false;
+            await register();
+            return;
+          }
+          if (!warned) {
+            warned = true;
+            toast.error("অন্য device থেকে এই session শেষ করা হয়েছে");
+          }
+          cancelled = true;
           await supabase.auth.signOut();
+        } else {
+          consecutiveMisses = 0;
         }
       } catch { /* ignore */ }
     };
     const handle = window.setInterval(tick, 60_000);
+    const onVisible = () => { if (document.visibilityState === "visible") void tick(); };
+    document.addEventListener("visibilitychange", onVisible);
     return () => {
       cancelled = true;
       window.clearInterval(handle);
+      document.removeEventListener("visibilitychange", onVisible);
     };
   }, [session?.user?.id]);
 
