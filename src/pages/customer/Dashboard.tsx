@@ -94,89 +94,89 @@ export default function CustomerDashboard() {
         <p className="text-sm text-muted-foreground">এই মাসের একটি সংক্ষিপ্ত সারসংক্ষেপ</p>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-3">
-        <Card className="p-4">
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <span>আয় (এই মাস)</span>
-            <TrendingUp className="h-4 w-4 text-emerald-600" />
+      <div className="grid grid-cols-3 gap-2 sm:gap-3">
+        <Card className="p-3 sm:p-4">
+          <div className="flex items-center justify-between gap-1 text-[11px] text-muted-foreground sm:text-xs">
+            <span className="truncate">আয়</span>
+            <TrendingUp className="h-3.5 w-3.5 shrink-0 text-emerald-600 sm:h-4 sm:w-4" />
           </div>
-          <div className="mt-2 text-2xl font-bold text-emerald-600">{bdt(income)}</div>
+          <div className="mt-1 text-base font-bold text-emerald-600 sm:mt-2 sm:text-2xl">{bdt(income)}</div>
         </Card>
-        <Card className="p-4">
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <span>ব্যয় (এই মাস)</span>
-            <TrendingDown className="h-4 w-4 text-rose-600" />
+        <Card className="p-3 sm:p-4">
+          <div className="flex items-center justify-between gap-1 text-[11px] text-muted-foreground sm:text-xs">
+            <span className="truncate">ব্যয়</span>
+            <TrendingDown className="h-3.5 w-3.5 shrink-0 text-rose-600 sm:h-4 sm:w-4" />
           </div>
-          <div className="mt-2 text-2xl font-bold text-rose-600">{bdt(expense)}</div>
+          <div className="mt-1 text-base font-bold text-rose-600 sm:mt-2 sm:text-2xl">{bdt(expense)}</div>
         </Card>
-        <Card className="p-4">
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <span>ব্যালেন্স</span>
-            <Wallet className="h-4 w-4 text-primary" />
+        <Card className="p-3 sm:p-4">
+          <div className="flex items-center justify-between gap-1 text-[11px] text-muted-foreground sm:text-xs">
+            <span className="truncate">ব্যালেন্স</span>
+            <Wallet className="h-3.5 w-3.5 shrink-0 text-primary sm:h-4 sm:w-4" />
           </div>
-          <div className={`mt-2 text-2xl font-bold ${balance >= 0 ? "text-foreground" : "text-rose-600"}`}>
+          <div className={`mt-1 text-base font-bold sm:mt-2 sm:text-2xl ${balance >= 0 ? "text-foreground" : "text-rose-600"}`}>
             {bdt(balance)}
           </div>
         </Card>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid grid-cols-2 gap-2 sm:gap-3">
         <Link
           to="/customer/my-fordo"
-          className="group rounded-2xl border bg-card p-5 shadow-sm transition hover:border-primary/40"
+          className="group rounded-2xl border bg-card p-3 shadow-sm transition hover:border-primary/40 sm:p-5"
         >
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
-              <ListChecks className="h-5 w-5" />
+          <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:gap-3">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary sm:h-10 sm:w-10">
+              <ListChecks className="h-4 w-4 sm:h-5 sm:w-5" />
             </div>
-            <div>
-              <div className="font-semibold">আমার ফর্দ</div>
-              <div className="text-xs text-muted-foreground">{fordoCount}টি ফর্দ পাঠানো হয়েছে</div>
+            <div className="min-w-0">
+              <div className="text-sm font-semibold sm:text-base">আমার ফর্দ</div>
+              <div className="text-[10px] text-muted-foreground sm:text-xs">{fordoCount}টি ফর্দ</div>
             </div>
           </div>
         </Link>
 
         <Link
           to="/customer/notes"
-          className="group rounded-2xl border bg-card p-5 shadow-sm transition hover:border-primary/40"
+          className="group rounded-2xl border bg-card p-3 shadow-sm transition hover:border-primary/40 sm:p-5"
         >
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-500/10 text-amber-600">
-              <NotebookPen className="h-5 w-5" />
+          <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:gap-3">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-500/10 text-amber-600 sm:h-10 sm:w-10">
+              <NotebookPen className="h-4 w-4 sm:h-5 sm:w-5" />
             </div>
-            <div>
-              <div className="font-semibold">নোট</div>
-              <div className="text-xs text-muted-foreground">{noteCount}টি নোট</div>
+            <div className="min-w-0">
+              <div className="text-sm font-semibold sm:text-base">নোট</div>
+              <div className="text-[10px] text-muted-foreground sm:text-xs">{noteCount}টি নোট</div>
             </div>
           </div>
         </Link>
 
         <Link
           to="/customer/money"
-          className="group rounded-2xl border bg-card p-5 shadow-sm transition hover:border-emerald-500/40"
+          className="group rounded-2xl border bg-card p-3 shadow-sm transition hover:border-emerald-500/40 sm:p-5"
         >
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600">
-              <ArrowDownLeft className="h-5 w-5" />
+          <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:gap-3">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600 sm:h-10 sm:w-10">
+              <ArrowDownLeft className="h-4 w-4 sm:h-5 sm:w-5" />
             </div>
             <div className="min-w-0">
-              <div className="font-semibold">পাব (ধার দেওয়া)</div>
-              <div className="text-xs text-muted-foreground">{bdt(willGet)} বাকি</div>
+              <div className="text-sm font-semibold sm:text-base">পাব</div>
+              <div className="text-[10px] text-muted-foreground sm:text-xs">{bdt(willGet)}</div>
             </div>
           </div>
         </Link>
 
         <Link
           to="/customer/money"
-          className="group rounded-2xl border bg-card p-5 shadow-sm transition hover:border-rose-500/40"
+          className="group rounded-2xl border bg-card p-3 shadow-sm transition hover:border-rose-500/40 sm:p-5"
         >
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-rose-500/10 text-rose-600">
-              <ArrowUpRight className="h-5 w-5" />
+          <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:gap-3">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-rose-500/10 text-rose-600 sm:h-10 sm:w-10">
+              <ArrowUpRight className="h-4 w-4 sm:h-5 sm:w-5" />
             </div>
             <div className="min-w-0">
-              <div className="font-semibold">দেব (ঋণ আছে)</div>
-              <div className="text-xs text-muted-foreground">{bdt(willGive)} বাকি</div>
+              <div className="text-sm font-semibold sm:text-base">দেব</div>
+              <div className="text-[10px] text-muted-foreground sm:text-xs">{bdt(willGive)}</div>
             </div>
           </div>
         </Link>
