@@ -1,51 +1,57 @@
-## সমস্যা
-আপলোড করা Excel এ আছে: **8 Division, 64 District, 622 Thana/Upazila** (city corporation এর থানা সহ — যেমন Dhaka এর 57টি, Chattogram এর 32টি)।
+## যা যা যোগ করতে হবে
 
-বর্তমান database ও admin portal এ আছে:
-- ✅ 8 Divisions (সব আছে, কিন্তু Chattogram → "Chattagram" — typo)
-- ✅ 64 Districts (সব আছে)
-- ❌ মাত্র **494 Upazilas** — **128টি থানা missing** (মূলত Dhaka, Chattogram, Khulna, Sylhet, Rajshahi, Barisal এর city corporation এর থানা)
+### 1️⃣ ফর্দ থেকে Expense এ এক ক্লিকে যোগ করা
+গ্রাহকের "আমার ফর্দ" পেজে প্রতিটি ফর্দ card এ একটি নতুন বোতাম **"💸 খরচে যোগ করুন"** থাকবে (যখন total > 0)। চাপলে ফর্দের total টাকা ক্যাটাগরি "বাজার/খাবার", note এ "ফর্দ থেকে: <দোকানের নাম>" দিয়ে `consumer_transactions` এ একটা expense entry হিসেবে save হবে। একই ফর্দ যাতে দু'বার add না হয় সেজন্য টেবিলে একটি `source_wishlist_id` কলাম থাকবে — duplicate checked।
 
-## সমাধান
+### 2️⃣ দেনা-পাওনা (Loans/Debts)
+নতুন টেবিল `consumer_loans` — গ্রাহক track করতে পারবে:
+- **পাওনা (lent)**: কাকে কত টাকা ধার দিয়েছে
+- **দেনা (borrowed)**: কারো কাছে কত টাকা ঋণ
+- প্রতিটি entry তে: party_name, phone, amount, type (lent/borrowed), date, due_date, note, is_settled, settled_at
 
-### 1. নতুন complete BD geo JSON তৈরি (`src/data/bd_geo.json`)
-Excel ফাইল থেকে data process করে নতুন JSON বানাব:
-- 8 Division (সঠিক বানান: Chattogram, Coxsbazar ইত্যাদি)
-- 64 District (English + Bengali দুটোই)
-- 622 Thana/Upazila (English + Bengali দুটোই, district এর সাথে link)
+আয়-ব্যয় পেজে নতুন একটা **"দেনা-পাওনা"** tab। উপরে summary tiles: "পাব ৳X • দেব ৳Y • নিট ৳(X-Y)"। List এ unsettled গুলো highlighted, settle বোতামে চাপলে date সহ closed হয়। Settle করলে চাইলে স্বয়ংক্রিয়ভাবে income/expense entry তৈরি হবে।
 
-প্রতিটি record এ stable `legacy_id` থাকবে যাতে re-sync করলেও duplicate না হয়।
+### 3️⃣ Monthly History + Subscription gating
 
-### 2. Division name fix migration
-বর্তমান DB তে "Chattagram" আছে — Excel এ "Chattogram"। JSON re-seed করলে নতুন legacy_id দিয়ে ঢুকবে। তাই migration দিয়ে পুরাতন "Chattagram" entry টা update করব → "Chattogram", যাতে existing references ভেঙে না যায়।
+**বর্তমান page পরিবর্তন:**
+- উপরে month picker — default current month
+- "এই মাস" → পূর্ণ details (transactions list + summary)
+- পূর্বের ১ মাস + আরও পূর্বের ১ মাস (মোট আগের ৩ মাস current সহ) → **detailed access**
+- ৩ মাসের পূর্বের যেকোনো মাস → শুধু **summary** (total income/expense/balance) দেখা যাবে; বিস্তারিত list দেখতে চাইলে subscription dialog খুলবে
 
-### 3. Admin Locations page উন্নত করা (`src/pages/admin/Locations.tsx`)
-- উপরে summary tiles: "মোট Division: X / 8", "জেলা: Y / 64", "থানা/উপজেলা: Z / 622" — কোথায় missing তা সাথে সাথে দেখা যাবে
-- Search box: division/district/thana নাম দিয়ে instant filter
-- "Re-sync from JSON" button আগের মতই থাকবে — চাপলে missing 128 thana auto add হবে
+**নতুন subscription plans (consumer-targeted):**
+DB তে `subscription_plans` এ ৩টি নতুন consumer plan add হবে — `code` field দিয়ে identify:
+- `consumer_history_1y` — পূর্বের ১ বছরের বিস্তারিত access
+- `consumer_history_5y` — পূর্বের ৫ বছর
+- `consumer_history_10y` — পূর্বের ১০ বছর
 
-### 4. seed-bd-geo edge function
-আগে থেকেই upsert (onConflict: legacy_id) করে — তাই কোনো পরিবর্তন লাগবে না। শুধু JSON বড় হবে, batch chunking আগে থেকেই আছে।
+এগুলো বিদ্যমান `subscriptions` table reuse করবে। Access check helper: `canAccessMonth(monthDate, sub)` — current/prev-2 সবসময় free, এর আগের range subscription duration অনুযায়ী determine।
 
-### 5. কাজের পর Admin কে যা করতে হবে
-Admin → Locations page এ গিয়ে **"Re-sync from JSON"** বোতাম এ একবার চাপতে হবে। তাহলে missing 128 thana database এ যোগ হবে।
+**Subscription kনা flow:** existing payment flow (যেটা owner-side use হয়) reuse — admin manually approve করবে `subscription_requests` দিয়ে (ইতিমধ্যে আছে)।
+
+### 4️⃣ Customer Dashboard tile update
+"আয়-ব্যয়" tile এ এই মাসের নিট (income - expense) দেখাবে এবং পাশে "দেনা-পাওনা" mini stat।
+
+---
 
 ## Technical breakdown
 
-**Files to create/modify:**
-- `src/data/bd_geo.json` — Excel থেকে generate করা নতুন complete data (overwrite)
-- `src/pages/admin/Locations.tsx` — summary tiles + search যোগ
-- `supabase/migrations/<timestamp>_fix_chattogram.sql` — পুরাতন division row এর `name_en` update
+**Database migrations:**
+1. `consumer_transactions` এ `source_wishlist_id uuid` কলাম যোগ + unique index `(user_id, source_wishlist_id)` যেখানে non-null
+2. নতুন `consumer_loans` table:
+   - কলাম: id, user_id, party_name, party_phone, type (enum: 'lent'|'borrowed'), amount, loan_date, due_date, note, is_settled, settled_at
+   - RLS: user নিজের record দেখতে/insert/update/delete করতে পারবে
+   - trigger: tg_set_updated_at
+3. `subscription_plans` এ ৩টি নতুন row insert (code: consumer_history_1y/5y/10y)
 
-**Generation script (one-time, exec only):**
-Python দিয়ে Excel parse → district lookup table দিয়ে correct `district_legacy_id` map → output JSON।
+**Frontend changes:**
+- `src/pages/customer/MyFordo.tsx` — ফর্দ card এ "খরচে যোগ" বোতাম, duplicate-prevention
+- `src/pages/customer/Money.tsx` — Tabs: "আয়-ব্যয়" / "দেনা-পাওনা"; month picker; subscription gating UI
+- নতুন `src/components/customer/LoansTab.tsx` — দেনা-পাওনা UI
+- নতুন `src/lib/consumer-history-access.ts` — month access logic helper
+- `src/pages/customer/Dashboard.tsx` — tile update
 
-**District name mapping notes:**
-Excel এ "Cox's Bazar" আছে, DB তে "Coxsbazar" — script এ normalize করা হবে যাতে existing district legacy_id এর সাথে match করে এবং duplicate না হয়।
-
-**Result:**
-Re-sync এর পর: Admin Portal → Locations এ পাবেন:
-- 8 Division (সব সঠিক বানান)
-- 64 District (সব আছে)
-- 622 Thana/Upazila (সব City Corp এর থানা সহ — Dhaka 57, Chattogram 32, Sylhet 18, Rajshahi 21, Barisal 17, Khulna 17, Comilla 18 ইত্যাদি)
-- প্রতিটি বাংলা ও English দুই নামে।
+**Files to create/modify (~7 files):**
+- 1 migration (3 schema changes)
+- Modified: MyFordo.tsx, Money.tsx, Dashboard.tsx
+- Created: LoansTab.tsx, consumer-history-access.ts, MonthPicker component
