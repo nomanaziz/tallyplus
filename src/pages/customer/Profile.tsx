@@ -89,7 +89,7 @@ export default function CustomerProfilePage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-md space-y-6 rounded-2xl border bg-card p-6 shadow-sm">
+    <div className="mx-auto w-full max-w-2xl space-y-6 rounded-2xl border bg-card p-6 shadow-sm">
         <div>
           <h1 className="text-xl font-bold">আমার প্রোফাইল</h1>
           <p className="mt-1 text-sm text-muted-foreground">নাম ও ঠিকানা update করুন</p>
