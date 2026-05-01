@@ -1,99 +1,85 @@
-## লক্ষ্য
+## Problem 1: `/vendor/file-server` shows "দোকান পাওয়া যায়নি"
 
-1. Admin/employee login শুধু **email + password** দিয়ে — phone+PIN দিয়ে নয়
-2. **Super admin** (সবচেয়ে প্রথম admin) কখনো revoke/delete হবে না
-3. প্রতিটা admin team member এর জন্য আলাদা **page permissions** set করা যাবে (যেমন: Users, Marketplace, Subscriptions, Categories ইত্যাদি)
-4. বর্তমানে phone+PIN দিয়ে login করা admin (আপনি) — নিজের email/password set করার option দেওয়া হবে
+**Root cause:** `src/pages/vendor/Username.tsx` queries the `shops` and `products` tables directly with the regular supabase client (anon role). RLS on `public.shops` only allows owners/members/admins to SELECT — there is no public policy. Same for `products`. So anonymous shoppers cannot load the public storefront, even though the shop `file-server` exists and is `marketplace_enabled = true`.
 
-## Database changes (migration)
+The marketplace listing/grid works because `marketplace_listings` does have a public read policy and the marketplace browse pages call the `marketplace-public` edge function (which uses the service-role admin client and bypasses RLS).
 
-নতুন table `public.admin_profiles`:
-- `user_id uuid PK` → references `auth.users`
-- `email text not null unique`
-- `full_name text`
-- `is_super boolean default false` — super admin flag, একবার true হলে protected
-- `permissions jsonb default '{}'` — যেমন `{"users": true, "marketplace": true, "subscriptions": false, ...}`
-- `created_at, updated_at`
+**Fix:** Switch `Username.tsx` to load shop + listings + products through the existing `marketplace-public` edge function using `action: "shop-by-username"` (already implemented at line 250) and a new `action: "shop-products"` (or extend `shop-by-username` to return products in one round-trip).
 
-RLS:
-- SELECT/UPDATE: যদি user admin role হয় (নিজের row দেখতে/edit করতে পারবে), super admin সব দেখবে/edit করবে
-- INSERT/DELETE: শুধু super admin
+- Update `marketplace-public/index.ts` so `shop-by-username` returns `{ shop, listings, products }` (mirrors the `shop` action).
+- Refactor `Username.tsx` to call the function and stop using the anon `supabase.from("shops")` / `supabase.from("products")` queries.
+- Same fix applied where needed in `src/pages/shop/p/Id.tsx` (already uses the function — verify) and `src/pages/shop/s/Slug.tsx` (likely the same RLS bug).
 
-Helper function `public.has_admin_perm(_user_id uuid, _key text) returns boolean` — super হলে true, নাহলে `permissions->>_key = 'true'` চেক করে।
+## Problem 2: Convert public storefront into a real e-commerce flow with cart + checkout + consumer accounts
 
-Trigger `tg_protect_super_admin` on `user_roles`:
-- যদি delete করা row এর role = 'admin' এবং সেই user `admin_profiles.is_super = true` হয় → exception
-- একইভাবে `admin_profiles` row delete বা `is_super = false` করতে দেওয়া হবে না super admin এর জন্য
+Today there is a localStorage `consumer-cart` and "Add to list" buttons on cards, but no cart page, no checkout, and no order submission tied to a consumer account. Orders table (`marketplace_orders` + `marketplace_order_items`) already exists with delivery_charge, subtotal, status, etc.
 
-বর্তমান existing admin (`f4d64af7-...`) এর জন্য `admin_profiles` row insert হবে `is_super = true` দিয়ে — email পরে নিজে set করবেন।
+### What we'll build
 
-## Edge functions
+**1. Cart page — `/cart`**
+- Lists items grouped by shop (since each shop has its own delivery, payment, policies).
+- Qty +/- and remove controls (uses `consumer-cart.ts`).
+- Per-shop subtotal; "Checkout this shop" button.
 
-**নতুন: `create-admin-user`** (super admin only)
-- input: `email`, `password`, `full_name`, `permissions`
-- service role দিয়ে `auth.admin.createUser({ email, password, email_confirm: true })`
-- `user_roles` এ admin role insert
-- `admin_profiles` এ row insert (is_super: false, permissions: provided)
+**2. Checkout page — `/checkout/$shopId`**
+- Shows items belonging to that shop only (multi-shop carts checkout one shop at a time — matches how `marketplace_orders` is shop-scoped).
+- Consumer must be logged in. If not authenticated as a consumer:
+  - Show inline auth panel with two tabs: **Login** and **Register**.
+  - Both use phone + PIN (existing `customer-signup-with-pin` and `customer-login-with-pin` edge functions, used by the `/customer` portal).
+  - On success, account is `consumer` role; the page proceeds to checkout.
+- Form: Name (prefilled from `consumer_profiles`), Phone (prefilled, read-only), Address, optional Note, payment method (Cash on Delivery default).
+- Delivery zones: fetch from `delivery_zones` for that shop (if table exists; otherwise omit charge).
+- "Place order" → inserts into `marketplace_orders` + `marketplace_order_items`, clears cart for that shop, redirects to `/orders/$orderNo` with a success screen.
 
-**নতুন: `set-admin-credentials`** (admin user নিজের জন্য)
-- input: `email`, `password` (নতুন), authenticated caller
-- caller এর existing auth user এর email + password update via `auth.admin.updateUserById`
-- `admin_profiles.email` update
-- বিশেষ করে phone+PIN দিয়ে login করা পুরাতন admin দের জন্য
+**3. Order success/tracking page — `/orders/$orderNo`**
+- Read-only order summary, status, shop contact.
 
-**Modify: `login-with-pin`**
-- যদি profile এর user_id `user_roles` এ admin role হিসেবে থাকে → reject with `admin_must_use_email`
-- যদি user_id `shop_members` table এ থাকে (employee) → reject একইভাবে
-- শুধু shop owner (admin/employee নয়) phone+PIN দিয়ে login করতে পারবে
+**4. Header cart badge**
+- Add a cart icon with item-count badge to `SiteHeader` (visible on storefront/marketplace pages) linking to `/cart`.
 
-## Frontend changes
+**5. Consumer auth context check**
+- Reuse existing `customer-login-with-pin` / `customer-signup-with-pin` edge functions.
+- Add a tiny `useConsumerSession` hook that wraps `supabase.auth.getUser()` + checks the `consumer` role via `is_consumer` (already in DB).
 
-### `src/pages/admin/Login.tsx`
-- already email+password — কোনো বদল লাগবে না, just verify
+### Database
 
-### `src/pages/admin/PlatformAdmins.tsx` (পুরো rewrite)
-- "Add admin" form: phone/PIN বদলে **email + password + full name + permissions checkboxes**
-- Permissions checkboxes (Users, Marketplace, Marketplace Categories, Subscription Requests, Plans, Subscriptions)
-- Table এ extra column: **Super** badge + permissions summary
-- Super admin row এ Revoke button **disabled** + tooltip "Super admin — cannot be revoked"
-- "Edit permissions" dialog প্রত্যেকের জন্য
-- Current logged-in admin তার নিজের permissions edit করতে পারবে না (avoid lockout) — শুধু super admin অন্যদের edit করবে
+`marketplace_orders` already supports anonymous orders (no FK to consumer). We will additionally store the consumer's `user_id` for "My orders" history.
 
-### `src/pages/Index.tsx` / `src/components/site/LoginCard.tsx`
-- phone+PIN login submit এর সময় edge function থেকে `admin_must_use_email` error এলে redirect to `/admin/login` সাথে toast: "Admin/employee হিসেবে email + password দিয়ে login করুন"
+Migration:
+```sql
+ALTER TABLE public.marketplace_orders
+  ADD COLUMN IF NOT EXISTS consumer_user_id uuid REFERENCES auth.users(id) ON DELETE SET NULL;
 
-### নতুন: `src/pages/admin/MyCredentials.tsx` (route: `/admin/my-credentials`)
-- যে admin phone+PIN দিয়ে এসেছিলেন (এখনো `admin_profiles.email` blank), login এর পর প্রথমবার এই page এ redirect
-- email + password set করার form → `set-admin-credentials` call
-- Sidebar এ "My Credentials" link
+-- Public insert policy for marketplace orders (already may exist — verify)
+-- Allow consumers to read their own orders:
+CREATE POLICY "consumer reads own orders" ON public.marketplace_orders
+  FOR SELECT USING (consumer_user_id = auth.uid());
+```
 
-### `src/components/admin/AdminSidebar.tsx`
-- প্রতিটা menu item render হবে `admin_profiles.permissions` দেখে — যা allow নেই, hide
-- Super admin সব দেখবে
+(Existing public-insert policy will be checked first; only added if missing.)
 
-### Route guards
-- `/admin/*` routes এ check করব — যে admin এর সেই page এর permission নেই, redirect to first allowed page বা "Access denied" page
+### Files to create / change
 
-## Files to be created/modified
+**Edge function**
+- `supabase/functions/marketplace-public/index.ts` — extend `shop-by-username` to also return `listings` + `products`. Add `place-order` action that validates stock, creates the order with admin client, and links `consumer_user_id` from the JWT.
 
-**Migration (1)**: new `admin_profiles` table, RLS policies, `has_admin_perm()`, super admin protection trigger, seed existing admin as super.
+**New pages**
+- `src/pages/shop/Cart.tsx` (route `/cart`)
+- `src/pages/shop/Checkout.tsx` (route `/checkout/:shopId`)
+- `src/pages/shop/OrderSuccess.tsx` (route `/orders/:orderNo`)
+- `src/components/shop/ConsumerAuthPanel.tsx` — phone + PIN login/register tabs.
+- `src/lib/consumer-session.ts` — small hook returning `{ user, isConsumer, profile }`.
 
-**Edge functions**:
-- create: `supabase/functions/create-admin-user/index.ts`
-- create: `supabase/functions/set-admin-credentials/index.ts`
-- modify: `supabase/functions/login-with-pin/index.ts` (block admins/employees)
+**Edits**
+- `src/pages/vendor/Username.tsx` — switch to edge-function fetch.
+- `src/pages/shop/s/Slug.tsx` — same fix if needed.
+- `src/components/site/SiteHeader.tsx` — add cart icon + badge.
+- `src/lib/app-routes.tsx` — register `/cart`, `/checkout/:shopId`, `/orders/:orderNo`.
+- `src/lib/consumer-cart.ts` — add `getCartByShop`, `clearShopCart`, `useCart` (full list hook).
 
-**Frontend**:
-- modify: `src/pages/admin/PlatformAdmins.tsx` (email/password + permissions + super protection)
-- create: `src/pages/admin/MyCredentials.tsx`
-- modify: `src/components/admin/AdminSidebar.tsx` (filter by permissions)
-- modify: `src/lib/app-routes.tsx` (add MyCredentials route + permission guard wrapper)
-- modify: `src/lib/auth.tsx` (load admin_profiles row, expose `adminPermissions` + `isSuperAdmin`)
-- modify: `src/components/site/LoginCard.tsx` (handle `admin_must_use_email` error)
+### Out of scope (can be added later if you want)
+- Online payments (current plan: Cash on Delivery only).
+- Reviews / ratings.
+- Wishlist sync to server.
 
-## Notes / acknowledgements
-
-- পুরাতন phone+PIN admin (আপনি) এর existing auth user এর email এখন `8801XXXXXXXXX@tally.local` — `set-admin-credentials` সেটাকে real email এ replace করবে। এর পর phone+PIN দিয়ে login আর কাজ করবে না (intentional — admin email দিয়েই login করবে)।
-- Employee = shop_members এর entry। তারাও email+password দিয়ে login করবে — owner তাদের create করার সময় phone+PIN এর পরিবর্তে email+password দেবে। (এই অংশ এই plan এর scope এ আছে — `create-employee-user` function পরে আরেকটা turn এ update করব, যেহেতু এই message মূলত admin team নিয়ে।)
-
-আপনি approve করলে এগুলো implement করব।
+Confirm and I'll implement.
