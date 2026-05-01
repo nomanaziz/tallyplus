@@ -495,7 +495,46 @@ function ProductsTab() {
               <div><Label>Base Unit</Label><Input value={editing?.base_unit ?? ""} onChange={(e) => setEditing({ ...editing, base_unit: e.target.value })} /></div>
             </div>
             <div><Label>Slug (auto if empty)</Label><Input value={editing?.slug ?? ""} onChange={(e) => setEditing({ ...editing, slug: e.target.value })} placeholder="auto-generated" /></div>
-            <div><Label>Image URL</Label><Input value={editing?.image_url ?? ""} onChange={(e) => setEditing({ ...editing, image_url: e.target.value })} /></div>
+            <div>
+              <Label>Product image</Label>
+              <div className="mt-1 flex items-start gap-3">
+                <div className="flex h-20 w-20 flex-none items-center justify-center overflow-hidden rounded-md border bg-muted">
+                  {editing?.image_url ? (
+                    <img src={editing.image_url} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    <Package className="h-6 w-6 text-muted-foreground" />
+                  )}
+                </div>
+                <div className="flex-1 space-y-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border bg-background px-3 py-1.5 text-sm font-medium hover:bg-accent">
+                      {uploadingImage ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                      <span>{uploadingImage ? "Uploading…" : "Upload image"}</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const f = e.target.files?.[0];
+                          if (f) void uploadImage(f);
+                          e.currentTarget.value = "";
+                        }}
+                      />
+                    </label>
+                    {editing?.image_url && (
+                      <Button type="button" variant="ghost" size="sm" onClick={() => setEditing({ ...editing, image_url: null })}>
+                        <X className="mr-1 h-3.5 w-3.5" /> Remove
+                      </Button>
+                    )}
+                  </div>
+                  <Input
+                    placeholder="…or paste image URL"
+                    value={editing?.image_url ?? ""}
+                    onChange={(e) => setEditing({ ...editing, image_url: e.target.value })}
+                  />
+                </div>
+              </div>
+            </div>
             <div>
               <Label>Shop types (relevant for which shops)</Label>
               <div className="mt-2 flex flex-wrap gap-2">
