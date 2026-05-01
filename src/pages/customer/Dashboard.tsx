@@ -3,7 +3,7 @@ import { Link } from "@/lib/router";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { Card } from "@/components/ui/card";
-import { Wallet, ListChecks, NotebookPen, TrendingUp, TrendingDown, Loader2, ArrowDownLeft, ArrowUpRight } from "lucide-react";
+import { Wallet, ListChecks, NotebookPen, TrendingUp, TrendingDown, Loader2, ArrowDownLeft, ArrowUpRight, ShoppingBag, GraduationCap, User } from "lucide-react";
 
 type Tx = { id: string; type: string; amount: number; tx_date: string };
 
@@ -120,67 +120,51 @@ export default function CustomerDashboard() {
         </Card>
       </div>
 
-      <div className="grid grid-cols-2 gap-2 sm:gap-3">
-        <Link
-          to="/customer/my-fordo"
-          className="group rounded-2xl border bg-card p-3 shadow-sm transition hover:border-primary/40 sm:p-5"
-        >
-          <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary sm:h-10 sm:w-10">
-              <ListChecks className="h-4 w-4 sm:h-5 sm:w-5" />
-            </div>
-            <div className="min-w-0">
-              <div className="text-sm font-semibold sm:text-base">আমার ফর্দ</div>
-              <div className="text-[10px] text-muted-foreground sm:text-xs">{fordoCount}টি ফর্দ</div>
-            </div>
-          </div>
-        </Link>
-
-        <Link
-          to="/customer/notes"
-          className="group rounded-2xl border bg-card p-3 shadow-sm transition hover:border-primary/40 sm:p-5"
-        >
-          <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-500/10 text-amber-600 sm:h-10 sm:w-10">
-              <NotebookPen className="h-4 w-4 sm:h-5 sm:w-5" />
-            </div>
-            <div className="min-w-0">
-              <div className="text-sm font-semibold sm:text-base">নোট</div>
-              <div className="text-[10px] text-muted-foreground sm:text-xs">{noteCount}টি নোট</div>
-            </div>
-          </div>
-        </Link>
-
-        <Link
-          to="/customer/money"
-          className="group rounded-2xl border bg-card p-3 shadow-sm transition hover:border-emerald-500/40 sm:p-5"
-        >
-          <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600 sm:h-10 sm:w-10">
-              <ArrowDownLeft className="h-4 w-4 sm:h-5 sm:w-5" />
-            </div>
-            <div className="min-w-0">
-              <div className="text-sm font-semibold sm:text-base">পাব</div>
-              <div className="text-[10px] text-muted-foreground sm:text-xs">{bdt(willGet)}</div>
-            </div>
-          </div>
-        </Link>
-
-        <Link
-          to="/customer/money"
-          className="group rounded-2xl border bg-card p-3 shadow-sm transition hover:border-rose-500/40 sm:p-5"
-        >
-          <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-rose-500/10 text-rose-600 sm:h-10 sm:w-10">
-              <ArrowUpRight className="h-4 w-4 sm:h-5 sm:w-5" />
-            </div>
-            <div className="min-w-0">
-              <div className="text-sm font-semibold sm:text-base">দেব</div>
-              <div className="text-[10px] text-muted-foreground sm:text-xs">{bdt(willGive)}</div>
-            </div>
-          </div>
-        </Link>
+      <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 sm:gap-3">
+        <Shortcut to="/customer/my-fordo" label="আমার ফর্দ" sub={`${fordoCount}টি`} Icon={ListChecks} tone="primary" />
+        <Shortcut to="/customer/my-orders" label="আমার অর্ডার" Icon={ShoppingBag} tone="primary" />
+        <Shortcut to="/customer/money" label="আয়-ব্যয়" Icon={Wallet} tone="primary" />
+        <Shortcut to="/customer/notes" label="নোট" sub={`${noteCount}টি`} Icon={NotebookPen} tone="amber" />
+        <Shortcut to="/customer/money" label="পাব" sub={bdt(willGet)} Icon={ArrowDownLeft} tone="emerald" />
+        <Shortcut to="/customer/money" label="দেব" sub={bdt(willGive)} Icon={ArrowUpRight} tone="rose" />
+        <Shortcut to="/customer/training" label="ট্রেনিং" Icon={GraduationCap} tone="primary" />
+        <Shortcut to="/customer/profile" label="ঠিকানা" Icon={User} tone="primary" />
       </div>
     </div>
+  );
+}
+
+type Tone = "primary" | "amber" | "emerald" | "rose";
+const TONE: Record<Tone, string> = {
+  primary: "bg-primary/10 text-primary",
+  amber: "bg-amber-500/10 text-amber-600",
+  emerald: "bg-emerald-500/10 text-emerald-600",
+  rose: "bg-rose-500/10 text-rose-600",
+};
+
+function Shortcut({
+  to,
+  label,
+  sub,
+  Icon,
+  tone,
+}: {
+  to: string;
+  label: string;
+  sub?: string;
+  Icon: React.ComponentType<{ className?: string }>;
+  tone: Tone;
+}) {
+  return (
+    <Link
+      to={to}
+      className="group flex flex-col items-center gap-1.5 rounded-2xl border bg-card p-3 text-center shadow-sm transition hover:border-primary/40 sm:p-4"
+    >
+      <div className={`flex h-10 w-10 items-center justify-center rounded-full sm:h-12 sm:w-12 ${TONE[tone]}`}>
+        <Icon className="h-5 w-5 sm:h-6 sm:w-6" />
+      </div>
+      <div className="text-[11px] font-semibold leading-tight sm:text-sm">{label}</div>
+      {sub ? <div className="text-[10px] text-muted-foreground">{sub}</div> : null}
+    </Link>
   );
 }
