@@ -94,6 +94,9 @@ const L84 = lazy(() => import("@/pages/app/Returns"));
 const L85 = lazy(() => import("@/pages/app/returns/New"));
 const L86 = lazy(() => import("@/pages/app/returns/Id"));
 const L87 = lazy(() => import("@/pages/customer/Training"));
+const LCart = lazy(() => import("@/pages/shop/Cart"));
+const LCheckout = lazy(() => import("@/pages/shop/Checkout"));
+const LOrderSuccess = lazy(() => import("@/pages/shop/OrderSuccess"));
 
 export const appRoutes: RouteObject[] = [
 { index: true, element: <Suspense fallback={<RouteFallback/>}><L0/></Suspense> },
@@ -203,5 +206,8 @@ export const appRoutes: RouteObject[] = [
 ] },
 { path: "terms", element: <Suspense fallback={<RouteFallback/>}><L71/></Suspense> },
 { path: "vendor/:username", element: <Suspense fallback={<RouteFallback/>}><L72/></Suspense> },
+{ path: "cart", element: <Suspense fallback={<RouteFallback/>}><LCart/></Suspense> },
+{ path: "checkout/:shopId", element: <Suspense fallback={<RouteFallback/>}><LCheckout/></Suspense> },
+{ path: "orders/:orderNo", element: <Suspense fallback={<RouteFallback/>}><LOrderSuccess/></Suspense> },
 { path: "*", element: <NotFound /> }
 ];
