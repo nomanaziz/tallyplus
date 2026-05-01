@@ -54,10 +54,8 @@ export function SiteHeader() {
           </Link>
         </nav>
         <div className="flex items-center gap-1.5 md:gap-2">
-          {user ? (
+          {user && (
             <Button asChild size="sm" className="hidden md:inline-flex"><Link to={homeTarget}>{t("dashboard")}</Link></Button>
-          ) : (
-            <Button asChild size="sm" className="hidden md:inline-flex"><Link to="/">{t("login")}</Link></Button>
           )}
 
           {/* Mobile hamburger */}
@@ -104,13 +102,11 @@ export function SiteHeader() {
                 </SheetClose>
               </nav>
               <div className="border-t p-3">
-                <SheetClose asChild>
-                  {user ? (
+                {user && (
+                  <SheetClose asChild>
                     <Button asChild className="w-full"><Link to={homeTarget}>{t("dashboard")}</Link></Button>
-                  ) : (
-                    <Button asChild className="w-full"><Link to="/">{t("login")}</Link></Button>
-                  )}
-                </SheetClose>
+                  </SheetClose>
+                )}
               </div>
             </SheetContent>
           </Sheet>

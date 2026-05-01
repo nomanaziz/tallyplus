@@ -18,7 +18,7 @@ export function AuthEntry() {
 
       <main className="container mx-auto grid flex-1 gap-8 px-4 py-8 md:grid-cols-2 md:items-center md:gap-12 md:py-16">
         {/* Brand pitch */}
-        <div>
+        <div className="order-2 md:order-1">
           <h1 className="text-3xl font-extrabold leading-tight tracking-tight md:text-5xl">
             {lang === "bn" ? (
               <>
@@ -71,7 +71,7 @@ export function AuthEntry() {
         </div>
 
         {/* Auth card */}
-        <div className="relative">
+        <div className="relative order-1 md:order-2">
           <div className="absolute inset-0 -z-10 mx-auto my-auto h-[90%] w-[90%] rounded-[2.5rem] bg-gradient-to-br from-primary/30 via-primary/10 to-transparent blur-2xl" aria-hidden />
           <div className="flex justify-center md:justify-end">
             <LoginCard />

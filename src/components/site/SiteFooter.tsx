@@ -59,7 +59,6 @@ export function SiteFooter() {
           <Link to="/terms" className="hover:text-foreground">
             {lang === "bn" ? "শর্তাবলী" : "Terms & Conditions"}
           </Link>
-          <Link to="/" className="hover:text-foreground">{t("login")}</Link>
           <span className="hidden h-4 w-px bg-border md:inline-block" />
           <ColorThemeButton
             className="inline-flex h-8 w-8 items-center justify-center rounded-full border hover:bg-accent hover:text-foreground"
