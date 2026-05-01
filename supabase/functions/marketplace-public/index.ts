@@ -7,6 +7,7 @@
 //   { action: "listing", id }                             -> single listing detail
 //   { action: "place-order", shop_id, items, customer_name, customer_phone,
 //       customer_address?, note?, payment_method? }        -> create marketplace order
+//   { action: "delivery-zones", shop_id }                  -> active delivery zones for shop
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -353,6 +354,7 @@ Deno.serve(async (req) => {
       const customerAddress = String(body.customer_address ?? "").trim();
       const note = String(body.note ?? "").trim();
       const paymentMethod = String(body.payment_method ?? "cod").trim();
+      const deliveryZoneId = body.delivery_zone_id ? String(body.delivery_zone_id) : null;
 
       if (!shopId) return json({ error: "Invalid shop_id" }, 400);
       if (items.length === 0) return json({ error: "Cart is empty" }, 400);
@@ -412,7 +414,18 @@ Deno.serve(async (req) => {
         };
       });
 
-      const deliveryCharge = 0;
+      let deliveryCharge = 0;
+      if (deliveryZoneId) {
+        const { data: zone } = await admin
+          .from("shop_delivery_zones")
+          .select("id, shop_id, charge, free_shipping_min, is_active")
+          .eq("id", deliveryZoneId)
+          .maybeSingle();
+        const z = zone as { id: string; shop_id: string; charge: number; free_shipping_min: number | null; is_active: boolean } | null;
+        if (z && z.shop_id === shopId && z.is_active) {
+          deliveryCharge = z.free_shipping_min !== null && subtotal >= Number(z.free_shipping_min) ? 0 : Number(z.charge);
+        }
+      }
       const total = subtotal + deliveryCharge;
       const orderNo = "MO-" + Date.now().toString(36).toUpperCase() + Math.floor(Math.random() * 1000).toString(36).toUpperCase();
 
@@ -431,6 +444,7 @@ Deno.serve(async (req) => {
           payment_method: paymentMethod,
           note: note || null,
           consumer_user_id: consumerUserId,
+          delivery_zone_id: deliveryZoneId,
         })
         .select("id, order_no")
         .single();
@@ -447,6 +461,19 @@ Deno.serve(async (req) => {
         return json({ error: itemsErr.message }, 500);
       }
       return json({ ok: true, order_id: orderId, order_no: (created as { order_no: string }).order_no });
+    }
+
+    if (action === "delivery-zones") {
+      const shopId = String(body.shop_id ?? "").trim();
+      if (!shopId) return json({ error: "Invalid shop_id" }, 400);
+      const { data, error } = await admin
+        .from("shop_delivery_zones")
+        .select("id, name, charge, free_shipping_min, sort_order")
+        .eq("shop_id", shopId)
+        .eq("is_active", true)
+        .order("sort_order", { ascending: true });
+      if (error) return json({ error: error.message }, 500);
+      return json({ zones: data ?? [] }, 200, PUBLIC_CACHE);
     }
 
     return json({ error: "Unknown action" }, 400);
