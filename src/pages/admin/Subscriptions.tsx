@@ -37,7 +37,7 @@ function SubsPage() {
   const isExpired = (s: any) => new Date(s.expires_at) < new Date();
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6 p-6">
+    <div className="mx-auto max-w-6xl space-y-4 p-3 sm:space-y-6 sm:p-6">
       <div>
         <h1 className="text-2xl font-bold">Subscriptions</h1>
         <p className="text-sm text-muted-foreground">সকল subscription</p>
