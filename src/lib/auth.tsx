@@ -29,6 +29,9 @@ type Ctx = {
   isOwner: boolean;
   hasActiveSubscription: boolean;
   subscription: Sub | null;
+  adminPermissions: Record<string, boolean> | null;
+  isSuperAdmin: boolean;
+  adminEmail: string | null;
   refresh: () => Promise<void>;
   ensureProfile: () => Promise<void>;
   signOut: () => Promise<void>;
@@ -43,6 +46,9 @@ const AuthCtx = createContext<Ctx>({
   isOwner: false,
   hasActiveSubscription: false,
   subscription: null,
+  adminPermissions: null,
+  isSuperAdmin: false,
+  adminEmail: null,
   refresh: async () => {},
   ensureProfile: async () => {},
   signOut: async () => {},
@@ -56,6 +62,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [subscription, setSubscription] = useState<Sub | null>(null);
   const [loading, setLoading] = useState(true);
   const [profileLoaded, setProfileLoaded] = useState(false);
+  const [adminPermissions, setAdminPermissions] = useState<Record<string, boolean> | null>(null);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  const [adminEmail, setAdminEmail] = useState<string | null>(null);
 
   const loadProfile = async (_uid: string) => {
     // Single round-trip: profile + admin flag + active subscription
@@ -75,6 +84,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsAdmin(!!payload.is_admin);
     setIsOwner(!!payload.is_owner);
     setSubscription(payload.subscription ?? null);
+    if (payload.is_admin) {
+      const { data: ap } = await supabase
+        .from("admin_profiles")
+        .select("permissions,is_super,email")
+        .eq("user_id", _uid)
+        .maybeSingle();
+      setAdminPermissions((ap?.permissions as Record<string, boolean>) ?? {});
+      setIsSuperAdmin(!!ap?.is_super);
+      setAdminEmail((ap?.email as string) ?? null);
+    } else {
+      setAdminPermissions(null);
+      setIsSuperAdmin(false);
+      setAdminEmail(null);
+    }
     setProfileLoaded(true);
   };
 
@@ -95,6 +118,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setIsOwner(false);
         setSubscription(null);
         setProfileLoaded(false);
+        setAdminPermissions(null);
+        setIsSuperAdmin(false);
+        setAdminEmail(null);
       }
     });
     supabase.auth
@@ -176,6 +202,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isOwner,
         hasActiveSubscription: !!subscription,
         subscription,
+        adminPermissions,
+        isSuperAdmin,
+        adminEmail,
         refresh,
         ensureProfile,
         signOut,

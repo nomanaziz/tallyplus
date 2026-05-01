@@ -150,6 +150,15 @@ export function LoginCard() {
         if (role === "owner") {
           const r = await callFn("login-with-pin", { phone: ph, pin });
           if (!r.ok) {
+            if (r.error === "admin_must_use_email") {
+              toast.error("Admin হিসেবে email + password দিয়ে login করুন");
+              navigate({ to: "/admin/login" });
+              return;
+            }
+            if (r.error === "employee_must_use_email") {
+              toast.error("Employee হিসেবে email + password দিয়ে login করুন");
+              return;
+            }
             if (r.error === "wrong_pin") {
               setShowForgotPin(true);
               return toast.error("ভুল PIN");
