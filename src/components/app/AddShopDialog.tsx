@@ -331,7 +331,7 @@ export function AddShopDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={busy}>
             {lang === "bn" ? "বাতিল" : "Cancel"}
           </Button>
-          <Button onClick={submit} disabled={busy} className="bg-foreground text-background hover:bg-foreground/90">
+          <Button onClick={submit} disabled={busy} className="bg-primary text-primary-foreground hover:bg-primary/90">
             {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : (lang === "bn" ? "নতুন দোকান যুক্ত করুন" : "Add New Shop")}
           </Button>
         </DialogFooter>

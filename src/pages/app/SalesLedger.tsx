@@ -199,7 +199,7 @@ function SalesLedgerPage() {
           <h1 className="text-xl font-extrabold md:text-2xl">{lang === "bn" ? "লেনদেনের ইতিহাস" : "Transaction History"}</h1>
         </div>
         <div className="flex items-center gap-2">
-          <Button onClick={printAll} className="h-10 gap-2 bg-foreground text-background hover:bg-foreground/90">
+          <Button onClick={printAll} className="h-10 gap-2 bg-primary text-primary-foreground hover:bg-primary/90">
             <Download className="h-4 w-4" />
             {lang === "bn" ? "ডাউনলোড/প্রিন্ট" : "Download/Print"}
           </Button>

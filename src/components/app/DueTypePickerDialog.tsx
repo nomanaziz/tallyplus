@@ -83,7 +83,7 @@ export function DueTypePickerDialog({
             ))}
           </div>
         </div>
-        <Button onClick={onContinue} className="w-full h-11 bg-foreground text-background hover:bg-foreground/90">
+        <Button onClick={onContinue} className="w-full h-11 bg-primary text-primary-foreground hover:bg-primary/90">
           Continue
         </Button>
       </DialogContent>

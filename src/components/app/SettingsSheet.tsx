@@ -163,7 +163,7 @@ export function SettingsSheet({ open, onOpenChange }: { open: boolean; onOpenCha
 
           <button
             onClick={() => go("/app/shops")}
-            className="flex w-full items-center justify-center gap-2 rounded-lg bg-foreground px-3 py-2.5 text-sm font-semibold text-background transition hover:opacity-90"
+            className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-3 py-2.5 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90"
           >
             <ArrowLeftRight className="h-4 w-4" />
             {lang === "bn" ? "দোকান পরিবর্তন করুন" : "Switch Shop"}

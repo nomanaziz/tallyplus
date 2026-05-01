@@ -129,7 +129,7 @@ export function QuickSellSheet({ open, onOpenChange }: { open: boolean; onOpenCh
               {lang === "bn" ? "এসএমএস অবশিষ্ট: 30" : "SMS left: 30"}
             </Badge>
           </div>
-          <Button onClick={save} disabled={saving} className="w-full h-12 bg-foreground text-background hover:bg-foreground/90 text-base">
+          <Button onClick={save} disabled={saving} className="w-full h-12 bg-primary text-primary-foreground hover:bg-primary/90 text-base">
             {saving ? (lang === "bn" ? "সংরক্ষণ হচ্ছে..." : "Saving...") : (lang === "bn" ? "টাকার মূল্য পেয়েছেন" : "Payment received")}
           </Button>
         </div>

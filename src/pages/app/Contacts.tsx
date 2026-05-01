@@ -226,7 +226,7 @@ function ContactsPage() {
           </div>
 
           <div className="border-t p-3">
-            <Button onClick={handleAdd} className="h-11 w-full bg-foreground text-background hover:bg-foreground/90">
+            <Button onClick={handleAdd} className="h-11 w-full bg-primary text-primary-foreground hover:bg-primary/90">
               {addBtnLabel}
             </Button>
           </div>

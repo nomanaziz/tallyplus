@@ -121,7 +121,7 @@ export function ProductDetailsDialog({
               <Trash2 className="mr-2 h-4 w-4" />
               {lang === "bn" ? "মুছে ফেলুন" : "Delete"}
             </Button>
-            <Button onClick={onUpdateStock} className="bg-foreground text-background hover:opacity-90">
+            <Button onClick={onUpdateStock} className="bg-primary text-primary-foreground hover:opacity-90">
               <Plus className="mr-2 h-4 w-4" />
               {lang === "bn" ? "স্টক আপডেট" : "Update Stock"}
             </Button>
