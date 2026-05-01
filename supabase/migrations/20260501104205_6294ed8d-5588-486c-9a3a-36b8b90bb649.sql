@@ -1,0 +1,6 @@
+ALTER TABLE public.sale_items
+  ADD COLUMN IF NOT EXISTS cost numeric NOT NULL DEFAULT 0;
+
+ALTER TABLE public.sales
+  ADD COLUMN IF NOT EXISTS cost_total numeric NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS profit numeric NOT NULL DEFAULT 0;

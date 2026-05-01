@@ -20,6 +20,7 @@ type StoreProduct = {
   id: string;
   name: string;
   sale_price: number;
+  cost_price: number;
   unit: string | null;
   stock: number;
   sku: string | null;
@@ -31,6 +32,7 @@ type Row = {
   productId: string | null;
   name: string;
   price: number;
+  cost: number;
   unit: string;
   qty: number;
   isExternal: boolean;
@@ -88,7 +90,7 @@ function QuickOrderInner() {
       const escaped = q.replace(/[%,]/g, "");
       const { data } = await supabase
         .from("products")
-        .select("id,name,sale_price,unit,stock,sku,barcode")
+        .select("id,name,sale_price,cost_price,unit,stock,sku,barcode")
         .eq("shop_id", current.id)
         .is("deleted_at", null)
         .or(`name.ilike.%${escaped}%,sku.ilike.%${escaped}%,barcode.ilike.%${escaped}%`)
@@ -110,6 +112,7 @@ function QuickOrderInner() {
         productId: p.id,
         name: p.name,
         price: Number(p.sale_price) || 0,
+        cost: Number(p.cost_price) || 0,
         unit: p.unit || "pcs",
         qty: 1,
         isExternal: false,
@@ -134,6 +137,7 @@ function QuickOrderInner() {
         productId: null,
         name: name.trim(),
         price: 0,
+        cost: 0,
         unit: "pcs",
         qty: 1,
         isExternal: true,
@@ -173,6 +177,11 @@ function QuickOrderInner() {
     () => rows.reduce((s, r) => s + (Number(r.qty) || 0) * (Number(r.price) || 0), 0),
     [rows],
   );
+  const totalCost = useMemo(
+    () => rows.reduce((s, r) => s + (Number(r.qty) || 0) * (Number(r.cost) || 0), 0),
+    [rows],
+  );
+  const totalProfit = total - totalCost;
 
   const convertToSale = async () => {
     if (!current?.id || !user) return;
@@ -216,6 +225,8 @@ function QuickOrderInner() {
       }
 
       const subtotal = total;
+      const costTotal = totalCost;
+      const profitAmt = subtotal - costTotal;
       const { data: sale, error: eS } = await supabase
         .from("sales")
         .insert({
@@ -227,6 +238,8 @@ function QuickOrderInner() {
           total: subtotal,
           paid: subtotal,
           due: 0,
+          cost_total: costTotal,
+          profit: profitAmt,
           payment_method: "cash",
           status: "completed",
           note: note.trim() || null,
@@ -243,6 +256,7 @@ function QuickOrderInner() {
         name: r.name,
         qty: r.qty,
         price: r.price,
+        cost: r.cost,
         total: r.qty * r.price,
       }));
       const { error: eI } = await supabase.from("sale_items").insert(items);
@@ -295,11 +309,11 @@ function QuickOrderInner() {
 
   return (
     <div className="container max-w-3xl px-4 py-4">
-      <div className="mb-2 text-xs text-muted-foreground">Home / {lang === "bn" ? "দ্রুত ফর্দ" : "Quick Order"}</div>
+      <div className="mb-2 text-xs text-muted-foreground">Home / {lang === "bn" ? "দ্রুত বিক্রি" : "Quick Sell"}</div>
       <div className="mb-4 flex items-center justify-between gap-2">
         <h1 className="flex items-center gap-2 text-xl font-extrabold">
           <ReceiptText className="h-5 w-5 text-primary" />
-          {lang === "bn" ? "দ্রুত ফর্দ" : "Quick Order"}
+          {lang === "bn" ? "দ্রুত বিক্রি" : "Quick Sell"}
         </h1>
         <label className="flex items-center gap-2 rounded-lg border bg-card px-3 py-1.5 text-xs">
           <Switch checked={allowExternal} onCheckedChange={setAllowExternal} />
@@ -423,19 +437,27 @@ function QuickOrderInner() {
                       )}
                     </div>
                   </div>
-                  {/* Price */}
+                  {/* Cost */}
                   <div className="col-span-2">
-                    {r.isExternal ? (
-                      <Input
-                        type="number"
-                        value={r.price || ""}
-                        onChange={(e) => updateRow(r.tempId, { price: Number(e.target.value) || 0 })}
-                        className="h-9 text-right"
-                        placeholder="৳"
-                      />
-                    ) : (
-                      <div className="text-right text-sm font-semibold">৳{r.price.toFixed(0)}</div>
-                    )}
+                    <Input
+                      type="number"
+                      value={r.cost || ""}
+                      onChange={(e) => updateRow(r.tempId, { cost: Number(e.target.value) || 0 })}
+                      className="h-9 text-right"
+                      placeholder={lang === "bn" ? "ক্রয়" : "Cost"}
+                      title={lang === "bn" ? "ক্রয় মূল্য" : "Cost price"}
+                    />
+                  </div>
+                  {/* Sell price */}
+                  <div className="col-span-2">
+                    <Input
+                      type="number"
+                      value={r.price || ""}
+                      onChange={(e) => updateRow(r.tempId, { price: Number(e.target.value) || 0 })}
+                      className="h-9 text-right"
+                      placeholder={lang === "bn" ? "বিক্রয়" : "Sell"}
+                      title={lang === "bn" ? "বিক্রয় মূল্য" : "Sell price"}
+                    />
                   </div>
                   {/* Qty */}
                   <div className="col-span-2">
@@ -448,17 +470,25 @@ function QuickOrderInner() {
                     />
                   </div>
                   {/* Unit */}
-                  <div className="col-span-2">
+                  <div className="col-span-12 -mt-1 flex items-center justify-between gap-2 text-[11px]">
                     {r.isExternal ? (
                       <Input
                         value={r.unit}
                         onChange={(e) => updateRow(r.tempId, { unit: e.target.value })}
-                        className="h-9"
+                        className="h-7 w-20"
                         maxLength={10}
                       />
                     ) : (
-                      <div className="text-center text-xs text-muted-foreground">{r.unit}</div>
+                      <div className="text-xs text-muted-foreground">{r.unit}</div>
                     )}
+                    <div className="text-right">
+                      <span className="text-muted-foreground">{lang === "bn" ? "লাভ" : "Profit"}: </span>
+                      <span className={`font-semibold ${(r.price - r.cost) * r.qty >= 0 ? "text-success" : "text-destructive"}`}>
+                        ৳{((r.price - r.cost) * r.qty).toFixed(0)}
+                      </span>
+                      <span className="ml-2 text-muted-foreground">{lang === "bn" ? "মোট" : "Total"}: </span>
+                      <span className="font-semibold">৳{(r.price * r.qty).toFixed(0)}</span>
+                    </div>
                   </div>
                 </div>
                 <button
@@ -475,9 +505,19 @@ function QuickOrderInner() {
         )}
 
         {rows.length > 0 && (
-          <div className="flex items-center justify-between border-t px-4 py-3">
-            <span className="text-sm font-semibold">{lang === "bn" ? "মোট" : "Total"}</span>
-            <span className="text-lg font-extrabold">৳ {total.toFixed(2)}</span>
+          <div className="border-t px-4 py-3 space-y-1">
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span>{lang === "bn" ? "মোট ক্রয়" : "Total cost"}</span>
+              <span>৳ {totalCost.toFixed(2)}</span>
+            </div>
+            <div className="flex items-center justify-between text-sm">
+              <span className="font-semibold">{lang === "bn" ? "মোট লাভ" : "Total profit"}</span>
+              <span className={`font-bold ${totalProfit >= 0 ? "text-success" : "text-destructive"}`}>৳ {totalProfit.toFixed(2)}</span>
+            </div>
+            <div className="flex items-center justify-between border-t pt-1.5">
+              <span className="text-sm font-semibold">{lang === "bn" ? "মোট বিক্রয়" : "Total sell"}</span>
+              <span className="text-lg font-extrabold">৳ {total.toFixed(2)}</span>
+            </div>
           </div>
         )}
       </div>

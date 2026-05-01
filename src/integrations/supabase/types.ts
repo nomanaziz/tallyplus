@@ -2714,6 +2714,7 @@ export type Database = {
       }
       sale_items: {
         Row: {
+          cost: number
           created_at: string
           id: string
           name: string
@@ -2725,6 +2726,7 @@ export type Database = {
           total: number
         }
         Insert: {
+          cost?: number
           created_at?: string
           id?: string
           name: string
@@ -2736,6 +2738,7 @@ export type Database = {
           total: number
         }
         Update: {
+          cost?: number
           created_at?: string
           id?: string
           name?: string
@@ -2866,6 +2869,7 @@ export type Database = {
       }
       sales: {
         Row: {
+          cost_total: number
           created_at: string
           created_by: string | null
           customer_id: string | null
@@ -2877,6 +2881,7 @@ export type Database = {
           note: string | null
           paid: number
           payment_method: Database["public"]["Enums"]["payment_method"]
+          profit: number
           shop_id: string
           status: Database["public"]["Enums"]["sale_status"]
           subtotal: number
@@ -2885,6 +2890,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          cost_total?: number
           created_at?: string
           created_by?: string | null
           customer_id?: string | null
@@ -2896,6 +2902,7 @@ export type Database = {
           note?: string | null
           paid?: number
           payment_method?: Database["public"]["Enums"]["payment_method"]
+          profit?: number
           shop_id: string
           status?: Database["public"]["Enums"]["sale_status"]
           subtotal?: number
@@ -2904,6 +2911,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          cost_total?: number
           created_at?: string
           created_by?: string | null
           customer_id?: string | null
@@ -2915,6 +2923,7 @@ export type Database = {
           note?: string | null
           paid?: number
           payment_method?: Database["public"]["Enums"]["payment_method"]
+          profit?: number
           shop_id?: string
           status?: Database["public"]["Enums"]["sale_status"]
           subtotal?: number

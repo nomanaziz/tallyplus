@@ -26,6 +26,7 @@ export const SECTIONS: SidebarSection[] = [
     items: [
       { to: "/app/purchase", bn: "ক্রয়", en: "Purchase", icon: icons.purchase, perm: "purchase" },
       { to: "/app/sell", bn: "বিক্রয়", en: "Sell", icon: icons.sell, perm: "sell" },
+      { to: "/app/quick-order", bn: "দ্রুত বিক্রি", en: "Quick Sell", icon: icons.quickSell, perm: "sell" },
       { to: "/app/cashbox", bn: "ক্যাশবক্স", en: "Cashbox", icon: icons.cashbox },
     ],
   },
@@ -59,7 +60,6 @@ export const SECTIONS: SidebarSection[] = [
     en: "Customers",
     items: [
       { to: "/app/contacts", bn: "যোগাযোগ", en: "Contacts", icon: icons.contact, perm: "contacts" },
-      { to: "/app/quick-order", bn: "দ্রুত ফর্দ", en: "Quick Order", icon: icons.quickSell, perm: "sell" },
       { to: "/app/customer-wishlist", bn: "গ্রাহক ফর্দ", en: "Customer Fordo", icon: icons.contact, perm: "contacts" },
       { to: "/app/fordo-history", bn: "ফর্দ ইতিহাস", en: "Fordo History", icon: icons.contact, perm: "contacts" },
       { to: "/app/marketing", bn: "মার্কেটিং", en: "Marketing", icon: icons.marketing, perm: "sms" },
