@@ -4,8 +4,6 @@ import { Button } from "@/components/ui/button";
 import { HeroAuthCard } from "./HeroAuthCard";
 import logo from "@/assets/logo.png";
 import { ArrowRight, MessageCircle, Store, ShoppingBag, Wallet, Receipt } from "lucide-react";
-import { LangToggle } from "@/components/site/LangToggle";
-import { ThemeToggle } from "@/components/site/ThemeToggle";
 
 /**
  * Facebook-style entry screen for logged-out visitors.
@@ -24,10 +22,9 @@ export function AuthEntry() {
             <img src={logo} alt="Tally Plus" width={32} height={32} className="h-7 w-7 object-contain" />
             <span className="text-lg font-extrabold tracking-tight">{t("appName")}</span>
           </Link>
-          <div className="flex items-center gap-1.5">
-            <LangToggle />
-            <ThemeToggle />
-          </div>
+          <Link to="/about" className="text-xs font-semibold text-muted-foreground hover:text-foreground hover:underline">
+            {t("learnAboutTallyPlus")} →
+          </Link>
         </div>
       </header>
 
