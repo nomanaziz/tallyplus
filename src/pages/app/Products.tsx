@@ -655,9 +655,18 @@ function ProductsPage() {
                   const cur = updates[p.id] ?? stockNum;
                   const changed = updates[p.id] != null && updates[p.id] !== stockNum;
                   return (
-                    <TableRow key={p.id} className={editStockMode && changed ? "bg-amber-50/60 hover:bg-amber-50" : undefined}>
+                    <TableRow
+                      key={p.id}
+                      className={(editStockMode && changed ? "bg-amber-50/60 hover:bg-amber-50 " : "") + (!editStockMode && !selectMode ? "cursor-pointer sm:cursor-default" : "")}
+                      onClick={(e) => {
+                        if (editStockMode || selectMode) return;
+                        const target = e.target as HTMLElement;
+                        if (target.closest('button,a,input,[role="menuitem"],[role="menu"],[role="checkbox"]')) return;
+                        setDetails(p);
+                      }}
+                    >
                       {selectMode && (
-                        <TableCell className="w-10">
+                        <TableCell className="w-10" onClick={(e) => e.stopPropagation()}>
                           <Checkbox
                             checked={selected.has(p.id)}
                             onCheckedChange={() => toggleSelect(p.id)}
@@ -665,8 +674,8 @@ function ProductsPage() {
                           />
                         </TableCell>
                       )}
-                      <TableCell>
-                        <div className="flex items-center gap-2">
+                      <TableCell className="min-w-0">
+                        <div className="flex items-center gap-2 min-w-0">
                           <div className="flex h-8 w-8 flex-none items-center justify-center rounded-md bg-muted">
                             {p.image_url ? (
                               <img src={p.image_url} alt="" className="h-8 w-8 rounded-md object-cover" />
@@ -674,7 +683,7 @@ function ProductsPage() {
                               <Package className="h-4 w-4 text-muted-foreground" />
                             )}
                           </div>
-                          <span className="font-medium">{p.name}</span>
+                          <span className="font-medium text-sm sm:text-base whitespace-normal break-words leading-tight min-w-0">{p.name}</span>
                         </div>
                       </TableCell>
                       <TableCell className="text-right tabular-nums">
