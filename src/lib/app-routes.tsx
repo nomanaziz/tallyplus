@@ -89,6 +89,7 @@ const L83 = lazy(() => import("@/pages/About"));
 const L84 = lazy(() => import("@/pages/app/Returns"));
 const L85 = lazy(() => import("@/pages/app/returns/New"));
 const L86 = lazy(() => import("@/pages/app/returns/Id"));
+const L87 = lazy(() => import("@/pages/customer/Training"));
 
 export const appRoutes: RouteObject[] = [
 { index: true, element: <Suspense fallback={<RouteFallback/>}><L0/></Suspense> },
