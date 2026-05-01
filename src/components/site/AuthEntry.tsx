@@ -1,7 +1,7 @@
 import { Link } from "@/lib/router";
 import { useI18n } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
-import { HeroAuthCard } from "./HeroAuthCard";
+import { LoginCard } from "./LoginCard";
 import logo from "@/assets/logo.png";
 import { ArrowRight, MessageCircle, Store, ShoppingBag, Wallet, Receipt } from "lucide-react";
 
@@ -85,7 +85,9 @@ export function AuthEntry() {
         {/* Auth card */}
         <div className="relative">
           <div className="absolute inset-0 -z-10 mx-auto my-auto h-[90%] w-[90%] rounded-[2.5rem] bg-gradient-to-br from-primary/30 via-primary/10 to-transparent blur-2xl" aria-hidden />
-          <HeroAuthCard />
+          <div className="flex justify-center md:justify-end">
+            <LoginCard />
+          </div>
         </div>
       </main>
 
