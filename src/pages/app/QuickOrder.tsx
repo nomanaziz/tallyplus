@@ -43,12 +43,20 @@ function tid() {
   return Math.random().toString(36).slice(2, 10);
 }
 
-function FieldBox({ label, children }: { label: string; children: React.ReactNode }) {
+function FieldBox({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
   return (
-    <div className="rounded-md border bg-background px-2 py-1">
-      <div className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">{label}</div>
-      {children}
-    </div>
+    <label className="group flex h-16 flex-col items-stretch justify-between rounded-xl border bg-background px-2 py-1.5 transition-colors focus-within:border-primary focus-within:ring-1 focus-within:ring-primary/30">
+      <span className="text-center text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+        {label}
+      </span>
+      <div className="flex flex-1 items-center justify-center">{children}</div>
+    </label>
   );
 }
 
@@ -317,14 +325,16 @@ function QuickOrderInner() {
   };
 
   return (
-    <div className="container max-w-3xl px-4 py-4">
-      <div className="mb-2 text-xs text-muted-foreground">Home / {lang === "bn" ? "দ্রুত বিক্রি" : "Quick Sell"}</div>
-      <div className="mb-4 flex items-center justify-between gap-2">
+    <div className="container max-w-3xl space-y-4 px-4 py-4 pb-28">
+      <div className="text-xs text-muted-foreground">
+        Home / {lang === "bn" ? "দ্রুত বিক্রি" : "Quick Sell"}
+      </div>
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="flex items-center gap-2 text-xl font-extrabold">
           <ReceiptText className="h-5 w-5 text-primary" />
           {lang === "bn" ? "দ্রুত বিক্রি" : "Quick Sell"}
         </h1>
-        <label className="flex items-center gap-2 rounded-lg border bg-card px-3 py-1.5 text-xs">
+        <label className="inline-flex items-center gap-2 rounded-full border bg-card px-3 py-1.5 text-xs shadow-sm">
           <Switch checked={allowExternal} onCheckedChange={setAllowExternal} />
           <span className="font-medium">
             {lang === "bn" ? "স্টকের বাইরের পণ্য" : "Out-of-stock items"}
@@ -333,7 +343,7 @@ function QuickOrderInner() {
       </div>
 
       {/* Smart input */}
-      <div className="rounded-2xl border bg-card p-3 shadow-sm">
+      <div className="rounded-2xl border bg-card p-4 shadow-sm">
         <div className="relative">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -403,7 +413,7 @@ function QuickOrderInner() {
             </div>
           )}
         </div>
-        <p className="mt-2 text-[11px] text-muted-foreground">
+        <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
           {lang === "bn"
             ? "দোকানের পণ্য বাছাই করলে দাম ও একক স্বয়ংক্রিয় আসবে।"
             : "Pick a store product and price + unit auto-fill."}
@@ -411,11 +421,20 @@ function QuickOrderInner() {
       </div>
 
       {/* Items */}
-      <div className="mt-4 rounded-2xl border bg-card shadow-sm">
+      <div className="rounded-2xl border bg-card shadow-sm">
         {rows.length === 0 ? (
-          <div className="flex flex-col items-center px-4 py-10 text-center text-sm text-muted-foreground">
-            <ShoppingCart className="mb-2 h-10 w-10 opacity-40" />
-            {lang === "bn" ? "এখনো কোনো পণ্য যোগ হয়নি।" : "No items yet."}
+          <div className="flex flex-col items-center justify-center px-4 py-12 text-center text-sm text-muted-foreground">
+            <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-muted">
+              <ShoppingCart className="h-7 w-7 opacity-60" />
+            </div>
+            <div className="font-medium">
+              {lang === "bn" ? "এখনো কোনো পণ্য যোগ হয়নি" : "No items yet"}
+            </div>
+            <div className="mt-1 text-xs">
+              {lang === "bn"
+                ? "উপরের সার্চ বক্সে পণ্য খুঁজুন বা নতুন নাম লিখুন।"
+                : "Search above or type a new product name."}
+            </div>
           </div>
         ) : (
           <ul className="divide-y">
@@ -423,63 +442,76 @@ function QuickOrderInner() {
               const lineTotal = (Number(r.price) || 0) * (Number(r.qty) || 0);
               const lineProfit = ((Number(r.price) || 0) - (Number(r.cost) || 0)) * (Number(r.qty) || 0);
               return (
-                <li key={r.tempId} className="px-3 py-3">
-                  {/* Top row: name + delete */}
-                  <div className="flex items-start gap-2">
-                    <div className="mt-1 w-5 select-none text-center text-xs font-semibold text-muted-foreground">
-                      {idx + 1}.
+                <li key={r.tempId} className="space-y-3 p-4">
+                  {/* Top row: serial + name + delete */}
+                  <div className="flex items-start gap-2.5">
+                    <div className="mt-0.5 flex h-6 w-6 flex-none items-center justify-center rounded-full bg-muted text-xs font-bold text-muted-foreground">
+                      {idx + 1}
                     </div>
                     <div className="min-w-0 flex-1">
                       {r.isExternal ? (
                         <Input
                           value={r.name}
                           onChange={(e) => updateRow(r.tempId, { name: e.target.value })}
-                          className="h-9 text-sm font-medium"
+                          className="h-9 text-sm font-semibold"
                           placeholder={lang === "bn" ? "পণ্যের নাম" : "Product name"}
                         />
                       ) : (
-                        <div className="line-clamp-2 break-words text-sm font-semibold">{r.name}</div>
+                        <div className="line-clamp-2 break-words text-base font-semibold leading-snug">
+                          {r.name}
+                        </div>
                       )}
-                      <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                      <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
                         {r.isExternal ? (
-                          <Badge variant="secondary" className="text-[10px]">External</Badge>
+                          <Badge
+                            variant="secondary"
+                            className="h-5 rounded-full px-2 text-[10px] font-medium"
+                          >
+                            {lang === "bn" ? "বাইরের পণ্য" : "External"}
+                          </Badge>
                         ) : (
-                          <span className="inline-flex items-center gap-0.5 text-[10px] text-success">
-                            <Check className="h-3 w-3" /> {lang === "bn" ? "দোকানের পণ্য" : "in store"}
-                          </span>
+                          <Badge
+                            variant="secondary"
+                            className="h-5 gap-1 rounded-full bg-success/10 px-2 text-[10px] font-medium text-success hover:bg-success/15"
+                          >
+                            <Check className="h-3 w-3" />
+                            {lang === "bn" ? "দোকানের পণ্য" : "In store"}
+                          </Badge>
                         )}
                         {r.isExternal ? (
                           <Input
                             value={r.unit}
                             onChange={(e) => updateRow(r.tempId, { unit: e.target.value })}
-                            className="h-6 w-16 text-[11px]"
+                            className="h-5 w-16 rounded-full px-2 text-[11px]"
                             maxLength={10}
                             placeholder={lang === "bn" ? "একক" : "Unit"}
                           />
                         ) : (
-                          <span className="text-[11px] text-muted-foreground">/{r.unit}</span>
+                          <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                            /{r.unit}
+                          </span>
                         )}
                       </div>
                     </div>
                     <button
                       type="button"
                       onClick={() => removeRow(r.tempId)}
-                      className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-destructive"
+                      className="flex h-8 w-8 flex-none items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
                       aria-label="remove"
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
                   </div>
 
-                  {/* Inputs row: labelled boxes for ক্রয় / বিক্রয় / পরিমাণ */}
-                  <div className="mt-2 grid grid-cols-3 gap-2">
+                  {/* Inputs row: ক্রয় / বিক্রয় / পরিমাণ */}
+                  <div className="grid grid-cols-3 gap-2">
                     <FieldBox label={lang === "bn" ? "ক্রয়" : "Cost"}>
                       <Input
                         type="number"
                         inputMode="decimal"
                         value={r.cost || ""}
                         onChange={(e) => updateRow(r.tempId, { cost: Number(e.target.value) || 0 })}
-                        className="h-9 border-0 bg-transparent px-0 text-right text-sm shadow-none focus-visible:ring-0"
+                        className="h-7 border-0 bg-transparent p-0 text-center text-base font-bold shadow-none focus-visible:ring-0"
                         placeholder="0"
                       />
                     </FieldBox>
@@ -489,7 +521,7 @@ function QuickOrderInner() {
                         inputMode="decimal"
                         value={r.price || ""}
                         onChange={(e) => updateRow(r.tempId, { price: Number(e.target.value) || 0 })}
-                        className="h-9 border-0 bg-transparent px-0 text-right text-sm shadow-none focus-visible:ring-0"
+                        className="h-7 border-0 bg-transparent p-0 text-center text-base font-bold shadow-none focus-visible:ring-0"
                         placeholder="0"
                       />
                     </FieldBox>
@@ -499,23 +531,27 @@ function QuickOrderInner() {
                         inputMode="decimal"
                         value={r.qty}
                         onChange={(e) => updateRow(r.tempId, { qty: Number(e.target.value) || 0 })}
-                        className="h-9 border-0 bg-transparent px-0 text-right text-sm shadow-none focus-visible:ring-0"
+                        className="h-7 border-0 bg-transparent p-0 text-center text-base font-bold shadow-none focus-visible:ring-0"
                         min={0}
                       />
                     </FieldBox>
                   </div>
 
                   {/* Line summary */}
-                  <div className="mt-2 flex items-center justify-between text-[11px]">
+                  <div className="flex items-center justify-between rounded-lg bg-muted/40 px-3 py-1.5 text-[11px]">
                     <span className="text-muted-foreground">
                       {lang === "bn" ? "লাভ" : "Profit"}:{" "}
-                      <span className={`font-semibold ${lineProfit >= 0 ? "text-success" : "text-destructive"}`}>
+                      <span
+                        className={`font-semibold ${lineProfit >= 0 ? "text-success" : "text-destructive"}`}
+                      >
                         ৳{lineProfit.toFixed(0)}
                       </span>
                     </span>
                     <span className="text-muted-foreground">
                       {lang === "bn" ? "মোট" : "Total"}:{" "}
-                      <span className="text-sm font-bold text-foreground">৳{lineTotal.toFixed(0)}</span>
+                      <span className="text-sm font-bold text-foreground">
+                        ৳{lineTotal.toFixed(0)}
+                      </span>
                     </span>
                   </div>
                 </li>
@@ -525,58 +561,80 @@ function QuickOrderInner() {
         )}
 
         {rows.length > 0 && (
-          <div className="border-t px-4 py-3 space-y-1">
+          <div className="space-y-2 border-t bg-muted/30 px-4 py-3">
             <div className="flex items-center justify-between text-xs text-muted-foreground">
               <span>{lang === "bn" ? "মোট ক্রয়" : "Total cost"}</span>
-              <span>৳ {totalCost.toFixed(2)}</span>
+              <span className="tabular-nums">৳ {totalCost.toFixed(2)}</span>
             </div>
             <div className="flex items-center justify-between text-sm">
               <span className="font-semibold">{lang === "bn" ? "মোট লাভ" : "Total profit"}</span>
-              <span className={`font-bold ${totalProfit >= 0 ? "text-success" : "text-destructive"}`}>৳ {totalProfit.toFixed(2)}</span>
+              <span
+                className={`font-bold tabular-nums ${totalProfit >= 0 ? "text-success" : "text-destructive"}`}
+              >
+                ৳ {totalProfit.toFixed(2)}
+              </span>
             </div>
-            <div className="flex items-center justify-between border-t pt-1.5">
-              <span className="text-sm font-semibold">{lang === "bn" ? "মোট বিক্রয়" : "Total sell"}</span>
-              <span className="text-lg font-extrabold">৳ {total.toFixed(2)}</span>
+            <div className="flex items-center justify-between border-t pt-2">
+              <span className="text-base font-bold">{lang === "bn" ? "মোট বিক্রয়" : "Total sell"}</span>
+              <span className="text-xl font-extrabold tabular-nums text-primary">
+                ৳ {total.toFixed(2)}
+              </span>
             </div>
           </div>
         )}
       </div>
 
       {/* Optional customer */}
-      <div className="mt-3">
+      <div className="space-y-2">
         <button
           type="button"
           onClick={() => setShowOpt((v) => !v)}
-          className="text-xs font-semibold text-primary hover:underline"
+          className="inline-flex items-center gap-1.5 rounded-full border bg-card px-3 py-1.5 text-xs font-semibold text-primary shadow-sm transition-colors hover:bg-accent"
         >
-          {showOpt
-            ? lang === "bn" ? "− গ্রাহকের তথ্য লুকান" : "− Hide customer info"
-            : lang === "bn" ? "+ গ্রাহকের তথ্য (ইচ্ছাধীন)" : "+ Customer info (optional)"}
+          {showOpt ? (
+            <>
+              <X className="h-3.5 w-3.5" />
+              {lang === "bn" ? "গ্রাহকের তথ্য লুকান" : "Hide customer info"}
+            </>
+          ) : (
+            <>
+              <Plus className="h-3.5 w-3.5" />
+              {lang === "bn" ? "গ্রাহকের তথ্য (ইচ্ছাধীন)" : "Customer info (optional)"}
+            </>
+          )}
         </button>
         {showOpt && (
-          <div className="mt-2 grid gap-2 rounded-xl border bg-card p-3 sm:grid-cols-2">
-            <div>
-              <Label className="text-xs">{lang === "bn" ? "গ্রাহকের নাম" : "Customer name"}</Label>
-              <Input value={custName} onChange={(e) => setCustName(e.target.value)} className="h-9" />
+          <div className="grid gap-3 rounded-2xl border bg-card p-4 shadow-sm sm:grid-cols-2">
+            <div className="space-y-1">
+              <Label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                {lang === "bn" ? "গ্রাহকের নাম" : "Customer name"}
+              </Label>
+              <Input value={custName} onChange={(e) => setCustName(e.target.value)} className="h-10" />
             </div>
-            <div>
-              <Label className="text-xs">{lang === "bn" ? "মোবাইল" : "Phone"}</Label>
-              <Input value={custPhone} onChange={(e) => setCustPhone(e.target.value)} className="h-9" />
+            <div className="space-y-1">
+              <Label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                {lang === "bn" ? "মোবাইল" : "Phone"}
+              </Label>
+              <Input value={custPhone} onChange={(e) => setCustPhone(e.target.value)} className="h-10" />
             </div>
-            <div className="sm:col-span-2">
-              <Label className="text-xs">{lang === "bn" ? "ঠিকানা" : "Address"}</Label>
-              <Input value={custAddress} onChange={(e) => setCustAddress(e.target.value)} className="h-9" />
+            <div className="space-y-1 sm:col-span-2">
+              <Label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                {lang === "bn" ? "ঠিকানা" : "Address"}
+              </Label>
+              <Input value={custAddress} onChange={(e) => setCustAddress(e.target.value)} className="h-10" />
             </div>
-            <div className="sm:col-span-2">
-              <Label className="text-xs">{lang === "bn" ? "নোট" : "Note"}</Label>
-              <Input value={note} onChange={(e) => setNote(e.target.value)} className="h-9" />
+            <div className="space-y-1 sm:col-span-2">
+              <Label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                {lang === "bn" ? "নোট" : "Note"}
+              </Label>
+              <Input value={note} onChange={(e) => setNote(e.target.value)} className="h-10" />
             </div>
           </div>
         )}
       </div>
 
       {/* Actions */}
-      <div className="sticky bottom-2 z-10 mt-4 flex flex-col gap-2 rounded-2xl border bg-background/95 p-3 shadow-lg backdrop-blur sm:flex-row">
+      <div className="sticky bottom-2 z-10 flex flex-col gap-2 rounded-2xl border bg-background/95 p-3 shadow-lg backdrop-blur sm:flex-row">
         <Button
           variant="outline"
           className="flex-1 h-12 text-base font-semibold"
