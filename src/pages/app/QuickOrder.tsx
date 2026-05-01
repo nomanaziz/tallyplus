@@ -43,6 +43,15 @@ function tid() {
   return Math.random().toString(36).slice(2, 10);
 }
 
+function FieldBox({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="rounded-md border bg-background px-2 py-1">
+      <div className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">{label}</div>
+      {children}
+    </div>
+  );
+}
+
 function QuickOrderPage() {
   return (
     <RequirePerm group="sell">
