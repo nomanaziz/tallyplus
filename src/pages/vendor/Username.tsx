@@ -96,6 +96,12 @@ function PublicShopPage() {
     typeof rawWishlistSlug === "string" && rawWishlistSlug.trim().length > 0
       ? rawWishlistSlug.trim()
       : null;
+  // Prefer the clean shop handle (username → slug) for the fordo URL,
+  // fall back to the random wishlist_slug if neither is set.
+  const fordoHandle =
+    (shop.username && shop.username.trim()) ||
+    (shop.slug && shop.slug.trim()) ||
+    wishlistSlug;
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
