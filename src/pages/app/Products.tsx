@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Plus, Download, MoreVertical, Package, Pencil, Trash2, Sparkles, Hash,
-  Eye, History, Save, X, Minus, ListOrdered, RefreshCw,
+  Eye, History, Save, X, Minus, ListOrdered, RefreshCw, SlidersHorizontal,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useShop } from "@/lib/shop";
