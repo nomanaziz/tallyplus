@@ -1127,8 +1127,11 @@ function ProductFormDialog({
       setBarcodeOn(Boolean(p?.barcode));
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       setSerializedOn(Boolean((p as any)?.is_serialized));
+    } else if (open && !p) {
+      // New product: auto-enable IMEI/Serial tracking for mobile shops
+      setSerializedOn(shopTypeCode === "mobile");
     }
-  }, [open, product]);
+  }, [open, product, shopTypeCode]);
 
   const topCats = allCats.filter((c) => !c.parent_id);
   const subCats = categoryId ? allCats.filter((c) => c.parent_id === categoryId) : [];
