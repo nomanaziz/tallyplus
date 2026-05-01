@@ -386,6 +386,15 @@ function ProductsPage() {
             </>
           ) : (
             <>
+              <Button
+                variant="outline"
+                className="h-9 gap-1.5 px-2 sm:h-10 sm:gap-2 sm:px-3"
+                onClick={load}
+                aria-label={lang === "bn" ? "রিফ্রেশ" : "Refresh"}
+              >
+                <RefreshCw className="h-4 w-4" />
+                <span className="hidden sm:inline">{lang === "bn" ? "রিফ্রেশ" : "Refresh"}</span>
+              </Button>
               <Button variant="outline" className="hidden sm:inline-flex h-10 gap-2 border-primary text-primary hover:bg-primary/10" onClick={openHistory}>
                 <History className="h-4 w-4" />
                 {lang === "bn" ? "স্টকের ইতিহাস" : "Stock history"}
