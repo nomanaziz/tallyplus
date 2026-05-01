@@ -25,6 +25,7 @@ const L18 = lazy(() => import("@/pages/admin/Subscriptions"));
 const L19 = lazy(() => import("@/pages/admin/Training"));
 const L20 = lazy(() => import("@/pages/admin/UsageLimits"));
 const L21 = lazy(() => import("@/pages/admin/Users"));
+const LPlatformAdmins = lazy(() => import("@/pages/admin/PlatformAdmins"));
 const L22 = lazy(() => import("@/pages/Affiliate"));
 const L23 = lazy(() => import("@/pages/affiliate/Register"));
 const L24 = lazy(() => import("@/pages/app/AppLayout"));
