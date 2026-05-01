@@ -109,10 +109,12 @@ function RecycleBinPage() {
                         <RotateCcw className="h-3.5 w-3.5" />
                         {lang === "bn" ? "ফেরত" : "Restore"}
                       </Button>
-                      <Button size="sm" variant="outline" onClick={() => purge(String(r.id))} className="gap-1 border-rose-200 text-rose-600 hover:bg-rose-50">
-                        <Trash2 className="h-3.5 w-3.5" />
-                        {lang === "bn" ? "স্থায়ী" : "Purge"}
-                      </Button>
+                      {canPurge && (
+                        <Button size="sm" variant="outline" onClick={() => purge(String(r.id))} className="gap-1 border-rose-200 text-rose-600 hover:bg-rose-50">
+                          <Trash2 className="h-3.5 w-3.5" />
+                          {lang === "bn" ? "স্থায়ী" : "Purge"}
+                        </Button>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>
