@@ -1,9 +1,12 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, Store, CreditCard, Receipt, Package } from "lucide-react";
+import {
+  Users, Store, CreditCard, Receipt, Package, ShieldCheck,
+  TrendingUp, Calendar, AlertCircle, Layers,
+} from "lucide-react";
 
-
+type PlanRow = { name: string; count: number; revenue: number };
 
 type Stats = {
   users: number;
@@ -11,68 +14,198 @@ type Stats = {
   activeSubs: number;
   pendingRequests: number;
   marketplaceProducts: number;
+  marketplaceActive: number;
+  listings: number;
+  admins: number;
+  expiringSoon: number;
+  thisMonthSubs: number;
+  totalRevenue: number;
+  byPlan: PlanRow[];
 };
+
+function fmtBdt(n: number) {
+  return "৳" + Math.round(n).toLocaleString("en-BD");
+}
 
 function AdminOverview() {
   const [stats, setStats] = useState<Stats | null>(null);
 
   useEffect(() => {
     (async () => {
-      const nowIso = new Date().toISOString();
-      const [u, s, sub, req, mp] = await Promise.all([
+      const now = new Date();
+      const nowIso = now.toISOString();
+      const in7 = new Date(now.getTime() + 7 * 86400_000).toISOString();
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+
+      const [
+        u, s, sub, req, mp, mpa, list, admins, exp, mNew,
+        activeSubsRows, plans,
+      ] = await Promise.all([
         supabase.from("profiles").select("id", { count: "exact", head: true }),
         supabase.from("shops").select("id", { count: "exact", head: true }).is("deleted_at", null),
-        supabase
-          .from("subscriptions")
-          .select("id", { count: "exact", head: true })
-          .eq("status", "active")
-          .gt("expires_at", nowIso),
-        supabase
-          .from("subscription_requests")
-          .select("id", { count: "exact", head: true })
+        supabase.from("subscriptions").select("id", { count: "exact", head: true })
+          .eq("status", "active").gt("expires_at", nowIso),
+        supabase.from("subscription_requests").select("id", { count: "exact", head: true })
           .eq("status", "pending"),
         supabase.from("marketplace_products").select("id", { count: "exact", head: true }),
+        supabase.from("marketplace_products").select("id", { count: "exact", head: true })
+          .eq("is_active", true),
+        supabase.from("marketplace_listings").select("id", { count: "exact", head: true }),
+        supabase.from("user_roles").select("user_id", { count: "exact", head: true })
+          .eq("role", "admin"),
+        supabase.from("subscriptions").select("id", { count: "exact", head: true })
+          .eq("status", "active").gt("expires_at", nowIso).lt("expires_at", in7),
+        supabase.from("subscriptions").select("id", { count: "exact", head: true })
+          .gte("created_at", monthStart),
+        supabase.from("subscriptions").select("plan_id")
+          .eq("status", "active").gt("expires_at", nowIso),
+        supabase.from("subscription_plans").select("id,name_bn,name_en,price_bdt"),
       ]);
+
+      const planMap = new Map<string, { name: string; price: number }>();
+      ((plans.data as any[]) ?? []).forEach((p) => {
+        planMap.set(p.id, { name: p.name_bn || p.name_en || "Plan", price: Number(p.price_bdt) || 0 });
+      });
+      const grouped = new Map<string, PlanRow>();
+      let revenue = 0;
+      ((activeSubsRows.data as any[]) ?? []).forEach((row) => {
+        const p = planMap.get(row.plan_id);
+        if (!p) return;
+        const cur = grouped.get(row.plan_id) ?? { name: p.name, count: 0, revenue: 0 };
+        cur.count += 1;
+        cur.revenue += p.price;
+        revenue += p.price;
+        grouped.set(row.plan_id, cur);
+      });
+      const byPlan = Array.from(grouped.values()).sort((a, b) => b.count - a.count);
+
       setStats({
         users: u.count ?? 0,
         shops: s.count ?? 0,
         activeSubs: sub.count ?? 0,
         pendingRequests: req.count ?? 0,
         marketplaceProducts: mp.count ?? 0,
+        marketplaceActive: mpa.count ?? 0,
+        listings: list.count ?? 0,
+        admins: admins.count ?? 0,
+        expiringSoon: exp.count ?? 0,
+        thisMonthSubs: mNew.count ?? 0,
+        totalRevenue: revenue,
+        byPlan,
       });
     })();
   }, []);
 
-  const cards = [
-    { label: "Total Users", value: stats?.users, icon: Users },
-    { label: "Active Shops", value: stats?.shops, icon: Store },
-    { label: "Active Subscriptions", value: stats?.activeSubs, icon: CreditCard },
-    { label: "Pending Payment Requests", value: stats?.pendingRequests, icon: Receipt },
-    { label: "Marketplace Products", value: stats?.marketplaceProducts, icon: Package },
+  const tiles = [
+    { label: "Users", value: stats?.users, icon: Users },
+    { label: "Shops", value: stats?.shops, icon: Store },
+    { label: "Active subs", value: stats?.activeSubs, icon: CreditCard },
+    { label: "Pending req.", value: stats?.pendingRequests, icon: Receipt },
   ];
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6 p-6">
+    <div className="mx-auto w-full max-w-6xl space-y-3 p-3 sm:space-y-4 sm:p-6">
       <div>
-        <h1 className="text-2xl font-bold">Overview</h1>
-        <p className="text-sm text-muted-foreground">প্ল্যাটফর্মের সারসংক্ষেপ</p>
+        <h1 className="text-xl font-bold sm:text-2xl">Overview</h1>
+        <p className="text-xs text-muted-foreground sm:text-sm">প্ল্যাটফর্মের সারসংক্ষেপ</p>
       </div>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {cards.map((c) => {
-          const Icon = c.icon;
+
+      {/* Top stat strip */}
+      <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4">
+        {tiles.map((t) => {
+          const Icon = t.icon;
           return (
-            <Card key={c.label}>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">{c.label}</CardTitle>
-                <Icon className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold">{c.value ?? "—"}</div>
+            <Card key={t.label}>
+              <CardContent className="flex items-center justify-between gap-2 p-3">
+                <div className="min-w-0">
+                  <div className="truncate text-[11px] text-muted-foreground sm:text-xs">{t.label}</div>
+                  <div className="text-lg font-bold sm:text-xl">{t.value ?? "—"}</div>
+                </div>
+                <Icon className="h-4 w-4 flex-none text-muted-foreground" />
               </CardContent>
             </Card>
           );
         })}
       </div>
+
+      {/* Subscription summary */}
+      <Card>
+        <CardHeader className="p-3 pb-1 sm:p-4 sm:pb-2">
+          <CardTitle className="flex items-center gap-2 text-sm font-semibold">
+            <TrendingUp className="h-4 w-4 text-primary" />
+            Subscription Summary
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3 p-3 pt-2 sm:p-4 sm:pt-2">
+          <div className="grid grid-cols-3 gap-2">
+            <MiniStat label="Active revenue" value={stats ? fmtBdt(stats.totalRevenue) : "—"} icon={CreditCard} />
+            <MiniStat label="Expiring 7d" value={stats?.expiringSoon ?? "—"} icon={AlertCircle} tone="amber" />
+            <MiniStat label="New (month)" value={stats?.thisMonthSubs ?? "—"} icon={Calendar} />
+          </div>
+          {stats && stats.byPlan.length > 0 && (
+            <div className="overflow-hidden rounded-md border">
+              <div className="grid grid-cols-[1fr_auto_auto] items-center gap-2 bg-muted/50 px-3 py-1.5 text-[11px] font-medium uppercase text-muted-foreground sm:text-xs">
+                <span>Plan</span>
+                <span className="text-right">Active users</span>
+                <span className="text-right">Revenue</span>
+              </div>
+              {stats.byPlan.map((p) => (
+                <div key={p.name} className="grid grid-cols-[1fr_auto_auto] items-center gap-2 border-t px-3 py-2 text-sm">
+                  <span className="truncate font-medium">{p.name}</span>
+                  <span className="text-right tabular-nums">{p.count}</span>
+                  <span className="text-right tabular-nums text-muted-foreground">{fmtBdt(p.revenue)}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Marketplace + admin team */}
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <Card>
+          <CardHeader className="p-3 pb-1 sm:p-4 sm:pb-2">
+            <CardTitle className="flex items-center gap-2 text-sm font-semibold">
+              <Package className="h-4 w-4 text-primary" /> Marketplace
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="grid grid-cols-3 gap-2 p-3 pt-2 sm:p-4 sm:pt-2">
+            <MiniStat label="Products" value={stats?.marketplaceProducts ?? "—"} icon={Package} />
+            <MiniStat label="Active" value={stats?.marketplaceActive ?? "—"} icon={Layers} tone="emerald" />
+            <MiniStat label="Listings" value={stats?.listings ?? "—"} icon={Store} />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="p-3 pb-1 sm:p-4 sm:pb-2">
+            <CardTitle className="flex items-center gap-2 text-sm font-semibold">
+              <ShieldCheck className="h-4 w-4 text-primary" /> Admin Team
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-3 pt-2 sm:p-4 sm:pt-2">
+            <div className="text-2xl font-bold">{stats?.admins ?? "—"}</div>
+            <div className="text-xs text-muted-foreground">Total platform admins</div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+function MiniStat({
+  label, value, icon: Icon, tone = "muted",
+}: { label: string; value: number | string; icon: React.ComponentType<{ className?: string }>; tone?: "muted" | "amber" | "emerald" }) {
+  const toneCls =
+    tone === "amber" ? "text-amber-600" :
+    tone === "emerald" ? "text-emerald-600" :
+    "text-muted-foreground";
+  return (
+    <div className="rounded-md border bg-card p-2">
+      <div className="flex items-center justify-between gap-1">
+        <span className="truncate text-[10px] text-muted-foreground sm:text-[11px]">{label}</span>
+        <Icon className={`h-3.5 w-3.5 ${toneCls}`} />
+      </div>
+      <div className="mt-0.5 text-base font-bold tabular-nums sm:text-lg">{value}</div>
     </div>
   );
 }

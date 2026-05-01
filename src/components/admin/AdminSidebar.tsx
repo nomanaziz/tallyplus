@@ -30,6 +30,7 @@ const ITEMS: Item[] = [
   { to: "/admin", label: "Overview", icon: LayoutDashboard },
   { to: "/admin/landing", label: "Landing Page", icon: FileEdit },
   { to: "/admin/users", label: "Users", icon: Users },
+  { to: "/admin/admins", label: "Admin Team", icon: ShieldCheck },
   { to: "/admin/shop-types", label: "Shop Types", icon: Tag },
   { to: "/admin/subscription-requests", label: "Subscription Requests", icon: Receipt },
   { to: "/admin/subscriptions", label: "Subscriptions", icon: CreditCard },

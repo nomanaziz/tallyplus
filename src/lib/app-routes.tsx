@@ -25,6 +25,7 @@ const L18 = lazy(() => import("@/pages/admin/Subscriptions"));
 const L19 = lazy(() => import("@/pages/admin/Training"));
 const L20 = lazy(() => import("@/pages/admin/UsageLimits"));
 const L21 = lazy(() => import("@/pages/admin/Users"));
+const LPlatformAdmins = lazy(() => import("@/pages/admin/PlatformAdmins"));
 const L22 = lazy(() => import("@/pages/Affiliate"));
 const L23 = lazy(() => import("@/pages/affiliate/Register"));
 const L24 = lazy(() => import("@/pages/app/AppLayout"));
@@ -115,6 +116,8 @@ export const appRoutes: RouteObject[] = [
 { path: "training", element: <Suspense fallback={<RouteFallback/>}><L19/></Suspense> },
 { path: "usage-limits", element: <Suspense fallback={<RouteFallback/>}><L20/></Suspense> },
 { path: "users", element: <Suspense fallback={<RouteFallback/>}><L21/></Suspense> }
+,
+{ path: "admins", element: <Suspense fallback={<RouteFallback/>}><LPlatformAdmins/></Suspense> }
 ] },
 { path: "affiliate", element: <Suspense fallback={<RouteFallback/>}><L22/></Suspense>, children: [
 { path: "register", element: <Suspense fallback={<RouteFallback/>}><L23/></Suspense> }

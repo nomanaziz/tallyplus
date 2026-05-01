@@ -16,7 +16,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel } from "@/components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Plus, Pencil, Loader2, Package, Store, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, X, Search, MoreHorizontal, Check, FolderOpen } from "lucide-react";
+import { Plus, Pencil, Loader2, Package, Store, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, X, Search, MoreHorizontal, Check, FolderOpen, Upload } from "lucide-react";
 import { toast } from "sonner";
 
 
@@ -44,10 +44,10 @@ type ShopTypeOpt = { code: string; name_bn: string; name_en: string };
 
 function MarketplacePage() {
   return (
-    <div className="mx-auto w-full max-w-[1600px] space-y-4 p-4 lg:p-6">
+    <div className="mx-auto w-full max-w-[1600px] space-y-4 p-3 sm:p-4 lg:p-6">
       <div>
-        <h1 className="text-2xl font-bold">Marketplace</h1>
-        <p className="text-sm text-muted-foreground">Canonical products & seller listings</p>
+        <h1 className="text-xl font-bold sm:text-2xl">Marketplace</h1>
+        <p className="text-xs text-muted-foreground sm:text-sm">Canonical products & seller listings</p>
       </div>
       <Tabs defaultValue="products">
         <TabsList>
@@ -84,6 +84,7 @@ function ProductsTab() {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<Partial<Product> | null>(null);
   const [saving, setSaving] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [shopTypes, setShopTypes] = useState<ShopTypeOpt[]>([]);
   const [categories, setCategories] = useState<{ name: string; count: number }[]>([]);
 
@@ -204,6 +205,24 @@ function ProductsTab() {
     const cur = editing?.shop_types ?? [];
     const next = cur.includes(code) ? cur.filter((c) => c !== code) : [...cur, code];
     setEditing({ ...editing, shop_types: next });
+  };
+
+  const uploadImage = async (file: File) => {
+    setUploadingImage(true);
+    const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+    const path = `marketplace/${crypto.randomUUID()}.${ext}`;
+    const { error } = await supabase.storage.from("product-images").upload(path, file, {
+      cacheControl: "3600", upsert: false, contentType: file.type || undefined,
+    });
+    if (error) {
+      setUploadingImage(false);
+      toast.error(error.message);
+      return;
+    }
+    const { data } = supabase.storage.from("product-images").getPublicUrl(path);
+    setEditing((prev) => ({ ...(prev ?? {}), image_url: data.publicUrl }));
+    setUploadingImage(false);
+    toast.success("Image uploaded");
   };
 
   const toggleAllOnPage = (checked: boolean) => {
@@ -476,7 +495,46 @@ function ProductsTab() {
               <div><Label>Base Unit</Label><Input value={editing?.base_unit ?? ""} onChange={(e) => setEditing({ ...editing, base_unit: e.target.value })} /></div>
             </div>
             <div><Label>Slug (auto if empty)</Label><Input value={editing?.slug ?? ""} onChange={(e) => setEditing({ ...editing, slug: e.target.value })} placeholder="auto-generated" /></div>
-            <div><Label>Image URL</Label><Input value={editing?.image_url ?? ""} onChange={(e) => setEditing({ ...editing, image_url: e.target.value })} /></div>
+            <div>
+              <Label>Product image</Label>
+              <div className="mt-1 flex items-start gap-3">
+                <div className="flex h-20 w-20 flex-none items-center justify-center overflow-hidden rounded-md border bg-muted">
+                  {editing?.image_url ? (
+                    <img src={editing.image_url} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    <Package className="h-6 w-6 text-muted-foreground" />
+                  )}
+                </div>
+                <div className="flex-1 space-y-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border bg-background px-3 py-1.5 text-sm font-medium hover:bg-accent">
+                      {uploadingImage ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                      <span>{uploadingImage ? "Uploading…" : "Upload image"}</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const f = e.target.files?.[0];
+                          if (f) void uploadImage(f);
+                          e.currentTarget.value = "";
+                        }}
+                      />
+                    </label>
+                    {editing?.image_url && (
+                      <Button type="button" variant="ghost" size="sm" onClick={() => setEditing({ ...editing, image_url: null })}>
+                        <X className="mr-1 h-3.5 w-3.5" /> Remove
+                      </Button>
+                    )}
+                  </div>
+                  <Input
+                    placeholder="…or paste image URL"
+                    value={editing?.image_url ?? ""}
+                    onChange={(e) => setEditing({ ...editing, image_url: e.target.value })}
+                  />
+                </div>
+              </div>
+            </div>
             <div>
               <Label>Shop types (relevant for which shops)</Label>
               <div className="mt-2 flex flex-wrap gap-2">
