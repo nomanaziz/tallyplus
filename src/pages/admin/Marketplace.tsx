@@ -38,9 +38,12 @@ type Product = {
   default_cost?: number | null;
   shop_types?: string[];
   created_at?: string;
+  category_id?: string | null;
+  subcategory_id?: string | null;
 };
 
 type ShopTypeOpt = { code: string; name_bn: string; name_en: string };
+type MpCat = { id: string; parent_id: string | null; name_bn: string; name_en: string; is_active: boolean };
 
 function MarketplacePage() {
   return (
@@ -87,6 +90,7 @@ function ProductsTab() {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [shopTypes, setShopTypes] = useState<ShopTypeOpt[]>([]);
   const [categories, setCategories] = useState<{ name: string; count: number }[]>([]);
+  const [mpCats, setMpCats] = useState<MpCat[]>([]);
 
   // filters
   const [search, setSearch] = useState("");
@@ -155,6 +159,12 @@ function ProductsTab() {
         .eq("is_active", true)
         .order("sort_order");
       setShopTypes((data as ShopTypeOpt[]) ?? []);
+      const { data: cats } = await supabase
+        .from("marketplace_categories")
+        .select("id,parent_id,name_bn,name_en,is_active")
+        .eq("is_active", true)
+        .order("sort_order");
+      setMpCats((cats as MpCat[]) ?? []);
     })();
   }, []);
 
@@ -189,6 +199,8 @@ function ProductsTab() {
       default_price: Number(editing.default_price) || 0,
       default_cost: Number(editing.default_cost) || 0,
       shop_types: editing.shop_types ?? [],
+      category_id: editing.category_id ?? null,
+      subcategory_id: editing.subcategory_id ?? null,
     };
     const { error } = editing.id
       ? await supabase.from("marketplace_products").update(payload).eq("id", editing.id)
