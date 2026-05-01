@@ -16,6 +16,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { InvoiceDialog, type InvoiceData } from "@/components/app/InvoiceDialog";
 import { toast } from "sonner";
+import { usePermissions } from "@/lib/permissions-hook";
 import { printTableReport } from "@/lib/print-report";
 
 type Purchase = {
@@ -38,6 +39,8 @@ function PurchaseLedgerPage() {
   const { current } = useShop();
   const nav = useNavigate();
   const qc = useQueryClient();
+  const { isOwner, isAdmin } = usePermissions();
+  const canDelete = isOwner || isAdmin;
   const { data: raw, refetch } = useQuery(purchasesListQuery(current?.id ?? null));
   const list = useMemo(() => (raw as unknown as Purchase[] | undefined) ?? [], [raw]);
   const { data: suppliersData } = useQuery(contactsQuery(current?.id ?? null, "suppliers"));
@@ -295,10 +298,12 @@ function PurchaseLedgerPage() {
                               <Printer className="mr-2 h-4 w-4" />
                               {lang === "bn" ? "প্রিন্ট" : "Print"}
                             </DropdownMenuItem>
-                            <DropdownMenuItem className="text-rose-600" onClick={() => void softDelete(p)}>
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              {lang === "bn" ? "মুছুন" : "Delete"}
-                            </DropdownMenuItem>
+                            {canDelete && (
+                              <DropdownMenuItem className="text-rose-600" onClick={() => void softDelete(p)}>
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                {lang === "bn" ? "মুছুন" : "Delete"}
+                              </DropdownMenuItem>
+                            )}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
