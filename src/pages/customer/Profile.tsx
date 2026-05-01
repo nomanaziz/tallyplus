@@ -7,7 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Loader2, LogOut, Wallet, NotebookPen, GraduationCap, ListChecks, ShoppingBag } from "lucide-react";
+import { Loader2, LogOut } from "lucide-react";
+import { icons } from "@/lib/icons";
 import { LocationPicker, type LocationValue } from "@/components/LocationPicker";
 
 type Consumer = {
@@ -92,19 +93,19 @@ export default function CustomerProfilePage() {
     <div className="mx-auto w-full max-w-2xl space-y-6">
       <div className="grid grid-cols-3 gap-2 sm:grid-cols-5 sm:gap-3">
         {[
-          { to: "/customer/my-fordo", label: "ফর্দ", Icon: ListChecks },
-          { to: "/customer/my-orders", label: "অর্ডার", Icon: ShoppingBag },
-          { to: "/customer/money", label: "আয়-ব্যয়", Icon: Wallet },
-          { to: "/customer/notes", label: "নোট", Icon: NotebookPen },
-          { to: "/customer/training", label: "ট্রেনিং", Icon: GraduationCap },
-        ].map(({ to, label, Icon }) => (
+          { to: "/customer/my-fordo", label: "ফর্দ", icon: icons.productList },
+          { to: "/customer/my-orders", label: "অর্ডার", icon: icons.salesList },
+          { to: "/customer/money", label: "আয়-ব্যয়", icon: icons.cashbox },
+          { to: "/customer/notes", label: "নোট", icon: icons.bookmark },
+          { to: "/customer/training", label: "ট্রেনিং", icon: icons.training },
+        ].map(({ to, label, icon }) => (
           <Link
             key={to}
             to={to}
             className="flex flex-col items-center gap-1.5 rounded-2xl border bg-card p-3 text-center shadow-sm transition hover:border-primary/40"
           >
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
-              <Icon className="h-5 w-5" />
+            <div className="flex h-12 w-12 items-center justify-center">
+              <img src={icon} alt="" className="h-full w-full object-contain" />
             </div>
             <div className="text-[11px] font-semibold leading-tight">{label}</div>
           </Link>
