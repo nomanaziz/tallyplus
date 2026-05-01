@@ -521,6 +521,22 @@ export default function MyFordo() {
                             <Button size="sm" variant="outline" onClick={() => openSaveTemplate(w)}>
                               <Save className="mr-1 h-3.5 w-3.5" /> টেমপ্লেট সংরক্ষণ
                             </Button>
+                            {total > 0 && (
+                              <Button
+                                size="sm"
+                                variant={expensedIds.has(w.id) ? "ghost" : "outline"}
+                                disabled={expensedIds.has(w.id) || pushingId === w.id}
+                                onClick={() => pushToExpense(w)}
+                                className={expensedIds.has(w.id) ? "text-success" : "border-rose-500/30 text-rose-600 hover:bg-rose-500/10"}
+                              >
+                                {pushingId === w.id ? (
+                                  <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
+                                ) : (
+                                  <Wallet className="mr-1 h-3.5 w-3.5" />
+                                )}
+                                {expensedIds.has(w.id) ? "✓ খরচে যোগ আছে" : "খরচে যোগ করুন"}
+                              </Button>
+                            )}
                           </div>
                         )}
                       </>
