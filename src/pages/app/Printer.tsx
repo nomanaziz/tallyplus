@@ -161,7 +161,7 @@ function PrinterPage() {
                 <Button variant="outline" className="h-10 flex-1" onClick={() => refetch()}>
                   <X className="h-4 w-4" /> {lang === "bn" ? "বাতিল করুন" : "Cancel"}
                 </Button>
-                <Button disabled={busy} className="h-10 flex-1 bg-foreground text-background hover:bg-foreground/90" onClick={save}>
+                <Button disabled={busy} className="h-10 flex-1 bg-primary text-primary-foreground hover:bg-primary/90" onClick={save}>
                   <Save className="h-4 w-4" /> {busy ? "..." : lang === "bn" ? "সেভ করুন" : "Save"}
                 </Button>
               </div>

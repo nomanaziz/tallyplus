@@ -398,14 +398,14 @@ export function NewUserAccessDialog({
           <div className="border-t p-3">
             {share ? (
               <Button
-                className="h-11 w-full bg-foreground text-background hover:bg-foreground/90"
+                className="h-11 w-full bg-primary text-primary-foreground hover:bg-primary/90"
                 onClick={() => onOpenChange(false)}
               >
                 {lang === "bn" ? "শেষ" : "Done"}
               </Button>
             ) : step === 1 ? (
               <Button
-                className="h-11 w-full bg-foreground text-background hover:bg-foreground/90"
+                className="h-11 w-full bg-primary text-primary-foreground hover:bg-primary/90"
                 onClick={() => {
                   if (validateStep1()) setStep(2);
                 }}
@@ -420,7 +420,7 @@ export function NewUserAccessDialog({
                 <Button
                   disabled={busy}
                   onClick={save}
-                  className="h-11 flex-[2] bg-foreground text-background hover:bg-foreground/90"
+                  className="h-11 flex-[2] bg-primary text-primary-foreground hover:bg-primary/90"
                 >
                   {busy ? "..." : lang === "bn" ? "সেভ করুন" : "Save"}
                 </Button>

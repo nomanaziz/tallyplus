@@ -200,7 +200,7 @@ function CombinedReportPage() {
             onClick={() => setTab("general")}
             className={
               "rounded-md px-4 py-1.5 font-semibold transition " +
-              (tab === "general" ? "bg-foreground text-background" : "text-muted-foreground hover:bg-accent")
+              (tab === "general" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent")
             }
           >
             {lang === "bn" ? "সাধারণ রিপোর্ট" : "General Report"}
@@ -209,7 +209,7 @@ function CombinedReportPage() {
             onClick={() => setTab("details")}
             className={
               "rounded-md px-4 py-1.5 font-semibold transition " +
-              (tab === "details" ? "bg-foreground text-background" : "text-muted-foreground hover:bg-accent")
+              (tab === "details" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent")
             }
           >
             {lang === "bn" ? "বিস্তারিত রিপোর্ট" : "Details Report"}

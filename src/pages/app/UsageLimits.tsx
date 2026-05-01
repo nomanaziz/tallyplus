@@ -192,7 +192,7 @@ export default function UsageLimitsPage() {
             ))}
           </div>
           <div className="mt-4 flex justify-center">
-            <Button asChild className="bg-foreground text-background hover:bg-foreground/90">
+            <Button asChild className="bg-primary text-primary-foreground hover:bg-primary/90">
               <Link to="/app/subscribe">{lang === "bn" ? "সকল সাবস্ক্রিপশন প্যাকেজ দেখুন" : "View all subscription packages"} <ArrowRight className="ml-1 h-4 w-4" /></Link>
             </Button>
           </div>

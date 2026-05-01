@@ -101,7 +101,7 @@ export function NewRoleDialog({
           <Button
             onClick={save}
             disabled={busy}
-            className="h-11 w-full bg-foreground text-background hover:bg-foreground/90"
+            className="h-11 w-full bg-primary text-primary-foreground hover:bg-primary/90"
           >
             {busy ? "..." : lang === "bn" ? "সেভ করুন" : "Save"}
           </Button>

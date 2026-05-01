@@ -329,7 +329,7 @@ function MarketingPage() {
               </div>
               <Button
                 size="sm"
-                className="h-9 bg-foreground text-background hover:bg-foreground/90"
+                className="h-9 bg-primary text-primary-foreground hover:bg-primary/90"
                 onClick={selectAll}
               >
                 {lang === "bn" ? "সব যোগ" : "Select All"}
@@ -374,7 +374,7 @@ function MarketingPage() {
                         variant={added ? "outline" : "default"}
                         className={
                           "h-7 px-3 text-xs " +
-                          (added ? "" : "bg-foreground text-background hover:bg-foreground/90")
+                          (added ? "" : "bg-primary text-primary-foreground hover:bg-primary/90")
                         }
                         onClick={() => (added ? removeRecipient(norm!) : addRecipient(c.phone))}
                         disabled={!c.phone}
@@ -409,7 +409,7 @@ function MarketingPage() {
                   />
                   <Button
                     onClick={addManualPhone}
-                    className="h-full rounded-none bg-foreground text-background hover:bg-foreground/90"
+                    className="h-full rounded-none bg-primary text-primary-foreground hover:bg-primary/90"
                     aria-label="Add"
                   >
                     <Plus className="h-4 w-4" />

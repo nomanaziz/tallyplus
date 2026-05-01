@@ -86,7 +86,7 @@ function ExpiringPage() {
             onClick={() => setTab("soon")}
             className={
               "rounded-md px-4 py-1.5 font-semibold transition " +
-              (tab === "soon" ? "bg-foreground text-background" : "text-muted-foreground hover:bg-accent")
+              (tab === "soon" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent")
             }
           >
             {lang === "bn" ? "শীঘ্রই মেয়াদোত্তীর্ণ" : "Expired soon"}
@@ -95,7 +95,7 @@ function ExpiringPage() {
             onClick={() => setTab("expired")}
             className={
               "rounded-md px-4 py-1.5 font-semibold transition " +
-              (tab === "expired" ? "bg-foreground text-background" : "text-muted-foreground hover:bg-accent")
+              (tab === "expired" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent")
             }
           >
             {lang === "bn" ? "মেয়াদোত্তীর্ণ" : "Expired"}

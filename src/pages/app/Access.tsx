@@ -145,7 +145,7 @@ function AccessPage() {
             </div>
           )}
           <div className="border-t p-3">
-            <Button className="h-11 w-full gap-2 bg-foreground text-background hover:bg-foreground/90" onClick={() => setOpenAdd(true)}>
+            <Button className="h-11 w-full gap-2 bg-primary text-primary-foreground hover:bg-primary/90" onClick={() => setOpenAdd(true)}>
               <Plus className="h-4 w-4" />
               {lang === "bn" ? "নতুন ইউজারকে এক্সেস দিন" : "Grant new access"}
             </Button>

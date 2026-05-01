@@ -70,7 +70,7 @@ export function UpdateStockDialog({
             <Plus className="h-5 w-5" />
           </Button>
         </div>
-        <Button onClick={handleSave} disabled={busy} className="h-11 bg-foreground text-background hover:opacity-90">
+        <Button onClick={handleSave} disabled={busy} className="h-11 bg-primary text-primary-foreground hover:opacity-90">
           <Save className="mr-2 h-4 w-4" />
           {busy ? "..." : lang === "bn" ? "পণ্য সংখ্যা আপডেট করুন" : "Update stock count"}
         </Button>
