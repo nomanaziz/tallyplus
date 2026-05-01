@@ -3,8 +3,11 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { SiteHeader } from "@/components/site/SiteHeader";
 import { SiteFooter } from "@/components/site/SiteFooter";
-import { Loader2, MapPin, Phone, ShoppingBag, Store, ArrowLeft } from "lucide-react";
+import { Loader2, MapPin, Phone, ShoppingBag, Store, ArrowLeft, Heart } from "lucide-react";
 import { MarketplaceProductCard } from "@/components/marketplace/MarketplaceProductCard";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+import { useAuth } from "@/lib/auth";
 
 type Listing = { id: string; product_id: string; price: number; stock: number; unit: string | null; min_order: number | null; warranty_months?: number | null };
 type Shop = {
@@ -17,11 +20,14 @@ type Product = { id: string; name: string; image_url: string | null; unit: strin
 
 function ShopPage() {
   const { slug } = useParams();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [shop, setShop] = useState<Shop | null>(null);
   const [listings, setListings] = useState<Listing[]>([]);
   const [products, setProducts] = useState<Record<string, Product>>({});
   const [error, setError] = useState<string | null>(null);
+  const [favId, setFavId] = useState<string | null>(null);
+  const [favLoading, setFavLoading] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -44,6 +50,42 @@ function ShopPage() {
       cancelled = true;
     };
   }, [slug]);
+
+  useEffect(() => {
+    if (!user || !shop) { setFavId(null); return; }
+    let alive = true;
+    void supabase
+      .from("consumer_favourite_shops")
+      .select("id")
+      .eq("consumer_id", user.id)
+      .eq("shop_id", shop.id)
+      .maybeSingle()
+      .then(({ data }) => { if (alive) setFavId((data as { id: string } | null)?.id ?? null); });
+    return () => { alive = false; };
+  }, [user, shop]);
+
+  const toggleFav = async () => {
+    if (!user) { toast.error("পছন্দ করতে লগইন করুন"); return; }
+    if (!shop) return;
+    setFavLoading(true);
+    if (favId) {
+      const { error } = await supabase.from("consumer_favourite_shops").delete().eq("id", favId);
+      setFavLoading(false);
+      if (error) return toast.error(error.message);
+      setFavId(null);
+      toast.success("প্রিয় থেকে সরানো হয়েছে");
+    } else {
+      const { data, error } = await supabase
+        .from("consumer_favourite_shops")
+        .insert({ consumer_id: user.id, shop_id: shop.id })
+        .select("id")
+        .single();
+      setFavLoading(false);
+      if (error) return toast.error(error.message);
+      setFavId((data as { id: string }).id);
+      toast.success("প্রিয় দোকানে যোগ হয়েছে ❤️");
+    }
+  };
 
   if (loading) {
     return (
