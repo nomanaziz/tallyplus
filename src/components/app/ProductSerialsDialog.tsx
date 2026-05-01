@@ -87,9 +87,21 @@ export function ProductSerialsDialog({ open, onOpenChange, productId, productNam
   }
 
   async function removeRow(id: string) {
-    if (!confirm(lang === "bn" ? "ডিলিট করবেন?" : "Delete?")) return;
+    if (!confirm(lang === "bn" ? "ডিলিট করবেন? স্টক ১ কমে যাবে।" : "Delete? Stock will decrease by 1.")) return;
+    // Find the row first to know its status — only in_stock serials should reduce product stock
+    const target = rows.find((r) => r.id === id);
     const { error } = await supabase.from("product_serials").delete().eq("id", id);
     if (error) { toast.error(error.message); return; }
+    if (target && target.status === "in_stock" && productId) {
+      // Decrement product stock by 1 (skip if product is unlimited stock = -1)
+      const { data: prod } = await supabase
+        .from("products").select("stock").eq("id", productId).maybeSingle();
+      const cur = Number(prod?.stock ?? 0);
+      if (cur >= 0) {
+        const next = Math.max(cur - 1, 0);
+        await supabase.from("products").update({ stock: next }).eq("id", productId);
+      }
+    }
     void refresh();
   }
 
