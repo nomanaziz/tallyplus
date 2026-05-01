@@ -50,6 +50,9 @@ verify_jwt = true
 [functions.find-shops-by-phone]
 verify_jwt = false
 
+[functions.find-shops-by-name]
+verify_jwt = false
+
 [functions.customer-create-wishlist]
 verify_jwt = true
 
