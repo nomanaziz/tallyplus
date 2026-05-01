@@ -1235,6 +1235,28 @@ function ProductFormDialog({
       }
       return;
     }
+    // If user toggled "online sell" on this product, publish/unpublish
+    // the matching marketplace listing. This ensures the product shows
+    // in the public marketplace (and that the parent shop is enabled).
+    const savedProductId = (savedRow as { id?: string } | null)?.id ?? product?.id ?? null;
+    if (savedProductId) {
+      try {
+        await publishProductToMarketplace(
+          {
+            id: savedProductId,
+            shop_id: shopId,
+            sale_price: payload.sale_price,
+            stock: payload.stock,
+            unit: payload.unit,
+            warranty_enabled: payload.warranty_enabled,
+            warranty_value: payload.warranty_value,
+          },
+          onlineOn,
+        );
+      } catch {
+        /* non-blocking */
+      }
+    }
     toast.success(lang === "bn" ? "সেভ হয়েছে" : "Saved");
     onOpenChange(false);
     const savedId = (savedRow as { id?: string } | null)?.id ?? product?.id ?? null;
