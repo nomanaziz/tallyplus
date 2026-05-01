@@ -104,10 +104,10 @@ function UsersPage() {
     r.isAdmin ? "admin" : r.shopCount > 0 ? "owner" : "buyer";
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6 p-6">
+    <div className="mx-auto max-w-6xl space-y-4 p-3 sm:space-y-6 sm:p-6">
       <div>
-        <h1 className="text-2xl font-bold">Users</h1>
-        <p className="text-sm text-muted-foreground">সকল user manage করুন</p>
+        <h1 className="text-xl font-bold sm:text-2xl">Users</h1>
+        <p className="text-xs text-muted-foreground sm:text-sm">সকল user manage করুন</p>
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
@@ -115,10 +115,10 @@ function UsersPage() {
           placeholder="Search name or phone..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="max-w-xs"
+          className="w-full sm:max-w-xs"
         />
         <Select value={filter} onValueChange={(v) => setFilter(v as any)}>
-          <SelectTrigger className="w-44">
+          <SelectTrigger className="w-full sm:w-44">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
