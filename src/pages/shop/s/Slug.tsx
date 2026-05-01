@@ -135,9 +135,21 @@ function ShopPage() {
                 </div>
               )}
             </div>
-            <div className="pb-2">
-              <h1 className="text-2xl font-bold sm:text-3xl">{shop.name}</h1>
-              {shop.tagline && <p className="mt-1 text-sm text-muted-foreground">{shop.tagline}</p>}
+            <div className="flex flex-1 items-end justify-between gap-3 pb-2">
+              <div className="min-w-0">
+                <h1 className="truncate text-2xl font-bold sm:text-3xl">{shop.name}</h1>
+                {shop.tagline && <p className="mt-1 text-sm text-muted-foreground">{shop.tagline}</p>}
+              </div>
+              <Button
+                onClick={toggleFav}
+                disabled={favLoading}
+                variant={favId ? "default" : "outline"}
+                size="sm"
+                className={favId ? "bg-rose-500 text-white hover:bg-rose-600" : ""}
+              >
+                <Heart className={`mr-1.5 h-4 w-4 ${favId ? "fill-white" : ""}`} />
+                {favId ? "প্রিয়" : "প্রিয় করুন"}
+              </Button>
             </div>
           </div>
 
