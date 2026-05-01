@@ -1,68 +1,48 @@
 ## Goal
 
-Mobile-এ Products page আরও compact এবং tap-friendly করা — product নামের জন্য বেশি জায়গা, header ছোট, footer single-line।
+গ্রাহক (consumer) এলাকায় App Training যোগ করো এবং admin training ভিডিও তৈরির সময় বেছে নেওয়া যাবে — ভিডিওটা **দোকানদারের জন্য**, **গ্রাহকের জন্য**, নাকি **উভয়ের জন্য**। সেই অনুযায়ী ভিডিও সঠিক audience এর Training page-এ দেখাবে।
 
-## Changes
+## Database change (migration)
 
-### 1. Mobile-এ row tap → product details খোলে, View button সরানো
+`training_videos` টেবিলে একটা নতুন column যোগ করো:
 
-`src/pages/app/Products.tsx` — table row (line ~614):
+```sql
+ALTER TABLE public.training_videos
+  ADD COLUMN audience text NOT NULL DEFAULT 'shopkeeper';
+-- allowed values: 'shopkeeper' | 'consumer' | 'both'
+```
 
-- `<TableRow>` এ `onClick` যোগ করা যা `setDetails(p)` call করবে। Edit/select/serial-edit modes এর সময় skip করবে যাতে checkbox/qty input এর সাথে conflict না হয়।
-- Eye/View button টা mobile-এ hidden (`hidden sm:inline-flex`) — desktop-এ আগের মতই থাকবে।
-- Stock edit mode এর qty cell এ `e.stopPropagation()` যোগ করা (Input/+/− buttons), এবং checkbox cell-এও — যাতে inadvertently details না খোলে।
-- Row এ `cursor-pointer` ক্লাস (mobile-only via `sm:cursor-default` if desired, কিন্তু সরাসরি `cursor-pointer` দিলেই ঠিক আছে)।
+পুরনো ভিডিওগুলো default-এ `shopkeeper` হিসেবে থাকবে (এখনকার আচরণ অপরিবর্তিত)।
 
-### 2. Product নামের column বড় করা
+RLS: পাবলিক select policy আগে থেকেই `is_published = true` filter করে — কোন পরিবর্তনের দরকার নেই। শুধু audience filter ক্লায়েন্ট থেকে যোগ হবে।
 
-- Product name `<TableCell>`-এ `min-w-0` যোগ এবং name span-এ `break-words`/`whitespace-normal text-sm sm:text-base` যাতে full নাম দেখা যায়।
-- Mobile-এ "Cost" আগে থেকেই hidden, "Stock value" md:থেকে — ঠিক আছে। অতিরিক্ত জায়গা পেতে action column-এ একটাই button (3-dot menu) থাকবে mobile-এ — যেহেতু Eye সরানো হলো।
-- Stock/Sale price column header-এ `whitespace-nowrap` + `w-px` দিয়ে minimal width নেবে যাতে name column বেশি grow করে।
+## Admin (`src/pages/admin/Training.tsx`)
 
-### 3. Header compact + Sort/Filter "Action" এর under-এ
+- `Video` type-এ `audience: 'shopkeeper'|'consumer'|'both'` যোগ।
+- Edit/Add dialog-এ একটা নতুন **Audience** Select:
+  - দোকানদার (Shopkeeper)
+  - গ্রাহক (Consumer)
+  - উভয় (Both)
+- Card preview-তে category badge-এর পাশে একটা ছোট audience badge দেখাও (যেমন "গ্রাহক" / "দোকানদার" / "উভয়")।
+- Save payload-এ `audience` পাঠাও; default `shopkeeper`।
 
-Mobile-এ header আরও কমপ্যাক্ট:
+## Shopkeeper Training page (`src/pages/app/Training.tsx`)
 
-- "প্রোডাক্ট ও স্টক ব্যবস্থাপনা" subtitle সরানো (already `hidden sm:block`, ঠিকই আছে)।
-- Title h1: `text-base sm:text-xl` → `text-sm sm:text-lg` mobile-এ।
-- Header gap: `gap-3` → `gap-2`।
-- Mobile-এ Sort/Filter (`DataToolbar` এর `middleExtra`) দুটো dropdown বড় জায়গা নিচ্ছে — mobile-এ এদের একটা compact "Sort & Filter" dropdown/popover-এ ঢোকানো:
-    - নতুন একটা Popover button (Mobile only, `sm:hidden`) যা "ফিল্টার" icon দিয়ে show হবে; click করলে দুটো Select থাকবে inside।
-    - Desktop-এ আগের মতোই inline দুটো Select থাকবে।
-- "Refresh" button mobile-এ already top-এ আছে → সেটা ঠিক থাকবে।
+Query-তে filter: `audience IN ('shopkeeper','both')`। বাকি UI অপরিবর্তিত।
 
-### 4. Pagination footer single-line + sticky
+## Consumer Training — নতুন page
 
-`src/components/app/DataPagination.tsx` redesign:
+নতুন ফাইল: `src/pages/customer/Training.tsx`
+- Layout: `src/pages/app/Training.tsx`-এর মতই grid + search + category chips + YouTube modal player।
+- Query: `is_published = true AND audience IN ('consumer','both')`।
+- শিরোনাম: "অ্যাপ ট্রেনিং"।
 
-- Single line layout: `flex flex-nowrap items-center justify-between gap-2 px-2 py-2 text-xs`।
-- Mobile-এ left side text shorten: "১–২৫ / ৩০" + tiny "প্রতি পেজ ১০" select পাশে।
-- Page number buttons mobile-এ কম দেখাবে: only current + first/last + prev/next chevrons (no middle numbers) when `pageCount > 5` on small screen.
-- Implementation: mobile (`sm:hidden`) পাশে শুধু `‹ page/total ›` + first/last chevrons এবং per-page select; desktop-এ পুরো compact list।
-- Sticky footer: pagination div-কে `sticky bottom-0 bg-card z-10 border-t` দেওয়া যাতে scroll হলেও পাওয়া যায় (parent card already has `rounded-xl border bg-card`; sticky inside scroll container works only if the page itself scrolls — which it does)।
-- Information condense: "Showing 1–25 of 30 · Per page 10 · ‹ 1 2 3 ›" — সব এক horizontal row-এ। `flex-wrap` সরিয়ে `flex-nowrap` + `min-w-0` + `truncate` left text-এ।
-
-### 5. Footer summary আরও compact
-
-- Per-page select width `w-[72px]` → `w-[60px]`, height `h-8` → `h-7`।
-- Page buttons `h-8 min-w-8` → `h-7 min-w-7 text-xs`।
-- Mobile-এ "প্রতি পেজ" label hide (`hidden sm:inline`); শুধু dropdown দেখা যাবে।
-
-## Out of scope
-
-- Sort/Filter logic পরিবর্তন।
-- Desktop layout (≥sm) — শুধু minor tweaks; existing behavior intact।
-- ProductDetailsDialog এর content।
+### Routing & Nav
+- `src/lib/app-routes.tsx`-এ নতুন lazy import + route যোগ করো customer section-এ:
+  `{ path: "training", element: <CustomerTraining/> }` → পাথ হবে `/customer/training`।
+- `src/pages/customer/CustomerLayout.tsx`-এর `NAV`-এ "ট্রেনিং" entry যোগ করো (আইকন: `GraduationCap`)। মোবাইল bottom nav 5-column থেকে 6-column হবে।
 
 ## Technical notes
 
-- Row click handler এ guard:
-  ```tsx
-  onClick={(e) => {
-    if (selectMode || editStockMode) return;
-    if ((e.target as HTMLElement).closest('button,[role="menu"],[role="checkbox"],input')) return;
-    setDetails(p);
-  }}
-  ```
-- Mobile-only Sort/Filter Popover: use existing `@/components/ui/popover` (already in design system); fallback to keeping inline if Popover is bulky. Since mobile screens are tight, this is worth it.
-- Pagination sticky: use `sticky bottom-0` on the wrapper `<div>` of `DataPagination`. To work, parent `<div className="rounded-xl border bg-card">` should not have `overflow-hidden`. Currently it does not — safe.
+- টাইপ regen-এর দরকার নেই — `audience` কে cast করে ব্যবহার করা যাবে যতক্ষণ Supabase types regenerate না হয়।
+- কোন breaking change নেই; পুরনো ভিডিওগুলো default `shopkeeper` audience পাবে এবং আগের মতোই দোকানদার page-এ দেখাবে।
