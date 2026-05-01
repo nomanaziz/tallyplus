@@ -1,9 +1,7 @@
 import { useEffect } from "react";
 import { useNavigate } from "@/lib/router";
 import { useAuth } from "@/lib/auth";
-import { LoginCard } from "@/components/site/LoginCard";
-import { SiteHeader } from "@/components/site/SiteHeader";
-import { SiteFooter } from "@/components/site/SiteFooter";
+import { AuthEntry } from "@/components/site/AuthEntry";
 import { homePathFor } from "@/lib/home-redirect";
 import { Loader2 } from "lucide-react";
 
@@ -35,15 +33,7 @@ function Index() {
     );
   }
 
-  return (
-    <div className="flex min-h-screen flex-col bg-background">
-      <SiteHeader />
-      <main className="flex flex-1 items-center justify-center px-4 py-8">
-        <LoginCard />
-      </main>
-      <SiteFooter />
-    </div>
-  );
+  return <AuthEntry />;
 }
 
 export default Index;
