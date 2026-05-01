@@ -14,7 +14,7 @@ export function HeroSection() {
     <section className="relative overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-br from-primary/25 via-background to-background" aria-hidden />
       <div className="container relative mx-auto grid gap-10 px-4 py-12 md:grid-cols-2 md:items-center md:py-20">
-        <div>
+        <div className="order-2 md:order-1">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/15 px-3 py-1 text-xs font-semibold text-foreground ring-1 ring-primary/30">
             <TrendingUp className="h-3.5 w-3.5" />
             {lang === "bn" ? "৫+ বছরের অভিজ্ঞতা · ২৪/৭ এক্সপার্ট সাপোর্ট" : "5+ years of experience · 24/7 expert support"}
@@ -60,7 +60,7 @@ export function HeroSection() {
             </div>
           </div>
         </div>
-        <div className="relative">
+        <div className="relative order-1 md:order-2">
           <div className="absolute inset-0 -z-10 mx-auto my-auto h-[90%] w-[90%] rounded-[2.5rem] bg-gradient-to-br from-primary/30 via-primary/10 to-transparent blur-2xl" aria-hidden />
           <div className="mx-auto flex justify-center">
             <LoginCard />
