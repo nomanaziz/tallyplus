@@ -4,9 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useShop } from "@/lib/shop";
 import { useI18n, fmtMoney } from "@/lib/i18n";
 import { dashboardSummaryQuery } from "@/lib/queries";
-import { icons } from "@/lib/icons";
 import { RefreshCw } from "lucide-react";
-import { QuickSellSheet } from "@/components/app/QuickSellSheet";
 import { DashboardBannerCarousel } from "@/components/app/DashboardBannerCarousel";
 import { SECTIONS, type SidebarItem } from "@/components/app/AppSidebar";
 import { usePermissions } from "@/lib/permissions-hook";
@@ -30,7 +28,6 @@ function Dashboard() {
   const { current } = useShop();
   const { isOwner, isAdmin, canGroup, loading: permLoading } = usePermissions();
   const [range, setRange] = useState<Range>("today");
-  const [quickOpen, setQuickOpen] = useState(false);
   const start = rangeStart(range);
   const startIso = start ? start.toISOString() : "1970-01-01T00:00:00.000Z";
   const { data, isFetching, refetch } = useQuery(dashboardSummaryQuery(current?.id ?? null, startIso));
@@ -117,27 +114,6 @@ function Dashboard() {
 
       {/* Admin-managed banner carousel */}
       <DashboardBannerCarousel />
-
-      {/* 4 main action buttons: Purchase, Sell, Quick Sell, Fordo */}
-      <div className="mt-5 grid grid-cols-4 gap-2 sm:gap-3">
-        <Link to="/app/purchase" search={{}} className="flex flex-col items-center justify-center gap-2 rounded-2xl border bg-card p-3 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md sm:p-5">
-          <img src={icons.purchase} alt="" className="h-9 w-9 sm:h-12 sm:w-12" />
-          <span className="text-[11px] font-bold sm:text-sm">{lang === "bn" ? "কেনা" : "Purchase"}</span>
-        </Link>
-        <Link to="/app/sell" search={{}} className="flex flex-col items-center justify-center gap-2 rounded-2xl border bg-card p-3 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md sm:p-5">
-          <img src={icons.sell} alt="" className="h-9 w-9 sm:h-12 sm:w-12" />
-          <span className="text-[11px] font-bold sm:text-sm">{lang === "bn" ? "বেচা" : "Sell"}</span>
-        </Link>
-        <button type="button" onClick={() => setQuickOpen(true)} className="flex flex-col items-center justify-center gap-2 rounded-2xl border bg-card p-3 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md sm:p-5">
-          <img src={icons.quickSell} alt="" className="h-9 w-9 sm:h-12 sm:w-12" />
-          <span className="text-[11px] font-bold sm:text-sm">{lang === "bn" ? "দ্রুত বেচা" : "Quick Sell"}</span>
-        </button>
-        <Link to="/app/customer-wishlist" search={{}} className="flex flex-col items-center justify-center gap-2 rounded-2xl border bg-card p-3 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md sm:p-5">
-          <img src={icons.bookmark} alt="" className="h-9 w-9 sm:h-12 sm:w-12" />
-          <span className="text-[11px] font-bold sm:text-sm">{lang === "bn" ? "ফর্দ" : "Fordo"}</span>
-        </Link>
-      </div>
-      <QuickSellSheet open={quickOpen} onOpenChange={setQuickOpen} />
 
       {/* All menus, category-wise */}
       <div className="mt-5 space-y-3">
