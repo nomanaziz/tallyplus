@@ -1,46 +1,51 @@
-## দুটো সমস্যা সমাধান
+## সমস্যা
+আপলোড করা Excel এ আছে: **8 Division, 64 District, 622 Thana/Upazila** (city corporation এর থানা সহ — যেমন Dhaka এর 57টি, Chattogram এর 32টি)।
 
-### সমস্যা ১ — Customer Dashboard-এ "আমার ফর্দ" ০ দেখায়, অথচ MyFordo পেজে ৩টা পর্দা আছে
+বর্তমান database ও admin portal এ আছে:
+- ✅ 8 Divisions (সব আছে, কিন্তু Chattogram → "Chattagram" — typo)
+- ✅ 64 Districts (সব আছে)
+- ❌ মাত্র **494 Upazilas** — **128টি থানা missing** (মূলত Dhaka, Chattogram, Khulna, Sylhet, Rajshahi, Barisal এর city corporation এর থানা)
 
-**কারণ:** Dashboard সরাসরি `customer_wishlists` table-এ শুধু `consumer_user_id = user.id` দিয়ে count করছে। কিন্তু MyFordo পেজ `consumer-fordo-history` edge function ব্যবহার করে — যেটা phone number variants মিলিয়েও ফর্দ আনে (পাবলিক shop link দিয়ে পাঠানো ফর্দ user_id ছাড়াই save হয়, শুধু phone-এ মিলে)।
+## সমাধান
 
-**সমাধান:**
-- `src/pages/customer/Dashboard.tsx`-এ ফর্দ count আনার সময় MyFordo-র মতো একই `consumer-fordo-history` edge function call করব।
-- Returned `wishlists` array-এর length-ই হবে actual count। এর সাথে `deleted_at` বাদ দিয়ে গণনা করব।
+### 1. নতুন complete BD geo JSON তৈরি (`src/data/bd_geo.json`)
+Excel ফাইল থেকে data process করে নতুন JSON বানাব:
+- 8 Division (সঠিক বানান: Chattogram, Coxsbazar ইত্যাদি)
+- 64 District (English + Bengali দুটোই)
+- 622 Thana/Upazila (English + Bengali দুটোই, district এর সাথে link)
 
-### সমস্যা ২ — গ্রাহক Division/District/Upazila/Area select করতে পারে না
+প্রতিটি record এ stable `legacy_id` থাকবে যাতে re-sync করলেও duplicate না হয়।
 
-**ভাল খবর — সব ডেটা/স্কিমা already আছে:**
-- Super-admin DB তে `bd_divisions`, `bd_districts`, `bd_upazilas` table আছে এবং publicly readable (RLS: `SELECT true`)। Admin Locations পেজ থেকে seed করা যায়।
-- `consumer_profiles` table-এ already `division`, `district`, `upazila`, `area` text column আছে। কোনো migration লাগবে না।
+### 2. Division name fix migration
+বর্তমান DB তে "Chattagram" আছে — Excel এ "Chattogram"। JSON re-seed করলে নতুন legacy_id দিয়ে ঢুকবে। তাই migration দিয়ে পুরাতন "Chattagram" entry টা update করব → "Chattogram", যাতে existing references ভেঙে না যায়।
 
-**সমাধান:**
+### 3. Admin Locations page উন্নত করা (`src/pages/admin/Locations.tsx`)
+- উপরে summary tiles: "মোট Division: X / 8", "জেলা: Y / 64", "থানা/উপজেলা: Z / 622" — কোথায় missing তা সাথে সাথে দেখা যাবে
+- Search box: division/district/thana নাম দিয়ে instant filter
+- "Re-sync from JSON" button আগের মতই থাকবে — চাপলে missing 128 thana auto add হবে
 
-1. **নতুন reusable component** `src/components/LocationPicker.tsx`:
-   - তিনটা cascading dropdown: বিভাগ → জেলা → উপজেলা + একটা free-text "এলাকা/গ্রাম" input
-   - শুধু `is_active=true` row গুলা দেখাবে
-   - Bengali (`name_bn`) by default
-   - Data caching: React Query দিয়ে — divisions/districts/upazilas list একবার load হয়ে cache হবে (5 min stale time)
-   - Props: `value: { division, district, upazila, area }`, `onChange`, optional `disabled`
+### 4. seed-bd-geo edge function
+আগে থেকেই upsert (onConflict: legacy_id) করে — তাই কোনো পরিবর্তন লাগবে না। শুধু JSON বড় হবে, batch chunking আগে থেকেই আছে।
 
-2. **`src/pages/customer/Profile.tsx`-এ যোগ:**
-   - Form state-এ division/district/upazila/area add
-   - Profile load করার সময় এই ৪টা field সহ select করব
-   - Save করার সময় upsert payload-এ পাঠাবো
-   - "ঠিকানা" Textarea-র উপরে LocationPicker বসব
+### 5. কাজের পর Admin কে যা করতে হবে
+Admin → Locations page এ গিয়ে **"Re-sync from JSON"** বোতাম এ একবার চাপতে হবে। তাহলে missing 128 thana database এ যোগ হবে।
 
-3. **Future-proof reuse:**
-   - Same `LocationPicker` component পরে product listing form, shop registration ইত্যাদিতে use করা যাবে — single source of truth (super-admin database)
+## Technical breakdown
 
-## Files to change
+**Files to create/modify:**
+- `src/data/bd_geo.json` — Excel থেকে generate করা নতুন complete data (overwrite)
+- `src/pages/admin/Locations.tsx` — summary tiles + search যোগ
+- `supabase/migrations/<timestamp>_fix_chattogram.sql` — পুরাতন division row এর `name_en` update
 
-- `src/pages/customer/Dashboard.tsx` — fordo count edge function থেকে আনব
-- `src/components/LocationPicker.tsx` (নতুন) — cascading bn_div/dist/upa picker
-- `src/pages/customer/Profile.tsx` — LocationPicker integrate, save/load logic update
+**Generation script (one-time, exec only):**
+Python দিয়ে Excel parse → district lookup table দিয়ে correct `district_legacy_id` map → output JSON।
 
-## Out of scope (এই round-এ নয়)
+**District name mapping notes:**
+Excel এ "Cox's Bazar" আছে, DB তে "Coxsbazar" — script এ normalize করা হবে যাতে existing district legacy_id এর সাথে match করে এবং duplicate না হয়।
 
-- নতুন database migration — সব কিছু আগে থেকেই আছে
-- Map-based picker
-- Geo-based shop suggestion (আলাদা feature)
-- Vendor/Shop registration-এ একই picker — পরে চাইলে যোগ করা যাবে
+**Result:**
+Re-sync এর পর: Admin Portal → Locations এ পাবেন:
+- 8 Division (সব সঠিক বানান)
+- 64 District (সব আছে)
+- 622 Thana/Upazila (সব City Corp এর থানা সহ — Dhaka 57, Chattogram 32, Sylhet 18, Rajshahi 21, Barisal 17, Khulna 17, Comilla 18 ইত্যাদি)
+- প্রতিটি বাংলা ও English দুই নামে।
