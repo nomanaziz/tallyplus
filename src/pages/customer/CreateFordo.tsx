@@ -25,7 +25,7 @@ type Shop = { id: string; name: string; phone: string; logo_url: string | null; 
 export default function CreateFordo() {
   const { user, session } = useAuth();
   const navigate = useNavigate();
-  const search = useSearch() as { templateId?: string };
+  const search = useSearch() as { templateId?: string; duplicateFrom?: string };
   const [step, setStep] = useState<1 | 2>(1);
   const [items, setItems] = useState<Item[]>([{ name: "", qty: "", unit: "" }]);
   const [note, setNote] = useState("");
@@ -128,6 +128,31 @@ export default function CreateFordo() {
       }
     })();
   }, [user, search.templateId]);
+
+  // Preload duplicate (from sessionStorage) if ?duplicateFrom= is set
+  useEffect(() => {
+    if (!search.duplicateFrom) return;
+    const wlId = search.duplicateFrom;
+    try {
+      const raw = sessionStorage.getItem(`fordo-dup-${wlId}`);
+      if (!raw) return;
+      const payload = JSON.parse(raw) as {
+        items?: Array<{ name?: string; qty?: string; unit?: string }>;
+        note?: string;
+      };
+      const mapped: Item[] = (payload.items ?? []).map((it) => ({
+        name: it.name ?? "",
+        qty: it.qty ?? "",
+        unit: it.unit ?? "",
+      }));
+      if (mapped.length > 0) setItems(mapped);
+      if (payload.note) setNote(payload.note);
+      sessionStorage.removeItem(`fordo-dup-${wlId}`);
+      toast.success("পুরোনো ফর্দের নকল লোড হয়েছে — সম্পাদনা করে পাঠান");
+    } catch {
+      // ignore
+    }
+  }, [search.duplicateFrom]);
 
   const loadNearby = async (
     p: { division: string | null; district: string | null; upazila: string | null } | null,
