@@ -207,6 +207,24 @@ function ProductsTab() {
     setEditing({ ...editing, shop_types: next });
   };
 
+  const uploadImage = async (file: File) => {
+    setUploadingImage(true);
+    const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+    const path = `marketplace/${crypto.randomUUID()}.${ext}`;
+    const { error } = await supabase.storage.from("product-images").upload(path, file, {
+      cacheControl: "3600", upsert: false, contentType: file.type || undefined,
+    });
+    if (error) {
+      setUploadingImage(false);
+      toast.error(error.message);
+      return;
+    }
+    const { data } = supabase.storage.from("product-images").getPublicUrl(path);
+    setEditing((prev) => ({ ...(prev ?? {}), image_url: data.publicUrl }));
+    setUploadingImage(false);
+    toast.success("Image uploaded");
+  };
+
   const toggleAllOnPage = (checked: boolean) => {
     if (checked) setSelected(new Set(items.map((i) => i.id)));
     else setSelected(new Set());
