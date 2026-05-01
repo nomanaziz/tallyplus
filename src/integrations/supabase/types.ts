@@ -92,6 +92,36 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_profiles: {
+        Row: {
+          created_at: string
+          email: string | null
+          full_name: string | null
+          is_super: boolean
+          permissions: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          is_super?: boolean
+          permissions?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          is_super?: boolean
+          permissions?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       affiliate_agents: {
         Row: {
           agent_referral_code: string
@@ -4180,6 +4210,10 @@ export type Database = {
         Returns: undefined
       }
       has_active_subscription: { Args: { _user_id: string }; Returns: boolean }
+      has_admin_perm: {
+        Args: { _key: string; _user_id: string }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -4194,6 +4228,7 @@ export type Database = {
         Args: { _shop_id: string; _user_id: string }
         Returns: boolean
       }
+      is_super_admin: { Args: { _user_id: string }; Returns: boolean }
       my_account: { Args: never; Returns: Json }
       my_account_resolve: { Args: never; Returns: Json }
       my_shop_perms: { Args: { _shop_id: string }; Returns: Json }
