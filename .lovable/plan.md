@@ -1,65 +1,46 @@
-## Goal
+## দুটো সমস্যা সমাধান
 
-Reports পেজে ১৩টা সাব-রিপোর্ট কার্ড আছে — এর মধ্যে শুধু ৩টা (Owner Ledger, Shop Assets, Owner Report) কাজ করে। বাকি ১০টা "শীঘ্রই আসছে" দেখায়। এই ১০টা রিপোর্ট পেজ তৈরি করতে হবে।
+### সমস্যা ১ — Customer Dashboard-এ "আমার ফর্দ" ০ দেখায়, অথচ MyFordo পেজে ৩টা পর্দা আছে
 
-## Good news
+**কারণ:** Dashboard সরাসরি `customer_wishlists` table-এ শুধু `consumer_user_id = user.id` দিয়ে count করছে। কিন্তু MyFordo পেজ `consumer-fordo-history` edge function ব্যবহার করে — যেটা phone number variants মিলিয়েও ফর্দ আনে (পাবলিক shop link দিয়ে পাঠানো ফর্দ user_id ছাড়াই save হয়, শুধু phone-এ মিলে)।
 
-`src/lib/queries.ts`-এ ১০টা রিপোর্টের জন্য **ডেটা queries আগে থেকেই লেখা আছে** (`salesReportQuery`, `purchaseReportQuery`, `stockReportQuery`, `productReportQuery`, `topCustomersQuery`, `topEmployeesQuery`, `expenseReportQuery`, `supplierReportQuery`, `incomeReportQuery`)। শুধু UI পেজ + রাউট লাগবে। Profit & Loss-এর জন্য existing `businessReportQuery` থেকেই হিসাব হবে।
+**সমাধান:**
+- `src/pages/customer/Dashboard.tsx`-এ ফর্দ count আনার সময় MyFordo-র মতো একই `consumer-fordo-history` edge function call করব।
+- Returned `wishlists` array-এর length-ই হবে actual count। এর সাথে `deleted_at` বাদ দিয়ে গণনা করব।
 
-## Pages to build (10)
+### সমস্যা ২ — গ্রাহক Division/District/Upazila/Area select করতে পারে না
 
-| # | পেজ | Route | Query |
-|---|---|---|---|
-| 1 | বিক্রির রিপোর্ট | `/app/sales-report` | `salesReportQuery` |
-| 2 | ক্রয়ের রিপোর্ট | `/app/purchase-report` | `purchaseReportQuery` |
-| 3 | স্টকের রিপোর্ট | `/app/stock-report` | `stockReportQuery` |
-| 4 | পণ্যের রিপোর্ট | `/app/product-report` | `productReportQuery` |
-| 5 | সেরা কাস্টমার | `/app/top-customers` | `topCustomersQuery` |
-| 6 | সেরা কর্মচারী | `/app/top-employees` | `topEmployeesQuery` |
-| 7 | লাভ-ক্ষতি রিপোর্ট | `/app/profit-loss` | `businessReportQuery` (productProfit + balance) |
-| 8 | খরচের রিপোর্ট | `/app/expense-report` | `expenseReportQuery` |
-| 9 | সাপ্লায়ার রিপোর্ট | `/app/supplier-report` | `supplierReportQuery` |
-| 10 | আয়ের রিপোর্ট | `/app/income-report` | `incomeReportQuery` |
+**ভাল খবর — সব ডেটা/স্কিমা already আছে:**
+- Super-admin DB তে `bd_divisions`, `bd_districts`, `bd_upazilas` table আছে এবং publicly readable (RLS: `SELECT true`)। Admin Locations পেজ থেকে seed করা যায়।
+- `consumer_profiles` table-এ already `division`, `district`, `upazila`, `area` text column আছে। কোনো migration লাগবে না।
 
-## Common pattern (every page)
+**সমাধান:**
 
-প্রত্যেক পেজে একই layout — `OwnerReport.tsx` কে template হিসেবে follow করব:
+1. **নতুন reusable component** `src/components/LocationPicker.tsx`:
+   - তিনটা cascading dropdown: বিভাগ → জেলা → উপজেলা + একটা free-text "এলাকা/গ্রাম" input
+   - শুধু `is_active=true` row গুলা দেখাবে
+   - Bengali (`name_bn`) by default
+   - Data caching: React Query দিয়ে — divisions/districts/upazilas list একবার load হয়ে cache হবে (5 min stale time)
+   - Props: `value: { division, district, upazila, area }`, `onChange`, optional `disabled`
 
-- `PageHeader` + breadcrumb + title (Bengali/English via `useI18n`)
-- `DateRangePicker` (default: এই মাসের শুরু → আজ)
-- Refresh button + Print/Download button (`printReport` থেকে)
-- Summary tiles (টপে total, count ইত্যাদি)
-- Detail table (sortable, mobile responsive — ছোট স্ক্রিনে card, বড়তে table)
-- Empty state + loading skeleton
-- `RequirePerm group="report"` দিয়ে wrap
-- Bengali money formatting (`fmtMoney`)
+2. **`src/pages/customer/Profile.tsx`-এ যোগ:**
+   - Form state-এ division/district/upazila/area add
+   - Profile load করার সময় এই ৪টা field সহ select করব
+   - Save করার সময় upsert payload-এ পাঠাবো
+   - "ঠিকানা" Textarea-র উপরে LocationPicker বসব
 
-## Specific contents
+3. **Future-proof reuse:**
+   - Same `LocationPicker` component পরে product listing form, shop registration ইত্যাদিতে use করা যাবে — single source of truth (super-admin database)
 
-1. **বিক্রির রিপোর্ট** — Total sales, cash, due summary tiles + invoice table (invoice no, customer, items, total, paid, due, method, date)
-2. **ক্রয়ের রিপোর্ট** — একই pattern, supplier dimension সহ
-3. **স্টকের রিপোর্ট** — Per-product in/out qty + amount; total in/out summary
-4. **পণ্যের রিপোর্ট** — Per-product sold qty, revenue, profit (sorted by revenue); top performers
-5. **সেরা কাস্টমার** — Ranked list: name, phone, orders, total purchase, due
-6. **সেরা কর্মচারী** — Ranked: name, sales count, total amount
-7. **লাভ-ক্ষতি** — Tile grid: total revenue, total cost, gross profit, expense, net profit (color-coded)
-8. **খরচের রিপোর্ট** — Per-category aggregation: count, amount, %; pie/bar friendly
-9. **সাপ্লায়ার রিপোর্ট** — Ranked: name, phone, total purchase, paid, due
-10. **আয়ের রিপোর্ট** — List of other income entries: source, amount, paid_via, date, note + total
+## Files to change
 
-## Wiring
+- `src/pages/customer/Dashboard.tsx` — fordo count edge function থেকে আনব
+- `src/components/LocationPicker.tsx` (নতুন) — cascading bn_div/dist/upa picker
+- `src/pages/customer/Profile.tsx` — LocationPicker integrate, save/load logic update
 
-- `src/pages/app/`-এ ১০টা নতুন file create
-- `src/lib/app-routes.tsx` — ১০টা lazy import + ১০টা route entry
-- `src/pages/app/Reports.tsx` — `subReports` array-তে ১০টা item-এ `to: "/app/..."` add করব এবং "শীঘ্রই আসছে" placeholder লাইনটা সরাব। ক্লিক করলে `nav(to)` দিয়ে navigate করবে।
-- `src/lib/preload-routes.ts` — heavy report chunks-কে low-priority preload list-এ যোগ করব (optional, for snappy nav)
+## Out of scope (এই round-এ নয়)
 
-## Out of scope
-
-- নতুন database column বা edge function লাগবে না — সব data already available
-- Charts (Recharts) — শুরুতে শুধু tiles + tables, পরে চাইলে chart যোগ করা যাবে
-- CSV export — শুধু `printReport` (PDF/print) থাকবে এই round-এ
-
-## Estimated impact
-
-১০টা নতুন পেজ + ১টা routes ফাইল edit + ১টা Reports.tsx edit। সব পেজ একই কাঠামো, তাই দ্রুত শেষ হবে।
+- নতুন database migration — সব কিছু আগে থেকেই আছে
+- Map-based picker
+- Geo-based shop suggestion (আলাদা feature)
+- Vendor/Shop registration-এ একই picker — পরে চাইলে যোগ করা যাবে

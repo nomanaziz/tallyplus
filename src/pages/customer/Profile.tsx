@@ -8,8 +8,18 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Loader2, LogOut } from "lucide-react";
+import { LocationPicker, type LocationValue } from "@/components/LocationPicker";
 
-type Consumer = { id: string; name: string; phone: string; address: string | null };
+type Consumer = {
+  id: string;
+  name: string;
+  phone: string;
+  address: string | null;
+  division: string | null;
+  district: string | null;
+  upazila: string | null;
+  area: string | null;
+};
 
 export default function CustomerProfilePage() {
   const { session, signOut, loading: authLoading } = useAuth();
@@ -19,6 +29,7 @@ export default function CustomerProfilePage() {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
+  const [loc, setLoc] = useState<LocationValue>({ division: null, district: null, upazila: null, area: null });
 
   useEffect(() => {
     if (authLoading) return;
@@ -28,7 +39,7 @@ export default function CustomerProfilePage() {
     }
     void supabase
       .from("consumer_profiles")
-      .select("id,name,phone,address")
+      .select("id,name,phone,address,division,district,upazila,area")
       .eq("id", session.user.id)
       .maybeSingle()
       .then(({ data }) => {
@@ -37,6 +48,12 @@ export default function CustomerProfilePage() {
           setName(c.name ?? "");
           setPhone(c.phone ?? "");
           setAddress(c.address ?? "");
+          setLoc({
+            division: c.division ?? null,
+            district: c.district ?? null,
+            upazila: c.upazila ?? null,
+            area: c.area ?? null,
+          });
         }
         setLoading(false);
       });
@@ -48,7 +65,16 @@ export default function CustomerProfilePage() {
     setSaving(true);
     const { error } = await supabase
       .from("consumer_profiles")
-      .upsert({ id: session.user.id, name: name.trim(), phone, address: address.trim() || null });
+      .upsert({
+        id: session.user.id,
+        name: name.trim(),
+        phone,
+        address: address.trim() || null,
+        division: loc.division,
+        district: loc.district,
+        upazila: loc.upazila,
+        area: loc.area?.trim() || null,
+      });
     setSaving(false);
     if (error) return toast.error(error.message);
     toast.success("সংরক্ষিত");
@@ -63,7 +89,7 @@ export default function CustomerProfilePage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-md space-y-6 rounded-2xl border bg-card p-6 shadow-sm">
+    <div className="mx-auto w-full max-w-2xl space-y-6 rounded-2xl border bg-card p-6 shadow-sm">
         <div>
           <h1 className="text-xl font-bold">আমার প্রোফাইল</h1>
           <p className="mt-1 text-sm text-muted-foreground">নাম ও ঠিকানা update করুন</p>
@@ -79,8 +105,13 @@ export default function CustomerProfilePage() {
             <Input value={phone} disabled className="bg-muted" />
             <p className="mt-1 text-xs text-muted-foreground">মোবাইল নম্বর পরিবর্তনযোগ্য নয়</p>
           </div>
+          <div className="space-y-2">
+            <Label>আপনার এলাকা</Label>
+            <p className="text-xs text-muted-foreground">বিভাগ → জেলা → উপজেলা নির্বাচন করুন</p>
+            <LocationPicker value={loc} onChange={setLoc} />
+          </div>
           <div>
-            <Label>ঠিকানা</Label>
+            <Label>বিস্তারিত ঠিকানা</Label>
             <Textarea
               value={address}
               onChange={(e) => setAddress(e.target.value)}
