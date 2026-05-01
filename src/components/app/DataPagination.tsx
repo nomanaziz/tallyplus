@@ -43,29 +43,54 @@ export function DataPagination({
   if (total === 0) return null;
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 border-t px-3 py-3 text-sm">
-      <div className="text-muted-foreground">
-        {lang === "bn"
-          ? `দেখাচ্ছে ${fmt(from)}–${fmt(to)} / মোট ${fmt(total)}`
-          : `Showing ${fmt(from)}–${fmt(to)} of ${fmt(total)}`}
+    <div className="sticky bottom-0 z-10 flex flex-nowrap items-center justify-between gap-1.5 border-t bg-card/95 px-2 py-1.5 text-xs backdrop-blur sm:gap-3 sm:px-3 sm:py-2 sm:text-sm">
+      {/* Left: showing X–Y / total — compact on mobile */}
+      <div className="min-w-0 flex-shrink truncate text-muted-foreground tabular-nums">
+        <span className="sm:hidden">{`${fmt(from)}–${fmt(to)}/${fmt(total)}`}</span>
+        <span className="hidden sm:inline">
+          {lang === "bn"
+            ? `দেখাচ্ছে ${fmt(from)}–${fmt(to)} / মোট ${fmt(total)}`
+            : `Showing ${fmt(from)}–${fmt(to)} of ${fmt(total)}`}
+        </span>
       </div>
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-muted-foreground">
-            {lang === "bn" ? "প্রতি পেজ" : "Per page"}
+
+      {/* Right: per-page + nav, all in one line */}
+      <div className="flex flex-none items-center gap-1 sm:gap-2">
+        <span className="hidden text-xs text-muted-foreground sm:inline">
+          {lang === "bn" ? "প্রতি পেজ" : "Per page"}
+        </span>
+        <Select value={String(pageSize)} onValueChange={(v) => onPageSizeChange(Number(v))}>
+          <SelectTrigger className="h-7 w-[60px] px-2 text-xs sm:h-8 sm:w-[72px] sm:text-sm">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {pageSizeOptions.map((n) => (
+              <SelectItem key={n} value={String(n)}>{fmt(n)}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        {/* Mobile compact nav: ‹‹ ‹ p/total › ›› */}
+        <div className="flex items-center gap-0.5 sm:hidden">
+          <Button variant="outline" size="icon" className="h-7 w-7" disabled={page <= 1} onClick={() => onPageChange(1)} aria-label="First">
+            <ChevronsLeft className="h-3.5 w-3.5" />
+          </Button>
+          <Button variant="outline" size="icon" className="h-7 w-7" disabled={page <= 1} onClick={() => onPageChange(page - 1)} aria-label="Prev">
+            <ChevronLeft className="h-3.5 w-3.5" />
+          </Button>
+          <span className="px-1 text-xs font-medium tabular-nums">
+            {fmt(page)}/{fmt(pageCount)}
           </span>
-          <Select value={String(pageSize)} onValueChange={(v) => onPageSizeChange(Number(v))}>
-            <SelectTrigger className="h-8 w-[72px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {pageSizeOptions.map((n) => (
-                <SelectItem key={n} value={String(n)}>{fmt(n)}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Button variant="outline" size="icon" className="h-7 w-7" disabled={page >= pageCount} onClick={() => onPageChange(page + 1)} aria-label="Next">
+            <ChevronRight className="h-3.5 w-3.5" />
+          </Button>
+          <Button variant="outline" size="icon" className="h-7 w-7" disabled={page >= pageCount} onClick={() => onPageChange(pageCount)} aria-label="Last">
+            <ChevronsRight className="h-3.5 w-3.5" />
+          </Button>
         </div>
-        <div className="flex items-center gap-1">
+
+        {/* Desktop full nav */}
+        <div className="hidden items-center gap-1 sm:flex">
           <Button variant="outline" size="icon" className="h-8 w-8" disabled={page <= 1} onClick={() => onPageChange(1)} aria-label="First">
             <ChevronsLeft className="h-4 w-4" />
           </Button>
