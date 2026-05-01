@@ -3,7 +3,6 @@ import { useNavigate } from "@/lib/router";
 import { useAuth } from "@/lib/auth";
 import { useShop } from "@/lib/shop";
 import { useI18n } from "@/lib/i18n";
-import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
