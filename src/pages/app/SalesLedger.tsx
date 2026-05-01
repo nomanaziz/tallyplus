@@ -19,7 +19,7 @@ import { DataPagination } from "@/components/app/DataPagination";
 import { usePagination } from "@/hooks/use-pagination";
 import { toast } from "sonner";
 import { printTableReport } from "@/lib/print-report";
-import { usePerms } from "@/lib/permissions-hook";
+import { usePermissions } from "@/lib/permissions-hook";
 
 type Sale = {
   id: string;
