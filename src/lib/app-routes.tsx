@@ -76,6 +76,16 @@ const L69 = lazy(() => import("@/pages/shop/p/Id"));
 const L70 = lazy(() => import("@/pages/shop/s/Slug"));
 const L71 = lazy(() => import("@/pages/Terms"));
 const L72 = lazy(() => import("@/pages/vendor/Username"));
+const L73 = lazy(() => import("@/pages/app/SalesReport"));
+const L74 = lazy(() => import("@/pages/app/PurchaseReport"));
+const L75 = lazy(() => import("@/pages/app/StockReport"));
+const L76 = lazy(() => import("@/pages/app/ProductReport"));
+const L77 = lazy(() => import("@/pages/app/TopCustomers"));
+const L78 = lazy(() => import("@/pages/app/TopEmployees"));
+const L79 = lazy(() => import("@/pages/app/ProfitLoss"));
+const L80 = lazy(() => import("@/pages/app/ExpenseReport"));
+const L81 = lazy(() => import("@/pages/app/SupplierReport"));
+const L82 = lazy(() => import("@/pages/app/IncomeReport"));
 
 export const appRoutes: RouteObject[] = [
 { index: true, element: <Suspense fallback={<RouteFallback/>}><L0/></Suspense> },
@@ -129,6 +139,16 @@ export const appRoutes: RouteObject[] = [
 { path: "quick-order", element: <Suspense fallback={<RouteFallback/>}><L46/></Suspense> },
 { path: "recycle-bin", element: <Suspense fallback={<RouteFallback/>}><L47/></Suspense> },
 { path: "reports", element: <Suspense fallback={<RouteFallback/>}><L48/></Suspense> },
+{ path: "sales-report", element: <Suspense fallback={<RouteFallback/>}><L73/></Suspense> },
+{ path: "purchase-report", element: <Suspense fallback={<RouteFallback/>}><L74/></Suspense> },
+{ path: "stock-report", element: <Suspense fallback={<RouteFallback/>}><L75/></Suspense> },
+{ path: "product-report", element: <Suspense fallback={<RouteFallback/>}><L76/></Suspense> },
+{ path: "top-customers", element: <Suspense fallback={<RouteFallback/>}><L77/></Suspense> },
+{ path: "top-employees", element: <Suspense fallback={<RouteFallback/>}><L78/></Suspense> },
+{ path: "profit-loss", element: <Suspense fallback={<RouteFallback/>}><L79/></Suspense> },
+{ path: "expense-report", element: <Suspense fallback={<RouteFallback/>}><L80/></Suspense> },
+{ path: "supplier-report", element: <Suspense fallback={<RouteFallback/>}><L81/></Suspense> },
+{ path: "income-report", element: <Suspense fallback={<RouteFallback/>}><L82/></Suspense> },
 { path: "sales-ledger", element: <Suspense fallback={<RouteFallback/>}><L49/></Suspense> },
 { path: "sell", element: <Suspense fallback={<RouteFallback/>}><L50/></Suspense> },
 { path: "shops", element: <Suspense fallback={<RouteFallback/>}><L51/></Suspense> },

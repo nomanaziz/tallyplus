@@ -55,16 +55,16 @@ function ReportsPage() {
     { Icon: Wallet, bn: "মালিকের লেনদেন", en: "Owner ledger", to: "/app/owner-ledger" },
     { Icon: Package, bn: "দোকানের সম্পদ", en: "Shop assets", to: "/app/assets" },
     { Icon: UserCircle2, bn: "মালিকের রিপোর্ট", en: "Owner report", to: "/app/owner-report" },
-    { Icon: BarChart3, bn: "বিক্রির রিপোর্ট", en: "Sales report" },
-    { Icon: ShoppingCart, bn: "ক্রয়ের রিপোর্ট", en: "Purchase report" },
-    { Icon: Boxes, bn: "স্টকের রিপোর্ট", en: "Stock report" },
-    { Icon: FileText, bn: "পণ্যের রিপোর্ট", en: "Product report" },
-    { Icon: Users, bn: "সেরা কাস্টমার", en: "Top customers" },
-    { Icon: UserCog, bn: "সেরা কর্মচারী", en: "Top employees" },
-    { Icon: PieChart, bn: "লাভ-ক্ষতি রিপোর্ট", en: "Profit & loss" },
-    { Icon: Receipt, bn: "খরচের রিপোর্ট", en: "Expense report" },
-    { Icon: Truck, bn: "সাপ্লায়ার রিপোর্ট", en: "Supplier report" },
-    { Icon: DollarSign, bn: "আয়ের রিপোর্ট", en: "Income report" },
+    { Icon: BarChart3, bn: "বিক্রির রিপোর্ট", en: "Sales report", to: "/app/sales-report" },
+    { Icon: ShoppingCart, bn: "ক্রয়ের রিপোর্ট", en: "Purchase report", to: "/app/purchase-report" },
+    { Icon: Boxes, bn: "স্টকের রিপোর্ট", en: "Stock report", to: "/app/stock-report" },
+    { Icon: FileText, bn: "পণ্যের রিপোর্ট", en: "Product report", to: "/app/product-report" },
+    { Icon: Users, bn: "সেরা কাস্টমার", en: "Top customers", to: "/app/top-customers" },
+    { Icon: UserCog, bn: "সেরা কর্মচারী", en: "Top employees", to: "/app/top-employees" },
+    { Icon: PieChart, bn: "লাভ-ক্ষতি রিপোর্ট", en: "Profit & loss", to: "/app/profit-loss" },
+    { Icon: Receipt, bn: "খরচের রিপোর্ট", en: "Expense report", to: "/app/expense-report" },
+    { Icon: Truck, bn: "সাপ্লায়ার রিপোর্ট", en: "Supplier report", to: "/app/supplier-report" },
+    { Icon: DollarSign, bn: "আয়ের রিপোর্ট", en: "Income report", to: "/app/income-report" },
   ];
 
   return (
@@ -172,9 +172,6 @@ function ReportsPage() {
               </button>
             ))}
           </div>
-          <p className="mt-3 text-center text-[11px] text-muted-foreground">
-            {lang === "bn" ? "প্রত্যেকটি ব্যক্তিগত রিপোর্ট শীঘ্রই আসছে" : "Individual sub-reports coming soon"}
-          </p>
         </div>
       </div>
     </div>
