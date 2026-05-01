@@ -59,7 +59,6 @@ const L52 = lazy(() => import("@/pages/app/SmsHistory"));
 const L53 = lazy(() => import("@/pages/app/Training"));
 const L54 = lazy(() => import("@/pages/app/UsageLimits"));
 const L55 = lazy(() => import("@/pages/app/Warranty"));
-const L56 = lazy(() => import("@/pages/Auth"));
 const L57 = lazy(() => import("@/pages/customer/CustomerLayout"));
 const L58 = lazy(() => import("@/pages/customer/CreateFordo"));
 const L59 = lazy(() => import("@/pages/customer/Dashboard"));
@@ -160,7 +159,7 @@ export const appRoutes: RouteObject[] = [
 { path: "usage-limits", element: <Suspense fallback={<RouteFallback/>}><L54/></Suspense> },
 { path: "warranty", element: <Suspense fallback={<RouteFallback/>}><L55/></Suspense> }
 ] },
-{ path: "auth", element: <Suspense fallback={<RouteFallback/>}><L56/></Suspense> },
+{ path: "auth", element: <Navigate to="/" replace /> },
 { path: "customer", element: <Suspense fallback={<RouteFallback/>}><L57/></Suspense>, children: [
 { path: "create-fordo", element: <Suspense fallback={<RouteFallback/>}><L58/></Suspense> },
 { path: "dashboard", element: <Suspense fallback={<RouteFallback/>}><L59/></Suspense> },

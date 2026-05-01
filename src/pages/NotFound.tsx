@@ -13,7 +13,7 @@ export default function NotFound() {
   const quickLinks = [
     { to: "/", icon: Home, label: "হোম" },
     { to: "/shop", icon: Store, label: "মার্কেটপ্লেস" },
-    { to: user ? "/app/dashboard" : "/auth", icon: LayoutDashboard, label: "ড্যাশবোর্ড" },
+    { to: user ? "/app/dashboard" : "/", icon: LayoutDashboard, label: "ড্যাশবোর্ড" },
     { to: "/pricing", icon: Tag, label: "প্রাইসিং" },
   ];
 

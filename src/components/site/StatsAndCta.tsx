@@ -48,7 +48,7 @@ export function FinalCta() {
             <a href="#"><Download className="mr-1.5 h-4 w-4" />{lang === "bn" ? "ডাউনলোড" : "Download"}</a>
           </Button>
           <Button asChild size="lg" variant="outline" className="h-12 rounded-full border-foreground/30 bg-transparent px-6 text-base font-bold text-primary-foreground hover:bg-primary-foreground/10">
-            <Link to={user ? "/app" : "/auth"}><Globe className="mr-1.5 h-4 w-4" />{lang === "bn" ? "ওয়েব ভার্সন" : "Use the web version"}</Link>
+            <Link to={user ? "/app" : "/"}><Globe className="mr-1.5 h-4 w-4" />{lang === "bn" ? "ওয়েব ভার্সন" : "Use the web version"}</Link>
           </Button>
         </div>
         <p className="mt-5 text-sm text-primary-foreground/80">

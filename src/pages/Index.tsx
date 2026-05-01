@@ -1,20 +1,21 @@
 import { useEffect } from "react";
 import { useNavigate } from "@/lib/router";
 import { useAuth } from "@/lib/auth";
-import { AuthEntry } from "@/components/site/AuthEntry";
+import { LoginCard } from "@/components/site/LoginCard";
+import { SiteHeader } from "@/components/site/SiteHeader";
+import { SiteFooter } from "@/components/site/SiteFooter";
 import { homePathFor } from "@/lib/home-redirect";
 import { Loader2 } from "lucide-react";
 
 /**
- * Facebook-style entry:
- * - Logged-out → AuthEntry (login/signup first, with link to /about)
+ * Home page = login/signup card directly.
+ * - Logged-out → LoginCard
  * - Logged-in  → auto-redirect to role-aware dashboard
  */
 function Index() {
   const { session, loading, isOwner, ensureProfile } = useAuth();
   const navigate = useNavigate();
 
-  // Trigger profile load so isOwner becomes accurate.
   useEffect(() => {
     if (session?.user) void ensureProfile();
   }, [session?.user, ensureProfile]);
@@ -34,7 +35,15 @@ function Index() {
     );
   }
 
-  return <AuthEntry />;
+  return (
+    <div className="flex min-h-screen flex-col bg-background">
+      <SiteHeader />
+      <main className="flex flex-1 items-center justify-center px-4 py-8">
+        <LoginCard />
+      </main>
+      <SiteFooter />
+    </div>
+  );
 }
 
 export default Index;

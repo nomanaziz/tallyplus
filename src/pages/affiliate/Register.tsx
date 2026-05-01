@@ -31,7 +31,7 @@ function RegisterPage() {
   const submit = async () => {
     if (!user) {
       toast.error("আগে লগইন করুন");
-      nav({ to: "/auth" });
+      nav({ to: "/" });
       return;
     }
     if (!name.trim() || !phone.trim()) {
@@ -77,7 +77,7 @@ function RegisterPage() {
           ) : !user ? (
             <div className="mt-6 rounded-lg border bg-muted/40 p-4 text-sm">
               রেজিস্ট্রেশনের আগে আপনাকে লগইন করতে হবে।
-              <div className="mt-3"><Link to="/auth"><Button className="w-full">লগইন করুন</Button></Link></div>
+              <div className="mt-3"><Link to="/"><Button className="w-full">লগইন করুন</Button></Link></div>
             </div>
           ) : existing ? (
             <div className="mt-6 rounded-lg border bg-emerald-50 p-4 text-sm text-emerald-900">

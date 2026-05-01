@@ -3,7 +3,7 @@ import { useI18n, bnNum } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { TrendingUp, MessageCircle, ArrowRight } from "lucide-react";
-import { HeroAuthCard } from "./HeroAuthCard";
+import { LoginCard } from "./LoginCard";
 
 export function HeroSection() {
   const { t, lang } = useI18n();
@@ -33,12 +33,12 @@ export function HeroSection() {
           </p>
           <div className="mt-7 flex flex-wrap gap-3">
             <Button asChild size="lg" className="h-12 rounded-full px-6 text-base font-bold">
-              <Link to={user ? "/app" : "/auth"} search={user ? undefined : { role: "owner", mode: "signup" }}>
+              <Link to={user ? "/app" : "/"} search={user ? undefined : { role: "owner", mode: "signup" }}>
                 {t("shopSignupCta")} <ArrowRight className="ml-1 h-4 w-4" />
               </Link>
             </Button>
             <Button asChild size="lg" variant="secondary" className="h-12 rounded-full px-6 text-base font-bold">
-              <Link to={user ? "/customer/dashboard" : "/auth"} search={user ? undefined : { role: "customer", mode: "signup" }}>
+              <Link to={user ? "/customer/dashboard" : "/"} search={user ? undefined : { role: "customer", mode: "signup" }}>
                 {t("personalSignupCta")} <ArrowRight className="ml-1 h-4 w-4" />
               </Link>
             </Button>
@@ -62,7 +62,9 @@ export function HeroSection() {
         </div>
         <div className="relative">
           <div className="absolute inset-0 -z-10 mx-auto my-auto h-[90%] w-[90%] rounded-[2.5rem] bg-gradient-to-br from-primary/30 via-primary/10 to-transparent blur-2xl" aria-hidden />
-          <HeroAuthCard />
+          <div className="mx-auto flex justify-center">
+            <LoginCard />
+          </div>
         </div>
       </div>
     </section>

@@ -117,7 +117,7 @@ function AppLayout() {
   }, [user, shops.length, shopsLoading]);
 
   useEffect(() => {
-    if (!loading && !user) nav({ to: "/auth" });
+    if (!loading && !user) nav({ to: "/" });
   }, [loading, user, nav]);
 
   useEffect(() => {

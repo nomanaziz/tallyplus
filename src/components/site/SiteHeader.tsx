@@ -57,7 +57,7 @@ export function SiteHeader() {
           {user ? (
             <Button asChild size="sm" className="hidden md:inline-flex"><Link to={homeTarget}>{t("dashboard")}</Link></Button>
           ) : (
-            <Button asChild size="sm" className="hidden md:inline-flex"><Link to="/auth">{t("login")}</Link></Button>
+            <Button asChild size="sm" className="hidden md:inline-flex"><Link to="/">{t("login")}</Link></Button>
           )}
 
           {/* Mobile hamburger */}
@@ -108,7 +108,7 @@ export function SiteHeader() {
                   {user ? (
                     <Button asChild className="w-full"><Link to={homeTarget}>{t("dashboard")}</Link></Button>
                   ) : (
-                    <Button asChild className="w-full"><Link to="/auth">{t("login")}</Link></Button>
+                    <Button asChild className="w-full"><Link to="/">{t("login")}</Link></Button>
                   )}
                 </SheetClose>
               </div>

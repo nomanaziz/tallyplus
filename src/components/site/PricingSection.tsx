@@ -56,7 +56,7 @@ export function PricingSection() {
 
   const handlePick = async (p: Plan) => {
     if (!user) {
-      navigate({ to: "/auth" });
+      navigate({ to: "/" });
       return;
     }
     if (gatewayEnabled) {
@@ -110,7 +110,7 @@ export function PricingSection() {
               {lang === "bn" ? "শীঘ্রই প্ল্যান প্রকাশ হবে।" : "Plans will be published soon."}
             </p>
             <Button asChild variant="outline" className="mt-4">
-              <Link to={user ? "/app/subscribe" : "/auth"}>
+              <Link to={user ? "/app/subscribe" : "/"}>
                 {lang === "bn" ? "যোগাযোগ করুন" : "Contact us"}
               </Link>
             </Button>
@@ -132,7 +132,7 @@ export function PricingSection() {
                 {lang === "bn" ? FREE_LIMITS_BN : FREE_LIMITS_EN}
               </p>
               <Button asChild variant="outline" className="mt-6 h-11 w-full rounded-full text-base font-bold">
-                <Link to={user ? "/app/dashboard" : "/auth"}>
+                <Link to={user ? "/app/dashboard" : "/"}>
                   {lang === "bn" ? "ফ্রি শুরু করুন" : "Start free"}
                 </Link>
               </Button>

@@ -126,7 +126,7 @@ function AdminLoginPage() {
         </Button>
 
         <p className="text-center text-xs text-muted-foreground">
-          <Link to="/auth" className="underline">
+          <Link to="/" className="underline">
             Shop owner হিসেবে login করুন
           </Link>
         </p>
