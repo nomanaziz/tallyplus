@@ -16,7 +16,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel } from "@/components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Plus, Pencil, Loader2, Package, Store, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, X, Search, MoreHorizontal, Check, FolderOpen } from "lucide-react";
+import { Plus, Pencil, Loader2, Package, Store, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, X, Search, MoreHorizontal, Check, FolderOpen, Upload } from "lucide-react";
 import { toast } from "sonner";
 
 
@@ -44,10 +44,10 @@ type ShopTypeOpt = { code: string; name_bn: string; name_en: string };
 
 function MarketplacePage() {
   return (
-    <div className="mx-auto w-full max-w-[1600px] space-y-4 p-4 lg:p-6">
+    <div className="mx-auto w-full max-w-[1600px] space-y-4 p-3 sm:p-4 lg:p-6">
       <div>
-        <h1 className="text-2xl font-bold">Marketplace</h1>
-        <p className="text-sm text-muted-foreground">Canonical products & seller listings</p>
+        <h1 className="text-xl font-bold sm:text-2xl">Marketplace</h1>
+        <p className="text-xs text-muted-foreground sm:text-sm">Canonical products & seller listings</p>
       </div>
       <Tabs defaultValue="products">
         <TabsList>
