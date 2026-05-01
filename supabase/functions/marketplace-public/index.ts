@@ -5,6 +5,8 @@
 //   { action: "shop-by-username", username }              -> shop page by username
 //   { action: "log-visit", shop_id }                      -> increment visit counter
 //   { action: "listing", id }                             -> single listing detail
+//   { action: "place-order", shop_id, items, customer_name, customer_phone,
+//       customer_address?, note?, payment_method? }        -> create marketplace order
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -341,6 +343,110 @@ Deno.serve(async (req) => {
       if (!product) return json({ error: "পণ্য পাওয়া যায়নি" }, 404);
 
       return json({ listing: l, shop, product });
+    }
+
+    if (action === "place-order") {
+      const shopId = String(body.shop_id ?? "").trim();
+      const items = Array.isArray(body.items) ? body.items as Array<{ listing_id: string; qty: number }> : [];
+      const customerName = String(body.customer_name ?? "").trim();
+      const customerPhone = String(body.customer_phone ?? "").trim();
+      const customerAddress = String(body.customer_address ?? "").trim();
+      const note = String(body.note ?? "").trim();
+      const paymentMethod = String(body.payment_method ?? "cod").trim();
+
+      if (!shopId) return json({ error: "Invalid shop_id" }, 400);
+      if (items.length === 0) return json({ error: "Cart is empty" }, 400);
+      if (!customerName || customerName.length < 2) return json({ error: "Name required" }, 400);
+      if (!customerPhone) return json({ error: "Phone required" }, 400);
+      if (!customerAddress) return json({ error: "Address required" }, 400);
+
+      // Resolve consumer user from auth header (optional)
+      let consumerUserId: string | null = null;
+      const authHeader = req.headers.get("authorization") ?? req.headers.get("Authorization");
+      if (authHeader?.startsWith("Bearer ")) {
+        try {
+          const url = Deno.env.get("SUPABASE_URL")!;
+          const anonKey = Deno.env.get("SUPABASE_PUBLISHABLE_KEY") ?? Deno.env.get("SUPABASE_ANON_KEY")!;
+          const userClient = createClient(url, anonKey, { global: { headers: { Authorization: authHeader } } });
+          const { data } = await userClient.auth.getUser();
+          if (data?.user?.id) consumerUserId = data.user.id;
+        } catch (_) { /* ignore */ }
+      }
+
+      // Validate listings belong to shop and are published
+      const listingIds = items.map((i) => String(i.listing_id));
+      const { data: listingsData } = await admin
+        .from("marketplace_listings")
+        .select("id, shop_id, product_id, price, stock, unit, is_published")
+        .in("id", listingIds);
+      const listingMap = new Map<string, { id: string; shop_id: string; product_id: string; price: number; stock: number; unit: string | null; is_published: boolean }>();
+      ((listingsData as Array<{ id: string; shop_id: string; product_id: string; price: number; stock: number; unit: string | null; is_published: boolean }> | null) ?? []).forEach((l) => listingMap.set(l.id, l));
+      const productIds: string[] = [];
+      for (const it of items) {
+        const l = listingMap.get(String(it.listing_id));
+        if (!l || l.shop_id !== shopId || !l.is_published) {
+          return json({ error: "এক বা একাধিক পণ্য আর available নেই" }, 400);
+        }
+        productIds.push(l.product_id);
+      }
+      const { data: productsData } = await admin
+        .from("products")
+        .select("id, name")
+        .in("id", productIds);
+      const productNameMap = new Map<string, string>();
+      ((productsData as Array<{ id: string; name: string }> | null) ?? []).forEach((p) => productNameMap.set(p.id, p.name));
+
+      let subtotal = 0;
+      const orderItems = items.map((it) => {
+        const l = listingMap.get(String(it.listing_id))!;
+        const qty = Math.max(1, Number(it.qty) || 1);
+        const lineTotal = Number(l.price) * qty;
+        subtotal += lineTotal;
+        return {
+          listing_id: l.id,
+          product_id: l.product_id,
+          name: productNameMap.get(l.product_id) ?? "Item",
+          qty,
+          price: Number(l.price),
+          total: lineTotal,
+        };
+      });
+
+      const deliveryCharge = 0;
+      const total = subtotal + deliveryCharge;
+      const orderNo = "MO-" + Date.now().toString(36).toUpperCase() + Math.floor(Math.random() * 1000).toString(36).toUpperCase();
+
+      const { data: created, error: orderErr } = await admin
+        .from("marketplace_orders")
+        .insert({
+          shop_id: shopId,
+          order_no: orderNo,
+          customer_name: customerName,
+          customer_phone: customerPhone,
+          customer_address: customerAddress,
+          subtotal,
+          delivery_charge: deliveryCharge,
+          total,
+          status: "pending",
+          payment_method: paymentMethod,
+          note: note || null,
+          consumer_user_id: consumerUserId,
+        })
+        .select("id, order_no")
+        .single();
+      if (orderErr || !created) {
+        console.error("order insert error:", orderErr);
+        return json({ error: orderErr?.message ?? "Order failed" }, 500);
+      }
+      const orderId = (created as { id: string; order_no: string }).id;
+      const { error: itemsErr } = await admin
+        .from("marketplace_order_items")
+        .insert(orderItems.map((oi) => ({ ...oi, order_id: orderId })));
+      if (itemsErr) {
+        console.error("order items insert error:", itemsErr);
+        return json({ error: itemsErr.message }, 500);
+      }
+      return json({ ok: true, order_id: orderId, order_no: (created as { order_no: string }).order_no });
     }
 
     return json({ error: "Unknown action" }, 400);

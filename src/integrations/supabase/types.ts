@@ -1699,6 +1699,7 @@ export type Database = {
       }
       marketplace_orders: {
         Row: {
+          consumer_user_id: string | null
           created_at: string
           customer_address: string | null
           customer_name: string
@@ -1716,6 +1717,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          consumer_user_id?: string | null
           created_at?: string
           customer_address?: string | null
           customer_name: string
@@ -1733,6 +1735,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          consumer_user_id?: string | null
           created_at?: string
           customer_address?: string | null
           customer_name?: string

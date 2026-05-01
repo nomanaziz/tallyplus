@@ -10,9 +10,10 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { Menu, Store, Home as HomeIcon, ScrollText } from "lucide-react";
+import { Menu, Store, Home as HomeIcon, ScrollText, ShoppingCart } from "lucide-react";
 import logo from "@/assets/logo.png";
 import { homePathFor } from "@/lib/home-redirect";
+import { useCartCount } from "@/lib/consumer-cart";
 
 export function SiteHeader() {
   const { t, lang } = useI18n();
@@ -20,6 +21,7 @@ export function SiteHeader() {
   const homeTarget = homePathFor({ loggedIn: !!user, isOwner });
   const marketLabel = lang === "bn" ? "মার্কেটপ্লেস" : "Marketplace";
   const fordoLabel = lang === "bn" ? "ফর্দ" : "Fordo";
+  const cartCount = useCartCount();
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-background/85 backdrop-blur">
       <div className="container mx-auto flex h-16 md:h-20 items-center justify-between px-3 md:px-4 gap-2">
@@ -54,6 +56,18 @@ export function SiteHeader() {
           </Link>
         </nav>
         <div className="flex items-center gap-1.5 md:gap-2">
+          <Link
+            to="/cart"
+            aria-label="Cart"
+            className="relative inline-flex h-9 w-9 items-center justify-center rounded-md border hover:bg-accent"
+          >
+            <ShoppingCart className="h-4 w-4" />
+            {cartCount > 0 && (
+              <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
+                {cartCount}
+              </span>
+            )}
+          </Link>
           {user && (
             <Button asChild size="sm" className="hidden md:inline-flex"><Link to={homeTarget}>{t("dashboard")}</Link></Button>
           )}

@@ -72,3 +72,42 @@ export function useCartQty(listingId: string): number {
   }, [listingId]);
   return qty;
 }
+
+export function removeFromCart(listingId: string) {
+  const cart = read().filter((c) => c.listing_id !== listingId);
+  write(cart);
+}
+
+export function clearShopCart(shopId: string) {
+  const cart = read().filter((c) => c.shop_id !== shopId);
+  write(cart);
+}
+
+export function getCartByShop(): Record<string, CartItem[]> {
+  const cart = read();
+  const byShop: Record<string, CartItem[]> = {};
+  for (const item of cart) {
+    if (!byShop[item.shop_id]) byShop[item.shop_id] = [];
+    byShop[item.shop_id].push(item);
+  }
+  return byShop;
+}
+
+export function useCart(): CartItem[] {
+  const [cart, setCart] = useState<CartItem[]>(() => read());
+  useEffect(() => {
+    const update = () => setCart(read());
+    window.addEventListener(EVENT, update);
+    window.addEventListener("storage", update);
+    return () => {
+      window.removeEventListener(EVENT, update);
+      window.removeEventListener("storage", update);
+    };
+  }, []);
+  return cart;
+}
+
+export function useCartCount(): number {
+  const cart = useCart();
+  return cart.reduce((s, c) => s + c.qty, 0);
+}

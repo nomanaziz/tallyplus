@@ -38,27 +38,18 @@ function PublicShopPage() {
         if (alive) { setNotFound(true); setLoading(false); }
         return;
       }
-      const { data: shop } = await supabase
-        .from("shops")
-        .select("*")
-        .or(`username.eq.${username},slug.eq.${username}`)
-        .maybeSingle();
-      if (!shop) { if (alive) { setNotFound(true); setLoading(false); } return; }
-      const { data: listings = [] } = await supabase
-        .from("marketplace_listings" as never)
-        .select("id, product_id, price, stock, unit, min_order, warranty_months")
-        .eq("shop_id", (shop as { id: string }).id)
-        .eq("is_published", true);
-      const productIds = (listings as Listing[]).map(l => l.product_id);
-      const { data: products = [] } = productIds.length
-        ? await supabase.from("products").select("id, name, image_url, unit").in("id", productIds)
-        : { data: [] as Product[] };
-      const productMap: Record<string, Product> = {};
-      for (const p of products as Product[]) productMap[p.id] = p;
-      if (alive) {
-        setData({ shop: shop as Shop, listings: listings as Listing[], products: productMap });
+      const { data: resp, error } = await supabase.functions.invoke("marketplace-public", {
+        body: { action: "shop-by-username", username: username.toLowerCase() },
+      });
+      if (!alive) return;
+      if (error || !resp || (resp as { error?: string }).error) {
+        setNotFound(true);
         setLoading(false);
+        return;
       }
+      const d = resp as { shop: Shop; listings: Listing[]; products: Record<string, Product> };
+      setData({ shop: d.shop, listings: d.listings ?? [], products: d.products ?? {} });
+      setLoading(false);
     })();
     return () => { alive = false; };
   }, [username]);
