@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, Pencil, Trash2, UserRound, Truck, Users, RefreshCw, ChevronRight, Search, MessageCircle } from "lucide-react";
+import { Plus, Pencil, Trash2, UserRound, Truck, Users, RefreshCw, ChevronRight, Search, MessageCircle, BookUser } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useShop } from "@/lib/shop";
 import { useI18n, fmtMoney, bnNum } from "@/lib/i18n";
@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { ContactActionsBar } from "@/components/app/ContactActionsBar";
 import { NewUserAccessDialog } from "@/components/app/NewUserAccessDialog";
 import { DueReminderDialog } from "@/components/app/DueReminderDialog";
+import { PhonebookPickerDialog, type PhonebookContact } from "@/components/app/PhonebookPickerDialog";
 import { toast } from "sonner";
 
 type Tab = "customers" | "suppliers" | "employees";
