@@ -91,7 +91,7 @@ function ShopsPage() {
                 key={s.id}
                 className={
                   "flex flex-col rounded-2xl border-2 bg-background p-5 shadow-sm transition " +
-                  (active ? "border-emerald-500 ring-2 ring-emerald-100" : "border-border hover:border-primary/40")
+                    (active ? "border-primary ring-2 ring-primary/20" : "border-border hover:border-primary/40")
                 }
               >
                 <div className="mb-3 flex items-center gap-3">
@@ -108,15 +108,13 @@ function ShopsPage() {
                       {s.address || (lang === "bn" ? "ঠিকানা যোগ করা হয়নি" : "No address")}
                     </div>
                   </div>
-                  {active && <CheckCircle2 className="h-5 w-5 flex-none text-emerald-500" />}
+                    {active && <CheckCircle2 className="h-5 w-5 flex-none text-primary" />}
                 </div>
                 <div className="mt-auto flex items-center gap-2">
                   <Button
                     onClick={() => select(s)}
-                    className={
-                      "h-10 flex-1 font-semibold " +
-                      (active ? "bg-emerald-600 hover:bg-emerald-700" : "")
-                    }
+                      variant={active ? "default" : "outline"}
+                      className="h-10 flex-1 font-semibold"
                   >
                     {active
                       ? lang === "bn" ? "বর্তমান দোকান" : "Current Shop"
