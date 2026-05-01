@@ -435,6 +435,15 @@ function MyWishlistPage() {
   const templates = data?.templates ?? [];
   const customerName = data?.customer?.name ?? "গ্রাহক";
 
+  const monthCounts: Record<string, number> = {};
+  for (const w of wishlists) {
+    const k = monthKey(w.created_at);
+    monthCounts[k] = (monthCounts[k] || 0) + 1;
+  }
+  const monthOptions = Object.keys(monthCounts).sort((a, b) => (a < b ? 1 : -1));
+  const filteredWishlists =
+    monthFilter === "all" ? wishlists : wishlists.filter((w) => monthKey(w.created_at) === monthFilter);
+
   return (
     <div className="min-h-screen bg-muted/30 pb-24">
       <div className="mx-auto max-w-md px-4 pt-6">
@@ -458,17 +467,39 @@ function MyWishlistPage() {
 
         {/* My Wishlists */}
         <section className="mb-5">
-          <div className="mb-2 flex items-center justify-between">
-            <h2 className="text-sm font-bold">আমার ফর্দসমূহ ({wishlists.length})</h2>
+          <div className="mb-2 flex items-center justify-between gap-2">
+            <h2 className="text-sm font-bold">আমার ফর্দসমূহ ({filteredWishlists.length})</h2>
+            {monthOptions.length > 0 && (
+              <div className="flex items-center gap-1">
+                <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                <Select value={monthFilter} onValueChange={setMonthFilter}>
+                  <SelectTrigger className="h-8 w-[160px] text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">সব মাস ({wishlists.length})</SelectItem>
+                    {monthOptions.map((k) => (
+                      <SelectItem key={k} value={k}>
+                        {monthLabel(k)} ({monthCounts[k]})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
           </div>
 
           {wishlists.length === 0 ? (
             <div className="rounded-xl border bg-card p-6 text-center text-sm text-muted-foreground">
               এখনও কোনো ফর্দ পাঠাননি।
             </div>
+          ) : filteredWishlists.length === 0 ? (
+            <div className="rounded-xl border bg-card p-6 text-center text-sm text-muted-foreground">
+              এই মাসে কোনো ফর্দ পাঠাননি।
+            </div>
           ) : (
             <div className="space-y-2">
-              {wishlists.map((wl) => {
+              {filteredWishlists.map((wl) => {
                 const items = itemsByWishlist.get(wl.id) ?? [];
                 const open = openId === wl.id;
                 const status = STATUS_LABEL[wl.status] ?? STATUS_LABEL.new;
@@ -538,14 +569,22 @@ function MyWishlistPage() {
                             ))}
                           </ul>
                         )}
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="mt-3 w-full"
-                          onClick={() => reuseWishlist(wl)}
-                        >
-                          <Send className="mr-1.5 h-3.5 w-3.5" /> এই ফর্দ আবার পাঠান
-                        </Button>
+                        <div className="mt-3 grid grid-cols-2 gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => reuseWishlist(wl)}
+                          >
+                            <Copy className="mr-1.5 h-3.5 w-3.5" /> নকল করে পাঠান
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => openSaveTemplate(wl)}
+                          >
+                            <Save className="mr-1.5 h-3.5 w-3.5" /> টেমপ্লেট সংরক্ষণ
+                          </Button>
+                        </div>
                       </div>
                     )}
                   </div>
