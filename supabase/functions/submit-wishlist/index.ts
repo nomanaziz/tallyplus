@@ -10,6 +10,7 @@ import {
   signToken,
   verifyPin,
 } from "../_shared/wishlist-auth.ts";
+import { resolveShopByHandle } from "../_shared/resolve-shop.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: cors });
@@ -73,13 +74,7 @@ Deno.serve(async (req) => {
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const admin = createClient(url, serviceKey);
 
-    const { data: shop, error: sErr } = await admin
-      .from("shops")
-      .select("id")
-      .eq("wishlist_slug", slug)
-      .is("deleted_at", null)
-      .maybeSingle();
-    if (sErr) return json({ error: sErr.message }, 500);
+    const shop = await resolveShopByHandle(admin, slug);
     if (!shop) return json({ error: "এই লিঙ্কটি আর সক্রিয় নেই" }, 404);
 
     // Find or create the persistent wishlist customer for this (shop, phone)

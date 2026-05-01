@@ -1,6 +1,7 @@
 // Public endpoint: returns minimal branding info for a shop's wishlist link.
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { resolveShopByHandle } from "../_shared/resolve-shop.ts";
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
@@ -32,19 +33,16 @@ Deno.serve(async (req) => {
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const admin = createClient(url, serviceKey);
 
-    const { data, error } = await admin
-      .from("shops")
-      .select("name, logo_url, shop_type_code")
-      .eq("wishlist_slug", slug)
-      .is("deleted_at", null)
-      .maybeSingle();
-    if (error) return json({ error: error.message }, 500);
+    const data = await resolveShopByHandle(admin, slug);
     if (!data) return json({ error: "এই লিঙ্কটি আর সক্রিয় নেই" }, 404);
 
     return json({
       shop_name: data.name,
       shop_logo_url: data.logo_url,
       shop_type_code: data.shop_type_code,
+      // expose canonical fordo slug so the client can normalize URLs
+      wishlist_slug: data.wishlist_slug,
+      username: data.username,
     });
   } catch (e) {
     return json({ error: (e as Error).message }, 500);

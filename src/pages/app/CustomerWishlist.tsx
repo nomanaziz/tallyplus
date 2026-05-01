@@ -66,6 +66,8 @@ function CustomerWishlistPage() {
   const { lang } = useI18n();
   const qc = useQueryClient();
   const [slug, setSlug] = useState<string | null>(null);
+  const [username, setUsername] = useState<string | null>(null);
+  const [shopSlug, setShopSlug] = useState<string | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
 
   // Fetch slug from shops (we can read our own shop)
@@ -75,10 +77,15 @@ function CustomerWishlistPage() {
     (async () => {
       const { data } = await supabase
         .from("shops")
-        .select("wishlist_slug")
+        .select("wishlist_slug, username, slug")
         .eq("id", current.id)
         .maybeSingle();
-      if (!cancelled) setSlug(((data as { wishlist_slug: string | null } | null)?.wishlist_slug) ?? null);
+      if (!cancelled) {
+        const row = data as { wishlist_slug: string | null; username: string | null; slug: string | null } | null;
+        setSlug(row?.wishlist_slug ?? null);
+        setUsername(row?.username ?? null);
+        setShopSlug(row?.slug ?? null);
+      }
     })();
     return () => {
       cancelled = true;
@@ -86,9 +93,15 @@ function CustomerWishlistPage() {
   }, [current?.id]);
 
   const shareUrl = useMemo(() => {
-    if (!slug || typeof window === "undefined") return "";
-    return `${window.location.origin}/f/${slug}`;
-  }, [slug]);
+    if (typeof window === "undefined") return "";
+    // Prefer the clean handle (username → shop slug → wishlist_slug fallback)
+    const handle = (username && username.trim()) || (shopSlug && shopSlug.trim()) || slug;
+    if (!handle) return "";
+    // Clean URLs use /{handle}/forward; legacy /f/{slug} keeps working too.
+    return handle === slug
+      ? `${window.location.origin}/f/${handle}`
+      : `${window.location.origin}/${handle}/forward`;
+  }, [slug, username, shopSlug]);
 
   const listQ = useQuery({
     queryKey: ["customer-wishlists", current?.id],

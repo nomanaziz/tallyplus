@@ -96,6 +96,12 @@ function PublicShopPage() {
     typeof rawWishlistSlug === "string" && rawWishlistSlug.trim().length > 0
       ? rawWishlistSlug.trim()
       : null;
+  // Prefer the clean shop handle (username → slug) for the fordo URL,
+  // fall back to the random wishlist_slug if neither is set.
+  const fordoHandle =
+    (shop.username && shop.username.trim()) ||
+    (shop.slug && shop.slug.trim()) ||
+    wishlistSlug;
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
@@ -162,10 +168,10 @@ function PublicShopPage() {
                 সরাসরি লিখুন বা মাইক চেপে কথা বলে ফর্দ বানান। ১ মিনিটেই পাঠানো শেষ।
               </p>
             </div>
-            {wishlistSlug ? (
+            {fordoHandle ? (
               <Link
-                to="/f/$slug"
-                params={{ slug: wishlistSlug }}
+                to="/$slug/forward"
+                params={{ slug: fordoHandle }}
                 className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-bold text-primary-foreground shadow-md hover:bg-primary/90 sm:text-base"
               >
                 <FileText className="h-4 w-4" />
