@@ -3,8 +3,7 @@ import { Link } from "@/lib/router";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { Card } from "@/components/ui/card";
-import { TrendingUp, TrendingDown, Wallet, Loader2 } from "lucide-react";
-import { icons } from "@/lib/icons";
+import { TrendingUp, TrendingDown, Wallet, Loader2, Heart, MapPin, StickyNote, GraduationCap, ShoppingBag, ListChecks, Wallet as WalletIcon, ArrowDownToLine, ArrowUpFromLine } from "lucide-react";
 
 type Tx = { id: string; type: string; amount: number; tx_date: string };
 
@@ -120,37 +119,52 @@ export default function CustomerDashboard() {
       </div>
 
       <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 sm:gap-3">
-        <Shortcut to="/customer/my-fordo" label="আমার ফর্দ" sub={`${fordoCount}টি`} icon={icons.productList} />
-        <Shortcut to="/customer/my-orders" label="আমার অর্ডার" icon={icons.salesList} />
-        <Shortcut to="/customer/money" label="আয়-ব্যয়" icon={icons.cashbox} />
-        <Shortcut to="/customer/notes" label="নোট" sub={`${noteCount}টি`} icon={icons.bookmark} />
-        <Shortcut to="/customer/money" label="পাব" sub={bdt(willGet)} icon={icons.due} />
-        <Shortcut to="/customer/money" label="দেব" sub={bdt(willGive)} icon={icons.expense} />
-        <Shortcut to="/customer/training" label="ট্রেনিং" icon={icons.training} />
-        <Shortcut to="/customer/profile" label="ঠিকানা" icon={icons.contact} />
+        <Shortcut to="/customer/my-fordo" label="আমার ফর্দ" sub={`${fordoCount}টি`} icon={ListChecks} tone="violet" />
+        <Shortcut to="/customer/my-orders" label="আমার অর্ডার" icon={ShoppingBag} tone="indigo" />
+        <Shortcut to="/customer/favorite-shops" label="প্রিয় দোকান" icon={Heart} tone="rose" />
+        <Shortcut to="/customer/money" label="আয়-ব্যয়" icon={WalletIcon} tone="emerald" />
+        <Shortcut to="/customer/notes" label="নোট" sub={`${noteCount}টি`} icon={StickyNote} tone="amber" />
+        <Shortcut to="/customer/money" label="পাব" sub={bdt(willGet)} icon={ArrowDownToLine} tone="green" />
+        <Shortcut to="/customer/money" label="দেব" sub={bdt(willGive)} icon={ArrowUpFromLine} tone="red" />
+        <Shortcut to="/customer/training" label="ট্রেনিং" icon={GraduationCap} tone="sky" />
+        <Shortcut to="/customer/profile" label="ঠিকানা" icon={MapPin} tone="orange" />
       </div>
     </div>
   );
 }
 
+const TONE: Record<string, string> = {
+  violet: "bg-violet-100 text-violet-700",
+  indigo: "bg-indigo-100 text-indigo-700",
+  rose: "bg-rose-100 text-rose-700",
+  emerald: "bg-emerald-100 text-emerald-700",
+  amber: "bg-amber-100 text-amber-700",
+  green: "bg-green-100 text-green-700",
+  red: "bg-red-100 text-red-700",
+  sky: "bg-sky-100 text-sky-700",
+  orange: "bg-orange-100 text-orange-700",
+};
+
 function Shortcut({
   to,
   label,
   sub,
-  icon,
+  icon: Icon,
+  tone = "indigo",
 }: {
   to: string;
   label: string;
   sub?: string;
-  icon: string;
+  icon: React.ComponentType<{ className?: string }>;
+  tone?: keyof typeof TONE;
 }) {
   return (
     <Link
       to={to}
       className="group flex flex-col items-center gap-1.5 rounded-2xl border bg-card p-3 text-center shadow-sm transition hover:border-primary/40 hover:shadow-md sm:p-4"
     >
-      <div className="flex h-12 w-12 items-center justify-center sm:h-14 sm:w-14">
-        <img src={icon} alt="" className="h-full w-full object-contain" />
+      <div className={`flex h-12 w-12 items-center justify-center rounded-2xl sm:h-14 sm:w-14 ${TONE[tone]}`}>
+        <Icon className="h-6 w-6 sm:h-7 sm:w-7" />
       </div>
       <div className="text-[11px] font-semibold leading-tight sm:text-sm">{label}</div>
       {sub ? <div className="text-[10px] text-muted-foreground">{sub}</div> : null}
