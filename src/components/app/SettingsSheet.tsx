@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { usePwaInstall } from "@/hooks/use-pwa-install";
 import { ColorThemeInline } from "./ColorThemePicker";
 import { toast } from "sonner";
+import { ActiveDevicesDialog } from "./ActiveDevicesDialog";
 import {
   ArrowLeftRight,
   ChevronRight,
@@ -97,6 +98,7 @@ export function SettingsSheet({ open, onOpenChange }: { open: boolean; onOpenCha
   const pwa = usePwaInstall();
   const { current } = useShop();
   const { signOut, profile } = useAuth();
+  const [devicesOpen, setDevicesOpen] = useState(false);
   const nav = useNavigate();
 
   const { data: appLinks } = useQuery({
@@ -133,6 +135,7 @@ export function SettingsSheet({ open, onOpenChange }: { open: boolean; onOpenCha
   };
 
   return (
+    <>
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="flex w-full flex-col gap-0 p-0 sm:max-w-md">
         <SheetHeader className="flex-none border-b px-4 py-3">
@@ -290,6 +293,11 @@ export function SettingsSheet({ open, onOpenChange }: { open: boolean; onOpenCha
               label={lang === "bn" ? "অ্যাপ ট্রেনিং" : "App Training"}
               onClick={() => go("/app/training")}
             />
+            <Row
+              icon={<Smartphone className="h-4 w-4" />}
+              label={lang === "bn" ? "সক্রিয় device সমূহ (max ২)" : "Active devices (max 2)"}
+              onClick={() => setDevicesOpen(true)}
+            />
           </div>
 
           <SectionLabel>{lang === "bn" ? "অন্যান্য" : "Other"}</SectionLabel>
@@ -326,5 +334,7 @@ export function SettingsSheet({ open, onOpenChange }: { open: boolean; onOpenCha
         </div>
       </SheetContent>
     </Sheet>
+    <ActiveDevicesDialog open={devicesOpen} onOpenChange={setDevicesOpen} />
+    </>
   );
 }

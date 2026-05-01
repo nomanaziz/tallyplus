@@ -41,6 +41,7 @@ const ITEMS: Item[] = [
   { to: "/admin/sms-gateways", label: "SMS Gateways", icon: MessageSquareText },
   { to: "/admin/payment-attempts", label: "Payment Attempts", icon: AlertTriangle },
   { to: "/admin/marketplace", label: "Marketplace", icon: Store },
+  { to: "/admin/marketplace-categories", label: "Marketplace Categories", icon: Tags },
   { to: "/admin/banners", label: "Dashboard Banners", icon: Image },
   { to: "/admin/training", label: "Training Videos", icon: GraduationCap },
   { to: "/admin/affiliates", label: "Affiliate Program", icon: Handshake },

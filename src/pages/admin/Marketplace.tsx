@@ -38,9 +38,12 @@ type Product = {
   default_cost?: number | null;
   shop_types?: string[];
   created_at?: string;
+  category_id?: string | null;
+  subcategory_id?: string | null;
 };
 
 type ShopTypeOpt = { code: string; name_bn: string; name_en: string };
+type MpCat = { id: string; parent_id: string | null; name_bn: string; name_en: string; is_active: boolean };
 
 function MarketplacePage() {
   return (
@@ -87,6 +90,7 @@ function ProductsTab() {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [shopTypes, setShopTypes] = useState<ShopTypeOpt[]>([]);
   const [categories, setCategories] = useState<{ name: string; count: number }[]>([]);
+  const [mpCats, setMpCats] = useState<MpCat[]>([]);
 
   // filters
   const [search, setSearch] = useState("");
@@ -155,6 +159,12 @@ function ProductsTab() {
         .eq("is_active", true)
         .order("sort_order");
       setShopTypes((data as ShopTypeOpt[]) ?? []);
+      const { data: cats } = await supabase
+        .from("marketplace_categories")
+        .select("id,parent_id,name_bn,name_en,is_active")
+        .eq("is_active", true)
+        .order("sort_order");
+      setMpCats((cats as MpCat[]) ?? []);
     })();
   }, []);
 
@@ -189,6 +199,8 @@ function ProductsTab() {
       default_price: Number(editing.default_price) || 0,
       default_cost: Number(editing.default_cost) || 0,
       shop_types: editing.shop_types ?? [],
+      category_id: editing.category_id ?? null,
+      subcategory_id: editing.subcategory_id ?? null,
     };
     const { error } = editing.id
       ? await supabase.from("marketplace_products").update(payload).eq("id", editing.id)
@@ -493,6 +505,39 @@ function ProductsTab() {
                 />
               </div>
               <div><Label>Base Unit</Label><Input value={editing?.base_unit ?? ""} onChange={(e) => setEditing({ ...editing, base_unit: e.target.value })} /></div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Marketplace Category</Label>
+                <Select
+                  value={editing?.category_id ?? "__none"}
+                  onValueChange={(v) => setEditing({ ...editing, category_id: v === "__none" ? null : v, subcategory_id: null })}
+                >
+                  <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none">— None —</SelectItem>
+                    {mpCats.filter((c) => !c.parent_id).map((c) => (
+                      <SelectItem key={c.id} value={c.id}>{c.name_bn} / {c.name_en}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Subcategory</Label>
+                <Select
+                  value={editing?.subcategory_id ?? "__none"}
+                  onValueChange={(v) => setEditing({ ...editing, subcategory_id: v === "__none" ? null : v })}
+                  disabled={!editing?.category_id}
+                >
+                  <SelectTrigger><SelectValue placeholder={editing?.category_id ? "Select subcategory" : "Pick category first"} /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none">— None —</SelectItem>
+                    {mpCats.filter((c) => c.parent_id === editing?.category_id).map((c) => (
+                      <SelectItem key={c.id} value={c.id}>{c.name_bn} / {c.name_en}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             <div><Label>Slug (auto if empty)</Label><Input value={editing?.slug ?? ""} onChange={(e) => setEditing({ ...editing, slug: e.target.value })} placeholder="auto-generated" /></div>
             <div>

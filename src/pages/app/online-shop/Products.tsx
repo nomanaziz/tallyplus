@@ -14,6 +14,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, Package, Plus, Search, Pencil } from "lucide-react";
 import { toast } from "sonner";
+import { publishProductToMarketplace } from "@/lib/marketplace-publish";
 
 
 
@@ -84,29 +85,19 @@ function OnlineProductsPage() {
   const togglePublish = async (p: Product, publish: boolean) => {
     if (!shopId) return;
     setSavingId(p.id);
-    const existing = listings?.[p.id];
-    if (existing) {
-      const { error } = await supabase
-        .from("marketplace_listings")
-        .update({ is_published: publish })
-        .eq("id", existing.id);
-      if (error) toast.error(error.message);
-    } else if (publish) {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { setSavingId(null); return; }
-      const { error } = await supabase.from("marketplace_listings").insert({
+    const result = await publishProductToMarketplace(
+      {
+        id: p.id,
         shop_id: shopId,
-        product_id: p.id,
-        seller_id: user.id,
-        price: p.sale_price,
+        sale_price: p.sale_price,
         stock: p.stock,
         unit: p.unit,
-        warranty_months: p.warranty_enabled ? p.warranty_value : null,
-        is_published: true,
-      });
-      if (error) toast.error(error.message);
-    }
-    await supabase.from("products").update({ is_marketplace_published: publish }).eq("id", p.id);
+        warranty_enabled: p.warranty_enabled,
+        warranty_value: p.warranty_value,
+      },
+      publish,
+    );
+    if (!result.ok && result.error) toast.error(result.error);
     await qc.invalidateQueries({ queryKey: ["listings-by-product", shopId] });
     await qc.invalidateQueries({ queryKey: ["products-for-online", shopId] });
     setSavingId(null);
