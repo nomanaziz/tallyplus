@@ -361,7 +361,7 @@ export default function MyFordo() {
           <h2 className="flex items-center gap-1 text-sm font-bold">
             <CalendarClock className="h-4 w-4" /> সময়সূচী
           </h2>
-          <div className="grid gap-2 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             {schedules.map((s) => (
               <Card key={s.id} className="flex items-center gap-3 p-3">
                 <div className="min-w-0 flex-1">
@@ -393,7 +393,7 @@ export default function MyFordo() {
           <h2 className="flex items-center gap-1 text-sm font-bold">
             <FileText className="h-4 w-4" /> আমার টেমপ্লেট
           </h2>
-          <div className="grid gap-2 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             {templates.map((t) => {
               const count = Array.isArray(t.items) ? t.items.length : 0;
               return (
