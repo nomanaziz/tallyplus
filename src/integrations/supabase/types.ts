@@ -1516,6 +1516,50 @@ export type Database = {
           },
         ]
       }
+      marketplace_categories: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          name_bn: string
+          name_en: string
+          parent_id: string | null
+          slug: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name_bn: string
+          name_en: string
+          parent_id?: string | null
+          slug: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name_bn?: string
+          name_en?: string
+          parent_id?: string | null
+          slug?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketplace_categories_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "marketplace_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       marketplace_listings: {
         Row: {
           created_at: string
@@ -1629,12 +1673,15 @@ export type Database = {
           customer_address: string | null
           customer_name: string
           customer_phone: string
+          delivery_charge: number
+          delivery_zone_id: string | null
           id: string
           note: string | null
           order_no: string | null
           payment_method: string | null
           shop_id: string
           status: string
+          subtotal: number
           total: number
           updated_at: string
         }
@@ -1643,12 +1690,15 @@ export type Database = {
           customer_address?: string | null
           customer_name: string
           customer_phone: string
+          delivery_charge?: number
+          delivery_zone_id?: string | null
           id?: string
           note?: string | null
           order_no?: string | null
           payment_method?: string | null
           shop_id: string
           status?: string
+          subtotal?: number
           total?: number
           updated_at?: string
         }
@@ -1657,16 +1707,27 @@ export type Database = {
           customer_address?: string | null
           customer_name?: string
           customer_phone?: string
+          delivery_charge?: number
+          delivery_zone_id?: string | null
           id?: string
           note?: string | null
           order_no?: string | null
           payment_method?: string | null
           shop_id?: string
           status?: string
+          subtotal?: number
           total?: number
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "marketplace_orders_delivery_zone_id_fkey"
+            columns: ["delivery_zone_id"]
+            isOneToOne: false
+            referencedRelation: "shop_delivery_zones"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       marketplace_products: {
         Row: {
@@ -1674,6 +1735,7 @@ export type Database = {
           base_unit: string | null
           brand: string | null
           category: string | null
+          category_id: string | null
           created_at: string
           created_by: string | null
           default_cost: number | null
@@ -1688,6 +1750,7 @@ export type Database = {
           search_text: string | null
           shop_types: string[]
           slug: string
+          subcategory_id: string | null
           updated_at: string
         }
         Insert: {
@@ -1695,6 +1758,7 @@ export type Database = {
           base_unit?: string | null
           brand?: string | null
           category?: string | null
+          category_id?: string | null
           created_at?: string
           created_by?: string | null
           default_cost?: number | null
@@ -1709,6 +1773,7 @@ export type Database = {
           search_text?: string | null
           shop_types?: string[]
           slug: string
+          subcategory_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -1716,6 +1781,7 @@ export type Database = {
           base_unit?: string | null
           brand?: string | null
           category?: string | null
+          category_id?: string | null
           created_at?: string
           created_by?: string | null
           default_cost?: number | null
@@ -1730,9 +1796,25 @@ export type Database = {
           search_text?: string | null
           shop_types?: string[]
           slug?: string
+          subcategory_id?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "marketplace_products_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "marketplace_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketplace_products_subcategory_id_fkey"
+            columns: ["subcategory_id"]
+            isOneToOne: false
+            referencedRelation: "marketplace_categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       notification_settings: {
         Row: {
@@ -3946,6 +4028,33 @@ export type Database = {
         }
         Relationships: []
       }
+      user_active_sessions: {
+        Row: {
+          created_at: string
+          device_id: string
+          id: string
+          last_seen_at: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          device_id: string
+          id?: string
+          last_seen_at?: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          device_id?: string
+          id?: string
+          last_seen_at?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -4078,6 +4187,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      heartbeat_active_device: { Args: { _device_id: string }; Returns: Json }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_consumer: { Args: { _user_id: string }; Returns: boolean }
       is_shop_member: {
@@ -4096,6 +4206,10 @@ export type Database = {
           _type: string
         }
         Returns: undefined
+      }
+      register_active_device: {
+        Args: { _device_id: string; _user_agent: string }
+        Returns: Json
       }
       resolve_shop_by_handle: {
         Args: { _handle: string }
