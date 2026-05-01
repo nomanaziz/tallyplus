@@ -2,11 +2,14 @@ import { Link, useNavigate, useParams } from "@/lib/router";
 import { useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft,
+  Calendar,
   ChevronDown,
   ChevronUp,
+  Copy,
   Loader2,
   LogOut,
   Plus,
+  Save,
   ScrollText,
   Send,
   X,
@@ -17,6 +20,12 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 
 
 
@@ -93,6 +102,12 @@ function MyWishlistPage() {
   // Dashboard state
   const [data, setData] = useState<HistoryResp | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
+  const [monthFilter, setMonthFilter] = useState<string>("all");
+  // Save as template
+  const [saveOpen, setSaveOpen] = useState(false);
+  const [saveWlId, setSaveWlId] = useState<string | null>(null);
+  const [saveName, setSaveName] = useState("");
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     try {
@@ -254,6 +269,69 @@ function MyWishlistPage() {
     }
   };
 
+  // ----- Save wishlist as template -----
+  const openSaveTemplate = (wl: WL) => {
+    const items = itemsByWishlist.get(wl.id) ?? [];
+    if (items.length === 0) {
+      toast.error("এই ফর্দে কোনো পণ্য নেই");
+      return;
+    }
+    setSaveWlId(wl.id);
+    const dt = new Date(wl.created_at);
+    setSaveName(`${shopName} — ${dt.toLocaleDateString("bn-BD", { day: "numeric", month: "short" })}`);
+    setSaveOpen(true);
+  };
+  const confirmSaveTemplate = async () => {
+    if (!token || !saveWlId) return;
+    const name = saveName.trim();
+    if (!name) return toast.error("একটি নাম দিন");
+    const items = (itemsByWishlist.get(saveWlId) ?? []).map((it) => ({
+      name: it.name,
+      qty: it.qty,
+      unit: it.unit,
+      price: it.price,
+    }));
+    setSaving(true);
+    try {
+      const { data: d, error } = await supabase.functions.invoke("save-wishlist-template", {
+        body: { token, action: "save", name, items },
+      });
+      const r = (d ?? {}) as { ok?: boolean; id?: string; error?: string };
+      if (error || r.error || !r.ok) {
+        toast.error(r.error ?? error?.message ?? "সংরক্ষণ ব্যর্থ");
+        return;
+      }
+      toast.success("টেমপ্লেট সংরক্ষণ করা হয়েছে");
+      setSaveOpen(false);
+      // Add to local list so user sees it immediately
+      const newTpl: Template = {
+        id: r.id ?? crypto.randomUUID(),
+        name,
+        items,
+        updated_at: new Date().toISOString(),
+      };
+      setData((prev) => prev ? { ...prev, templates: [newTpl, ...(prev.templates ?? [])] } : prev);
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // ----- Month filter -----
+  const BN_MONTHS = [
+    "জানুয়ারি", "ফেব্রুয়ারি", "মার্চ", "এপ্রিল", "মে", "জুন",
+    "জুলাই", "আগস্ট", "সেপ্টেম্বর", "অক্টোবর", "নভেম্বর", "ডিসেম্বর",
+  ];
+  const monthKey = (iso: string) => {
+    const d = new Date(iso);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  };
+  const monthLabel = (key: string) => {
+    const [y, m] = key.split("-");
+    return `${BN_MONTHS[Number(m) - 1]} ${y}`;
+  };
+
   if (shopErr) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-muted/30 p-6">
@@ -357,6 +435,15 @@ function MyWishlistPage() {
   const templates = data?.templates ?? [];
   const customerName = data?.customer?.name ?? "গ্রাহক";
 
+  const monthCounts: Record<string, number> = {};
+  for (const w of wishlists) {
+    const k = monthKey(w.created_at);
+    monthCounts[k] = (monthCounts[k] || 0) + 1;
+  }
+  const monthOptions = Object.keys(monthCounts).sort((a, b) => (a < b ? 1 : -1));
+  const filteredWishlists =
+    monthFilter === "all" ? wishlists : wishlists.filter((w) => monthKey(w.created_at) === monthFilter);
+
   return (
     <div className="min-h-screen bg-muted/30 pb-24">
       <div className="mx-auto max-w-md px-4 pt-6">
@@ -380,17 +467,39 @@ function MyWishlistPage() {
 
         {/* My Wishlists */}
         <section className="mb-5">
-          <div className="mb-2 flex items-center justify-between">
-            <h2 className="text-sm font-bold">আমার ফর্দসমূহ ({wishlists.length})</h2>
+          <div className="mb-2 flex items-center justify-between gap-2">
+            <h2 className="text-sm font-bold">আমার ফর্দসমূহ ({filteredWishlists.length})</h2>
+            {monthOptions.length > 0 && (
+              <div className="flex items-center gap-1">
+                <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                <Select value={monthFilter} onValueChange={setMonthFilter}>
+                  <SelectTrigger className="h-8 w-[160px] text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">সব মাস ({wishlists.length})</SelectItem>
+                    {monthOptions.map((k) => (
+                      <SelectItem key={k} value={k}>
+                        {monthLabel(k)} ({monthCounts[k]})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
           </div>
 
           {wishlists.length === 0 ? (
             <div className="rounded-xl border bg-card p-6 text-center text-sm text-muted-foreground">
               এখনও কোনো ফর্দ পাঠাননি।
             </div>
+          ) : filteredWishlists.length === 0 ? (
+            <div className="rounded-xl border bg-card p-6 text-center text-sm text-muted-foreground">
+              এই মাসে কোনো ফর্দ পাঠাননি।
+            </div>
           ) : (
             <div className="space-y-2">
-              {wishlists.map((wl) => {
+              {filteredWishlists.map((wl) => {
                 const items = itemsByWishlist.get(wl.id) ?? [];
                 const open = openId === wl.id;
                 const status = STATUS_LABEL[wl.status] ?? STATUS_LABEL.new;
@@ -460,14 +569,22 @@ function MyWishlistPage() {
                             ))}
                           </ul>
                         )}
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="mt-3 w-full"
-                          onClick={() => reuseWishlist(wl)}
-                        >
-                          <Send className="mr-1.5 h-3.5 w-3.5" /> এই ফর্দ আবার পাঠান
-                        </Button>
+                        <div className="mt-3 grid grid-cols-2 gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => reuseWishlist(wl)}
+                          >
+                            <Copy className="mr-1.5 h-3.5 w-3.5" /> নকল করে পাঠান
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => openSaveTemplate(wl)}
+                          >
+                            <Save className="mr-1.5 h-3.5 w-3.5" /> টেমপ্লেট সংরক্ষণ
+                          </Button>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -515,6 +632,29 @@ function MyWishlistPage() {
           <Plus className="h-4 w-4" /> নতুন ফর্দ পাঠান
         </Link>
       </div>
+
+      <Dialog open={saveOpen} onOpenChange={setSaveOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>টেমপ্লেট হিসেবে সংরক্ষণ</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label>টেমপ্লেটের নাম</Label>
+            <Input
+              value={saveName}
+              onChange={(e) => setSaveName(e.target.value)}
+              placeholder="যেমন: মাসিক বাজার"
+              maxLength={80}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSaveOpen(false)}>বাতিল</Button>
+            <Button disabled={saving} onClick={confirmSaveTemplate}>
+              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "সংরক্ষণ"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

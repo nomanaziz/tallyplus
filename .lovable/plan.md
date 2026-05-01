@@ -1,51 +1,75 @@
-## পরিস্থিতি (পরিষ্কার সত্য)
+## লক্ষ্য
 
-**TanStack Router এবং TanStack Start আগের turn এই ১০০% remove হয়ে গেছে।** আমি এখন verify করেছি:
+গ্রাহকের ফর্দ পেইজে তিনটা feature:
+1. **Save** — ফর্দ template হিসেবে সংরক্ষণ (যেখানে নেই)
+2. **Duplicate** — পুরোনো ফর্দ থেকে hubohu নতুন ফর্দ বানানো, edit করে নিজের তালিকায় রাখা
+3. **Month filter** — কোন মাসে কয়টা ফর্দ পাঠানো হয়েছে, মাস ধরে filter
 
-- `src/routes/` folder নাই (deleted)
-- `createFileRoute`, `routeTree`, `createRootRoute` — কোথাও নাই (০ matches)
-- `@tanstack/react-router`, `@tanstack/react-start` — package.json এ নাই
-- App এখন pure **React Router DOM v6 SPA** — `BrowserRouter` + `useRoutes` + `lazy()` code-splitting
+দুইটা পেইজ আছে — দুইটাতেই কাজ করতে হবে:
+- `/customer/my-fordo` (login করা গ্রাহকের নিজের সব দোকানের ফর্দ)
+- `/f/:slug/my` (একটা দোকানের public link এ PIN দিয়ে ঢোকা গ্রাহকের ফর্দ)
 
-বাকি আছে শুধু একটাই TanStack জিনিস: **`@tanstack/react-query`** (আর তার core: `@tanstack/query-core`)। কিন্তু এটা router না, framework ও না — এটা একটা data caching library যেটা ৪৫+ files এ data fetching চালায় (Dashboard, POS, Products, Orders, সব)। **এটাই app টা fast রাখে** — cache থেকে instant data দেয়, duplicate API call আটকায়। সরালে app **slower** হবে।
+---
 
-আপনি বলেছেন "performance ই priority"। তাই React Query রাখব এবং performance এর জন্য বাকি cleanup ও optimize করব।
+## বর্তমান অবস্থা (যা ইতিমধ্যে আছে)
 
-## কী কী করব
+- **`/customer/my-fordo`**: টেমপ্লেট save আছে (CreateFordo পেইজে), template থেকে নতুন ফর্দ load হয়। কিন্তু পাঠানো ফর্দ থেকে সরাসরি "save as template" বা "duplicate" নাই। মাস filter নাই।
+- **`/f/:slug/my`**: "এই ফর্দ আবার পাঠান" button আছে (reuseWishlist) — এটাই duplicate এর কাছাকাছি, কিন্তু "save as template" নাই (templates শুধু shopkeeper বানায়)। মাস filter নাই।
 
-### 1. Project এর নাম ঠিক করা
-`package.json` এ এখনও পুরনো নাম `"tanstack_start_ts"` রয়ে গেছে — এটা confusing। নাম change করে `"tallyplus"` করব।
+DB tables ঠিক আছে: `consumer_fordo_templates` (auth user এর জন্য), `wishlist_templates` (shop-link customer এর জন্য) — দুইটাই jsonb items সহ।
 
-### 2. Vite config থেকে পুরনো reference clean করা
-`vite.config.ts` এর manualChunks এ `"query"` chunk আছে (TanStack query এর) — এটা ঠিক আছে রাখব (performance এর জন্য ভালো), কিন্তু পুরো config টা একবার রিভিউ করে dead/unused কিছু থাকলে সরাব।
+---
 
-### 3. Performance optimizations
-যেহেতু আপনার একমাত্র শর্ত হলো **fast**, এই কাজগুলো করব:
+## কী বানাবো
 
-- **Route preloading**: heavy routes (Dashboard, Sell, Products) এ idle-time prefetch — click করার আগেই lazy chunk download শুরু হবে।
-- **React Query tuning verify**: `staleTime: 5min`, `gcTime: 30min`, `refetchOnWindowFocus: false` — আগেই tuned আছে, কিন্তু individual page এ অযথা refetch হচ্ছে কিনা check করব।
-- **Bundle audit**: `manualChunks` এ react-vendor, supabase, query, radix, charts, icons আলাদা — এটা parallel download এর জন্য ভালো। Verify করব ঠিকঠাক split হচ্ছে।
-- **Lazy heavy components**: যদি কোনো বড় component (chart, barcode scanner, PDF) eagerly load হচ্ছে দেখি, lazy করব।
-- **Image lazy loading**: `<img loading="lazy">` ব্যবহার নিশ্চিত করা।
+### A. `/customer/my-fordo` (auth গ্রাহক)
 
-### 4. Live preview এ test করে confirm
-Performance profile চালিয়ে before/after দেখাব — Web Vitals (LCP, FCP, TTI), long tasks, bundle size।
+**1. মাস filter bar** — পাঠানো ফর্দ section এর উপরে:
+- চলতি মাস default
+- dropdown / chips: গত ১২ মাস + "সব মাস"
+- প্রতি option এ count badge: `নভেম্বর ২০২৫ (৫)`
+- filter অনুযায়ী wishlists list filter হবে; খালি হলে "এই মাসে কোনো ফর্দ নেই"
 
-### 5. কী **করব না** (এবং কেন)
-- ❌ React Query সরাব না — এটা সরালে app slow হবে, fast হবে না। এটা router না।
-- ❌ আবার scratch থেকে rebuild করব না — গত turn এ migrate করা হয়েছে, এখন আবার ভাঙলে নতুন bug আসবে।
+**2. প্রতি wishlist card এ দুইটা নতুন button** (expand-এর মধ্যে):
+- **"টেমপ্লেট হিসেবে সংরক্ষণ"** → ছোট dialog এ template name নিয়ে `consumer_fordo_templates` এ insert (items + note copy)
+- **"আবার পাঠান (duplicate)"** → এই wishlist এর items + note নিয়ে `/customer/create-fordo` এ navigate, prefill (sessionStorage এ পাঠাবো)
 
-## প্রযুক্তিগত বিবরণ (technical)
+**3. CreateFordo page** এ sessionStorage থেকে prefill support যোগ (templateId এর মতো `?duplicateFrom=<wishlistId>` flow)
+
+### B. `/f/:slug/my` (public shop link)
+
+**1. মাস filter bar** — wishlists section এর উপরে, একই pattern (এই দোকানের পাঠানো ফর্দ গুলো মাস ধরে)
+
+**2. Save as template button** — প্রতি wishlist card এর expanded view এ:
+- নতুন edge function `save-wishlist-template` ইতিমধ্যে আছে (already saw the file)
+- token + name + items পাঠাবো, dialog দিয়ে name নেবো
+
+**3. Duplicate** — `reuseWishlist` ইতিমধ্যে আছে কিন্তু button label কে স্পষ্ট করবো: "নতুন করে পাঠান (এই ফর্দের নকল)"। কাজ একই থাকবে।
+
+---
+
+## Technical details
+
+- **Month grouping**: client-side। `wishlists.created_at` থেকে `YYYY-MM` key বের করে `Map<string, count>` বানাবো, options sorted desc।
+- **Bengali month names**: `["জানুয়ারি",...,"ডিসেম্বর"]` array, year সহ display।
+- **Duplicate flow (auth side)**: 
+  ```
+  sessionStorage.setItem(`fordo-dup-${wlId}`, JSON.stringify({ items, note }));
+  navigate to /customer/create-fordo?duplicateFrom=<wlId>
+  ```
+  CreateFordo এ existing `templateId` useEffect এর মতো নতুন `duplicateFrom` useEffect।
+- **Save template (auth side)**: `supabase.from("consumer_fordo_templates").insert({ consumer_user_id, name, items, note })`
+- **Save template (public side)**: existing `save-wishlist-template` edge function কল।
+- কোন DB migration লাগবে না — সব tables already আছে।
+
+---
+
+## ফাইল পরিবর্তন
 
 ```text
-Stack এখন:
-  React 19 + Vite 7 + React Router DOM 6 (SPA)
-  ├─ Data: @tanstack/react-query (cache layer, NOT router)
-  ├─ DB: Supabase
-  ├─ UI: Radix + Tailwind v4 + shadcn
-  └─ Local: Dexie (IndexedDB)
-
-Bundling: lazy() + Suspense + manualChunks (react-vendor, supabase, query, radix, charts, icons)
+src/pages/customer/MyFordo.tsx         — month filter + 2 buttons per card + small dialog
+src/pages/customer/CreateFordo.tsx     — duplicateFrom prefill support
+src/pages/f/slug/My.tsx                — month filter + save-as-template dialog + button label
 ```
 
-আপনি Approve দিলে আমি execute mode এ গিয়ে কাজ শুরু করব।
+কোনো নতুন ফাইল বা edge function নাই (সব ইতিমধ্যে আছে)।
