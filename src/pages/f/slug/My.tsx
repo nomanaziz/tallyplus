@@ -2,11 +2,14 @@ import { Link, useNavigate, useParams } from "@/lib/router";
 import { useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft,
+  Calendar,
   ChevronDown,
   ChevronUp,
+  Copy,
   Loader2,
   LogOut,
   Plus,
+  Save,
   ScrollText,
   Send,
   X,
@@ -17,6 +20,12 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 
 
 
@@ -93,6 +102,12 @@ function MyWishlistPage() {
   // Dashboard state
   const [data, setData] = useState<HistoryResp | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
+  const [monthFilter, setMonthFilter] = useState<string>("all");
+  // Save as template
+  const [saveOpen, setSaveOpen] = useState(false);
+  const [saveWlId, setSaveWlId] = useState<string | null>(null);
+  const [saveName, setSaveName] = useState("");
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     try {
@@ -252,6 +267,69 @@ function MyWishlistPage() {
     } catch (e) {
       toast.error((e as Error).message);
     }
+  };
+
+  // ----- Save wishlist as template -----
+  const openSaveTemplate = (wl: WL) => {
+    const items = itemsByWishlist.get(wl.id) ?? [];
+    if (items.length === 0) {
+      toast.error("এই ফর্দে কোনো পণ্য নেই");
+      return;
+    }
+    setSaveWlId(wl.id);
+    const dt = new Date(wl.created_at);
+    setSaveName(`${shopName} — ${dt.toLocaleDateString("bn-BD", { day: "numeric", month: "short" })}`);
+    setSaveOpen(true);
+  };
+  const confirmSaveTemplate = async () => {
+    if (!token || !saveWlId) return;
+    const name = saveName.trim();
+    if (!name) return toast.error("একটি নাম দিন");
+    const items = (itemsByWishlist.get(saveWlId) ?? []).map((it) => ({
+      name: it.name,
+      qty: it.qty,
+      unit: it.unit,
+      price: it.price,
+    }));
+    setSaving(true);
+    try {
+      const { data: d, error } = await supabase.functions.invoke("save-wishlist-template", {
+        body: { token, action: "save", name, items },
+      });
+      const r = (d ?? {}) as { ok?: boolean; id?: string; error?: string };
+      if (error || r.error || !r.ok) {
+        toast.error(r.error ?? error?.message ?? "সংরক্ষণ ব্যর্থ");
+        return;
+      }
+      toast.success("টেমপ্লেট সংরক্ষণ করা হয়েছে");
+      setSaveOpen(false);
+      // Add to local list so user sees it immediately
+      const newTpl: Template = {
+        id: r.id ?? crypto.randomUUID(),
+        name,
+        items,
+        updated_at: new Date().toISOString(),
+      };
+      setData((prev) => prev ? { ...prev, templates: [newTpl, ...(prev.templates ?? [])] } : prev);
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // ----- Month filter -----
+  const BN_MONTHS = [
+    "জানুয়ারি", "ফেব্রুয়ারি", "মার্চ", "এপ্রিল", "মে", "জুন",
+    "জুলাই", "আগস্ট", "সেপ্টেম্বর", "অক্টোবর", "নভেম্বর", "ডিসেম্বর",
+  ];
+  const monthKey = (iso: string) => {
+    const d = new Date(iso);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  };
+  const monthLabel = (key: string) => {
+    const [y, m] = key.split("-");
+    return `${BN_MONTHS[Number(m) - 1]} ${y}`;
   };
 
   if (shopErr) {
