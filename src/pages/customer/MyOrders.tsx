@@ -5,6 +5,8 @@ import { Loader2, Package, ShoppingBag } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
+type OrderItem = { name: string; qty: number; price: number; total: number };
+
 type Row = {
   id: string;
   order_no: string | null;
@@ -15,6 +17,7 @@ type Row = {
   delivery_charge: number;
   created_at: string;
   shops: { name: string; logo_url: string | null } | null;
+  marketplace_order_items: OrderItem[];
 };
 
 const STATUS_LABEL: Record<string, string> = {
@@ -44,7 +47,9 @@ export default function MyOrdersPage() {
       if (!u?.user) { if (alive) setLoading(false); return; }
       const { data } = await supabase
         .from("marketplace_orders")
-        .select("id, order_no, shop_id, status, total, subtotal, delivery_charge, created_at, shops(name, logo_url)")
+        .select(
+          "id, order_no, shop_id, status, total, subtotal, delivery_charge, created_at, shops(name, logo_url), marketplace_order_items(name, qty, price, total)"
+        )
         .eq("consumer_user_id", u.user.id)
         .order("created_at", { ascending: false });
       if (alive) {
@@ -72,34 +77,63 @@ export default function MyOrdersPage() {
         </div>
       ) : (
         <div className="space-y-3">
-          {rows.map((r) => (
-            <Link
-              key={r.id}
-              to="/orders/$orderNo"
-              params={{ orderNo: r.order_no ?? r.id }}
-              className="block rounded-xl border bg-card p-4 transition hover:shadow-md"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex items-center gap-3 min-w-0">
-                  {r.shops?.logo_url ? (
-                    <img src={r.shops.logo_url} alt={r.shops?.name ?? ""} className="h-10 w-10 rounded-lg object-cover" />
-                  ) : (
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
-                      <Package className="h-5 w-5 text-muted-foreground" />
+          {rows.map((r) => {
+            const items = r.marketplace_order_items ?? [];
+            const totalQty = items.reduce((s, i) => s + Number(i.qty), 0);
+            return (
+              <Link
+                key={r.id}
+                to="/orders/$orderNo"
+                params={{ orderNo: r.order_no ?? r.id }}
+                className="block rounded-xl border bg-card p-4 transition hover:shadow-md"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex min-w-0 items-center gap-3">
+                    {r.shops?.logo_url ? (
+                      <img src={r.shops.logo_url} alt={r.shops?.name ?? ""} className="h-10 w-10 rounded-lg object-cover" />
+                    ) : (
+                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
+                        <Package className="h-5 w-5 text-muted-foreground" />
+                      </div>
+                    )}
+                    <div className="min-w-0">
+                      <div className="truncate font-semibold">{r.shops?.name ?? "Shop"}</div>
+                      <div className="text-xs text-muted-foreground">
+                        #{r.order_no} • {new Date(r.created_at).toLocaleDateString("bn-BD")}
+                      </div>
                     </div>
-                  )}
-                  <div className="min-w-0">
-                    <div className="truncate font-semibold">{r.shops?.name ?? "Shop"}</div>
-                    <div className="text-xs text-muted-foreground">#{r.order_no} • {new Date(r.created_at).toLocaleDateString("bn-BD")}</div>
+                  </div>
+                  <div className="text-right">
+                    <Badge variant={STATUS_VARIANT[r.status] ?? "secondary"}>{STATUS_LABEL[r.status] ?? r.status}</Badge>
+                    <div className="mt-1 text-base font-bold">৳{Number(r.total).toFixed(0)}</div>
                   </div>
                 </div>
-                <div className="text-right">
-                  <Badge variant={STATUS_VARIANT[r.status] ?? "secondary"}>{STATUS_LABEL[r.status] ?? r.status}</Badge>
-                  <div className="mt-1 text-base font-bold">৳{Number(r.total).toFixed(0)}</div>
-                </div>
-              </div>
-            </Link>
-          ))}
+
+                {items.length > 0 && (
+                  <div className="mt-3 space-y-1 rounded-lg bg-muted/40 p-2.5">
+                    {items.slice(0, 3).map((it, idx) => (
+                      <div key={idx} className="flex items-center justify-between gap-2 text-xs">
+                        <div className="min-w-0 flex-1 truncate">
+                          <span className="font-medium">{it.name}</span>
+                          <span className="text-muted-foreground"> × {it.qty}</span>
+                        </div>
+                        <span className="shrink-0 font-semibold">৳{Number(it.total).toFixed(0)}</span>
+                      </div>
+                    ))}
+                    {items.length > 3 && (
+                      <div className="pt-0.5 text-[11px] text-muted-foreground">
+                        + আরও {items.length - 3}টি পণ্য
+                      </div>
+                    )}
+                    <div className="border-t pt-1 text-[11px] text-muted-foreground">
+                      মোট {totalQty}টি পণ্য • Subtotal ৳{Number(r.subtotal).toFixed(0)}
+                      {Number(r.delivery_charge) > 0 ? ` + ডেলিভারি ৳${Number(r.delivery_charge).toFixed(0)}` : ""}
+                    </div>
+                  </div>
+                )}
+              </Link>
+            );
+          })}
         </div>
       )}
     </div>
