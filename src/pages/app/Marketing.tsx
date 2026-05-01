@@ -130,7 +130,17 @@ function MarketingPage() {
 
   const filtered = useMemo(() => {
     const ql = q.trim().toLowerCase();
-    return contacts.filter((c) => !ql || c.name.toLowerCase().includes(ql) || (c.phone ?? "").includes(ql));
+    // Dedupe by (normalized name + normalized phone) to hide duplicate rows
+    const seen = new Set<string>();
+    const unique: Contact[] = [];
+    for (const c of contacts) {
+      const phoneDigits = (c.phone ?? "").replace(/\D/g, "");
+      const key = (c.name ?? "").trim().toLowerCase() + "|" + phoneDigits;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      unique.push(c);
+    }
+    return unique.filter((c) => !ql || c.name.toLowerCase().includes(ql) || (c.phone ?? "").includes(ql));
   }, [contacts, q]);
 
   const normalizePhone = (raw: string): string | null => {
