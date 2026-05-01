@@ -194,6 +194,24 @@ export const appRoutes: RouteObject[] = [
 { path: "training", element: <Suspense fallback={<RouteFallback/>}><L53/></Suspense> },
 { path: "usage-limits", element: <Suspense fallback={<RouteFallback/>}><L54/></Suspense> },
 { path: "warranty", element: <Suspense fallback={<RouteFallback/>}><L55/></Suspense> }
+,
+{ path: "online-shop", children: [
+  { index: true, element: <Suspense fallback={<RouteFallback/>}><LOnlineShop/></Suspense> },
+  { path: "orders", element: <Suspense fallback={<RouteFallback/>}><LOSOrders/></Suspense> },
+  { path: "products", element: <Suspense fallback={<RouteFallback/>}><LOSProducts/></Suspense> },
+  { path: "delivery", element: <Suspense fallback={<RouteFallback/>}><LOSDelivery/></Suspense> },
+  { path: "settings", element: <Suspense fallback={<RouteFallback/>}><LOSSettings/></Suspense> },
+  { path: "messages", element: <Suspense fallback={<RouteFallback/>}><LOSMessages/></Suspense> },
+  { path: "themes", element: <Suspense fallback={<RouteFallback/>}><LOSThemes/></Suspense> },
+  { path: "customize", element: <Suspense fallback={<RouteFallback/>}><LOSCustomize/></Suspense> },
+  { path: "featured", element: <Suspense fallback={<RouteFallback/>}><LOSFeatured/></Suspense> },
+  { path: "marketing", element: <Suspense fallback={<RouteFallback/>}><LOSMarketing/></Suspense> },
+  { path: "policy", element: <Suspense fallback={<RouteFallback/>}><LOSPolicy/></Suspense> },
+  { path: "fraud-check", element: <Suspense fallback={<RouteFallback/>}><LOSFraudCheck/></Suspense> },
+  { path: "promo-codes", element: <Suspense fallback={<RouteFallback/>}><LOSPromoCodes/></Suspense> }
+] },
+{ path: "n", element: <Navigate to="/app/online-shop" replace /> },
+{ path: "n/:rest", element: <Navigate to="/app/online-shop" replace /> }
 ] },
 { path: "auth", element: <Navigate to="/" replace /> },
 { path: "customer", element: <Suspense fallback={<RouteFallback/>}><L57/></Suspense>, children: [
@@ -204,6 +222,8 @@ export const appRoutes: RouteObject[] = [
 { path: "notes", element: <Suspense fallback={<RouteFallback/>}><L62/></Suspense> },
 { path: "profile", element: <Suspense fallback={<RouteFallback/>}><L63/></Suspense> },
 { path: "training", element: <Suspense fallback={<RouteFallback/>}><L87/></Suspense> }
+,
+{ path: "my-orders", element: <Suspense fallback={<RouteFallback/>}><LMyOrders/></Suspense> }
 ] },
 { path: "f/:slug", element: <Suspense fallback={<RouteFallback/>}><L64/></Suspense>, children: [
 { path: "my", element: <Suspense fallback={<RouteFallback/>}><L65/></Suspense> }
