@@ -1,0 +1,100 @@
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useI18n, fmtMoney } from "@/lib/i18n";
+import { useShop } from "@/lib/shop";
+import { businessReportQuery, rangeToIso } from "@/lib/queries";
+import { ReportShell, StatTile } from "@/components/app/ReportShell";
+import { monthStartIso, todayIso, type DateRange } from "@/components/app/DateRangePicker";
+import { printReport, type PrintRow } from "@/lib/print-report";
+import { RequirePerm } from "@/components/app/RequirePerm";
+
+function Page() {
+  const { lang } = useI18n();
+  const { current } = useShop();
+  const [range, setRange] = useState<DateRange>({ start: monthStartIso(), end: todayIso() });
+  const iso = rangeToIso(range.start, range.end);
+  const { data, isFetching, refetch } = useQuery(businessReportQuery(current?.id ?? null, iso));
+  const s = data ?? { totalSales: 0, cashSales: 0, dueReceived: 0, cashPurchase: 0, duePaid: 0, otherIncome: 0, otherExpense: 0, receivable: 0, payable: 0, productProfit: 0 };
+
+  const grossProfit = s.productProfit;
+  const netProfit = grossProfit + s.otherIncome - s.otherExpense;
+
+  const onPrint = () => {
+    const rows: PrintRow[] = [
+      { kind: "section", label: lang === "bn" ? "আয়" : "Income" },
+      { kind: "row", label: lang === "bn" ? "মোট বিক্রি" : "Total sales", value: fmtMoney(s.totalSales, lang), tone: "success" },
+      { kind: "row", label: lang === "bn" ? "অন্যান্য আয়" : "Other income", value: fmtMoney(s.otherIncome, lang), tone: "success" },
+      { kind: "section", label: lang === "bn" ? "ব্যয়" : "Cost" },
+      { kind: "row", label: lang === "bn" ? "অন্যান্য খরচ" : "Other expense", value: fmtMoney(s.otherExpense, lang), tone: "danger" },
+      { kind: "divider" },
+      { kind: "row", label: lang === "bn" ? "মোট লাভ (পণ্য থেকে)" : "Gross profit", value: fmtMoney(grossProfit, lang), tone: grossProfit >= 0 ? "success" : "danger" },
+      { kind: "row", label: lang === "bn" ? "নিট লাভ" : "Net profit", value: fmtMoney(netProfit, lang), tone: netProfit >= 0 ? "success" : "danger" },
+    ];
+    printReport({
+      shopName: current?.name ?? "",
+      shopAddress: (current as any)?.address ?? null,
+      shopPhone: (current as any)?.phone ?? null,
+      title: "লাভ-ক্ষতি রিপোর্ট",
+      startDate: range.start,
+      endDate: range.end,
+      rows,
+    });
+  };
+
+  return (
+    <ReportShell
+      breadcrumb="লাভ-ক্ষতি রিপোর্ট"
+      titleBn="লাভ-ক্ষতি রিপোর্ট"
+      titleEn="Profit & Loss"
+      range={range}
+      onRangeChange={setRange}
+      isFetching={isFetching}
+      onRefresh={() => refetch()}
+      onPrint={onPrint}
+    >
+      <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+        <StatTile label={lang === "bn" ? "মোট বিক্রি" : "Total sales"} value={fmtMoney(s.totalSales, lang)} tone="success" />
+        <StatTile label={lang === "bn" ? "অন্যান্য আয়" : "Other income"} value={fmtMoney(s.otherIncome, lang)} tone="success" />
+        <StatTile label={lang === "bn" ? "অন্যান্য খরচ" : "Other expense"} value={fmtMoney(s.otherExpense, lang)} tone="danger" />
+        <StatTile label={lang === "bn" ? "পণ্য থেকে লাভ" : "Product profit"} value={fmtMoney(grossProfit, lang)} tone={grossProfit >= 0 ? "success" : "danger"} />
+      </div>
+
+      <div className={"rounded-xl border-2 p-6 " + (netProfit >= 0 ? "border-emerald-300 bg-emerald-50" : "border-rose-300 bg-rose-50")}>
+        <div className="text-sm font-semibold text-muted-foreground">{lang === "bn" ? "নিট লাভ / ক্ষতি" : "Net Profit / Loss"}</div>
+        <div className="mt-1 text-[11px] text-muted-foreground">
+          {lang === "bn" ? "পণ্য বিক্রয় লাভ + অন্যান্য আয় − অন্যান্য খরচ" : "Product profit + Other income − Other expense"}
+        </div>
+        <div className={"mt-3 text-4xl font-extrabold " + (netProfit >= 0 ? "text-emerald-700" : "text-rose-600")}>
+          {fmtMoney(netProfit, lang)}
+        </div>
+      </div>
+
+      <div className="rounded-xl border bg-background p-4">
+        <h3 className="mb-3 text-sm font-bold">{lang === "bn" ? "বিস্তারিত হিসাব" : "Breakdown"}</h3>
+        <div className="space-y-2 text-sm">
+          <Row label={lang === "bn" ? "মোট বিক্রি" : "Total sales"} value={fmtMoney(s.totalSales, lang)} tone="success" />
+          <Row label={lang === "bn" ? "নগদ বিক্রি" : "Cash sales"} value={fmtMoney(s.cashSales, lang)} tone="success" />
+          <Row label={lang === "bn" ? "বাকি আদায়" : "Due received"} value={fmtMoney(s.dueReceived, lang)} tone="success" />
+          <Row label={lang === "bn" ? "নগদ ক্রয়" : "Cash purchase"} value={fmtMoney(s.cashPurchase, lang)} tone="danger" />
+          <Row label={lang === "bn" ? "সাপ্লায়ার বাকি প্রদান" : "Supplier due paid"} value={fmtMoney(s.duePaid, lang)} tone="danger" />
+          <Row label={lang === "bn" ? "অন্যান্য আয়" : "Other income"} value={fmtMoney(s.otherIncome, lang)} tone="success" />
+          <Row label={lang === "bn" ? "অন্যান্য খরচ" : "Other expense"} value={fmtMoney(s.otherExpense, lang)} tone="danger" />
+        </div>
+      </div>
+    </ReportShell>
+  );
+}
+
+function Row({ label, value, tone }: { label: string; value: string; tone: "success" | "danger" }) {
+  const c = tone === "success" ? "text-emerald-600" : "text-rose-600";
+  return (
+    <div className="flex items-center justify-between rounded-md border px-3 py-2">
+      <span className="font-semibold">{label}</span>
+      <span className={"font-extrabold " + c}>{value}</span>
+    </div>
+  );
+}
+
+export default function ProfitLoss() {
+  return <RequirePerm group="report"><Page /></RequirePerm>;
+}
