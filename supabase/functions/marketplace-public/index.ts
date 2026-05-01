@@ -5,6 +5,8 @@
 //   { action: "shop-by-username", username }              -> shop page by username
 //   { action: "log-visit", shop_id }                      -> increment visit counter
 //   { action: "listing", id }                             -> single listing detail
+//   { action: "place-order", shop_id, items, customer_name, customer_phone,
+//       customer_address?, note?, payment_method? }        -> create marketplace order
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
