@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Plus, Download, MoreVertical, Package, Pencil, Trash2, Sparkles, Hash,
-  Eye, History, Save, X, Minus, ListOrdered, RefreshCw, SlidersHorizontal,
+  Eye, History, Save, X, Minus, ListOrdered, RefreshCw, SlidersHorizontal, Globe,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useShop } from "@/lib/shop";
@@ -55,6 +55,7 @@ type Product = {
   category_id: string | null;
   image_url: string | null;
   is_serialized?: boolean;
+  is_marketplace_published?: boolean | null;
 };
 
 const PREDEFINED_UNITS = [
@@ -684,12 +685,31 @@ function ProductsPage() {
                             )}
                           </div>
                           <span className="font-medium text-sm sm:text-base whitespace-normal break-words leading-tight min-w-0">{p.name}</span>
+                          {p.is_marketplace_published && (
+                            <Globe
+                              className="h-3.5 w-3.5 flex-none text-emerald-600"
+                              aria-label={lang === "bn" ? "অনলাইনে বিক্রয়যোগ্য" : "Available online"}
+                            />
+                          )}
                         </div>
                       </TableCell>
                       <TableCell className="text-right tabular-nums">
                         {isUnlimited
                           ? <span className="text-primary">{lang === "bn" ? "অসীম" : "Unlimited"}</span>
-                          : (lang === "bn" ? bnNum(stockNum) : stockNum)}
+                          : (() => {
+                              const alert = p.low_stock_alert == null ? 0 : Number(p.low_stock_alert);
+                              const tone =
+                                stockNum === 0
+                                  ? "bg-rose-100 text-rose-700"
+                                  : alert > 0 && stockNum <= alert
+                                  ? "bg-amber-100 text-amber-700"
+                                  : "bg-emerald-100 text-emerald-700";
+                              return (
+                                <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-semibold tabular-nums ${tone}`}>
+                                  {lang === "bn" ? bnNum(stockNum) : stockNum}
+                                </span>
+                              );
+                            })()}
                       </TableCell>
                       <TableCell className="text-right hidden sm:table-cell tabular-nums">
                         {fmtMoney(Number(p.cost_price), lang)}
