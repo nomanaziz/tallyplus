@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "@/lib/router";
+import { Link, useNavigate, useSearch } from "@/lib/router";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
@@ -38,8 +38,9 @@ async function callFn(name: string, body: unknown) {
 }
 
 export default function AuthPage() {
-  const { session } = useAuth();
+  const { session, isOwner, ensureProfile } = useAuth();
   const navigate = useNavigate();
+  const search = useSearch<{ role?: string; mode?: string }>();
   const [mode, setMode] = useState<Mode>("login");
   const [role, setRole] = useState<Role>("owner");
   const [name, setName] = useState("");
@@ -54,8 +55,16 @@ export default function AuthPage() {
   useEffect(() => {
     // Don't auto-redirect while we're showing the post-signup sample-import prompt
     if (postSignup) return;
-    if (session?.user) navigate({ to: "/app/dashboard", replace: true });
-  }, [session, navigate, postSignup]);
+    if (session?.user) {
+      void ensureProfile();
+      navigate({ to: isOwner ? "/app/dashboard" : "/customer/dashboard", replace: true });
+    }
+  }, [session, navigate, postSignup, isOwner, ensureProfile]);
+
+  useEffect(() => {
+    if (search.role === "customer" || search.role === "owner") setRole(search.role);
+    if (search.mode === "signup" || search.mode === "login") setMode(search.mode);
+  }, [search.role, search.mode]);
 
   useEffect(() => {
     void supabase
@@ -219,8 +228,8 @@ export default function AuthPage() {
           <div className="space-y-3">
             <Tabs value={role} onValueChange={(v) => setRole(v as Role)}>
               <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="owner">দোকানদার</TabsTrigger>
-                <TabsTrigger value="customer">গ্রাহক</TabsTrigger>
+                <TabsTrigger value="owner">দোকান (দোকানদার)</TabsTrigger>
+                <TabsTrigger value="customer">ব্যক্তিগত (গ্রাহক)</TabsTrigger>
               </TabsList>
             </Tabs>
             <Input
@@ -262,8 +271,8 @@ export default function AuthPage() {
           <div className="space-y-3">
             <Tabs value={role} onValueChange={(v) => setRole(v as Role)}>
               <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="owner">দোকান মালিক</TabsTrigger>
-                <TabsTrigger value="customer">গ্রাহক</TabsTrigger>
+                <TabsTrigger value="owner">দোকান (দোকানদার)</TabsTrigger>
+                <TabsTrigger value="customer">ব্যক্তিগত (গ্রাহক)</TabsTrigger>
               </TabsList>
             </Tabs>
 

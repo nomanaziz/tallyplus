@@ -20,17 +20,26 @@ export function HeroSection() {
             {lang === "bn" ? "৫+ বছরের অভিজ্ঞতা · ২৪/৭ এক্সপার্ট সাপোর্ট" : "5+ years of experience · 24/7 expert support"}
           </span>
           <h2 className="mt-4 text-base font-semibold text-muted-foreground">
-            {lang === "bn" ? "স্মার্টভাবে ব্যবসা করুন।" : "Run a smarter business."}
+            {lang === "bn" ? "ব্যক্তিগত হিসাব হোক বা দোকান — সবই এক অ্যাপে।" : "Personal finances or your shop — all in one app."}
           </h2>
           <h1 className="mt-2 text-4xl font-extrabold leading-[1.1] tracking-tight md:text-6xl">
-            {lang === "bn" ? "ব্যবসা বাড়ান" : "Grow Your Business"} <br />
-            <span className="text-primary">{lang === "bn" ? "টালি প্লাসের সাথে।" : "With Tally Plus."}</span>
+            {lang === "bn" ? "টালি প্লাসে" : "Track it all"} <br />
+            <span className="text-primary">{lang === "bn" ? "ব্যক্তিগত ও দোকান, একসাথে" : "with Tally Plus"}</span>
           </h1>
-          <p className="mt-5 max-w-md text-base text-muted-foreground md:text-lg">{t("heroSub")}</p>
+          <p className="mt-5 max-w-md text-base text-muted-foreground md:text-lg">
+            {lang === "bn"
+              ? "ব্যক্তিগত আয়-ব্যয়, দেনা-পাওনা ও ফর্দ — অথবা পূর্ণাঙ্গ POS, স্টক, বাকি, কর্মচারী, রিপোর্ট। অফলাইনেও কাজ করে।"
+              : "Personal income–expense, lending and wishlist — or a full POS, stock, dues, employees and reports. Works offline too."}
+          </p>
           <div className="mt-7 flex flex-wrap gap-3">
             <Button asChild size="lg" className="h-12 rounded-full px-6 text-base font-bold">
-              <Link to={user ? "/app" : "/auth"}>
-                {t("getStarted")} <ArrowRight className="ml-1 h-4 w-4" />
+              <Link to={user ? "/app" : "/auth"} search={user ? undefined : { role: "owner", mode: "signup" }}>
+                {t("shopSignupCta")} <ArrowRight className="ml-1 h-4 w-4" />
+              </Link>
+            </Button>
+            <Button asChild size="lg" variant="secondary" className="h-12 rounded-full px-6 text-base font-bold">
+              <Link to={user ? "/customer/dashboard" : "/auth"} search={user ? undefined : { role: "customer", mode: "signup" }}>
+                {t("personalSignupCta")} <ArrowRight className="ml-1 h-4 w-4" />
               </Link>
             </Button>
             <Button asChild size="lg" variant="outline" className="h-12 rounded-full border-foreground/15 px-6 text-base font-semibold">

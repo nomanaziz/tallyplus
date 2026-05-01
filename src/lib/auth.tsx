@@ -24,6 +24,7 @@ type Ctx = {
   user: User | null;
   profile: Profile | null;
   isAdmin: boolean;
+  isOwner: boolean;
   hasActiveSubscription: boolean;
   subscription: Sub | null;
   refresh: () => Promise<void>;
@@ -37,6 +38,7 @@ const AuthCtx = createContext<Ctx>({
   user: null,
   profile: null,
   isAdmin: false,
+  isOwner: false,
   hasActiveSubscription: false,
   subscription: null,
   refresh: async () => {},
@@ -48,6 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isOwner, setIsOwner] = useState(false);
   const [subscription, setSubscription] = useState<Sub | null>(null);
   const [loading, setLoading] = useState(true);
   const [profileLoaded, setProfileLoaded] = useState(false);
@@ -63,10 +66,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const payload = (data ?? {}) as {
       profile: Profile | null;
       is_admin: boolean;
+      is_owner?: boolean;
       subscription: Sub | null;
     };
     setProfile(payload.profile ?? null);
     setIsAdmin(!!payload.is_admin);
+    setIsOwner(!!payload.is_owner);
     setSubscription(payload.subscription ?? null);
     setProfileLoaded(true);
   };
@@ -85,6 +90,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!s?.user) {
         setProfile(null);
         setIsAdmin(false);
+        setIsOwner(false);
         setSubscription(null);
         setProfileLoaded(false);
       }
@@ -129,6 +135,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user: session?.user ?? null,
         profile,
         isAdmin,
+        isOwner,
         hasActiveSubscription: !!subscription,
         subscription,
         refresh,
