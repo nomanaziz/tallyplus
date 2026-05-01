@@ -718,7 +718,7 @@ type Listing = {
   created_at: string;
   product_id: string;
   shop_id: string;
-  products?: { name: string; name_en?: string | null } | null;
+  products?: { name: string } | null;
   shops?: { name: string } | null;
 };
 
@@ -736,7 +736,7 @@ function ListingsTab() {
     setLoading(true);
     let q = supabase
       .from("marketplace_listings")
-      .select("*, products(name, name_en), shops(name)", { count: "exact" });
+      .select("*, products(name), shops(name)", { count: "exact" });
     if (publishedFilter !== "__all") q = q.eq("is_published", publishedFilter === "live");
     const from = (page - 1) * pageSize;
     const to = from + pageSize - 1;
@@ -749,7 +749,6 @@ function ListingsTab() {
       rows = rows.filter(
         (l) =>
           (l.products?.name ?? "").toLowerCase().includes(s) ||
-          (l.products?.name_en ?? "").toLowerCase().includes(s) ||
           (l.shops?.name ?? "").toLowerCase().includes(s),
       );
     }
@@ -812,7 +811,6 @@ function ListingsTab() {
                     <TableRow key={l.id} className="hover:bg-muted/40">
                       <TableCell>
                         <div className="font-medium">{l.products?.name ?? "—"}</div>
-                        <div className="text-xs text-muted-foreground">{l.products?.name_en ?? ""}</div>
                       </TableCell>
                       <TableCell className="text-sm">{l.shops?.name ?? "—"}</TableCell>
                       <TableCell className="text-right tabular-nums">৳ {l.price}</TableCell>
