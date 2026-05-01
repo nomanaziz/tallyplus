@@ -82,7 +82,7 @@ function AccessPage() {
   const initials = (name: string | null) =>
     (name || "U").split(" ").map((s) => s[0]).filter(Boolean).slice(0, 2).join("").toUpperCase();
 
-  const inviteLink = typeof window !== "undefined" ? `${window.location.origin}/auth` : "/auth";
+  const inviteLink = typeof window !== "undefined" ? `${window.location.origin}/auth` : "/";
 
   const effectivePerms = useMemo<PermissionMap>(() => {
     if (!selected) return {};

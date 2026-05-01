@@ -33,12 +33,12 @@ export function HeroSection() {
           </p>
           <div className="mt-7 flex flex-wrap gap-3">
             <Button asChild size="lg" className="h-12 rounded-full px-6 text-base font-bold">
-              <Link to={user ? "/app" : "/auth"} search={user ? undefined : { role: "owner", mode: "signup" }}>
+              <Link to={user ? "/app" : "/"} search={user ? undefined : { role: "owner", mode: "signup" }}>
                 {t("shopSignupCta")} <ArrowRight className="ml-1 h-4 w-4" />
               </Link>
             </Button>
             <Button asChild size="lg" variant="secondary" className="h-12 rounded-full px-6 text-base font-bold">
-              <Link to={user ? "/customer/dashboard" : "/auth"} search={user ? undefined : { role: "customer", mode: "signup" }}>
+              <Link to={user ? "/customer/dashboard" : "/"} search={user ? undefined : { role: "customer", mode: "signup" }}>
                 {t("personalSignupCta")} <ArrowRight className="ml-1 h-4 w-4" />
               </Link>
             </Button>
