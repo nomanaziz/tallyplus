@@ -86,6 +86,7 @@ const L79 = lazy(() => import("@/pages/app/ProfitLoss"));
 const L80 = lazy(() => import("@/pages/app/ExpenseReport"));
 const L81 = lazy(() => import("@/pages/app/SupplierReport"));
 const L82 = lazy(() => import("@/pages/app/IncomeReport"));
+const L83 = lazy(() => import("@/pages/About"));
 
 export const appRoutes: RouteObject[] = [
 { index: true, element: <Suspense fallback={<RouteFallback/>}><L0/></Suspense> },
@@ -173,6 +174,7 @@ export const appRoutes: RouteObject[] = [
 ] },
 { path: "pricing", element: <Suspense fallback={<RouteFallback/>}><L66/></Suspense> },
 { path: "privacy", element: <Suspense fallback={<RouteFallback/>}><L67/></Suspense> },
+{ path: "about", element: <Suspense fallback={<RouteFallback/>}><L83/></Suspense> },
 { path: "shop", element: <Suspense fallback={<RouteFallback/>}><L68/></Suspense>, children: [
 { path: "p/:id", element: <Suspense fallback={<RouteFallback/>}><L69/></Suspense> },
 { path: "s/:slug", element: <Suspense fallback={<RouteFallback/>}><L70/></Suspense> }
