@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Loader2, LogOut } from "lucide-react";
+import { Loader2, LogOut, Wallet, NotebookPen, GraduationCap, ListChecks, ShoppingBag } from "lucide-react";
 import { LocationPicker, type LocationValue } from "@/components/LocationPicker";
 
 type Consumer = {
@@ -89,7 +89,29 @@ export default function CustomerProfilePage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-2xl space-y-6 rounded-2xl border bg-card p-6 shadow-sm">
+    <div className="mx-auto w-full max-w-2xl space-y-6">
+      <div className="grid grid-cols-3 gap-2 sm:grid-cols-5 sm:gap-3">
+        {[
+          { to: "/customer/my-fordo", label: "ফর্দ", Icon: ListChecks },
+          { to: "/customer/my-orders", label: "অর্ডার", Icon: ShoppingBag },
+          { to: "/customer/money", label: "আয়-ব্যয়", Icon: Wallet },
+          { to: "/customer/notes", label: "নোট", Icon: NotebookPen },
+          { to: "/customer/training", label: "ট্রেনিং", Icon: GraduationCap },
+        ].map(({ to, label, Icon }) => (
+          <Link
+            key={to}
+            to={to}
+            className="flex flex-col items-center gap-1.5 rounded-2xl border bg-card p-3 text-center shadow-sm transition hover:border-primary/40"
+          >
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
+              <Icon className="h-5 w-5" />
+            </div>
+            <div className="text-[11px] font-semibold leading-tight">{label}</div>
+          </Link>
+        ))}
+      </div>
+
+      <div className="space-y-6 rounded-2xl border bg-card p-6 shadow-sm">
         <div>
           <h1 className="text-xl font-bold">আমার প্রোফাইল</h1>
           <p className="mt-1 text-sm text-muted-foreground">নাম ও ঠিকানা update করুন</p>
@@ -141,6 +163,7 @@ export default function CustomerProfilePage() {
             লগআউট
           </Button>
         </div>
+      </div>
     </div>
   );
 }
