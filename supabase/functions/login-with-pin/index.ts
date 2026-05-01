@@ -49,6 +49,23 @@ Deno.serve(async (req) => {
     if (!profile) return json({ ok: false, error: "no_account" });
     if (!profile.pin_hash) return json({ ok: false, error: "no_pin" });
 
+    // Block admins and shop employees from PIN login — they must use email + password.
+    const { data: adminRow } = await admin
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", profile.id)
+      .eq("role", "admin")
+      .maybeSingle();
+    if (adminRow) return json({ ok: false, error: "admin_must_use_email" });
+
+    const { data: employeeRow } = await admin
+      .from("shop_members")
+      .select("user_id")
+      .eq("user_id", profile.id)
+      .limit(1)
+      .maybeSingle();
+    if (employeeRow) return json({ ok: false, error: "employee_must_use_email" });
+
     const ok = await bcrypt.compare(pinStr, profile.pin_hash);
     if (!ok) return json({ ok: false, error: "wrong_pin" });
 
