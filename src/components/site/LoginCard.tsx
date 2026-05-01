@@ -258,8 +258,8 @@ export function LoginCard() {
         <div className="space-y-3">
           <Tabs value={role} onValueChange={(v) => setRole(v as Role)}>
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="owner">দোকান (দোকানদার)</TabsTrigger>
-              <TabsTrigger value="customer">ব্যক্তিগত (গ্রাহক)</TabsTrigger>
+              <TabsTrigger value="owner">ব্যবসায়িক হিসাব</TabsTrigger>
+              <TabsTrigger value="customer">ব্যক্তিগত হিসাব</TabsTrigger>
             </TabsList>
           </Tabs>
           <Input
@@ -308,8 +308,8 @@ export function LoginCard() {
         <div className="space-y-3">
           <Tabs value={role} onValueChange={(v) => setRole(v as Role)}>
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="owner">দোকান (দোকানদার)</TabsTrigger>
-              <TabsTrigger value="customer">ব্যক্তিগত (গ্রাহক)</TabsTrigger>
+              <TabsTrigger value="owner">ব্যবসায়িক হিসাব</TabsTrigger>
+              <TabsTrigger value="customer">ব্যক্তিগত হিসাব</TabsTrigger>
             </TabsList>
           </Tabs>
 
