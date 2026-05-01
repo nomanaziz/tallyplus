@@ -20,6 +20,7 @@ type StoreProduct = {
   id: string;
   name: string;
   sale_price: number;
+  cost_price: number;
   unit: string | null;
   stock: number;
   sku: string | null;
@@ -31,6 +32,7 @@ type Row = {
   productId: string | null;
   name: string;
   price: number;
+  cost: number;
   unit: string;
   qty: number;
   isExternal: boolean;
@@ -88,7 +90,7 @@ function QuickOrderInner() {
       const escaped = q.replace(/[%,]/g, "");
       const { data } = await supabase
         .from("products")
-        .select("id,name,sale_price,unit,stock,sku,barcode")
+        .select("id,name,sale_price,cost_price,unit,stock,sku,barcode")
         .eq("shop_id", current.id)
         .is("deleted_at", null)
         .or(`name.ilike.%${escaped}%,sku.ilike.%${escaped}%,barcode.ilike.%${escaped}%`)
@@ -110,6 +112,7 @@ function QuickOrderInner() {
         productId: p.id,
         name: p.name,
         price: Number(p.sale_price) || 0,
+        cost: Number(p.cost_price) || 0,
         unit: p.unit || "pcs",
         qty: 1,
         isExternal: false,
@@ -134,6 +137,7 @@ function QuickOrderInner() {
         productId: null,
         name: name.trim(),
         price: 0,
+        cost: 0,
         unit: "pcs",
         qty: 1,
         isExternal: true,
@@ -173,6 +177,11 @@ function QuickOrderInner() {
     () => rows.reduce((s, r) => s + (Number(r.qty) || 0) * (Number(r.price) || 0), 0),
     [rows],
   );
+  const totalCost = useMemo(
+    () => rows.reduce((s, r) => s + (Number(r.qty) || 0) * (Number(r.cost) || 0), 0),
+    [rows],
+  );
+  const totalProfit = total - totalCost;
 
   const convertToSale = async () => {
     if (!current?.id || !user) return;
@@ -216,6 +225,8 @@ function QuickOrderInner() {
       }
 
       const subtotal = total;
+      const costTotal = totalCost;
+      const profitAmt = subtotal - costTotal;
       const { data: sale, error: eS } = await supabase
         .from("sales")
         .insert({
@@ -227,6 +238,8 @@ function QuickOrderInner() {
           total: subtotal,
           paid: subtotal,
           due: 0,
+          cost_total: costTotal,
+          profit: profitAmt,
           payment_method: "cash",
           status: "completed",
           note: note.trim() || null,
@@ -243,6 +256,7 @@ function QuickOrderInner() {
         name: r.name,
         qty: r.qty,
         price: r.price,
+        cost: r.cost,
         total: r.qty * r.price,
       }));
       const { error: eI } = await supabase.from("sale_items").insert(items);
