@@ -2,33 +2,21 @@ import { Link } from "@/lib/router";
 import { useI18n } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { LoginCard } from "./LoginCard";
-import logo from "@/assets/logo.png";
-import { ArrowRight, MessageCircle, Store, ShoppingBag, Wallet, Receipt } from "lucide-react";
+import { SiteHeader } from "./SiteHeader";
+import { SiteFooter } from "./SiteFooter";
+import { ArrowRight, MessageCircle, Store, Wallet } from "lucide-react";
 
 /**
- * Facebook-style entry screen for logged-out visitors.
- * Left: brand pitch (Personal + Shop dual positioning).
- * Right: existing HeroAuthCard (login/signup form).
- * Bottom: small link row + CTA to the full landing /about page.
+ * Logged-out home: brand pitch (left) + LoginCard (right).
+ * Uses the common SiteHeader / SiteFooter so the chrome matches the rest of the site.
  */
 export function AuthEntry() {
   const { t, lang } = useI18n();
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/15 via-background to-background">
-      {/* Compact top bar */}
-      <header className="sticky top-0 z-30 w-full border-b bg-background/85 backdrop-blur">
-        <div className="container mx-auto flex h-14 items-center justify-between px-3 md:px-4">
-          <Link to="/" className="flex items-center gap-2">
-            <img src={logo} alt="Tally Plus" width={32} height={32} className="h-7 w-7 object-contain" />
-            <span className="text-lg font-extrabold tracking-tight">{t("appName")}</span>
-          </Link>
-          <Link to="/about" className="text-xs font-semibold text-muted-foreground hover:text-foreground hover:underline">
-            {t("learnAboutTallyPlus")} →
-          </Link>
-        </div>
-      </header>
+    <div className="flex min-h-screen flex-col bg-gradient-to-br from-primary/15 via-background to-background">
+      <SiteHeader />
 
-      <main className="container mx-auto grid gap-8 px-4 py-8 md:grid-cols-2 md:items-center md:gap-12 md:py-16">
+      <main className="container mx-auto grid flex-1 gap-8 px-4 py-8 md:grid-cols-2 md:items-center md:gap-12 md:py-16">
         {/* Brand pitch */}
         <div>
           <h1 className="text-3xl font-extrabold leading-tight tracking-tight md:text-5xl">
@@ -91,34 +79,7 @@ export function AuthEntry() {
         </div>
       </main>
 
-      {/* Footer link row — Facebook-style mini menu */}
-      <footer className="border-t bg-background/60 py-4">
-        <div className="container mx-auto flex flex-wrap items-center justify-center gap-x-5 gap-y-2 px-4 text-xs text-muted-foreground">
-          <Link to="/about" className="hover:text-foreground hover:underline">
-            {lang === "bn" ? "টালি প্লাস সম্পর্কে" : "About Tally Plus"}
-          </Link>
-          <Link to="/shop" className="inline-flex items-center gap-1 hover:text-foreground hover:underline">
-            <ShoppingBag className="h-3 w-3" />
-            {lang === "bn" ? "মার্কেটপ্লেস" : "Marketplace"}
-          </Link>
-          <Link to="/pricing" className="hover:text-foreground hover:underline">
-            {lang === "bn" ? "মূল্য তালিকা" : "Pricing"}
-          </Link>
-          <Link to="/customer/my-fordo" className="inline-flex items-center gap-1 hover:text-foreground hover:underline">
-            <Receipt className="h-3 w-3" />
-            {lang === "bn" ? "ফর্দ" : "Fordo"}
-          </Link>
-          <Link to="/privacy" className="hover:text-foreground hover:underline">
-            {lang === "bn" ? "গোপনীয়তা" : "Privacy"}
-          </Link>
-          <Link to="/terms" className="hover:text-foreground hover:underline">
-            {lang === "bn" ? "শর্তাবলী" : "Terms"}
-          </Link>
-        </div>
-        <div className="container mx-auto mt-2 px-4 text-center text-[11px] text-muted-foreground/70">
-          © {new Date().getFullYear()} {t("appName")}
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }
