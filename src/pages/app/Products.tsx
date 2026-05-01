@@ -28,6 +28,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
+import { publishProductToMarketplace } from "@/lib/marketplace-publish";
 import { CatalogProductPicker, type CatalogProduct } from "@/components/app/CatalogProductPicker";
 import { ensureDefaultCategories } from "@/lib/default-categories";
 import { SampleProductImportSheet } from "@/components/app/SampleProductImportSheet";
