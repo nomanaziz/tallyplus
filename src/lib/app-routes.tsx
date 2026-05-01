@@ -113,6 +113,8 @@ const LOSMarketing = lazy(() => import("@/pages/app/online-shop/Marketing"));
 const LOSPolicy = lazy(() => import("@/pages/app/online-shop/Policy"));
 const LOSFraudCheck = lazy(() => import("@/pages/app/online-shop/FraudCheck"));
 const LOSPromoCodes = lazy(() => import("@/pages/app/online-shop/PromoCodes"));
+const LSubscribe = lazy(() => import("@/pages/app/Subscribe"));
+const LSubscribeCallback = lazy(() => import("@/pages/app/SubscribeCallback"));
 
 export const appRoutes: RouteObject[] = [
 { index: true, element: <Suspense fallback={<RouteFallback/>}><L0/></Suspense> },
@@ -195,6 +197,10 @@ export const appRoutes: RouteObject[] = [
 { path: "training", element: <Suspense fallback={<RouteFallback/>}><L53/></Suspense> },
 { path: "usage-limits", element: <Suspense fallback={<RouteFallback/>}><L54/></Suspense> },
 { path: "warranty", element: <Suspense fallback={<RouteFallback/>}><L55/></Suspense> }
+,
+{ path: "subscribe", element: <Suspense fallback={<RouteFallback/>}><LSubscribe/></Suspense> }
+,
+{ path: "subscribe/callback", element: <Suspense fallback={<RouteFallback/>}><LSubscribeCallback/></Suspense> }
 ,
 { path: "online-shop", children: [
   { index: true, element: <Suspense fallback={<RouteFallback/>}><LOnlineShop/></Suspense> },
