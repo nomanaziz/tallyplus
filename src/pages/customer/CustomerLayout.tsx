@@ -3,7 +3,7 @@ import { Outlet, useNavigate, Link } from "@/lib/router";
 import { useAuth } from "@/lib/auth";
 import { SiteHeader } from "@/components/site/SiteHeader";
 import { SiteFooter } from "@/components/site/SiteFooter";
-import { Loader2, LayoutDashboard, ListChecks, Wallet, NotebookPen, User, LogOut } from "lucide-react";
+import { Loader2, LayoutDashboard, ListChecks, Wallet, NotebookPen, User, LogOut, GraduationCap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AdSlot } from "@/components/ads/AdSlot";
 
@@ -12,6 +12,7 @@ const NAV = [
   { to: "/customer/my-fordo", label: "আমার ফর্দ", Icon: ListChecks },
   { to: "/customer/money", label: "আয়-ব্যয়", Icon: Wallet },
   { to: "/customer/notes", label: "নোট", Icon: NotebookPen },
+  { to: "/customer/training", label: "ট্রেনিং", Icon: GraduationCap },
   { to: "/customer/profile", label: "প্রোফাইল", Icon: User },
 ];
 
@@ -85,7 +86,7 @@ export default function CustomerLayout() {
 
       {/* Mobile bottom nav */}
       <nav className="fixed inset-x-0 bottom-0 z-30 border-t bg-background/95 backdrop-blur md:hidden">
-        <div className="grid grid-cols-5">
+        <div className="grid grid-cols-6">
           {NAV.map(({ to, label, Icon }) => (
             <Link
               key={to}

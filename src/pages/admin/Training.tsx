@@ -26,6 +26,7 @@ type Video = {
   description: string | null;
   sort_order: number;
   is_published: boolean;
+  audience: "shopkeeper" | "consumer" | "both";
 };
 
 const CATEGORIES = [
@@ -38,6 +39,18 @@ const CATEGORIES = [
   { value: "online_shop", label: "Online Shop / অনলাইন শপ" },
   { value: "report", label: "Reports / রিপোর্ট" },
 ];
+
+const AUDIENCES = [
+  { value: "shopkeeper", label: "দোকানদার / Shopkeeper" },
+  { value: "consumer", label: "গ্রাহক / Consumer" },
+  { value: "both", label: "উভয় / Both" },
+] as const;
+
+const AUDIENCE_BADGE: Record<string, string> = {
+  shopkeeper: "দোকানদার",
+  consumer: "গ্রাহক",
+  both: "উভয়",
+};
 
 function extractYouTubeId(input: string): string {
   const trimmed = input.trim();
@@ -87,6 +100,7 @@ function TrainingAdmin() {
       description: editing.description?.trim() || null,
       sort_order: Number(editing.sort_order ?? 0),
       is_published: editing.is_published ?? true,
+      audience: editing.audience ?? "shopkeeper",
     };
     const { error } = editing.id
       ? await supabase.from("training_videos").update(payload).eq("id", editing.id)
@@ -113,7 +127,7 @@ function TrainingAdmin() {
           <h1 className="text-2xl font-extrabold">Training Videos</h1>
           <p className="text-sm text-muted-foreground">Manage YouTube videos shown on the user's App Training page.</p>
         </div>
-        <Button onClick={() => setEditing({ category: "general", is_published: true, sort_order: 0 })} className="gap-2">
+        <Button onClick={() => setEditing({ category: "general", is_published: true, sort_order: 0, audience: "shopkeeper" })} className="gap-2">
           <Plus className="h-4 w-4" /> Add Video
         </Button>
       </div>
@@ -141,6 +155,9 @@ function TrainingAdmin() {
                 )}
                 <span className="absolute top-2 right-2 rounded bg-black/70 px-2 py-0.5 text-[10px] font-bold uppercase text-white">
                   {v.category}
+                </span>
+                <span className="absolute bottom-2 right-2 rounded bg-primary px-2 py-0.5 text-[10px] font-bold text-primary-foreground">
+                  {AUDIENCE_BADGE[v.audience ?? "shopkeeper"]}
                 </span>
               </div>
               <CardContent className="p-3">
@@ -198,6 +215,18 @@ function TrainingAdmin() {
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {CATEGORIES.map((c) => <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid gap-1.5">
+                <Label>Audience / কার জন্য</Label>
+                <Select
+                  value={editing.audience ?? "shopkeeper"}
+                  onValueChange={(v) => setEditing({ ...editing, audience: v as Video["audience"] })}
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {AUDIENCES.map((a) => <SelectItem key={a.value} value={a.value}>{a.label}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
