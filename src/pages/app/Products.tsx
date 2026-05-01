@@ -474,21 +474,21 @@ function ProductsPage() {
       <SampleProductImportSheet open={openImport} onOpenChange={setOpenImport} onImported={() => void load()} />
 
       {/* Summary card — Total Stock & Stock Value */}
-      <div className="mt-2 rounded-2xl bg-primary p-2 text-primary-foreground shadow-sm sm:mt-4 sm:p-5">
-        <div className="grid grid-cols-2 gap-1.5 sm:gap-4">
-          <div className="rounded-xl bg-primary-foreground/15 px-2 py-1.5 text-center sm:px-3 sm:py-4">
-            <div className="text-base font-extrabold tabular-nums sm:text-3xl">
+      <div className="mt-2 rounded-xl bg-primary p-1.5 text-primary-foreground shadow-sm sm:mt-3 sm:p-3">
+        <div className="grid grid-cols-2 gap-1.5 sm:gap-3">
+          <div className="rounded-lg bg-primary-foreground/15 px-2 py-1 text-center sm:px-3 sm:py-2">
+            <div className="text-sm font-extrabold tabular-nums sm:text-xl">
               {lang === "bn" ? bnNum(totalStockCount) : totalStockCount.toLocaleString()}
             </div>
-            <div className="mt-0 text-[10px] font-semibold sm:mt-1 sm:text-sm">
+            <div className="mt-0 text-[10px] font-semibold sm:text-xs">
               {lang === "bn" ? "মোট স্টক" : "Total Stock"}
             </div>
           </div>
-          <div className="rounded-xl bg-primary-foreground/15 px-2 py-1.5 text-center sm:px-3 sm:py-4">
-            <div className="text-base font-extrabold tabular-nums sm:text-3xl">
+          <div className="rounded-lg bg-primary-foreground/15 px-2 py-1 text-center sm:px-3 sm:py-2">
+            <div className="text-sm font-extrabold tabular-nums sm:text-xl">
               {fmtMoney(totalStockValue, lang)}
             </div>
-            <div className="mt-0 text-[10px] font-semibold sm:mt-1 sm:text-sm">
+            <div className="mt-0 text-[10px] font-semibold sm:text-xs">
               {lang === "bn" ? "মজুদ মূল্য" : "Stock Value"}
             </div>
           </div>
