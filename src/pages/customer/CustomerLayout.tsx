@@ -3,15 +3,16 @@ import { Outlet, useNavigate, Link } from "@/lib/router";
 import { useAuth } from "@/lib/auth";
 import { SiteHeader } from "@/components/site/SiteHeader";
 import { SiteFooter } from "@/components/site/SiteFooter";
-import { Loader2, LayoutDashboard, ListChecks, User, LogOut, ShoppingBag } from "lucide-react";
+import { Loader2, LogOut } from "lucide-react";
+import { icons } from "@/lib/icons";
 import { Button } from "@/components/ui/button";
 import { AdSlot } from "@/components/ads/AdSlot";
 
 const NAV = [
-  { to: "/customer/dashboard", label: "ড্যাশবোর্ড", Icon: LayoutDashboard },
-  { to: "/customer/my-fordo", label: "আমার ফর্দ", Icon: ListChecks },
-  { to: "/customer/my-orders", label: "আমার অর্ডার", Icon: ShoppingBag },
-  { to: "/customer/profile", label: "ঠিকানা", Icon: User },
+  { to: "/customer/dashboard", label: "ড্যাশবোর্ড", icon: icons.home },
+  { to: "/customer/my-fordo", label: "আমার ফর্দ", icon: icons.productList },
+  { to: "/customer/my-orders", label: "আমার অর্ডার", icon: icons.salesList },
+  { to: "/customer/profile", label: "ঠিকানা", icon: icons.contact },
 ];
 
 export default function CustomerLayout() {
@@ -43,7 +44,7 @@ export default function CustomerLayout() {
           {/* Side nav (desktop) */}
           <aside className="hidden md:block">
             <div className="sticky top-24 space-y-1 rounded-2xl border bg-card p-2 shadow-sm">
-              {NAV.map(({ to, label, Icon }) => (
+              {NAV.map(({ to, label, icon }) => (
                 <Link
                   key={to}
                   to={to}
@@ -51,7 +52,7 @@ export default function CustomerLayout() {
                   inactiveProps={{ className: "text-foreground hover:bg-accent" }}
                   className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition"
                 >
-                  <Icon className="h-4 w-4" />
+                  <img src={icon} alt="" className="h-5 w-5 flex-none object-contain" />
                   {label}
                 </Link>
               ))}
@@ -85,15 +86,15 @@ export default function CustomerLayout() {
       {/* Mobile bottom nav */}
       <nav className="fixed inset-x-0 bottom-0 z-30 border-t bg-background/95 backdrop-blur md:hidden">
         <div className="grid grid-cols-4">
-          {NAV.map(({ to, label, Icon }) => (
+          {NAV.map(({ to, label, icon }) => (
             <Link
               key={to}
               to={to}
               activeProps={{ className: "text-primary" }}
               inactiveProps={{ className: "text-muted-foreground" }}
-              className="flex flex-col items-center justify-center gap-0.5 py-2 text-[10px] font-medium"
+              className="flex flex-col items-center justify-center gap-0.5 py-1.5 text-[10px] font-medium"
             >
-              <Icon className="h-4 w-4" />
+              <img src={icon} alt="" className="h-6 w-6 object-contain" />
               <span className="truncate">{label}</span>
             </Link>
           ))}
