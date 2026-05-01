@@ -73,10 +73,10 @@ function DueLedgerPage() {
           <h1 className="text-lg font-bold">{lang === "bn" ? "বাকির খাতা" : "Due Ledger"}</h1>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <span className="rounded-full border bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+          <span className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-300">
             {lang === "bn" ? "মোট পাবো:" : "Receivable:"} {fmtMoney(totals.receivable, lang)}
           </span>
-          <span className="rounded-full border bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-700">
+          <span className="rounded-md border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-700 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-300">
             {lang === "bn" ? "মোট দিবো:" : "Payable:"} {fmtMoney(totals.payable, lang)}
           </span>
           <Button variant="outline" className="h-10 gap-2" onClick={() => nav({ to: "/app/due-history" })}>
