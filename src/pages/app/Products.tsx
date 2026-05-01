@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Plus, Download, MoreVertical, Package, Pencil, Trash2, Sparkles, Hash,
-  Eye, History, Save, X, Minus, ListOrdered, RefreshCw,
+  Eye, History, Save, X, Minus, ListOrdered, RefreshCw, SlidersHorizontal,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useShop } from "@/lib/shop";
@@ -17,6 +17,7 @@ import { Switch } from "@/components/ui/switch";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from "@/components/ui/sheet";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { DataToolbar } from "@/components/app/DataToolbar";
 import { EmptyState } from "@/components/app/EmptyState";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -364,8 +365,8 @@ function ProductsPage() {
       <div className="mb-1 hidden text-xs text-muted-foreground sm:block">
         {lang === "bn" ? "প্রোডাক্ট ও স্টক ব্যবস্থাপনা" : "Products & Stock Management"}
       </div>
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-base font-bold sm:text-xl md:text-2xl">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h1 className="text-sm font-bold sm:text-lg md:text-2xl">
           {lang === "bn" ? "প্রোডাক্ট ও স্টক" : "Products & Stock"}
         </h1>
         <div className="flex flex-wrap items-center gap-2">
@@ -522,9 +523,52 @@ function ProductsPage() {
           search={search}
           onSearch={setSearch}
           middleExtra={
-            <div className="flex w-full gap-1.5 sm:contents">
+            <>
+              {/* Mobile: collapse Sort + Filter into a single popover */}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="icon" className="h-9 w-9 flex-none sm:hidden" aria-label={lang === "bn" ? "সাজান ও ফিল্টার" : "Sort & filter"}>
+                    <SlidersHorizontal className="h-4 w-4" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent align="end" className="w-64 space-y-3 p-3">
+                  <div className="space-y-1">
+                    <div className="text-xs font-semibold text-muted-foreground">{lang === "bn" ? "সাজান" : "Sort"}</div>
+                    <Select value={sortBy} onValueChange={setSortBy}>
+                      <SelectTrigger className="h-9 w-full text-xs">
+                        <SelectValue placeholder={lang === "bn" ? "সাজান" : "Sort"} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="name_asc">{lang === "bn" ? "নাম (ক → হ)" : "Name (A → Z)"}</SelectItem>
+                        <SelectItem value="name_desc">{lang === "bn" ? "নাম (হ → ক)" : "Name (Z → A)"}</SelectItem>
+                        <SelectItem value="stock_asc">{lang === "bn" ? "স্টক কম → বেশি" : "Stock low → high"}</SelectItem>
+                        <SelectItem value="stock_desc">{lang === "bn" ? "স্টক বেশি → কম" : "Stock high → low"}</SelectItem>
+                        <SelectItem value="price_asc">{lang === "bn" ? "দাম কম → বেশি" : "Price low → high"}</SelectItem>
+                        <SelectItem value="price_desc">{lang === "bn" ? "দাম বেশি → কম" : "Price high → low"}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1">
+                    <div className="text-xs font-semibold text-muted-foreground">{lang === "bn" ? "ফিল্টার" : "Filter"}</div>
+                    <Select value={filterBy} onValueChange={setFilterBy}>
+                      <SelectTrigger className="h-9 w-full text-xs">
+                        <SelectValue placeholder={lang === "bn" ? "ফিল্টার" : "Filter"} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">{lang === "bn" ? "সব প্রোডাক্ট" : "All products"}</SelectItem>
+                        <SelectItem value="in_stock">{lang === "bn" ? "স্টক আছে" : "In stock"}</SelectItem>
+                        <SelectItem value="out_of_stock">{lang === "bn" ? "স্টক শেষ" : "Out of stock"}</SelectItem>
+                        <SelectItem value="low_stock">{lang === "bn" ? "কম স্টক" : "Low stock"}</SelectItem>
+                        <SelectItem value="unlimited">{lang === "bn" ? "অসীম স্টক" : "Unlimited"}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </PopoverContent>
+              </Popover>
+
+              {/* Desktop: inline selects */}
               <Select value={sortBy} onValueChange={setSortBy}>
-                <SelectTrigger className="h-9 flex-1 text-xs sm:h-10 sm:w-[170px] sm:flex-none sm:text-sm">
+                <SelectTrigger className="hidden sm:flex h-10 w-[170px] text-sm">
                   <SelectValue placeholder={lang === "bn" ? "সাজান" : "Sort"} />
                 </SelectTrigger>
                 <SelectContent>
@@ -537,7 +581,7 @@ function ProductsPage() {
                 </SelectContent>
               </Select>
               <Select value={filterBy} onValueChange={setFilterBy}>
-                <SelectTrigger className="h-9 flex-1 text-xs sm:h-10 sm:w-[160px] sm:flex-none sm:text-sm">
+                <SelectTrigger className="hidden sm:flex h-10 w-[160px] text-sm">
                   <SelectValue placeholder={lang === "bn" ? "ফিল্টার" : "Filter"} />
                 </SelectTrigger>
                 <SelectContent>
@@ -548,7 +592,7 @@ function ProductsPage() {
                   <SelectItem value="unlimited">{lang === "bn" ? "অসীম স্টক" : "Unlimited"}</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
+            </>
           }
         />
       </div>
@@ -592,14 +636,14 @@ function ProductsPage() {
                     </TableHead>
                   )}
                   <TableHead>{lang === "bn" ? "পণ্যের নাম" : "Product"}</TableHead>
-                  <TableHead className="text-right">{lang === "bn" ? "বর্তমান মজুদ" : "In stock"}</TableHead>
-                  <TableHead className="text-right hidden sm:table-cell">{lang === "bn" ? "দর" : "Cost"}</TableHead>
-                  <TableHead className="text-right">{lang === "bn" ? "বিক্রয় মূল্য" : "Sale price"}</TableHead>
-                  <TableHead className="text-right hidden md:table-cell">{lang === "bn" ? "মোট মজুদ মূল্য" : "Stock value"}</TableHead>
+                  <TableHead className="text-right whitespace-nowrap w-px">{lang === "bn" ? "বর্তমান মজুদ" : "In stock"}</TableHead>
+                  <TableHead className="text-right hidden sm:table-cell whitespace-nowrap w-px">{lang === "bn" ? "দর" : "Cost"}</TableHead>
+                  <TableHead className="text-right whitespace-nowrap w-px">{lang === "bn" ? "বিক্রয় মূল্য" : "Sale price"}</TableHead>
+                  <TableHead className="text-right hidden md:table-cell whitespace-nowrap w-px">{lang === "bn" ? "মোট মজুদ মূল্য" : "Stock value"}</TableHead>
                   {editStockMode ? (
                     <TableHead className="text-center w-[260px]">{lang === "bn" ? "আপডেটেড স্টক" : "Updated stock"}</TableHead>
                   ) : (
-                    <TableHead className="text-right">Action</TableHead>
+                    <TableHead className="text-right w-px whitespace-nowrap">Action</TableHead>
                   )}
                 </TableRow>
               </TableHeader>
@@ -611,9 +655,18 @@ function ProductsPage() {
                   const cur = updates[p.id] ?? stockNum;
                   const changed = updates[p.id] != null && updates[p.id] !== stockNum;
                   return (
-                    <TableRow key={p.id} className={editStockMode && changed ? "bg-amber-50/60 hover:bg-amber-50" : undefined}>
+                    <TableRow
+                      key={p.id}
+                      className={(editStockMode && changed ? "bg-amber-50/60 hover:bg-amber-50 " : "") + (!editStockMode && !selectMode ? "cursor-pointer sm:cursor-default" : "")}
+                      onClick={(e) => {
+                        if (editStockMode || selectMode) return;
+                        const target = e.target as HTMLElement;
+                        if (target.closest('button,a,input,[role="menuitem"],[role="menu"],[role="checkbox"]')) return;
+                        setDetails(p);
+                      }}
+                    >
                       {selectMode && (
-                        <TableCell className="w-10">
+                        <TableCell className="w-10" onClick={(e) => e.stopPropagation()}>
                           <Checkbox
                             checked={selected.has(p.id)}
                             onCheckedChange={() => toggleSelect(p.id)}
@@ -621,8 +674,8 @@ function ProductsPage() {
                           />
                         </TableCell>
                       )}
-                      <TableCell>
-                        <div className="flex items-center gap-2">
+                      <TableCell className="min-w-0">
+                        <div className="flex items-center gap-2 min-w-0">
                           <div className="flex h-8 w-8 flex-none items-center justify-center rounded-md bg-muted">
                             {p.image_url ? (
                               <img src={p.image_url} alt="" className="h-8 w-8 rounded-md object-cover" />
@@ -630,7 +683,7 @@ function ProductsPage() {
                               <Package className="h-4 w-4 text-muted-foreground" />
                             )}
                           </div>
-                          <span className="font-medium">{p.name}</span>
+                          <span className="font-medium text-sm sm:text-base whitespace-normal break-words leading-tight min-w-0">{p.name}</span>
                         </div>
                       </TableCell>
                       <TableCell className="text-right tabular-nums">
@@ -646,7 +699,7 @@ function ProductsPage() {
                         {isUnlimited ? "—" : fmtMoney(stockValue, lang)}
                       </TableCell>
                       {editStockMode ? (
-                        <TableCell>
+                        <TableCell onClick={(e) => e.stopPropagation()}>
                           {isUnlimited ? (
                             <div className="text-center text-xs text-muted-foreground">
                               {lang === "bn" ? "অসীম" : "Unlimited"}
@@ -679,12 +732,12 @@ function ProductsPage() {
                           )}
                         </TableCell>
                       ) : (
-                        <TableCell className="text-right">
+                        <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                           <div className="flex items-center justify-end gap-1">
                             <Button
                               size="sm"
                               variant="outline"
-                              className="h-8 w-8 p-0"
+                              className="hidden sm:inline-flex h-8 w-8 p-0"
                               onClick={() => setDetails(p)}
                               title={lang === "bn" ? "বিস্তারিত" : "View"}
                             >
