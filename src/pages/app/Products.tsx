@@ -636,14 +636,14 @@ function ProductsPage() {
                     </TableHead>
                   )}
                   <TableHead>{lang === "bn" ? "পণ্যের নাম" : "Product"}</TableHead>
-                  <TableHead className="text-right">{lang === "bn" ? "বর্তমান মজুদ" : "In stock"}</TableHead>
-                  <TableHead className="text-right hidden sm:table-cell">{lang === "bn" ? "দর" : "Cost"}</TableHead>
-                  <TableHead className="text-right">{lang === "bn" ? "বিক্রয় মূল্য" : "Sale price"}</TableHead>
-                  <TableHead className="text-right hidden md:table-cell">{lang === "bn" ? "মোট মজুদ মূল্য" : "Stock value"}</TableHead>
+                  <TableHead className="text-right whitespace-nowrap w-px">{lang === "bn" ? "বর্তমান মজুদ" : "In stock"}</TableHead>
+                  <TableHead className="text-right hidden sm:table-cell whitespace-nowrap w-px">{lang === "bn" ? "দর" : "Cost"}</TableHead>
+                  <TableHead className="text-right whitespace-nowrap w-px">{lang === "bn" ? "বিক্রয় মূল্য" : "Sale price"}</TableHead>
+                  <TableHead className="text-right hidden md:table-cell whitespace-nowrap w-px">{lang === "bn" ? "মোট মজুদ মূল্য" : "Stock value"}</TableHead>
                   {editStockMode ? (
                     <TableHead className="text-center w-[260px]">{lang === "bn" ? "আপডেটেড স্টক" : "Updated stock"}</TableHead>
                   ) : (
-                    <TableHead className="text-right">Action</TableHead>
+                    <TableHead className="text-right w-px whitespace-nowrap">Action</TableHead>
                   )}
                 </TableRow>
               </TableHeader>
