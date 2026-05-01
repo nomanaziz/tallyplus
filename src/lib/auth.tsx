@@ -1,6 +1,8 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Session, User } from "@supabase/supabase-js";
+import { getDeviceId, getDeviceLabel } from "./device-id";
+import { toast } from "sonner";
 
 type Profile = {
   id: string;
@@ -126,6 +128,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       sessionStorage.removeItem("tp_pin_unlocked");
     }
   };
+
+  // Two-device limit: register this device on sign-in and heartbeat to detect
+  // remote sign-out (when user logs in on a 3rd device, this device is evicted).
+  useEffect(() => {
+    if (!session?.user) return;
+    const deviceId = getDeviceId();
+    let cancelled = false;
+
+    const register = async () => {
+      try {
+        await supabase.rpc("register_active_device", {
+          _device_id: deviceId,
+          _user_agent: getDeviceLabel(),
+        });
+      } catch { /* ignore */ }
+    };
+    void register();
+
+    const tick = async () => {
+      if (cancelled) return;
+      try {
+        const { data, error } = await supabase.rpc("heartbeat_active_device", { _device_id: deviceId });
+        if (cancelled) return;
+        const allowed = (data as { ok?: boolean; allowed?: boolean } | null)?.allowed;
+        if (!error && allowed === false) {
+          toast.error("অন্য device থেকে এই session শেষ করা হয়েছে");
+          await supabase.auth.signOut();
+        }
+      } catch { /* ignore */ }
+    };
+    const handle = window.setInterval(tick, 60_000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(handle);
+    };
+  }, [session?.user?.id]);
 
   return (
     <AuthCtx.Provider
