@@ -46,6 +46,7 @@ function TrainingPage() {
         .from("training_videos")
         .select("*")
         .eq("is_published", true)
+        .in("audience", ["shopkeeper", "both"])
         .order("category")
         .order("sort_order");
       setVideos((data as Video[]) ?? []);
