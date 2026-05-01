@@ -1,68 +1,58 @@
 ## লক্ষ্য
 
-আলাদা `/auth` পেজ পুরোপুরি সরিয়ে দিয়ে, `/auth` এর সরল login/signup design টা সরাসরি **হোম পেজ (`/`)** এ বসানো। বর্তমান হোম পেজে যে দুই-কলাম brand-pitch + HeroAuthCard layout আছে (AuthEntry component) সেটা সরে গিয়ে শুধু একটাই পরিষ্কার কার্ড দেখাবে — যেমনটা এখন `/auth` এ আছে।
+"PIN ভুলে গেছেন? WhatsApp করুন" link টা এখন সবসময় দেখায়। এটা শুধুমাত্র তখনই আসবে যখন:
+- ফোন নম্বর সঠিক ভাবে দেওয়া আছে (valid মোবাইল নম্বর), **এবং**
+- ওই নম্বরে account আছে (login-with-pin / customer-login-with-pin → `wrong_pin` বা `no_pin_set` error দিয়েছে — মানে account exists কিন্তু PIN মেলেনি)।
 
-## এখন যা আছে
+যদি account না থাকে (`no_account`) বা ফোন না দেওয়া হয়, তখন WhatsApp link দেখাবে না — সরাসরি toast এ message আসবে।
 
-- `/` → `Index.tsx` → `<AuthEntry />` (ব্রান্ড পিচ + tabs সহ HeroAuthCard, একটু গ্যাঞ্জাম)
-- `/auth` → `Auth.tsx` (পরিষ্কার single card: Login tab → phone+PIN; Create account tab → name/shop/PIN; post-signup sample import prompt সহ)
+## বর্তমান অবস্থা (`src/components/site/LoginCard.tsx`)
 
-## পরিবর্তন
+- Login mode এ phone + PIN field এর নিচে সবসময় একটি static WhatsApp link থাকে।
+- Login submit করলে edge function (`login-with-pin` / `customer-login-with-pin`) ৩ ধরনের error দেয়: `wrong_pin`, `no_account`, `no_pin_set` — toast এ দেখানো হয়, কিন্তু WhatsApp link এর visibility এর সাথে যুক্ত নয়।
 
-### 1. হোম পেজ replace
-`src/pages/Index.tsx` এর ভেতরের রেন্ডার `<AuthEntry />` এর জায়গায় `Auth.tsx` এর form UI বসবে (logged-out হলে)। logged-in হলে আগের মতই role অনুযায়ী dashboard এ redirect হবে।
+## পরিবর্তন (শুধু `LoginCard.tsx`)
 
-বাস্তবায়নের জন্য `Auth.tsx` এর form অংশটাকে একটা reusable component এ refactor করব: `src/components/site/LoginCard.tsx` — যেটা SiteHeader/SiteFooter wrapper ছাড়া শুধু কেন্দ্রে কার্ড দেখাবে। এটাই Index এবং (যদি কোথাও ভুলে কেউ /auth এ আসে) redirect target এ ব্যবহার হবে।
+### ১. নতুন state
+`const [showForgotPin, setShowForgotPin] = useState(false);`
+এটা track করবে user এর জন্য "PIN ভুলে গেছেন?" option দেখানো উচিত কি না।
 
-কার্ডের ভেতরে যা থাকবে (Auth.tsx এর মতই):
-- Login mode: role tabs (দোকানদার/গ্রাহক) → মোবাইল + PIN → লগইন → "Create account" link → "PIN ভুলে গেছেন? WhatsApp"
-- Signup mode: role tabs → নাম (+ owner হলে দোকানের নাম, ShopTypePicker) → মোবাইল + PIN → Account তৈরি → "← লগইনে ফিরুন"
-- Owner signup এর পর sample import prompt (আগের মতই)
+### ২. Login submit এর behaviour update
+`handleSubmit` এর login branch এ:
+- `wrong_pin` বা `no_pin_set` → `setShowForgotPin(true)` + আগের মত toast।
+- `no_account` → `setShowForgotPin(false)` + toast "এই নম্বরে account নেই — সাইনআপ করুন"।
+- success → state reset।
 
-হোম পেজে SiteHeader থাকবে কি না: হ্যাঁ, ভাষা switch ও logo-র জন্য SiteHeader রাখব (আগের `/auth` এর মতই)। SiteFooter ও থাকবে।
+Phone বা PIN field edit করলে `showForgotPin` reset হয়ে যাবে (নতুন চেষ্টা)। mode/role switch করলেও reset।
 
-### 2. `/auth` route ও `Auth.tsx` মুছে দেওয়া
-- `src/lib/app-routes.tsx` থেকে `path: "auth"` route এবং `L56` lazy import সরানো হবে।
-- `src/pages/Auth.tsx` ফাইল delete হবে।
+### ৩. WhatsApp link conditional render
+শুধু তখনই দেখাবে যখন:
+- `mode === "login"`, **এবং**
+- `showForgotPin === true`, **এবং**
+- `normalizePhone(phone)` valid (≥ 10 digit)।
 
-### 3. সব `/auth` references হোমে redirect
-নিচের ফাইলগুলোতে `/auth` কে `/` দিয়ে replace করা হবে (অথবা প্রাসঙ্গিক query সহ যেমন `/?mode=signup`):
+Validation এ phone না থাকলে button disabled থাকবে / link হাইড থাকবে। `waUrl()` এ phone fallback string টা সরিয়ে শুধু আসল ফোন থাকবে (যেহেতু এখন phone নিশ্চিত)।
 
+WhatsApp message format — এখন phone টা সবসময় থাকবে, যেমন:
 ```
-src/pages/customer/Profile.tsx          → "/auth" → "/"
-src/pages/customer/CustomerLayout.tsx   → "/auth" → "/"
-src/pages/Affiliate.tsx                 → Link to="/auth" → "/"
-src/components/site/SiteHeader.tsx      → 2 জায়গায় "/auth" → "/"
-src/components/site/SiteFooter.tsx      → "/auth" → "/"
-src/components/site/PricingSection.tsx  → navigate /auth → "/"
-src/components/site/HeroAuthCard.tsx    → "পুরো Login পেজে যান" link পুরো বাদ
-src/pages/affiliate/Register.tsx        → "/auth" → "/"
-src/pages/admin/Login.tsx               → "/auth" → "/"
-src/components/app/NewUserAccessDialog.tsx → loginUrl `/auth?phone=` → `/?phone=`
+আসসালামু আলাইকুম, আমার Tally Plus account এর PIN ভুলে গেছি।
+Phone: +8801XXXXXXXXX
+দয়া করে PIN reset/সাহায্য করুন।
 ```
 
-হোম পেজে phone query param থাকলে (NewUserAccessDialog flow) সেটা phone field এ pre-fill হবে।
-
-### 4. AuthEntry / HeroAuthCard cleanup
-- `src/components/site/AuthEntry.tsx` আর কোথাও use হচ্ছে না — delete।
-- `src/components/site/HeroAuthCard.tsx` ও আর use হবে না (AuthEntry এর ভেতরেই ছিল) — delete।
-- `src/lib/home-redirect.ts` যা logged-in user এর জন্য target ঠিক করে — অপরিবর্তিত রাখা হবে।
-
-## ফাইল সারাংশ
-
-```text
-নতুন:  src/components/site/LoginCard.tsx   (reusable login/signup card)
-বদল:   src/pages/Index.tsx                  (AuthEntry → LoginCard + header/footer)
-       src/lib/app-routes.tsx               (/auth route ও L56 সরানো)
-       উপরের ১১টি ফাইল                       (/auth → /)
-মুছে দেয়া: src/pages/Auth.tsx
-           src/components/site/AuthEntry.tsx
-           src/components/site/HeroAuthCard.tsx
-```
+### ৪. UX detail
+- WhatsApp box এর উপরে ছোট হিন্ট: "PIN মনে নেই? নিচের button থেকে WhatsApp এ admin কে জানান।"
+- Signup mode বা role tab switch করলে `showForgotPin` সবসময় false হবে।
 
 ## ফলাফল
 
-- হোম পেজ এ ঢুকেই সরাসরি পরিষ্কার login card — অতিরিক্ত brand pitch / dual column ঝামেলা নেই।
-- "Create account" tab এ গেলে শুধু দরকারি field গুলো (নাম, দোকান হলে দোকানের নাম+ধরন, ফোন, PIN)।
-- আলাদা `/auth` পেজ আর নেই; পুরোনো লিংক বা bookmark গেলে home এ redirect (router এর `*` notfound হিসেবে নয় — আমরা সব আভ্যন্তরীণ link ঠিক করে দিচ্ছি, আর `/auth` URL এ গেলে NotFound এড়াতে চাইলে পরে `Navigate` redirect যোগ করা যাবে; এই plan এ সব internal link ই হোমে যায়, তাই সমস্যা নেই)।
-- Logged-in user হোমে আসলে আগের মতই role-aware dashboard এ চলে যাবে।
+- একদম প্রথমে login screen এ WhatsApp link দেখা যাবে না — পরিষ্কার UI।
+- ফোন না দিয়ে কেউ WhatsApp করতে পারবে না।
+- `no_account` হলে শুধু toast — sign up করতে বলবে, WhatsApp link আসবে না (কারণ account ই নাই)।
+- শুধু "account আছে কিন্তু PIN ভুল / PIN সেট নাই" — এই দুই case এ WhatsApp করার option আসবে, এবং সেই WhatsApp message এ user এর ফোন নম্বর অটো বসানো থাকবে।
+
+## ফাইল
+
+```text
+বদল: src/components/site/LoginCard.tsx
+```

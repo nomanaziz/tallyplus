@@ -58,6 +58,12 @@ export function LoginCard() {
   const [loading, setLoading] = useState(false);
   const [adminPhone, setAdminPhone] = useState(ADMIN_WA);
   const [postSignup, setPostSignup] = useState<null | "owner">(null);
+  const [showForgotPin, setShowForgotPin] = useState(false);
+
+  // Reset forgot-pin hint whenever the user changes phone/pin/mode/role
+  useEffect(() => {
+    setShowForgotPin(false);
+  }, [phone, pin, mode, role]);
 
   useEffect(() => {
     if (search.role === "customer" || search.role === "owner") setRole(search.role);
@@ -144,24 +150,41 @@ export function LoginCard() {
         if (role === "owner") {
           const r = await callFn("login-with-pin", { phone: ph, pin });
           if (!r.ok) {
-            if (r.error === "wrong_pin") return toast.error("ভুল PIN");
-            if (r.error === "no_account") return toast.error("এই নম্বরে দোকানদার account নেই — সাইনআপ করুন");
+            if (r.error === "wrong_pin") {
+              setShowForgotPin(true);
+              return toast.error("ভুল PIN");
+            }
+            if (r.error === "no_account") {
+              setShowForgotPin(false);
+              return toast.error("এই নম্বরে দোকানদার account নেই — সাইনআপ করুন");
+            }
             return toast.error(r.error || "লগইন ব্যর্থ");
           }
           await setSession(r.access_token, r.refresh_token);
           await ensureProfile();
+          setShowForgotPin(false);
           toast.success("লগইন সফল");
           navigate({ to: "/app/dashboard", replace: true });
         } else {
           const r = await callFn("customer-login-with-pin", { phone: ph, pin });
           if (!r.ok) {
-            if (r.error === "wrong_pin") return toast.error("ভুল PIN");
-            if (r.error === "no_account") return toast.error("এই নম্বরে গ্রাহক account নেই — সাইনআপ করুন");
-            if (r.error === "no_pin_set") return toast.error("PIN সেট নেই — WhatsApp এ সাহায্য নিন");
+            if (r.error === "wrong_pin") {
+              setShowForgotPin(true);
+              return toast.error("ভুল PIN");
+            }
+            if (r.error === "no_account") {
+              setShowForgotPin(false);
+              return toast.error("এই নম্বরে গ্রাহক account নেই — সাইনআপ করুন");
+            }
+            if (r.error === "no_pin_set") {
+              setShowForgotPin(true);
+              return toast.error("PIN সেট নেই — WhatsApp এ সাহায্য নিন");
+            }
             return toast.error(r.error || "লগইন ব্যর্থ");
           }
           await setSession(r.access_token, r.refresh_token);
           await ensureProfile();
+          setShowForgotPin(false);
           toast.success("লগইন সফল");
           navigate({ to: "/customer/dashboard", replace: true });
         }
@@ -174,11 +197,15 @@ export function LoginCard() {
   };
 
   const waUrl = () => {
+    const ph = normalizePhone(phone);
     const text = encodeURIComponent(
-      `আসসালামু আলাইকুম, আমার Tally Plus account সমস্যা — Phone: ${normalizePhone(phone) || "(আমার নম্বর)"}\nসাহায্য করুন।`,
+      `আসসালামু আলাইকুম, আমার Tally Plus account এর PIN ভুলে গেছি।\nPhone: ${ph}\nদয়া করে PIN reset/সাহায্য করুন।`,
     );
     return `https://wa.me/${adminPhone}?text=${text}`;
   };
+
+  const phoneIsValid = normalizePhone(phone).length >= 10;
+  const canShowForgotPin = mode === "login" && showForgotPin && phoneIsValid;
 
   if (postSignup === "owner") {
     return (
@@ -260,15 +287,22 @@ export function LoginCard() {
           >
             Create account
           </button>
-          <a
-            href={waUrl()}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center justify-center gap-2 rounded-md border border-green-600/30 bg-green-50 px-3 py-2 text-xs text-green-700 hover:bg-green-100 dark:bg-green-950/30 dark:text-green-400"
-          >
-            <MessageCircle className="h-3.5 w-3.5" />
-            PIN ভুলে গেছেন? WhatsApp করুন
-          </a>
+          {canShowForgotPin && (
+            <div className="space-y-1.5">
+              <p className="text-center text-[11px] text-muted-foreground">
+                PIN মনে নেই? নিচের button থেকে WhatsApp এ admin কে জানান।
+              </p>
+              <a
+                href={waUrl()}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 rounded-md border border-green-600/30 bg-green-50 px-3 py-2 text-xs text-green-700 hover:bg-green-100 dark:bg-green-950/30 dark:text-green-400"
+              >
+                <MessageCircle className="h-3.5 w-3.5" />
+                PIN ভুলে গেছেন? WhatsApp করুন
+              </a>
+            </div>
+          )}
         </div>
       ) : (
         <div className="space-y-3">
