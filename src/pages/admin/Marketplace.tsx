@@ -506,6 +506,39 @@ function ProductsTab() {
               </div>
               <div><Label>Base Unit</Label><Input value={editing?.base_unit ?? ""} onChange={(e) => setEditing({ ...editing, base_unit: e.target.value })} /></div>
             </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Marketplace Category</Label>
+                <Select
+                  value={editing?.category_id ?? "__none"}
+                  onValueChange={(v) => setEditing({ ...editing, category_id: v === "__none" ? null : v, subcategory_id: null })}
+                >
+                  <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none">— None —</SelectItem>
+                    {mpCats.filter((c) => !c.parent_id).map((c) => (
+                      <SelectItem key={c.id} value={c.id}>{c.name_bn} / {c.name_en}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Subcategory</Label>
+                <Select
+                  value={editing?.subcategory_id ?? "__none"}
+                  onValueChange={(v) => setEditing({ ...editing, subcategory_id: v === "__none" ? null : v })}
+                  disabled={!editing?.category_id}
+                >
+                  <SelectTrigger><SelectValue placeholder={editing?.category_id ? "Select subcategory" : "Pick category first"} /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none">— None —</SelectItem>
+                    {mpCats.filter((c) => c.parent_id === editing?.category_id).map((c) => (
+                      <SelectItem key={c.id} value={c.id}>{c.name_bn} / {c.name_en}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
             <div><Label>Slug (auto if empty)</Label><Input value={editing?.slug ?? ""} onChange={(e) => setEditing({ ...editing, slug: e.target.value })} placeholder="auto-generated" /></div>
             <div>
               <Label>Product image</Label>
