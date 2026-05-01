@@ -98,6 +98,20 @@ const LCart = lazy(() => import("@/pages/shop/Cart"));
 const LCheckout = lazy(() => import("@/pages/shop/Checkout"));
 const LOrderSuccess = lazy(() => import("@/pages/shop/OrderSuccess"));
 const LFordo = lazy(() => import("@/pages/fordo/Index"));
+const LMyOrders = lazy(() => import("@/pages/customer/MyOrders"));
+const LOnlineShop = lazy(() => import("@/pages/app/online-shop/Index"));
+const LOSOrders = lazy(() => import("@/pages/app/online-shop/Orders"));
+const LOSProducts = lazy(() => import("@/pages/app/online-shop/Products"));
+const LOSDelivery = lazy(() => import("@/pages/app/online-shop/Delivery"));
+const LOSSettings = lazy(() => import("@/pages/app/online-shop/Settings"));
+const LOSMessages = lazy(() => import("@/pages/app/online-shop/Messages"));
+const LOSThemes = lazy(() => import("@/pages/app/online-shop/Themes"));
+const LOSCustomize = lazy(() => import("@/pages/app/online-shop/Customize"));
+const LOSFeatured = lazy(() => import("@/pages/app/online-shop/Featured"));
+const LOSMarketing = lazy(() => import("@/pages/app/online-shop/Marketing"));
+const LOSPolicy = lazy(() => import("@/pages/app/online-shop/Policy"));
+const LOSFraudCheck = lazy(() => import("@/pages/app/online-shop/FraudCheck"));
+const LOSPromoCodes = lazy(() => import("@/pages/app/online-shop/PromoCodes"));
 
 export const appRoutes: RouteObject[] = [
 { index: true, element: <Suspense fallback={<RouteFallback/>}><L0/></Suspense> },
