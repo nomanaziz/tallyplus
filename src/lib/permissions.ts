@@ -6,11 +6,22 @@ export type FeatureGroup = {
   key: string;
   title_bn: string;
   title_en: string;
-  icon: string; // emoji or short label
+  icon: string;
   items: { key: string; label_bn: string; label_en: string }[];
 };
 
 export const FEATURE_GROUPS: FeatureGroup[] = [
+  {
+    key: "dashboard",
+    title_bn: "হোম / ড্যাশবোর্ড",
+    title_en: "Home / Dashboard",
+    icon: "🏠",
+    items: [
+      { key: "view", label_bn: "ড্যাশবোর্ড দেখা", label_en: "View dashboard" },
+      { key: "summary", label_bn: "সারাংশ কার্ড", label_en: "Summary cards" },
+      { key: "quick_actions", label_bn: "দ্রুত অ্যাকশন", label_en: "Quick actions" },
+    ],
+  },
   {
     key: "purchase",
     title_bn: "কেনা",
@@ -103,6 +114,9 @@ export const FEATURE_GROUPS: FeatureGroup[] = [
       { key: "details", label_bn: "বিস্তারিত", label_en: "Details" },
       { key: "edit", label_bn: "এডিট করুন", label_en: "Edit" },
       { key: "delete", label_bn: "মুছে ফেলুন", label_en: "Delete" },
+      { key: "import", label_bn: "ইমপোর্ট / স্যাম্পল লোড", label_en: "Import / Sample load" },
+      { key: "categories", label_bn: "ক্যাটাগরি ম্যানেজ", label_en: "Manage categories" },
+      { key: "barcode", label_bn: "বারকোড প্রিন্ট", label_en: "Barcode print" },
     ],
   },
   {
@@ -111,13 +125,122 @@ export const FEATURE_GROUPS: FeatureGroup[] = [
     title_en: "Stock",
     icon: "🏷️",
     items: [
+      { key: "view", label_bn: "স্টকের হিসাব", label_en: "Stock" },
       { key: "history", label_bn: "ইতিহাস", label_en: "History" },
       { key: "update", label_bn: "আপডেট", label_en: "Update" },
-      { key: "view", label_bn: "স্টকের হিসাব", label_en: "Stock" },
+      { key: "edit", label_bn: "স্টক এডিট", label_en: "Stock edit" },
+      { key: "bulk_update", label_bn: "একসাথে স্টক আপডেট", label_en: "Bulk stock update" },
+      { key: "serial", label_bn: "সিরিয়াল / IMEI ম্যানেজ", label_en: "Manage Serials / IMEI" },
+      { key: "expiring", label_bn: "মেয়াদোত্তীর্ণ পণ্য", label_en: "Expiring products" },
+      { key: "warranty", label_bn: "ওয়ারেন্টি ট্র্যাকিং", label_en: "Warranty tracking" },
     ],
   },
-  { key: "sms", title_bn: "এস এম এস", title_en: "SMS", icon: "💬", items: [{ key: "view", label_bn: "এস এম এস", label_en: "SMS" }] },
-  { key: "report", title_bn: "ব্যবসার রিপোর্ট", title_en: "Report", icon: "📈", items: [{ key: "view", label_bn: "ব্যবসার রিপোর্ট", label_en: "Report" }] },
+  {
+    key: "cashbox",
+    title_bn: "নগদ বাক্স",
+    title_en: "Cashbox",
+    icon: "💵",
+    items: [
+      { key: "view", label_bn: "নগদ বাক্স দেখা", label_en: "View cashbox" },
+      { key: "cash_in", label_bn: "নগদ যোগ", label_en: "Cash in" },
+      { key: "cash_out", label_bn: "নগদ উত্তোলন", label_en: "Cash out" },
+      { key: "denominations", label_bn: "নোট-পয়সা গণনা", label_en: "Denominations" },
+      { key: "history", label_bn: "নগদ ইতিহাস", label_en: "Cash history" },
+    ],
+  },
+  {
+    key: "assets",
+    title_bn: "সম্পদ ও দায়",
+    title_en: "Assets & Liabilities",
+    icon: "🏦",
+    items: [
+      { key: "view", label_bn: "সম্পদ দেখা", label_en: "View assets" },
+      { key: "add", label_bn: "যোগ করুন", label_en: "Add" },
+      { key: "edit", label_bn: "এডিট করুন", label_en: "Edit" },
+      { key: "delete", label_bn: "মুছে ফেলুন", label_en: "Delete" },
+    ],
+  },
+  {
+    key: "owner_ledger",
+    title_bn: "মালিকের খাতা",
+    title_en: "Owner ledger",
+    icon: "👔",
+    items: [
+      { key: "view", label_bn: "মালিকের খাতা দেখা", label_en: "View owner ledger" },
+      { key: "add", label_bn: "এন্ট্রি যোগ", label_en: "Add entry" },
+      { key: "edit", label_bn: "এডিট", label_en: "Edit" },
+      { key: "delete", label_bn: "ডিলিট", label_en: "Delete" },
+    ],
+  },
+  {
+    key: "wishlist",
+    title_bn: "গ্রাহক ফর্দ",
+    title_en: "Customer wishlist",
+    icon: "📝",
+    items: [
+      { key: "view", label_bn: "ফর্দ তালিকা", label_en: "View wishlist" },
+      { key: "convert", label_bn: "ফর্দ → বিক্রি কনভার্ট", label_en: "Convert to sale" },
+      { key: "edit", label_bn: "এডিট", label_en: "Edit" },
+      { key: "delete", label_bn: "ডিলিট", label_en: "Delete" },
+      { key: "history", label_bn: "ফর্দ ইতিহাস", label_en: "Wishlist history" },
+    ],
+  },
+  {
+    key: "quick_order",
+    title_bn: "দ্রুত অর্ডার",
+    title_en: "Quick order",
+    icon: "⚡",
+    items: [
+      { key: "view", label_bn: "দ্রুত অর্ডার দেখা", label_en: "View quick order" },
+      { key: "create", label_bn: "অর্ডার তৈরি", label_en: "Create order" },
+      { key: "edit", label_bn: "এডিট", label_en: "Edit" },
+      { key: "delete", label_bn: "ডিলিট", label_en: "Delete" },
+    ],
+  },
+  {
+    key: "marketing",
+    title_bn: "মার্কেটিং",
+    title_en: "Marketing",
+    icon: "📣",
+    items: [
+      { key: "view", label_bn: "মার্কেটিং দেখা", label_en: "View marketing" },
+      { key: "send_sms", label_bn: "এসএমএস পাঠানো", label_en: "Send SMS" },
+      { key: "campaigns", label_bn: "ক্যাম্পেইন ম্যানেজ", label_en: "Manage campaigns" },
+    ],
+  },
+  {
+    key: "sms",
+    title_bn: "এস এম এস",
+    title_en: "SMS",
+    icon: "💬",
+    items: [
+      { key: "view", label_bn: "এস এম এস", label_en: "SMS" },
+      { key: "history", label_bn: "এসএমএস ইতিহাস", label_en: "SMS history" },
+      { key: "buy", label_bn: "এসএমএস কিনুন", label_en: "Buy SMS" },
+    ],
+  },
+  {
+    key: "report",
+    title_bn: "ব্যবসার রিপোর্ট",
+    title_en: "Reports",
+    icon: "📈",
+    items: [
+      { key: "view", label_bn: "ব্যবসার রিপোর্ট", label_en: "Business report" },
+      { key: "sales_report", label_bn: "বিক্রির রিপোর্ট", label_en: "Sales report" },
+      { key: "purchase_report", label_bn: "কেনার রিপোর্ট", label_en: "Purchase report" },
+      { key: "stock_report", label_bn: "স্টক রিপোর্ট", label_en: "Stock report" },
+      { key: "product_report", label_bn: "প্রোডাক্ট রিপোর্ট", label_en: "Product report" },
+      { key: "expense_report", label_bn: "খরচ রিপোর্ট", label_en: "Expense report" },
+      { key: "income_report", label_bn: "আয় রিপোর্ট", label_en: "Income report" },
+      { key: "profit_loss", label_bn: "লাভ-ক্ষতি", label_en: "Profit & Loss" },
+      { key: "supplier_report", label_bn: "সাপ্লায়ার রিপোর্ট", label_en: "Supplier report" },
+      { key: "top_customers", label_bn: "শীর্ষ কাস্টমার", label_en: "Top customers" },
+      { key: "top_employees", label_bn: "শীর্ষ কর্মচারী", label_en: "Top employees" },
+      { key: "owner_report", label_bn: "মালিক রিপোর্ট", label_en: "Owner report" },
+      { key: "combined_report", label_bn: "একত্রিত রিপোর্ট", label_en: "Combined report" },
+      { key: "export", label_bn: "এক্সপোর্ট / ডাউনলোড", label_en: "Export / Download" },
+    ],
+  },
   {
     key: "returns",
     title_bn: "প্রোডাক্ট রিটার্ন",
@@ -131,7 +254,26 @@ export const FEATURE_GROUPS: FeatureGroup[] = [
       { key: "delete", label_bn: "মুছে ফেলুন", label_en: "Delete" },
     ],
   },
-  { key: "topup", title_bn: "টপ আপ", title_en: "Top up", icon: "🔋", items: [{ key: "view", label_bn: "টপ আপ", label_en: "Top up" }] },
+  {
+    key: "recycle_bin",
+    title_bn: "রিসাইকেল বিন",
+    title_en: "Recycle bin",
+    icon: "🗑️",
+    items: [
+      { key: "view", label_bn: "বিন দেখা", label_en: "View bin" },
+      { key: "restore", label_bn: "পুনরুদ্ধার", label_en: "Restore" },
+      { key: "purge", label_bn: "স্থায়ী ডিলিট", label_en: "Permanent delete" },
+    ],
+  },
+  {
+    key: "topup",
+    title_bn: "টপ আপ",
+    title_en: "Top up",
+    icon: "🔋",
+    items: [
+      { key: "view", label_bn: "টপ আপ", label_en: "Top up" },
+    ],
+  },
   {
     key: "online_shop",
     title_bn: "অনলাইন শপ",
@@ -146,33 +288,107 @@ export const FEATURE_GROUPS: FeatureGroup[] = [
       { key: "order_details", label_bn: "অর্ডারের বিস্তারিত", label_en: "Order details" },
       { key: "theme", label_bn: "থিম সেটিংস", label_en: "Theme" },
       { key: "delivery", label_bn: "ডেলিভারি মাধ্যম", label_en: "Delivery" },
+      { key: "featured", label_bn: "ফিচার্ড প্রোডাক্ট", label_en: "Featured products" },
+      { key: "banners", label_bn: "ব্যানার ম্যানেজ", label_en: "Manage banners" },
     ],
   },
-  { key: "shop", title_bn: "শপ", title_en: "Shop", icon: "🏪", items: [{ key: "view", label_bn: "শপ সেটিংস", label_en: "Shop settings" }] },
+  {
+    key: "shop",
+    title_bn: "শপ সেটিংস",
+    title_en: "Shop settings",
+    icon: "🏪",
+    items: [
+      { key: "view", label_bn: "শপ সেটিংস", label_en: "Shop settings" },
+      { key: "edit", label_bn: "শপ এডিট", label_en: "Edit shop" },
+      { key: "logo", label_bn: "লোগো / প্রোফাইল", label_en: "Logo / Profile" },
+      { key: "switch", label_bn: "শপ সুইচ", label_en: "Switch shop" },
+      { key: "create", label_bn: "নতুন শপ যোগ", label_en: "Add new shop" },
+      { key: "delete", label_bn: "শপ ডিলিট", label_en: "Delete shop" },
+    ],
+  },
+  {
+    key: "printer",
+    title_bn: "প্রিন্টার",
+    title_en: "Printer",
+    icon: "🖨️",
+    items: [
+      { key: "view", label_bn: "প্রিন্টার সেটিংস", label_en: "Printer settings" },
+      { key: "configure", label_bn: "কনফিগার", label_en: "Configure" },
+    ],
+  },
+  {
+    key: "training",
+    title_bn: "অ্যাপ ট্রেনিং",
+    title_en: "Training",
+    icon: "🎓",
+    items: [
+      { key: "view", label_bn: "ট্রেনিং দেখা", label_en: "View training" },
+    ],
+  },
+  {
+    key: "affiliate",
+    title_bn: "অ্যাফিলিয়েট",
+    title_en: "Affiliate",
+    icon: "🤝",
+    items: [
+      { key: "view", label_bn: "অ্যাফিলিয়েট দেখা", label_en: "View affiliate" },
+      { key: "withdraw", label_bn: "টাকা উত্তোলন", label_en: "Withdraw" },
+      { key: "share", label_bn: "রেফারেল শেয়ার", label_en: "Share referral" },
+    ],
+  },
+  {
+    key: "subscription",
+    title_bn: "সাবস্ক্রিপশন",
+    title_en: "Subscription",
+    icon: "💳",
+    items: [
+      { key: "view", label_bn: "প্ল্যান দেখা", label_en: "View plans" },
+      { key: "purchase", label_bn: "কিনুন / আপগ্রেড", label_en: "Purchase / upgrade" },
+      { key: "usage", label_bn: "ব্যবহারের সীমা", label_en: "Usage limits" },
+    ],
+  },
+  {
+    key: "access",
+    title_bn: "অ্যাক্সেস ম্যানেজমেন্ট",
+    title_en: "Access management",
+    icon: "🔐",
+    items: [
+      { key: "view", label_bn: "মেম্বার তালিকা", label_en: "View members" },
+      { key: "invite", label_bn: "নতুন মেম্বার যোগ", label_en: "Invite member" },
+      { key: "edit_perms", label_bn: "পারমিশন এডিট", label_en: "Edit permissions" },
+      { key: "remove", label_bn: "মেম্বার রিমুভ", label_en: "Remove member" },
+      { key: "custom_roles", label_bn: "কাস্টম রোল", label_en: "Custom roles" },
+    ],
+  },
 ];
 
 export type PermissionMap = Record<string, string[]>;
 
-/** Preset permissions per role. */
 export const ROLE_PRESETS: Record<RoleKey, PermissionMap> = {
   EMPLOYEE: {
+    dashboard: ["view", "summary"],
     sell: ["sell", "quick_sell", "cart_edit"],
     contacts: ["view", "customers", "add_customer"],
+    products: ["view"],
   },
   MANAGER: {
+    dashboard: ["view", "summary", "quick_actions"],
     purchase: ["buy", "cart_edit", "discount", "delivery"],
     sell: ["sell", "quick_sell", "cart_edit", "discount", "delivery"],
     expense: ["expense", "list", "add"],
     contacts: ["view", "customers", "suppliers", "add_customer", "add_supplier"],
-    products: ["view"],
-    stock: ["view", "history"],
-    report: ["view"],
+    products: ["view", "add", "edit", "details"],
+    stock: ["view", "history", "update", "edit"],
+    cashbox: ["view", "cash_in", "cash_out", "history"],
+    wishlist: ["view", "convert"],
+    quick_order: ["view", "create"],
+    report: ["view", "sales_report", "purchase_report", "stock_report"],
     returns: ["view", "add", "refund"],
+    sms: ["view", "history"],
   },
   OWNER: Object.fromEntries(FEATURE_GROUPS.map((g) => [g.key, g.items.map((i) => i.key)])),
 };
 
-/** Map app_role enum (DB) to default preset. */
 export function presetForDbRole(role: string): PermissionMap {
   if (role === "owner" || role === "admin") return ROLE_PRESETS.OWNER;
   if (role === "manager") return ROLE_PRESETS.MANAGER;
@@ -210,7 +426,6 @@ export function isGroupFullyOn(perms: PermissionMap | null | undefined, group: s
   return fg.items.every((i) => perms[group].includes(i.key));
 }
 
-/** Normalize phone to international 8801XXXXXXXXX (no +, no spaces). */
 export function normalizeBdPhone(raw: string | null | undefined): string | null {
   if (!raw) return null;
   const digits = raw.replace(/\D/g, "");
