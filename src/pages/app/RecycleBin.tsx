@@ -12,6 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { DataPagination } from "@/components/app/DataPagination";
 import { usePagination } from "@/hooks/use-pagination";
 import { toast } from "sonner";
+import { usePermissions } from "@/lib/permissions-hook";
 
 type Tab = "products" | "customers" | "suppliers" | "sales" | "purchases" | "expenses" | "customer_wishlists";
 
@@ -31,6 +32,8 @@ function RecycleBinPage() {
   const { lang } = useI18n();
   const { current } = useShop();
   const qc = useQueryClient();
+  const { isOwner, isAdmin } = usePermissions();
+  const canPurge = isOwner || isAdmin;
   const [tab, setTab] = useState<Tab>("products");
   const { data: rawData = [], refetch } = useQuery(recycleBinQuery(current?.id ?? null, tab));
   const rows = rawData as unknown as Record<string, unknown>[];
@@ -106,10 +109,12 @@ function RecycleBinPage() {
                         <RotateCcw className="h-3.5 w-3.5" />
                         {lang === "bn" ? "ফেরত" : "Restore"}
                       </Button>
-                      <Button size="sm" variant="outline" onClick={() => purge(String(r.id))} className="gap-1 border-rose-200 text-rose-600 hover:bg-rose-50">
-                        <Trash2 className="h-3.5 w-3.5" />
-                        {lang === "bn" ? "স্থায়ী" : "Purge"}
-                      </Button>
+                      {canPurge && (
+                        <Button size="sm" variant="outline" onClick={() => purge(String(r.id))} className="gap-1 border-rose-200 text-rose-600 hover:bg-rose-50">
+                          <Trash2 className="h-3.5 w-3.5" />
+                          {lang === "bn" ? "স্থায়ী" : "Purge"}
+                        </Button>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>

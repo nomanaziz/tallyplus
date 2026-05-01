@@ -1125,10 +1125,16 @@ function ProductFormDialog({
       setDiscountValue(p?.discount_value != null ? String(p.discount_value) : "");
       setDiscountType(((p?.discount_type as "percent"|"flat") ?? "percent"));
       setBarcodeOn(Boolean(p?.barcode));
+      // For new products in mobile shops, default IMEI/Serial tracking ON
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      setSerializedOn(Boolean((p as any)?.is_serialized));
+      const existingSerialized = (p as any)?.is_serialized;
+      if (p) {
+        setSerializedOn(Boolean(existingSerialized));
+      } else {
+        setSerializedOn(shopTypeCode === "mobile");
+      }
     }
-  }, [open, product]);
+  }, [open, product, shopTypeCode]);
 
   const topCats = allCats.filter((c) => !c.parent_id);
   const subCats = categoryId ? allCats.filter((c) => c.parent_id === categoryId) : [];

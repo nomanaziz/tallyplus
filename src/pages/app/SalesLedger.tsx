@@ -19,6 +19,7 @@ import { DataPagination } from "@/components/app/DataPagination";
 import { usePagination } from "@/hooks/use-pagination";
 import { toast } from "sonner";
 import { printTableReport } from "@/lib/print-report";
+import { usePermissions } from "@/lib/permissions-hook";
 
 type Sale = {
   id: string;
@@ -42,6 +43,8 @@ function SalesLedgerPage() {
   const { current } = useShop();
   const nav = useNavigate();
   const qc = useQueryClient();
+  const { isOwner, isAdmin } = usePermissions();
+  const canDelete = isOwner || isAdmin;
   const { data: rawSales, refetch } = useQuery(salesListQuery(current?.id ?? null));
   const sales = useMemo(() => (rawSales as unknown as Sale[] | undefined) ?? [], [rawSales]);
   const { data: customersData } = useQuery(contactsQuery(current?.id ?? null, "customers"));
@@ -310,10 +313,12 @@ function SalesLedgerPage() {
                                 {lang === "bn" ? "ডিসকাউন্ট দিন" : "Apply discount"}
                               </DropdownMenuItem>
                             )}
-                            <DropdownMenuItem className="text-rose-600" onClick={() => void softDelete(s)}>
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              {lang === "bn" ? "মুছুন" : "Delete"}
-                            </DropdownMenuItem>
+                            {canDelete && (
+                              <DropdownMenuItem className="text-rose-600" onClick={() => void softDelete(s)}>
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                {lang === "bn" ? "মুছুন" : "Delete"}
+                              </DropdownMenuItem>
+                            )}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
