@@ -3,7 +3,8 @@ import { Link } from "@/lib/router";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { Card } from "@/components/ui/card";
-import { Wallet, ListChecks, NotebookPen, TrendingUp, TrendingDown, Loader2, ArrowDownLeft, ArrowUpRight, ShoppingBag, GraduationCap, User } from "lucide-react";
+import { TrendingUp, TrendingDown, Wallet, Loader2 } from "lucide-react";
+import { icons } from "@/lib/icons";
 
 type Tx = { id: string; type: string; amount: number; tx_date: string };
 
@@ -35,8 +36,6 @@ export default function CustomerDashboard() {
           .select("type, amount")
           .eq("user_id", user.id)
           .gte("tx_date", since),
-        // Use the same unified resolver as MyFordo so phone-matched fordos
-        // (sent via the public shop link before login) are also counted.
         supabase.functions.invoke("consumer-fordo-history", { body: {} }),
         supabase
           .from("consumer_notes")
@@ -121,47 +120,37 @@ export default function CustomerDashboard() {
       </div>
 
       <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 sm:gap-3">
-        <Shortcut to="/customer/my-fordo" label="আমার ফর্দ" sub={`${fordoCount}টি`} Icon={ListChecks} tone="primary" />
-        <Shortcut to="/customer/my-orders" label="আমার অর্ডার" Icon={ShoppingBag} tone="primary" />
-        <Shortcut to="/customer/money" label="আয়-ব্যয়" Icon={Wallet} tone="primary" />
-        <Shortcut to="/customer/notes" label="নোট" sub={`${noteCount}টি`} Icon={NotebookPen} tone="amber" />
-        <Shortcut to="/customer/money" label="পাব" sub={bdt(willGet)} Icon={ArrowDownLeft} tone="emerald" />
-        <Shortcut to="/customer/money" label="দেব" sub={bdt(willGive)} Icon={ArrowUpRight} tone="rose" />
-        <Shortcut to="/customer/training" label="ট্রেনিং" Icon={GraduationCap} tone="primary" />
-        <Shortcut to="/customer/profile" label="ঠিকানা" Icon={User} tone="primary" />
+        <Shortcut to="/customer/my-fordo" label="আমার ফর্দ" sub={`${fordoCount}টি`} icon={icons.productList} />
+        <Shortcut to="/customer/my-orders" label="আমার অর্ডার" icon={icons.salesList} />
+        <Shortcut to="/customer/money" label="আয়-ব্যয়" icon={icons.cashbox} />
+        <Shortcut to="/customer/notes" label="নোট" sub={`${noteCount}টি`} icon={icons.bookmark} />
+        <Shortcut to="/customer/money" label="পাব" sub={bdt(willGet)} icon={icons.due} />
+        <Shortcut to="/customer/money" label="দেব" sub={bdt(willGive)} icon={icons.expense} />
+        <Shortcut to="/customer/training" label="ট্রেনিং" icon={icons.training} />
+        <Shortcut to="/customer/profile" label="ঠিকানা" icon={icons.contact} />
       </div>
     </div>
   );
 }
 
-type Tone = "primary" | "amber" | "emerald" | "rose";
-const TONE: Record<Tone, string> = {
-  primary: "bg-primary/10 text-primary",
-  amber: "bg-amber-500/10 text-amber-600",
-  emerald: "bg-emerald-500/10 text-emerald-600",
-  rose: "bg-rose-500/10 text-rose-600",
-};
-
 function Shortcut({
   to,
   label,
   sub,
-  Icon,
-  tone,
+  icon,
 }: {
   to: string;
   label: string;
   sub?: string;
-  Icon: React.ComponentType<{ className?: string }>;
-  tone: Tone;
+  icon: string;
 }) {
   return (
     <Link
       to={to}
-      className="group flex flex-col items-center gap-1.5 rounded-2xl border bg-card p-3 text-center shadow-sm transition hover:border-primary/40 sm:p-4"
+      className="group flex flex-col items-center gap-1.5 rounded-2xl border bg-card p-3 text-center shadow-sm transition hover:border-primary/40 hover:shadow-md sm:p-4"
     >
-      <div className={`flex h-10 w-10 items-center justify-center rounded-full sm:h-12 sm:w-12 ${TONE[tone]}`}>
-        <Icon className="h-5 w-5 sm:h-6 sm:w-6" />
+      <div className="flex h-12 w-12 items-center justify-center sm:h-14 sm:w-14">
+        <img src={icon} alt="" className="h-full w-full object-contain" />
       </div>
       <div className="text-[11px] font-semibold leading-tight sm:text-sm">{label}</div>
       {sub ? <div className="text-[10px] text-muted-foreground">{sub}</div> : null}
