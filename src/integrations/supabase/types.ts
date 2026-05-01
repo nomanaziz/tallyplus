@@ -3844,6 +3844,7 @@ export type Database = {
       }
       training_videos: {
         Row: {
+          audience: string
           category: string
           created_at: string
           created_by: string | null
@@ -3857,6 +3858,7 @@ export type Database = {
           youtube_id: string
         }
         Insert: {
+          audience?: string
           category?: string
           created_at?: string
           created_by?: string | null
@@ -3870,6 +3872,7 @@ export type Database = {
           youtube_id: string
         }
         Update: {
+          audience?: string
           category?: string
           created_at?: string
           created_by?: string | null
