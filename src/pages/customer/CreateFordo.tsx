@@ -231,14 +231,18 @@ export default function CreateFordo() {
           toast.info("অন্তত ২ অক্ষর লিখুন");
           return;
         }
-        const { data } = await supabase
-          .from("shops")
-          .select("id,name,phone,logo_url,owner_id")
-          .ilike("name", `%${q}%`)
-          .is("deleted_at", null)
-          .limit(20);
-        setResults((data ?? []) as Shop[]);
-        if ((data ?? []).length === 0) toast.info("কোনো দোকান পাওয়া যায়নি");
+        const res = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/find-shops-by-name`,
+          {
+            method: "POST",
+            headers: { "content-type": "application/json", apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY },
+            body: JSON.stringify({ name: q }),
+          },
+        );
+        const d = await res.json();
+        if (!res.ok) throw new Error(d.error ?? "ত্রুটি");
+        setResults((d.shops ?? []) as Shop[]);
+        if ((d.shops ?? []).length === 0) toast.info("কোনো দোকান পাওয়া যায়নি");
       }
     } catch (e) {
       toast.error((e as Error).message);
