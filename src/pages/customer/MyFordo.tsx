@@ -374,15 +374,39 @@ export default function MyFordo() {
         </section>
       )}
 
-      <h2 className="pt-2 text-sm font-bold">পাঠানো ফর্দ</h2>
+      <div className="flex flex-wrap items-center justify-between gap-2 pt-2">
+        <h2 className="text-sm font-bold">পাঠানো ফর্দ ({filteredItems.length})</h2>
+        {monthOptions.length > 0 && (
+          <div className="flex items-center gap-1.5">
+            <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+            <Select value={monthFilter} onValueChange={setMonthFilter}>
+              <SelectTrigger className="h-8 w-[180px] text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">সব মাস ({items.length})</SelectItem>
+                {monthOptions.map((k) => (
+                  <SelectItem key={k} value={k}>
+                    {monthLabel(k)} ({monthCounts[k]})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+      </div>
       {items.length === 0 ? (
         <Card className="p-8 text-center text-sm text-muted-foreground">
           <ListChecks className="mx-auto mb-2 h-8 w-8 text-muted-foreground/50" />
           এখনো কোনো ফর্দ পাঠানো হয়নি। দোকানের ফর্দ লিঙ্কে গিয়ে পাঠান।
         </Card>
+      ) : filteredItems.length === 0 ? (
+        <Card className="p-6 text-center text-sm text-muted-foreground">
+          এই মাসে কোনো ফর্দ পাঠানো হয়নি।
+        </Card>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2">
-          {items.map((w) => {
+          {filteredItems.map((w) => {
             const wlItems = itemsByWl[w.id] ?? [];
             const total = wlTotal(w.id);
             const isOpen = !!expanded[w.id];
@@ -448,6 +472,16 @@ export default function MyFordo() {
                             })}
                           </ul>
                         )}
+                        {isOpen && (
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            <Button size="sm" variant="outline" onClick={() => duplicateWishlist(w)}>
+                              <Copy className="mr-1 h-3.5 w-3.5" /> আবার পাঠান (নকল)
+                            </Button>
+                            <Button size="sm" variant="outline" onClick={() => openSaveTemplate(w)}>
+                              <Save className="mr-1 h-3.5 w-3.5" /> টেমপ্লেট সংরক্ষণ
+                            </Button>
+                          </div>
+                        )}
                       </>
                     )}
                   </div>
@@ -457,6 +491,29 @@ export default function MyFordo() {
           })}
         </div>
       )}
+
+      <Dialog open={saveOpen} onOpenChange={setSaveOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>টেমপ্লেট হিসেবে সংরক্ষণ</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label>টেমপ্লেটের নাম</Label>
+            <Input
+              value={saveName}
+              onChange={(e) => setSaveName(e.target.value)}
+              placeholder="যেমন: মাসিক বাজার"
+              maxLength={80}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSaveOpen(false)}>বাতিল</Button>
+            <Button disabled={saving} onClick={confirmSaveTemplate}>
+              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "সংরক্ষণ"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
