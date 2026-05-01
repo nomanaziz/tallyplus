@@ -1,0 +1,1 @@
+UPDATE public.bd_divisions SET name_en = 'Chattogram', updated_at = now() WHERE name_en = 'Chattagram';
