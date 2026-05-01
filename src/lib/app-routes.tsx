@@ -173,7 +173,8 @@ export const appRoutes: RouteObject[] = [
 { path: "money", element: <Suspense fallback={<RouteFallback/>}><L60/></Suspense> },
 { path: "my-fordo", element: <Suspense fallback={<RouteFallback/>}><L61/></Suspense> },
 { path: "notes", element: <Suspense fallback={<RouteFallback/>}><L62/></Suspense> },
-{ path: "profile", element: <Suspense fallback={<RouteFallback/>}><L63/></Suspense> }
+{ path: "profile", element: <Suspense fallback={<RouteFallback/>}><L63/></Suspense> },
+{ path: "training", element: <Suspense fallback={<RouteFallback/>}><L87/></Suspense> }
 ] },
 { path: "f/:slug", element: <Suspense fallback={<RouteFallback/>}><L64/></Suspense>, children: [
 { path: "my", element: <Suspense fallback={<RouteFallback/>}><L65/></Suspense> }
