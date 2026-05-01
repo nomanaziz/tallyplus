@@ -1,65 +1,68 @@
-## সমস্যা
+## লক্ষ্য
 
-DB-তে চেক করে দেখলাম বর্তমানে ৭টা shop-এর মধ্যে শুধু **১টায়** `wishlist_slug` set আছে — বাকি ৬টায় NULL। কারণ:
+আলাদা `/auth` পেজ পুরোপুরি সরিয়ে দিয়ে, `/auth` এর সরল login/signup design টা সরাসরি **হোম পেজ (`/`)** এ বসানো। বর্তমান হোম পেজে যে দুই-কলাম brand-pitch + HeroAuthCard layout আছে (AuthEntry component) সেটা সরে গিয়ে শুধু একটাই পরিষ্কার কার্ড দেখাবে — যেমনটা এখন `/auth` এ আছে।
 
-- `wishlist_slug` কলামটা শুধু **একটা পুরোনো migration**-এ existing shops-এর জন্য একবার backfill হয়েছিল।
-- `shops` insert/create flow-এ নতুন shop-এর জন্য `wishlist_slug` auto-generate করা হয় না।
-- ফলে নতুন shop owner যখন দোকান খুলেন, তার ফর্দ link generate হয় না (`vendor/Username.tsx`-এ "ফর্দ লিঙ্ক এখনো নেই" দেখায়, dashboard-এ link copy করা যায় না)।
+## এখন যা আছে
 
-User-এর প্রস্তাব ভাল: **আলাদা random slug-এর ঝামেলা না করে — shop-এর নিজের identifier (username বা শহরের নাম) এর শেষে `/forward` যোগ করেই ফর্দ link বানানো হোক**। তাহলে যেকোনো নতুন shop খুললেই তার URL-এর শেষে `/forward` দিলেই ফর্দ পাঠানো যাবে — কোনো alaada generation দরকার নেই।
+- `/` → `Index.tsx` → `<AuthEntry />` (ব্রান্ড পিচ + tabs সহ HeroAuthCard, একটু গ্যাঞ্জাম)
+- `/auth` → `Auth.tsx` (পরিষ্কার single card: Login tab → phone+PIN; Create account tab → name/shop/PIN; post-signup sample import prompt সহ)
 
-## সমাধান (২ স্তরে)
+## পরিবর্তন
 
-### স্তর ১: DB ও routing — primary identifier দিয়ে fordo URL
+### 1. হোম পেজ replace
+`src/pages/Index.tsx` এর ভেতরের রেন্ডার `<AuthEntry />` এর জায়গায় `Auth.tsx` এর form UI বসবে (logged-out হলে)। logged-in হলে আগের মতই role অনুযায়ী dashboard এ redirect হবে।
 
-**নতুন route যোগ:** `/{username}/forward` এবং `/shop/s/{slug}/forward` (existing `/f/:slug`-ও backward compatible থাকবে)।
+বাস্তবায়নের জন্য `Auth.tsx` এর form অংশটাকে একটা reusable component এ refactor করব: `src/components/site/LoginCard.tsx` — যেটা SiteHeader/SiteFooter wrapper ছাড়া শুধু কেন্দ্রে কার্ড দেখাবে। এটাই Index এবং (যদি কোথাও ভুলে কেউ /auth এ আসে) redirect target এ ব্যবহার হবে।
 
-**Routing change (`src/lib/app-routes.tsx`):** 
-- `vendor/:username` route-এর child হিসেবে `forward` যোগ করব → `/vendor/:username/forward` এবং reusable shortcut `/{username}/forward`-ও support করার জন্য একটা catch-all রুট `/:handle/forward` যোগ করব যেটা `username`/`slug`/`wishlist_slug` যেকোনোটাতে match করবে।
-- `/shop/s/:slug` এর child হিসেবেও `forward` যোগ করা হবে।
+কার্ডের ভেতরে যা থাকবে (Auth.tsx এর মতই):
+- Login mode: role tabs (দোকানদার/গ্রাহক) → মোবাইল + PIN → লগইন → "Create account" link → "PIN ভুলে গেছেন? WhatsApp"
+- Signup mode: role tabs → নাম (+ owner হলে দোকানের নাম, ShopTypePicker) → মোবাইল + PIN → Account তৈরি → "← লগইনে ফিরুন"
+- Owner signup এর পর sample import prompt (আগের মতই)
 
-**Edge function update (`supabase/functions/wishlist-shop-info`, `submit-wishlist`, `customer-wishlist-login`):** 
-- বর্তমানে এগুলো শুধু `wishlist_slug` দিয়ে শপ খোঁজে। 
-- update করব যাতে input `slug` কে আগে `wishlist_slug`-এ match করে, না পেলে `username`-এ, না পেলে `slug`-এ match করে। এক জায়গায় একটা helper function `resolveShopByHandle(slug)` বানাব যেটা তিনটায় try করবে।
+হোম পেজে SiteHeader থাকবে কি না: হ্যাঁ, ভাষা switch ও logo-র জন্য SiteHeader রাখব (আগের `/auth` এর মতই)। SiteFooter ও থাকবে।
 
-### স্তর ২: পুরোনো `/f/:slug` link backward-compatible রাখা
+### 2. `/auth` route ও `Auth.tsx` মুছে দেওয়া
+- `src/lib/app-routes.tsx` থেকে `path: "auth"` route এবং `L56` lazy import সরানো হবে।
+- `src/pages/Auth.tsx` ফাইল delete হবে।
 
-বর্তমান QR কোড / শেয়ার করা পুরোনো `/f/{wishlist_slug}` link কাজ করতে থাকবে। শুধু resolver function-টা username/slug ও handle করবে।
+### 3. সব `/auth` references হোমে redirect
+নিচের ফাইলগুলোতে `/auth` কে `/` দিয়ে replace করা হবে (অথবা প্রাসঙ্গিক query সহ যেমন `/?mode=signup`):
 
-### স্তর ৩: Auto-generate fallback slug (safety net)
+```
+src/pages/customer/Profile.tsx          → "/auth" → "/"
+src/pages/customer/CustomerLayout.tsx   → "/auth" → "/"
+src/pages/Affiliate.tsx                 → Link to="/auth" → "/"
+src/components/site/SiteHeader.tsx      → 2 জায়গায় "/auth" → "/"
+src/components/site/SiteFooter.tsx      → "/auth" → "/"
+src/components/site/PricingSection.tsx  → navigate /auth → "/"
+src/components/site/HeroAuthCard.tsx    → "পুরো Login পেজে যান" link পুরো বাদ
+src/pages/affiliate/Register.tsx        → "/auth" → "/"
+src/pages/admin/Login.tsx               → "/auth" → "/"
+src/components/app/NewUserAccessDialog.tsx → loginUrl `/auth?phone=` → `/?phone=`
+```
 
-যেহেতু কিছু shop-এর `username` ও `slug` দুটোই NULL (DB query-তে দেখলাম ৬টা shop-এ দুটোই null), তাদের জন্য:
+হোম পেজে phone query param থাকলে (NewUserAccessDialog flow) সেটা phone field এ pre-fill হবে।
 
-- Migration: `shops` table-এ একটা **trigger** যোগ করব যা insert/update-এ যদি `wishlist_slug` NULL হয়, auto একটা random ৬-অক্ষরের slug generate করে দেবে। এটা backfill-এর সমান logic।
-- Backfill: existing NULL সব shop-এর জন্য slug generate করব।
-- ফলে owner-দের কোনো setup ছাড়াই — যদি username থাকে তাহলে `/{username}/forward`, না থাকলে fallback `/f/{auto-slug}` দু'টোই কাজ করবে।
+### 4. AuthEntry / HeroAuthCard cleanup
+- `src/components/site/AuthEntry.tsx` আর কোথাও use হচ্ছে না — delete।
+- `src/components/site/HeroAuthCard.tsx` ও আর use হবে না (AuthEntry এর ভেতরেই ছিল) — delete।
+- `src/lib/home-redirect.ts` যা logged-in user এর জন্য target ঠিক করে — অপরিবর্তিত রাখা হবে।
 
-### স্তর ৪: UI fix
+## ফাইল সারাংশ
 
-- **`src/pages/vendor/Username.tsx`** (line 165-180): `wishlistSlug` না থাকলেও যদি `username` থাকে, "ফর্দ পাঠান" button enable করব এবং নতুন route `/vendor/$username/forward` এ link করব।
-- **`src/pages/app/CustomerWishlist.tsx`** (line 89-91, owner dashboard-এ link দেখানো): যদি shop-এর `username` থাকে → preferred link `${origin}/{username}/forward` দেখাব, না থাকলে fallback `${origin}/f/{wishlist_slug}`। দু'টোই QR/copy করা যাবে।
-- **`src/pages/shop/Index.tsx`** (line 416, 464): same logic — username থাকলে `/{username}/forward`, না হলে `/f/{wishlist_slug}`।
-
-## কী পরিবর্তন হবে — সংক্ষেপে
-
-| File | পরিবর্তন |
-|---|---|
-| New migration | `wishlist_slug` auto-generate trigger + NULL backfill |
-| `src/lib/app-routes.tsx` | `vendor/:username` ও `shop/s/:slug` এ `forward` child route যোগ |
-| `supabase/functions/wishlist-shop-info/index.ts` | handle resolver: wishlist_slug → username → slug |
-| `supabase/functions/submit-wishlist/index.ts` | একই resolver |
-| `supabase/functions/customer-wishlist-login/index.ts` | একই resolver |
-| `src/pages/vendor/Username.tsx` | "ফর্দ পাঠান" button সবসময় active, prefer username link |
-| `src/pages/app/CustomerWishlist.tsx` | username-based fordo link দেখাবে (with QR) |
-| `src/pages/shop/Index.tsx` | marketplace card-এ username-based link |
-| New route file: `src/pages/f/forward/Handle.tsx` (বা existing `f/Slug.tsx` reuse করব path param দিয়ে) | `/vendor/:username/forward` ও `/shop/s/:slug/forward` কে existing `f/Slug.tsx` component-এ map করব handle prop দিয়ে |
+```text
+নতুন:  src/components/site/LoginCard.tsx   (reusable login/signup card)
+বদল:   src/pages/Index.tsx                  (AuthEntry → LoginCard + header/footer)
+       src/lib/app-routes.tsx               (/auth route ও L56 সরানো)
+       উপরের ১১টি ফাইল                       (/auth → /)
+মুছে দেয়া: src/pages/Auth.tsx
+           src/components/site/AuthEntry.tsx
+           src/components/site/HeroAuthCard.tsx
+```
 
 ## ফলাফল
 
-- নতুন shop খুললেই owner কোনো extra setup ছাড়া fordo link পেয়ে যাবে — তার URL: `tallyplus.lovable.app/{username}/forward` (অথবা `/f/{auto-slug}` fallback)।
-- পুরোনো সব `/f/{wishlist_slug}` link কাজ করতে থাকবে।
-- QR code/share — সব username-based clean URL দেখাবে।
-
-## আপনার approval দরকার
-
-আমি কি **`/{username}/forward`** pattern-এ যাব (clean), নাকি `/f/{username}` (existing pattern-এর কাছাকাছি)? ডিফল্ট ধরে `/{username}/forward` এ যাচ্ছি যেটা আপনি বললেন — approve করলে implement শুরু করি।
+- হোম পেজ এ ঢুকেই সরাসরি পরিষ্কার login card — অতিরিক্ত brand pitch / dual column ঝামেলা নেই।
+- "Create account" tab এ গেলে শুধু দরকারি field গুলো (নাম, দোকান হলে দোকানের নাম+ধরন, ফোন, PIN)।
+- আলাদা `/auth` পেজ আর নেই; পুরোনো লিংক বা bookmark গেলে home এ redirect (router এর `*` notfound হিসেবে নয় — আমরা সব আভ্যন্তরীণ link ঠিক করে দিচ্ছি, আর `/auth` URL এ গেলে NotFound এড়াতে চাইলে পরে `Navigate` redirect যোগ করা যাবে; এই plan এ সব internal link ই হোমে যায়, তাই সমস্যা নেই)।
+- Logged-in user হোমে আসলে আগের মতই role-aware dashboard এ চলে যাবে।
