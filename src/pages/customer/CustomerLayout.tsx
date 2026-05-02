@@ -3,7 +3,7 @@ import { Outlet, useNavigate, Link } from "@/lib/router";
 import { useAuth } from "@/lib/auth";
 import { SiteHeader } from "@/components/site/SiteHeader";
 import { SiteFooter } from "@/components/site/SiteFooter";
-import { Loader2, LogOut, Home, ListChecks, ShoppingBag, Heart, MapPin } from "lucide-react";
+import { Loader2, LogOut, Home, ListChecks, ShoppingBag, Heart, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AdSlot } from "@/components/ads/AdSlot";
 
@@ -12,7 +12,7 @@ const NAV = [
   { to: "/customer/my-fordo", label: "আমার ফর্দ", Icon: ListChecks },
   { to: "/customer/my-orders", label: "আমার অর্ডার", Icon: ShoppingBag },
   { to: "/customer/favorite-shops", label: "প্রিয় দোকান", Icon: Heart },
-  { to: "/customer/profile", label: "ঠিকানা", Icon: MapPin },
+  { to: "/customer/profile", label: "প্রোফাইল", Icon: User },
 ];
 
 export default function CustomerLayout() {
