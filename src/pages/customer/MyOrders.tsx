@@ -45,13 +45,29 @@ export default function MyOrdersPage() {
     (async () => {
       const { data: u } = await supabase.auth.getUser();
       if (!u?.user) { if (alive) setLoading(false); return; }
-      const { data } = await supabase
+      // Fetch the user's known phone numbers so we also match orders that
+      // were placed before the consumer signed in (consumer_user_id NULL).
+      let phones: string[] = [];
+      const { data: ph } = await supabase.rpc("my_phones");
+      if (Array.isArray(ph)) phones = (ph as string[]).filter(Boolean);
+
+      let q = supabase
         .from("marketplace_orders")
         .select(
           "id, order_no, shop_id, status, total, subtotal, delivery_charge, created_at, shops(name, logo_url), marketplace_order_items(name, qty, price, total)"
         )
-        .eq("consumer_user_id", u.user.id)
         .order("created_at", { ascending: false });
+
+      if (phones.length > 0) {
+        // Match either by user id OR by any known phone number.
+        const phoneList = phones.map((p) => `"${p}"`).join(",");
+        q = q.or(`consumer_user_id.eq.${u.user.id},customer_phone.in.(${phoneList})`);
+      } else {
+        q = q.eq("consumer_user_id", u.user.id);
+      }
+
+      const { data, error } = await q;
+      if (error) console.error("[my-orders]", error);
       if (alive) {
         setRows((data as unknown as Row[] | null) ?? []);
         setLoading(false);

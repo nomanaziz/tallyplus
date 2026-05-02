@@ -4243,6 +4243,7 @@ export type Database = {
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
       my_account: { Args: never; Returns: Json }
       my_account_resolve: { Args: never; Returns: Json }
+      my_phones: { Args: never; Returns: string[] }
       my_shop_perms: { Args: { _shop_id: string }; Returns: Json }
       notify_shop_members: {
         Args: {
@@ -4277,6 +4278,7 @@ export type Database = {
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
       user_active_shop_count: { Args: { _user_id: string }; Returns: number }
+      user_phones: { Args: { _uid: string }; Returns: string[] }
       user_shop_limit: { Args: { _user_id: string }; Returns: number }
     }
     Enums: {
