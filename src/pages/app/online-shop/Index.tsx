@@ -70,11 +70,12 @@ function OnlineShopDashboard() {
     queryKey: ["online-shop-stats", shopId],
     enabled: !!shopId,
     queryFn: async () => {
-      const [{ count: products }, { count: visits }] = await Promise.all([
+      const [{ count: products }, { count: visits }, { count: activeOrders }] = await Promise.all([
         supabase.from("marketplace_listings").select("id", { count: "exact", head: true }).eq("shop_id", shopId!).eq("is_published", true),
         supabase.from("shop_visits").select("id", { count: "exact", head: true }).eq("shop_id", shopId!),
+        supabase.from("marketplace_orders").select("id", { count: "exact", head: true }).eq("shop_id", shopId!).in("status", ["pending", "processing", "shipped"]),
       ]);
-      return { activeOrders: 0, products: products ?? 0, earning: 0, visits: visits ?? 0 };
+      return { activeOrders: activeOrders ?? 0, products: products ?? 0, earning: 0, visits: visits ?? 0 };
     },
   });
 
@@ -154,8 +155,8 @@ function OnlineShopDashboard() {
 
       {/* Stats */}
       <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4">
-        <StatCard icon={ClipboardList} label={lang === "bn" ? "অ্যাক্টিভ অর্ডার" : "Active Order"} value={bnNumIf(lang, stats?.activeOrders ?? 0)} accent="amber" />
-        <StatCard img={productListIcon} label={lang === "bn" ? "অনলাইন প্রোডাক্ট" : "Online Product"} value={bnNumIf(lang, stats?.products ?? 0)} accent="emerald" />
+        <StatCard to="/app/online-shop/orders" icon={ClipboardList} label={lang === "bn" ? "অ্যাক্টিভ অর্ডার" : "Active Order"} value={bnNumIf(lang, stats?.activeOrders ?? 0)} accent="amber" />
+        <StatCard to="/app/online-shop/products" img={productListIcon} label={lang === "bn" ? "অনলাইন প্রোডাক্ট" : "Online Product"} value={bnNumIf(lang, stats?.products ?? 0)} accent="emerald" />
         <StatCard img={businessReportIcon} label={lang === "bn" ? "মোট আয়" : "Total Earning"} value={`৳ ${bnNumIf(lang, stats?.earning ?? 0)}`} accent="blue" />
         <StatCard icon={Eye} label={lang === "bn" ? "ওয়েবসাইট ভিজিট" : "Website Visit"} value={bnNumIf(lang, stats?.visits ?? 0)} accent="violet" />
       </div>
@@ -240,12 +241,12 @@ function bnNumIf(lang: string, n: number) {
   return lang === "bn" ? bnNum(n) : String(n);
 }
 
-function StatCard({ icon: Icon, img, label, value, accent }: { icon?: typeof Settings; img?: string; label: string; value: string; accent: string }) {
+function StatCard({ icon: Icon, img, label, value, accent, to }: { icon?: typeof Settings; img?: string; label: string; value: string; accent: string; to?: string }) {
   const accentMap: Record<string, string> = {
     amber: "text-amber-500", emerald: "text-emerald-500", blue: "text-blue-500", violet: "text-violet-500",
   };
-  return (
-    <div className="rounded-xl border bg-card p-3 shadow-sm">
+  const inner = (
+    <>
       <div className="flex items-center gap-2 text-xs text-muted-foreground">
         {img ? (
           <img src={img} alt="" className="h-4 w-4 object-contain" />
@@ -255,6 +256,18 @@ function StatCard({ icon: Icon, img, label, value, accent }: { icon?: typeof Set
         <span>{label}</span>
       </div>
       <div className="mt-1 text-xl font-extrabold">{value}</div>
+    </>
+  );
+  if (to) {
+    return (
+      <Link to={to as never} className="rounded-xl border bg-card p-3 shadow-sm transition hover:border-primary/40 hover:shadow-md">
+        {inner}
+      </Link>
+    );
+  }
+  return (
+    <div className="rounded-xl border bg-card p-3 shadow-sm">
+      {inner}
     </div>
   );
 }
