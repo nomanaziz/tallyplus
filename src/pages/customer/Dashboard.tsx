@@ -3,7 +3,7 @@ import { Link } from "@/lib/router";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { Card } from "@/components/ui/card";
-import { TrendingUp, TrendingDown, Wallet, Loader2, Heart, MapPin, StickyNote, GraduationCap, ShoppingBag, ListChecks, Wallet as WalletIcon, ArrowDownToLine, ArrowUpFromLine } from "lucide-react";
+import { TrendingUp, TrendingDown, Wallet, Loader2, Heart, User, StickyNote, GraduationCap, ShoppingBag, ListChecks, Wallet as WalletIcon, ArrowDownToLine, ArrowUpFromLine } from "lucide-react";
 
 type Tx = { id: string; type: string; amount: number; tx_date: string };
 
@@ -127,7 +127,7 @@ export default function CustomerDashboard() {
         <Shortcut to="/customer/money" label="পাব" sub={bdt(willGet)} icon={ArrowDownToLine} tone="green" />
         <Shortcut to="/customer/money" label="দেব" sub={bdt(willGive)} icon={ArrowUpFromLine} tone="red" />
         <Shortcut to="/customer/training" label="ট্রেনিং" icon={GraduationCap} tone="sky" />
-        <Shortcut to="/customer/profile" label="ঠিকানা" icon={MapPin} tone="orange" />
+        <Shortcut to="/customer/profile" label="প্রোফাইল" icon={User} tone="orange" />
       </div>
     </div>
   );

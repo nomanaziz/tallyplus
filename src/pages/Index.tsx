@@ -11,7 +11,7 @@ import { Loader2 } from "lucide-react";
  * - Logged-in  → auto-redirect to role-aware dashboard
  */
 function Index() {
-  const { session, loading, isOwner, ensureProfile } = useAuth();
+  const { session, loading, isOwner, isAdmin, ensureProfile } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -21,9 +21,9 @@ function Index() {
   useEffect(() => {
     if (loading) return;
     if (!session?.user) return;
-    const target = homePathFor({ loggedIn: true, isOwner });
+    const target = homePathFor({ loggedIn: true, isOwner, isAdmin });
     navigate({ to: target, replace: true });
-  }, [loading, session?.user, isOwner, navigate]);
+  }, [loading, session?.user, isOwner, isAdmin, navigate]);
 
   if (loading || session?.user) {
     return (

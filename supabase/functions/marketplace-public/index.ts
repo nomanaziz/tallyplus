@@ -217,9 +217,10 @@ Deno.serve(async (req) => {
       ((listingRows as { shop_id: string }[] | null) ?? []).forEach((l) => {
         counts[l.shop_id] = (counts[l.shop_id] ?? 0) + 1;
       });
-      // Only include shops with at least 1 published listing
-      const filtered = shopRows.filter((s) => (counts[s.id] ?? 0) > 0);
-      return json({ shops: filtered, counts, total: count ?? filtered.length, page, pageSize }, 200, PUBLIC_CACHE);
+      // Return all marketplace-enabled shops, including those with 0 published
+      // listings yet — they still belong in the directory so customers can
+      // discover newly created shops.
+      return json({ shops: shopRows, counts, total: count ?? shopRows.length, page, pageSize }, 200, PUBLIC_CACHE);
     }
 
     if (action === "shop") {
