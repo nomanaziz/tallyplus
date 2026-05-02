@@ -18,9 +18,11 @@ import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetHeader } from "@/co
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SiteHeader } from "@/components/site/SiteHeader";
 import { SiteFooter } from "@/components/site/SiteFooter";
-import { Search, Store, SlidersHorizontal, RotateCcw, ShoppingBag, MapPin, FileText } from "lucide-react";
+import { Search, Store, SlidersHorizontal, RotateCcw, ShoppingBag, MapPin, FileText, Heart } from "lucide-react";
 import { MarketplaceProductCard } from "@/components/marketplace/MarketplaceProductCard";
 import { VendorGridSkeleton, ProductGridSkeleton } from "@/components/marketplace/MarketplaceSkeleton";
+import { useAuth } from "@/lib/auth";
+import { toast } from "sonner";
 
 type Listing = {
   id: string;
@@ -65,6 +67,9 @@ function MarketplacePage() {
     inStock: rawSearch.inStock === "true" ? true : rawSearch.inStock === "false" ? false : undefined,
   } as SearchParams;
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const [favIds, setFavIds] = useState<Record<string, string>>({}); // shop_id -> favourite row id
+  const [favBusy, setFavBusy] = useState<Record<string, boolean>>({});
   const [q, setQ] = useState(search.q ?? "");
   const [minP, setMinP] = useState(search.min !== undefined ? String(search.min) : "");
   const [maxP, setMaxP] = useState(search.max !== undefined ? String(search.max) : "");
@@ -81,6 +86,46 @@ function MarketplacePage() {
       .order("sort_order", { ascending: true })
       .then(({ data }) => setShopTypes((data as ShopType[] | null) ?? []));
   }, []);
+
+  // Load this user's favourite shops once so hearts render in the right state.
+  useEffect(() => {
+    if (!user) { setFavIds({}); return; }
+    let alive = true;
+    void supabase
+      .from("consumer_favourite_shops")
+      .select("id, shop_id")
+      .eq("consumer_id", user.id)
+      .then(({ data }) => {
+        if (!alive) return;
+        const map: Record<string, string> = {};
+        ((data as { id: string; shop_id: string }[] | null) ?? []).forEach((r) => { map[r.shop_id] = r.id; });
+        setFavIds(map);
+      });
+    return () => { alive = false; };
+  }, [user]);
+
+  const toggleFav = async (shopId: string) => {
+    if (!user) { toast.error("পছন্দ করতে লগইন করুন"); return; }
+    if (favBusy[shopId]) return;
+    setFavBusy((b) => ({ ...b, [shopId]: true }));
+    const existing = favIds[shopId];
+    if (existing) {
+      const { error } = await supabase.from("consumer_favourite_shops").delete().eq("id", existing);
+      setFavBusy((b) => ({ ...b, [shopId]: false }));
+      if (error) return toast.error(error.message);
+      setFavIds((m) => { const c = { ...m }; delete c[shopId]; return c; });
+    } else {
+      const { data, error } = await supabase
+        .from("consumer_favourite_shops")
+        .insert({ consumer_id: user.id, shop_id: shopId })
+        .select("id")
+        .single();
+      setFavBusy((b) => ({ ...b, [shopId]: false }));
+      if (error) return toast.error(error.message);
+      setFavIds((m) => ({ ...m, [shopId]: (data as { id: string }).id }));
+      toast.success("প্রিয় দোকানে যোগ হয়েছে ❤️");
+    }
+  };
 
   const typeKey = (search.type ?? []).join(",");
 
@@ -427,8 +472,17 @@ function MarketplacePage() {
                       return (
                         <div
                           key={s.id}
-                          className="flex flex-col rounded-2xl border bg-card p-3 transition-shadow hover:shadow-md"
+                          className="relative flex flex-col rounded-2xl border bg-card p-3 transition-shadow hover:shadow-md"
                         >
+                          <button
+                            type="button"
+                            aria-label={favIds[s.id] ? "প্রিয় থেকে সরান" : "প্রিয় করুন"}
+                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); void toggleFav(s.id); }}
+                            disabled={!!favBusy[s.id]}
+                            className="absolute right-2 top-2 z-10 inline-flex h-8 w-8 items-center justify-center rounded-full border bg-background/90 text-muted-foreground shadow-sm backdrop-blur-sm transition hover:text-rose-500 disabled:opacity-50"
+                          >
+                            <Heart className={`h-4 w-4 ${favIds[s.id] ? "fill-rose-500 text-rose-500" : ""}`} />
+                          </button>
                           <Link
                             to={s.username ? "/vendor/$username" : "/shop/s/$slug"}
                             params={s.username ? ({ username: s.username } as never) : ({ slug: s.slug ?? "" } as never)}
