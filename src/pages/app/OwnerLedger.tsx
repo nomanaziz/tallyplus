@@ -12,6 +12,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { EmptyState } from "@/components/app/EmptyState";
+import { StatCard, StatGrid } from "@/components/app/StatCard";
+import { ActionTilePair } from "@/components/app/ActionTilePair";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -68,39 +70,19 @@ function OwnerLedgerPage() {
         </div>
       </div>
 
-      {/* Quick add tiles */}
-      <div className="mt-4 grid grid-cols-2 gap-2">
-        <button
-          onClick={() => { setEditing(null); setPresetDir("invest"); setOpen(true); }}
-          className="flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-emerald-300 bg-emerald-50 px-3 py-4 font-semibold text-emerald-800 shadow-sm transition hover:bg-emerald-100 active:scale-[0.98]"
-        >
-          <ArrowDownCircle className="h-6 w-6" />
-          <span className="text-xs">{lang === "bn" ? "মালিক টাকা দিল (বিনিয়োগ)" : "Owner invested"}</span>
-        </button>
-        <button
-          onClick={() => { setEditing(null); setPresetDir("withdraw"); setOpen(true); }}
-          className="flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-rose-300 bg-rose-50 px-3 py-4 font-semibold text-rose-800 shadow-sm transition hover:bg-rose-100 active:scale-[0.98]"
-        >
-          <ArrowUpCircle className="h-6 w-6" />
-          <span className="text-xs">{lang === "bn" ? "মালিক টাকা নিল (উত্তোলন)" : "Owner withdrew"}</span>
-        </button>
-      </div>
+      <ActionTilePair
+        className="mt-4"
+        tiles={[
+          { label: lang === "bn" ? "মালিক টাকা দিল (বিনিয়োগ)" : "Owner invested", icon: <ArrowDownCircle className="h-5 w-5" />, tone: "success", onClick: () => { setEditing(null); setPresetDir("invest"); setOpen(true); } },
+          { label: lang === "bn" ? "মালিক টাকা নিল (উত্তোলন)" : "Owner withdrew", icon: <ArrowUpCircle className="h-5 w-5" />, tone: "danger", onClick: () => { setEditing(null); setPresetDir("withdraw"); setOpen(true); } },
+        ]}
+      />
 
-      {/* Summary */}
-      <div className="mt-4 grid grid-cols-3 gap-2">
-        <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3">
-          <div className="text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground">{lang === "bn" ? "মোট বিনিয়োগ" : "Total invest"}</div>
-          <div className="mt-1 text-base font-extrabold text-emerald-700 md:text-xl">{fmtMoney(totals.invest, lang)}</div>
-        </div>
-        <div className="rounded-xl border border-rose-200 bg-rose-50 p-3">
-          <div className="text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground">{lang === "bn" ? "মোট উত্তোলন" : "Total withdraw"}</div>
-          <div className="mt-1 text-base font-extrabold text-rose-700 md:text-xl">{fmtMoney(totals.withdraw, lang)}</div>
-        </div>
-        <div className="rounded-xl border bg-background p-3">
-          <div className="text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground">{lang === "bn" ? "নিট মূলধন" : "Net capital"}</div>
-          <div className={"mt-1 text-base font-extrabold md:text-xl " + (totals.net >= 0 ? "text-primary" : "text-rose-600")}>{fmtMoney(totals.net, lang)}</div>
-        </div>
-      </div>
+      <StatGrid className="mt-4">
+        <StatCard icon={<ArrowDownCircle className="h-4 w-4" />} label={lang === "bn" ? "মোট বিনিয়োগ" : "Total invest"} value={fmtMoney(totals.invest, lang)} tone="success" />
+        <StatCard icon={<ArrowUpCircle className="h-4 w-4" />} label={lang === "bn" ? "মোট উত্তোলন" : "Total withdraw"} value={fmtMoney(totals.withdraw, lang)} tone="danger" />
+        <StatCard icon={<Wallet className="h-4 w-4" />} label={lang === "bn" ? "নিট মূলধন" : "Net capital"} value={fmtMoney(totals.net, lang)} tone={totals.net >= 0 ? "primary" : "danger"} />
+      </StatGrid>
 
       <div className="mt-4 rounded-xl border bg-card">
         {list.length === 0 ? (
