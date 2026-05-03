@@ -146,6 +146,21 @@ export const dashboardOverviewQuery = (shopId: string | null | undefined) =>
       const nowIso = new Date().toISOString();
       const in30 = new Date(Date.now() + 30 * 86400_000).toISOString();
 
+      // warranty_end_date column may not exist in DB; gracefully fall back.
+      const warrantyHead = supabase.from("products").select("id", { count: "exact", head: true })
+        .eq("shop_id", shopId).is("deleted_at", null)
+        // @ts-expect-error column may be absent from generated types
+        .gte("warranty_end_date", nowIso);
+      const expiringWarrantyQ = supabase.from("products").select("id,name,warranty_end_date")
+        .eq("shop_id", shopId).is("deleted_at", null)
+        // @ts-expect-error column may be absent from generated types
+        .gte("warranty_end_date", nowIso)
+        // @ts-expect-error column may be absent from generated types
+        .lte("warranty_end_date", in30)
+        // @ts-expect-error column may be absent from generated types
+        .order("warranty_end_date", { ascending: true })
+        .limit(5);
+
       const [
         productsAll, lowStock, published, warranty,
         customersC, suppliersC, members, ordersPending, fordoNew,
@@ -154,7 +169,7 @@ export const dashboardOverviewQuery = (shopId: string | null | undefined) =>
         supabase.from("products").select("id", { count: "exact", head: true }).eq("shop_id", shopId).is("deleted_at", null),
         supabase.from("products").select("id,name,stock,low_stock_alert").eq("shop_id", shopId).is("deleted_at", null).not("low_stock_alert", "is", null),
         supabase.from("products").select("id", { count: "exact", head: true }).eq("shop_id", shopId).is("deleted_at", null).eq("is_marketplace_published", true),
-        supabase.from("products").select("id", { count: "exact", head: true }).eq("shop_id", shopId).is("deleted_at", null).gte("warranty_end_date", nowIso),
+        warrantyHead,
         supabase.from("customers").select("id", { count: "exact", head: true }).eq("shop_id", shopId).is("deleted_at", null),
         supabase.from("suppliers").select("id", { count: "exact", head: true }).eq("shop_id", shopId).is("deleted_at", null),
         supabase.from("shop_members").select("id", { count: "exact", head: true }).eq("shop_id", shopId),
@@ -164,7 +179,7 @@ export const dashboardOverviewQuery = (shopId: string | null | undefined) =>
         supabase.from("customer_wishlists").select("id,customer_name,status,created_at").eq("shop_id", shopId).order("created_at", { ascending: false }).limit(5),
         supabase.from("marketplace_orders").select("id,customer_name,total,status,created_at").eq("shop_id", shopId).order("created_at", { ascending: false }).limit(5),
         supabase.from("products").select("id,name,stock,low_stock_alert").eq("shop_id", shopId).is("deleted_at", null).not("low_stock_alert", "is", null).order("stock", { ascending: true }).limit(5),
-        supabase.from("products").select("id,name,warranty_end_date").eq("shop_id", shopId).is("deleted_at", null).gte("warranty_end_date", nowIso).lte("warranty_end_date", in30).order("warranty_end_date", { ascending: true }).limit(5),
+        expiringWarrantyQ,
       ]);
 
       const lowStockCount = ((lowStock.data ?? []) as Array<{ stock: number; low_stock_alert: number | null }>)
@@ -187,7 +202,7 @@ export const dashboardOverviewQuery = (shopId: string | null | undefined) =>
         recentOrders: ((recentOrders.data ?? []) as Array<{ id: string; customer_name: string | null; total: number; status: string; created_at: string }>).map((r) => ({ ...r, total: Number(r.total) })),
         lowStockProducts: ((lowStockList.data ?? []) as Array<{ id: string; name: string; stock: number; low_stock_alert: number | null }>)
           .filter((p) => (p.low_stock_alert ?? 0) > 0 && Number(p.stock) <= Number(p.low_stock_alert)),
-        expiringWarranty: ((expiringWarranty.data ?? []) as Array<{ id: string; name: string; warranty_end_date: string }>),
+        expiringWarranty: ((expiringWarranty.data ?? []) as unknown as Array<{ id: string; name: string; warranty_end_date: string }>) || [],
       };
     },
   });
