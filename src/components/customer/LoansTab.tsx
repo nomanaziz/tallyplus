@@ -85,7 +85,7 @@ export default function LoansTab() {
     const amt = Number(amount);
     if (!amt || amt <= 0) return toast.error("সঠিক টাকা দিন");
     setSaving(true);
-    const { error } = await supabase.from("consumer_loans").insert({
+    const { data: created, error } = await supabase.from("consumer_loans").insert({
       user_id: user.id,
       party_name: partyName.trim(),
       party_phone: partyPhone.trim() || null,
@@ -94,9 +94,24 @@ export default function LoansTab() {
       loan_date: date,
       due_date: dueDate || null,
       note: note.trim() || null,
-    });
+    }).select("id").single();
     setSaving(false);
     if (error) return toast.error(error.message);
+    // Hit the account balance immediately:
+    //  - "lent" (ধার দিলাম) → টাকা বের হলো → expense
+    //  - "borrowed" (ঋণ নিলাম) → টাকা ঢুকলো → income
+    if (created?.id) {
+      await supabase.from("consumer_transactions").insert({
+        user_id: user.id,
+        type: type === "lent" ? "expense" : "income",
+        amount: amt,
+        category: type === "lent" ? "ধার দিলাম" : "ঋণ নিলাম",
+        note: `${partyName.trim()} — দেনা-পাওনা`,
+        tx_date: date,
+        source_loan_id: created.id,
+        source_loan_event: "created",
+      });
+    }
     toast.success("যোগ হয়েছে");
     reset();
     setOpen(false);
@@ -110,7 +125,9 @@ export default function LoansTab() {
       .update({ is_settled: true, settled_at: new Date().toISOString() })
       .eq("id", loan.id);
     if (error) return toast.error(error.message);
-    // Auto-create matching transaction
+    // Settle reverses the original loan flow:
+    //  - "lent" settled → টাকা ফেরত পেলাম → income
+    //  - "borrowed" settled → টাকা পরিশোধ করলাম → expense
     if (user) {
       await supabase.from("consumer_transactions").insert({
         user_id: user.id,
@@ -119,6 +136,8 @@ export default function LoansTab() {
         category: loan.type === "lent" ? "ধার ফেরত পেলাম" : "ঋণ পরিশোধ",
         note: `${loan.party_name} — দেনা-পাওনা settle`,
         tx_date: new Date().toISOString().slice(0, 10),
+        source_loan_id: loan.id,
+        source_loan_event: "settled",
       });
     }
     toast.success("Settle হয়েছে");
@@ -127,6 +146,8 @@ export default function LoansTab() {
 
   const remove = async (id: string) => {
     if (!confirm("Entry মুছবেন?")) return;
+    // Remove related auto-transactions so the account balance reverses.
+    await supabase.from("consumer_transactions").delete().eq("source_loan_id", id);
     const { error } = await supabase.from("consumer_loans").delete().eq("id", id);
     if (error) return toast.error(error.message);
     void load();
