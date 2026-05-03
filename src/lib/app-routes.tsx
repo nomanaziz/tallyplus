@@ -237,8 +237,11 @@ export const appRoutes: RouteObject[] = [
 { path: "f/:slug", element: <Suspense fallback={<RouteFallback/>}><L64/></Suspense>, children: [
 { path: "my", element: <Suspense fallback={<RouteFallback/>}><L65/></Suspense> }
 ] },
-// Clean fordo URLs: any shop's username/slug followed by /forward.
+// Clean fordo URLs: any shop's username/slug followed by /fordo.
 // The same Slug component resolves it server-side (wishlist_slug → username → slug).
+{ path: ":slug/fordo", element: <Suspense fallback={<RouteFallback/>}><L64/></Suspense> },
+{ path: ":slug/fordo/my", element: <Suspense fallback={<RouteFallback/>}><L65/></Suspense> },
+// Backward-compat: legacy /:slug/forward URLs still work.
 { path: ":slug/forward", element: <Suspense fallback={<RouteFallback/>}><L64/></Suspense> },
 { path: ":slug/forward/my", element: <Suspense fallback={<RouteFallback/>}><L65/></Suspense> },
 { path: "pricing", element: <Suspense fallback={<RouteFallback/>}><L66/></Suspense> },

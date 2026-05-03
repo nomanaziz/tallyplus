@@ -97,10 +97,10 @@ function CustomerWishlistPage() {
     // Prefer the clean handle (username → shop slug → wishlist_slug fallback)
     const handle = (username && username.trim()) || (shopSlug && shopSlug.trim()) || slug;
     if (!handle) return "";
-    // Clean URLs use /{handle}/forward; legacy /f/{slug} keeps working too.
+    // Clean URLs use /{handle}/fordo; legacy /f/{slug} keeps working too.
     return handle === slug
       ? `${window.location.origin}/f/${handle}`
-      : `${window.location.origin}/${handle}/forward`;
+      : `${window.location.origin}/${handle}/fordo`;
   }, [slug, username, shopSlug]);
 
   const listQ = useQuery({

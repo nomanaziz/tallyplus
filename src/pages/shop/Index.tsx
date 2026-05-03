@@ -521,7 +521,7 @@ function MarketplacePage() {
                           <div className="mt-3 flex gap-2">
                             {fordoHandle ? (
                               <Link
-                                to={fordoIsLegacy ? "/f/$slug" : "/$slug/forward"}
+                                to={fordoIsLegacy ? "/f/$slug" : "/$slug/fordo"}
                                 params={{ slug: fordoHandle }}
                                 className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-bold text-primary-foreground shadow-sm hover:bg-primary/90"
                               >
