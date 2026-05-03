@@ -8,6 +8,7 @@ import {
   RefreshCw, Package, ShoppingBag, ListChecks, ShieldCheck, Users, Truck,
   UserCog, Globe, AlertTriangle, Clock, TrendingUp,
 } from "lucide-react";
+import { icons } from "@/lib/icons";
 import { DashboardBannerCarousel } from "@/components/app/DashboardBannerCarousel";
 import { SECTIONS, type SidebarItem } from "@/components/app/AppSidebar";
 import { usePermissions } from "@/lib/permissions-hook";
@@ -91,7 +92,7 @@ function Dashboard() {
               ))}
             </div>
             <button onClick={load} disabled={loading} aria-label="refresh" className="ml-0.5 inline-flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground hover:bg-background">
-              <RefreshCw className={`h-3 w-3 ${loading ? "animate-spin" : ""}`} />
+              <img src={icons.refresh} alt="" className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
             </button>
           </div>
         </div>
