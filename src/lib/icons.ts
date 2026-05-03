@@ -59,6 +59,15 @@ import bill from "@/assets/icons/bill.png";
 import supplier from "@/assets/icons/supplier.png";
 import trending from "@/assets/icons/trending.png";
 import comboChart from "@/assets/icons/combo-chart.png";
+import backArrow from "@/assets/icons/back-arrow.png";
+import profile from "@/assets/icons/profile.png";
+import customerTraining from "@/assets/icons/customer-training.png";
+import willGet from "@/assets/icons/will-get.png";
+import willGive from "@/assets/icons/will-give.png";
+import money from "@/assets/icons/money.png";
+import order from "@/assets/icons/order.png";
+import favorite from "@/assets/icons/favorite.png";
+import note from "@/assets/icons/note.png";
 
 export const icons = {
   home,
@@ -121,6 +130,15 @@ export const icons = {
   supplier,
   trending,
   comboChart,
+  backArrow,
+  profile,
+  customerTraining,
+  willGet,
+  willGive,
+  money,
+  order,
+  favorite,
+  note,
 } as const;
 
 export type IconKey = keyof typeof icons;
