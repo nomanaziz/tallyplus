@@ -3,8 +3,11 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useShop } from "@/lib/shop";
 import { useI18n, fmtMoney } from "@/lib/i18n";
-import { dashboardSummaryQuery } from "@/lib/queries";
-import { RefreshCw } from "lucide-react";
+import { dashboardSummaryQuery, dashboardOverviewQuery } from "@/lib/queries";
+import {
+  RefreshCw, Package, ShoppingBag, ListChecks, ShieldCheck, Users, Truck,
+  UserCog, Globe, AlertTriangle, Clock, TrendingUp,
+} from "lucide-react";
 import { DashboardBannerCarousel } from "@/components/app/DashboardBannerCarousel";
 import { SECTIONS, type SidebarItem } from "@/components/app/AppSidebar";
 import { usePermissions } from "@/lib/permissions-hook";
@@ -32,6 +35,7 @@ function Dashboard() {
   const startIso = start ? start.toISOString() : "1970-01-01T00:00:00.000Z";
   const { data, isFetching, refetch } = useQuery(dashboardSummaryQuery(current?.id ?? null, startIso));
   const stats = data ?? { sales: 0, purchases: 0, expenses: 0, receivable: 0, payable: 0, stockValue: 0, balance: 0 };
+  const { data: overview } = useQuery(dashboardOverviewQuery(current?.id ?? null));
   const loading = isFetching;
   const load = () => { void refetch(); };
 
@@ -55,7 +59,7 @@ function Dashboard() {
     .filter((s) => s.items.length > 0);
 
   return (
-    <div className="container px-4 py-4">
+    <div className="w-full px-3 py-4 sm:px-4 xl:px-6 2xl:px-10">
       {/* Compact summary card — hishabee style */}
       <div className="rounded-xl border bg-card shadow-sm">
         <div className="flex items-center justify-between border-b px-3 py-2">
@@ -115,8 +119,13 @@ function Dashboard() {
       {/* Admin-managed banner carousel */}
       <DashboardBannerCarousel />
 
-      {/* All menus, category-wise */}
-      <div className="mt-5 space-y-3">
+      {/* Desktop overview: extended KPI tiles + recent activity */}
+      <div className="mt-5 hidden md:block">
+        <DesktopOverview overview={overview} lang={lang} />
+      </div>
+
+      {/* Mobile-only: icon menu (sidebar handles desktop nav) */}
+      <div className="mt-5 space-y-3 md:hidden">
         {menuSections.map((section) => (
           <Section
             key={section.id}
@@ -128,6 +137,191 @@ function Dashboard() {
       </div>
     </div>
   );
+}
+
+function DesktopOverview({
+  overview,
+  lang,
+}: {
+  overview: import("@/lib/queries").DashboardOverview | undefined;
+  lang: "bn" | "en";
+}) {
+  const o = overview;
+  const tiles: Array<{ to: string; label: string; value: string | number; sub?: string; icon: React.ComponentType<{ className?: string }>; tone: string }> = [
+    { to: "/app/products", label: lang === "bn" ? "মোট পণ্য" : "Products", value: o?.productsTotal ?? "—", icon: Package, tone: "indigo" },
+    { to: "/app/products", label: lang === "bn" ? "কম স্টক" : "Low stock", value: o?.productsLowStock ?? "—", icon: AlertTriangle, tone: "amber" },
+    { to: "/app/online-shop/products", label: lang === "bn" ? "অনলাইন পণ্য" : "Online products", value: o?.productsPublished ?? "—", icon: Globe, tone: "sky" },
+    { to: "/app/online-shop/orders", label: lang === "bn" ? "নতুন অর্ডার" : "New orders", value: o?.ordersPending ?? "—", icon: ShoppingBag, tone: "emerald" },
+    { to: "/app/customer-wishlist", label: lang === "bn" ? "নতুন ফর্দ" : "New fordo", value: o?.fordoNew ?? "—", icon: ListChecks, tone: "violet" },
+    { to: "/app/warranty", label: lang === "bn" ? "ওয়ারেন্টি" : "Warranty", value: o?.warrantyActive ?? "—", icon: ShieldCheck, tone: "rose" },
+    { to: "/app/contacts", label: lang === "bn" ? "গ্রাহক" : "Customers", value: o?.customersCount ?? "—", icon: Users, tone: "blue" },
+    { to: "/app/contacts", label: lang === "bn" ? "সরবরাহকারী" : "Suppliers", value: o?.suppliersCount ?? "—", icon: Truck, tone: "orange" },
+    { to: "/app/access", label: lang === "bn" ? "কর্মচারী" : "Employees", value: o?.employeesCount ?? "—", icon: UserCog, tone: "teal" },
+  ];
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-3 gap-2 sm:gap-3 lg:grid-cols-6 xl:grid-cols-9">
+        {tiles.map((t) => (
+          <KpiTile key={t.label} {...t} />
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+        <PanelCard title={lang === "bn" ? "সাম্প্রতিক বিক্রি" : "Recent sales"} icon={TrendingUp} to="/app/sales-ledger" lang={lang}>
+          {(o?.recentSales ?? []).length === 0 ? (
+            <Empty lang={lang} />
+          ) : (
+            <ul className="divide-y">
+              {(o?.recentSales ?? []).map((r) => (
+                <li key={r.id} className="flex items-center justify-between gap-2 py-2 text-sm">
+                  <div className="min-w-0">
+                    <div className="truncate font-medium">{r.customer_name || (lang === "bn" ? "নগদ গ্রাহক" : "Walk-in")}</div>
+                    <div className="text-[11px] text-muted-foreground">#{r.invoice_no ?? "—"} · {timeAgo(r.created_at, lang)}</div>
+                  </div>
+                  <div className="font-bold tabular-nums">{fmtMoney(r.total, lang)}</div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </PanelCard>
+
+        <PanelCard title={lang === "bn" ? "নতুন অনলাইন অর্ডার" : "New online orders"} icon={ShoppingBag} to="/app/online-shop/orders" lang={lang}>
+          {(o?.recentOrders ?? []).length === 0 ? (
+            <Empty lang={lang} />
+          ) : (
+            <ul className="divide-y">
+              {(o?.recentOrders ?? []).map((r) => (
+                <li key={r.id} className="flex items-center justify-between gap-2 py-2 text-sm">
+                  <div className="min-w-0">
+                    <div className="truncate font-medium">{r.customer_name || "—"}</div>
+                    <div className="text-[11px] text-muted-foreground">{r.status} · {timeAgo(r.created_at, lang)}</div>
+                  </div>
+                  <div className="font-bold tabular-nums">{fmtMoney(r.total, lang)}</div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </PanelCard>
+
+        <PanelCard title={lang === "bn" ? "সাম্প্রতিক ফর্দ" : "Recent fordo"} icon={ListChecks} to="/app/customer-wishlist" lang={lang}>
+          {(o?.recentWishlists ?? []).length === 0 ? (
+            <Empty lang={lang} />
+          ) : (
+            <ul className="divide-y">
+              {(o?.recentWishlists ?? []).map((r) => (
+                <li key={r.id} className="flex items-center justify-between gap-2 py-2 text-sm">
+                  <div className="min-w-0">
+                    <div className="truncate font-medium">{r.customer_name || "—"}</div>
+                    <div className="text-[11px] text-muted-foreground">{r.status} · {timeAgo(r.created_at, lang)}</div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </PanelCard>
+
+        <PanelCard title={lang === "bn" ? "কম স্টক পণ্য" : "Low-stock products"} icon={AlertTriangle} to="/app/products" lang={lang}>
+          {(o?.lowStockProducts ?? []).length === 0 ? (
+            <Empty lang={lang} />
+          ) : (
+            <ul className="divide-y">
+              {(o?.lowStockProducts ?? []).map((r) => (
+                <li key={r.id} className="flex items-center justify-between gap-2 py-2 text-sm">
+                  <div className="truncate font-medium">{r.name}</div>
+                  <div className="text-xs">
+                    <span className="font-bold text-destructive">{r.stock}</span>
+                    <span className="text-muted-foreground"> / {r.low_stock_alert}</span>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </PanelCard>
+
+        <PanelCard title={lang === "bn" ? "মেয়াদোত্তীর্ণ হবে শীঘ্রই" : "Warranty expiring soon"} icon={Clock} to="/app/warranty" lang={lang}>
+          {(o?.expiringWarranty ?? []).length === 0 ? (
+            <Empty lang={lang} />
+          ) : (
+            <ul className="divide-y">
+              {(o?.expiringWarranty ?? []).map((r) => (
+                <li key={r.id} className="flex items-center justify-between gap-2 py-2 text-sm">
+                  <div className="truncate font-medium">{r.name}</div>
+                  <div className="text-[11px] text-muted-foreground">{new Date(r.warranty_end_date).toLocaleDateString()}</div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </PanelCard>
+      </div>
+    </div>
+  );
+}
+
+const TONES: Record<string, string> = {
+  indigo: "bg-indigo-100 text-indigo-700",
+  amber: "bg-amber-100 text-amber-700",
+  sky: "bg-sky-100 text-sky-700",
+  emerald: "bg-emerald-100 text-emerald-700",
+  violet: "bg-violet-100 text-violet-700",
+  rose: "bg-rose-100 text-rose-700",
+  blue: "bg-blue-100 text-blue-700",
+  orange: "bg-orange-100 text-orange-700",
+  teal: "bg-teal-100 text-teal-700",
+};
+
+function KpiTile({
+  to, label, value, sub, icon: Icon, tone,
+}: { to: string; label: string; value: string | number; sub?: string; icon: React.ComponentType<{ className?: string }>; tone: string }) {
+  return (
+    <Link to={to as never} className="group rounded-xl border bg-card p-3 shadow-sm transition hover:border-primary/40 hover:shadow-md">
+      <div className="flex items-center justify-between gap-2">
+        <span className="truncate text-[11px] font-medium text-muted-foreground">{label}</span>
+        <span className={`flex h-7 w-7 items-center justify-center rounded-lg ${TONES[tone] ?? TONES.indigo}`}>
+          <Icon className="h-4 w-4" />
+        </span>
+      </div>
+      <div className="mt-1 text-lg font-bold tabular-nums">{value}</div>
+      {sub ? <div className="text-[10px] text-muted-foreground">{sub}</div> : null}
+    </Link>
+  );
+}
+
+function PanelCard({
+  title, icon: Icon, to, lang, children,
+}: { title: string; icon: React.ComponentType<{ className?: string }>; to: string; lang: "bn" | "en"; children: React.ReactNode }) {
+  return (
+    <div className="rounded-xl border bg-card p-3 shadow-sm">
+      <div className="flex items-center justify-between border-b pb-2">
+        <div className="flex items-center gap-2 text-sm font-bold">
+          <Icon className="h-4 w-4 text-primary" />
+          {title}
+        </div>
+        <Link to={to as never} className="text-[11px] font-semibold text-primary hover:underline">
+          {lang === "bn" ? "সব দেখুন →" : "View all →"}
+        </Link>
+      </div>
+      <div className="pt-1">{children}</div>
+    </div>
+  );
+}
+
+function Empty({ lang }: { lang: "bn" | "en" }) {
+  return (
+    <div className="py-6 text-center text-xs text-muted-foreground">
+      {lang === "bn" ? "কোনো তথ্য নেই" : "No data yet"}
+    </div>
+  );
+}
+
+function timeAgo(iso: string, lang: "bn" | "en") {
+  const diff = Date.now() - new Date(iso).getTime();
+  const m = Math.floor(diff / 60000);
+  if (m < 1) return lang === "bn" ? "এখনই" : "just now";
+  if (m < 60) return `${m}${lang === "bn" ? " মি" : "m"}`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}${lang === "bn" ? " ঘ" : "h"}`;
+  const d = Math.floor(h / 24);
+  return `${d}${lang === "bn" ? " দি" : "d"}`;
 }
 
 function Section({
