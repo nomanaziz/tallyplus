@@ -99,7 +99,7 @@ function OwnerReportPage() {
         </Section>
 
         {/* Owner equity */}
-        <div className="rounded-xl border-2 border-primary/40 bg-primary/5 p-4">
+        <div className="rounded-xl border bg-card p-4 shadow-sm ring-1 ring-primary/20">
           <div className="text-sm font-bold text-muted-foreground">{lang === "bn" ? "মালিকের অবস্থান (Equity)" : "Owner equity"}</div>
           <div className="mt-1 text-[11px] text-muted-foreground">
             {lang === "bn" ? "নিট মূলধন + নিট লাভ − সম্পদ ক্ষতি" : "Net capital + Net profit − Asset loss"}

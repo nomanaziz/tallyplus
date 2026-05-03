@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { EmptyState } from "@/components/app/EmptyState";
+import { StatCard, StatGrid } from "@/components/app/StatCard";
 import { Plus, Search, Eye, Trash2, Undo2, Download, FileText, Printer } from "lucide-react";
 import { toast } from "sonner";
 import { printTableReport } from "@/lib/print-report";
@@ -202,12 +203,12 @@ function ReturnsListPage() {
 
       <div className="container space-y-3 px-3 py-3 md:space-y-4 md:px-4 md:py-4">
         {/* Summary tiles */}
-        <div className="grid grid-cols-2 gap-2 md:grid-cols-4 md:gap-3">
-          <Tile label={lang === "bn" ? "মোট রিটার্ন" : "Total returns"} value={String(totals.count)} />
-          <Tile label={lang === "bn" ? "রিটার্ন মূল্য" : "Return value"} value={fmtMoney(totals.value, lang)} tone="primary" />
-          <Tile label={lang === "bn" ? "টাকা ফেরত" : "Refunded"} value={fmtMoney(totals.refunded, lang)} tone="danger" />
-          <Tile label={lang === "bn" ? "অপেক্ষমান" : "Pending"} value={fmtMoney(totals.pending, lang)} tone="warn" />
-        </div>
+        <StatGrid>
+          <StatCard label={lang === "bn" ? "মোট রিটার্ন" : "Total returns"} value={String(totals.count)} />
+          <StatCard label={lang === "bn" ? "রিটার্ন মূল্য" : "Return value"} value={fmtMoney(totals.value, lang)} tone="primary" />
+          <StatCard label={lang === "bn" ? "টাকা ফেরত" : "Refunded"} value={fmtMoney(totals.refunded, lang)} tone="danger" />
+          <StatCard label={lang === "bn" ? "অপেক্ষমান" : "Pending"} value={fmtMoney(totals.pending, lang)} tone="warn" />
+        </StatGrid>
 
         {/* Filters */}
         <div className="flex flex-col gap-2 rounded-xl border bg-background p-3 md:flex-row md:items-center">
