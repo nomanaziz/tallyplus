@@ -80,11 +80,7 @@ export default function BuySmsPage() {
   const { data: gateway } = useQuery({
     queryKey: ["payment_gateway_settings"],
     queryFn: async () => {
-      const { data } = await supabase
-        .from("payment_gateway_settings")
-        .select("is_enabled")
-        .eq("id", true)
-        .maybeSingle();
+      const { data } = await supabase.rpc("payment_gateway_public").maybeSingle();
       return data;
     },
   });

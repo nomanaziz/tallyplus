@@ -3234,6 +3234,41 @@ export type Database = {
         }
         Relationships: []
       }
+      shop_secrets: {
+        Row: {
+          fb_pixel_test_id: string | null
+          fb_pixel_token: string | null
+          fraud_api_key: string | null
+          fraud_api_provider: string | null
+          shop_id: string
+          updated_at: string
+        }
+        Insert: {
+          fb_pixel_test_id?: string | null
+          fb_pixel_token?: string | null
+          fraud_api_key?: string | null
+          fraud_api_provider?: string | null
+          shop_id: string
+          updated_at?: string
+        }
+        Update: {
+          fb_pixel_test_id?: string | null
+          fb_pixel_token?: string | null
+          fraud_api_key?: string | null
+          fraud_api_provider?: string | null
+          shop_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shop_secrets_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: true
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shop_sms_balance: {
         Row: {
           balance: number
@@ -3353,10 +3388,6 @@ export type Database = {
           facebook_pixel_id: string | null
           facebook_url: string | null
           fb_pixel_id: string | null
-          fb_pixel_test_id: string | null
-          fb_pixel_token: string | null
-          fraud_api_key: string | null
-          fraud_api_provider: string | null
           google_analytics_id: string | null
           gtm_id: string | null
           id: string
@@ -3404,10 +3435,6 @@ export type Database = {
           facebook_pixel_id?: string | null
           facebook_url?: string | null
           fb_pixel_id?: string | null
-          fb_pixel_test_id?: string | null
-          fb_pixel_token?: string | null
-          fraud_api_key?: string | null
-          fraud_api_provider?: string | null
           google_analytics_id?: string | null
           gtm_id?: string | null
           id?: string
@@ -3455,10 +3482,6 @@ export type Database = {
           facebook_pixel_id?: string | null
           facebook_url?: string | null
           fb_pixel_id?: string | null
-          fb_pixel_test_id?: string | null
-          fb_pixel_token?: string | null
-          fraud_api_key?: string | null
-          fraud_api_provider?: string | null
           google_analytics_id?: string | null
           gtm_id?: string | null
           id?: string
@@ -4267,6 +4290,13 @@ export type Database = {
           _type: string
         }
         Returns: undefined
+      }
+      payment_gateway_public: {
+        Args: never
+        Returns: {
+          is_enabled: boolean
+          provider: string
+        }[]
       }
       register_active_device: {
         Args: { _device_id: string; _user_agent: string }
