@@ -60,7 +60,7 @@ export default function Subscribe() {
         supabase.from("subscription_plans")
           .select("id,code,name_bn,name_en,price_bdt,old_price_bdt,duration_days,max_shops,is_lifetime,perks,description_bn,description_en,discount_pct")
           .eq("is_active", true).order("price_bdt"),
-        supabase.from("payment_gateway_settings").select("is_enabled").eq("id", true).maybeSingle(),
+        supabase.rpc("payment_gateway_public").maybeSingle(),
         supabase.from("payment_methods").select("*").eq("is_active", true).order("sort_order").order("created_at"),
         user ? supabase
           .from("subscriptions")

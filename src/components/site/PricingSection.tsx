@@ -43,7 +43,7 @@ export function PricingSection() {
           .select("id,code,name_bn,name_en,price_bdt,old_price_bdt,duration_days,max_shops,is_lifetime,perks,description_bn,description_en,discount_pct")
           .eq("is_active", true)
           .order("price_bdt"),
-        supabase.from("payment_gateway_settings").select("is_enabled").eq("id", true).maybeSingle(),
+        supabase.rpc("payment_gateway_public").maybeSingle(),
       ]);
       setPlans((pl as Plan[]) ?? []);
       setGatewayEnabled(!!gw?.is_enabled);
