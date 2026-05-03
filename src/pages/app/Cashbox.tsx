@@ -12,6 +12,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { DataToolbar } from "@/components/app/DataToolbar";
 import { EmptyState } from "@/components/app/EmptyState";
+import { StatCard, StatGrid } from "@/components/app/StatCard";
+import { ActionTilePair } from "@/components/app/ActionTilePair";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DataPagination } from "@/components/app/DataPagination";
 import { usePagination } from "@/hooks/use-pagination";
@@ -93,43 +95,34 @@ function CashboxPage() {
       <div className="mb-1 text-xs text-muted-foreground">Cashbox</div>
       <h1 className="text-xl font-extrabold md:text-2xl">{lang === "bn" ? "ক্যাশবক্স" : "Cashbox"}</h1>
 
-      <div className="mt-4 grid grid-cols-2 gap-3">
-        <button
-          onClick={() => setOpenDir("in")}
-          className="group flex items-center justify-center gap-2 rounded-xl border-2 border-emerald-300 bg-emerald-50 px-4 py-5 text-emerald-800 shadow-sm transition hover:bg-emerald-100 active:scale-[0.98]"
-        >
-          <ArrowDownCircle className="h-6 w-6" />
-          <span className="text-base font-extrabold">{lang === "bn" ? "জমা" : "Cash In"}</span>
-        </button>
-        <button
-          onClick={() => setOpenDir("out")}
-          className="group flex items-center justify-center gap-2 rounded-xl border-2 border-rose-300 bg-rose-50 px-4 py-5 text-rose-800 shadow-sm transition hover:bg-rose-100 active:scale-[0.98]"
-        >
-          <ArrowUpCircle className="h-6 w-6" />
-          <span className="text-base font-extrabold">{lang === "bn" ? "খরচ" : "Cash Out"}</span>
-        </button>
-      </div>
+      <ActionTilePair
+        className="mt-4"
+        tiles={[
+          { label: lang === "bn" ? "জমা" : "Cash In", icon: <ArrowDownCircle className="h-5 w-5" />, tone: "success", onClick: () => setOpenDir("in") },
+          { label: lang === "bn" ? "খরচ" : "Cash Out", icon: <ArrowUpCircle className="h-5 w-5" />, tone: "danger", onClick: () => setOpenDir("out") },
+        ]}
+      />
 
-      <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <SummaryCard
-          icon={<ArrowDownCircle className="h-5 w-5 text-emerald-600" />}
+      <StatGrid className="mt-4">
+        <StatCard
+          icon={<ArrowDownCircle className="h-4 w-4" />}
           label={lang === "bn" ? "মোট জমা" : "Total in"}
           value={fmtMoney(totals.in, lang)}
-          tone="emerald"
+          tone="success"
         />
-        <SummaryCard
-          icon={<ArrowUpCircle className="h-5 w-5 text-rose-600" />}
+        <StatCard
+          icon={<ArrowUpCircle className="h-4 w-4" />}
           label={lang === "bn" ? "মোট খরচ" : "Total out"}
           value={fmtMoney(totals.out, lang)}
-          tone="rose"
+          tone="danger"
         />
-        <SummaryCard
-          icon={<Wallet className="h-5 w-5 text-primary" />}
+        <StatCard
+          icon={<Wallet className="h-4 w-4" />}
           label={lang === "bn" ? "ব্যালেন্স" : "Balance"}
           value={fmtMoney(totals.balance, lang)}
           tone="primary"
         />
-      </div>
+      </StatGrid>
 
       <Tabs defaultValue="entries" className="mt-4">
         <TabsList>
