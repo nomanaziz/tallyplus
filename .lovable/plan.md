@@ -1,66 +1,59 @@
-## Fixes
+## Goal
 
-### 1. Favorite (❤️) button visibility
+Desktop-এ `/app/dashboard` কে একটা real "overview" page বানানো — শুধু mobile-style icon menu না। Mobile view আগের মতই থাকবে (icon grid দিয়ে navigation দরকার), কিন্তু desktop-এ extra business information দেখাব এবং ডান পাশের ফাঁকা জায়গা ঠিক করব।
 
-The heart toggle already exists on the shop detail pages (`/shop/s/$slug` and `/vendor/$username`), but users on the marketplace listing don't see any heart on shop cards, so the empty-state message ("Go to a shop and press ❤️") feels broken.
+## Changes
 
-**Changes:**
-- `src/pages/shop/Index.tsx` (vendor grid): add a small heart icon button in the top-right corner of each vendor card. Click toggles `consumer_favourite_shops` (insert/delete) for the current user. Optimistic UI; show login toast if not signed in. Pre-fetch the user's existing favourite shop_ids once and store in a `Set` to render filled state.
-- `src/pages/customer/FavoriteShops.tsx` empty-state copy: keep the hint but also add a button "প্রিয় দোকান খুঁজুন" → `/shop`.
+### 1. Layout fix (wide screen empty side)
+`src/pages/app/Dashboard.tsx` এ wrapper এখন `container px-4 py-4` — Tailwind এর `container` 1536px-এ আটকে যায়, তাই বড় screen-এ ডান দিকে বিশাল gap। এটা পরিবর্তন করে `w-full px-4 py-4 xl:px-6 2xl:px-8` করব যাতে available width পুরোটা ব্যবহার হয়।
 
-### 2. New "online" shop not appearing in marketplace
+### 2. Desktop vs Mobile split
+Dashboard component-এ দুইটা layout branch:
+- **Mobile (`<md` / hidden md:block)**: এখনকার balance card + sales/purchase/expense + stock/receivable/payable + banner + **icon menu grid** (যেমন আছে তেমন)।
+- **Desktop (`hidden md:block`)**: balance card + extended KPI grid (নিচে) + banner + recent activity panels। Icon menu grid hide করে দেব (sidebar আছেই)।
 
-In `supabase/functions/marketplace-public/index.ts → action: "list-shops"`, after fetching shops with `marketplace_enabled = true`, the code filters out any shop that has zero published listings:
+### 3. New desktop KPI widgets
+উপরের summary card এর নিচে desktop-only `lg:grid-cols-4` grid:
 
-```ts
-const filtered = shopRows.filter((s) => (counts[s.id] ?? 0) > 0);
-```
+| Tile | Source |
+|---|---|
+| আজকের বিক্রি / ক্রয় / খরচ / Balance | already in `dashboard_summary` |
+| বাকি দিয়েছি / বাকি নিয়েছি | already in `dashboard_summary` |
+| Stock value + Low stock count | `products` (sum, count where stock<=low_stock_alert) |
+| মোট পণ্য | `products` count |
+| Online shop পণ্য (published) | `products` where `is_marketplace_published=true` |
+| Warranty (active) | `warranties` count where end_date >= now |
+| গ্রাহক ফর্দ (নতুন/unread) | `customer_wishlists` where `status='new'` (last 7d) |
+| অনলাইন order (নতুন) | `online_orders` / `marketplace_orders` where `status='pending'` |
+| মোট গ্রাহক | `customers` count |
+| মোট supplier | `suppliers` count |
+| কর্মচারী | `shop_members` count + 1 (owner) |
+| Cash in hand | `cash_movements` net |
 
-A newly created online shop with no products yet is hidden.
+প্রতিটা tile-এ icon + label + value + (optional) sub-text এবং relevant page-এ ক্লিকে নিয়ে যাবে।
 
-**Change:** keep the listing count but **don't drop** shops with zero listings. Return all `marketplace_enabled` shops; show count badge `0 পণ্য` on the card. Re-deploy edge function (auto).
+### 4. Recent activity panels (desktop, 2-column)
+- **সাম্প্রতিক বিক্রি** (last 5 sales: customer, total, time)
+- **সাম্প্রতিক অনলাইন order / ফর্দ** (last 5)
+- **Low-stock products** (top 5)
+- **মেয়াদোত্তীর্ণ হবে শীঘ্রই** (warranty/products expiring next 30d)
 
-### 3. Role-based home redirect (admin → wrong dashboard)
+প্রতি panel-এর header-এ "সব দেখুন" link সংশ্লিষ্ট report page-এ।
 
-`src/lib/home-redirect.ts` only checks `isOwner`, so an **admin who doesn't own a shop** lands on `/customer/dashboard`.
+### 5. New centralized query
+`src/lib/queries.ts`-এ `dashboardOverviewQuery(shopId)` add করব — একটা hook যা parallel-এ extra count/list গুলা fetch করে (60s staleTime)। RLS-এর কারণে সব গুলা existing tables-এ already shop_id filter দিয়ে কাজ করবে।
 
-**Change:**
-- Update `homePathFor({ loggedIn, isOwner, isAdmin, isConsumer })`:
-  - `isAdmin` → `/admin`
-  - `isOwner` → `/app/dashboard`
-  - else → `/customer/dashboard`
-- Update `src/pages/Index.tsx` to pass `isAdmin` (already in `useAuth`).
+### 6. Mobile menu button (skip)
+আপনার নিজেরই মনে হয়েছে দরকার নাই — তাই বাদ। Desktop-এ menu icon grid পুরোটা hide; sidebar যথেষ্ট। Mobile-এ আগের মতই grid থাকবে।
 
-### 4. Customer "My Orders" empty even though order exists
+## Files
 
-RLS for `marketplace_orders` requires `consumer_user_id = auth.uid()`. When the customer placed the order through `marketplace-public/place-order`, `consumer_user_id` is only set if a Bearer token was forwarded. Orders placed before login (or from the public site without an attached session) have `consumer_user_id = NULL`, so they never show up.
+- `src/pages/app/Dashboard.tsx` — split mobile/desktop view, new KPI grid + activity panels, container width fix
+- `src/lib/queries.ts` — new `dashboardOverviewQuery` (counts + recent lists)
 
-**Changes:**
-- DB migration: add an RLS SELECT policy on `marketplace_orders` allowing the signed-in user to read rows where `customer_phone` matches their `auth.users.phone` OR `profiles.phone` / `consumer_profiles.phone`. Use a `security definer` helper `public.user_phones(uid uuid) returns text[]` that aggregates phone numbers for the user, then policy `customer_phone = ANY(public.user_phones(auth.uid()))`.
-- Update `src/pages/customer/MyOrders.tsx` query: keep `consumer_user_id = auth.uid()` filter but also OR by phone. Switch to `.or("consumer_user_id.eq." + uid + ",customer_phone.in.(...phones)")` after fetching the user's phone list (1 small RPC `my_phones()` returning `text[]`).
-- Backfill: one-time UPDATE setting `consumer_user_id` for existing orders where `customer_phone` matches a known user phone (run inside the migration).
+কোনো DB migration লাগবে না — সব data already accessible existing tables থেকে।
 
-### 5. Customer dashboard label
+## Out of scope
 
-`src/pages/customer/Dashboard.tsx` shortcut still says "ঠিকানা" with `MapPin` for the profile link.
-
-**Change:** label → "প্রোফাইল", icon → `User`, target → `/customer/profile` (already correct).
-
-### 6. Bonus: refresh after order
-
-Add `staleTime: 0` and `refetchOnMount: 'always'` (or just remove caching) to MyOrders query so a fresh order shows immediately when the customer navigates back.
-
-## Technical notes
-
-- All RLS changes go through one migration.
-- `marketplace-public` edge function only changes the `list-shops` filter line; redeploy is automatic.
-- No new packages needed.
-- Files touched:
-  - `src/lib/home-redirect.ts`
-  - `src/pages/Index.tsx`
-  - `src/pages/shop/Index.tsx` (heart on vendor card)
-  - `src/pages/customer/Dashboard.tsx` (label)
-  - `src/pages/customer/MyOrders.tsx` (phone match + refetch)
-  - `src/pages/customer/FavoriteShops.tsx` (CTA polish)
-  - `supabase/functions/marketplace-public/index.ts` (filter)
-  - new migration: phone-based RLS for `marketplace_orders` + `my_phones` RPC + backfill `consumer_user_id`.
+- Mobile dashboard layout পরিবর্তন (যেমন আছে তেমনই থাকবে)
+- New backend RPC (client-side parallel queries যথেষ্ট performance-এর জন্য)
