@@ -24,6 +24,32 @@ import buySubscription from "@/assets/icons/buy-subscription.png";
 import brandHishabee from "@/assets/icons/brand-hishabee.svg";
 import brandBee from "@/assets/icons/brand-bee.svg";
 import bookmark from "@/assets/icons/bookmark.svg";
+import activeWarranty from "@/assets/icons/active-warranty.png";
+import pendingOrder from "@/assets/icons/pending-order.png";
+import customer from "@/assets/icons/customer.png";
+import employee from "@/assets/icons/employee.png";
+import alert from "@/assets/icons/alert.png";
+import cash from "@/assets/icons/cash.png";
+import cashRegister from "@/assets/icons/cash-register.png";
+import transaction from "@/assets/icons/transaction.png";
+import wishlist from "@/assets/icons/wishlist.png";
+import notification from "@/assets/icons/notification.png";
+import language from "@/assets/icons/language.png";
+import settings from "@/assets/icons/settings.png";
+import search from "@/assets/icons/search.png";
+import add from "@/assets/icons/add.png";
+import addUser from "@/assets/icons/add-user-male.png";
+import addImage from "@/assets/icons/add-image.png";
+import edit from "@/assets/icons/edit-pencil.png";
+import del from "@/assets/icons/delete.png";
+import eye from "@/assets/icons/eye.png";
+import eyeOff from "@/assets/icons/invisible.png";
+import download from "@/assets/icons/download.png";
+import exportPdf from "@/assets/icons/export-pdf.png";
+import refresh from "@/assets/icons/refresh.png";
+import imageFile from "@/assets/icons/image-file.png";
+import mindMap from "@/assets/icons/mind-map.png";
+import ownerDashboard from "@/assets/icons/owner-dashboard.png";
 
 export const icons = {
   home,
@@ -51,6 +77,32 @@ export const icons = {
   brandHishabee,
   brandBee,
   bookmark,
+  activeWarranty,
+  pendingOrder,
+  customer,
+  employee,
+  alert,
+  cash,
+  cashRegister,
+  transaction,
+  wishlist,
+  notification,
+  language,
+  settings,
+  search,
+  add,
+  addUser,
+  addImage,
+  edit,
+  delete: del,
+  eye,
+  eyeOff,
+  download,
+  exportPdf,
+  refresh,
+  imageFile,
+  mindMap,
+  ownerDashboard,
 } as const;
 
 export type IconKey = keyof typeof icons;

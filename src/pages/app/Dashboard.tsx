@@ -4,10 +4,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useShop } from "@/lib/shop";
 import { useI18n, fmtMoney } from "@/lib/i18n";
 import { dashboardSummaryQuery, dashboardOverviewQuery } from "@/lib/queries";
-import {
-  RefreshCw, Package, ShoppingBag, ListChecks, ShieldCheck, Users, Truck,
-  UserCog, Globe, AlertTriangle, Clock, TrendingUp,
-} from "lucide-react";
+import { Package, Truck, Globe, Clock } from "lucide-react";
+import { icons } from "@/lib/icons";
 import { DashboardBannerCarousel } from "@/components/app/DashboardBannerCarousel";
 import { SECTIONS, type SidebarItem } from "@/components/app/AppSidebar";
 import { usePermissions } from "@/lib/permissions-hook";
@@ -91,7 +89,7 @@ function Dashboard() {
               ))}
             </div>
             <button onClick={load} disabled={loading} aria-label="refresh" className="ml-0.5 inline-flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground hover:bg-background">
-              <RefreshCw className={`h-3 w-3 ${loading ? "animate-spin" : ""}`} />
+              <img src={icons.refresh} alt="" className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
             </button>
           </div>
         </div>
@@ -147,16 +145,16 @@ function DesktopOverview({
   lang: "bn" | "en";
 }) {
   const o = overview;
-  const tiles: Array<{ to: string; label: string; value: string | number; sub?: string; icon: React.ComponentType<{ className?: string }>; tone: string }> = [
+  const tiles: Array<{ to: string; label: string; value: string | number; sub?: string; img?: string; icon?: React.ComponentType<{ className?: string }>; tone: string }> = [
     { to: "/app/products", label: lang === "bn" ? "মোট পণ্য" : "Products", value: o?.productsTotal ?? "—", icon: Package, tone: "indigo" },
-    { to: "/app/products", label: lang === "bn" ? "কম স্টক" : "Low stock", value: o?.productsLowStock ?? "—", icon: AlertTriangle, tone: "amber" },
+    { to: "/app/products", label: lang === "bn" ? "কম স্টক" : "Low stock", value: o?.productsLowStock ?? "—", img: icons.alert, tone: "amber" },
     { to: "/app/online-shop/products", label: lang === "bn" ? "অনলাইন পণ্য" : "Online products", value: o?.productsPublished ?? "—", icon: Globe, tone: "sky" },
-    { to: "/app/online-shop/orders", label: lang === "bn" ? "নতুন অর্ডার" : "New orders", value: o?.ordersPending ?? "—", icon: ShoppingBag, tone: "emerald" },
-    { to: "/app/customer-wishlist", label: lang === "bn" ? "নতুন ফর্দ" : "New fordo", value: o?.fordoNew ?? "—", icon: ListChecks, tone: "violet" },
-    { to: "/app/warranty", label: lang === "bn" ? "ওয়ারেন্টি" : "Warranty", value: o?.warrantyActive ?? "—", icon: ShieldCheck, tone: "rose" },
-    { to: "/app/contacts", label: lang === "bn" ? "গ্রাহক" : "Customers", value: o?.customersCount ?? "—", icon: Users, tone: "blue" },
+    { to: "/app/online-shop/orders", label: lang === "bn" ? "নতুন অর্ডার" : "New orders", value: o?.ordersPending ?? "—", img: icons.pendingOrder, tone: "emerald" },
+    { to: "/app/customer-wishlist", label: lang === "bn" ? "নতুন ফর্দ" : "New fordo", value: o?.fordoNew ?? "—", img: icons.wishlist, tone: "violet" },
+    { to: "/app/warranty", label: lang === "bn" ? "ওয়ারেন্টি" : "Warranty", value: o?.warrantyActive ?? "—", img: icons.activeWarranty, tone: "rose" },
+    { to: "/app/contacts", label: lang === "bn" ? "গ্রাহক" : "Customers", value: o?.customersCount ?? "—", img: icons.customer, tone: "blue" },
     { to: "/app/contacts", label: lang === "bn" ? "সরবরাহকারী" : "Suppliers", value: o?.suppliersCount ?? "—", icon: Truck, tone: "orange" },
-    { to: "/app/access", label: lang === "bn" ? "কর্মচারী" : "Employees", value: o?.employeesCount ?? "—", icon: UserCog, tone: "teal" },
+    { to: "/app/access", label: lang === "bn" ? "কর্মচারী" : "Employees", value: o?.employeesCount ?? "—", img: icons.employee, tone: "teal" },
   ];
   return (
     <div className="space-y-4">
@@ -167,7 +165,7 @@ function DesktopOverview({
       </div>
 
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-        <PanelCard title={lang === "bn" ? "সাম্প্রতিক বিক্রি" : "Recent sales"} icon={TrendingUp} to="/app/sales-ledger" lang={lang}>
+        <PanelCard title={lang === "bn" ? "সাম্প্রতিক বিক্রি" : "Recent sales"} img={icons.transaction} to="/app/sales-ledger" lang={lang}>
           {(o?.recentSales ?? []).length === 0 ? (
             <Empty lang={lang} />
           ) : (
@@ -185,7 +183,7 @@ function DesktopOverview({
           )}
         </PanelCard>
 
-        <PanelCard title={lang === "bn" ? "নতুন অনলাইন অর্ডার" : "New online orders"} icon={ShoppingBag} to="/app/online-shop/orders" lang={lang}>
+        <PanelCard title={lang === "bn" ? "নতুন অনলাইন অর্ডার" : "New online orders"} img={icons.pendingOrder} to="/app/online-shop/orders" lang={lang}>
           {(o?.recentOrders ?? []).length === 0 ? (
             <Empty lang={lang} />
           ) : (
@@ -203,7 +201,7 @@ function DesktopOverview({
           )}
         </PanelCard>
 
-        <PanelCard title={lang === "bn" ? "সাম্প্রতিক ফর্দ" : "Recent fordo"} icon={ListChecks} to="/app/customer-wishlist" lang={lang}>
+        <PanelCard title={lang === "bn" ? "সাম্প্রতিক ফর্দ" : "Recent fordo"} img={icons.wishlist} to="/app/customer-wishlist" lang={lang}>
           {(o?.recentWishlists ?? []).length === 0 ? (
             <Empty lang={lang} />
           ) : (
@@ -220,7 +218,7 @@ function DesktopOverview({
           )}
         </PanelCard>
 
-        <PanelCard title={lang === "bn" ? "কম স্টক পণ্য" : "Low-stock products"} icon={AlertTriangle} to="/app/products" lang={lang}>
+        <PanelCard title={lang === "bn" ? "কম স্টক পণ্য" : "Low-stock products"} img={icons.alert} to="/app/products" lang={lang}>
           {(o?.lowStockProducts ?? []).length === 0 ? (
             <Empty lang={lang} />
           ) : (
@@ -270,15 +268,19 @@ const TONES: Record<string, string> = {
 };
 
 function KpiTile({
-  to, label, value, sub, icon: Icon, tone,
-}: { to: string; label: string; value: string | number; sub?: string; icon: React.ComponentType<{ className?: string }>; tone: string }) {
+  to, label, value, sub, icon: Icon, img, tone,
+}: { to: string; label: string; value: string | number; sub?: string; icon?: React.ComponentType<{ className?: string }>; img?: string; tone: string }) {
   return (
     <Link to={to as never} className="group rounded-xl border bg-card p-3 shadow-sm transition hover:border-primary/40 hover:shadow-md">
       <div className="flex items-center justify-between gap-2">
         <span className="truncate text-[11px] font-medium text-muted-foreground">{label}</span>
-        <span className={`flex h-7 w-7 items-center justify-center rounded-lg ${TONES[tone] ?? TONES.indigo}`}>
-          <Icon className="h-4 w-4" />
-        </span>
+        {img ? (
+          <img src={img} alt="" className="h-7 w-7 object-contain" />
+        ) : Icon ? (
+          <span className={`flex h-7 w-7 items-center justify-center rounded-lg ${TONES[tone] ?? TONES.indigo}`}>
+            <Icon className="h-4 w-4" />
+          </span>
+        ) : null}
       </div>
       <div className="mt-1 text-lg font-bold tabular-nums">{value}</div>
       {sub ? <div className="text-[10px] text-muted-foreground">{sub}</div> : null}
@@ -287,13 +289,13 @@ function KpiTile({
 }
 
 function PanelCard({
-  title, icon: Icon, to, lang, children,
-}: { title: string; icon: React.ComponentType<{ className?: string }>; to: string; lang: "bn" | "en"; children: React.ReactNode }) {
+  title, icon: Icon, img, to, lang, children,
+}: { title: string; icon?: React.ComponentType<{ className?: string }>; img?: string; to: string; lang: "bn" | "en"; children: React.ReactNode }) {
   return (
     <div className="rounded-xl border bg-card p-3 shadow-sm">
       <div className="flex items-center justify-between border-b pb-2">
         <div className="flex items-center gap-2 text-sm font-bold">
-          <Icon className="h-4 w-4 text-primary" />
+          {img ? <img src={img} alt="" className="h-5 w-5 object-contain" /> : Icon ? <Icon className="h-4 w-4 text-primary" /> : null}
           {title}
         </div>
         <Link to={to as never} className="text-[11px] font-semibold text-primary hover:underline">
