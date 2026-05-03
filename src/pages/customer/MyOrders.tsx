@@ -54,7 +54,7 @@ export default function MyOrdersPage() {
       let q = supabase
         .from("marketplace_orders")
         .select(
-          "id, order_no, shop_id, status, total, subtotal, delivery_charge, created_at, shops(name, logo_url), marketplace_order_items(name, qty, price, total)"
+          "id, order_no, shop_id, status, total, subtotal, delivery_charge, created_at, marketplace_order_items(name, qty, price, total)"
         )
         .order("created_at", { ascending: false });
 
@@ -68,8 +68,22 @@ export default function MyOrdersPage() {
 
       const { data, error } = await q;
       if (error) console.error("[my-orders]", error);
+      const orders = (data as unknown as Row[] | null) ?? [];
+      // Fetch shop info separately to avoid relying on a PostgREST embed.
+      const shopIds = Array.from(new Set(orders.map((o) => o.shop_id))).filter(Boolean);
+      let shopMap = new Map<string, { name: string; logo_url: string | null }>();
+      if (shopIds.length > 0) {
+        const { data: shopsData } = await supabase
+          .from("shops")
+          .select("id, name, logo_url")
+          .in("id", shopIds);
+        for (const s of (shopsData ?? []) as Array<{ id: string; name: string; logo_url: string | null }>) {
+          shopMap.set(s.id, { name: s.name, logo_url: s.logo_url });
+        }
+      }
+      const enriched = orders.map((o) => ({ ...o, shops: shopMap.get(o.shop_id) ?? null }));
       if (alive) {
-        setRows((data as unknown as Row[] | null) ?? []);
+        setRows(enriched);
         setLoading(false);
       }
     })();
