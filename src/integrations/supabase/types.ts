@@ -1207,6 +1207,8 @@ export type Database = {
           created_at: string
           id: string
           note: string | null
+          source_loan_event: string | null
+          source_loan_id: string | null
           source_wishlist_id: string | null
           tx_date: string
           type: string
@@ -1219,6 +1221,8 @@ export type Database = {
           created_at?: string
           id?: string
           note?: string | null
+          source_loan_event?: string | null
+          source_loan_id?: string | null
           source_wishlist_id?: string | null
           tx_date?: string
           type: string
@@ -1231,6 +1235,8 @@ export type Database = {
           created_at?: string
           id?: string
           note?: string | null
+          source_loan_event?: string | null
+          source_loan_id?: string | null
           source_wishlist_id?: string | null
           tx_date?: string
           type?: string
@@ -1758,6 +1764,13 @@ export type Database = {
             columns: ["delivery_zone_id"]
             isOneToOne: false
             referencedRelation: "shop_delivery_zones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketplace_orders_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
             referencedColumns: ["id"]
           },
         ]
