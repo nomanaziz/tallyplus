@@ -4,10 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useShop } from "@/lib/shop";
 import { useI18n, fmtMoney } from "@/lib/i18n";
 import { dashboardSummaryQuery, dashboardOverviewQuery } from "@/lib/queries";
-import {
-  RefreshCw, Package, ShoppingBag, ListChecks, ShieldCheck, Users, Truck,
-  UserCog, Globe, AlertTriangle, Clock, TrendingUp,
-} from "lucide-react";
+import { Package, Truck, Globe, Clock } from "lucide-react";
 import { icons } from "@/lib/icons";
 import { DashboardBannerCarousel } from "@/components/app/DashboardBannerCarousel";
 import { SECTIONS, type SidebarItem } from "@/components/app/AppSidebar";
