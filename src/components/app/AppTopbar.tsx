@@ -12,7 +12,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { InstallAppButton } from "./InstallAppPrompt";
 import { NotificationBell } from "./NotificationBell";
-import { Settings, ChevronDown, LogOut, Languages, ArrowLeftRight, LayoutDashboard } from "lucide-react";
+import { ChevronDown, LogOut, Languages, ArrowLeftRight, LayoutDashboard } from "lucide-react";
+import { icons } from "@/lib/icons";
 
 const SettingsSheet = lazy(() =>
   import("./SettingsSheet").then((m) => ({ default: m.SettingsSheet }))
@@ -55,7 +56,7 @@ export function AppTopbar() {
           onClick={() => setSettingsOpen(true)}
           className="flex h-9 items-center gap-1.5 rounded-full px-2 text-sm font-medium text-muted-foreground hover:bg-accent"
         >
-          <Settings className="h-4 w-4" />
+          <img src={icons.settings} alt="" className="h-4 w-4" />
           <span className="hidden md:inline">{lang === "bn" ? "সেটিংস" : "Settings"}</span>
         </button>
         <DropdownMenu>
