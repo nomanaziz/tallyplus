@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "@/lib/router";
-import { Bell, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
+import { icons } from "@/lib/icons";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
@@ -103,7 +104,7 @@ export function NotificationBell() {
           className="relative flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground hover:bg-accent"
           aria-label="Notifications"
         >
-          <Bell className="h-5 w-5" />
+          <img src={icons.notification} alt="" className="h-5 w-5" />
           {unread > 0 && (
             <span className="absolute right-1 top-1 inline-flex min-w-[16px] items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold leading-4 text-destructive-foreground">
               {unread > 9 ? "9+" : unread}
