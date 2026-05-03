@@ -112,6 +112,86 @@ export const stockHistoryQuery = (shopId: string | null | undefined) =>
     },
   });
 
+/* ---------- Dashboard overview (desktop wide widgets) ---------- */
+export type DashboardOverview = {
+  productsTotal: number;
+  productsLowStock: number;
+  productsPublished: number;
+  warrantyActive: number;
+  customersCount: number;
+  suppliersCount: number;
+  employeesCount: number;
+  ordersPending: number;
+  fordoNew: number;
+  recentSales: Array<{ id: string; invoice_no: string | null; total: number; created_at: string; customer_name: string | null }>;
+  recentWishlists: Array<{ id: string; customer_name: string | null; status: string; created_at: string }>;
+  recentOrders: Array<{ id: string; customer_name: string | null; total: number; status: string; created_at: string }>;
+  lowStockProducts: Array<{ id: string; name: string; stock: number; low_stock_alert: number | null }>;
+  expiringWarranty: Array<{ id: string; name: string; warranty_end_date: string }>;
+};
+
+export const dashboardOverviewQuery = (shopId: string | null | undefined) =>
+  queryOptions({
+    queryKey: ["dashboard", "overview", shopId],
+    enabled: !!shopId,
+    staleTime: 60_000,
+    gcTime: 5 * 60_000,
+    queryFn: async (): Promise<DashboardOverview> => {
+      const empty: DashboardOverview = {
+        productsTotal: 0, productsLowStock: 0, productsPublished: 0, warrantyActive: 0,
+        customersCount: 0, suppliersCount: 0, employeesCount: 0, ordersPending: 0, fordoNew: 0,
+        recentSales: [], recentWishlists: [], recentOrders: [], lowStockProducts: [], expiringWarranty: [],
+      };
+      if (!shopId) return empty;
+      const nowIso = new Date().toISOString();
+      const in30 = new Date(Date.now() + 30 * 86400_000).toISOString();
+
+      const [
+        productsAll, lowStock, published, warranty,
+        customersC, suppliersC, members, ordersPending, fordoNew,
+        recentSales, recentWishlists, recentOrders, lowStockList, expiringWarranty,
+      ] = await Promise.all([
+        supabase.from("products").select("id", { count: "exact", head: true }).eq("shop_id", shopId).is("deleted_at", null),
+        supabase.from("products").select("id,name,stock,low_stock_alert").eq("shop_id", shopId).is("deleted_at", null).not("low_stock_alert", "is", null),
+        supabase.from("products").select("id", { count: "exact", head: true }).eq("shop_id", shopId).is("deleted_at", null).eq("is_marketplace_published", true),
+        supabase.from("products").select("id", { count: "exact", head: true }).eq("shop_id", shopId).is("deleted_at", null).gte("warranty_end_date", nowIso),
+        supabase.from("customers").select("id", { count: "exact", head: true }).eq("shop_id", shopId).is("deleted_at", null),
+        supabase.from("suppliers").select("id", { count: "exact", head: true }).eq("shop_id", shopId).is("deleted_at", null),
+        supabase.from("shop_members").select("id", { count: "exact", head: true }).eq("shop_id", shopId),
+        supabase.from("marketplace_orders").select("id", { count: "exact", head: true }).eq("shop_id", shopId).in("status", ["pending", "processing"]),
+        supabase.from("customer_wishlists").select("id", { count: "exact", head: true }).eq("shop_id", shopId).eq("status", "new"),
+        supabase.from("sales").select("id,invoice_no,total,created_at,customers(name)").eq("shop_id", shopId).is("deleted_at", null).order("created_at", { ascending: false }).limit(5),
+        supabase.from("customer_wishlists").select("id,customer_name,status,created_at").eq("shop_id", shopId).order("created_at", { ascending: false }).limit(5),
+        supabase.from("marketplace_orders").select("id,customer_name,total,status,created_at").eq("shop_id", shopId).order("created_at", { ascending: false }).limit(5),
+        supabase.from("products").select("id,name,stock,low_stock_alert").eq("shop_id", shopId).is("deleted_at", null).not("low_stock_alert", "is", null).order("stock", { ascending: true }).limit(5),
+        supabase.from("products").select("id,name,warranty_end_date").eq("shop_id", shopId).is("deleted_at", null).gte("warranty_end_date", nowIso).lte("warranty_end_date", in30).order("warranty_end_date", { ascending: true }).limit(5),
+      ]);
+
+      const lowStockCount = ((lowStock.data ?? []) as Array<{ stock: number; low_stock_alert: number | null }>)
+        .filter((p) => (p.low_stock_alert ?? 0) > 0 && Number(p.stock) <= Number(p.low_stock_alert)).length;
+
+      return {
+        productsTotal: productsAll.count ?? 0,
+        productsLowStock: lowStockCount,
+        productsPublished: published.count ?? 0,
+        warrantyActive: warranty.count ?? 0,
+        customersCount: customersC.count ?? 0,
+        suppliersCount: suppliersC.count ?? 0,
+        employeesCount: (members.count ?? 0) + 1,
+        ordersPending: ordersPending.count ?? 0,
+        fordoNew: fordoNew.count ?? 0,
+        recentSales: ((recentSales.data ?? []) as Array<{ id: string; invoice_no: string | null; total: number; created_at: string; customers: { name: string } | null }>).map((r) => ({
+          id: r.id, invoice_no: r.invoice_no, total: Number(r.total), created_at: r.created_at, customer_name: r.customers?.name ?? null,
+        })),
+        recentWishlists: ((recentWishlists.data ?? []) as Array<{ id: string; customer_name: string | null; status: string; created_at: string }>),
+        recentOrders: ((recentOrders.data ?? []) as Array<{ id: string; customer_name: string | null; total: number; status: string; created_at: string }>).map((r) => ({ ...r, total: Number(r.total) })),
+        lowStockProducts: ((lowStockList.data ?? []) as Array<{ id: string; name: string; stock: number; low_stock_alert: number | null }>)
+          .filter((p) => (p.low_stock_alert ?? 0) > 0 && Number(p.stock) <= Number(p.low_stock_alert)),
+        expiringWarranty: ((expiringWarranty.data ?? []) as Array<{ id: string; name: string; warranty_end_date: string }>),
+      };
+    },
+  });
+
 /* ---------- Cash movements ---------- */
 export const cashMovementsQuery = (shopId: string | null | undefined) =>
   queryOptions({
