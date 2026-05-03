@@ -30,7 +30,7 @@ const SettingsSheet = lazy(() =>
 function AppLayoutWithShop() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const [boot, setBoot] = useState<{
     checked: boolean;
     isPureConsumer: boolean;
@@ -42,6 +42,16 @@ function AppLayoutWithShop() {
       navigate({ to: "/app/dashboard", replace: true });
     }
   }, [location.pathname, navigate]);
+
+  // If auth has finished loading and there is no signed-in user, bounce to
+  // the home/login page. Without this guard a freshly-installed PWA whose
+  // start_url used to point at /app/dashboard would sit on the spinner
+  // forever waiting for `user` to arrive.
+  useEffect(() => {
+    if (!loading && !user) {
+      navigate({ to: "/", replace: true });
+    }
+  }, [loading, user, navigate]);
 
   // ONE round-trip boot: replaces 4 parallel queries (consumer/profile/shop/member)
   // + ShopProvider's separate shops fetch. Major first-paint speedup.
