@@ -50,6 +50,15 @@ import refresh from "@/assets/icons/refresh.png";
 import imageFile from "@/assets/icons/image-file.png";
 import mindMap from "@/assets/icons/mind-map.png";
 import ownerDashboard from "@/assets/icons/owner-dashboard.png";
+import moneyProtection from "@/assets/icons/money-protection.png";
+import cashIn from "@/assets/icons/cash-in.png";
+import cashOut from "@/assets/icons/cash-out.png";
+import trackOrder from "@/assets/icons/track-order.png";
+import truck from "@/assets/icons/truck.png";
+import bill from "@/assets/icons/bill.png";
+import supplier from "@/assets/icons/supplier.png";
+import trending from "@/assets/icons/trending.png";
+import comboChart from "@/assets/icons/combo-chart.png";
 
 export const icons = {
   home,
@@ -103,6 +112,15 @@ export const icons = {
   imageFile,
   mindMap,
   ownerDashboard,
+  moneyProtection,
+  cashIn,
+  cashOut,
+  trackOrder,
+  truck,
+  bill,
+  supplier,
+  trending,
+  comboChart,
 } as const;
 
 export type IconKey = keyof typeof icons;
