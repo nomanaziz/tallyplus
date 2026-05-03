@@ -146,18 +146,13 @@ export const dashboardOverviewQuery = (shopId: string | null | undefined) =>
       const nowIso = new Date().toISOString();
       const in30 = new Date(Date.now() + 30 * 86400_000).toISOString();
 
-      // warranty_end_date column may not exist in DB; gracefully fall back.
       const warrantyHead = supabase.from("products").select("id", { count: "exact", head: true })
         .eq("shop_id", shopId).is("deleted_at", null)
-        // @ts-expect-error column may be absent from generated types
         .gte("warranty_end_date", nowIso);
       const expiringWarrantyQ = supabase.from("products").select("id,name,warranty_end_date")
         .eq("shop_id", shopId).is("deleted_at", null)
-        // @ts-expect-error column may be absent from generated types
         .gte("warranty_end_date", nowIso)
-        // @ts-expect-error column may be absent from generated types
         .lte("warranty_end_date", in30)
-        // @ts-expect-error column may be absent from generated types
         .order("warranty_end_date", { ascending: true })
         .limit(5);
 
