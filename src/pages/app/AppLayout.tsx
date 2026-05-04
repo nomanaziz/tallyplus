@@ -30,7 +30,7 @@ const SettingsSheet = lazy(() =>
 function AppLayoutWithShop() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, loading } = useAuth();
+  const { user, loading, accountReady, isOwner, isAdmin } = useAuth();
   const [boot, setBoot] = useState<{
     checked: boolean;
     isPureConsumer: boolean;
@@ -53,11 +53,18 @@ function AppLayoutWithShop() {
     }
   }, [loading, user, navigate]);
 
+  useEffect(() => {
+    if (loading || !accountReady || !user) return;
+    if (isOwner || isAdmin) {
+      setBoot((prev) => ({ ...prev, checked: true, isPureConsumer: false }));
+    }
+  }, [loading, accountReady, user, isOwner, isAdmin]);
+
   // ONE round-trip boot: replaces 4 parallel queries (consumer/profile/shop/member)
   // + ShopProvider's separate shops fetch. Major first-paint speedup.
   useEffect(() => {
     let cancelled = false;
-    if (!user) { setBoot({ checked: false, isPureConsumer: false, shops: [] }); return; }
+    if (!user || !accountReady) { setBoot({ checked: false, isPureConsumer: false, shops: [] }); return; }
     (async () => {
       const { data, error } = await supabase.rpc("my_account_resolve");
       if (cancelled) return;
@@ -84,7 +91,7 @@ function AppLayoutWithShop() {
       }
     })();
     return () => { cancelled = true; };
-  }, [user, navigate]);
+  }, [user, accountReady, navigate]);
 
   if (!user || !boot.checked || boot.isPureConsumer) {
     return (
