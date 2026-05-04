@@ -386,3 +386,39 @@ function ServiceFormSheet({ open, onClose, editing, shopId, categories, onSaved 
 export default function GuardedServicesPage() {
   return <RequirePerm group="products"><ServicesPage /></RequirePerm>;
 }
+
+function ServiceAreaPicker({ value, onChange }: { value: string[]; onChange: (v: string[]) => void }) {
+  const { lang } = useI18n();
+  const [loc, setLoc] = useState<BdLocation>({ division: null, district: null, upazila: null, area: null });
+
+  const add = () => {
+    if (!loc.division) return toast.error(lang === "bn" ? "বিভাগ দিন" : "Pick a division");
+    const parts = [loc.division, loc.district, loc.upazila].filter(Boolean) as string[];
+    const label = parts.join(" › ") + (loc.area?.trim() ? ` • ${loc.area.trim()}` : "");
+    if (value.includes(label)) return toast.message(lang === "bn" ? "ইতিমধ্যে যোগ আছে" : "Already added");
+    onChange([...value, label]);
+    setLoc({ division: null, district: null, upazila: null, area: null });
+  };
+  const remove = (label: string) => onChange(value.filter((v) => v !== label));
+
+  return (
+    <div className="space-y-2">
+      <BdLocationPicker value={loc} onChange={setLoc} showArea={false} />
+      <Button type="button" variant="outline" size="sm" onClick={add} className="gap-1">
+        <Plus className="h-3.5 w-3.5" /> {lang === "bn" ? "এই এলাকা যোগ করুন" : "Add this area"}
+      </Button>
+      {value.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 pt-1">
+          {value.map((v) => (
+            <span key={v} className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-xs">
+              {v}
+              <button type="button" onClick={() => remove(v)} className="hover:text-destructive">
+                <X className="h-3 w-3" />
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
