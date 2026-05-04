@@ -525,7 +525,7 @@ function MarketplacePage() {
                 <SheetHeader>
                   <SheetTitle>ফিল্টার</SheetTitle>
                 </SheetHeader>
-                <div className="mt-4">{filterPanel}</div>
+                <div className="mt-4">{view === "services" ? servicesFilterPanel : filterPanel}</div>
               </SheetContent>
             </Sheet>
           </form>
