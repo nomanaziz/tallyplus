@@ -9,6 +9,9 @@ import { fetchContactLedger, type LedgerRow } from "@/lib/contact-ledger";
 import { PaymentEntryDialog, type PaymentDir } from "./PaymentEntryDialog";
 import { DueReminderDialog } from "./DueReminderDialog";
 import { EmptyState } from "./EmptyState";
+import { ShareMenu } from "./ShareMenu";
+import { buildStatementHtml } from "@/lib/statement-html";
+import { generatePdfFromHtml } from "@/lib/share-document";
 
 export type LedgerContact = {
   id: string;
@@ -135,6 +138,31 @@ export function ContactLedgerPanel({ contact, onChanged }: { contact: LedgerCont
             {lang === "bn" ? "রিমাইন্ডার পাঠান" : "Send Reminder"}
           </Button>
         )}
+        <ShareMenu
+          phone={contact.phone}
+          filename={`statement-${contact.name.replace(/\s+/g, "_")}.pdf`}
+          label={lang === "bn" ? "শেয়ার / পাঠান" : "Share"}
+          text={
+            lang === "bn"
+              ? `প্রিয় ${contact.name},\n${current?.name ? current.name + " — " : ""}আপনার ${balance >= 0 ? "মোট বাকি" : "অগ্রিম"}: ${fmtMoney(Math.abs(balance), lang)}\nসময়কাল: ${from} থেকে ${to}\nবিস্তারিত PDF সংযুক্ত।\n\nধন্যবাদ।`
+              : `Dear ${contact.name},\n${current?.name ? current.name + " — " : ""}Your ${balance >= 0 ? "outstanding balance" : "advance"}: ${fmtMoney(Math.abs(balance), lang)}\nPeriod: ${from} to ${to}\nPDF attached.\n\nThank you.`
+          }
+          buildPdf={() =>
+            generatePdfFromHtml(
+              buildStatementHtml({
+                lang,
+                shop: { name: current?.name ?? "", address: current?.address ?? null, phone: current?.phone ?? null },
+                contact: { name: contact.name, phone: contact.phone },
+                from,
+                to,
+                rows,
+                balance,
+                party: contact.party,
+              }),
+              "a4",
+            )
+          }
+        />
       </div>
 
       {/* History table */}

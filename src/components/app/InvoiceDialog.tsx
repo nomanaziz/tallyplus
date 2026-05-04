@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button";
 import { CheckCircle2, X, Printer, Receipt, Store } from "lucide-react";
 import { useI18n, fmtMoney, bnNum } from "@/lib/i18n";
 import { printInvoice, toBnWords, toEnWords } from "@/lib/print-invoice";
+import { ShareMenu } from "@/components/app/ShareMenu";
+import { generateInvoicePdf } from "@/lib/share-document";
 
 export type InvoiceItem = {
   name: string;
@@ -213,6 +215,20 @@ export function InvoiceDialog({
             >
               <Receipt className="h-4 w-4" />
             </Button>
+            <ShareMenu
+              size="default"
+              variant="outline"
+              className="h-11"
+              label={lang === "bn" ? "শেয়ার" : "Share"}
+              phone={data.party.phone}
+              filename={`invoice-${data.invoiceNo}.pdf`}
+              text={
+                (lang === "bn"
+                  ? `${data.shop.name}\nইনভয়েস: ${data.invoiceNo}\nতারিখ: ${dtStr}\nমোট: ${fmtMoney(data.grandTotal, lang)}\nপরিশোধিত: ${fmtMoney(data.paid, lang)}\nবাকি: ${fmtMoney(dueRemain, lang)}\n\nধন্যবাদ।`
+                  : `${data.shop.name}\nInvoice: ${data.invoiceNo}\nDate: ${dtStr}\nTotal: ${fmtMoney(data.grandTotal, lang)}\nPaid: ${fmtMoney(data.paid, lang)}\nDue: ${fmtMoney(dueRemain, lang)}\n\nThank you.`)
+              }
+              buildPdf={() => generateInvoicePdf(data, lang, "a4")}
+            />
           </div>
         </div>
 
