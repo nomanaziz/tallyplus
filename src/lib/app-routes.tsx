@@ -102,6 +102,7 @@ const LOrderSuccess = lazy(() => import("@/pages/shop/OrderSuccess"));
 const LFordo = lazy(() => import("@/pages/fordo/Index"));
 const LMyOrders = lazy(() => import("@/pages/customer/MyOrders"));
 const LFavoriteShops = lazy(() => import("@/pages/customer/FavoriteShops"));
+const LMyServices = lazy(() => import("@/pages/customer/MyServices"));
 const LOnlineShop = lazy(() => import("@/pages/app/online-shop/Index"));
 const LOSOrders = lazy(() => import("@/pages/app/online-shop/Orders"));
 const LOSProducts = lazy(() => import("@/pages/app/online-shop/Products"));
@@ -238,6 +239,8 @@ export const appRoutes: RouteObject[] = [
 { path: "my-orders", element: <Suspense fallback={<RouteFallback/>}><LMyOrders/></Suspense> }
 ,
 { path: "favorite-shops", element: <Suspense fallback={<RouteFallback/>}><LFavoriteShops/></Suspense> }
+,
+{ path: "my-services", element: <Suspense fallback={<RouteFallback/>}><LMyServices/></Suspense> }
 ] },
 { path: "f/:slug", element: <Suspense fallback={<RouteFallback/>}><L64/></Suspense>, children: [
 { path: "my", element: <Suspense fallback={<RouteFallback/>}><L65/></Suspense> }

@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, Pencil, Trash2, Globe, Clock, Shield, Home, Wrench, Search, MapPin } from "lucide-react";
+import { Plus, Pencil, Trash2, Globe, Clock, Shield, Home, Wrench, Search, MapPin, CalendarClock, Phone, BadgeDollarSign } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useShop } from "@/lib/shop";
 import { useI18n, fmtMoney } from "@/lib/i18n";
@@ -19,6 +19,8 @@ import { ServiceCatalogPicker } from "@/components/app/ServiceCatalogPicker";
 import { type CatalogItem } from "@/lib/service-catalog";
 import { BdLocationPicker, type BdLocation } from "@/components/shared/BdLocationPicker";
 import { X } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
 
 function ServicesPage() {
   const { lang } = useI18n();
@@ -29,6 +31,11 @@ function ServicesPage() {
   const [search, setSearch] = useState("");
   const [openForm, setOpenForm] = useState(false);
   const [editing, setEditing] = useState<Service | null>(null);
+  const [tab, setTab] = useState<string>(() => {
+    if (typeof window === "undefined") return "list";
+    const sp = new URLSearchParams(window.location.search);
+    return sp.get("tab") === "bookings" ? "bookings" : "list";
+  });
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -81,6 +88,17 @@ function ServicesPage() {
         </Button>
       </div>
 
+      <Tabs value={tab} onValueChange={setTab} className="mb-3">
+        <TabsList>
+          <TabsTrigger value="list">{lang === "bn" ? "সার্ভিস তালিকা" : "Services"}</TabsTrigger>
+          <TabsTrigger value="bookings" className="gap-1.5">
+            <CalendarClock className="h-3.5 w-3.5" /> {lang === "bn" ? "বুকিং" : "Bookings"}
+          </TabsTrigger>
+        </TabsList>
+        <TabsContent value="bookings" className="mt-3">
+          <ServiceBookingsTab shopId={current.id} />
+        </TabsContent>
+        <TabsContent value="list" className="mt-3">
       <div className="mb-3 relative max-w-md">
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" placeholder={lang === "bn" ? "সার্ভিস খুঁজুন" : "Search service"} />
@@ -146,6 +164,8 @@ function ServicesPage() {
           })}
         </div>
       )}
+        </TabsContent>
+      </Tabs>
 
       <ServiceFormSheet
         open={openForm}
@@ -184,6 +204,9 @@ function ServiceFormSheet({ open, onClose, editing, shopId, categories, onSaved 
       category_id: null,
       service_charge_extra: null,
       service_areas: [],
+      booking_enabled: true,
+      advance_amount: 0,
+      advance_required: false,
     });
   }, [editing, open]);
 
@@ -209,6 +232,9 @@ function ServiceFormSheet({ open, onClose, editing, shopId, categories, onSaved 
         category_id: form.category_id || null,
         service_charge_extra: form.service_charge_extra ? Number(form.service_charge_extra) : null,
         service_areas: Array.isArray(form.service_areas) ? form.service_areas : [],
+        booking_enabled: form.booking_enabled !== false,
+        advance_amount: form.advance_amount ? Number(form.advance_amount) : 0,
+        advance_required: !!form.advance_required,
       };
       let serviceId = editing?.id;
       if (editing) {
@@ -350,6 +376,33 @@ function ServiceFormSheet({ open, onClose, editing, shopId, categories, onSaved 
               <Input type="number" value={form.service_charge_extra ?? ""} onChange={(e) => update({ service_charge_extra: e.target.value ? Number(e.target.value) : null })} />
             </div>
           )}
+          {/* Booking & advance */}
+          <div className="rounded-md border p-3 space-y-2">
+            <div className="flex items-center justify-between">
+              <Label className="flex items-center gap-2"><CalendarClock className="h-4 w-4" /> {lang === "bn" ? "অনলাইন বুকিং চালু" : "Online booking enabled"}</Label>
+              <Switch checked={form.booking_enabled !== false} onCheckedChange={(v) => update({ booking_enabled: v })} />
+            </div>
+            <div className="text-xs text-muted-foreground">
+              {lang === "bn"
+                ? "বন্ধ থাকলে গ্রাহক শুধু ফোন করতে পারবে, অনলাইন বুকিং নিতে পারবে না।"
+                : "When off, customers can only call you — no online booking."}
+            </div>
+            <div className="grid grid-cols-2 gap-3 pt-1">
+              <div>
+                <Label className="flex items-center gap-1"><BadgeDollarSign className="h-3.5 w-3.5" /> {lang === "bn" ? "অগ্রিম / যাতায়াত (৳)" : "Advance / travel (৳)"}</Label>
+                <Input
+                  type="number"
+                  placeholder="0"
+                  value={form.advance_amount ?? ""}
+                  onChange={(e) => update({ advance_amount: e.target.value ? Number(e.target.value) : 0 })}
+                />
+              </div>
+              <div className="flex items-end justify-between rounded-md border px-3 py-2">
+                <Label className="text-xs">{lang === "bn" ? "অগ্রিম বাধ্যতামূলক" : "Advance required"}</Label>
+                <Switch checked={!!form.advance_required} onCheckedChange={(v) => update({ advance_required: v })} />
+              </div>
+            </div>
+          </div>
           <div className="flex items-center justify-between">
             <Label className="flex items-center gap-2"><Globe className="h-4 w-4" /> {lang === "bn" ? "অনলাইন মার্কেটে দেখান" : "Show on online marketplace"}</Label>
             <Switch checked={!!form.is_marketplace_published} onCheckedChange={(v) => update({ is_marketplace_published: v })} />
@@ -385,6 +438,129 @@ function ServiceFormSheet({ open, onClose, editing, shopId, categories, onSaved 
 
 export default function GuardedServicesPage() {
   return <RequirePerm group="products"><ServicesPage /></RequirePerm>;
+}
+
+type Booking = {
+  id: string;
+  shop_id: string;
+  service_id: string;
+  service_name: string;
+  customer_name: string;
+  customer_phone: string;
+  customer_address: string | null;
+  scheduled_at: string | null;
+  note: string | null;
+  service_price: number;
+  advance_amount: number;
+  advance_paid: boolean;
+  advance_payment_method: string | null;
+  advance_txn_id: string | null;
+  status: string;
+  created_at: string;
+};
+
+const STATUSES: { value: string; bn: string; en: string }[] = [
+  { value: "pending", bn: "অপেক্ষমান", en: "Pending" },
+  { value: "confirmed", bn: "নিশ্চিত", en: "Confirmed" },
+  { value: "in_progress", bn: "চলছে", en: "In progress" },
+  { value: "completed", bn: "সম্পন্ন", en: "Completed" },
+  { value: "cancelled", bn: "বাতিল", en: "Cancelled" },
+];
+
+function ServiceBookingsTab({ shopId }: { shopId: string }) {
+  const { lang } = useI18n();
+  const qc = useQueryClient();
+  const { data: bookings = [], isLoading } = useQuery({
+    queryKey: ["service_bookings", shopId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("service_bookings")
+        .select("*")
+        .eq("shop_id", shopId)
+        .order("created_at", { ascending: false })
+        .limit(200);
+      if (error) throw error;
+      return (data ?? []) as Booking[];
+    },
+  });
+
+  const setStatus = async (b: Booking, status: string) => {
+    const { error } = await supabase.from("service_bookings").update({ status }).eq("id", b.id);
+    if (error) return toast.error(error.message);
+    toast.success(lang === "bn" ? "আপডেট হয়েছে" : "Updated");
+    qc.invalidateQueries({ queryKey: ["service_bookings", shopId] });
+  };
+  const setAdvancePaid = async (b: Booking, v: boolean) => {
+    const { error } = await supabase.from("service_bookings").update({ advance_paid: v }).eq("id", b.id);
+    if (error) return toast.error(error.message);
+    qc.invalidateQueries({ queryKey: ["service_bookings", shopId] });
+  };
+
+  if (isLoading) return <div className="text-sm text-muted-foreground">{lang === "bn" ? "লোড হচ্ছে…" : "Loading…"}</div>;
+  if (bookings.length === 0) {
+    return <EmptyState icon={<CalendarClock className="h-6 w-6" />} title={lang === "bn" ? "এখনও কোনো বুকিং আসেনি" : "No bookings yet"} />;
+  }
+  return (
+    <div className="space-y-2">
+      {bookings.map((b) => (
+        <div key={b.id} className="rounded-xl border bg-card p-3">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <div className="font-semibold truncate">{b.service_name}</div>
+              <div className="mt-0.5 text-sm">
+                <span className="font-medium">{b.customer_name}</span>
+                {" • "}
+                <a href={`tel:${b.customer_phone}`} className="inline-flex items-center gap-1 text-primary hover:underline">
+                  <Phone className="h-3 w-3" /> {b.customer_phone}
+                </a>
+              </div>
+              {b.customer_address && (
+                <div className="mt-0.5 text-xs text-muted-foreground inline-flex items-start gap-1">
+                  <MapPin className="mt-0.5 h-3 w-3 flex-none" /> <span>{b.customer_address}</span>
+                </div>
+              )}
+              {b.scheduled_at && (
+                <div className="mt-0.5 text-xs text-muted-foreground inline-flex items-center gap-1">
+                  <CalendarClock className="h-3 w-3" /> {new Date(b.scheduled_at).toLocaleString(lang === "bn" ? "bn-BD" : "en-US")}
+                </div>
+              )}
+              {b.note && <div className="mt-1 text-xs italic text-muted-foreground">"{b.note}"</div>}
+            </div>
+            <Badge variant={b.status === "completed" ? "default" : b.status === "cancelled" ? "destructive" : "secondary"}>
+              {STATUSES.find((s) => s.value === b.status)?.[lang] ?? b.status}
+            </Badge>
+          </div>
+          <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
+            <span className="rounded-full bg-muted px-2 py-0.5">{lang === "bn" ? "মূল্য" : "Price"}: ৳{Number(b.service_price).toLocaleString("bn-BD")}</span>
+            {b.advance_amount > 0 && (
+              <span className={`rounded-full px-2 py-0.5 ${b.advance_paid ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300" : "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300"}`}>
+                {lang === "bn" ? "অগ্রিম" : "Advance"}: ৳{Number(b.advance_amount).toLocaleString("bn-BD")}
+                {" "}{b.advance_paid ? (lang === "bn" ? "(পেইড)" : "(paid)") : (lang === "bn" ? "(বাকি)" : "(unpaid)")}
+                {b.advance_payment_method ? ` • ${b.advance_payment_method}` : ""}
+                {b.advance_txn_id ? ` • ${b.advance_txn_id}` : ""}
+              </span>
+            )}
+          </div>
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <Select value={b.status} onValueChange={(v) => setStatus(b, v)}>
+              <SelectTrigger className="h-8 w-40 text-xs"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {STATUSES.map((s) => <SelectItem key={s.value} value={s.value}>{s[lang]}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            {b.advance_amount > 0 && (
+              <Button size="sm" variant="outline" onClick={() => setAdvancePaid(b, !b.advance_paid)}>
+                {b.advance_paid ? (lang === "bn" ? "অগ্রিম বাকি দেখান" : "Mark unpaid") : (lang === "bn" ? "অগ্রিম পেইড" : "Mark paid")}
+              </Button>
+            )}
+            <a href={`tel:${b.customer_phone}`} className="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs hover:bg-accent">
+              <Phone className="h-3 w-3" /> {lang === "bn" ? "কল" : "Call"}
+            </a>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 function ServiceAreaPicker({ value, onChange }: { value: string[]; onChange: (v: string[]) => void }) {

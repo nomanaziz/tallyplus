@@ -5,6 +5,8 @@ import { SiteHeader } from "@/components/site/SiteHeader";
 import { SiteFooter } from "@/components/site/SiteFooter";
 import { ArrowLeft, Clock, Home, Loader2, MapPin, Phone, ShieldCheck, Store, Wrench, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ServiceBookingDialog } from "@/components/shop/ServiceBookingDialog";
+import { CalendarPlus } from "lucide-react";
 
 type Service = {
   id: string;
@@ -22,6 +24,9 @@ type Service = {
   warranty_enabled: boolean | null;
   warranty_value: number | null;
   warranty_unit: string | null;
+  advance_amount?: number | null;
+  advance_required?: boolean | null;
+  booking_enabled?: boolean | null;
 };
 type Shop = {
   id: string;
@@ -42,6 +47,7 @@ function ServiceDetailPage() {
   const [service, setService] = useState<Service | null>(null);
   const [shop, setShop] = useState<Shop | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [bookingOpen, setBookingOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -83,6 +89,8 @@ function ServiceDetailPage() {
   const dur = service.duration_label
     ?? (service.duration_minutes ? `${service.duration_minutes} মিনিট` : null);
   const waText = encodeURIComponent(`আসসালামু আলাইকুম, "${service.name}" সার্ভিসটি সম্পর্কে জানতে চাই।`);
+  const bookingEnabled = service.booking_enabled !== false;
+  const advanceAmt = Number(service.advance_amount ?? 0);
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
@@ -185,7 +193,12 @@ function ServiceDetailPage() {
             </div>
 
             {/* CTAs */}
-            <div className="grid grid-cols-2 gap-2 pt-1">
+            <div className="grid grid-cols-1 gap-2 pt-1 sm:grid-cols-3">
+              {bookingEnabled && (
+                <Button onClick={() => setBookingOpen(true)} className="gap-1.5">
+                  <CalendarPlus className="h-4 w-4" /> এখনই বুক করুন
+                </Button>
+              )}
               {shop.phone ? (
                 <a href={`tel:${shop.phone}`} className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground shadow hover:bg-primary/90">
                   <Phone className="h-4 w-4" /> ফোন করুন
@@ -204,10 +217,29 @@ function ServiceDetailPage() {
                 </a>
               ) : null}
             </div>
+            {advanceAmt > 0 && (
+              <div className="text-xs text-amber-700 dark:text-amber-400">
+                নোট: এই সার্ভিসে যাতায়াত / অগ্রিম ৳{advanceAmt.toLocaleString("bn-BD")}
+                {service.advance_required ? " বাধ্যতামূলক" : " প্রযোজ্য"}।
+              </div>
+            )}
           </div>
         </div>
       </main>
       <SiteFooter />
+      <ServiceBookingDialog
+        open={bookingOpen}
+        onOpenChange={setBookingOpen}
+        service={{
+          id: service.id,
+          name: service.name,
+          price: Number(service.price),
+          advance_amount: service.advance_amount,
+          advance_required: service.advance_required,
+          booking_enabled: service.booking_enabled,
+        }}
+        shop={{ id: shop.id, name: shop.name, phone: shop.phone }}
+      />
     </div>
   );
 }

@@ -21,6 +21,9 @@ export type Service = {
   home_service: boolean;
   service_charge_extra: number | null;
   service_areas?: string[] | null;
+  advance_amount?: number | null;
+  advance_required?: boolean | null;
+  booking_enabled?: boolean | null;
 };
 
 export type ServiceCategory = {
