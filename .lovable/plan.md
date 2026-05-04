@@ -1,26 +1,32 @@
-## লক্ষ্য
+## Overview
 
-নতুন দোকান তৈরি হলেই স্বয়ংক্রিয়ভাবে একটা unique `username` সেট হবে, যাতে অনলাইন শপের পাবলিক লিংক (`/vendor/{username}`) সাথে সাথে কাজ করে। পুরনো দোকানে কিছু করা হবে না — মালিক নিজেই Settings এ গিয়ে সেট করবেন।
+তিনটা সম্পর্কিত feature:
 
-## পরিবর্তন
+1. **শপ ownership transfer** — admin-mediated, both-side verification, charge সহ
+2. **Bulk product import** — Excel/CSV থেকে
+3. **Bulk product export** — Excel এ
 
-### ১. DB trigger — `tg_shops_ensure_username` (migration)
+---
 
-`shops` টেবিলে `BEFORE INSERT` trigger যোগ হবে:
+## ১. Shop Ownership Transfer (Admin-mediated)
 
-- যদি `NEW.username` already দেওয়া থাকে (non-empty), কিছুই করবে না।
-- নাহলে দোকানের `name` থেকে slugify করবে: lowercase, only `a-z0-9-`, max 24 chars।
-- যদি ফাঁকা/reserved/duplicate হয়, suffix যোগ করবে (`-ab12` → `extensions.gen_random_bytes` থেকে)।
-- 10 attempt fail হলে fallback হিসেবে `shop-` + uuid prefix।
-- Validation: `^[a-z0-9][a-z0-9_-]{2,31}$` মেনে চলবে, এবং Settings.tsx এর `RESERVED` সেটের সাথে মেলে এমন reserved শব্দ এড়াবে (app, admin, auth, shop, shops, api, vendor, marketplace ইত্যাদি)।
-- `SET search_path = public, extensions` এবং `extensions.gen_random_bytes(...)` qualified call (আগের wishlist_slug trigger এর মতই)।
+### Flow
 
-### ২. কোডে কোনো পরিবর্তন নেই
+```text
+Owner A → "Transfer Request" পাঠায়
+  ↓ (নতুন owner-এর phone/email + amount auto-charge ব্যাখ্যা)
+System → Owner A-র wallet/balance থেকে charge কাটে (বা SMS balance-এর মত pending payment)
+  ↓
+Pending → Owner B-র কাছে notification + accept/reject
+  ↓ (B accepts)
+Pending → Admin queue
+  ↓ (admin approves)
+shops.owner_id update + audit trail + uniqueness reassign
+```
 
-`AddShopDialog` এ আলাদা username field দরকার নেই — trigger সব handle করবে। User চাইলে পরে Settings থেকে edit করতে পারবেন।
+দুই side verification: **(a)** নতুন owner অবশ্যই platform-এ registered থাকতে হবে এবং accept করতে হবে, **(b)** Admin চূড়ান্ত approve করবে।
 
-## প্রভাব
+### Database (migration)
 
-- **নতুন দোকান**: তৈরির সাথে সাথেই `/vendor/{username}` লিংক কাজ করবে।
-- **পুরনো দোকান**: untouched — মালিক Settings এ গিয়ে নিজে username দেবেন (যেমন এখন কাজ করে)।
-- **online shop dashboard banner** এ "এখনো সেট করা হয়নি" শুধুমাত্র সেইসব পুরনো দোকানে দেখাবে যেগুলোয় username নেই।
+নতুন table `shop_transfer_requests`:
+- `id`, `shop_id`, `from_user_id`, `to_user
