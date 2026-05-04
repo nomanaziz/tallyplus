@@ -3,8 +3,10 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { SiteHeader } from "@/components/site/SiteHeader";
 import { SiteFooter } from "@/components/site/SiteFooter";
-import { Loader2, MapPin, Phone, ShoppingBag, Store, ArrowLeft, Heart } from "lucide-react";
+import { Loader2, MapPin, Phone, ShoppingBag, Store, ArrowLeft, Heart, Wrench } from "lucide-react";
 import { MarketplaceProductCard } from "@/components/marketplace/MarketplaceProductCard";
+import { MarketplaceServiceCard } from "@/components/marketplace/MarketplaceServiceCard";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
@@ -15,6 +17,13 @@ type Shop = {
   cover_url: string | null; tagline: string | null; address: string | null; phone: string | null;
 };
 type Product = { id: string; name: string; image_url: string | null; unit: string | null };
+type Service = {
+  id: string; shop_id: string; name: string; description?: string | null;
+  price: number; duration_minutes?: number | null; duration_label?: string | null;
+  unit?: string | null; image_url?: string | null;
+  home_service?: boolean | null; service_charge_extra?: number | null;
+  service_areas?: string[] | null;
+};
 
 
 
@@ -25,6 +34,7 @@ function ShopPage() {
   const [shop, setShop] = useState<Shop | null>(null);
   const [listings, setListings] = useState<Listing[]>([]);
   const [products, setProducts] = useState<Record<string, Product>>({});
+  const [services, setServices] = useState<Service[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [favId, setFavId] = useState<string | null>(null);
   const [favLoading, setFavLoading] = useState(false);
@@ -39,10 +49,11 @@ function ShopPage() {
         if (error || !data || (data as { error?: string }).error) {
           setError((data as { error?: string })?.error ?? error?.message ?? "ত্রুটি");
         } else {
-          const d = data as { shop: Shop; listings: Listing[]; products: Record<string, Product> };
+          const d = data as { shop: Shop; listings: Listing[]; products: Record<string, Product>; services?: Service[] };
           setShop(d.shop);
           setListings(d.listings ?? []);
           setProducts(d.products ?? {});
+          setServices(d.services ?? []);
         }
         setLoading(false);
       });
@@ -167,30 +178,54 @@ function ShopPage() {
       </section>
 
       <main className="container mx-auto px-4 py-8">
-        <h2 className="mb-4 text-lg font-semibold">পণ্যসমূহ ({listings.length})</h2>
-
-        {listings.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-center">
-            <ShoppingBag className="mb-3 h-10 w-10 text-muted-foreground" />
-            <p className="text-muted-foreground">এই দোকানে এখনো কোনো অনলাইন পণ্য যোগ হয়নি।</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-            {listings.map((l) => {
-              const p = products[l.product_id];
-              if (!p) return null;
-              return (
-                <MarketplaceProductCard
-                  key={l.id}
-                  listing={{ ...l, shop_id: shop.id }}
-                  product={p}
-                  shop={shop}
-                  showShopChip={false}
-                />
-              );
-            })}
-          </div>
-        )}
+        <Tabs defaultValue="products" className="w-full">
+          <TabsList className="mb-4">
+            <TabsTrigger value="products" className="gap-1.5">
+              <ShoppingBag className="h-4 w-4" /> পণ্য ({listings.length})
+            </TabsTrigger>
+            <TabsTrigger value="services" className="gap-1.5">
+              <Wrench className="h-4 w-4" /> সার্ভিস ({services.length})
+            </TabsTrigger>
+          </TabsList>
+          <TabsContent value="products">
+            {listings.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <ShoppingBag className="mb-3 h-10 w-10 text-muted-foreground" />
+                <p className="text-muted-foreground">এই দোকানে এখনো কোনো অনলাইন পণ্য যোগ হয়নি।</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+                {listings.map((l) => {
+                  const p = products[l.product_id];
+                  if (!p) return null;
+                  return (
+                    <MarketplaceProductCard
+                      key={l.id}
+                      listing={{ ...l, shop_id: shop.id }}
+                      product={p}
+                      shop={shop}
+                      showShopChip={false}
+                    />
+                  );
+                })}
+              </div>
+            )}
+          </TabsContent>
+          <TabsContent value="services">
+            {services.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <Wrench className="mb-3 h-10 w-10 text-muted-foreground" />
+                <p className="text-muted-foreground">এই দোকানে এখনো কোনো অনলাইন সার্ভিস যোগ হয়নি।</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+                {services.map((svc) => (
+                  <MarketplaceServiceCard key={svc.id} service={svc} shop={shop} />
+                ))}
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
       </main>
       </div>
       <SiteFooter />

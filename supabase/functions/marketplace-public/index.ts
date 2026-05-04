@@ -96,6 +96,50 @@ async function attachShopsAndProducts(
   return { shops: shopMap, products: productMap };
 }
 
+// deno-lint-ignore no-explicit-any
+async function loadShopListings(admin: any, shopId: string): Promise<ListingRow[]> {
+  const { data } = await admin
+    .from("marketplace_listings")
+    .select("id, shop_id, product_id, price, stock, unit, min_order, is_published, created_at, warranty_months")
+    .eq("shop_id", shopId)
+    .eq("is_published", true)
+    .order("created_at", { ascending: false });
+  return (data as ListingRow[] | null) ?? [];
+}
+
+// deno-lint-ignore no-explicit-any
+async function loadProductsFor(admin: any, listings: ListingRow[]): Promise<Record<string, ProductRow>> {
+  if (listings.length === 0) return {};
+  const productIds = Array.from(new Set(listings.map((l) => l.product_id)));
+  const { data } = await admin
+    .from("products")
+    .select("id, name, image_url, category_id, unit")
+    .in("id", productIds)
+    .is("deleted_at", null);
+  const map: Record<string, ProductRow> = {};
+  ((data as ProductRow[] | null) ?? []).forEach((p) => (map[p.id] = p));
+  return map;
+}
+
+// deno-lint-ignore no-explicit-any
+async function loadShopServices(admin: any, shopId: string): Promise<Array<Record<string, unknown>>> {
+  const { data: ml } = await admin
+    .from("marketplace_service_listings")
+    .select("service_id")
+    .eq("shop_id", shopId)
+    .eq("is_published", true);
+  const sids = ((ml as { service_id: string }[] | null) ?? []).map((l) => l.service_id);
+  if (sids.length === 0) return [];
+  const { data: services } = await admin
+    .from("services")
+    .select("id, shop_id, name, description, price, duration_minutes, duration_label, unit, image_url, home_service, service_charge_extra, service_areas, warranty_enabled, warranty_value, warranty_unit, advance_amount, advance_required, booking_enabled")
+    .in("id", sids)
+    .is("deleted_at", null)
+    .eq("is_active", true)
+    .order("name");
+  return (services as Array<Record<string, unknown>> | null) ?? [];
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: cors });
 
@@ -217,10 +261,22 @@ Deno.serve(async (req) => {
       ((listingRows as { shop_id: string }[] | null) ?? []).forEach((l) => {
         counts[l.shop_id] = (counts[l.shop_id] ?? 0) + 1;
       });
+
+      // Count published service listings per shop
+      const { data: svcListingRows } = await admin
+        .from("marketplace_service_listings")
+        .select("shop_id")
+        .eq("is_published", true)
+        .in("shop_id", ids);
+      const service_counts: Record<string, number> = {};
+      ((svcListingRows as { shop_id: string }[] | null) ?? []).forEach((l) => {
+        service_counts[l.shop_id] = (service_counts[l.shop_id] ?? 0) + 1;
+      });
+
       // Return all marketplace-enabled shops, including those with 0 published
       // listings yet — they still belong in the directory so customers can
       // discover newly created shops.
-      return json({ shops: shopRows, counts, total: count ?? shopRows.length, page, pageSize }, 200, PUBLIC_CACHE);
+      return json({ shops: shopRows, counts, service_counts, total: count ?? shopRows.length, page, pageSize }, 200, PUBLIC_CACHE);
     }
 
     if (action === "shop") {
@@ -239,16 +295,11 @@ Deno.serve(async (req) => {
         return json({ error: "এই দোকান এখনো অনলাইন মার্কেটে যুক্ত হয়নি" }, 404);
       }
 
-      const { data: listings } = await admin
-        .from("marketplace_listings")
-        .select("id, shop_id, product_id, price, stock, unit, min_order, is_published, created_at, warranty_months")
-        .eq("shop_id", s.id)
-        .eq("is_published", true)
-        .order("created_at", { ascending: false });
-      const rows = (listings as ListingRow[] | null) ?? [];
-      const { products } = await attachShopsAndProducts(admin, rows);
+      const rows = await loadShopListings(admin, s.id);
+      const products = await loadProductsFor(admin, rows);
+      const services = await loadShopServices(admin, s.id);
 
-      return json({ shop: s, listings: rows, products });
+      return json({ shop: s, listings: rows, products, services });
     }
 
     if (action === "shop-by-username") {
@@ -277,16 +328,11 @@ Deno.serve(async (req) => {
         return json({ error: "এই দোকান এখনো অনলাইনে নেই" }, 404);
       }
 
-      const { data: listings } = await admin
-        .from("marketplace_listings")
-        .select("id, shop_id, product_id, price, stock, unit, min_order, is_published, created_at, warranty_months")
-        .eq("shop_id", s.id)
-        .eq("is_published", true)
-        .order("created_at", { ascending: false });
-      const rows = (listings as ListingRow[] | null) ?? [];
-      const { products } = await attachShopsAndProducts(admin, rows);
+      const rows = await loadShopListings(admin, s.id);
+      const products = await loadProductsFor(admin, rows);
+      const services = await loadShopServices(admin, s.id);
 
-      return json({ shop: s, listings: rows, products });
+      return json({ shop: s, listings: rows, products, services });
     }
 
     if (action === "log-visit") {
