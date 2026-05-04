@@ -112,6 +112,26 @@ function Dashboard() {
             <div className="mt-0.5 text-sm font-bold text-destructive">{fmtMoney(stats.payable, lang)}</div>
           </div>
         </div>
+        <div className="grid grid-cols-3 divide-x border-t md:hidden">
+          <Link to="/app/online-shop/orders" className="p-2.5 text-center active:bg-accent">
+            <div className="text-[11px] text-muted-foreground">{lang === "bn" ? "নতুন অর্ডার" : "New orders"}</div>
+            <div className={`mt-0.5 text-sm font-bold ${(overview?.ordersPending ?? 0) > 0 ? "text-primary" : "text-muted-foreground"}`}>
+              {overview?.ordersPending ?? 0}
+            </div>
+          </Link>
+          <Link to="/app/customer-wishlist" className="p-2.5 text-center active:bg-accent">
+            <div className="text-[11px] text-muted-foreground">{lang === "bn" ? "নতুন ফর্দ" : "New fordo"}</div>
+            <div className={`mt-0.5 text-sm font-bold ${(overview?.fordoNew ?? 0) > 0 ? "text-success" : "text-muted-foreground"}`}>
+              {overview?.fordoNew ?? 0}
+            </div>
+          </Link>
+          <Link to="/app/products" className="p-2.5 text-center active:bg-accent">
+            <div className="text-[11px] text-muted-foreground">{lang === "bn" ? "কম স্টক" : "Low stock"}</div>
+            <div className={`mt-0.5 text-sm font-bold ${(overview?.productsLowStock ?? 0) > 0 ? "text-destructive" : "text-muted-foreground"}`}>
+              {overview?.productsLowStock ?? 0}
+            </div>
+          </Link>
+        </div>
       </div>
 
       {/* Admin-managed banner carousel */}
