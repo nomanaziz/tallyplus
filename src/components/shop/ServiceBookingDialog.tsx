@@ -54,6 +54,7 @@ export function ServiceBookingDialog({
   const [note, setNote] = useState("");
   const [advMethod, setAdvMethod] = useState<string>("bkash");
   const [advTxn, setAdvTxn] = useState("");
+  const [advPayerPhone, setAdvPayerPhone] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   // Reset step whenever the dialog opens / auth state changes
@@ -128,6 +129,7 @@ export function ServiceBookingDialog({
           note: note.trim() || null,
           advance_payment_method: advanceRequired ? advMethod : (advTxn ? advMethod : null),
           advance_txn_id: advTxn.trim() || null,
+          advance_payer_phone: advPayerPhone.trim() || null,
         },
       });
       const errMsg = (data as { error?: string } | null)?.error ?? error?.message;
@@ -245,6 +247,11 @@ export function ServiceBookingDialog({
                 </Select>
                 <Input value={advTxn} onChange={(e) => setAdvTxn(e.target.value)} placeholder="TxnID" />
               </div>
+              <Input
+                value={advPayerPhone}
+                onChange={(e) => setAdvPayerPhone(e.target.value)}
+                placeholder={advMethod === "cash" ? "—" : "যে নাম্বার থেকে পাঠিয়েছেন (ঐচ্ছিক)"}
+              />
             </div>
           )}
           {!user && (

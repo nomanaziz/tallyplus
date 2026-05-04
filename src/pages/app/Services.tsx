@@ -25,6 +25,11 @@ import { useUsageLimit, parseLimitError } from "@/lib/usage-limits";
 import { UsageLimitBanner } from "@/components/app/UsageLimitBanner";
 import { QuickAddServiceDialog } from "@/components/app/QuickAddServiceDialog";
 import { Zap } from "lucide-react";
+import { AdvancePaymentInfoCard } from "@/components/app/AdvancePaymentInfoCard";
+import { CompleteServiceDialog, type CompleteBooking } from "@/components/app/CompleteServiceDialog";
+import { ServiceHistoryTab } from "@/components/app/ServiceHistoryTab";
+import { History, CheckCircle2, Printer } from "lucide-react";
+import { InvoiceDialog, type InvoiceData } from "@/components/app/InvoiceDialog";
 
 function ServicesPage() {
   const { lang } = useI18n();
@@ -156,9 +161,15 @@ function ServicesPage() {
           <TabsTrigger value="bookings" className="gap-1.5">
             <CalendarClock className="h-3.5 w-3.5" /> {lang === "bn" ? "বুকিং" : "Bookings"}
           </TabsTrigger>
+          <TabsTrigger value="history" className="gap-1.5">
+            <History className="h-3.5 w-3.5" /> {lang === "bn" ? "ইতিহাস" : "History"}
+          </TabsTrigger>
         </TabsList>
         <TabsContent value="bookings" className="mt-3">
           <ServiceBookingsTab shopId={current.id} />
+        </TabsContent>
+        <TabsContent value="history" className="mt-3">
+          <ServiceHistoryTab shopId={current.id} />
         </TabsContent>
         <TabsContent value="list" className="mt-3">
       <div className="mb-3 relative max-w-md">
@@ -535,6 +546,9 @@ type Booking = {
   advance_paid: boolean;
   advance_payment_method: string | null;
   advance_txn_id: string | null;
+  advance_payer_phone: string | null;
+  sale_id: string | null;
+  final_amount: number | null;
   status: string;
   created_at: string;
 };
@@ -549,7 +563,10 @@ const STATUSES: { value: string; bn: string; en: string }[] = [
 
 function ServiceBookingsTab({ shopId }: { shopId: string }) {
   const { lang } = useI18n();
+  const { current } = useShop();
   const qc = useQueryClient();
+  const [completing, setCompleting] = useState<CompleteBooking | null>(null);
+  const [invoice, setInvoice] = useState<InvoiceData | null>(null);
   const { data: bookings = [], isLoading } = useQuery({
     queryKey: ["service_bookings", shopId],
     queryFn: async () => {
@@ -565,10 +582,54 @@ function ServiceBookingsTab({ shopId }: { shopId: string }) {
   });
 
   const setStatus = async (b: Booking, status: string) => {
+    if (status === "completed") {
+      setCompleting({
+        id: b.id,
+        shop_id: b.shop_id,
+        service_id: b.service_id,
+        service_name: b.service_name,
+        service_price: Number(b.service_price),
+        customer_name: b.customer_name,
+        customer_phone: b.customer_phone,
+        customer_address: b.customer_address,
+        advance_amount: Number(b.advance_amount),
+        advance_paid: b.advance_paid,
+      });
+      return;
+    }
     const { error } = await supabase.from("service_bookings").update({ status }).eq("id", b.id);
     if (error) return toast.error(error.message);
     toast.success(lang === "bn" ? "আপডেট হয়েছে" : "Updated");
     qc.invalidateQueries({ queryKey: ["service_bookings", shopId] });
+  };
+
+  const printInvoice = async (b: Booking) => {
+    if (!b.sale_id || !current) return;
+    const { data: items } = await supabase
+      .from("sale_items")
+      .select("name,qty,price,total")
+      .eq("sale_id", b.sale_id);
+    const { data: sale } = await supabase
+      .from("sales")
+      .select("subtotal,discount,total,paid,due,created_at,invoice_no")
+      .eq("id", b.sale_id)
+      .single();
+    if (!sale) return;
+    const s = sale as { subtotal: number; discount: number; total: number; paid: number; due: number; created_at: string; invoice_no: string | null };
+    setInvoice({
+      mode: "sell",
+      shop: { name: current.name, address: current.address, phone: current.phone, logo_url: current.logo_url },
+      party: { name: b.customer_name, phone: b.customer_phone, address: b.customer_address },
+      invoiceNo: s.invoice_no || b.sale_id.slice(0, 8).toUpperCase(),
+      date: s.created_at,
+      items: (items ?? []).map((it) => ({ name: (it as { name: string }).name, qty: Number((it as { qty: number }).qty), unit: null, price: Number((it as { price: number }).price), total: Number((it as { total: number }).total) })),
+      subtotal: Number(s.subtotal),
+      discount: Number(s.discount),
+      delivery: 0,
+      grandTotal: Number(s.total),
+      paid: Number(s.paid),
+      currentDue: Number(s.due),
+    });
   };
   const setAdvancePaid = async (b: Booking, v: boolean) => {
     const { error } = await supabase.from("service_bookings").update({ advance_paid: v }).eq("id", b.id);
@@ -611,16 +672,20 @@ function ServiceBookingsTab({ shopId }: { shopId: string }) {
             </Badge>
           </div>
           <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
-            <span className="rounded-full bg-muted px-2 py-0.5">{lang === "bn" ? "মূল্য" : "Price"}: ৳{Number(b.service_price).toLocaleString("bn-BD")}</span>
-            {b.advance_amount > 0 && (
-              <span className={`rounded-full px-2 py-0.5 ${b.advance_paid ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300" : "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300"}`}>
-                {lang === "bn" ? "অগ্রিম" : "Advance"}: ৳{Number(b.advance_amount).toLocaleString("bn-BD")}
-                {" "}{b.advance_paid ? (lang === "bn" ? "(পেইড)" : "(paid)") : (lang === "bn" ? "(বাকি)" : "(unpaid)")}
-                {b.advance_payment_method ? ` • ${b.advance_payment_method}` : ""}
-                {b.advance_txn_id ? ` • ${b.advance_txn_id}` : ""}
-              </span>
-            )}
+            <span className="rounded-full bg-muted px-2 py-0.5">
+              {b.status === "completed" && b.final_amount != null
+                ? (lang === "bn" ? "সম্পন্ন মূল্য" : "Final") + `: ৳${Number(b.final_amount).toLocaleString("bn-BD")}`
+                : (lang === "bn" ? "মূল্য" : "Price") + `: ৳${Number(b.service_price).toLocaleString("bn-BD")}`}
+            </span>
           </div>
+          <AdvancePaymentInfoCard
+            amount={Number(b.advance_amount)}
+            paid={b.advance_paid}
+            method={b.advance_payment_method}
+            txnId={b.advance_txn_id}
+            payerPhone={b.advance_payer_phone}
+            customerPhone={b.customer_phone}
+          />
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <Select value={b.status} onValueChange={(v) => setStatus(b, v)}>
               <SelectTrigger className="h-8 w-40 text-xs"><SelectValue /></SelectTrigger>
@@ -628,6 +693,22 @@ function ServiceBookingsTab({ shopId }: { shopId: string }) {
                 {STATUSES.map((s) => <SelectItem key={s.value} value={s.value}>{s[lang]}</SelectItem>)}
               </SelectContent>
             </Select>
+            {b.status !== "completed" && b.status !== "cancelled" && (
+              <Button
+                size="sm"
+                className="h-8 gap-1"
+                onClick={() => setStatus(b, "completed")}
+              >
+                <CheckCircle2 className="h-3.5 w-3.5" />
+                {lang === "bn" ? "সম্পন্ন ও ইনভয়েস" : "Complete & invoice"}
+              </Button>
+            )}
+            {b.status === "completed" && b.sale_id && (
+              <Button size="sm" variant="outline" className="h-8 gap-1" onClick={() => printInvoice(b)}>
+                <Printer className="h-3.5 w-3.5" />
+                {lang === "bn" ? "ইনভয়েস" : "Invoice"}
+              </Button>
+            )}
             {b.advance_amount > 0 && (
               <Button size="sm" variant="outline" onClick={() => setAdvancePaid(b, !b.advance_paid)}>
                 {b.advance_paid ? (lang === "bn" ? "অগ্রিম বাকি দেখান" : "Mark unpaid") : (lang === "bn" ? "অগ্রিম পেইড" : "Mark paid")}
@@ -639,6 +720,16 @@ function ServiceBookingsTab({ shopId }: { shopId: string }) {
           </div>
         </div>
       ))}
+      {current && (
+        <CompleteServiceDialog
+          open={!!completing}
+          onClose={() => setCompleting(null)}
+          booking={completing}
+          shop={{ id: current.id, name: current.name, address: current.address, phone: current.phone, logo_url: current.logo_url }}
+          onCompleted={() => qc.invalidateQueries({ queryKey: ["service_bookings", shopId] })}
+        />
+      )}
+      <InvoiceDialog open={!!invoice} onClose={() => setInvoice(null)} data={invoice} />
     </div>
   );
 }

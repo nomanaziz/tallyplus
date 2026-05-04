@@ -728,6 +728,7 @@ Deno.serve(async (req) => {
       const advanceRequired = !!s.advance_required;
       const advance_payment_method = body.advance_payment_method ? String(body.advance_payment_method).trim() : null;
       const advance_txn_id = body.advance_txn_id ? String(body.advance_txn_id).trim() : null;
+      const advance_payer_phone = body.advance_payer_phone ? String(body.advance_payer_phone).trim() : null;
       if (advanceRequired && (!advance_payment_method || !advance_txn_id)) {
         return json({ error: "এই সার্ভিসে অগ্রিম বাধ্যতামূলক — পেমেন্ট মাধ্যম ও TxnID দিন" }, 400);
       }
@@ -775,6 +776,7 @@ Deno.serve(async (req) => {
         advance_paid: false,
         advance_payment_method,
         advance_txn_id,
+        advance_payer_phone,
         status: "pending",
       };
       const { data: row, error } = await admin
