@@ -1,50 +1,158 @@
-## সমস্যা
+## ব্যবহারকারীর চাওয়া (৪টি জিনিস)
 
-বর্তমান প্রিন্ট setup-এ `body.invoice-printing #invoice-print-area` এবং `#pos-print-area`-কে `position: fixed; left: 0; width: 100%` দিয়ে রেন্ডার করা হচ্ছে। এর ফলে:
+1. **Due Receive option** — কাস্টমার লিস্টে যাদের বাকি (due) আছে, তাদের জন্য "টাকা পেলাম / Received" বাটন থাকবে। বাকি থাকলে red, paid থাকলে normal/gray।
+2. **Customer detail/history view** — একটা কাস্টমারে ক্লিক করলে ডান পেইনে তার পুরো ইতিহাস: কোন কোন invoice, কী product কিনেছে, কত paid, কত due, সব payment entries। প্রতিটা invoice থেকে আবার "প্রিন্ট/পাঠাও" করা যাবে।
+3. **Price Quotation (মূল্য তালিকা)** — sale না করেই কাস্টমারকে দাম পাঠানোর আগের estimate document।
+4. **Challan/Delivery Note (চালান কপি)** — sale-এর সাথে delivery slip print, যেটা product handover-এর সময় দেওয়া হয়।
 
-1. **A4 প্রিন্টে কন্টেন্ট বাঁদিকে কেটে যাচ্ছে** — `width: 100%` মানে viewport এর পুরো প্রস্থ, কিন্তু `@page { margin: 8mm }` কারণে আসল printable area ছোট। ফলে heading "ইনভয়েস" → "য়েস" দেখাচ্ছে, "#" কলাম, পণ্যের নাম কলাম, ক্রেতার নাম/ঠিকানা সব হারিয়ে যাচ্ছে।
-2. **Thermal/POS প্রিন্টে heading নেই** — `pos-print-area` এর ভেতরে আসলে heading আছে কিন্তু `position: fixed` + `width: 76mm` কারণে roll printer বা PDF এ একই ক্লিপিং হচ্ছে, এবং rows মাঝখানে page-break হয়ে কাটছে।
-3. **পারফোরেশন/কাটার দাগ নেই** — receipt শেষে কোনো cut-line marker নেই।
+---
 
-## সমাধানের পরিকল্পনা
+## ১. Due Ledger পেজ আপডেট
 
-### ১. `position: fixed` সম্পূর্ণ বাদ দাও — flow layout ব্যবহার করো
+**File:** `src/pages/app/DueLedger.tsx`
 
-`src/styles.css`-এর `@media print` ব্লক পুরো rewrite করো:
+### Left list (কাস্টমার card):
+- Due > 0 হলে amount **red** (`text-rose-600`) এবং একটা ছোট **"Received"/"টাকা পেলাম"** বাটন (green) দেখাবে — ক্লিকে `MoneyDueEntryDialog` খুলবে preset: party=customer, direction=`taking` (টাকা নিচ্ছি), name/phone/contactId পূর্বেই fill করা।
+- Due = 0 হলে amount muted color, কোনো receive বাটন না (paid badge দেখাবে)।
+- Card-এ ক্লিক করলে selected হবে → ডান পেইনে detail।
 
-- Dialog ancestors-কে `position: static`, `display: block`, কোনো width/height/transform ছাড়াই reset করো (Radix portal, role=dialog, scroll viewport সবসহ)।
-- Print area গুলোকে normal flow এ রেন্ডার করো — `position: static; width: auto; max-width: none;` শুধু। ব্রাউজার `@page margin` নিজেই respect করবে, আর কোনো clipping হবে না।
-- `padding: 6mm` print-area থেকে সরিয়ে `@page margin`-এ নিয়ে যাও। double-padding সমস্যা শেষ।
+### Right pane — Customer detail/history:
+যখন একটা contact selected হবে, ডান পেইনে দেখাবে (date range filter সহ):
+- Header: name, phone, address, current due balance (red/green)
+- "নতুন invoice" + "Quotation" + "Challan" দ্রুত-অ্যাকশন বাটন
+- **Tabs**: 
+  - **Invoices** — `sales` থেকে এই customer-এর সব sale, প্রতিটায় invoice_no, date, total, paid, due, status badge। Row-এ ক্লিকে existing `InvoiceDialog` খুলবে (already-built reprint pattern, `SalesLedger.tsx`-এর `openInvoice` কোড reuse)। প্রতি row-এ আলাদা **🖨 Reprint**, **📄 Challan**, **WhatsApp share** বাটন।
+  - **Payments** — `payments` table থেকে এই customer-এর সব received/given entries (date, amount, method, note)।
+  - **Quotations** — নিচের নতুন `quotations` table থেকে।
+- Bottom-এ summary: Total purchased, Total paid, Outstanding due।
 
-### ২. A4 invoice — heading সবসময় পেইজের উপরে, কন্টেন্ট page-break-safe
+---
 
-`InvoiceDialog.tsx`-এ:
-- "ইনভয়েস" heading-কে স্পষ্ট ও bold করো (already আছে, কিন্তু print-only mini header যোগ করো যাতে multi-page হলেও প্রতি page-এ shop name + invoice no top-এ থাকে)।
-- টেবিলের `<thead>`-এ `display: table-header-group` + প্রতি `<tr>`-এ `page-break-inside: avoid` set করো print CSS-এ — যাতে row মাঝখানে কাটে না।
-- Totals block, signatures block-এ `page-break-inside: avoid` দাও।
+## ২. Database changes
 
-### ৩. Thermal/POS receipt — heading + perforation marks
+**Migration:** `supabase/migrations/<ts>_quotations_and_challan.sql`
 
-`InvoiceDialog.tsx`-এর `#pos-print-area`-এ:
-- উপরে shop logo (যদি থাকে) + shop name centered bold heading নিশ্চিত করো (বর্তমানে আছে, কিন্তু ক্লিপিং কারণে দেখা যাচ্ছিল না — flow layout fix-এ আপনাআপনি ফিরবে)।
-- নিচে "Thank you" এর পরে **পারফোরেশন/cut line** যোগ করো:
-  - একটি dashed border line (`border-top: 2px dashed #000`)
-  - মাঝে ছোট্ট "✂ ---- কাটুন / CUT HERE ---- ✂" label
-  - তার নিচে কয়েক mm খালি জায়গা যাতে roll cutter সঠিক জায়গায় কাটে
-- প্রতি item row-এ `page-break-inside: avoid` (যদিও 80mm continuous roll-এ সাধারণত প্রযোজ্য না, PDF save-এ কাজে দেবে)।
-- POS page size: `@page pos-receipt { size: 80mm auto; margin: 3mm 2mm; }` — auto height continuous roll-এর জন্য। `width: 76mm` instead of `width: 100%` রাখো যাতে 80mm roll এ 2mm করে দুই পাশে গ্যাপ পায়।
+### `quotations` টেবিল (নতুন)
+```
+id uuid pk default gen_random_uuid()
+shop_id uuid not null references shops(id) on delete cascade
+customer_id uuid references customers(id) on delete set null
+quote_no text not null   -- e.g. Q-20260504-0001
+customer_name text       -- snapshot, কাস্টমার delete হলেও থাকবে
+customer_phone text
+customer_address text
+valid_until date
+subtotal numeric not null default 0
+discount numeric not null default 0
+delivery numeric not null default 0
+total numeric not null default 0
+note text
+status text not null default 'draft'  -- draft/sent/converted/expired
+converted_sale_id uuid references sales(id) on delete set null
+created_by uuid references auth.users(id)
+created_at timestamptz default now()
+updated_at timestamptz default now()
+deleted_at timestamptz
+```
 
-### ৪. টেস্ট
+### `quotation_items` টেবিল (নতুন)
+```
+id uuid pk
+quotation_id uuid not null references quotations(id) on delete cascade
+product_id uuid references products(id) on delete set null
+name text not null
+qty numeric not null
+unit text
+price numeric not null
+total numeric not null
+sort_order int default 0
+```
 
-A4 print preview এবং POS print preview উভয়েই:
-- পুরো heading "ইনভয়েস" দেখা যায়
-- প্রথম কলাম "#" এবং সব row visible
-- Customer name/phone/address rows visible
-- পরিশেষে cut line + পারফোরেশন (POS এর জন্য)
+### RLS
+দুটো টেবিলে RLS on, policies বানাবো `shop_id`-based যেমন `sales`/`sale_items`-এর pattern (যে user-এর সেই shop-এ access আছে — `has_shop_access(shop_id)` helper বা existing pattern)।
 
-### পরিবর্তিত ফাইল
+### Challan টেবিল?
+**লাগবে না।** Challan মূলত একটা existing sale-এর alternate print template। `sales` + `sale_items` থেকেই challan render হবে।
 
-- `src/styles.css` — `@media print` ব্লক rewrite (position:fixed → static, page-break rules, @page margins)
-- `src/components/app/InvoiceDialog.tsx` — POS receipt-এ cut/perforation marker যোগ, A4 totals/signature block-এ `page-break-inside: avoid` class যোগ
+---
 
-কোনো DB, edge function বা package change লাগবে না।
+## ৩. Quotation feature
+
+### সাইডবার এন্ট্রি
+`AppSidebar.tsx`-এ "Quotation / মূল্য তালিকা" link, route `/app/quotations`।
+
+### পেজ `src/pages/app/Quotations.tsx`
+- লিস্ট: quote_no, customer name/phone, total, valid_until, status badge, actions (View/Reprint/Convert to Sale/Delete)
+- "+ নতুন Quotation" বাটন → `QuotationFormDialog`
+
+### `src/components/app/QuotationFormDialog.tsx`
+POSPage-এর সরলীকৃত version:
+- Customer select/add (existing customer combo)
+- Item add (existing product picker, manual add allowed)
+- Subtotal/discount/delivery/total auto-calc
+- Valid until date
+- Note
+- Save → row ইনসার্ট, success-এ `QuotationDocDialog` খুলে preview/print
+
+### `src/components/app/QuotationDocDialog.tsx`
+`InvoiceDialog`-এর copy, কিন্তু:
+- Heading: **"মূল্য তালিকা / Price Quotation"**
+- "Paid/Due/Previous due" rows বাদ
+- "Valid until: <date>" badge
+- Footer: "এই দাম শুধু <date> পর্যন্ত প্রযোজ্য / Prices valid until <date>"
+- A4 + POS print দুটোই কাজ করবে (একই print CSS)
+
+### Convert to Sale
+Quotation list-এ "Convert to Sale" বাটন → POS/Sell পেজ-এ pre-filled items সহ redirect (route param দিয়ে), sale তৈরি হলে `quotations.converted_sale_id` + `status='converted'` আপডেট।
+
+---
+
+## ৪. Challan / Delivery Note feature
+
+Challan = same data, ভিন্ন template — কোনো price/total দরকার নেই (শুধু delivery confirmation):
+
+### `src/components/app/ChallanDialog.tsx` (নতুন)
+- Heading: **"চালান / Delivery Challan"**
+- Shop block, customer block, **Challan No** = `CH-` + sale.invoice_no
+- Date, delivery address (customer.address)
+- Items table: **#, Product, Qty, Unit** শুধু (price/total কলাম নেই — চালানে দাম থাকে না, শুধু পণ্য delivery confirm)
+- নিচে: "প্রাপ্তি স্বীকার / Received in good condition"
+- দুই signature: প্রাপকের স্বাক্ষর, প্রেরকের স্বাক্ষর
+- A4 + POS print বাটন (existing `invoice-printing`/`pos-printing` CSS classes reuse)
+
+### Trigger points
+1. `POSPage.tsx` — sale complete dialog-এ existing "Invoice" বাটনের পাশে নতুন **"চালান / Challan"** বাটন → `ChallanDialog` খোলে
+2. `SalesLedger.tsx` — প্রতি row-এর action menu-তে "চালান প্রিন্ট" option
+3. `DueLedger` customer detail Invoices tab-এ প্রতি row-এ challan বাটন
+
+---
+
+## ৫. পরিবর্তিত / নতুন ফাইলের তালিকা
+
+### নতুন
+- `supabase/migrations/<ts>_quotations.sql` — quotations + quotation_items + RLS
+- `src/pages/app/Quotations.tsx` — quotation list page
+- `src/components/app/QuotationFormDialog.tsx` — create/edit quote
+- `src/components/app/QuotationDocDialog.tsx` — print/preview quote
+- `src/components/app/ChallanDialog.tsx` — delivery note print
+- `src/components/app/CustomerHistoryPanel.tsx` — DueLedger-এর right-pane content (invoices/payments/quotations tabs সহ)
+
+### এডিট
+- `src/pages/app/DueLedger.tsx` — red color due, Received বাটন, customer select state, right pane → `CustomerHistoryPanel`
+- `src/components/app/MoneyDueEntryDialog.tsx` — preset contactId/name/phone props যোগ (existing customer থাকলে নতুন insert না করে শুধু payment entry+balance update)
+- `src/components/app/POSPage.tsx` — success dialog-এ Challan বাটন
+- `src/pages/app/SalesLedger.tsx` — row action-এ Challan
+- `src/components/app/AppSidebar.tsx` — Quotation menu link
+- `src/router.tsx` বা routes — `/app/quotations` route যুক্ত
+
+কোনো edge function নতুন বানানোর দরকার নেই — সবই client-side Supabase + existing print CSS।
+
+---
+
+## ৬. Open question
+
+কনফার্ম করার আগে শুধু একটা decision:
+
+- Quotation print template-এ **"Tax/VAT" কলাম** দরকার? (বর্তমান invoice-এ নেই, default নাই রাখছি — চাইলে পরে যোগ করা যাবে।)
+
+বাকি সব plan অনুযায়ী implement করব।
