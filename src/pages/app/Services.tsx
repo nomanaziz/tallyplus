@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, Pencil, Trash2, Globe, Clock, Shield, Home, Wrench, Search, MapPin, CalendarClock, Phone, BadgeDollarSign } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -35,6 +35,7 @@ function ServicesPage() {
   const [editing, setEditing] = useState<Service | null>(null);
   const { data: usage, refresh: refreshUsage } = useUsageLimit(current?.id ?? null, "services");
   const limitReached = !!usage && usage.limit !== -1 && usage.used >= usage.limit;
+  useEffect(() => { void refreshUsage(); }, [items.length, refreshUsage]);
   const [tab, setTab] = useState<string>(() => {
     if (typeof window === "undefined") return "list";
     const sp = new URLSearchParams(window.location.search);
