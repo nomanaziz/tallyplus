@@ -204,6 +204,9 @@ function ServiceFormSheet({ open, onClose, editing, shopId, categories, onSaved 
       category_id: null,
       service_charge_extra: null,
       service_areas: [],
+      booking_enabled: true,
+      advance_amount: 0,
+      advance_required: false,
     });
   }, [editing, open]);
 
