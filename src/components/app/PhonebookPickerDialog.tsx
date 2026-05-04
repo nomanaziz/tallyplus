@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Search, BookUser, Upload, X } from "lucide-react";
+import { Search, BookUser, Upload, X, CheckSquare, Square } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,9 @@ export type PhonebookContact = { name: string; phone: string };
 type Props = {
   open: boolean;
   onOpenChange: (v: boolean) => void;
-  onPick: (c: PhonebookContact) => void;
+  onPick?: (c: PhonebookContact) => void;
+  /** When provided, picker shows multi-select UI and returns all selected contacts. */
+  onPickMany?: (cs: PhonebookContact[]) => void;
 };
 
 // Detect Contact Picker API support (Android Chrome / Edge).
@@ -51,18 +53,21 @@ function initials(name: string) {
   return (name || "U").split(" ").map((s) => s[0]).filter(Boolean).slice(0, 2).join("").toUpperCase();
 }
 
-export function PhonebookPickerDialog({ open, onOpenChange, onPick }: Props) {
+export function PhonebookPickerDialog({ open, onOpenChange, onPick, onPickMany }: Props) {
   const { lang } = useI18n();
   const [list, setList] = useState<PhonebookContact[]>([]);
   const [search, setSearch] = useState("");
   const [busy, setBusy] = useState(false);
+  const [picked, setPicked] = useState<Set<string>>(new Set());
   const fileRef = useRef<HTMLInputElement>(null);
   const supportsApi = useMemo(() => hasContactPickerApi(), []);
+  const multi = !!onPickMany;
 
   useEffect(() => {
     if (!open) {
       setList([]);
       setSearch("");
+      setPicked(new Set());
     }
   }, [open]);
 
@@ -93,7 +98,13 @@ export function PhonebookPickerDialog({ open, onOpenChange, onPick }: Props) {
         name: (c.name?.[0] ?? "").trim() || (c.tel?.[0] ?? ""),
         phone: (c.tel?.[0] ?? "").replace(/\s+/g, ""),
       })).filter((c) => c.name || c.phone);
-      if (mapped.length === 1) {
+      if (multi && mapped.length > 0) {
+        // For bulk mode, native picker selection IS the final list.
+        onPickMany?.(mapped);
+        onOpenChange(false);
+        return;
+      }
+      if (mapped.length === 1 && onPick) {
         onPick(mapped[0]);
         onOpenChange(false);
         return;
@@ -129,6 +140,35 @@ export function PhonebookPickerDialog({ open, onOpenChange, onPick }: Props) {
     if (!q) return list;
     return list.filter((c) => c.name.toLowerCase().includes(q) || c.phone.includes(q));
   }, [list, search]);
+
+  const keyOf = (c: PhonebookContact, i: number) => `${c.phone}__${c.name}__${i}`;
+  const toggle = (k: string) => {
+    setPicked((prev) => {
+      const next = new Set(prev);
+      if (next.has(k)) next.delete(k); else next.add(k);
+      return next;
+    });
+  };
+  const allKeys = filtered.map((c, i) => keyOf(c, i));
+  const allSelected = allKeys.length > 0 && allKeys.every((k) => picked.has(k));
+  const toggleAll = () => {
+    setPicked((prev) => {
+      const next = new Set(prev);
+      if (allSelected) allKeys.forEach((k) => next.delete(k));
+      else allKeys.forEach((k) => next.add(k));
+      return next;
+    });
+  };
+  const submitMany = () => {
+    const out: PhonebookContact[] = [];
+    list.forEach((c, i) => { if (picked.has(keyOf(c, i))) out.push(c); });
+    if (out.length === 0) {
+      toast.error(lang === "bn" ? "অন্তত একজন বাছাই করুন" : "Select at least one");
+      return;
+    }
+    onPickMany?.(out);
+    onOpenChange(false);
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -199,15 +239,31 @@ export function PhonebookPickerDialog({ open, onOpenChange, onPick }: Props) {
             <EmptyState title={lang === "bn" ? "কিছু পাওয়া যায়নি" : "No matches"} />
           ) : (
             <div className="flex flex-col">
+              {multi && (
+                <button
+                  onClick={toggleAll}
+                  className="flex items-center gap-2 border-b px-3 py-2 text-left text-xs font-semibold text-muted-foreground hover:bg-accent"
+                >
+                  {allSelected ? <CheckSquare className="h-4 w-4 text-primary" /> : <Square className="h-4 w-4" />}
+                  {allSelected
+                    ? (lang === "bn" ? "সব বাদ দিন" : "Deselect all")
+                    : (lang === "bn" ? "সব নির্বাচন" : "Select all")}
+                </button>
+              )}
               {filtered.map((c, i) => (
                 <button
                   key={`${c.phone}-${i}`}
                   onClick={() => {
-                    onPick(c);
-                    onOpenChange(false);
+                    if (multi) toggle(keyOf(c, i));
+                    else { onPick?.(c); onOpenChange(false); }
                   }}
                   className="flex items-center gap-3 border-b px-3 py-3 text-left transition hover:bg-accent"
                 >
+                  {multi && (
+                    picked.has(keyOf(c, i))
+                      ? <CheckSquare className="h-4 w-4 flex-none text-primary" />
+                      : <Square className="h-4 w-4 flex-none text-muted-foreground" />
+                  )}
                   <div className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-orange-400 text-xs font-bold text-white">
                     {initials(c.name)}
                   </div>
@@ -227,12 +283,19 @@ export function PhonebookPickerDialog({ open, onOpenChange, onPick }: Props) {
               <X className="h-4 w-4" />
               {lang === "bn" ? "পরিষ্কার" : "Clear"}
             </Button>
-            {!supportsApi && (
-              <Button variant="outline" size="sm" onClick={() => fileRef.current?.click()} className="gap-1.5">
-                <Upload className="h-4 w-4" />
-                {lang === "bn" ? "অন্য ফাইল" : "Another file"}
-              </Button>
-            )}
+            <div className="flex items-center gap-2">
+              {!supportsApi && (
+                <Button variant="outline" size="sm" onClick={() => fileRef.current?.click()} className="gap-1.5">
+                  <Upload className="h-4 w-4" />
+                  {lang === "bn" ? "অন্য ফাইল" : "Another file"}
+                </Button>
+              )}
+              {multi && (
+                <Button size="sm" onClick={submitMany} disabled={picked.size === 0}>
+                  {lang === "bn" ? `যুক্ত করুন (${picked.size})` : `Add (${picked.size})`}
+                </Button>
+              )}
+            </div>
           </div>
         )}
       </DialogContent>
