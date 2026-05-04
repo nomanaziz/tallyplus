@@ -25,7 +25,7 @@ const SettingsSheet = lazy(() =>
 function AppLayoutWithShop() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, loading, accountReady, isOwner, isAdmin } = useAuth();
+  const { user, loading, accountReady } = useAuth();
   const [boot, setBoot] = useState<{
     checked: boolean;
     isPureConsumer: boolean;
@@ -49,13 +49,6 @@ function AppLayoutWithShop() {
     }
   }, [loading, user, navigate]);
 
-  useEffect(() => {
-    if (loading || !accountReady || !user) return;
-    if (isOwner || isAdmin) {
-      setBoot((prev) => ({ ...prev, checked: true, isPureConsumer: false }));
-    }
-  }, [loading, accountReady, user, isOwner, isAdmin]);
-
   // ONE round-trip boot: replaces 4 parallel queries (consumer/profile/shop/member)
   // + ShopProvider's separate shops fetch. Major first-paint speedup.
   useEffect(() => {
@@ -65,8 +58,20 @@ function AppLayoutWithShop() {
       const { data, error } = await supabase.rpc("my_account_resolve");
       if (cancelled) return;
       if (error || !data) {
-        // Fail open: continue, downstream guards still work.
-        setBoot({ checked: true, isPureConsumer: false, shops: [], ownsShop: false });
+        const { data: rows } = await supabase
+          .from("shops")
+          .select("id,name,slug,logo_url,address,phone,currency,shop_type_code,owner_id")
+          .eq("owner_id", user.id)
+          .is("deleted_at", null)
+          .order("created_at", { ascending: true });
+        if (cancelled) return;
+        const fallbackShops = Array.isArray(rows) ? rows as import("@/lib/shop").Shop[] : [];
+        setBoot({
+          checked: true,
+          isPureConsumer: false,
+          shops: fallbackShops,
+          ownsShop: fallbackShops.length > 0,
+        });
         return;
       }
       const d = data as {
