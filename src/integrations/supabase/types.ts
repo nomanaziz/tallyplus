@@ -1910,6 +1910,7 @@ export type Database = {
           is_featured: boolean
           is_published: boolean
           price: number
+          service_areas: string[]
           service_id: string
           shop_id: string
           updated_at: string
@@ -1922,6 +1923,7 @@ export type Database = {
           is_featured?: boolean
           is_published?: boolean
           price?: number
+          service_areas?: string[]
           service_id: string
           shop_id: string
           updated_at?: string
@@ -1934,6 +1936,7 @@ export type Database = {
           is_featured?: boolean
           is_published?: boolean
           price?: number
+          service_areas?: string[]
           service_id?: string
           shop_id?: string
           updated_at?: string
@@ -3251,6 +3254,7 @@ export type Database = {
           is_marketplace_published: boolean
           name: string
           price: number
+          service_areas: string[]
           service_charge_extra: number | null
           shop_id: string
           unit: string
@@ -3274,6 +3278,7 @@ export type Database = {
           is_marketplace_published?: boolean
           name: string
           price?: number
+          service_areas?: string[]
           service_charge_extra?: number | null
           shop_id: string
           unit?: string
@@ -3297,6 +3302,7 @@ export type Database = {
           is_marketplace_published?: boolean
           name?: string
           price?: number
+          service_areas?: string[]
           service_charge_extra?: number | null
           shop_id?: string
           unit?: string
