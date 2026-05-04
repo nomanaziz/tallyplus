@@ -41,7 +41,7 @@ export function buildInvoiceHtml(
           <td class="center">${lang === "bn" ? bnNum(index + 1) + "।" : index + 1}</td>
           <td>${escapeHtml(item.name)}</td>
           <td class="center">${escapeHtml(lang === "bn" ? bnNum(item.qty) : String(item.qty))}</td>
-          <td class="center">${escapeHtml(item.unit || "-")}</td>
+          <td class="center">${escapeHtml(item.unit || (lang === "bn" ? "পিস" : "piece"))}</td>
           <td class="right">${escapeHtml(fmtMoney(item.price, lang))}</td>
           <td class="right">${escapeHtml(fmtMoney(item.total, lang))}</td>
         </tr>`,
@@ -219,7 +219,7 @@ export function buildInvoiceHtml(
     <div class="rule"></div>
     ${data.items
       .map(
-        (item, index) => `<div class="item"><div class="strong">${lang === "bn" ? bnNum(index + 1) + ". " : `${index + 1}. `}${escapeHtml(item.name)}</div><div class="row"><span>${escapeHtml((lang === "bn" ? bnNum(item.qty) : String(item.qty)) + (item.unit ? ` ${item.unit}` : "") + ` × ${fmtMoney(item.price, lang)}`)}</span><span>${escapeHtml(fmtMoney(item.total, lang))}</span></div></div>`,
+        (item, index) => `<div class="item"><div class="strong">${lang === "bn" ? bnNum(index + 1) + ". " : `${index + 1}. `}${escapeHtml(item.name)}</div><div class="row"><span>${escapeHtml((lang === "bn" ? bnNum(item.qty) : String(item.qty)) + ` ${item.unit || (lang === "bn" ? "পিস" : "piece")}` + ` × ${fmtMoney(item.price, lang)}`)}</span><span>${escapeHtml(fmtMoney(item.total, lang))}</span></div></div>`,
       )
       .join("")}
     <div class="rule"></div>
