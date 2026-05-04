@@ -165,7 +165,8 @@ function DesktopOverview({
   lang: "bn" | "en";
 }) {
   const o = overview;
-  const tiles: Array<{ to: string; label: string; value: string | number; sub?: string; img?: string; icon?: React.ComponentType<{ className?: string }>; tone: string }> = [
+  type IconC = React.ComponentType<{ className?: string }>;
+  const tiles: Array<{ to: string; label: string; value: string | number; sub?: string; img?: IconC; icon?: IconC; tone: string }> = [
     { to: "/app/products", label: lang === "bn" ? "মোট পণ্য" : "Products", value: o?.productsTotal ?? "—", icon: Package, tone: "indigo" },
     { to: "/app/products", label: lang === "bn" ? "কম স্টক" : "Low stock", value: o?.productsLowStock ?? "—", img: icons.alert, tone: "amber" },
     { to: "/app/online-shop/products", label: lang === "bn" ? "অনলাইন পণ্য" : "Online products", value: o?.productsPublished ?? "—", icon: Globe, tone: "sky" },
@@ -288,14 +289,16 @@ const TONES: Record<string, string> = {
 };
 
 function KpiTile({
-  to, label, value, sub, icon: Icon, img, tone,
-}: { to: string; label: string; value: string | number; sub?: string; icon?: React.ComponentType<{ className?: string }>; img?: string; tone: string }) {
+  to, label, value, sub, icon: Icon, img: Img, tone,
+}: { to: string; label: string; value: string | number; sub?: string; icon?: React.ComponentType<{ className?: string }>; img?: React.ComponentType<{ className?: string }>; tone: string }) {
   return (
     <Link to={to as never} className="group rounded-xl border bg-card p-3 shadow-sm transition hover:border-primary/40 hover:shadow-md">
       <div className="flex items-center justify-between gap-2">
         <span className="truncate text-[11px] font-medium text-muted-foreground">{label}</span>
-        {img ? (
-          <img src={img} alt="" className="h-7 w-7 object-contain" />
+        {Img ? (
+          <span className={`flex h-7 w-7 items-center justify-center rounded-lg ${TONES[tone] ?? TONES.indigo}`}>
+            <Img className="h-4 w-4" />
+          </span>
         ) : Icon ? (
           <span className={`flex h-7 w-7 items-center justify-center rounded-lg ${TONES[tone] ?? TONES.indigo}`}>
             <Icon className="h-4 w-4" />
@@ -309,13 +312,13 @@ function KpiTile({
 }
 
 function PanelCard({
-  title, icon: Icon, img, to, lang, children,
-}: { title: string; icon?: React.ComponentType<{ className?: string }>; img?: string; to: string; lang: "bn" | "en"; children: React.ReactNode }) {
+  title, icon: Icon, img: Img, to, lang, children,
+}: { title: string; icon?: React.ComponentType<{ className?: string }>; img?: React.ComponentType<{ className?: string }>; to: string; lang: "bn" | "en"; children: React.ReactNode }) {
   return (
     <div className="rounded-xl border bg-card p-3 shadow-sm">
       <div className="flex items-center justify-between border-b pb-2">
         <div className="flex items-center gap-2 text-sm font-bold">
-          {img ? <img src={img} alt="" className="h-5 w-5 object-contain" /> : Icon ? <Icon className="h-4 w-4 text-primary" /> : null}
+          {Img ? <Img className="h-5 w-5 text-primary" /> : Icon ? <Icon className="h-4 w-4 text-primary" /> : null}
           {title}
         </div>
         <Link to={to as never} className="text-[11px] font-semibold text-primary hover:underline">
