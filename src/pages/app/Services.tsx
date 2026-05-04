@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, Pencil, Trash2, Globe, Clock, Shield, Home, Wrench, Search, MapPin } from "lucide-react";
+import { Plus, Pencil, Trash2, Globe, Clock, Shield, Home, Wrench, Search, MapPin, CalendarClock, Phone, BadgeDollarSign } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useShop } from "@/lib/shop";
 import { useI18n, fmtMoney } from "@/lib/i18n";
@@ -19,6 +19,8 @@ import { ServiceCatalogPicker } from "@/components/app/ServiceCatalogPicker";
 import { type CatalogItem } from "@/lib/service-catalog";
 import { BdLocationPicker, type BdLocation } from "@/components/shared/BdLocationPicker";
 import { X } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
 
 function ServicesPage() {
   const { lang } = useI18n();
@@ -29,6 +31,11 @@ function ServicesPage() {
   const [search, setSearch] = useState("");
   const [openForm, setOpenForm] = useState(false);
   const [editing, setEditing] = useState<Service | null>(null);
+  const [tab, setTab] = useState<string>(() => {
+    if (typeof window === "undefined") return "list";
+    const sp = new URLSearchParams(window.location.search);
+    return sp.get("tab") === "bookings" ? "bookings" : "list";
+  });
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -81,6 +88,17 @@ function ServicesPage() {
         </Button>
       </div>
 
+      <Tabs value={tab} onValueChange={setTab} className="mb-3">
+        <TabsList>
+          <TabsTrigger value="list">{lang === "bn" ? "সার্ভিস তালিকা" : "Services"}</TabsTrigger>
+          <TabsTrigger value="bookings" className="gap-1.5">
+            <CalendarClock className="h-3.5 w-3.5" /> {lang === "bn" ? "বুকিং" : "Bookings"}
+          </TabsTrigger>
+        </TabsList>
+        <TabsContent value="bookings" className="mt-3">
+          <ServiceBookingsTab shopId={current.id} />
+        </TabsContent>
+        <TabsContent value="list" className="mt-3">
       <div className="mb-3 relative max-w-md">
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" placeholder={lang === "bn" ? "সার্ভিস খুঁজুন" : "Search service"} />
@@ -146,6 +164,8 @@ function ServicesPage() {
           })}
         </div>
       )}
+        </TabsContent>
+      </Tabs>
 
       <ServiceFormSheet
         open={openForm}
@@ -350,6 +370,33 @@ function ServiceFormSheet({ open, onClose, editing, shopId, categories, onSaved 
               <Input type="number" value={form.service_charge_extra ?? ""} onChange={(e) => update({ service_charge_extra: e.target.value ? Number(e.target.value) : null })} />
             </div>
           )}
+          {/* Booking & advance */}
+          <div className="rounded-md border p-3 space-y-2">
+            <div className="flex items-center justify-between">
+              <Label className="flex items-center gap-2"><CalendarClock className="h-4 w-4" /> {lang === "bn" ? "অনলাইন বুকিং চালু" : "Online booking enabled"}</Label>
+              <Switch checked={form.booking_enabled !== false} onCheckedChange={(v) => update({ booking_enabled: v })} />
+            </div>
+            <div className="text-xs text-muted-foreground">
+              {lang === "bn"
+                ? "বন্ধ থাকলে গ্রাহক শুধু ফোন করতে পারবে, অনলাইন বুকিং নিতে পারবে না।"
+                : "When off, customers can only call you — no online booking."}
+            </div>
+            <div className="grid grid-cols-2 gap-3 pt-1">
+              <div>
+                <Label className="flex items-center gap-1"><BadgeDollarSign className="h-3.5 w-3.5" /> {lang === "bn" ? "অগ্রিম / যাতায়াত (৳)" : "Advance / travel (৳)"}</Label>
+                <Input
+                  type="number"
+                  placeholder="0"
+                  value={form.advance_amount ?? ""}
+                  onChange={(e) => update({ advance_amount: e.target.value ? Number(e.target.value) : 0 })}
+                />
+              </div>
+              <div className="flex items-end justify-between rounded-md border px-3 py-2">
+                <Label className="text-xs">{lang === "bn" ? "অগ্রিম বাধ্যতামূলক" : "Advance required"}</Label>
+                <Switch checked={!!form.advance_required} onCheckedChange={(v) => update({ advance_required: v })} />
+              </div>
+            </div>
+          </div>
           <div className="flex items-center justify-between">
             <Label className="flex items-center gap-2"><Globe className="h-4 w-4" /> {lang === "bn" ? "অনলাইন মার্কেটে দেখান" : "Show on online marketplace"}</Label>
             <Switch checked={!!form.is_marketplace_published} onCheckedChange={(v) => update({ is_marketplace_published: v })} />
