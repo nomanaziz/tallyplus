@@ -10,14 +10,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from "@/components/ui/sheet";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { EmptyState } from "@/components/app/EmptyState";
 import { toast } from "sonner";
 import { RequirePerm } from "@/components/app/RequirePerm";
 import { ServiceCatalogPicker } from "@/components/app/ServiceCatalogPicker";
-import { BD_DIVISIONS, type CatalogItem } from "@/lib/service-catalog";
+import { type CatalogItem } from "@/lib/service-catalog";
+import { BdLocationPicker, type BdLocation } from "@/components/shared/BdLocationPicker";
+import { X } from "lucide-react";
 
 function ServicesPage() {
   const { lang } = useI18n();
@@ -125,11 +126,7 @@ function ServicesPage() {
                     {(() => {
                       const areas = s.service_areas ?? [];
                       if (areas.length === 0) return lang === "bn" ? "সর্বত্র উপলব্ধ" : "Available everywhere";
-                      const names = areas.map((c) => {
-                        const d = BD_DIVISIONS.find((x) => x.code === c);
-                        return d ? (lang === "bn" ? d.name_bn : d.name_en) : c;
-                      });
-                      return (lang === "bn" ? "উপলব্ধ: " : "Available in: ") + names.join(", ");
+                      return (lang === "bn" ? "উপলব্ধ: " : "Available in: ") + areas.join(", ");
                     })()}
                   </span>
                 </div>
@@ -363,27 +360,13 @@ function ServiceFormSheet({ open, onClose, editing, shopId, categories, onSaved 
             </Label>
             <div className="text-xs text-muted-foreground">
               {lang === "bn"
-                ? "কোন বিভাগে সার্ভিস দেন? কিছু নির্বাচন না করলে \"সর্বত্র উপলব্ধ\" দেখাবে।"
-                : "Pick the divisions you serve. Empty means \"available everywhere\"."}
+                ? "বিভাগ → জেলা → উপজেলা/থানা সিলেক্ট করে \"যোগ করুন\"। একাধিক এলাকা যোগ করা যাবে। কিছু না দিলে \"সর্বত্র উপলব্ধ\" দেখাবে।"
+                : "Pick Division → District → Upazila/Thana, then \"Add\". You can add multiple areas. Empty means \"available everywhere\"."}
             </div>
-            <div className="grid grid-cols-2 gap-2">
-              {BD_DIVISIONS.map((d) => {
-                const checked = (form.service_areas ?? []).includes(d.code);
-                return (
-                  <label key={d.code} className="flex items-center gap-2 rounded-md border bg-background px-2 py-1.5 cursor-pointer hover:bg-muted/50">
-                    <Checkbox
-                      checked={checked}
-                      onCheckedChange={(v) => {
-                        const cur = new Set(form.service_areas ?? []);
-                        if (v) cur.add(d.code); else cur.delete(d.code);
-                        update({ service_areas: Array.from(cur) });
-                      }}
-                    />
-                    <span className="text-sm">{lang === "bn" ? d.name_bn : d.name_en}</span>
-                  </label>
-                );
-              })}
-            </div>
+            <ServiceAreaPicker
+              value={form.service_areas ?? []}
+              onChange={(v) => update({ service_areas: v })}
+            />
             {(form.service_areas ?? []).length > 0 && (
               <Button type="button" variant="ghost" size="sm" onClick={() => update({ service_areas: [] })}>
                 {lang === "bn" ? "সব মুছে \"সর্বত্র\" করুন" : "Clear (set to everywhere)"}
@@ -402,4 +385,40 @@ function ServiceFormSheet({ open, onClose, editing, shopId, categories, onSaved 
 
 export default function GuardedServicesPage() {
   return <RequirePerm group="products"><ServicesPage /></RequirePerm>;
+}
+
+function ServiceAreaPicker({ value, onChange }: { value: string[]; onChange: (v: string[]) => void }) {
+  const { lang } = useI18n();
+  const [loc, setLoc] = useState<BdLocation>({ division: null, district: null, upazila: null, area: null });
+
+  const add = () => {
+    if (!loc.division) return toast.error(lang === "bn" ? "বিভাগ দিন" : "Pick a division");
+    const parts = [loc.division, loc.district, loc.upazila].filter(Boolean) as string[];
+    const label = parts.join(" › ") + (loc.area?.trim() ? ` • ${loc.area.trim()}` : "");
+    if (value.includes(label)) return toast.message(lang === "bn" ? "ইতিমধ্যে যোগ আছে" : "Already added");
+    onChange([...value, label]);
+    setLoc({ division: null, district: null, upazila: null, area: null });
+  };
+  const remove = (label: string) => onChange(value.filter((v) => v !== label));
+
+  return (
+    <div className="space-y-2">
+      <BdLocationPicker value={loc} onChange={setLoc} showArea={false} />
+      <Button type="button" variant="outline" size="sm" onClick={add} className="gap-1">
+        <Plus className="h-3.5 w-3.5" /> {lang === "bn" ? "এই এলাকা যোগ করুন" : "Add this area"}
+      </Button>
+      {value.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 pt-1">
+          {value.map((v) => (
+            <span key={v} className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-xs">
+              {v}
+              <button type="button" onClick={() => remove(v)} className="hover:text-destructive">
+                <X className="h-3 w-3" />
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
