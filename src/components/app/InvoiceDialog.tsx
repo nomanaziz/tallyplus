@@ -158,7 +158,7 @@ export function InvoiceDialog({
           </table>
 
           {/* Totals */}
-          <div className="mt-4 grid grid-cols-2 gap-6 text-xs">
+          <div className="mt-4 grid grid-cols-2 gap-6 text-xs print-keep">
             <div className="space-y-1.5">
               <Row label={lang === "bn" ? "পূর্বের বাকি:" : "Previous due:"} value={fmtMoney(prev, lang)} />
               <Row label={lang === "bn" ? "বর্তমান বাকি:" : "Current due:"} value={fmtMoney(cur, lang)} />
@@ -179,13 +179,13 @@ export function InvoiceDialog({
           </div>
 
           {/* Amount in words */}
-          <div className="mt-4 text-xs">
+          <div className="mt-4 text-xs print-keep">
             <div className="font-semibold">{lang === "bn" ? "এমাউন্ট (কথায়):" : "Amount (in words):"}</div>
             <div className="mt-0.5">{lang === "bn" ? toBnWords(Math.round(data.grandTotal)) + " টাকা" : toEnWords(Math.round(data.grandTotal)) + " taka"}</div>
           </div>
 
           {/* Signatures */}
-          <div className="mt-8 grid grid-cols-2 gap-6 text-xs">
+          <div className="mt-8 grid grid-cols-2 gap-6 text-xs print-keep">
             <div className="text-center">
               <div className="border-t pt-1">{lang === "bn" ? "ক্রেতার স্বাক্ষর" : "Buyer signature"}</div>
             </div>
@@ -265,6 +265,11 @@ export function InvoiceDialog({
           <div style={{ textAlign: "center", fontSize: 10, marginTop: 4 }}>
             {lang === "bn" ? "ধন্যবাদ!" : "Thank you!"}
           </div>
+          {/* Perforation / cut line */}
+          <div style={{ marginTop: 10, borderTop: "2px dashed #000", paddingTop: 4, textAlign: "center", fontSize: 9, letterSpacing: 1 }}>
+            ✂ - - - - - - {lang === "bn" ? "এখানে কাটুন" : "CUT HERE"} - - - - - - ✂
+          </div>
+          <div style={{ height: 12 }} />
         </div>
       </DialogContent>
     </Dialog>
