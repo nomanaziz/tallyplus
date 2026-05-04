@@ -102,6 +102,7 @@ const LOrderSuccess = lazy(() => import("@/pages/shop/OrderSuccess"));
 const LFordo = lazy(() => import("@/pages/fordo/Index"));
 const LMyOrders = lazy(() => import("@/pages/customer/MyOrders"));
 const LFavoriteShops = lazy(() => import("@/pages/customer/FavoriteShops"));
+const LMyServices = lazy(() => import("@/pages/customer/MyServices"));
 const LOnlineShop = lazy(() => import("@/pages/app/online-shop/Index"));
 const LOSOrders = lazy(() => import("@/pages/app/online-shop/Orders"));
 const LOSProducts = lazy(() => import("@/pages/app/online-shop/Products"));
