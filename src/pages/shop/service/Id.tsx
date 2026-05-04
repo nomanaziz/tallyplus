@@ -230,6 +230,7 @@ function ServiceDetailPage() {
       <ServiceBookingDialog
         open={bookingOpen}
         onOpenChange={setBookingOpen}
+        redirectTo={`/shop/service/${service.id}`}
         service={{
           id: service.id,
           name: service.name,
