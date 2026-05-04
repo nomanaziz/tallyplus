@@ -12,9 +12,7 @@ const cors = {
 function normalizePhone(raw: string): string | null {
   const d = raw.replace(/\D/g, "");
   if (!d) return null;
-  if (d.startsWith("880")) return "+" + d;
-  if (d.startsWith("01") && d.length === 11) return "+880" + d.slice(1);
-  if (d.length === 10) return "+880" + d;
+  if (d.length < 6 || d.length > 15) return null;
   return "+" + d;
 }
 
@@ -25,10 +23,11 @@ function json(body: unknown, status = 200) {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: cors });
   try {
-    const { phone, full_name, pin } = await req.json();
+    const { phone, full_name, pin, country_code } = await req.json();
     const normalized = normalizePhone(String(phone ?? ""));
     const name = String(full_name ?? "").trim();
     const pinStr = String(pin ?? "");
+    const country = country_code ? String(country_code).toUpperCase().slice(0, 2) : null;
 
     if (!normalized) return json({ error: "Invalid phone" }, 400);
     if (name.length < 2) return json({ error: "Name required" }, 400);
@@ -60,7 +59,7 @@ Deno.serve(async (req) => {
       email,
       password,
       email_confirm: true,
-      user_metadata: { full_name: name, account_type: "consumer" },
+      user_metadata: { full_name: name, account_type: "consumer", country_code: country },
     });
     if (createErr || !created.user) {
       console.error("createUser error:", createErr);
@@ -74,7 +73,7 @@ Deno.serve(async (req) => {
     const pinHash = await bcrypt.hash(pinStr, 10);
     const { error: profErr } = await admin
       .from("consumer_profiles")
-      .update({ name, phone: normalized, pin_hash: pinHash })
+      .update({ name, phone: normalized, pin_hash: pinHash, country_code: country })
       .eq("id", userId);
     if (profErr) console.error("consumer_profile update error:", profErr);
 
