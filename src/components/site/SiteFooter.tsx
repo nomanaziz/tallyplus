@@ -1,6 +1,6 @@
 import { Link } from "@/lib/router";
-import { useI18n } from "@/lib/i18n";
-import { ArrowLeft, Languages, Facebook, Youtube, MessageCircle } from "lucide-react";
+import { useI18n, LANG_NAMES, type Lang } from "@/lib/i18n";
+import { ArrowLeft, Facebook, Youtube, MessageCircle } from "lucide-react";
 import { ColorThemeButton } from "@/components/app/ColorThemePicker";
 import { useSiteContact, waDigits } from "@/lib/site-contact";
 
@@ -63,15 +63,16 @@ export function SiteFooter() {
           <ColorThemeButton
             className="inline-flex h-8 w-8 items-center justify-center rounded-full border hover:bg-accent hover:text-foreground"
           />
-          <button
-            type="button"
-            onClick={() => setLang(lang === "bn" ? "en" : "bn")}
-            className="inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-semibold hover:bg-accent hover:text-foreground"
-            aria-label="Toggle language"
+          <select
+            value={lang}
+            onChange={(e) => setLang(e.target.value as Lang)}
+            className="rounded-md border bg-background px-2 py-1 text-xs font-semibold hover:bg-accent"
+            aria-label="Language"
           >
-            <Languages className="h-3.5 w-3.5" />
-            {lang === "bn" ? "English" : "বাংলা"}
-          </button>
+            {LANG_NAMES.map((l) => (
+              <option key={l.code} value={l.code}>{l.native}</option>
+            ))}
+          </select>
         </div>
       </div>
     </footer>
