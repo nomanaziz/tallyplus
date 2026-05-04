@@ -108,14 +108,14 @@ export function MarketplaceServiceCard({
             <CalendarPlus className="h-3 w-3" /> বুক করুন
           </span>
           {shop?.phone && (
-            <a
-              href={`tel:${shop.phone}`}
-              onClick={(e) => e.stopPropagation()}
+            <button
+              type="button"
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); window.location.href = `tel:${shop.phone}`; }}
               className="inline-flex items-center justify-center gap-1 rounded-md border px-2 py-1 text-[11px] font-semibold hover:bg-accent"
               title={`কল ${shop.phone}`}
             >
               <Phone className="h-3 w-3" />
-            </a>
+            </button>
           )}
         </div>
       </div>
