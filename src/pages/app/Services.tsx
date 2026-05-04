@@ -316,7 +316,10 @@ function ServiceFormSheet({ open, onClose, editing, shopId, categories, onSaved 
       onSaved();
       onClose();
     } catch (e) {
-      toast.error((e as Error).message);
+      const msg = (e as Error).message;
+      const li = parseLimitError(msg);
+      if (li) toast.error(lang === "bn" ? "ফ্রি প্ল্যানের সীমা শেষ — আপগ্রেড করুন" : "Free plan limit reached — upgrade");
+      else toast.error(msg);
     } finally {
       setSaving(false);
     }
