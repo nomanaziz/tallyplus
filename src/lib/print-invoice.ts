@@ -263,7 +263,7 @@ function below100Bn(n: number): string {
   return bnUnits[n] || "";
 }
 
-function toBnWords(n: number): string {
+export function toBnWords(n: number): string {
   if (n === 0) return "শূন্য";
   const parts: string[] = [];
   const crore = Math.floor(n / 10000000); n %= 10000000;
@@ -295,7 +295,7 @@ function below1000En(n: number): string {
   return parts.join(" ");
 }
 
-function toEnWords(n: number): string {
+export function toEnWords(n: number): string {
   if (n === 0) return "zero";
   const parts: string[] = [];
   const crore = Math.floor(n / 10000000); n %= 10000000;
