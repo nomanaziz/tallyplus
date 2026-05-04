@@ -42,6 +42,8 @@ import { usePagination } from "@/hooks/use-pagination";
 import { Checkbox } from "@/components/ui/checkbox";
 import { CheckSquare } from "lucide-react";
 import { printTableReport } from "@/lib/print-report";
+import { useUsageLimit, parseLimitError } from "@/lib/usage-limits";
+import { UsageLimitBanner } from "@/components/app/UsageLimitBanner";
 
 type Product = {
   id: string;
@@ -77,6 +79,8 @@ function ProductsPage() {
   const { user } = useAuth();
   const qc = useQueryClient();
   const { data: items = [], isLoading: loading, refetch } = useQuery(productsListQuery(current?.id ?? null));
+  const { data: usage, refresh: refreshUsage } = useUsageLimit(current?.id ?? null, "products");
+  const limitReached = !!usage && usage.limit !== -1 && usage.used >= usage.limit;
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState<string>("name_asc");
   const [filterBy, setFilterBy] = useState<string>("all");
@@ -436,9 +440,13 @@ function ProductsPage() {
                 <Sparkles className="h-4 w-4 text-primary" />
                 {lang === "bn" ? "স্যাম্পল ইম্পোর্ট" : "Import Sample"}
               </Button>
-              <Button className="h-9 gap-1.5 px-3 sm:h-10 sm:gap-2 sm:px-4" onClick={() => {
+              <Button className="h-9 gap-1.5 px-3 sm:h-10 sm:gap-2 sm:px-4" disabled={limitReached} onClick={() => {
                 if (!current?.id) {
                   toast.error(lang === "bn" ? "আগে দোকান নির্বাচন করুন" : "Select a shop first");
+                  return;
+                }
+                if (limitReached) {
+                  toast.error(lang === "bn" ? "ফ্রি প্ল্যানের সীমা শেষ — আপগ্রেড করুন" : "Free plan limit reached — upgrade");
                   return;
                 }
                 setEditing(null);
