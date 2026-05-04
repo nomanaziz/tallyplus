@@ -116,6 +116,7 @@ const LOSFraudCheck = lazy(() => import("@/pages/app/online-shop/FraudCheck"));
 const LOSPromoCodes = lazy(() => import("@/pages/app/online-shop/PromoCodes"));
 const LSubscribe = lazy(() => import("@/pages/app/Subscribe"));
 const LSubscribeCallback = lazy(() => import("@/pages/app/SubscribeCallback"));
+const LSharedFordo = lazy(() => import("@/pages/f/Share"));
 
 export const appRoutes: RouteObject[] = [
 { index: true, element: <Suspense fallback={<RouteFallback/>}><L0/></Suspense> },
@@ -260,5 +261,6 @@ export const appRoutes: RouteObject[] = [
 { path: "checkout/:shopId", element: <Suspense fallback={<RouteFallback/>}><LCheckout/></Suspense> },
 { path: "orders/:orderNo", element: <Suspense fallback={<RouteFallback/>}><LOrderSuccess/></Suspense> },
 { path: "fordo", element: <Suspense fallback={<RouteFallback/>}><LFordo/></Suspense> },
+{ path: "share/fordo/:token", element: <Suspense fallback={<RouteFallback/>}><LSharedFordo/></Suspense> },
 { path: "*", element: <NotFound /> }
 ];

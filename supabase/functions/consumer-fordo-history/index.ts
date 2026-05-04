@@ -88,7 +88,7 @@ Deno.serve(async (req) => {
 
   const { data: wls, error: wErr } = await admin
     .from("customer_wishlists")
-    .select("id, shop_id, customer_name, customer_phone, status, note, created_at, consumer_user_id, wishlist_customer_id")
+    .select("id, shop_id, customer_name, customer_phone, status, note, created_at, consumer_user_id, wishlist_customer_id, share_token")
     .or(orFilter)
     .is("deleted_at", null)
     .order("created_at", { ascending: false })

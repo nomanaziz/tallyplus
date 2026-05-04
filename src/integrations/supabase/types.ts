@@ -1342,6 +1342,8 @@ export type Database = {
           id: string
           is_b2b: boolean
           note: string | null
+          share_enabled: boolean
+          share_token: string | null
           shop_id: string
           status: string
           updated_at: string
@@ -1360,6 +1362,8 @@ export type Database = {
           id?: string
           is_b2b?: boolean
           note?: string | null
+          share_enabled?: boolean
+          share_token?: string | null
           shop_id: string
           status?: string
           updated_at?: string
@@ -1378,6 +1382,8 @@ export type Database = {
           id?: string
           is_b2b?: boolean
           note?: string | null
+          share_enabled?: boolean
+          share_token?: string | null
           shop_id?: string
           status?: string
           updated_at?: string
@@ -4568,6 +4574,7 @@ export type Database = {
         Args: { _names: string[]; _shop_id: string }
         Returns: undefined
       }
+      get_shared_fordo: { Args: { _token: string }; Returns: Json }
       has_active_subscription: { Args: { _user_id: string }; Returns: boolean }
       has_admin_perm: {
         Args: { _key: string; _user_id: string }
