@@ -20,6 +20,7 @@ export type Service = {
   is_featured: boolean;
   home_service: boolean;
   service_charge_extra: number | null;
+  service_areas?: string[] | null;
 };
 
 export type ServiceCategory = {

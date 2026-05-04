@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, Pencil, Trash2, Globe, Clock, Shield, Home, Wrench, Search } from "lucide-react";
+import { Plus, Pencil, Trash2, Globe, Clock, Shield, Home, Wrench, Search, MapPin } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useShop } from "@/lib/shop";
 import { useI18n, fmtMoney } from "@/lib/i18n";
@@ -10,11 +10,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from "@/components/ui/sheet";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { EmptyState } from "@/components/app/EmptyState";
 import { toast } from "sonner";
 import { RequirePerm } from "@/components/app/RequirePerm";
+import { ServiceCatalogPicker } from "@/components/app/ServiceCatalogPicker";
+import { BD_DIVISIONS, type CatalogItem } from "@/lib/service-catalog";
 
 function ServicesPage() {
   const { lang } = useI18n();
@@ -116,6 +119,20 @@ function ServicesPage() {
                   {s.home_service && <span className="inline-flex items-center gap-1 rounded-full bg-blue-500/10 text-blue-700 dark:text-blue-300 px-2 py-0.5"><Home className="h-3 w-3" /> {lang === "bn" ? "হোম সার্ভিস" : "Home"}</span>}
                   {s.is_marketplace_published && <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary px-2 py-0.5"><Globe className="h-3 w-3" /> {lang === "bn" ? "অনলাইনে" : "Online"}</span>}
                 </div>
+                <div className="mt-2 flex items-center gap-1 text-xs text-muted-foreground">
+                  <MapPin className="h-3 w-3 shrink-0" />
+                  <span className="truncate">
+                    {(() => {
+                      const areas = s.service_areas ?? [];
+                      if (areas.length === 0) return lang === "bn" ? "সর্বত্র উপলব্ধ" : "Available everywhere";
+                      const names = areas.map((c) => {
+                        const d = BD_DIVISIONS.find((x) => x.code === c);
+                        return d ? (lang === "bn" ? d.name_bn : d.name_en) : c;
+                      });
+                      return (lang === "bn" ? "উপলব্ধ: " : "Available in: ") + names.join(", ");
+                    })()}
+                  </span>
+                </div>
                 <div className="mt-3 flex gap-2">
                   <Button variant="outline" size="sm" className="flex-1 gap-1" onClick={() => { setEditing(s); setOpenForm(true); }}>
                     <Pencil className="h-3.5 w-3.5" /> {lang === "bn" ? "এডিট" : "Edit"}
@@ -169,6 +186,7 @@ function ServiceFormSheet({ open, onClose, editing, shopId, categories, onSaved 
       description: "",
       category_id: null,
       service_charge_extra: null,
+      service_areas: [],
     });
   }, [editing, open]);
 
@@ -193,6 +211,7 @@ function ServiceFormSheet({ open, onClose, editing, shopId, categories, onSaved 
         is_marketplace_published: !!form.is_marketplace_published,
         category_id: form.category_id || null,
         service_charge_extra: form.service_charge_extra ? Number(form.service_charge_extra) : null,
+        service_areas: Array.isArray(form.service_areas) ? form.service_areas : [],
       };
       let serviceId = editing?.id;
       if (editing) {
@@ -212,6 +231,7 @@ function ServiceFormSheet({ open, onClose, editing, shopId, categories, onSaved 
           warranty_value: payload.warranty_value,
           warranty_unit: payload.warranty_unit,
           is_published: true,
+          service_areas: payload.service_areas,
         }, { onConflict: "service_id" });
       } else if (serviceId) {
         await supabase.from("marketplace_service_listings").update({ is_published: false }).eq("service_id", serviceId);
@@ -233,6 +253,29 @@ function ServiceFormSheet({ open, onClose, editing, shopId, categories, onSaved 
           <SheetTitle>{editing ? (lang === "bn" ? "সার্ভিস এডিট করুন" : "Edit Service") : (lang === "bn" ? "নতুন সার্ভিস" : "New Service")}</SheetTitle>
         </SheetHeader>
         <div className="space-y-3 py-4">
+          {!editing && (
+            <div>
+              <Label>{lang === "bn" ? "ক্যাটালগ" : "Catalog"}</Label>
+              <ServiceCatalogPicker
+                onPick={(item: CatalogItem) => {
+                  update({
+                    name: lang === "bn" ? item.name_bn : item.name_en,
+                    description: lang === "bn" ? item.description_bn : item.description_en,
+                    unit: item.default_unit ?? "service",
+                    duration_minutes: item.default_duration_minutes ?? null,
+                    duration_label: item.default_duration_label ?? "",
+                    home_service: !!item.home_service_default,
+                    warranty_enabled: !!item.warranty_default,
+                    warranty_value: item.warranty_default?.value ?? null,
+                    warranty_unit: item.warranty_default?.unit ?? "days",
+                  });
+                }}
+              />
+              <div className="mt-1 text-xs text-muted-foreground">
+                {lang === "bn" ? "অথবা নিচে নিজে লিখুন" : "Or fill in manually below"}
+              </div>
+            </div>
+          )}
           <div>
             <Label>{lang === "bn" ? "নাম" : "Name"} *</Label>
             <Input value={form.name ?? ""} onChange={(e) => update({ name: e.target.value })} />
@@ -313,6 +356,39 @@ function ServiceFormSheet({ open, onClose, editing, shopId, categories, onSaved 
           <div className="flex items-center justify-between">
             <Label className="flex items-center gap-2"><Globe className="h-4 w-4" /> {lang === "bn" ? "অনলাইন মার্কেটে দেখান" : "Show on online marketplace"}</Label>
             <Switch checked={!!form.is_marketplace_published} onCheckedChange={(v) => update({ is_marketplace_published: v })} />
+          </div>
+          <div className="rounded-md border p-3 space-y-2">
+            <Label className="flex items-center gap-2">
+              <MapPin className="h-4 w-4" /> {lang === "bn" ? "সার্ভিস এলাকা" : "Service Area"}
+            </Label>
+            <div className="text-xs text-muted-foreground">
+              {lang === "bn"
+                ? "কোন বিভাগে সার্ভিস দেন? কিছু নির্বাচন না করলে \"সর্বত্র উপলব্ধ\" দেখাবে।"
+                : "Pick the divisions you serve. Empty means \"available everywhere\"."}
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              {BD_DIVISIONS.map((d) => {
+                const checked = (form.service_areas ?? []).includes(d.code);
+                return (
+                  <label key={d.code} className="flex items-center gap-2 rounded-md border bg-background px-2 py-1.5 cursor-pointer hover:bg-muted/50">
+                    <Checkbox
+                      checked={checked}
+                      onCheckedChange={(v) => {
+                        const cur = new Set(form.service_areas ?? []);
+                        if (v) cur.add(d.code); else cur.delete(d.code);
+                        update({ service_areas: Array.from(cur) });
+                      }}
+                    />
+                    <span className="text-sm">{lang === "bn" ? d.name_bn : d.name_en}</span>
+                  </label>
+                );
+              })}
+            </div>
+            {(form.service_areas ?? []).length > 0 && (
+              <Button type="button" variant="ghost" size="sm" onClick={() => update({ service_areas: [] })}>
+                {lang === "bn" ? "সব মুছে \"সর্বত্র\" করুন" : "Clear (set to everywhere)"}
+              </Button>
+            )}
           </div>
         </div>
         <SheetFooter>
