@@ -1,82 +1,39 @@
 ## Goal
 
-Right now the "এখনই বুক করুন" button on a service detail page opens `ServiceBookingDialog`, but the booking flow is not user-friendly for guests:
-- A guest can technically submit, but there is no clear option to log in for a better experience or to save the booking to their account.
-- Bookings made as a guest are not tied to their consumer account, so they don't show up in `/customer/my-services`.
+You're right that we need quick-import service templates. Most of this **already exists** — `src/lib/service-catalog.ts` ships a built-in catalog of 13 categories (Beauty & Wellness, Home Cleaning, Appliance Repair (incl. AC, Fridge, TV, Microwave), Plumbing, Electrical, Pest Control, Car Services (incl. Engine Tune-up), Carpentry & Painting, CCTV / IT (incl. Computer/Laptop), Shifting, Health, Tutoring, Events & Catering). The "নতুন সার্ভিস" sheet already shows a searchable `ServiceCatalogPicker` grouped by category that auto-fills name, description, unit, duration, warranty, home-service. Manual editing afterwards is already supported via the regular form fields.
 
-We will rebuild the booking flow into a clear 2-step experience that works for both guests and logged-in consumers, and offers them an easy path to log in / register without losing what they typed.
+So the only gaps are: **Mobile Repair** is missing, **Events** is thin, and there's no laundry/tailoring. We'll round these out and that's it — no DB or UI changes needed because the picker auto-derives categories from the catalog data.
 
-## New booking flow
+## Catalog additions (`src/lib/service-catalog.ts`)
 
-```text
-[Service page] → "এখনই বুক করুন"
-        │
-        ▼
-┌──────────────────────────────────────────┐
-│ Step 1: Choose how to continue           │
-│ ───────────────────────────────────────  │
-│  ◉ আমি গ্রাহক — লগইন করুন                 │   (only when NOT logged in)
-│  ◉ নতুন গ্রাহক — অ্যাকাউন্ট খুলুন           │   (only when NOT logged in)
-│  ◉ অ্যাকাউন্ট ছাড়াই বুক করুন (Guest)      │
-└──────────────────────────────────────────┘
-        │  (logged-in users skip Step 1)
-        ▼
-┌──────────────────────────────────────────┐
-│ Step 2: Booking details                  │
-│  • নাম, ফোন (prefilled if logged in)      │
-│  • ঠিকানা + Division/District/Upazila    │
-│  • পছন্দের সময়, নোট                       │
-│  • অগ্রিম পেমেন্ট (if required)           │
-│                                          │
-│  [বাতিল]   [বুকিং নিশ্চিত করুন]            │
-│                                          │
-│  Guests see a small footer:              │
-│  "চাইলে অ্যাকাউন্ট খুলে রাখুন → পরে আপনার  │
-│   বুকিং দেখতে পারবেন" + Login/Register   │
-└──────────────────────────────────────────┘
-```
+Append to `SERVICE_CATALOG`:
 
-For the **Login / Register** options, we send the user to the existing
-`LoginCard` on `/` with deep-link query params it already supports:
+**Events & Catering (3 new items)**
+- Sound System Rental (সাউন্ড সিস্টেম ভাড়া)
+- Stage Lighting (স্টেজ লাইটিং)
+- Anchor / MC (এঙ্কর / উপস্থাপক)
 
-```
-/?role=customer&mode=login&phone=<typed>&redirect=/shop/service/<id>
-/?role=customer&mode=signup&phone=<typed>&redirect=/shop/service/<id>
-```
+**Mobile Repair — new category (7 items)**
+- Mobile Screen Replace (warranty 30 days)
+- Mobile Battery Replace (warranty 60 days)
+- Charging Port Repair
+- Software Flash / Update
+- Water Damage Recovery
+- Camera Module Repair
+- Speaker / Mic Repair
 
-After successful auth, `LoginCard` already redirects back via `?redirect=`,
-landing the user on the same service page where they re-open the dialog
-(now in logged-in mode with prefilled profile data).
+**Tailoring & Laundry — new category (3 items)**
+- Tailoring
+- Laundry & Iron (home pickup)
+- Dry Cleaning (home pickup)
 
-## Implementation
+## Why no DB / UI work is needed
 
-### 1. `src/components/shop/ServiceBookingDialog.tsx` (rewrite)
-
-- Add a `step` state: `"choose" | "form"`.
-- Read `useAuth()`. If `user` is logged in, skip step 1 and go directly to `"form"`.
-- When dialog opens for a guest, show the 3-option chooser (Login / Register / Continue as guest).
-  - "লগইন" and "রেজিস্ট্রেশন" buttons navigate to the URLs above (using `useNavigate` from `@/lib/router`). They include the current service detail path as `redirect`, and pass the typed phone if any.
-  - "Guest" button advances to the form step.
-- In `"form"` step:
-  - Keep the existing fields and submission logic.
-  - For guests, render a small inline footer card with two outline buttons: "লগইন করুন" and "অ্যাকাউন্ট খুলুন" — same deep-link navigation. They preserve the typed name / phone via query params (phone goes into `?phone=`; name not passed because LoginCard doesn't accept it, that's fine).
-- Keep edge-function call unchanged; the function already attaches `consumer_user_id` automatically when an auth bearer is present.
-
-### 2. `src/pages/shop/service/Id.tsx` (small tweak)
-
-- No structural change. The dialog already opens via `setBookingOpen(true)`.
-- Make sure the dialog receives the current service detail URL so it can build a correct `redirect` param. Compute it inline:
-  `` const redirectTo = `/shop/service/${service.id}`; `` and pass as a new optional prop `redirectTo` to `ServiceBookingDialog`.
-
-### 3. No DB or edge-function changes
-
-- `marketplace-public` → `create-service-booking` already supports both guest and logged-in flows (it tries to read the bearer token and attaches `consumer_user_id` when present).
-- `service_bookings` is already wired to notify shop members via the existing `tg_notify_new_service_booking` trigger.
-- `/customer/my-services` (`list-my-service-bookings`) already matches by `consumer_user_id` OR by phone (via `my_phones`), so guest bookings made with the same phone will still appear after the user logs in.
+- `catalogCategoriesGrouped(lang)` automatically picks up new categories from the data — Mobile Repair / Tailoring will appear in the picker the moment we add the rows.
+- The form's "অথবা নিচে নিজে লিখুন" hint and editable fields already provide the "extra add করার option" the user asked for — owners can pick a template and then change anything (price, duration, warranty, home-service, image, areas) before saving, or skip the picker entirely.
 
 ## Files touched
 
-- `src/components/shop/ServiceBookingDialog.tsx` — add 2-step flow, login/register CTAs, accept `redirectTo` prop.
-- `src/pages/shop/service/Id.tsx` — pass `redirectTo` to the dialog.
+- `src/lib/service-catalog.ts` — append 13 new catalog entries (Events extras + Mobile Repair + Tailoring & Laundry).
 
-That's it — minimal surface, reuses the existing `LoginCard` deep-link contract.
+That's the entire change.
