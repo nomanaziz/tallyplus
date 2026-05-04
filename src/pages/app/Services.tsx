@@ -186,6 +186,7 @@ function ServiceFormSheet({ open, onClose, editing, shopId, categories, onSaved 
       description: "",
       category_id: null,
       service_charge_extra: null,
+      service_areas: [],
     });
   }, [editing, open]);
 
