@@ -2,7 +2,7 @@ import { Link } from "@/lib/router";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useShop } from "@/lib/shop";
-import { useI18n, fmtMoney } , type Lang from "@/lib/i18n";
+import { useI18n, fmtMoney, type Lang } from "@/lib/i18n";
 import { dashboardSummaryQuery, dashboardOverviewQuery } from "@/lib/queries";
 import { Package, Truck, Globe, Clock } from "lucide-react";
 import { icons, AppIcon } from "@/lib/icons";
