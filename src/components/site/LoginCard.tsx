@@ -292,12 +292,7 @@ export function LoginCard() {
               <TabsTrigger value="customer">ব্যক্তিগত হিসাব</TabsTrigger>
             </TabsList>
           </Tabs>
-          <Input
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            placeholder="মোবাইল নম্বর"
-            inputMode="tel"
-          />
+          <CountryPhone country={country} setCountry={setCountry} phone={phone} setPhone={setPhone} />
           <Input
             value={pin}
             onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 4))}
@@ -363,12 +358,7 @@ export function LoginCard() {
               />
             </>
           )}
-          <Input
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            placeholder="মোবাইল নম্বর"
-            inputMode="tel"
-          />
+          <CountryPhone country={country} setCountry={setCountry} phone={phone} setPhone={setPhone} />
           <Input
             value={pin}
             onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 4))}
