@@ -3,8 +3,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ShopTypePicker } from "@/components/app/ShopTypePicker";
+import { BdLocationPicker, type BdLocation } from "@/components/shared/BdLocationPicker";
 import { useAuth } from "@/lib/auth";
 import { useShop } from "@/lib/shop";
 import { useI18n } from "@/lib/i18n";
@@ -12,22 +12,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Camera, Store, Loader2 } from "lucide-react";
 import { z } from "zod";
-
-const BD_DIVISIONS = [
-  "Dhaka", "Chattogram", "Rajshahi", "Khulna",
-  "Barishal", "Sylhet", "Rangpur", "Mymensingh",
-];
-
-const DISTRICTS: Record<string, string[]> = {
-  Dhaka: ["Dhaka", "Gazipur", "Narayanganj", "Tangail", "Manikganj", "Munshiganj", "Narsingdi", "Kishoreganj", "Faridpur", "Madaripur"],
-  Chattogram: ["Chattogram", "Cox's Bazar", "Cumilla", "Feni", "Khagrachhari", "Bandarban", "Rangamati", "Noakhali", "Lakshmipur", "Brahmanbaria"],
-  Rajshahi: ["Rajshahi", "Bogura", "Pabna", "Sirajganj", "Natore", "Naogaon", "Joypurhat", "Chapainawabganj"],
-  Khulna: ["Khulna", "Jessore", "Satkhira", "Bagerhat", "Chuadanga", "Kushtia", "Magura", "Meherpur", "Narail", "Jhenaidah"],
-  Barishal: ["Barishal", "Bhola", "Jhalokati", "Patuakhali", "Pirojpur", "Barguna"],
-  Sylhet: ["Sylhet", "Habiganj", "Moulvibazar", "Sunamganj"],
-  Rangpur: ["Rangpur", "Dinajpur", "Gaibandha", "Kurigram", "Lalmonirhat", "Nilphamari", "Panchagarh", "Thakurgaon"],
-  Mymensingh: ["Mymensingh", "Jamalpur", "Netrokona", "Sherpur"],
-};
 
 export function AddShopDialog({
   open,
@@ -46,9 +30,7 @@ export function AddShopDialog({
   const [typeCode, setTypeCode] = useState<string | null>(null);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
-  const [division, setDivision] = useState<string>("");
-  const [district, setDistrict] = useState<string>("");
-  const [area, setArea] = useState<string>("");
+  const [loc, setLoc] = useState<BdLocation>({ division: null, district: null, upazila: null, area: null });
   const [address, setAddress] = useState("");
   const [phone, setPhone] = useState("");
   const [sellOnline, setSellOnline] = useState<"yes" | "no">("no");
@@ -56,7 +38,8 @@ export function AddShopDialog({
 
   const reset = () => {
     setName(""); setTypeCode(null); setLogoFile(null); setLogoPreview(null);
-    setDivision(""); setDistrict(""); setArea(""); setAddress(""); setPhone(""); setSellOnline("no");
+    setLoc({ division: null, district: null, upazila: null, area: null });
+    setAddress(""); setPhone(""); setSellOnline("no");
   };
 
   const onLogoPick = (f: File | null) => {
@@ -129,12 +112,12 @@ export function AddShopDialog({
     }
 
     // Save location
-    if (shopRow?.id && (division || district || area)) {
+    if (shopRow?.id && (loc.division || loc.district || loc.upazila)) {
       await supabase.from("seller_locations").insert({
         shop_id: shopRow.id,
-        division: division || null,
-        district: district || null,
-        upazila: area || null,
+        division: loc.division,
+        district: loc.district,
+        upazila: loc.upazila,
       });
     }
 
@@ -224,45 +207,7 @@ export function AddShopDialog({
           </div>
 
           {/* Location */}
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <div className="space-y-1.5">
-              <Label>{lang === "bn" ? "বিভাগ" : "Division"}</Label>
-              <Select value={division} onValueChange={(v) => { setDivision(v); setDistrict(""); }}>
-                <SelectTrigger className="h-11">
-                  <SelectValue placeholder={lang === "bn" ? "বিভাগ" : "division"} />
-                </SelectTrigger>
-                <SelectContent>
-                  {BD_DIVISIONS.map((d) => (
-                    <SelectItem key={d} value={d}>{d}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label>{lang === "bn" ? "জেলা" : "District"}</Label>
-              <Select value={district} onValueChange={setDistrict} disabled={!division}>
-                <SelectTrigger className="h-11">
-                  <SelectValue placeholder={lang === "bn" ? "জেলা" : "district"} />
-                </SelectTrigger>
-                <SelectContent>
-                  {(DISTRICTS[division] ?? []).map((d) => (
-                    <SelectItem key={d} value={d}>{d}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="space-y-1.5">
-            <Label>{lang === "bn" ? "এলাকা" : "Area"}</Label>
-            <Input
-              value={area}
-              onChange={(e) => setArea(e.target.value)}
-              placeholder={lang === "bn" ? "এলাকা" : "area"}
-              className="h-11"
-              maxLength={80}
-            />
-          </div>
+          <BdLocationPicker value={loc} onChange={setLoc} showArea={false} />
 
           {/* Address */}
           <div className="space-y-1.5">
@@ -284,8 +229,9 @@ export function AddShopDialog({
               {lang === "bn" ? "মোবাইল নম্বর" : "Input Mobile number"} <span className="text-rose-500">*</span>
             </Label>
             <div className="flex h-11 items-center overflow-hidden rounded-md border bg-background">
-              <span className="flex h-full items-center gap-1 border-r bg-muted/40 px-3 text-sm font-medium">
-                🇧🇩 +88
+              <span className="flex h-full items-center gap-1.5 border-r bg-muted/40 px-3 text-sm font-medium">
+                <span className="text-base leading-none">🇧🇩</span>
+                <span>+88</span>
               </span>
               <Input
                 inputMode="numeric"
