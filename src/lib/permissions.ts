@@ -384,6 +384,7 @@ export const ROLE_PRESETS: Record<RoleKey, PermissionMap> = {
     sell: ["sell", "quick_sell", "cart_edit"],
     contacts: ["view", "customers", "add_customer"],
     products: ["view"],
+    services: ["view"],
   },
   MANAGER: {
     dashboard: ["view", "summary", "quick_actions"],
@@ -392,6 +393,7 @@ export const ROLE_PRESETS: Record<RoleKey, PermissionMap> = {
     expense: ["expense", "list", "add"],
     contacts: ["view", "customers", "suppliers", "add_customer", "add_supplier"],
     products: ["view", "add", "edit", "details"],
+    services: ["view", "add", "edit", "bookings"],
     stock: ["view", "history", "update", "edit"],
     cashbox: ["view", "cash_in", "cash_out", "history"],
     wishlist: ["view", "convert"],
