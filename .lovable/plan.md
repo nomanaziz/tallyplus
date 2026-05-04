@@ -1,44 +1,70 @@
-# ফর্দ Share Link (পাবলিক, রিড-অনলি)
+## Goal
 
-গ্রাহক একটা ফর্দ তৈরি করার পর একটা public link পাবে যা WhatsApp/SMS-এ যেকাউকে পাঠানো যাবে। যিনি link পাবেন, তিনি login ছাড়াই ফর্দ দেখতে ও print করতে পারবেন — edit/modify করতে পারবেন না। দোকানদারের সঙ্গে existing flow (যে ফর্দ দোকানে পাঠানো হয়) আগের মতই থাকবে — এটা তার সাথে collide করবে না।
+When a shop owner adds a new service, let them pick from a pre-built catalog (inspired by sheba.xyz categories). Selecting a catalog item auto-fills the name, description, suggested unit, and default duration. Owners can also choose **service areas** (e.g. Dhaka, Chattogram, Sylhet, or "All over Bangladesh"), shown as "Available in: …" on the service card and on the public marketplace listing.
 
-## কী করা হবে
+Note on source: sheba.xyz blocks scraping (returns only a chat-widget shell), so the catalog will be curated from Sheba's well-known public category set rather than scraped live. The catalog ships as a static TS file — easy to extend later.
 
-1. **ডাটাবেজ migration**
-   - `customer_wishlists`-এ যোগ করা হবে: `share_token text unique` (auto-generated, ~16 char), `share_enabled boolean default true`।
-   - সব existing rows-এ token backfill।
-   - একটি SECURITY DEFINER RPC `get_shared_fordo(_token text)` — token মিললে wishlist + items + shop name JSON ফেরত দেবে। token না জানলে কিছুই access করা যাবে না (RLS অপরিবর্তিত)।
-   - Anon + authenticated কে শুধু এই function-এ EXECUTE permission।
+---
 
-2. **Public পেজ**
-   - নতুন route: `/f/s/:token` (lazy loaded, কোনো auth লাগবে না)।
-   - Page-এ দেখাবে: গ্রাহকের নাম, দোকান (যদি থাকে), note, সব item (নাম/পরিমাণ/একক/দাম), মোট টাকা।
-   - "Print" বোতাম (`window.print()`) — print-friendly CSS (header/footer hidden when printing)।
-   - Edit/delete UI কিছুই থাকবে না — pure read-only।
-   - Token invalid বা `share_enabled=false` হলে friendly "এই link আর কাজ করছে না" message।
+## 1. Built-in Service Catalog (static)
 
-3. **Share বোতাম যোগ করা হবে**
-   - `MyFordo.tsx` — প্রতিটি ফর্দ row-তে একটা **Share** আইকন: click করলে Web Share API (mobile) বা clipboard copy + toast ("লিংক কপি হয়েছে")। সাথে WhatsApp share quick action।
-   - `CreateFordo` save success-এর পর একটা dialog/toast: "ফর্দ তৈরি হয়েছে — লিংক কপি করুন / WhatsApp-এ পাঠান"।
+New file `src/lib/service-catalog.ts` exports an array of ~60–80 services across these categories (bn + en names, description, default unit, default duration, suggested price hint, warranty hint):
 
-4. **Owner flow অপরিবর্তিত** — existing `customer_wishlists` insert/RLS/notification trigger কিচ্ছু বদলাবে না। শুধু extra columns যোগ হচ্ছে।
+- **Beauty & Wellness** — Salon (Men), Salon (Women), Bridal Makeup, Hair Cut, Hair Color, Facial, Manicure/Pedicure, Massage
+- **Home Cleaning** — Full Home Cleaning, Kitchen Deep Clean, Bathroom Deep Clean, Sofa Cleaning, Mattress Cleaning, Carpet Cleaning, Water Tank Cleaning
+- **Appliance Repair** — AC Service, AC Repair, AC Installation, Refrigerator Repair, Washing Machine Repair, Microwave Repair, TV Repair, Geyser Repair, Water Filter Service
+- **Plumbing** — Tap/Faucet Fix, Pipe Leakage, Toilet Repair, Bathroom Fittings, Water Motor
+- **Electrical** — Wiring, Switch/Socket, Fan Install/Repair, Light Install, IPS/UPS, Generator
+- **Pest Control** — Cockroach, Bedbug, Termite, Rat, Mosquito
+- **Car Services** — Car Wash, Car AC, Engine Tune-up, Battery, Tyre, Body Paint
+- **Carpentry & Painting** — Furniture Repair, Door/Window, Interior Painting, Exterior Painting, Polishing
+- **CCTV / IT / Networking** — CCTV Install, CCTV Maintenance, Computer Repair, Laptop Repair, Wi-Fi Setup, Printer Repair
+- **Shifting / Movers** — Home Shifting, Office Shifting, Pick & Drop
+- **Health at Home** — Doctor Visit, Nurse, Physiotherapy, Sample Collection
+- **Tutoring & Lessons** — Home Tutor, Music, Quran
+- **Events & Catering** — Catering, Photography, Videography, Decoration
 
-## Technical notes
+Each entry shape:
+```ts
+{ slug, category, name_en, name_bn, description_en, description_bn,
+  default_unit, default_duration_minutes?, default_duration_label?,
+  warranty_default?, home_service_default? }
+```
 
-- Token format: `encode(gen_random_bytes(12), 'base64')` থেকে url-safe 16 char।
-- RPC return shape:
-  ```
-  { wishlist: {...}, items: [...], shop: { id, name, logo_url } | null }
-  ```
-- Share URL: `${window.location.origin}/f/s/${token}`
-- WhatsApp: `https://wa.me/?text=${encodeURIComponent('আমার ফর্দ: ' + url)}`
-- Print CSS scoped via a `print:` Tailwind utilities + `@media print` block in the page.
+## 2. New "Pick from catalog" UX in `src/pages/app/Services.tsx`
 
-## Files
+In `ServiceFormSheet`, above the Name field, add a **"সার্ভিস ক্যাটালগ থেকে বেছে নিন / Pick from catalog"** combobox (using `Command` + `Popover` from existing shadcn). It groups items by category with a search box. Selecting an item:
+- Fills `name`, `description`, `unit`, `duration_minutes`/`duration_label`, `home_service`, `warranty_*`
+- Owner can still edit any field, set price, then save.
 
-- New migration (add columns + RPC + grant)
-- New page: `src/pages/f/Share.tsx`
-- Route registration: `src/lib/app-routes.tsx` (add `f/s/:token`)
-- Edit: `src/pages/customer/MyFordo.tsx` (Share button per row)
-- Edit: `src/pages/customer/CreateFordo.tsx` (post-save share dialog)
-- Small helper: `src/lib/share-fordo.ts` (build URL, copy/share helpers)
+A small "Custom service" option lets owners skip the catalog entirely (current flow preserved).
+
+## 3. Service Areas
+
+### Schema (migration)
+- Add column `service_areas text[]` to `public.services` (default `'{}'`). Treat empty array as "everywhere".
+- Add same column to `public.marketplace_service_listings` so the marketplace card can filter without joining.
+- Backfill: existing rows get `'{}'`.
+
+### UI (form)
+Add a multi-select field "Service Area / সার্ভিস এলাকা" with checkboxes for the major divisions: Dhaka, Chattogram, Khulna, Rajshahi, Sylhet, Barishal, Rangpur, Mymensingh, plus "All over Bangladesh" (clears the array). List defined as a constant `BD_DIVISIONS` in `src/lib/service-catalog.ts`.
+
+### Display (service card)
+On each card show: `Available in: Dhaka, Sylhet` (or `Available everywhere` if empty). Bilingual.
+
+### Marketplace publish sync
+When `togglePublish` / `onSave` upserts into `marketplace_service_listings`, also write `service_areas`.
+
+## 4. Files Touched
+
+- **new** `src/lib/service-catalog.ts` — catalog data + BD_DIVISIONS constant + helper types
+- **new** `src/components/app/ServiceCatalogPicker.tsx` — Command-palette style picker (search + category groups)
+- **edit** `src/pages/app/Services.tsx` — integrate picker, render areas chip, area multi-select in form
+- **edit** `src/lib/services-queries.ts` — add `service_areas: string[]` to `Service` type and selects
+- **new** `supabase/migrations/<ts>_service_areas.sql` — adds `service_areas text[] default '{}'` to `services` and `marketplace_service_listings`
+
+## 5. Out of Scope (ask if you want them)
+
+- Free-text city/upazila search beyond divisions
+- Customer-side filtering by area on the marketplace page (can be follow-up)
+- Auto-translation of catalog items beyond the two languages shipped
