@@ -2,6 +2,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, X, Printer, Receipt, Store } from "lucide-react";
 import { useI18n, fmtMoney, bnNum } from "@/lib/i18n";
+import { printInvoice } from "@/lib/print-invoice";
 
 export type InvoiceItem = {
   name: string;
@@ -46,15 +47,11 @@ export function InvoiceDialog({
   const tot = prev + cur;
 
   const print = () => {
-    document.body.classList.add("invoice-printing");
-    window.print();
-    setTimeout(() => document.body.classList.remove("invoice-printing"), 500);
+    printInvoice(data, lang, "a4");
   };
 
   const printPOS = () => {
-    document.body.classList.add("pos-printing");
-    window.print();
-    setTimeout(() => document.body.classList.remove("pos-printing"), 500);
+    printInvoice(data, lang, "pos");
   };
 
   const dt = new Date(data.date);
