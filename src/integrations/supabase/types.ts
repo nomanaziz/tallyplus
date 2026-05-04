@@ -1663,34 +1663,46 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          item_type: string
           listing_id: string | null
           name: string
           order_id: string
           price: number
           product_id: string | null
           qty: number
+          scheduled_at: string | null
+          service_id: string | null
+          service_listing_id: string | null
           total: number
         }
         Insert: {
           created_at?: string
           id?: string
+          item_type?: string
           listing_id?: string | null
           name: string
           order_id: string
           price?: number
           product_id?: string | null
           qty?: number
+          scheduled_at?: string | null
+          service_id?: string | null
+          service_listing_id?: string | null
           total?: number
         }
         Update: {
           created_at?: string
           id?: string
+          item_type?: string
           listing_id?: string | null
           name?: string
           order_id?: string
           price?: number
           product_id?: string | null
           qty?: number
+          scheduled_at?: string | null
+          service_id?: string | null
+          service_listing_id?: string | null
           total?: number
         }
         Relationships: [
@@ -1699,6 +1711,20 @@ export type Database = {
             columns: ["order_id"]
             isOneToOne: false
             referencedRelation: "marketplace_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketplace_order_items_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketplace_order_items_service_listing_id_fkey"
+            columns: ["service_listing_id"]
+            isOneToOne: false
+            referencedRelation: "marketplace_service_listings"
             referencedColumns: ["id"]
           },
         ]
@@ -1715,7 +1741,10 @@ export type Database = {
           id: string
           note: string | null
           order_no: string | null
+          order_type: string
           payment_method: string | null
+          scheduled_at: string | null
+          service_address: string | null
           shop_id: string
           status: string
           subtotal: number
@@ -1733,7 +1762,10 @@ export type Database = {
           id?: string
           note?: string | null
           order_no?: string | null
+          order_type?: string
           payment_method?: string | null
+          scheduled_at?: string | null
+          service_address?: string | null
           shop_id: string
           status?: string
           subtotal?: number
@@ -1751,7 +1783,10 @@ export type Database = {
           id?: string
           note?: string | null
           order_no?: string | null
+          order_type?: string
           payment_method?: string | null
+          scheduled_at?: string | null
+          service_address?: string | null
           shop_id?: string
           status?: string
           subtotal?: number
@@ -1858,6 +1893,60 @@ export type Database = {
             columns: ["subcategory_id"]
             isOneToOne: false
             referencedRelation: "marketplace_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      marketplace_service_listings: {
+        Row: {
+          created_at: string
+          id: string
+          is_featured: boolean
+          is_published: boolean
+          price: number
+          service_id: string
+          shop_id: string
+          updated_at: string
+          warranty_unit: string | null
+          warranty_value: number | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_featured?: boolean
+          is_published?: boolean
+          price?: number
+          service_id: string
+          shop_id: string
+          updated_at?: string
+          warranty_unit?: string | null
+          warranty_value?: number | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_featured?: boolean
+          is_published?: boolean
+          price?: number
+          service_id?: string
+          shop_id?: string
+          updated_at?: string
+          warranty_unit?: string | null
+          warranty_value?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketplace_service_listings_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketplace_service_listings_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
             referencedColumns: ["id"]
           },
         ]
@@ -2733,36 +2822,42 @@ export type Database = {
           cost: number
           created_at: string
           id: string
+          item_type: string
           name: string
           price: number
           product_id: string | null
           qty: number
           sale_id: string
           serial_id: string | null
+          service_id: string | null
           total: number
         }
         Insert: {
           cost?: number
           created_at?: string
           id?: string
+          item_type?: string
           name: string
           price: number
           product_id?: string | null
           qty: number
           sale_id: string
           serial_id?: string | null
+          service_id?: string | null
           total: number
         }
         Update: {
           cost?: number
           created_at?: string
           id?: string
+          item_type?: string
           name?: string
           price?: number
           product_id?: string | null
           qty?: number
           sale_id?: string
           serial_id?: string | null
+          service_id?: string | null
           total?: number
         }
         Relationships: [
@@ -2778,6 +2873,13 @@ export type Database = {
             columns: ["sale_id"]
             isOneToOne: false
             referencedRelation: "sales"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sale_items_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
             referencedColumns: ["id"]
           },
         ]
@@ -3000,6 +3102,215 @@ export type Database = {
             foreignKeyName: "seller_locations_shop_id_fkey"
             columns: ["shop_id"]
             isOneToOne: true
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      service_categories: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          parent_id: string | null
+          shop_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          parent_id?: string | null
+          shop_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          parent_id?: string | null
+          shop_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_categories_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "service_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_categories_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      service_warranties: {
+        Row: {
+          created_at: string
+          customer_id: string | null
+          customer_name: string | null
+          customer_phone: string | null
+          expires_at: string
+          id: string
+          notes: string | null
+          sale_id: string | null
+          sale_item_id: string | null
+          service_id: string
+          shop_id: string
+          starts_at: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          customer_id?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
+          expires_at: string
+          id?: string
+          notes?: string | null
+          sale_id?: string | null
+          sale_item_id?: string | null
+          service_id: string
+          shop_id: string
+          starts_at?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
+          expires_at?: string
+          id?: string
+          notes?: string | null
+          sale_id?: string | null
+          sale_item_id?: string | null
+          service_id?: string
+          shop_id?: string
+          starts_at?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_warranties_sale_id_fkey"
+            columns: ["sale_id"]
+            isOneToOne: false
+            referencedRelation: "sales"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_warranties_sale_item_id_fkey"
+            columns: ["sale_item_id"]
+            isOneToOne: false
+            referencedRelation: "sale_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_warranties_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_warranties_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      services: {
+        Row: {
+          category_id: string | null
+          created_at: string
+          deleted_at: string | null
+          description: string | null
+          duration_label: string | null
+          duration_minutes: number | null
+          home_service: boolean
+          id: string
+          image_url: string | null
+          is_active: boolean
+          is_featured: boolean
+          is_marketplace_published: boolean
+          name: string
+          price: number
+          service_charge_extra: number | null
+          shop_id: string
+          unit: string
+          updated_at: string
+          warranty_enabled: boolean
+          warranty_unit: string | null
+          warranty_value: number | null
+        }
+        Insert: {
+          category_id?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          description?: string | null
+          duration_label?: string | null
+          duration_minutes?: number | null
+          home_service?: boolean
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          is_featured?: boolean
+          is_marketplace_published?: boolean
+          name: string
+          price?: number
+          service_charge_extra?: number | null
+          shop_id: string
+          unit?: string
+          updated_at?: string
+          warranty_enabled?: boolean
+          warranty_unit?: string | null
+          warranty_value?: number | null
+        }
+        Update: {
+          category_id?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          description?: string | null
+          duration_label?: string | null
+          duration_minutes?: number | null
+          home_service?: boolean
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          is_featured?: boolean
+          is_marketplace_published?: boolean
+          name?: string
+          price?: number
+          service_charge_extra?: number | null
+          shop_id?: string
+          unit?: string
+          updated_at?: string
+          warranty_enabled?: boolean
+          warranty_unit?: string | null
+          warranty_value?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_services_category"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "service_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "services_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
             referencedRelation: "shops"
             referencedColumns: ["id"]
           },

@@ -7,6 +7,7 @@ import { useShop } from "@/lib/shop";
 import { useAuth } from "@/lib/auth";
 import { useI18n, fmtMoney, bnNum } from "@/lib/i18n";
 import { productsLiteQuery } from "@/lib/queries";
+import { servicesLiteQuery, durationToText, type Service } from "@/lib/services-queries";
 import { SerialPickDialog } from "@/components/app/SerialPickDialog";
 import { BarcodeScannerButton } from "@/components/app/BarcodeScannerButton";
 import { useHardwareScanner } from "@/hooks/useHardwareScanner";
@@ -16,6 +17,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Wrench, Clock, Shield } from "lucide-react";
 import { EmptyState } from "@/components/app/EmptyState";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -43,7 +45,9 @@ type Product = {
 };
 
 type CartItem = {
-  product_id: string;
+  product_id: string | null;
+  service_id?: string | null;
+  item_type?: "product" | "service";
   name: string;
   qty: number;
   price: number;
@@ -57,6 +61,11 @@ type CartItem = {
   is_serialized?: boolean;
   serial_id?: string | null;
   serial_no?: string | null;
+  // Service-specific
+  warranty_enabled?: boolean;
+  warranty_value?: number | null;
+  warranty_unit?: string | null;
+  duration_label?: string | null;
 };
 
 function applyBulkPricing(item: CartItem): CartItem {
@@ -89,6 +98,9 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
   const qc = useQueryClient();
   const { data: productsData = [], refetch } = useQuery(productsLiteQuery(current?.id ?? null));
   const products = productsData as unknown as Product[];
+  const { data: servicesData = [] } = useQuery(servicesLiteQuery(current?.id ?? null));
+  const services = servicesData as Service[];
+  const [pickerTab, setPickerTab] = useState<"products" | "services">("products");
   const [search, setSearch] = useState("");
   const [cart, setCart] = useState<CartItem[]>([]);
   const [discount, setDiscount] = useState<string>("0");
@@ -229,9 +241,70 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
         <div className={`rounded-xl border bg-card ${mobileTab === "cart" ? "hidden md:block" : ""}`}>
           <div className="flex items-center justify-between border-b p-3">
             <div className="text-sm font-semibold">
-              {lang === "bn" ? "পণ্য নির্বাচন করুন" : "Select products"}
+              {lang === "bn" ? "নির্বাচন করুন" : "Select"}
             </div>
+            {isSell && services.length > 0 && (
+              <Tabs value={pickerTab} onValueChange={(v) => setPickerTab(v as "products" | "services")}>
+                <TabsList className="h-8">
+                  <TabsTrigger value="products" className="text-xs px-3">{lang === "bn" ? "পণ্য" : "Products"}</TabsTrigger>
+                  <TabsTrigger value="services" className="text-xs px-3">{lang === "bn" ? "সার্ভিস" : "Services"}</TabsTrigger>
+                </TabsList>
+              </Tabs>
+            )}
           </div>
+          {pickerTab === "services" && isSell ? (
+            <div className="p-3">
+              <div className="relative mb-3">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={lang === "bn" ? "সার্ভিস খুঁজুন" : "Search service"} className="h-10 pl-9" />
+              </div>
+              <div className="max-h-[55vh] overflow-y-auto">
+                <ul className="divide-y">
+                  {services.filter((s) => !search.trim() || s.name.toLowerCase().includes(search.toLowerCase())).map((s) => {
+                    const inCart = cart.find((c) => c.service_id === s.id);
+                    const dur = durationToText(s, lang);
+                    return (
+                      <li key={s.id} className="flex items-center gap-3 py-2">
+                        <div className="flex h-10 w-10 flex-none items-center justify-center rounded-md bg-muted">
+                          {s.image_url ? <img src={s.image_url} alt={s.name} className="h-10 w-10 rounded-md object-cover" /> : <Wrench className="h-5 w-5 text-muted-foreground" />}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="truncate text-sm font-medium">
+                            {s.name}
+                            {inCart && <span className="ml-2 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-bold text-primary">× {inCart.qty}</span>}
+                          </div>
+                          <div className="text-xs text-muted-foreground flex items-center gap-2">
+                            {fmtMoney(Number(s.price), lang)}
+                            {dur && <><span>·</span><Clock className="h-3 w-3" />{dur}</>}
+                            {s.warranty_enabled && <Shield className="h-3 w-3 text-emerald-600" />}
+                          </div>
+                        </div>
+                        <Button size="sm" onClick={() => {
+                          setCart((prev) => {
+                            const i = prev.findIndex((c) => c.service_id === s.id);
+                            if (i >= 0) {
+                              const copy = [...prev]; copy[i] = { ...copy[i], qty: copy[i].qty + 1 }; return copy;
+                            }
+                            return [...prev, {
+                              product_id: null, service_id: s.id, item_type: "service",
+                              name: s.name, qty: 1, price: Number(s.price),
+                              warranty_enabled: s.warranty_enabled, warranty_value: s.warranty_value, warranty_unit: s.warranty_unit,
+                              duration_label: s.duration_label,
+                            }];
+                          });
+                          toast.success(`${s.name} ${lang === "bn" ? "যোগ হয়েছে" : "added"}`, { duration: 1000 });
+                        }}>
+                          <Plus className="h-4 w-4" />
+                        </Button>
+                      </li>
+                    );
+                  })}
+                  {services.length === 0 && <li className="py-8 text-center text-sm text-muted-foreground">{lang === "bn" ? "কোনো সার্ভিস নেই" : "No services"}</li>}
+                </ul>
+              </div>
+            </div>
+          ) : (
+          <>
           <div className="flex flex-wrap items-center gap-2 p-3">
             <div className="relative min-w-0 flex-1">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -310,6 +383,8 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
               </ul>
             )}
           </div>
+          </>
+          )}
         </div>
 
         {/* Cart */}
@@ -686,7 +761,11 @@ function PaymentDialog(props: {
         const saleId = (sale as { id: string }).id;
 
         const items = props.cart.map((c) => ({
-          sale_id: saleId, product_id: c.product_id, name: c.name,
+          sale_id: saleId,
+          product_id: c.item_type === "service" ? null : c.product_id,
+          service_id: c.item_type === "service" ? (c.service_id ?? null) : null,
+          item_type: c.item_type ?? "product",
+          name: c.name,
           qty: c.qty, price: c.price, total: c.qty * c.price,
           serial_id: c.serial_id ?? null,
         }));
@@ -704,6 +783,28 @@ function PaymentDialog(props: {
 
         // stock decrement + movements
         for (const c of props.cart) {
+          if (c.item_type === "service" || !c.product_id) {
+            // Service sale: register warranty if applicable, skip stock
+            if (c.item_type === "service" && c.service_id && c.warranty_enabled && c.warranty_value && c.warranty_unit) {
+              const now = new Date();
+              const expires = new Date(now);
+              if (c.warranty_unit === "days") expires.setDate(expires.getDate() + c.warranty_value * c.qty);
+              else if (c.warranty_unit === "months") expires.setMonth(expires.getMonth() + c.warranty_value);
+              else if (c.warranty_unit === "years") expires.setFullYear(expires.getFullYear() + c.warranty_value);
+              await supabase.from("service_warranties").insert({
+                shop_id: current.id,
+                service_id: c.service_id,
+                sale_id: saleId,
+                customer_id: contactId,
+                customer_name: partyName.trim() || null,
+                customer_phone: partyPhone.trim() || null,
+                starts_at: now.toISOString(),
+                expires_at: expires.toISOString(),
+                status: "active",
+              });
+            }
+            continue;
+          }
           await supabase.from("stock_movements").insert({
             shop_id: current.id, product_id: c.product_id,
             qty: c.qty, type: "out", ref_table: "sales", ref_id: saleId,
@@ -753,13 +854,14 @@ function PaymentDialog(props: {
         const purId = (pur as { id: string }).id;
 
         const items = props.cart.map((c) => ({
-          purchase_id: purId, product_id: c.product_id, name: c.name,
+          purchase_id: purId, product_id: c.product_id ?? null, name: c.name,
           qty: c.qty, price: c.price, total: c.qty * c.price,
         }));
         const { error: eI } = await supabase.from("purchase_items").insert(items);
         if (eI) throw eI;
 
         for (const c of props.cart) {
+          if (!c.product_id) continue;
           await supabase.from("stock_movements").insert({
             shop_id: current.id, product_id: c.product_id,
             qty: c.qty, type: "in", ref_table: "purchases", ref_id: purId,
