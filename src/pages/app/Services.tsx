@@ -668,7 +668,7 @@ function ServiceBookingsTab({ shopId }: { shopId: string }) {
               {b.note && <div className="mt-1 text-xs italic text-muted-foreground">"{b.note}"</div>}
             </div>
             <Badge variant={b.status === "completed" ? "default" : b.status === "cancelled" ? "destructive" : "secondary"}>
-              {STATUSES.find((s) => s.value === b.status)?.[lang] ?? b.status}
+              {(STATUSES.find((s) => s.value === b.status) as Record<string,string> | undefined)?.[lang] ?? STATUSES.find((s)=>s.value===b.status)?.en ?? b.status}
             </Badge>
           </div>
           <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
@@ -690,7 +690,7 @@ function ServiceBookingsTab({ shopId }: { shopId: string }) {
             <Select value={b.status} onValueChange={(v) => setStatus(b, v)}>
               <SelectTrigger className="h-8 w-40 text-xs"><SelectValue /></SelectTrigger>
               <SelectContent>
-                {STATUSES.map((s) => <SelectItem key={s.value} value={s.value}>{s[lang]}</SelectItem>)}
+                {STATUSES.map((s) => <SelectItem key={s.value} value={s.value}>{(s as Record<string,string>)[lang] ?? s.en}</SelectItem>)}
               </SelectContent>
             </Select>
             {b.status !== "completed" && b.status !== "cancelled" && (
