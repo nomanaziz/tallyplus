@@ -175,6 +175,8 @@ function SettingsPage() {
 
       <SiteContactCard />
 
+      <TrialSettingsCard />
+
       <Card>
         <CardHeader className="flex flex-row items-center justify-between gap-2">
           <CardTitle className="text-base">App Links</CardTitle>
