@@ -3,13 +3,14 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useI18n } from "@/lib/i18n";
 import { useShop } from "@/lib/shop";
-import { PageHeader } from "@/components/app/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { toast } from "sonner";
+import { Link } from "@/lib/router";
+import { ArrowLeft } from "lucide-react";
 
 
 
@@ -79,7 +80,13 @@ function CustomizePage() {
 
   return (
     <div className="container mx-auto max-w-4xl px-4 pb-24">
-      <PageHeader breadcrumb="Online-shop" title="" />
+      <div className="flex items-center gap-2 pt-3">
+        <Button asChild variant="ghost" size="sm" className="gap-1">
+          <Link to="/app/online-shop">
+            <ArrowLeft className="h-4 w-4" /> {lang === "bn" ? "অনলাইন শপে ফিরে যান" : "Back to Online Shop"}
+          </Link>
+        </Button>
+      </div>
       <div className="mt-3 space-y-4">
         <h1 className="text-xl font-bold">{lang === "bn" ? "কাস্টমাইজেশন" : "Customization"}</h1>
 
