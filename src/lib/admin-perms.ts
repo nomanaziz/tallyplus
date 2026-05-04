@@ -20,6 +20,7 @@ export const ADMIN_PERMISSION_KEYS = [
   "locations",
   "ads",
   "settings",
+  "transfers",
 ] as const;
 
 export type AdminPermKey = (typeof ADMIN_PERMISSION_KEYS)[number];
@@ -45,6 +46,7 @@ export const ADMIN_PERMISSION_LABELS: Record<AdminPermKey, string> = {
   locations: "Locations",
   ads: "Ads / Monetization",
   settings: "Settings",
+  transfers: "Ownership Transfers",
 };
 
 export function hasPerm(
