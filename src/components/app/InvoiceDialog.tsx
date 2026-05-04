@@ -2,7 +2,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, X, Printer, Receipt, Store } from "lucide-react";
 import { useI18n, fmtMoney, bnNum } from "@/lib/i18n";
-import { printInvoice } from "@/lib/print-invoice";
+import { printInvoice, toBnWords, toEnWords } from "@/lib/print-invoice";
 
 export type InvoiceItem = {
   name: string;
