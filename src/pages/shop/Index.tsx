@@ -410,6 +410,88 @@ function MarketplacePage() {
     </div>
   );
 
+  const servicesFilterPanel = (
+    <div className="space-y-5">
+      <div>
+        <Label className="mb-2 block text-sm font-semibold">মূল্যসীমা (৳)</Label>
+        <div className="flex items-center gap-2">
+          <Input type="number" placeholder="সর্বনিম্ন" value={minP} onChange={(e) => setMinP(e.target.value)} className="h-9" />
+          <span className="text-muted-foreground">–</span>
+          <Input type="number" placeholder="সর্বোচ্চ" value={maxP} onChange={(e) => setMaxP(e.target.value)} className="h-9" />
+        </div>
+        <Button size="sm" variant="outline" className="mt-2 w-full" onClick={applyPrice}>প্রয়োগ করুন</Button>
+      </div>
+
+      <div className="flex items-center justify-between rounded-lg border bg-card p-3">
+        <Label htmlFor="homeService" className="inline-flex items-center gap-1.5 text-sm font-medium">
+          <Home className="h-3.5 w-3.5" /> বাসায় সার্ভিস
+        </Label>
+        <Switch
+          id="homeService"
+          checked={!!search.homeService}
+          onCheckedChange={(v) => navigate({ search: (prev) => ({ ...prev, homeService: v ? true : undefined, page: 1 }) })}
+        />
+      </div>
+
+      <div>
+        <Label className="mb-2 block text-sm font-semibold">ক্যাটাগরি</Label>
+        <Select
+          value={search.category ?? "all"}
+          onValueChange={(v) => navigate({ search: (prev) => ({ ...prev, category: v === "all" ? undefined : v, page: 1 }) })}
+        >
+          <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">সব ক্যাটাগরি</SelectItem>
+            {svcCats.map((c) => (
+              <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div>
+        <Label className="mb-2 block text-sm font-semibold inline-flex items-center gap-1.5">
+          <MapPin className="h-3.5 w-3.5" /> এলাকা
+        </Label>
+        <BdLocationPicker value={svcLoc} onChange={setSvcLoc} showArea={false} />
+        <Button
+          size="sm"
+          variant="outline"
+          className="mt-2 w-full"
+          onClick={() =>
+            navigate({
+              search: (prev) => ({
+                ...prev,
+                division: svcLoc.division ?? undefined,
+                district: svcLoc.district ?? undefined,
+                upazila: svcLoc.upazila ?? undefined,
+                page: 1,
+              }),
+            })
+          }
+        >
+          এলাকা প্রয়োগ করুন
+        </Button>
+      </div>
+
+      <div>
+        <Label className="mb-2 block text-sm font-semibold">সাজান</Label>
+        <Select value={search.sort ?? "newest"} onValueChange={(v) => setSort(v as Sort)}>
+          <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="newest">নতুন আগে</SelectItem>
+            <SelectItem value="price_asc">দাম: কম → বেশি</SelectItem>
+            <SelectItem value="price_desc">দাম: বেশি → কম</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <Button variant="ghost" size="sm" className="w-full gap-2" onClick={reset}>
+        <RotateCcw className="h-4 w-4" /> সব ফিল্টার রিসেট
+      </Button>
+    </div>
+  );
+
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <SiteHeader />
