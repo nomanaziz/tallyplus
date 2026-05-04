@@ -88,7 +88,6 @@ function ServicesPage() {
         <EmptyState
           icon={<Wrench className="h-6 w-6" />}
           title={lang === "bn" ? "কোনো সার্ভিস নেই" : "No services yet"}
-          description={lang === "bn" ? "প্রথম সার্ভিস যোগ করুন" : "Add your first service"}
         />
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
