@@ -716,9 +716,15 @@ function MarketplacePage() {
                                   {s.address}
                                 </div>
                               )}
-                              <div className="mt-1 inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
-                                <ShoppingBag className="h-3 w-3" />
-                                {vendorCounts[s.id] ?? 0} টি পণ্য
+                              <div className="mt-1 flex flex-wrap items-center gap-1">
+                                <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
+                                  <ShoppingBag className="h-3 w-3" />
+                                  {vendorCounts[s.id] ?? 0} পণ্য
+                                </span>
+                                <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
+                                  <Wrench className="h-3 w-3" />
+                                  {vendorServiceCounts[s.id] ?? 0} সার্ভিস
+                                </span>
                               </div>
                             </div>
                           </Link>
