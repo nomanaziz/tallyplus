@@ -129,7 +129,6 @@ export const appRoutes: RouteObject[] = [
 { index: true, element: <Suspense fallback={<RouteFallback/>}><L5/></Suspense> },
 { path: "landing", element: <Suspense fallback={<RouteFallback/>}><L6/></Suspense> },
 { path: "locations", element: <Suspense fallback={<RouteFallback/>}><L7/></Suspense> },
-{ path: "login", element: <Suspense fallback={<RouteFallback/>}><L8/></Suspense> },
 { path: "marketplace", element: <Suspense fallback={<RouteFallback/>}><L9/></Suspense> },
 { path: "payment-attempts", element: <Suspense fallback={<RouteFallback/>}><L10/></Suspense> },
 { path: "payment-gateway", element: <Suspense fallback={<RouteFallback/>}><L11/></Suspense> },
