@@ -12,7 +12,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 function AdminLayout() {
   const nav = useNavigate();
   const loc = useLocation();
-  const isLogin = loc.pathname === "/admin/login";
+  const isLogin = loc.pathname === "/xbd-login" || loc.pathname === "/admin/login";
   const [checking, setChecking] = useState(true);
   const [email, setEmail] = useState<string | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -27,7 +27,7 @@ function AdminLayout() {
       const { data } = await supabase.auth.getUser();
       const user = data.user;
       if (!user) {
-        if (!cancelled) nav({ to: "/admin/login" });
+        if (!cancelled) nav({ to: "/xbd-login" });
         return;
       }
       const { data: roleRow } = await supabase
@@ -40,7 +40,7 @@ function AdminLayout() {
       if (!roleRow) {
         await supabase.auth.signOut();
         toast.error("আপনার admin access নেই");
-        nav({ to: "/admin/login" });
+        nav({ to: "/xbd-login" });
         return;
       }
       setEmail(user.email ?? null);
@@ -53,7 +53,7 @@ function AdminLayout() {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    nav({ to: "/admin/login" });
+    nav({ to: "/xbd-login" });
   };
 
   if (checking) {
