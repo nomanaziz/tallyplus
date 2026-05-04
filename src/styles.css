@@ -402,6 +402,7 @@ html, body {
 @layer base {
   svg.lucide {
     color: var(--primary);
+    stroke-width: 1.5;
   }
   /* Don't tint icons inside these contexts — they should follow text color */
   button svg.lucide,
