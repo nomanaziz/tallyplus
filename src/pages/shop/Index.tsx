@@ -215,7 +215,7 @@ function MarketplacePage() {
       if (error || !data || (data as { error?: string }).error) {
         return { shops: [] as Shop[], counts: {} as Record<string, number>, total: 0 };
       }
-      return data as { shops: Shop[]; counts: Record<string, number>; total: number };
+      return data as { shops: Shop[]; counts: Record<string, number>; service_counts?: Record<string, number>; total: number };
     },
   });
 
@@ -227,6 +227,7 @@ function MarketplacePage() {
 
   const vendors = vendorsQ.data?.shops ?? [];
   const vendorCounts = vendorsQ.data?.counts ?? {};
+  const vendorServiceCounts = vendorsQ.data?.service_counts ?? {};
   const vendorTotal = vendorsQ.data?.total ?? 0;
   const vendorLoading = vendorsQ.isLoading;
 
