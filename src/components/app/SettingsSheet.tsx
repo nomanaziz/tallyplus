@@ -1,5 +1,6 @@
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { useI18n, type Lang } from "@/lib/i18n";
+import { useI18n, type Lang, LANG_NAMES } from "@/lib/i18n";
+import { COUNTRIES } from "@/lib/countries";
 import { useShop } from "@/lib/shop";
 import { useAuth } from "@/lib/auth";
 import { useNavigate } from "@/lib/router";
@@ -194,11 +195,13 @@ export function SettingsSheet({ open, onOpenChange }: { open: boolean; onOpenCha
                   onChange={(e) => setLang(e.target.value as Lang)}
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <option value="bn">বাংলা</option>
-                  <option value="en">English</option>
+                  {LANG_NAMES.map((l) => (
+                    <option key={l.code} value={l.code}>{l.native}</option>
+                  ))}
                 </select>
               }
             />
+            <CountryRow />
             <Row
               icon={<Coins className="h-4 w-4" />}
               label={lang === "bn" ? "কারেন্সি" : "Currency"}
@@ -209,9 +212,9 @@ export function SettingsSheet({ open, onOpenChange }: { open: boolean; onOpenCha
                   onChange={(e) => { setCurrency(e.target.value); persist("tp_currency", e.target.value); }}
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <option value="BDT">BDT ৳</option>
-                  <option value="USD">USD $</option>
-                  <option value="INR">INR ₹</option>
+                  {["BDT","USD","INR","PKR","AED","SAR","EUR","GBP","MYR","SGD","CNY","JPY"].map((c) => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
                 </select>
               }
             />
