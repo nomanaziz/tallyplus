@@ -20,7 +20,12 @@ function posRow(label: string, value: string, bold = false) {
   return `<div style="display:flex;justify-content:space-between;font-size:${bold ? 12 : 11}px;font-weight:${bold ? 700 : 400};gap:8px"><span>${escapeHtml(label)}</span><span style="text-align:right">${escapeHtml(value)}</span></div>`;
 }
 
-export function printInvoice(data: InvoiceData, lang: Lang, mode: "a4" | "pos" = "a4") {
+export function buildInvoiceHtml(
+  data: InvoiceData,
+  lang: Lang,
+  mode: "a4" | "pos" = "a4",
+  options: { autoPrint?: boolean } = { autoPrint: true },
+) {
   const isSell = data.mode === "sell";
   const dueRemain = Math.max(0, data.grandTotal - data.paid);
   const prev = data.previousDue ?? 0;
@@ -173,13 +178,13 @@ export function printInvoice(data: InvoiceData, lang: Lang, mode: "a4" | "pos" =
 
     <div class="printed">${lang === "bn" ? "প্রিন্ট করার সময়: " : "Printed at: "}${escapeHtml(dtStr)}</div>
   </main>
-  <script>
+  ${options.autoPrint ? `<script>
     window.addEventListener('load', () => {
       setTimeout(() => {
         window.print();
       }, 180);
     });
-  </script>
+  </script>` : ""}
 </body>
 </html>`;
 
@@ -230,17 +235,21 @@ export function printInvoice(data: InvoiceData, lang: Lang, mode: "a4" | "pos" =
     <div class="center" style="font-size:9px;letter-spacing:1px;margin-top:10px;border-top:2px dashed #000;padding-top:4px">✂ - - - - - - ${lang === "bn" ? "এখানে কাটুন" : "CUT HERE"} - - - - - - ✂</div>
     <div style="height:12px"></div>
   </main>
-  <script>
+  ${options.autoPrint ? `<script>
     window.addEventListener('load', () => {
       setTimeout(() => {
         window.print();
       }, 180);
     });
-  </script>
+  </script>` : ""}
 </body>
 </html>`;
 
-  const html = mode === "pos" ? posHtml : a4Html;
+  return mode === "pos" ? posHtml : a4Html;
+}
+
+export function printInvoice(data: InvoiceData, lang: Lang, mode: "a4" | "pos" = "a4") {
+  const html = buildInvoiceHtml(data, lang, mode, { autoPrint: true });
   const printWindow = window.open("", "_blank", mode === "pos" ? "width=420,height=760" : "width=980,height=900");
   if (!printWindow) return;
   printWindow.document.open();
