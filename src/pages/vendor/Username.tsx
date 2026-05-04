@@ -189,29 +189,54 @@ function PublicShopPage() {
           </section>
         )}
 
-        <h2 className="mb-4 text-lg font-semibold">পণ্যসমূহ ({listings.length})</h2>
-        {listings.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-center">
-            <ShoppingBag className="mb-3 h-10 w-10 text-muted-foreground" />
-            <p className="text-muted-foreground">এই দোকানে এখনো অনলাইন পণ্য নেই।</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-            {listings.map((l: Listing) => {
-              const p = products[l.product_id];
-              if (!p) return null;
-              return (
-                <MarketplaceProductCard
-                  key={l.id}
-                  listing={{ ...l, shop_id: shop.id }}
-                  product={p}
-                  shop={shop}
-                  showShopChip={false}
-                />
-              );
-            })}
-          </div>
-        )}
+        <Tabs defaultValue="products" className="w-full">
+          <TabsList className="mb-4">
+            <TabsTrigger value="products" className="gap-1.5">
+              <ShoppingBag className="h-4 w-4" /> পণ্য ({listings.length})
+            </TabsTrigger>
+            <TabsTrigger value="services" className="gap-1.5">
+              <Wrench className="h-4 w-4" /> সার্ভিস ({services.length})
+            </TabsTrigger>
+          </TabsList>
+          <TabsContent value="products">
+            {listings.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <ShoppingBag className="mb-3 h-10 w-10 text-muted-foreground" />
+                <p className="text-muted-foreground">এই দোকানে এখনো অনলাইন পণ্য নেই।</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+                {listings.map((l: Listing) => {
+                  const p = products[l.product_id];
+                  if (!p) return null;
+                  return (
+                    <MarketplaceProductCard
+                      key={l.id}
+                      listing={{ ...l, shop_id: shop.id }}
+                      product={p}
+                      shop={shop}
+                      showShopChip={false}
+                    />
+                  );
+                })}
+              </div>
+            )}
+          </TabsContent>
+          <TabsContent value="services">
+            {services.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <Wrench className="mb-3 h-10 w-10 text-muted-foreground" />
+                <p className="text-muted-foreground">এই দোকানে এখনো অনলাইন সার্ভিস নেই।</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+                {services.map((svc) => (
+                  <MarketplaceServiceCard key={svc.id} service={svc} shop={shop} />
+                ))}
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
 
         {(shop.terms_and_conditions || shop.return_policy || shop.shipping_policy) && (
           <section className="mt-10 grid gap-4 md:grid-cols-3">
