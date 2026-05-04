@@ -72,7 +72,7 @@ function AdminOverview() {
         supabase.from("shop_transfer_requests").select("id", { count: "exact", head: true })
           .in("status", ["pending_payment","pending_recipient","pending_admin"]),
         supabase.from("sms_purchase_requests").select("id", { count: "exact", head: true })
-          .eq("status", "pending"),
+          .eq("payment_status", "pending"),
         supabase.from("affiliate_withdrawals").select("id", { count: "exact", head: true })
           .eq("status", "pending"),
         supabase.from("profiles").select("id", { count: "exact", head: true })
