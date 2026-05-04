@@ -599,7 +599,7 @@ function MarketplacePage() {
                   </span>
                 )}
               </div>
-              {filterPanel}
+              {view === "services" ? servicesFilterPanel : filterPanel}
             </div>
           </aside>
 
