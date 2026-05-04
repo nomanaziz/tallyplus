@@ -401,7 +401,7 @@ html, body {
    to inherit color (links, destructive buttons, etc.). */
 @layer base {
   svg.lucide {
-    color: hsl(var(--primary));
+    color: var(--primary);
   }
   /* Don't tint icons inside these contexts — they should follow text color */
   button svg.lucide,
