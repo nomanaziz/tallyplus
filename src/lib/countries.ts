@@ -91,3 +91,44 @@ export function guessCountryCode(): string {
   if (region && COUNTRIES.find((c) => c.code === region)) return region;
   return "BD";
 }
+
+/**
+ * Detect country from a phone number string. Recognises:
+ *  - "+8801..." → BD (via dial code)
+ *  - any "+<dial><number>" → matches longest dial prefix
+ *  - bare "01XXXXXXXXX" (11 digits starting with 01) → BD legacy
+ * Returns undefined if it cannot tell.
+ */
+export function detectCountryFromPhone(raw: string): string | undefined {
+  if (!raw) return undefined;
+  const trimmed = raw.trim();
+  const hasPlus = trimmed.startsWith("+") || trimmed.startsWith("00");
+  const digits = trimmed.replace(/\D/g, "");
+  if (!digits) return undefined;
+  if (hasPlus) {
+    const sorted = [...COUNTRIES].sort((a, b) => b.dial.length - a.dial.length);
+    for (const c of sorted) {
+      if (digits.startsWith(c.dial)) return c.code;
+    }
+  }
+  if (digits.length === 11 && digits.startsWith("01")) return "BD";
+  return undefined;
+}
+
+/**
+ * Simple normalizer:
+ *  - keeps explicit +<dial> if present
+ *  - converts "00<...>" → "+<...>"
+ *  - converts BD legacy "01XXXXXXXXX" → "+880..."
+ *  - otherwise prepends "+" to digits (caller must provide intl number)
+ */
+export function normalizePhoneSimple(raw: string): string {
+  if (!raw) return "";
+  const trimmed = raw.trim();
+  const digits = trimmed.replace(/\D/g, "");
+  if (!digits) return "";
+  if (trimmed.startsWith("+")) return "+" + digits;
+  if (trimmed.startsWith("00")) return "+" + digits.slice(2);
+  if (digits.length === 11 && digits.startsWith("01")) return "+880" + digits.slice(1);
+  return "+" + digits;
+}
