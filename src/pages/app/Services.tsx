@@ -360,27 +360,13 @@ function ServiceFormSheet({ open, onClose, editing, shopId, categories, onSaved 
             </Label>
             <div className="text-xs text-muted-foreground">
               {lang === "bn"
-                ? "কোন বিভাগে সার্ভিস দেন? কিছু নির্বাচন না করলে \"সর্বত্র উপলব্ধ\" দেখাবে।"
-                : "Pick the divisions you serve. Empty means \"available everywhere\"."}
+                ? "বিভাগ → জেলা → উপজেলা/থানা সিলেক্ট করে \"যোগ করুন\"। একাধিক এলাকা যোগ করা যাবে। কিছু না দিলে \"সর্বত্র উপলব্ধ\" দেখাবে।"
+                : "Pick Division → District → Upazila/Thana, then \"Add\". You can add multiple areas. Empty means \"available everywhere\"."}
             </div>
-            <div className="grid grid-cols-2 gap-2">
-              {BD_DIVISIONS.map((d) => {
-                const checked = (form.service_areas ?? []).includes(d.code);
-                return (
-                  <label key={d.code} className="flex items-center gap-2 rounded-md border bg-background px-2 py-1.5 cursor-pointer hover:bg-muted/50">
-                    <Checkbox
-                      checked={checked}
-                      onCheckedChange={(v) => {
-                        const cur = new Set(form.service_areas ?? []);
-                        if (v) cur.add(d.code); else cur.delete(d.code);
-                        update({ service_areas: Array.from(cur) });
-                      }}
-                    />
-                    <span className="text-sm">{lang === "bn" ? d.name_bn : d.name_en}</span>
-                  </label>
-                );
-              })}
-            </div>
+            <ServiceAreaPicker
+              value={form.service_areas ?? []}
+              onChange={(v) => update({ service_areas: v })}
+            />
             {(form.service_areas ?? []).length > 0 && (
               <Button type="button" variant="ghost" size="sm" onClick={() => update({ service_areas: [] })}>
                 {lang === "bn" ? "সব মুছে \"সর্বত্র\" করুন" : "Clear (set to everywhere)"}
