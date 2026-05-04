@@ -695,7 +695,11 @@ function PaymentDialog(props: {
         const saleId = (sale as { id: string }).id;
 
         const items = props.cart.map((c) => ({
-          sale_id: saleId, product_id: c.product_id, name: c.name,
+          sale_id: saleId,
+          product_id: c.item_type === "service" ? null : c.product_id,
+          service_id: c.item_type === "service" ? (c.service_id ?? null) : null,
+          item_type: c.item_type ?? "product",
+          name: c.name,
           qty: c.qty, price: c.price, total: c.qty * c.price,
           serial_id: c.serial_id ?? null,
         }));
@@ -713,6 +717,28 @@ function PaymentDialog(props: {
 
         // stock decrement + movements
         for (const c of props.cart) {
+          if (c.item_type === "service" || !c.product_id) {
+            // Service sale: register warranty if applicable, skip stock
+            if (c.item_type === "service" && c.service_id && c.warranty_enabled && c.warranty_value && c.warranty_unit) {
+              const now = new Date();
+              const expires = new Date(now);
+              if (c.warranty_unit === "days") expires.setDate(expires.getDate() + c.warranty_value * c.qty);
+              else if (c.warranty_unit === "months") expires.setMonth(expires.getMonth() + c.warranty_value);
+              else if (c.warranty_unit === "years") expires.setFullYear(expires.getFullYear() + c.warranty_value);
+              await supabase.from("service_warranties").insert({
+                shop_id: current.id,
+                service_id: c.service_id,
+                sale_id: saleId,
+                customer_id: contactId,
+                customer_name: contactName,
+                customer_phone: contactPhone,
+                starts_at: now.toISOString(),
+                expires_at: expires.toISOString(),
+                status: "active",
+              });
+            }
+            continue;
+          }
           await supabase.from("stock_movements").insert({
             shop_id: current.id, product_id: c.product_id,
             qty: c.qty, type: "out", ref_table: "sales", ref_id: saleId,
@@ -762,13 +788,14 @@ function PaymentDialog(props: {
         const purId = (pur as { id: string }).id;
 
         const items = props.cart.map((c) => ({
-          purchase_id: purId, product_id: c.product_id, name: c.name,
+          purchase_id: purId, product_id: c.product_id ?? null, name: c.name,
           qty: c.qty, price: c.price, total: c.qty * c.price,
         }));
         const { error: eI } = await supabase.from("purchase_items").insert(items);
         if (eI) throw eI;
 
         for (const c of props.cart) {
+          if (!c.product_id) continue;
           await supabase.from("stock_movements").insert({
             shop_id: current.id, product_id: c.product_id,
             qty: c.qty, type: "in", ref_table: "purchases", ref_id: purId,
