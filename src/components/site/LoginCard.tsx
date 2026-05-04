@@ -10,6 +10,33 @@ import { Loader2, MessageCircle, Sparkles } from "lucide-react";
 import { ShopTypePicker } from "@/components/app/ShopTypePicker";
 import { COUNTRIES, guessCountryCode, getCountry } from "@/lib/countries";
 
+function CountryPhone({ country, setCountry, phone, setPhone }: {
+  country: string; setCountry: (c: string) => void; phone: string; setPhone: (v: string) => void;
+}) {
+  const c = getCountry(country);
+  return (
+    <div className="flex gap-2">
+      <select
+        value={country}
+        onChange={(e) => setCountry(e.target.value)}
+        className="w-32 rounded-md border bg-background px-2 text-sm"
+        aria-label="Country"
+      >
+        {COUNTRIES.map((co) => (
+          <option key={co.code} value={co.code}>{co.flag} {co.code} +{co.dial}</option>
+        ))}
+      </select>
+      <Input
+        value={phone}
+        onChange={(e) => setPhone(e.target.value)}
+        placeholder={c ? `Mobile (+${c.dial})` : "Mobile number"}
+        inputMode="tel"
+        className="flex-1"
+      />
+    </div>
+  );
+}
+
 type Mode = "login" | "signup";
 type Role = "owner" | "customer";
 
