@@ -3898,6 +3898,65 @@ export type Database = {
           },
         ]
       }
+      shop_transfer_requests: {
+        Row: {
+          admin_decided_at: string | null
+          admin_notes: string | null
+          charge_amount: number
+          created_at: string
+          from_user_id: string
+          id: string
+          payment_proof_url: string | null
+          reason: string | null
+          recipient_decided_at: string | null
+          shop_id: string
+          status: string
+          to_phone: string
+          to_user_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          admin_decided_at?: string | null
+          admin_notes?: string | null
+          charge_amount?: number
+          created_at?: string
+          from_user_id: string
+          id?: string
+          payment_proof_url?: string | null
+          reason?: string | null
+          recipient_decided_at?: string | null
+          shop_id: string
+          status?: string
+          to_phone: string
+          to_user_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          admin_decided_at?: string | null
+          admin_notes?: string | null
+          charge_amount?: number
+          created_at?: string
+          from_user_id?: string
+          id?: string
+          payment_proof_url?: string | null
+          reason?: string | null
+          recipient_decided_at?: string | null
+          shop_id?: string
+          status?: string
+          to_phone?: string
+          to_user_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shop_transfer_requests_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shop_types: {
         Row: {
           code: string
@@ -4682,6 +4741,30 @@ export type Database = {
         }
         Relationships: []
       }
+      transfer_settings: {
+        Row: {
+          charge_amount: number
+          id: boolean
+          is_enabled: boolean
+          payment_instructions: string | null
+          updated_at: string
+        }
+        Insert: {
+          charge_amount?: number
+          id?: boolean
+          is_enabled?: boolean
+          payment_instructions?: string | null
+          updated_at?: string
+        }
+        Update: {
+          charge_amount?: number
+          id?: boolean
+          is_enabled?: boolean
+          payment_instructions?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       trial_settings: {
         Row: {
           created_at: string
@@ -4858,6 +4941,10 @@ export type Database = {
         Args: { _count: number; _shop_id: string }
         Returns: undefined
       }
+      admin_decide_shop_transfer: {
+        Args: { _action: string; _id: string; _notes: string }
+        Returns: Json
+      }
       affiliate_pay_subscription: { Args: { _plan_id: string }; Returns: Json }
       affiliate_recalculate_tier: {
         Args: { _aff_id: string }
@@ -4933,6 +5020,15 @@ export type Database = {
         Args: { _device_id: string; _user_agent: string }
         Returns: Json
       }
+      request_shop_transfer: {
+        Args: {
+          _payment_proof_url: string
+          _reason: string
+          _shop_id: string
+          _to_phone: string
+        }
+        Returns: Json
+      }
       resolve_shop_by_handle: {
         Args: { _handle: string }
         Returns: {
@@ -4944,6 +5040,10 @@ export type Database = {
           username: string
           wishlist_slug: string
         }[]
+      }
+      respond_shop_transfer: {
+        Args: { _accept: boolean; _id: string }
+        Returns: Json
       }
       shop_role: {
         Args: { _shop_id: string; _user_id: string }

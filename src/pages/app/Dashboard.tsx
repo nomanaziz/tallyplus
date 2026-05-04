@@ -7,6 +7,7 @@ import { dashboardSummaryQuery, dashboardOverviewQuery } from "@/lib/queries";
 import { Package, Truck, Globe, Clock } from "lucide-react";
 import { icons, AppIcon } from "@/lib/icons";
 import { DashboardBannerCarousel } from "@/components/app/DashboardBannerCarousel";
+import { IncomingTransfersBanner } from "@/components/app/IncomingTransfersBanner";
 import { SECTIONS, type SidebarItem } from "@/components/app/AppSidebar";
 import { usePermissions } from "@/lib/permissions-hook";
 
@@ -136,6 +137,7 @@ function Dashboard() {
 
       {/* Admin-managed banner carousel */}
       <DashboardBannerCarousel />
+      <div className="mt-3"><IncomingTransfersBanner /></div>
 
       {/* Desktop overview: extended KPI tiles + recent activity */}
       <div className="mt-5 hidden md:block">

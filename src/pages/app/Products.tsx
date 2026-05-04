@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Plus, Download, MoreVertical, Package, Pencil, Trash2, Sparkles, Hash,
-  Eye, History, Save, X, Minus, ListOrdered, RefreshCw, SlidersHorizontal, Globe,
+  Eye, History, Save, X, Minus, ListOrdered, RefreshCw, SlidersHorizontal, Globe, Upload,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useShop } from "@/lib/shop";
@@ -32,6 +32,8 @@ import { publishProductToMarketplace } from "@/lib/marketplace-publish";
 import { CatalogProductPicker, type CatalogProduct } from "@/components/app/CatalogProductPicker";
 import { ensureDefaultCategories } from "@/lib/default-categories";
 import { SampleProductImportSheet } from "@/components/app/SampleProductImportSheet";
+import { ProductBulkImportDialog } from "@/components/app/ProductBulkImportDialog";
+import { exportProductsToXlsx } from "@/lib/product-export";
 import { ProductSerialsDialog } from "@/components/app/ProductSerialsDialog";
 import { BarcodeScannerButton } from "@/components/app/BarcodeScannerButton";
 import { SerialCaptureDialog } from "@/components/app/SerialCaptureDialog";
@@ -89,6 +91,7 @@ function ProductsPage() {
   const [openForm, setOpenForm] = useState(false);
   const [editing, setEditing] = useState<Product | null>(null);
   const [openImport, setOpenImport] = useState(false);
+  const [openBulkImport, setOpenBulkImport] = useState(false);
   const [serialsTarget, setSerialsTarget] = useState<Product | null>(null);
   // Serial capture (after add stock / new product) — { id, name, qty, cost }
   const [serialCapture, setSerialCapture] = useState<{ productId: string; name: string; qty: number; cost: number } | null>(null);
@@ -442,6 +445,14 @@ function ProductsPage() {
                 <Sparkles className="h-4 w-4 text-primary" />
                 {lang === "bn" ? "স্যাম্পল ইম্পোর্ট" : "Import Sample"}
               </Button>
+              <Button variant="outline" className="hidden sm:inline-flex h-10 gap-2" onClick={() => setOpenBulkImport(true)}>
+                <Upload className="h-4 w-4 text-primary" />
+                {lang === "bn" ? "Excel Import" : "Excel Import"}
+              </Button>
+              <Button variant="outline" className="hidden sm:inline-flex h-10 gap-2" onClick={() => exportProductsToXlsx(filtered, `products-${new Date().toISOString().slice(0,10)}.xlsx`)}>
+                <Download className="h-4 w-4" />
+                {lang === "bn" ? "Excel Export" : "Excel Export"}
+              </Button>
               <Button className="h-9 gap-1.5 px-3 sm:h-10 sm:gap-2 sm:px-4" disabled={limitReached} onClick={() => {
                 if (!current?.id) {
                   toast.error(lang === "bn" ? "আগে দোকান নির্বাচন করুন" : "Select a shop first");
@@ -478,6 +489,14 @@ function ProductsPage() {
                     <Sparkles className="mr-2 h-4 w-4 text-primary" />
                     {lang === "bn" ? "স্যাম্পল ইম্পোর্ট" : "Import Sample"}
                   </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setOpenBulkImport(true)}>
+                    <Upload className="mr-2 h-4 w-4 text-primary" />
+                    {lang === "bn" ? "Excel Import" : "Excel Import"}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => exportProductsToXlsx(filtered, `products-${new Date().toISOString().slice(0,10)}.xlsx`)}>
+                    <Download className="mr-2 h-4 w-4" />
+                    {lang === "bn" ? "Excel Export" : "Excel Export"}
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </>
@@ -485,6 +504,7 @@ function ProductsPage() {
         </div>
       </div>
       <SampleProductImportSheet open={openImport} onOpenChange={setOpenImport} onImported={() => void load()} />
+      <ProductBulkImportDialog open={openBulkImport} onOpenChange={setOpenBulkImport} onImported={() => void load()} />
 
       {/* Summary card — Total Stock & Stock Value */}
       <div className="mt-2 rounded-xl bg-primary p-1.5 text-primary-foreground shadow-sm sm:mt-3 sm:p-3">
