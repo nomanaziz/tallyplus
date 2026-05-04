@@ -24,7 +24,7 @@ export function DataToolbar({
   return (
     <div className="flex flex-wrap items-center gap-2">
       <div className="relative min-w-0 flex-1">
-        <img src={icons.search} alt="" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 opacity-70" />
+        <AppIcon name="search" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 opacity-70" />
         <Input
           value={search}
           onChange={(e) => onSearch(e.target.value)}
