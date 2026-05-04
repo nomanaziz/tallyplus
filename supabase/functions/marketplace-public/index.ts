@@ -251,16 +251,11 @@ Deno.serve(async (req) => {
         return json({ error: "এই দোকান এখনো অনলাইন মার্কেটে যুক্ত হয়নি" }, 404);
       }
 
-      const { data: listings } = await admin
-        .from("marketplace_listings")
-        .select("id, shop_id, product_id, price, stock, unit, min_order, is_published, created_at, warranty_months")
-        .eq("shop_id", s.id)
-        .eq("is_published", true)
-        .order("created_at", { ascending: false });
-      const rows = (listings as ListingRow[] | null) ?? [];
-      const { products } = await attachShopsAndProducts(admin, rows);
+      const rows = await loadShopListings(admin, s.id);
+      const products = await loadProductsFor(admin, rows);
+      const services = await loadShopServices(admin, s.id);
 
-      return json({ shop: s, listings: rows, products });
+      return json({ shop: s, listings: rows, products, services });
     }
 
     if (action === "shop-by-username") {
@@ -289,16 +284,11 @@ Deno.serve(async (req) => {
         return json({ error: "এই দোকান এখনো অনলাইনে নেই" }, 404);
       }
 
-      const { data: listings } = await admin
-        .from("marketplace_listings")
-        .select("id, shop_id, product_id, price, stock, unit, min_order, is_published, created_at, warranty_months")
-        .eq("shop_id", s.id)
-        .eq("is_published", true)
-        .order("created_at", { ascending: false });
-      const rows = (listings as ListingRow[] | null) ?? [];
-      const { products } = await attachShopsAndProducts(admin, rows);
+      const rows = await loadShopListings(admin, s.id);
+      const products = await loadProductsFor(admin, rows);
+      const services = await loadShopServices(admin, s.id);
 
-      return json({ shop: s, listings: rows, products });
+      return json({ shop: s, listings: rows, products, services });
     }
 
     if (action === "log-visit") {
