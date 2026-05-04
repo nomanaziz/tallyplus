@@ -8,7 +8,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { BdLocationPicker, type BdLocation } from "@/components/shared/BdLocationPicker";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Loader2, CalendarClock, BadgeDollarSign } from "lucide-react";
+import { Loader2, CalendarClock, BadgeDollarSign, LogIn, UserPlus, UserX } from "lucide-react";
+import { useAuth } from "@/lib/auth";
+import { useNavigate } from "@/lib/router";
 
 export type BookingService = {
   id: string;
@@ -31,13 +33,19 @@ export function ServiceBookingDialog({
   service,
   shop,
   onSuccess,
+  redirectTo,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   service: BookingService;
   shop: BookingShop;
   onSuccess?: () => void;
+  /** Where to send the user back after login/signup. Defaults to current path. */
+  redirectTo?: string;
 }) {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [step, setStep] = useState<"choose" | "form">(user ? "form" : "choose");
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
@@ -47,6 +55,12 @@ export function ServiceBookingDialog({
   const [advMethod, setAdvMethod] = useState<string>("bkash");
   const [advTxn, setAdvTxn] = useState("");
   const [submitting, setSubmitting] = useState(false);
+
+  // Reset step whenever the dialog opens / auth state changes
+  useEffect(() => {
+    if (!open) return;
+    setStep(user ? "form" : "choose");
+  }, [open, user]);
 
   // Pre-fill from logged-in consumer
   useEffect(() => {
@@ -114,12 +128,50 @@ export function ServiceBookingDialog({
     }
   };
 
+  const goAuth = (mode: "login" | "signup") => {
+    const back =
+      redirectTo
+      ?? (typeof window !== "undefined" ? window.location.pathname + window.location.search : "/");
+    const params = new URLSearchParams();
+    params.set("role", "customer");
+    params.set("mode", mode);
+    if (phone.trim()) params.set("phone", phone.trim());
+    params.set("redirect", back);
+    onOpenChange(false);
+    navigate({ to: `/?${params.toString()}` });
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{service.name} — বুকিং</DialogTitle>
         </DialogHeader>
+        {step === "choose" ? (
+          <div className="space-y-3">
+            <div className="rounded-md border bg-muted/30 p-3 text-sm">
+              <div>সার্ভিস ফি: <strong>৳{service.price.toLocaleString("bn-BD")}</strong></div>
+              <p className="mt-1 text-xs text-muted-foreground">
+                বুকিং করার জন্য নিচের যেকোনো একটি বেছে নিন। অ্যাকাউন্ট থাকলে আপনার বুকিং ও আগের তথ্য সুরক্ষিত থাকবে।
+              </p>
+            </div>
+            <Button className="w-full justify-start gap-2" onClick={() => goAuth("login")}>
+              <LogIn className="h-4 w-4" />
+              আমি আগে থেকেই গ্রাহক — লগইন করুন
+            </Button>
+            <Button variant="secondary" className="w-full justify-start gap-2" onClick={() => goAuth("signup")}>
+              <UserPlus className="h-4 w-4" />
+              নতুন গ্রাহক — অ্যাকাউন্ট খুলুন
+            </Button>
+            <Button variant="outline" className="w-full justify-start gap-2" onClick={() => setStep("form")}>
+              <UserX className="h-4 w-4" />
+              অ্যাকাউন্ট ছাড়াই বুক করুন (গেস্ট)
+            </Button>
+            <DialogFooter>
+              <Button variant="ghost" onClick={() => onOpenChange(false)}>বাতিল</Button>
+            </DialogFooter>
+          </div>
+        ) : (
         <div className="space-y-3">
           <div className="rounded-md border bg-muted/30 p-2 text-sm">
             <div>সার্ভিস ফি: <strong>৳{service.price.toLocaleString("bn-BD")}</strong></div>
@@ -174,13 +226,35 @@ export function ServiceBookingDialog({
               </div>
             </div>
           )}
+          {!user && (
+            <div className="rounded-md border border-dashed bg-muted/20 p-3 text-xs">
+              <div className="mb-2 text-muted-foreground">
+                চাইলে অ্যাকাউন্ট খুলে রাখুন — পরে আপনার সব বুকিং এক জায়গায় দেখতে পারবেন।
+              </div>
+              <div className="flex gap-2">
+                <Button type="button" size="sm" variant="outline" className="gap-1" onClick={() => goAuth("login")}>
+                  <LogIn className="h-3.5 w-3.5" /> লগইন
+                </Button>
+                <Button type="button" size="sm" variant="outline" className="gap-1" onClick={() => goAuth("signup")}>
+                  <UserPlus className="h-3.5 w-3.5" /> অ্যাকাউন্ট খুলুন
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
+        )}
+        {step === "form" && (
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>বাতিল</Button>
+          {!user ? (
+            <Button variant="outline" onClick={() => setStep("choose")}>পেছনে</Button>
+          ) : (
+            <Button variant="outline" onClick={() => onOpenChange(false)}>বাতিল</Button>
+          )}
           <Button onClick={submit} disabled={submitting}>
             {submitting && <Loader2 className="mr-1 h-4 w-4 animate-spin" />} বুকিং নিশ্চিত করুন
           </Button>
         </DialogFooter>
+        )}
       </DialogContent>
     </Dialog>
   );
