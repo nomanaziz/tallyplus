@@ -605,7 +605,47 @@ function MarketplacePage() {
 
           {/* Results */}
           <section className="min-w-0 flex-1">
-            {view === "vendors" ? (
+            {view === "services" ? (
+              servicesLoading ? (
+                <ProductGridSkeleton count={10} />
+              ) : services.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-20 text-center">
+                  <Wrench className="mb-4 h-12 w-12 text-muted-foreground" />
+                  <p className="text-lg font-medium">কোনো সার্ভিস পাওয়া যায়নি</p>
+                  <p className="mt-1 text-sm text-muted-foreground">ফিল্টার বদলে আবার চেষ্টা করুন।</p>
+                </div>
+              ) : (
+                <>
+                  <div className="mb-3 text-sm text-muted-foreground">{serviceTotal} টি সার্ভিস</div>
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5">
+                    {services.map((s) => {
+                      const svc = s as unknown as {
+                        id: string; shop_id: string; name: string; description?: string | null;
+                        price: number; duration_minutes?: number | null; duration_label?: string | null;
+                        unit?: string | null; image_url?: string | null;
+                        home_service?: boolean | null; service_charge_extra?: number | null;
+                        service_areas?: string[] | null;
+                      };
+                      const sh = serviceShops[svc.shop_id];
+                      return <MarketplaceServiceCard key={svc.id} service={svc} shop={sh} />;
+                    })}
+                  </div>
+                  {serviceTotalPages > 1 && (
+                    <div className="mt-8 flex items-center justify-center gap-2">
+                      <Button variant="outline" size="sm" disabled={page <= 1}
+                        onClick={() => navigate({ search: (prev) => ({ ...prev, page: page - 1 }) })}>
+                        পূর্ববর্তী
+                      </Button>
+                      <span className="text-sm text-muted-foreground">পৃষ্ঠা {page} / {serviceTotalPages}</span>
+                      <Button variant="outline" size="sm" disabled={page >= serviceTotalPages}
+                        onClick={() => navigate({ search: (prev) => ({ ...prev, page: page + 1 }) })}>
+                        পরবর্তী
+                      </Button>
+                    </div>
+                  )}
+                </>
+              )
+            ) : view === "vendors" ? (
               vendorLoading ? (
                 <VendorGridSkeleton count={8} />
               ) : vendors.length === 0 ? (
