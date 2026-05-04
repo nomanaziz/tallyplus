@@ -241,9 +241,70 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
         <div className={`rounded-xl border bg-card ${mobileTab === "cart" ? "hidden md:block" : ""}`}>
           <div className="flex items-center justify-between border-b p-3">
             <div className="text-sm font-semibold">
-              {lang === "bn" ? "পণ্য নির্বাচন করুন" : "Select products"}
+              {lang === "bn" ? "নির্বাচন করুন" : "Select"}
             </div>
+            {isSell && services.length > 0 && (
+              <Tabs value={pickerTab} onValueChange={(v) => setPickerTab(v as "products" | "services")}>
+                <TabsList className="h-8">
+                  <TabsTrigger value="products" className="text-xs px-3">{lang === "bn" ? "পণ্য" : "Products"}</TabsTrigger>
+                  <TabsTrigger value="services" className="text-xs px-3">{lang === "bn" ? "সার্ভিস" : "Services"}</TabsTrigger>
+                </TabsList>
+              </Tabs>
+            )}
           </div>
+          {pickerTab === "services" && isSell ? (
+            <div className="p-3">
+              <div className="relative mb-3">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={lang === "bn" ? "সার্ভিস খুঁজুন" : "Search service"} className="h-10 pl-9" />
+              </div>
+              <div className="max-h-[55vh] overflow-y-auto">
+                <ul className="divide-y">
+                  {services.filter((s) => !search.trim() || s.name.toLowerCase().includes(search.toLowerCase())).map((s) => {
+                    const inCart = cart.find((c) => c.service_id === s.id);
+                    const dur = durationToText(s, lang);
+                    return (
+                      <li key={s.id} className="flex items-center gap-3 py-2">
+                        <div className="flex h-10 w-10 flex-none items-center justify-center rounded-md bg-muted">
+                          {s.image_url ? <img src={s.image_url} alt={s.name} className="h-10 w-10 rounded-md object-cover" /> : <Wrench className="h-5 w-5 text-muted-foreground" />}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="truncate text-sm font-medium">
+                            {s.name}
+                            {inCart && <span className="ml-2 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-bold text-primary">× {inCart.qty}</span>}
+                          </div>
+                          <div className="text-xs text-muted-foreground flex items-center gap-2">
+                            {fmtMoney(Number(s.price), lang)}
+                            {dur && <><span>·</span><Clock className="h-3 w-3" />{dur}</>}
+                            {s.warranty_enabled && <Shield className="h-3 w-3 text-emerald-600" />}
+                          </div>
+                        </div>
+                        <Button size="sm" onClick={() => {
+                          setCart((prev) => {
+                            const i = prev.findIndex((c) => c.service_id === s.id);
+                            if (i >= 0) {
+                              const copy = [...prev]; copy[i] = { ...copy[i], qty: copy[i].qty + 1 }; return copy;
+                            }
+                            return [...prev, {
+                              product_id: null, service_id: s.id, item_type: "service",
+                              name: s.name, qty: 1, price: Number(s.price),
+                              warranty_enabled: s.warranty_enabled, warranty_value: s.warranty_value, warranty_unit: s.warranty_unit,
+                              duration_label: s.duration_label,
+                            }];
+                          });
+                          toast.success(`${s.name} ${lang === "bn" ? "যোগ হয়েছে" : "added"}`, { duration: 1000 });
+                        }}>
+                          <Plus className="h-4 w-4" />
+                        </Button>
+                      </li>
+                    );
+                  })}
+                  {services.length === 0 && <li className="py-8 text-center text-sm text-muted-foreground">{lang === "bn" ? "কোনো সার্ভিস নেই" : "No services"}</li>}
+                </ul>
+              </div>
+            </div>
+          ) : (
+          <>
           <div className="flex flex-wrap items-center gap-2 p-3">
             <div className="relative min-w-0 flex-1">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -322,6 +383,8 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
               </ul>
             )}
           </div>
+          </>
+          )}
         </div>
 
         {/* Cart */}
