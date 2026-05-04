@@ -1,7 +1,7 @@
 import { useNavigate } from "@/lib/router";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useI18n, fmtMoney } from "@/lib/i18n";
+import { useI18n, fmtMoney } , type Lang from "@/lib/i18n";
 import { useShop } from "@/lib/shop";
 import { combinedReportQuery, rangeToIso, type BusinessReportSummary } from "@/lib/queries";
 import { PageHeader } from "@/components/app/PageHeader";
@@ -299,7 +299,7 @@ function SectionCard({
   shops: { id: string; name: string }[];
   values: Record<string, number>;
   total: number;
-  lang: "bn" | "en";
+  lang: Lang;
 }) {
   const toneCls =
     tone === "success" ? "text-emerald-600" : tone === "danger" ? "text-rose-600" : "text-foreground";

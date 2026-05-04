@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Loader2, Plus, Printer, ReceiptText, Search, ShoppingCart, Trash2, X, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useShop } from "@/lib/shop";
-import { useI18n } from "@/lib/i18n";
+import { useI18n } , type Lang from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -685,7 +685,7 @@ function PrintDialog({
   shopName: string;
   custName: string;
   custPhone: string;
-  lang: "bn" | "en";
+  lang: Lang;
 }) {
   const update = (id: string, patch: Partial<Row>) =>
     onChange(rows.map((r) => (r.tempId === id ? { ...r, ...patch } : r)));

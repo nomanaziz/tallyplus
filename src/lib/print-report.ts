@@ -1,4 +1,5 @@
 // Shared print/download utility for business reports.
+import type { Lang } from "@/lib/i18n";
 // Renders a receipt-like printable HTML page that matches the uploaded mockup.
 
 export type PrintRow =
@@ -112,7 +113,7 @@ export type PrintTableReportOptions = {
   columns: PrintTableColumn[];
   rows: Record<string, string | number | null | undefined>[];
   footer?: string;
-  lang?: "bn" | "en";
+  lang?: Lang;
 };
 
 export function printTableReport(opts: PrintTableReportOptions) {

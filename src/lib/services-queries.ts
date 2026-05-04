@@ -1,4 +1,5 @@
 import { queryOptions } from "@tanstack/react-query";
+import type { Lang } from "@/lib/i18n";
 import { supabase } from "@/integrations/supabase/client";
 
 export type Service = {
@@ -87,7 +88,7 @@ export const serviceCategoriesQuery = (shopId: string | null | undefined) =>
     },
   });
 
-export function durationToText(s: Service, lang: "bn" | "en"): string {
+export function durationToText(s: Service, lang: Lang): string {
   if (s.duration_label) return s.duration_label;
   if (!s.duration_minutes) return "";
   const m = s.duration_minutes;
@@ -98,7 +99,7 @@ export function durationToText(s: Service, lang: "bn" | "en"): string {
   return r ? `${h}h ${r}m` : `${h}h`;
 }
 
-export function warrantyToText(s: { warranty_enabled: boolean; warranty_value: number | null; warranty_unit: string | null }, lang: "bn" | "en"): string | null {
+export function warrantyToText(s: { warranty_enabled: boolean; warranty_value: number | null; warranty_unit: string | null }, lang: Lang): string | null {
   if (!s.warranty_enabled || !s.warranty_value) return null;
   const unit = s.warranty_unit || "days";
   const labels: Record<string, [string, string]> = {

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import type { Lang } from "@/lib/i18n";
 import { supabase } from "@/integrations/supabase/client";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
@@ -19,7 +20,7 @@ export function ShopTypePicker({
 }: {
   value: string | null | undefined;
   onChange: (code: string, type: ShopType) => void;
-  lang?: "bn" | "en";
+  lang?: Lang;
   label?: string;
 }) {
   const [types, setTypes] = useState<ShopType[]>([]);
