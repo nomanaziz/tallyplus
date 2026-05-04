@@ -201,7 +201,7 @@ export function AddShopDialog({
             <ShopTypePicker
               value={typeCode}
               onChange={(code) => setTypeCode(code)}
-              lang={lang as "bn" | "en"}
+              lang={lang as Lang}
               label=""
             />
           </div>
