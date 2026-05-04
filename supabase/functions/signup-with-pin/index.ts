@@ -13,9 +13,7 @@ const cors = {
 function normalizePhone(raw: string): string | null {
   const digits = raw.replace(/\D/g, "");
   if (!digits) return null;
-  if (digits.startsWith("880")) return "+" + digits;
-  if (digits.startsWith("01") && digits.length === 11) return "+880" + digits.slice(1);
-  if (digits.length === 10) return "+880" + digits;
+  if (digits.length < 6 || digits.length > 15) return null;
   return "+" + digits;
 }
 
@@ -26,12 +24,13 @@ function json(body: unknown, status = 200) {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: cors });
   try {
-    const { phone, full_name, shop_name, pin, shop_type_code } = await req.json();
+    const { phone, full_name, shop_name, pin, shop_type_code, country_code } = await req.json();
     const normalized = normalizePhone(String(phone ?? ""));
     const name = String(full_name ?? "").trim();
     const shop = String(shop_name ?? "").trim();
     const pinStr = String(pin ?? "");
     const typeCode = shop_type_code ? String(shop_type_code) : null;
+    const country = country_code ? String(country_code).toUpperCase().slice(0, 2) : null;
 
     if (!normalized) return json({ error: "Invalid phone" }, 400);
     if (name.length < 2) return json({ error: "Name required" }, 400);
@@ -66,7 +65,7 @@ Deno.serve(async (req) => {
       email,
       password,
       email_confirm: true,
-      user_metadata: { full_name: name },
+      user_metadata: { full_name: name, country_code: country },
     });
     if (createErr || !created.user) {
       console.error("createUser error:", createErr);
@@ -80,7 +79,7 @@ Deno.serve(async (req) => {
     const pinHash = await bcrypt.hash(pinStr, 10);
     const { error: profErr } = await admin
       .from("profiles")
-      .update({ full_name: name, pin_hash: pinHash, phone: normalized })
+      .update({ full_name: name, pin_hash: pinHash, phone: normalized, country_code: country })
       .eq("id", userId);
     if (profErr) console.error("profile update error:", profErr);
 
