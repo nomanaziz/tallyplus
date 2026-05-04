@@ -1,9 +1,11 @@
 import { Link, useParams } from "@/lib/router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, MapPin, Phone, ShoppingBag, Store, MessageCircle, Facebook, Info, FileText } from "lucide-react";
+import { Loader2, MapPin, Phone, ShoppingBag, Store, MessageCircle, Facebook, Info, FileText, Wrench } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { MarketplaceProductCard } from "@/components/marketplace/MarketplaceProductCard";
+import { MarketplaceServiceCard, type ServiceCardItem } from "@/components/marketplace/MarketplaceServiceCard";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { SiteHeader } from "@/components/site/SiteHeader";
 import { SiteFooter } from "@/components/site/SiteFooter";
 
@@ -27,7 +29,7 @@ type Product = { id: string; name: string; image_url: string | null; unit: strin
 
 function PublicShopPage() {
   const { username } = useParams<{ username: string }>();
-  const [data, setData] = useState<{ shop: Shop; listings: Listing[]; products: Record<string, Product> } | null>(null);
+  const [data, setData] = useState<{ shop: Shop; listings: Listing[]; products: Record<string, Product>; services: ServiceCardItem[] } | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
 
@@ -47,8 +49,8 @@ function PublicShopPage() {
         setLoading(false);
         return;
       }
-      const d = resp as { shop: Shop; listings: Listing[]; products: Record<string, Product> };
-      setData({ shop: d.shop, listings: d.listings ?? [], products: d.products ?? {} });
+      const d = resp as { shop: Shop; listings: Listing[]; products: Record<string, Product>; services?: ServiceCardItem[] };
+      setData({ shop: d.shop, listings: d.listings ?? [], products: d.products ?? {}, services: d.services ?? [] });
       setLoading(false);
     })();
     return () => { alive = false; };
@@ -81,7 +83,7 @@ function PublicShopPage() {
       <SiteFooter />
     </div>
   );
-  const { shop, listings, products } = data;
+  const { shop, listings, products, services } = data;
   const rawWishlistSlug = shop.wishlist_slug;
   const wishlistSlug =
     typeof rawWishlistSlug === "string" && rawWishlistSlug.trim().length > 0
