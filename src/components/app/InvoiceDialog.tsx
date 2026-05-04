@@ -141,7 +141,7 @@ export function InvoiceDialog({
                   <td className="text-center">{lang === "bn" ? bnNum(i + 1) + "।" : i + 1}</td>
                   <td>{it.name}</td>
                   <td className="text-center">{lang === "bn" ? bnNum(it.qty) : it.qty}</td>
-                  <td className="text-center">{it.unit || "-"}</td>
+                  <td className="text-center">{it.unit || (lang === "bn" ? "পিস" : "piece")}</td>
                   <td className="text-right">{fmtMoney(it.price, lang)}</td>
                   <td className="text-right">{fmtMoney(it.total, lang)}</td>
                 </tr>
@@ -260,7 +260,7 @@ export function InvoiceDialog({
               <div style={{ fontWeight: 600 }}>{lang === "bn" ? bnNum(i + 1) + ". " : `${i + 1}. `}{it.name}</div>
               <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10 }}>
                 <span>
-                  {lang === "bn" ? bnNum(it.qty) : it.qty}{it.unit ? ` ${it.unit}` : ""} × {fmtMoney(it.price, lang)}
+                  {lang === "bn" ? bnNum(it.qty) : it.qty} {it.unit || (lang === "bn" ? "পিস" : "piece")} × {fmtMoney(it.price, lang)}
                 </span>
                 <span>{fmtMoney(it.total, lang)}</span>
               </div>
