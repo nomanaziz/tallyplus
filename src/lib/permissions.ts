@@ -120,6 +120,20 @@ export const FEATURE_GROUPS: FeatureGroup[] = [
     ],
   },
   {
+    key: "services",
+    title_bn: "সার্ভিস",
+    title_en: "Services",
+    icon: "🛠️",
+    items: [
+      { key: "view", label_bn: "সার্ভিস তালিকা", label_en: "Services" },
+      { key: "add", label_bn: "যোগ করুন", label_en: "Add" },
+      { key: "edit", label_bn: "এডিট করুন", label_en: "Edit" },
+      { key: "delete", label_bn: "মুছে ফেলুন", label_en: "Delete" },
+      { key: "bookings", label_bn: "বুকিং ম্যানেজ", label_en: "Manage bookings" },
+      { key: "publish", label_bn: "অনলাইন পাবলিশ", label_en: "Publish online" },
+    ],
+  },
+  {
     key: "stock",
     title_bn: "স্টকের হিসাব",
     title_en: "Stock",
