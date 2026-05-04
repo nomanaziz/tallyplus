@@ -6,14 +6,9 @@ import { useShop, ShopProvider } from "@/lib/shop";
 import { PermissionsProvider } from "@/lib/permissions-hook";
 import { ensureDefaultCategories } from "@/lib/default-categories";
 import { useI18n } from "@/lib/i18n";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { toast } from "sonner";
-import logo from "@/assets/logo.png";
 import { AppSidebar } from "@/components/app/AppSidebar";
 import { AppTopbar } from "@/components/app/AppTopbar";
-import { ShopTypePicker } from "@/components/app/ShopTypePicker";
+import { AddShopDialog } from "@/components/app/AddShopDialog";
 import { MobileBottomNav } from "@/components/app/MobileBottomNav";
 import { MobileBackBar } from "@/components/app/MobileBackBar";
 import { PromoPopupDialog } from "@/components/app/PromoPopupDialog";
@@ -35,7 +30,8 @@ function AppLayoutWithShop() {
     checked: boolean;
     isPureConsumer: boolean;
     shops: import("@/lib/shop").Shop[];
-  }>({ checked: false, isPureConsumer: false, shops: [] });
+    ownsShop: boolean;
+  }>({ checked: false, isPureConsumer: false, shops: [], ownsShop: false });
 
   useEffect(() => {
     if (location.pathname === "/app" || location.pathname === "/app/") {
@@ -64,13 +60,13 @@ function AppLayoutWithShop() {
   // + ShopProvider's separate shops fetch. Major first-paint speedup.
   useEffect(() => {
     let cancelled = false;
-    if (!user || !accountReady) { setBoot({ checked: false, isPureConsumer: false, shops: [] }); return; }
+    if (!user || !accountReady) { setBoot({ checked: false, isPureConsumer: false, shops: [], ownsShop: false }); return; }
     (async () => {
       const { data, error } = await supabase.rpc("my_account_resolve");
       if (cancelled) return;
       if (error || !data) {
         // Fail open: continue, downstream guards still work.
-        setBoot({ checked: true, isPureConsumer: false, shops: [] });
+        setBoot({ checked: true, isPureConsumer: false, shops: [], ownsShop: false });
         return;
       }
       const d = data as {
@@ -81,10 +77,25 @@ function AppLayoutWithShop() {
         shops?: import("@/lib/shop").Shop[];
       };
       const isOwnerOrMember = !!d.has_profile || !!d.owns_shop || !!d.is_member;
+      let shops = Array.isArray(d.shops) ? d.shops : [];
+      // Safety net: owner says they own a shop but the RPC returned no rows.
+      // Re-query directly so we never wrongly drop the owner onto the
+      // first-time setup screen.
+      if (!!d.owns_shop && shops.length === 0) {
+        console.warn("my_account_resolve returned 0 shops despite owns_shop=true; falling back to direct query");
+        const { data: rows } = await supabase
+          .from("shops")
+          .select("id,name,slug,logo_url,address,phone,currency,shop_type_code,owner_id")
+          .eq("owner_id", user.id)
+          .is("deleted_at", null);
+        if (cancelled) return;
+        if (Array.isArray(rows)) shops = rows as import("@/lib/shop").Shop[];
+      }
       setBoot({
         checked: true,
         isPureConsumer: !!d.is_consumer && !isOwnerOrMember,
-        shops: Array.isArray(d.shops) ? d.shops : [],
+        shops,
+        ownsShop: !!d.owns_shop,
       });
       if (!!d.is_consumer && !isOwnerOrMember) {
         navigate({ to: "/customer/dashboard", replace: true });
@@ -105,20 +116,17 @@ function AppLayoutWithShop() {
   return (
     <ShopProvider initialShops={boot.shops}>
       <PermissionsProvider>
-        <AppLayout />
+        <AppLayout ownsShop={boot.ownsShop} />
       </PermissionsProvider>
     </ShopProvider>
   );
 }
 
-function AppLayout() {
+function AppLayout({ ownsShop }: { ownsShop: boolean }) {
   const { t, lang } = useI18n();
   const { user, loading, ensureProfile } = useAuth();
-  const { shops, current, refresh: refreshShops, loading: shopsLoading } = useShop();
+  const { shops, current, loading: shopsLoading } = useShop();
   const nav = useNavigate();
-  const [shopName, setShopName] = useState("");
-  const [shopTypeCode, setShopTypeCode] = useState<string | null>(null);
-  const [creating, setCreating] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [sampleImportOpen, setSampleImportOpen] = useState(false);
 
@@ -167,41 +175,6 @@ function AppLayout() {
     });
   }, [user]);
 
-  const createShop = async () => {
-    if (!user || shopName.trim().length < 2) {
-      toast.error(lang === "bn" ? "দোকানের নাম দিন" : "Enter shop name");
-      return;
-    }
-    if (!shopTypeCode) {
-      toast.error(lang === "bn" ? "দোকানের ধরন বাছাই করুন" : "Choose shop type");
-      return;
-    }
-    setCreating(true);
-    const { data: shopRow, error } = await supabase
-      .from("shops")
-      .insert({ owner_id: user.id, name: shopName.trim(), shop_type_code: shopTypeCode })
-      .select("id")
-      .single();
-    setCreating(false);
-    if (error) { toast.error(error.message); return; }
-    // Seed default categories for this shop type
-    const { data: typeRow } = await supabase
-      .from("shop_types")
-      .select("default_categories")
-      .eq("code", shopTypeCode)
-      .maybeSingle();
-    const defaults = (typeRow?.default_categories as string[] | undefined) ?? [];
-    if (shopRow?.id && defaults.length > 0) {
-      await supabase
-        .from("categories")
-        .insert(defaults.map((name) => ({ shop_id: shopRow.id, name })));
-    }
-    setShopName("");
-    setShopTypeCode(null);
-    await refreshShops();
-    toast.success(lang === "bn" ? "দোকান তৈরি হয়েছে" : "Shop created");
-  };
-
   // While auth state is still resolving, show a lightweight splash instead
   // of bouncing back to /auth (which made login feel frozen on mobile).
   if (loading) {
@@ -224,32 +197,25 @@ function AppLayout() {
     );
   }
 
-  if (!shopsLoading && user && shops.length === 0) {
+  // Existing owner with no shops returned: do NOT show first-time setup
+  // (avoids the long-standing bug where a refreshed owner is dropped here).
+  // Show a soft splash; ShopProvider's refresh will catch up.
+  if (!shopsLoading && shops.length === 0 && ownsShop) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-primary/30 to-background p-4">
-        <div className="w-full max-w-sm rounded-3xl border bg-card p-6 shadow-xl">
-          <div className="mb-4 flex items-center gap-2">
-            <img src={logo} alt="" className="h-8 w-8 object-contain" />
-            <span className="font-extrabold">{t("appName")}</span>
-          </div>
-          <h1 className="text-2xl font-bold">{t("setupShop")}</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {lang === "bn" ? "শুরু করতে আপনার দোকানের নাম দিন" : "Enter your shop name to begin"}
-          </p>
-          <div className="mt-6 space-y-3">
-            <Label htmlFor="shop">{t("shopName")}</Label>
-            <Input id="shop" value={shopName} onChange={(e) => setShopName(e.target.value)} className="h-12 text-base" placeholder={lang === "bn" ? "যেমন: আল্লাহর দান স্টোর" : "e.g. My Shop"} />
-            <ShopTypePicker
-              value={shopTypeCode}
-              onChange={(code) => setShopTypeCode(code)}
-              lang={lang as "bn" | "en"}
-              label={lang === "bn" ? "দোকানের ধরন" : "Shop type"}
-            />
-            <Button onClick={createShop} disabled={creating} className="h-12 w-full text-base font-semibold">
-              {creating ? "..." : t("create")}
-            </Button>
-          </div>
-        </div>
+      <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-background text-sm text-muted-foreground">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+        <div>{lang === "bn" ? "আপনার দোকান লোড হচ্ছে..." : "Loading your shop..."}</div>
+      </div>
+    );
+  }
+
+  // Genuine first-time onboarding: open the full Add Shop dialog so the
+  // owner enters logo, type, division/district/area, address, phone,
+  // and online-sell preference (not just name + type).
+  if (!shopsLoading && shops.length === 0 && !ownsShop) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-primary/30 to-background">
+        <AddShopDialog open onOpenChange={() => { /* required: must complete setup */ }} />
       </div>
     );
   }
