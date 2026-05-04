@@ -217,10 +217,22 @@ Deno.serve(async (req) => {
       ((listingRows as { shop_id: string }[] | null) ?? []).forEach((l) => {
         counts[l.shop_id] = (counts[l.shop_id] ?? 0) + 1;
       });
+
+      // Count published service listings per shop
+      const { data: svcListingRows } = await admin
+        .from("marketplace_service_listings")
+        .select("shop_id")
+        .eq("is_published", true)
+        .in("shop_id", ids);
+      const service_counts: Record<string, number> = {};
+      ((svcListingRows as { shop_id: string }[] | null) ?? []).forEach((l) => {
+        service_counts[l.shop_id] = (service_counts[l.shop_id] ?? 0) + 1;
+      });
+
       // Return all marketplace-enabled shops, including those with 0 published
       // listings yet — they still belong in the directory so customers can
       // discover newly created shops.
-      return json({ shops: shopRows, counts, total: count ?? shopRows.length, page, pageSize }, 200, PUBLIC_CACHE);
+      return json({ shops: shopRows, counts, service_counts, total: count ?? shopRows.length, page, pageSize }, 200, PUBLIC_CACHE);
     }
 
     if (action === "shop") {
