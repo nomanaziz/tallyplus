@@ -4652,6 +4652,33 @@ export type Database = {
         }
         Relationships: []
       }
+      trial_settings: {
+        Row: {
+          created_at: string
+          duration_days: number
+          id: boolean
+          is_enabled: boolean
+          updated_at: string
+          warn_days_before: number
+        }
+        Insert: {
+          created_at?: string
+          duration_days?: number
+          id?: boolean
+          is_enabled?: boolean
+          updated_at?: string
+          warn_days_before?: number
+        }
+        Update: {
+          created_at?: string
+          duration_days?: number
+          id?: boolean
+          is_enabled?: boolean
+          updated_at?: string
+          warn_days_before?: number
+        }
+        Relationships: []
+      }
       usage_limits: {
         Row: {
           feature_key: string
@@ -4912,7 +4939,7 @@ export type Database = {
       sale_status: "completed" | "draft" | "returned" | "cancelled"
       serial_status: "in_stock" | "sold" | "returned" | "damaged"
       subscription_request_status: "pending" | "approved" | "rejected"
-      subscription_status: "active" | "expired" | "cancelled"
+      subscription_status: "active" | "expired" | "cancelled" | "trial"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -5055,7 +5082,7 @@ export const Constants = {
       sale_status: ["completed", "draft", "returned", "cancelled"],
       serial_status: ["in_stock", "sold", "returned", "damaged"],
       subscription_request_status: ["pending", "approved", "rejected"],
-      subscription_status: ["active", "expired", "cancelled"],
+      subscription_status: ["active", "expired", "cancelled", "trial"],
     },
   },
 } as const
