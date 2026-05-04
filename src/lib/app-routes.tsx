@@ -78,6 +78,7 @@ const L67 = lazy(() => import("@/pages/Privacy"));
 const L68 = lazy(() => import("@/pages/shop/Index"));
 const L69 = lazy(() => import("@/pages/shop/p/Id"));
 const L70 = lazy(() => import("@/pages/shop/s/Slug"));
+const L70b = lazy(() => import("@/pages/shop/service/Id"));
 const L71 = lazy(() => import("@/pages/Terms"));
 const L72 = lazy(() => import("@/pages/vendor/Username"));
 const L73 = lazy(() => import("@/pages/app/SalesReport"));
@@ -253,7 +254,8 @@ export const appRoutes: RouteObject[] = [
 { path: "about", element: <Suspense fallback={<RouteFallback/>}><L83/></Suspense> },
 { path: "shop", element: <Suspense fallback={<RouteFallback/>}><L68/></Suspense>, children: [
 { path: "p/:id", element: <Suspense fallback={<RouteFallback/>}><L69/></Suspense> },
-{ path: "s/:slug", element: <Suspense fallback={<RouteFallback/>}><L70/></Suspense> }
+{ path: "s/:slug", element: <Suspense fallback={<RouteFallback/>}><L70/></Suspense> },
+{ path: "service/:id", element: <Suspense fallback={<RouteFallback/>}><L70b/></Suspense> }
 ] },
 { path: "terms", element: <Suspense fallback={<RouteFallback/>}><L71/></Suspense> },
 { path: "vendor/:username", element: <Suspense fallback={<RouteFallback/>}><L72/></Suspense> },
