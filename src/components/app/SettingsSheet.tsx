@@ -1,5 +1,6 @@
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { useI18n, type Lang } from "@/lib/i18n";
+import { useI18n, type Lang, LANG_NAMES } from "@/lib/i18n";
+import { COUNTRIES } from "@/lib/countries";
 import { useShop } from "@/lib/shop";
 import { useAuth } from "@/lib/auth";
 import { useNavigate } from "@/lib/router";
@@ -100,6 +101,45 @@ export function SettingsSheet({ open, onOpenChange }: { open: boolean; onOpenCha
   const { signOut, profile } = useAuth();
   const [devicesOpen, setDevicesOpen] = useState(false);
   const nav = useNavigate();
+  const [country, setCountryState] = useState<string>(() =>
+    (typeof window !== "undefined" && localStorage.getItem("tp_country")) || "BD"
+  );
+  useEffect(() => {
+    void supabase.auth.getUser().then(async ({ data }) => {
+      if (!data.user) return;
+      const { data: prof } = await supabase.from("profiles").select("country_code").eq("id", data.user.id).maybeSingle();
+      if ((prof as { country_code?: string } | null)?.country_code) {
+        setCountryState((prof as { country_code: string }).country_code);
+      }
+    });
+  }, []);
+  const updateCountry = async (code: string) => {
+    setCountryState(code);
+    try { localStorage.setItem("tp_country", code); } catch { /* ignore */ }
+    const { data } = await supabase.auth.getUser();
+    if (data.user) {
+      await supabase.from("profiles").update({ country_code: code }).eq("id", data.user.id);
+    }
+    toast.success("Country updated");
+  };
+  const CountryRow = () => (
+    <Row
+      icon={<Globe className="h-4 w-4" />}
+      label={lang === "bn" ? "দেশ" : "Country"}
+      right={
+        <select
+          className="rounded border bg-background px-2 py-1 text-xs"
+          value={country}
+          onChange={(e) => updateCountry(e.target.value)}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {COUNTRIES.map((c) => (
+            <option key={c.code} value={c.code}>{c.flag} {c.name}</option>
+          ))}
+        </select>
+      }
+    />
+  );
 
   const { data: appLinks } = useQuery({
     queryKey: ["app_links", "other"],
@@ -194,11 +234,13 @@ export function SettingsSheet({ open, onOpenChange }: { open: boolean; onOpenCha
                   onChange={(e) => setLang(e.target.value as Lang)}
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <option value="bn">বাংলা</option>
-                  <option value="en">English</option>
+                  {LANG_NAMES.map((l) => (
+                    <option key={l.code} value={l.code}>{l.native}</option>
+                  ))}
                 </select>
               }
             />
+            <CountryRow />
             <Row
               icon={<Coins className="h-4 w-4" />}
               label={lang === "bn" ? "কারেন্সি" : "Currency"}
@@ -209,9 +251,9 @@ export function SettingsSheet({ open, onOpenChange }: { open: boolean; onOpenCha
                   onChange={(e) => { setCurrency(e.target.value); persist("tp_currency", e.target.value); }}
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <option value="BDT">BDT ৳</option>
-                  <option value="USD">USD $</option>
-                  <option value="INR">INR ₹</option>
+                  {["BDT","USD","INR","PKR","AED","SAR","EUR","GBP","MYR","SGD","CNY","JPY"].map((c) => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
                 </select>
               }
             />

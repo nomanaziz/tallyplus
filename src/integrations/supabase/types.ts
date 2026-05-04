@@ -1135,6 +1135,7 @@ export type Database = {
           address: string | null
           area: string | null
           avatar_url: string | null
+          country_code: string | null
           created_at: string
           default_lat: number | null
           default_lng: number | null
@@ -1151,6 +1152,7 @@ export type Database = {
           address?: string | null
           area?: string | null
           avatar_url?: string | null
+          country_code?: string | null
           created_at?: string
           default_lat?: number | null
           default_lng?: number | null
@@ -1167,6 +1169,7 @@ export type Database = {
           address?: string | null
           area?: string | null
           avatar_url?: string | null
+          country_code?: string | null
           created_at?: string
           default_lat?: number | null
           default_lng?: number | null
@@ -2522,6 +2525,7 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          country_code: string | null
           created_at: string
           full_name: string | null
           id: string
@@ -2533,6 +2537,7 @@ export type Database = {
         }
         Insert: {
           avatar_url?: string | null
+          country_code?: string | null
           created_at?: string
           full_name?: string | null
           id: string
@@ -2544,6 +2549,7 @@ export type Database = {
         }
         Update: {
           avatar_url?: string | null
+          country_code?: string | null
           created_at?: string
           full_name?: string | null
           id?: string

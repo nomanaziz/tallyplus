@@ -7,7 +7,7 @@ import { ShopTypePicker } from "@/components/app/ShopTypePicker";
 import { BdLocationPicker, type BdLocation } from "@/components/shared/BdLocationPicker";
 import { useAuth } from "@/lib/auth";
 import { useShop } from "@/lib/shop";
-import { useI18n } from "@/lib/i18n";
+import { useI18n, type Lang } from "@/lib/i18n";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Camera, Store, Loader2 } from "lucide-react";
@@ -201,7 +201,7 @@ export function AddShopDialog({
             <ShopTypePicker
               value={typeCode}
               onChange={(code) => setTypeCode(code)}
-              lang={lang as "bn" | "en"}
+              lang={lang as Lang}
               label=""
             />
           </div>

@@ -2,7 +2,7 @@ import { Link } from "@/lib/router";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useShop } from "@/lib/shop";
-import { useI18n, fmtMoney } from "@/lib/i18n";
+import { useI18n, fmtMoney, type Lang } from "@/lib/i18n";
 import { dashboardSummaryQuery, dashboardOverviewQuery } from "@/lib/queries";
 import { Package, Truck, Globe, Clock } from "lucide-react";
 import { icons, AppIcon } from "@/lib/icons";
@@ -164,7 +164,7 @@ function DesktopOverview({
   lang,
 }: {
   overview: import("@/lib/queries").DashboardOverview | undefined;
-  lang: "bn" | "en";
+  lang: Lang;
 }) {
   const o = overview;
   type IconC = React.ComponentType<{ className?: string }>;
@@ -315,7 +315,7 @@ function KpiTile({
 
 function PanelCard({
   title, icon: Icon, img: Img, to, lang, children,
-}: { title: string; icon?: React.ComponentType<{ className?: string }>; img?: React.ComponentType<{ className?: string }>; to: string; lang: "bn" | "en"; children: React.ReactNode }) {
+}: { title: string; icon?: React.ComponentType<{ className?: string }>; img?: React.ComponentType<{ className?: string }>; to: string; lang: Lang; children: React.ReactNode }) {
   return (
     <div className="rounded-xl border bg-card p-3 shadow-sm">
       <div className="flex items-center justify-between border-b pb-2">
@@ -332,7 +332,7 @@ function PanelCard({
   );
 }
 
-function Empty({ lang }: { lang: "bn" | "en" }) {
+function Empty({ lang }: { lang: Lang }) {
   return (
     <div className="py-6 text-center text-xs text-muted-foreground">
       {lang === "bn" ? "কোনো তথ্য নেই" : "No data yet"}
@@ -340,7 +340,7 @@ function Empty({ lang }: { lang: "bn" | "en" }) {
   );
 }
 
-function timeAgo(iso: string, lang: "bn" | "en") {
+function timeAgo(iso: string, lang: Lang) {
   const diff = Date.now() - new Date(iso).getTime();
   const m = Math.floor(diff / 60000);
   if (m < 1) return lang === "bn" ? "এখনই" : "just now";
@@ -358,7 +358,7 @@ function Section({
 }: {
   title: string;
   items: { to: string; icon: React.ComponentType<{ className?: string }>; bn: string; en: string }[];
-  lang: "bn" | "en";
+  lang: Lang;
 }) {
   return (
     <div className="rounded-xl border bg-card p-3 shadow-sm">

@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { InstallAppButton } from "./InstallAppPrompt";
 import { NotificationBell } from "./NotificationBell";
-import { ChevronDown, LogOut, Languages, ArrowLeftRight, LayoutDashboard } from "lucide-react";
+import { ChevronDown, LogOut, ArrowLeftRight, LayoutDashboard } from "lucide-react";
 import { icons, AppIcon } from "@/lib/icons";
 
 const SettingsSheet = lazy(() =>
@@ -22,7 +22,7 @@ const SettingsSheet = lazy(() =>
 export function AppTopbar() {
   const { profile, signOut } = useAuth();
   const { current } = useShop();
-  const { lang, setLang } = useI18n();
+  const { lang } = useI18n();
   const nav = useNavigate();
   const [settingsOpen, setSettingsOpen] = useState(false);
 
@@ -45,13 +45,6 @@ export function AppTopbar() {
       <div className="flex items-center gap-1.5">
         <NotificationBell />
         <InstallAppButton />
-        <button
-          onClick={() => setLang(lang === "bn" ? "en" : "bn")}
-          className="hidden h-9 items-center gap-1 rounded-full px-2 text-xs font-semibold text-muted-foreground hover:bg-accent md:inline-flex"
-        >
-          <Languages className="h-4 w-4" />
-          {lang === "bn" ? "EN" : "বাং"}
-        </button>
         <button
           onClick={() => setSettingsOpen(true)}
           className="flex h-9 items-center gap-1.5 rounded-full px-2 text-sm font-medium text-muted-foreground hover:bg-accent"
@@ -84,10 +77,6 @@ export function AppTopbar() {
             <DropdownMenuItem onClick={() => nav({ to: "/app/combined-report" })}>
               <LayoutDashboard className="mr-2 h-4 w-4" />
               {lang === "bn" ? "কম্বাইন্ড রিপোর্ট" : "Combined Report"}
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setLang(lang === "bn" ? "en" : "bn")}>
-              <Languages className="mr-2 h-4 w-4" />
-              {lang === "bn" ? "English" : "বাংলা"}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => signOut().then(() => nav({ to: "/" }))} className="text-destructive">
               <LogOut className="mr-2 h-4 w-4" />
