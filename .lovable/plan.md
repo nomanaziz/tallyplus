@@ -1,34 +1,33 @@
-# Fix dashboard shop setup screen
+# মার্কেটপ্লেসে সার্ভিস দেখানোর ব্যবস্থা
 
-Three concrete issues to address.
+বর্তমান অবস্থা: `marketplace_service_listings` table আছে এবং Services page থেকে সার্ভিস অনলাইন publish করা যাচ্ছে। কিন্তু public marketplace (`/shop`) এ শুধু "দোকান" আর "পণ্য" tab আছে — সার্ভিসের কোন tab/listing/filter নেই, আর `marketplace-public` edge function এ services আনার কোনো action নেই।
 
-## 1. New shop types are not in the database
+## কী করব
 
-The previous migration adding `service_provider`, `salon_beauty`, `repair_shop`, and `others` never actually ran — the DB still shows only the original 12 shop types (verified via `SELECT * FROM shop_types`). That is why the dropdown still does not include any service/others option.
+### 1. Edge Function: `supabase/functions/marketplace-public/index.ts`
+নতুন তিনটি action যোগ করব:
+- **`list-services`** — published services list, with filters: `q` (নাম search), `min_price`/`max_price`, `category` (service_categories), `division`/`district`/`upazila` (service_areas array contains), `home_service` (true/false), `sort` (newest/price_asc/price_desc), pagination। response এ services + shops map ফিরবে।
+- **`service-detail`** — single service id দিয়ে detail (service + shop info)।
+- **`service-categories`** — distinct service category list (filter dropdown এর জন্য)।
 
-**Fix:** create a fresh migration with a new timestamp that re-runs the same `INSERT … ON CONFLICT DO UPDATE` for the four new shop types. After it runs, `ShopTypePicker` will pick them up automatically (it loads from the DB, no code change needed).
+সব response এ shop must be `marketplace_enabled=true` এবং listing `is_published=true`।
 
-## 2. The setup card on `/app/dashboard` is too minimal
+### 2. Public Marketplace UI: `src/pages/shop/Index.tsx`
+Tabs এ তৃতীয় option যোগ করব: **দোকান | পণ্য | সার্ভিস**।
+- `view=services` হলে নতুন services grid render হবে।
+- Services-specific filter panel: মূল্যসীমা, ক্যাটাগরি (dropdown), এলাকা (Division → District → Upazila cascading picker — Services.tsx এ যেটা আছে সেটাই reuse), "বাসায় এসে সার্ভিস" toggle, sort।
+- নতুন `ServiceCard` component তৈরি করব (image, নাম, দাম, duration, area chips, "বিস্তারিত" button)।
 
-Currently when a user has 0 shops, `AppLayout.tsx` renders a tiny inline card with only **Shop name + Shop type + Create button** — no logo, address, area, phone, or "sell online" toggle. The full `AddShopDialog` already collects all of those fields and is what `/app/shops` uses.
+### 3. Service Detail Page (নতুন route)
+`src/pages/shop/service/[id].tsx` — service-এর full info, shop card, "ফোন করুন" / "মেসেজ" / "বুক করুন" CTA। বুক করলে shop owner-এর কাছে inquiry হিসেবে যাবে (existing messages বা contact flow ব্যবহার করব)।
 
-**Fix:** replace the inline card in `AppLayout.tsx` with the same `AddShopDialog` (kept open by default when the user has zero shops). Same UX as adding a second shop, so the first-time onboarding finally captures address, division/district/area, phone, logo, and "sell online" — matching the requirement that pharmacies need an address and service-providers need their service area.
+### 4. Shop Page (`/s/{slug}`) এ Services section
+`src/pages/shop/s/Slug.tsx` এ "পণ্যসমূহ" এর পাশে "সার্ভিসসমূহ" tab/section যোগ করব যাতে কোনো দোকানের সার্ভিসগুলো একসাথে দেখা যায়।
 
-## 3. Existing shop owner still sees the setup page after refresh
+## টেকনিক্যাল ডিটেইল
 
-`AppLayout` decides "show setup" purely on `shops.length === 0` from the `my_account_resolve` RPC. If that call returns an empty array transiently (network blip, RLS edge case, or `auth.uid()` mismatch right after token refresh), an owner who already has a shop is dumped on the setup screen. The user has reported this twice now.
+- Service area filter: `service_areas` text[] column-এ values "Division › District › Upazila" format এ আছে (Services.tsx থেকে)। edge function এ `array contains`/`overlaps` ব্যবহার করব।
+- Edge function এ shop join করব same pattern এ যেমন products এ আছে।
+- কোনো DB migration লাগবে না — সব table/column ইতিমধ্যে আছে।
 
-**Fix:**
-- After the RPC returns, if `owns_shop === true` but `shops` array is empty, do a direct fallback query: `from('shops').select(...).eq('owner_id', user.id).is('deleted_at', null)` and use that result. This guards against the RPC inconsistency.
-- If `owns_shop === true` and we still resolve to zero shops, do **not** render the setup card — render the spinner and re-trigger `refresh()` once. Better to wait a beat than wrongly prompt an owner to "set up" a new shop.
-- Add a small console warning in that branch so we can spot it in logs going forward.
-
-## Technical notes
-
-- New migration file: `supabase/migrations/<new-ts>_reapply_service_shop_types.sql` (same body as `20260504052000_add_service_shop_types.sql`).
-- `src/pages/app/AppLayout.tsx`:
-  - Remove the inline setup `<div>` (lines ~227–255) and the now-unused `shopName`, `shopTypeCode`, `creating`, `createShop`, `ShopTypePicker` import.
-  - When `shops.length === 0` and not in the fallback-loading state, render `<AddShopDialog open onOpenChange={() => {}} />` with an empty backdrop screen behind it.
-- Add fallback query + retry inside the `my_account_resolve` effect in `AppLayoutWithShop`.
-
-No DB schema change beyond the re-applied seed; no other components touched.
+প্রশ্ন: সার্ভিস "বুক" করলে কোথায় যাবে — (a) shop owner কে message/inquiry, (b) cart-style booking with date/time, নাকি (c) শুধু "ফোন করুন" CTA এই version এ? ডিফল্ট ধরে নিচ্ছি **(c) ফোন/WhatsApp CTA + একটি simple inquiry form** যা shop messages-এ যাবে।
