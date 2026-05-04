@@ -1,88 +1,67 @@
-## Overview
+## Goals
 
-তিনটা feature:
-1. **Shop ownership transfer** — both-side verification + admin approval + charge
-2. **Bulk product import** (Excel/CSV)
-3. **Bulk product export** (Excel)
-
----
-
-## ১. Shop Ownership Transfer
-
-### Flow
-1. Owner A → Settings/Shops পেজে "Transfer Ownership" বাটন → form: target user-এর phone + reason
-2. System target phone-এর registered user খোঁজে। না পেলে error
-3. Owner A confirm করে → charge (default ৳200, admin-configurable) তার balance থেকে কাটে। Balance না থাকলে block
-4. Request `pending_recipient` status-এ যায় → recipient-এর কাছে in-app notification
-5. Recipient accept → status `pending_admin`. Reject → status `rejected`, charge refund
-6. Admin approve → `shops.owner_id = to_user_id`, status `approved`. Admin reject → refund
-
-### DB migration
-- `shop_transfer_requests` table: `id, shop_id, from_user_id, to_user_id, to_phone, reason, charge_amount, charge_paid, status (pending_recipient|pending_admin|approved|rejected_recipient|rejected_admin|cancelled), recipient_decided_at, admin_decided_at, admin_notes, created_at, updated_at`
-- `transfer_settings` (id=true singleton): `charge_amount numeric default 200, is_enabled bool`
-- RLS: from/to user নিজের request দেখতে পারবে; admin সব দেখতে/আপডেট করতে পারবে
-- RPC `request_shop_transfer(_shop_id, _to_phone, _reason)` — verifies ownership, finds target user, checks balance, creates row
-- RPC `respond_shop_transfer(_id, _accept bool)` — recipient only
-- RPC `admin_decide_shop_transfer(_id, _approve bool, _notes)` — admin only; updates `shops.owner_id` on approve
-- Charge: existing `affiliate_wallet` নয়, বরং নতুন simple `user_wallet` table — কিন্তু এই scope বড় হবে। **সরলীকৃত approach**: charge field রাখা হবে কিন্তু payment integration MVP-তে স্কিপ; admin manually verify করবে user অন্য কোনো method-এ পরিশোধ করেছে কিনা। (যদি user চায়, পরবর্তী iteration-এ proper wallet)
-
-> **নোট**: real money charge integrate করতে গেলে আরেকটা পুরো wallet system লাগবে। MVP-তে: request তৈরি হলে status `pending_payment` → user manually proof upload (image) → admin verify → তারপর recipient-এর কাছে যায়। এটা সবচেয়ে practical।
-
-**Updated status flow**: `pending_payment → pending_recipient → pending_admin → approved/rejected`
-
-### UI
-- `src/components/app/TransferShopDialog.tsx` — owner থেকে request initiate, payment proof upload (existing `payment-proofs` bucket reuse)
-- `src/pages/app/Shops.tsx`-এ delete-এর পাশে "Transfer" button (only owner)
-- `src/components/app/IncomingTransfersBanner.tsx` — Dashboard-এ recipient-এর জন্য pending requests দেখাবে accept/reject সহ
-- `src/pages/admin/ShopTransfers.tsx` — admin queue with verify/approve/reject
-- AdminSidebar-এ link
+1. Fix "row-level security policy" error when admin uploads product images (Marketplace product images).
+2. Move admin login URL from `/admin/login` to `/xbd-login` (hide the obvious admin path).
+3. Add a small captcha (math-based) to the new admin login page.
 
 ---
 
-## ২. Bulk Product Import
+## 1. Fix product-images RLS for admins
 
-### UI
-- `src/pages/app/Products.tsx`-এ DataToolbar-এর কাছে "Import" + "Export" বাটন
-- Dialog: 
-  - Step 1: download template button (`product-import-template.xlsx`) — columns: `নাম, পরিমাণ, ক্রয়মূল্য, বিক্রয়মূল্য, ইউনিট (optional), category (optional), barcode (optional)`
-  - Step 2: file upload (.xlsx, .csv)
-  - Step 3: preview table — valid/invalid rows highlight, error messages
-  - Step 4: confirm import → batch insert
+**Root cause:** The `product-images` bucket only has an INSERT policy that requires the first folder of the path to equal `auth.uid()`. Admin uploads use path `marketplace/<uuid>.ext`, so the policy rejects them.
 
-### Library
-- `xlsx` (SheetJS) package install — supports both .xlsx & .csv parsing in browser
+Existing policies on `storage.objects` for `product-images`:
+- INSERT: `auth.uid()::text = (storage.foldername(name))[1]` — admin path fails
+- SELECT: owner OR `is_admin(auth.uid())` — fine
+- UPDATE: owner only — admin fails
 
-### Logic
-- Parse → normalize column names (Bengali/English both) → validate (name required, prices numeric, qty integer >= 0)
-- Check shop's product limit (existing `check_usage_limit` RPC)
-- Batch insert via single supabase call with `.insert([...])`
-- After insert: invalidate products query
+**Migration (requires approval):**
+```sql
+create policy "admin insert product-images"
+  on storage.objects for insert to authenticated
+  with check (bucket_id = 'product-images' and public.is_admin(auth.uid()));
+
+create policy "admin update product-images"
+  on storage.objects for update to authenticated
+  using (bucket_id = 'product-images' and public.is_admin(auth.uid()));
+
+create policy "admin delete product-images"
+  on storage.objects for delete to authenticated
+  using (bucket_id = 'product-images' and public.is_admin(auth.uid()));
+```
+
+This lets admins upload/update/delete any path inside `product-images` while keeping shop owners' folder-scoped access intact.
 
 ---
 
-## ৩. Bulk Product Export
+## 2. Move admin login to `/xbd-login`
 
-- "Export" বাটন → বর্তমান filter অনুযায়ী সব products fetch (paginated, all rows) → `xlsx` দিয়ে file generate → download
-- Columns: নাম, পরিমাণ, ক্রয়মূল্য, বিক্রয়মূল্য, ইউনিট, category, barcode, total stock value
+**Routing (`src/lib/app-routes.tsx`):**
+- Add a top-level route `{ path: "xbd-login", element: <Suspense><L8/></Suspense> }`.
+- Keep `/admin/login` removed (delete the existing `path: "login"` child) so the old URL 404s.
+- `/admin` (parent layout) still requires admin auth and now redirects unauthenticated users to `/xbd-login` instead of `/admin/login`.
+
+**Files to update:**
+- `src/lib/app-routes.tsx` — add `xbd-login`, remove `admin/login` child.
+- `src/pages/Admin.tsx` — change `nav({ to: "/admin/login" })` redirects to `/xbd-login`.
+- `src/pages/admin/Login.tsx` — change post-success nav (already goes to `/admin`, fine); update the "already logged in" redirect target if needed; update the bottom link.
+- `src/components/site/LoginCard.tsx`, `src/components/admin/AdminSidebar.tsx`, `src/lib/home-redirect.ts`, `src/pages/admin/MyCredentials.tsx` — replace any references to `/admin/login` with `/xbd-login`.
 
 ---
 
-## Files to add/edit
+## 3. Add small captcha to `/xbd-login`
 
-**Migrations**:
-- নতুন migration: `shop_transfer_requests` table + RLS + RPCs + `transfer_settings`
+Use a lightweight client-side math captcha (no third-party dependency, no extra secrets). Pattern:
+- On mount and after each failed attempt, generate `a + b` (1–9 each) and store the expected sum.
+- Add an input "Solve: 3 + 7 =" — login button is disabled until input matches.
+- On submit, double-check the answer; reset captcha on failure.
 
-**New files**:
-- `src/components/app/TransferShopDialog.tsx`
-- `src/components/app/IncomingTransfersBanner.tsx`
-- `src/components/app/ProductImportDialog.tsx`
-- `src/lib/product-export.ts`
-- `src/pages/admin/ShopTransfers.tsx`
+This is added directly in `src/pages/admin/Login.tsx`. It blocks naive bot login attempts and pairs with the obscured URL.
 
-**Edits**:
-- `src/pages/app/Shops.tsx` — Transfer button
-- `src/pages/app/Products.tsx` — Import/Export buttons + handler
-- `src/pages/app/Dashboard.tsx` — incoming transfer banner
-- `src/components/admin/AdminSidebar.tsx` — link
-- `src/lib/app-routes.tsx` — admin route
-- `package.json` — `xlsx` dep
+---
+
+## Notes
+
+- No edge function or new package required.
+- Existing admins keep working; only the URL changes.
+- The published site's old `/admin/login` will stop working — communicate to existing admins to use `/xbd-login`.
