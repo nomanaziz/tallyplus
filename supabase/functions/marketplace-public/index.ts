@@ -96,6 +96,50 @@ async function attachShopsAndProducts(
   return { shops: shopMap, products: productMap };
 }
 
+// deno-lint-ignore no-explicit-any
+async function loadShopListings(admin: any, shopId: string): Promise<ListingRow[]> {
+  const { data } = await admin
+    .from("marketplace_listings")
+    .select("id, shop_id, product_id, price, stock, unit, min_order, is_published, created_at, warranty_months")
+    .eq("shop_id", shopId)
+    .eq("is_published", true)
+    .order("created_at", { ascending: false });
+  return (data as ListingRow[] | null) ?? [];
+}
+
+// deno-lint-ignore no-explicit-any
+async function loadProductsFor(admin: any, listings: ListingRow[]): Promise<Record<string, ProductRow>> {
+  if (listings.length === 0) return {};
+  const productIds = Array.from(new Set(listings.map((l) => l.product_id)));
+  const { data } = await admin
+    .from("products")
+    .select("id, name, image_url, category_id, unit")
+    .in("id", productIds)
+    .is("deleted_at", null);
+  const map: Record<string, ProductRow> = {};
+  ((data as ProductRow[] | null) ?? []).forEach((p) => (map[p.id] = p));
+  return map;
+}
+
+// deno-lint-ignore no-explicit-any
+async function loadShopServices(admin: any, shopId: string): Promise<Array<Record<string, unknown>>> {
+  const { data: ml } = await admin
+    .from("marketplace_service_listings")
+    .select("service_id")
+    .eq("shop_id", shopId)
+    .eq("is_published", true);
+  const sids = ((ml as { service_id: string }[] | null) ?? []).map((l) => l.service_id);
+  if (sids.length === 0) return [];
+  const { data: services } = await admin
+    .from("services")
+    .select("id, shop_id, name, description, price, duration_minutes, duration_label, unit, image_url, home_service, service_charge_extra, service_areas, warranty_enabled, warranty_value, warranty_unit, advance_amount, advance_required, booking_enabled")
+    .in("id", sids)
+    .is("deleted_at", null)
+    .eq("is_active", true)
+    .order("name");
+  return (services as Array<Record<string, unknown>> | null) ?? [];
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: cors });
 
