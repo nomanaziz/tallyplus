@@ -3265,18 +3265,23 @@ export type Database = {
         Row: {
           advance_amount: number
           advance_paid: boolean
+          advance_payer_phone: string | null
           advance_payment_method: string | null
           advance_txn_id: string | null
           area: string | null
+          completed_at: string | null
           consumer_user_id: string | null
           created_at: string
           customer_address: string | null
           customer_name: string
           customer_phone: string
+          discount_amount: number
           district: string | null
           division: string | null
+          final_amount: number | null
           id: string
           note: string | null
+          sale_id: string | null
           scheduled_at: string | null
           service_id: string
           service_name: string
@@ -3289,18 +3294,23 @@ export type Database = {
         Insert: {
           advance_amount?: number
           advance_paid?: boolean
+          advance_payer_phone?: string | null
           advance_payment_method?: string | null
           advance_txn_id?: string | null
           area?: string | null
+          completed_at?: string | null
           consumer_user_id?: string | null
           created_at?: string
           customer_address?: string | null
           customer_name: string
           customer_phone: string
+          discount_amount?: number
           district?: string | null
           division?: string | null
+          final_amount?: number | null
           id?: string
           note?: string | null
+          sale_id?: string | null
           scheduled_at?: string | null
           service_id: string
           service_name: string
@@ -3313,18 +3323,23 @@ export type Database = {
         Update: {
           advance_amount?: number
           advance_paid?: boolean
+          advance_payer_phone?: string | null
           advance_payment_method?: string | null
           advance_txn_id?: string | null
           area?: string | null
+          completed_at?: string | null
           consumer_user_id?: string | null
           created_at?: string
           customer_address?: string | null
           customer_name?: string
           customer_phone?: string
+          discount_amount?: number
           district?: string | null
           division?: string | null
+          final_amount?: number | null
           id?: string
           note?: string | null
+          sale_id?: string | null
           scheduled_at?: string | null
           service_id?: string
           service_name?: string
@@ -3335,6 +3350,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "service_bookings_sale_id_fkey"
+            columns: ["sale_id"]
+            isOneToOne: false
+            referencedRelation: "sales"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "service_bookings_service_id_fkey"
             columns: ["service_id"]
