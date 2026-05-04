@@ -67,7 +67,7 @@ export default function CustomerDashboard() {
         supabase
           .from("consumer_favourite_shops")
           .select("id", { count: "exact", head: true })
-          .eq("user_id", user.id),
+          .eq("consumer_id", user.id),
         supabase.rpc("my_phones"),
         supabase.functions.invoke("marketplace-public", {
           body: { action: "list-my-service-bookings" },
