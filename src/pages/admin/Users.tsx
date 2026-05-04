@@ -15,6 +15,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ShieldCheck, ShieldOff, Ban, Check, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { getCountry, COUNTRIES } from "@/lib/countries";
 
 
 
@@ -24,6 +25,7 @@ type Profile = {
   phone: string | null;
   is_suspended: boolean;
   created_at: string;
+  country_code: string | null;
 };
 
 type Row = Profile & {
@@ -37,11 +39,12 @@ function UsersPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<"all" | "owner" | "admin" | "suspended">("all");
+  const [countryFilter, setCountryFilter] = useState<string>("all");
 
   const load = async () => {
     setLoading(true);
     const [{ data: profiles }, { data: roles }, { data: shops }] = await Promise.all([
-      supabase.from("profiles").select("id,full_name,phone,is_suspended,created_at").order("created_at", { ascending: false }).limit(500),
+      supabase.from("profiles").select("id,full_name,phone,is_suspended,created_at,country_code").order("created_at", { ascending: false }).limit(500),
       supabase.from("user_roles").select("user_id,role"),
       supabase.from("shops").select("owner_id").is("deleted_at", null),
     ]);
@@ -69,6 +72,7 @@ function UsersPage() {
     if (filter === "owner") list = list.filter((r) => r.shopCount > 0);
     else if (filter === "admin") list = list.filter((r) => r.isAdmin);
     else if (filter === "suspended") list = list.filter((r) => r.is_suspended);
+    if (countryFilter !== "all") list = list.filter((r) => (r.country_code || "") === countryFilter);
     if (search.trim()) {
       const q = search.trim().toLowerCase();
       list = list.filter(
@@ -78,7 +82,16 @@ function UsersPage() {
       );
     }
     return list;
-  }, [rows, filter, search]);
+  }, [rows, filter, search, countryFilter]);
+
+  const countryCounts = useMemo(() => {
+    const m = new Map<string, number>();
+    rows.forEach((r) => {
+      const k = r.country_code || "—";
+      m.set(k, (m.get(k) ?? 0) + 1);
+    });
+    return Array.from(m.entries()).sort((a, b) => b[1] - a[1]);
+  }, [rows]);
 
   const toggleSuspend = async (r: Row) => {
     const { error } = await supabase.from("profiles").update({ is_suspended: !r.is_suspended }).eq("id", r.id);
@@ -128,8 +141,35 @@ function UsersPage() {
             <SelectItem value="suspended">Suspended</SelectItem>
           </SelectContent>
         </Select>
+        <Select value={countryFilter} onValueChange={setCountryFilter}>
+          <SelectTrigger className="w-full sm:w-48">
+            <SelectValue placeholder="Country" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Countries</SelectItem>
+            {COUNTRIES.map((c) => (
+              <SelectItem key={c.code} value={c.code}>{c.flag} {c.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         <span className="text-sm text-muted-foreground">{filtered.length} users</span>
       </div>
+
+      {countryCounts.length > 0 && (
+        <Card>
+          <CardContent className="flex flex-wrap gap-2 p-3 text-xs">
+            <span className="font-semibold">Users by country:</span>
+            {countryCounts.slice(0, 12).map(([code, n]) => {
+              const c = getCountry(code);
+              return (
+                <Badge key={code} variant="outline" className="cursor-pointer" onClick={() => setCountryFilter(code === "—" ? "all" : code)}>
+                  {c ? `${c.flag} ${c.code}` : code} · {n}
+                </Badge>
+              );
+            })}
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardContent className="p-0">
@@ -144,6 +184,7 @@ function UsersPage() {
                 <TableRow>
                   <TableHead>Name</TableHead>
                   <TableHead>Phone</TableHead>
+                  <TableHead>Country</TableHead>
                   <TableHead>Type</TableHead>
                   <TableHead>Shops</TableHead>
                   <TableHead>Status</TableHead>
@@ -158,6 +199,9 @@ function UsersPage() {
                     <TableRow key={r.id}>
                       <TableCell className="font-medium">{r.full_name || "—"}</TableCell>
                       <TableCell>{r.phone || "—"}</TableCell>
+                      <TableCell className="text-xs">
+                        {(() => { const c = getCountry(r.country_code); return c ? `${c.flag} ${c.code}` : "—"; })()}
+                      </TableCell>
                       <TableCell>
                         <Badge variant={t === "admin" ? "default" : t === "owner" ? "secondary" : "outline"}>
                           {t}
@@ -195,7 +239,7 @@ function UsersPage() {
                 })}
                 {filtered.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                       কোন user পাওয়া যায়নি
                     </TableCell>
                   </TableRow>
