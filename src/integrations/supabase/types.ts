@@ -4855,7 +4855,9 @@ export type Database = {
         Args: { _names: string[]; _shop_id: string }
         Returns: undefined
       }
+      expire_old_subscriptions: { Args: never; Returns: number }
       get_shared_fordo: { Args: { _token: string }; Returns: Json }
+      grant_trial_subscription: { Args: { _user_id: string }; Returns: string }
       has_active_subscription: { Args: { _user_id: string }; Returns: boolean }
       has_admin_perm: {
         Args: { _key: string; _user_id: string }
