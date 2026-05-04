@@ -22,6 +22,7 @@ import {
   DollarSign,
   MessageSquareText,
   KeyRound,
+  ArrowLeftRight,
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useAuth } from "@/lib/auth";
@@ -42,6 +43,7 @@ const ITEMS: Item[] = [
   { to: "/admin/admins", label: "Admin Team", icon: ShieldCheck, perm: "platform_admins" },
   { to: "/admin/shop-types", label: "Shop Types", icon: Tag, perm: "shop_types" },
   { to: "/admin/subscription-requests", label: "Subscription Requests", icon: Receipt, perm: "subscription_requests" },
+  { to: "/admin/transfers", label: "Ownership Transfers", icon: ArrowLeftRight, perm: "transfers" },
   { to: "/admin/subscriptions", label: "Subscriptions", icon: CreditCard, perm: "subscriptions" },
   { to: "/admin/plans", label: "Plans", icon: Tags, perm: "plans" },
   { to: "/admin/usage-limits", label: "Usage Limits", icon: Gauge, perm: "usage_limits" },

@@ -5005,6 +5005,10 @@ export type Database = {
       my_account_resolve: { Args: never; Returns: Json }
       my_phones: { Args: never; Returns: string[] }
       my_shop_perms: { Args: { _shop_id: string }; Returns: Json }
+      notify_admins: {
+        Args: { _body: string; _link: string; _title: string; _type: string }
+        Returns: undefined
+      }
       notify_shop_members: {
         Args: {
           _body: string

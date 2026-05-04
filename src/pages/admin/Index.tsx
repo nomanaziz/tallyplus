@@ -3,8 +3,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Users, Store, CreditCard, Receipt, Package, ShieldCheck,
-  TrendingUp, Calendar, AlertCircle, Layers,
+  TrendingUp, Calendar, AlertCircle, Layers, ArrowLeftRight, Bell,
 } from "lucide-react";
+import { Link } from "@/lib/router";
 
 type PlanRow = { name: string; count: number; revenue: number };
 
@@ -21,6 +22,11 @@ type Stats = {
   thisMonthSubs: number;
   totalRevenue: number;
   byPlan: PlanRow[];
+  pendingTransfers: number;
+  pendingSms: number;
+  pendingWithdrawals: number;
+  signupsToday: number;
+  newShopsToday: number;
 };
 
 function fmtBdt(n: number) {
@@ -29,6 +35,7 @@ function fmtBdt(n: number) {
 
 function AdminOverview() {
   const [stats, setStats] = useState<Stats | null>(null);
+  const [activity, setActivity] = useState<Array<{ id: string; title: string; body: string | null; link: string | null; type: string | null; created_at: string }>>([]);
 
   useEffect(() => {
     (async () => {
@@ -36,10 +43,12 @@ function AdminOverview() {
       const nowIso = now.toISOString();
       const in7 = new Date(now.getTime() + 7 * 86400_000).toISOString();
       const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+      const dayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
 
       const [
         u, s, sub, req, mp, mpa, list, admins, exp, mNew,
         activeSubsRows, plans,
+        pTrans, pSms, pWd, sToday, shToday, recent,
       ] = await Promise.all([
         supabase.from("profiles").select("id", { count: "exact", head: true }),
         supabase.from("shops").select("id", { count: "exact", head: true }).is("deleted_at", null),
@@ -60,6 +69,18 @@ function AdminOverview() {
         supabase.from("subscriptions").select("plan_id")
           .eq("status", "active").gt("expires_at", nowIso),
         supabase.from("subscription_plans").select("id,name_bn,name_en,price_bdt"),
+        supabase.from("shop_transfer_requests").select("id", { count: "exact", head: true })
+          .in("status", ["pending_payment","pending_recipient","pending_admin"]),
+        supabase.from("sms_purchase_requests").select("id", { count: "exact", head: true })
+          .eq("payment_status", "pending"),
+        supabase.from("affiliate_withdrawals").select("id", { count: "exact", head: true })
+          .eq("status", "pending"),
+        supabase.from("profiles").select("id", { count: "exact", head: true })
+          .gte("created_at", dayStart),
+        supabase.from("shops").select("id", { count: "exact", head: true })
+          .gte("created_at", dayStart).is("deleted_at", null),
+        supabase.from("notifications").select("id,title,body,link,type,created_at")
+          .order("created_at", { ascending: false }).limit(15),
       ]);
 
       const planMap = new Map<string, { name: string; price: number }>();
@@ -92,7 +113,13 @@ function AdminOverview() {
         thisMonthSubs: mNew.count ?? 0,
         totalRevenue: revenue,
         byPlan,
+        pendingTransfers: pTrans.count ?? 0,
+        pendingSms: pSms.count ?? 0,
+        pendingWithdrawals: pWd.count ?? 0,
+        signupsToday: sToday.count ?? 0,
+        newShopsToday: shToday.count ?? 0,
       });
+      setActivity(((recent.data as any[]) ?? []) as any);
     })();
   }, []);
 
@@ -127,6 +154,23 @@ function AdminOverview() {
           );
         })}
       </div>
+
+      {/* Action-needed strip */}
+      <Card>
+        <CardHeader className="p-3 pb-1 sm:p-4 sm:pb-2">
+          <CardTitle className="flex items-center gap-2 text-sm font-semibold">
+            <AlertCircle className="h-4 w-4 text-amber-600" />
+            Needs Attention
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="grid grid-cols-2 gap-2 p-3 pt-2 sm:grid-cols-5 sm:p-4 sm:pt-2">
+          <ActionTile to="/admin/transfers" label="Transfers" value={stats?.pendingTransfers ?? "—"} icon={ArrowLeftRight} />
+          <ActionTile to="/admin/subscription-requests" label="Sub. Requests" value={stats?.pendingRequests ?? "—"} icon={Receipt} />
+          <ActionTile to="/admin/sms-gateways" label="SMS top-ups" value={stats?.pendingSms ?? "—"} icon={Bell} />
+          <ActionTile to="/admin/affiliates" label="Withdrawals" value={stats?.pendingWithdrawals ?? "—"} icon={CreditCard} />
+          <ActionTile to="/admin/users" label="Today signups" value={stats?.signupsToday ?? "—"} icon={Users} />
+        </CardContent>
+      </Card>
 
       {/* Subscription summary */}
       <Card>
@@ -188,6 +232,61 @@ function AdminOverview() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Recent activity */}
+      <Card>
+        <CardHeader className="p-3 pb-1 sm:p-4 sm:pb-2">
+          <CardTitle className="flex items-center gap-2 text-sm font-semibold">
+            <Bell className="h-4 w-4 text-primary" /> Recent Activity
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          {activity.length === 0 ? (
+            <div className="px-4 py-6 text-center text-xs text-muted-foreground">No recent activity</div>
+          ) : (
+            <ul className="divide-y">
+              {activity.map((n) => (
+                <li key={n.id}>
+                  {n.link ? (
+                    <Link to={n.link as never} className="block px-3 py-2 hover:bg-accent">
+                      <ActivityItem {...n} />
+                    </Link>
+                  ) : (
+                    <div className="px-3 py-2"><ActivityItem {...n} /></div>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function ActionTile({ to, label, value, icon: Icon }: { to: string; label: string; value: number | string; icon: React.ComponentType<{ className?: string }> }) {
+  const num = typeof value === "number" ? value : 0;
+  const tone = num > 0 ? "border-amber-300 bg-amber-50" : "bg-card";
+  return (
+    <Link to={to as never} className={`block rounded-md border p-2 transition hover:shadow-sm ${tone}`}>
+      <div className="flex items-center justify-between gap-1">
+        <span className="truncate text-[10px] text-muted-foreground sm:text-[11px]">{label}</span>
+        <Icon className={`h-3.5 w-3.5 ${num > 0 ? "text-amber-700" : "text-muted-foreground"}`} />
+      </div>
+      <div className="mt-0.5 text-base font-bold tabular-nums sm:text-lg">{value}</div>
+    </Link>
+  );
+}
+
+function ActivityItem({ title, body, created_at }: { title: string; body: string | null; created_at: string }) {
+  const dt = new Date(created_at);
+  return (
+    <div className="flex items-start justify-between gap-2">
+      <div className="min-w-0">
+        <div className="truncate text-sm font-medium">{title}</div>
+        {body && <div className="truncate text-xs text-muted-foreground">{body}</div>}
+      </div>
+      <div className="flex-none text-[10px] text-muted-foreground">{dt.toLocaleString()}</div>
     </div>
   );
 }
