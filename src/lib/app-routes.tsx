@@ -239,6 +239,8 @@ export const appRoutes: RouteObject[] = [
 { path: "my-orders", element: <Suspense fallback={<RouteFallback/>}><LMyOrders/></Suspense> }
 ,
 { path: "favorite-shops", element: <Suspense fallback={<RouteFallback/>}><LFavoriteShops/></Suspense> }
+,
+{ path: "my-services", element: <Suspense fallback={<RouteFallback/>}><LMyServices/></Suspense> }
 ] },
 { path: "f/:slug", element: <Suspense fallback={<RouteFallback/>}><L64/></Suspense>, children: [
 { path: "my", element: <Suspense fallback={<RouteFallback/>}><L65/></Suspense> }
