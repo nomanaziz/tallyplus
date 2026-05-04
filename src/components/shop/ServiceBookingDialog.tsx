@@ -87,10 +87,25 @@ export function ServiceBookingDialog({
   const advanceRequired = !!service.advance_required && Number(service.advance_amount ?? 0) > 0;
   const advanceAmount = Number(service.advance_amount ?? 0);
 
+  // Minimum bookable datetime = now (local), formatted for <input type="datetime-local">
+  const minScheduledAt = (() => {
+    const d = new Date();
+    d.setSeconds(0, 0);
+    const pad = (n: number) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  })();
+
   const submit = async () => {
     if (!name.trim() || !phone.trim()) {
       toast.error("নাম ও ফোন আবশ্যক");
       return;
+    }
+    if (scheduledAt) {
+      const picked = new Date(scheduledAt).getTime();
+      if (Number.isNaN(picked) || picked < Date.now() - 60_000) {
+        toast.error("পেছনের তারিখ/সময়ে বুকিং করা যাবে না — অনুগ্রহ করে ভবিষ্যতের সময় দিন");
+        return;
+      }
     }
     if (advanceRequired && !advTxn.trim()) {
       toast.error("অগ্রিম পেমেন্টের TxnID দিন");
@@ -199,7 +214,13 @@ export function ServiceBookingDialog({
           <BdLocationPicker value={loc} onChange={setLoc} showArea={false} />
           <div>
             <Label className="flex items-center gap-1"><CalendarClock className="h-3.5 w-3.5" /> পছন্দের সময়</Label>
-            <Input type="datetime-local" value={scheduledAt} onChange={(e) => setScheduledAt(e.target.value)} />
+            <Input
+              type="datetime-local"
+              min={minScheduledAt}
+              value={scheduledAt}
+              onChange={(e) => setScheduledAt(e.target.value)}
+            />
+            <p className="mt-1 text-xs text-muted-foreground">পেছনের তারিখ/সময় নির্বাচন করা যাবে না।</p>
           </div>
           <div>
             <Label>নোট</Label>
