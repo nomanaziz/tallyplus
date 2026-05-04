@@ -116,34 +116,36 @@ function ServicesPage() {
             {lang === "bn" ? "আপনার সার্ভিসের তালিকা ও মূল্য পরিচালনা করুন" : "Manage your services and pricing"}
           </div>
         </div>
-        <Button
-          onClick={() => {
-            if (limitReached) {
-              toast.error(lang === "bn" ? "সীমা শেষ — আপগ্রেড করুন" : "Limit reached — upgrade");
-              return;
-            }
-            setEditing(null);
-            setOpenForm(true);
-          }}
-          className="gap-2"
-          disabled={limitReached}
-        >
-          <Plus className="h-4 w-4" /> {lang === "bn" ? "নতুন সার্ভিস" : "New Service"}
-        </Button>
-        <Button
-          variant="outline"
-          onClick={() => {
-            if (limitReached) {
-              toast.error(lang === "bn" ? "সীমা শেষ — আপগ্রেড করুন" : "Limit reached — upgrade");
-              return;
-            }
-            setQuickOpen(true);
-          }}
-          className="gap-2"
-          disabled={limitReached}
-        >
-          <Zap className="h-4 w-4" /> {lang === "bn" ? "দ্রুত যোগ" : "Quick add"}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={() => {
+              if (limitReached) {
+                toast.error(lang === "bn" ? "সীমা শেষ — আপগ্রেড করুন" : "Limit reached — upgrade");
+                return;
+              }
+              setQuickOpen(true);
+            }}
+            className="gap-2"
+            disabled={limitReached}
+          >
+            <Zap className="h-4 w-4" /> {lang === "bn" ? "দ্রুত যোগ" : "Quick add"}
+          </Button>
+          <Button
+            onClick={() => {
+              if (limitReached) {
+                toast.error(lang === "bn" ? "সীমা শেষ — আপগ্রেড করুন" : "Limit reached — upgrade");
+                return;
+              }
+              setEditing(null);
+              setOpenForm(true);
+            }}
+            className="gap-2"
+            disabled={limitReached}
+          >
+            <Plus className="h-4 w-4" /> {lang === "bn" ? "নতুন সার্ভিস" : "New Service"}
+          </Button>
+        </div>
       </div>
 
       <UsageLimitBanner data={usage} label_bn="সার্ভিস" label_en="services" />
