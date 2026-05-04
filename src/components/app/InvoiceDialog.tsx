@@ -61,7 +61,7 @@ export function InvoiceDialog({
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-2xl max-h-[92vh] overflow-y-auto p-0 gap-0 invoice-dialog-content">
+      <DialogContent showCloseButton={false} className="max-w-2xl max-h-[92vh] overflow-y-auto p-0 gap-0 invoice-dialog-content">
         {/* Header */}
         <div className="flex items-center justify-between border-b px-5 py-3 print:hidden">
           <div className="flex items-center gap-2 text-emerald-600 font-bold">
