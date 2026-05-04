@@ -393,3 +393,26 @@ html, body {
 @media print {
   body.pos-printing { page: pos-receipt; }
 }
+
+/* === Theme-tinted Lucide icons ===
+   Lucide icons render with stroke="currentColor", so we just set color.
+   Default every SVG icon to the theme primary, but allow opt-out via
+   .icon-muted / explicit text-* utility classes / inside buttons that need
+   to inherit color (links, destructive buttons, etc.). */
+@layer base {
+  svg.lucide {
+    color: hsl(var(--primary));
+  }
+  /* Don't tint icons inside these contexts — they should follow text color */
+  button svg.lucide,
+  a svg.lucide,
+  [role="menuitem"] svg.lucide,
+  [data-slot="select-trigger"] svg.lucide,
+  .text-destructive svg.lucide,
+  .text-muted-foreground svg.lucide,
+  .text-foreground svg.lucide,
+  .icon-inherit svg.lucide,
+  .icon-inherit.lucide {
+    color: inherit;
+  }
+}
