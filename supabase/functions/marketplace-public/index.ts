@@ -732,6 +732,15 @@ Deno.serve(async (req) => {
         return json({ error: "এই সার্ভিসে অগ্রিম বাধ্যতামূলক — পেমেন্ট মাধ্যম ও TxnID দিন" }, 400);
       }
 
+      // Reject past scheduled times
+      if (body.scheduled_at) {
+        const t = new Date(String(body.scheduled_at)).getTime();
+        if (Number.isNaN(t)) return json({ error: "অবৈধ সময়" }, 400);
+        if (t < Date.now() - 60_000) {
+          return json({ error: "পেছনের তারিখ/সময়ে বুকিং করা যাবে না" }, 400);
+        }
+      }
+
       // Try to identify the consumer from the bearer token (optional)
       let consumer_user_id: string | null = null;
       const auth = req.headers.get("authorization");
