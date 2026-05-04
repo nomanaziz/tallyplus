@@ -22,6 +22,7 @@ type Sub = {
 
 type Ctx = {
   loading: boolean;
+  accountReady: boolean;
   session: Session | null;
   user: User | null;
   profile: Profile | null;
@@ -39,6 +40,7 @@ type Ctx = {
 
 const AuthCtx = createContext<Ctx>({
   loading: true,
+  accountReady: false,
   session: null,
   user: null,
   profile: null,
@@ -142,6 +144,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (session?.user) await loadProfile(session.user.id);
   };
 
+  useEffect(() => {
+    if (!session?.user) return;
+    setProfileLoaded(false);
+    void loadProfile(session.user.id);
+  }, [session?.user?.id]);
+
   // Lazily load profile/roles/subscription only when something requests it
   // (e.g. when entering the /app layout). Keeps public pages light.
   const ensureProfile = async () => {
@@ -227,6 +235,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     <AuthCtx.Provider
       value={{
         loading,
+        accountReady: !session?.user || profileLoaded,
         session,
         user: session?.user ?? null,
         profile,
