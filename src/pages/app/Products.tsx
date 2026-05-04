@@ -529,6 +529,7 @@ function ProductsPage() {
       )}
 
       <div className="mt-2 sm:mt-4 [&_input]:h-9 sm:[&_input]:h-10 [&_button]:h-9 sm:[&_button]:h-10">
+        <UsageLimitBanner data={usage} label_bn="পণ্য" label_en="products" />
         <DataToolbar
           search={search}
           onSearch={setSearch}
