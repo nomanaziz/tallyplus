@@ -382,6 +382,96 @@ function SettingsPage() {
 
 export default SettingsPage;
 
+function TrialSettingsCard() {
+  const qc = useQueryClient();
+  const { data, isLoading } = useQuery({
+    queryKey: ["admin_trial_settings"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("trial_settings")
+        .select("is_enabled,duration_days,warn_days_before")
+        .eq("id", true)
+        .maybeSingle();
+      if (error) throw error;
+      return data ?? { is_enabled: true, duration_days: 30, warn_days_before: 5 };
+    },
+  });
+  const [form, setForm] = useState({ is_enabled: true, duration_days: 30, warn_days_before: 5 });
+  useEffect(() => {
+    if (data) setForm({
+      is_enabled: !!data.is_enabled,
+      duration_days: Number(data.duration_days ?? 30),
+      warn_days_before: Number(data.warn_days_before ?? 5),
+    });
+  }, [data]);
+
+  const save = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.from("trial_settings").upsert({
+        id: true,
+        is_enabled: form.is_enabled,
+        duration_days: Math.max(1, Math.min(365, form.duration_days)),
+        warn_days_before: Math.max(1, Math.min(60, form.warn_days_before)),
+      }, { onConflict: "id" });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Trial settings saved");
+      qc.invalidateQueries({ queryKey: ["admin_trial_settings"] });
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base">Free Trial Settings</CardTitle>
+        <p className="text-xs text-muted-foreground">
+          নতুন user signup করলে স্বয়ংক্রিয়ভাবে ফ্রি ট্রায়াল পাবে। Trial-এ Full (Lifetime) access থাকে। Expire হলে user automatic Free plan-এ চলে যাবে।
+        </p>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex items-center gap-3">
+          <Switch
+            checked={form.is_enabled}
+            onCheckedChange={(v) => setForm({ ...form, is_enabled: v })}
+          />
+          <Label>Enable Free Trial for new users</Label>
+        </div>
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-1.5">
+            <Label>Trial duration (days)</Label>
+            <Input
+              type="number"
+              min={1}
+              max={365}
+              value={form.duration_days}
+              onChange={(e) => setForm({ ...form, duration_days: Number(e.target.value) })}
+            />
+            <p className="text-[11px] text-muted-foreground">Default 30 (এক মাস)।</p>
+          </div>
+          <div className="grid gap-1.5">
+            <Label>Warn user N days before expiry</Label>
+            <Input
+              type="number"
+              min={1}
+              max={60}
+              value={form.warn_days_before}
+              onChange={(e) => setForm({ ...form, warn_days_before: Number(e.target.value) })}
+            />
+            <p className="text-[11px] text-muted-foreground">এই দিনের ভিতরে আসলে user-কে warning banner দেখানো হবে।</p>
+          </div>
+        </div>
+        <div className="flex justify-end">
+          <Button onClick={() => save.mutate()} disabled={isLoading || save.isPending}>
+            Save Trial Settings
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 type ContactForm = {
   facebook_url: string;
   youtube_url: string;
