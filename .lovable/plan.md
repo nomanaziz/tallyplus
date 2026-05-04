@@ -1,78 +1,54 @@
-# Switch Shop Owner Icon Pack to Lucide
+## Goal
 
-`lucide-react` is already installed and used in the project. We'll convert the central `src/lib/icons.ts` registry from URL-based image imports to Lucide React components, so every consumer (`<img src={icons.X} />`) becomes `<Icon />` JSX. Free, open-source, no licensing issues, fully tree-shakable, scales/colors with currentColor.
+হোম মেনুর (mobile dashboard quick-tiles: ক্রয়, বিক্রয়, দ্রুত বিক্রি, ক্যাশবক্স ইত্যাদি) এবং desktop sidebar navigation এর প্রতিটি icon-কে একটা ছোট square tile এর ভিতরে বসানো হবে। Tile-এর background = theme primary color, icon-এর color = white (primary-foreground)। Theme switch করলে square ও সব icon সেই অনুযায়ী রং বদলাবে।
 
-## Approach
+## কেন এখন কাজ হচ্ছিল না
 
-### 1. Rewrite `src/lib/icons.ts`
-Replace all 67 image imports with a Lucide component map. Each key maps to a sensible Lucide equivalent:
+`src/styles.css`-এ একটা rule আছে যেটা `<a>` বা `<button>` এর ভিতরের Lucide icon-কে theme tint থেকে বাদ দেয় (color: inherit)। Sidebar ও mobile home menu — দুটোই `<Link>` (a tag), তাই icon গুলো foreground color পেয়ে যাচ্ছিল, primary না।
 
-```ts
-import {
-  Home, ShoppingCart, ShoppingBag, Zap, Wallet, Package, Boxes,
-  Users, ListOrdered, ClipboardList, HandCoins, Receipt, AlertCircle,
-  ShieldCheck, Trash2, KeyRound, Printer, BarChart3, Megaphone,
-  Store, GraduationCap, BadgeDollarSign, Bookmark, Clock, User,
-  UserCog, Banknote, ArrowDownToLine, ArrowUpFromLine, ArrowLeftRight,
-  Heart, Bell, Languages, Settings, Search, Plus, UserPlus, ImagePlus,
-  Pencil, Eye, EyeOff, Download, FileText, RefreshCw, Image as ImageIcon,
-  Network, LayoutDashboard, ShieldAlert, ArrowDownCircle, ArrowUpCircle,
-  Truck, MapPin, FileSpreadsheet, TrendingUp, PieChart, ArrowLeft,
-  StickyNote, Star, BookOpen,
-  // ...etc
-} from "lucide-react";
+## Changes
 
-export const icons = {
-  home: Home, sell: ShoppingCart, purchase: ShoppingBag,
-  quickSell: Zap, cashbox: Wallet, productList: Package,
-  stock: Boxes, contact: Users, salesList: ListOrdered,
-  // ...all 67 keys mapped
-} as const;
+### 1. `src/pages/app/Dashboard.tsx` — Mobile `Section` tile
 
-export type IconKey = keyof typeof icons;
-```
+প্রতিটা grid item এ icon-কে square wrapper এর ভিতরে রাখা হবে:
 
-### 2. Update all consumers (`<img src={icons.X} />` → `<Icon />`)
-Pattern across ~40+ files:
-
-Before:
 ```tsx
-<img src={icons.settings} alt="" className="h-4 w-4" />
+<Link ... className="group flex flex-col items-center gap-1.5 rounded-lg p-2 text-center hover:bg-accent">
+  <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm">
+    <it.icon className="h-6 w-6 icon-inherit" />
+  </span>
+  <span className="text-[11px] font-semibold leading-tight">{lang === "bn" ? it.bn : it.en}</span>
+</Link>
 ```
 
-After:
+- `bg-primary` → theme color পাল্টালে square-ও পাল্টাবে।
+- `text-primary-foreground` + `icon-inherit` → icon সাদা (dark theme এ সঠিক contrast)।
+- `rounded-lg` square shape, soft border via `shadow-sm`।
+
+### 2. `src/components/app/AppSidebar.tsx` — desktop nav
+
+`renderItem`-এর icon ও similar square treatment পাবে যাতে navigation menu-এর icon-ও theme অনুযায়ী রং বদলায়:
+
 ```tsx
-const Icon = icons.settings;
-<Icon className="h-4 w-4" />
+<Link ... >
+  <span className={cn(
+    "flex h-7 w-7 flex-none items-center justify-center rounded-md bg-primary text-primary-foreground",
+    active && "ring-2 ring-primary/40"
+  )}>
+    <it.icon className="h-4 w-4 icon-inherit" />
+  </span>
+  <span className="truncate">{lang === "bn" ? it.bn : it.en}</span>
+</Link>
 ```
 
-Or via a tiny helper component `<AppIcon name="settings" className="h-4 w-4" />` defined in `src/lib/icons.ts` for cleaner usage:
-```tsx
-export function AppIcon({ name, className }: { name: IconKey; className?: string }) {
-  const I = icons[name];
-  return <I className={className} />;
-}
-```
-Then a codemod via `rg`/`sed`-style replacement updates `<img src={icons.X} ...` → `<AppIcon name="X" ...`.
+Install-app button এর `Download` icon-ও একই square wrapper পাবে যাতে consistent দেখায়।
 
-### 3. Delete now-unused asset files
-Remove all `src/assets/icons/*.png` and `*.svg` files (they're no longer referenced).
+### 3. কোনো CSS পরিবর্তন দরকার নেই
 
-### 4. Brand icons exception
-`brand-hishabee.svg` and `brand-bee.svg` are project logos, not generic icons. Keep these as image imports, separate from the Lucide registry (e.g., `src/lib/brand.ts`).
+`.icon-inherit` class টা ইতিমধ্যেই styles.css-এ আছে এবং icon-কে wrapper span এর `text-primary-foreground` color inherit করতে দেয়।
 
-## Files affected
-- **Rewritten:** `src/lib/icons.ts` (complete rewrite, ~70 line file)
-- **New:** `src/lib/brand.ts` (keeps the 2 brand SVG imports)
-- **Edited:** every file using `icons.X` in JSX (`AppTopbar.tsx`, `DataToolbar.tsx`, `Dashboard.tsx`, `Sell.tsx`, `Purchase.tsx`, `Contacts.tsx`, customer pages, etc. — ~40 files). Mechanical `<img src={icons.X}` → `<AppIcon name="X"` swap.
-- **Deleted:** ~65 files in `src/assets/icons/` (all except the 2 brand SVGs).
+## Result
 
-## Benefits
-- ~500KB+ asset weight removed from the bundle
-- Icons inherit `currentColor` → automatic theme/dark-mode support
-- Crisp at any size (true SVG, not bitmap PNGs)
-- No licensing concerns, no manual icon-pack uploads needed
-- Easy to swap any individual icon later (one line in `icons.ts`)
-
-## Note
-This will visually change every icon in the app from colorful illustrated style → clean monochrome line icons (Lucide style). If you want to keep the colorful illustrated look, say so and I'll instead suggest a free illustrated set (e.g., Iconoir, Tabler, or Streamline free tier) before implementing.
+- Home page-এর সব quick-action tile (ক্রয়, বিক্রয়, দ্রুত বিক্রি, ক্যাশবক্স, ledger ইত্যাদি): প্রতিটার নিচে theme primary color square, ভিতরে সাদা icon।
+- Sidebar navigation: প্রতিটা item-এর সাথে ছোট square primary tile + সাদা icon।
+- Theme switch (green/blue/red/yellow/soft-dark) → সব square এবং icon contrast সহ instantly update।
