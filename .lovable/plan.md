@@ -1,26 +1,26 @@
-## Problems
+## লক্ষ্য
 
-1. **"function gen_random_bytes(integer) does not exist"** — The trigger `tg_shops_ensure_wishlist_slug` calls `gen_random_bytes()` unqualified, but the function lives in the `extensions` schema and isn't on the trigger's `search_path`. So every new shop insert fails.
-2. **AddShopDialog**: only Division + District dropdowns from a hardcoded list; no Upazila/Thana. Also has a free-text "এলাকা" field that's redundant with address.
-3. **Phone field** shows both 🇧🇩 flag AND `+88` text — duplicate country indicators.
+নতুন দোকান তৈরি হলেই স্বয়ংক্রিয়ভাবে একটা unique `username` সেট হবে, যাতে অনলাইন শপের পাবলিক লিংক (`/vendor/{username}`) সাথে সাথে কাজ করে। পুরনো দোকানে কিছু করা হবে না — মালিক নিজেই Settings এ গিয়ে সেট করবেন।
 
-## Fix
+## পরিবর্তন
 
-### 1. Migration — fix the slug trigger functions
+### ১. DB trigger — `tg_shops_ensure_username` (migration)
 
-Recreate `tg_shops_ensure_wishlist_slug` and `tg_wishlist_ensure_share_token` with `SET search_path = public, extensions` (and qualify calls as `extensions.gen_random_bytes(...)`) so shop inserts work again.
+`shops` টেবিলে `BEFORE INSERT` trigger যোগ হবে:
 
-### 2. `src/components/app/AddShopDialog.tsx`
+- যদি `NEW.username` already দেওয়া থাকে (non-empty), কিছুই করবে না।
+- নাহলে দোকানের `name` থেকে slugify করবে: lowercase, only `a-z0-9-`, max 24 chars।
+- যদি ফাঁকা/reserved/duplicate হয়, suffix যোগ করবে (`-ab12` → `extensions.gen_random_bytes` থেকে)।
+- 10 attempt fail হলে fallback হিসেবে `shop-` + uuid prefix।
+- Validation: `^[a-z0-9][a-z0-9_-]{2,31}$` মেনে চলবে, এবং Settings.tsx এর `RESERVED` সেটের সাথে মেলে এমন reserved শব্দ এড়াবে (app, admin, auth, shop, shops, api, vendor, marketplace ইত্যাদি)।
+- `SET search_path = public, extensions` এবং `extensions.gen_random_bytes(...)` qualified call (আগের wishlist_slug trigger এর মতই)।
 
-- Remove hardcoded `BD_DIVISIONS` / `DISTRICTS` constants and the standalone `area` field.
-- Replace the Division/District/Area block with the existing DB-backed `BdLocationPicker` (`showArea={false}`) — gives Division → District → Upazila/Thana from `bd_divisions`/`bd_districts`/`bd_upazilas`.
-- State becomes `loc: { division, district, upazila, area: null }`; on submit insert into `seller_locations` with proper `upazila` value (currently it incorrectly stores the area text in the upazila column).
-- Phone field: drop the `+88` text label, keep only `🇧🇩` flag (cleaner) — they sit side-by-side as one chip already.
+### ২. কোডে কোনো পরিবর্তন নেই
 
-No other UI changes.
+`AddShopDialog` এ আলাদা username field দরকার নেই — trigger সব handle করবে। User চাইলে পরে Settings থেকে edit করতে পারবেন।
 
-### Result
+## প্রভাব
 
-- Add Shop dialog opens, Division → District → থানা cascade works from the DB.
-- Phone shows just the BD flag chip + 11-digit input.
-- Saving a new shop no longer throws `gen_random_bytes` error.
+- **নতুন দোকান**: তৈরির সাথে সাথেই `/vendor/{username}` লিংক কাজ করবে।
+- **পুরনো দোকান**: untouched — মালিক Settings এ গিয়ে নিজে username দেবেন (যেমন এখন কাজ করে)।
+- **online shop dashboard banner** এ "এখনো সেট করা হয়নি" শুধুমাত্র সেইসব পুরনো দোকানে দেখাবে যেগুলোয় username নেই।
