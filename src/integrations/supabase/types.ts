@@ -3116,6 +3116,96 @@ export type Database = {
           },
         ]
       }
+      service_bookings: {
+        Row: {
+          advance_amount: number
+          advance_paid: boolean
+          advance_payment_method: string | null
+          advance_txn_id: string | null
+          area: string | null
+          consumer_user_id: string | null
+          created_at: string
+          customer_address: string | null
+          customer_name: string
+          customer_phone: string
+          district: string | null
+          division: string | null
+          id: string
+          note: string | null
+          scheduled_at: string | null
+          service_id: string
+          service_name: string
+          service_price: number
+          shop_id: string
+          status: string
+          upazila: string | null
+          updated_at: string
+        }
+        Insert: {
+          advance_amount?: number
+          advance_paid?: boolean
+          advance_payment_method?: string | null
+          advance_txn_id?: string | null
+          area?: string | null
+          consumer_user_id?: string | null
+          created_at?: string
+          customer_address?: string | null
+          customer_name: string
+          customer_phone: string
+          district?: string | null
+          division?: string | null
+          id?: string
+          note?: string | null
+          scheduled_at?: string | null
+          service_id: string
+          service_name: string
+          service_price?: number
+          shop_id: string
+          status?: string
+          upazila?: string | null
+          updated_at?: string
+        }
+        Update: {
+          advance_amount?: number
+          advance_paid?: boolean
+          advance_payment_method?: string | null
+          advance_txn_id?: string | null
+          area?: string | null
+          consumer_user_id?: string | null
+          created_at?: string
+          customer_address?: string | null
+          customer_name?: string
+          customer_phone?: string
+          district?: string | null
+          division?: string | null
+          id?: string
+          note?: string | null
+          scheduled_at?: string | null
+          service_id?: string
+          service_name?: string
+          service_price?: number
+          shop_id?: string
+          status?: string
+          upazila?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_bookings_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_bookings_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       service_categories: {
         Row: {
           created_at: string
@@ -3240,6 +3330,9 @@ export type Database = {
       }
       services: {
         Row: {
+          advance_amount: number
+          advance_required: boolean
+          booking_enabled: boolean
           category_id: string | null
           created_at: string
           deleted_at: string | null
@@ -3264,6 +3357,9 @@ export type Database = {
           warranty_value: number | null
         }
         Insert: {
+          advance_amount?: number
+          advance_required?: boolean
+          booking_enabled?: boolean
           category_id?: string | null
           created_at?: string
           deleted_at?: string | null
@@ -3288,6 +3384,9 @@ export type Database = {
           warranty_value?: number | null
         }
         Update: {
+          advance_amount?: number
+          advance_required?: boolean
+          booking_enabled?: boolean
           category_id?: string | null
           created_at?: string
           deleted_at?: string | null
