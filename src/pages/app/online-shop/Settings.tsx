@@ -84,8 +84,16 @@ function StoreSettingsPage() {
     if (!shopId) return null;
     const setLoading = kind === "logo" ? setUploadingLogo : setUploadingBanner;
     setLoading(true);
-    const path = `${shopId}/${kind}-${Date.now()}-${file.name}`;
-    const { error } = await supabase.storage.from("shop-logos").upload(path, file, { upsert: true });
+    const { data: ud } = await supabase.auth.getUser();
+    const uid = ud?.user?.id;
+    if (!uid) {
+      setLoading(false);
+      toast.error(lang === "bn" ? "লগইন প্রয়োজন" : "Login required");
+      return null;
+    }
+    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+    const path = `${uid}/${shopId}/${kind}-${Date.now()}-${safeName}`;
+    const { error } = await supabase.storage.from("shop-logos").upload(path, file, { upsert: true, contentType: file.type });
     if (error) {
       setLoading(false);
       toast.error(error.message);
