@@ -546,6 +546,9 @@ type Booking = {
   advance_paid: boolean;
   advance_payment_method: string | null;
   advance_txn_id: string | null;
+  advance_payer_phone: string | null;
+  sale_id: string | null;
+  final_amount: number | null;
   status: string;
   created_at: string;
 };
