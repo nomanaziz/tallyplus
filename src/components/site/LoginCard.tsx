@@ -8,6 +8,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Loader2, MessageCircle, Sparkles } from "lucide-react";
 import { ShopTypePicker } from "@/components/app/ShopTypePicker";
+import { COUNTRIES, guessCountryCode, getCountry } from "@/lib/countries";
 
 type Mode = "login" | "signup";
 type Role = "owner" | "customer";
@@ -16,12 +17,21 @@ const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
 const SUPABASE_ANON = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
 const ADMIN_WA = "8801XXXXXXXXX";
 
-function normalizePhone(raw: string): string {
+function normalizePhone(raw: string, countryCode?: string): string {
   const d = raw.replace(/\D/g, "");
   if (!d) return "";
-  if (d.startsWith("880")) return "+" + d;
-  if (d.startsWith("01") && d.length === 11) return "+880" + d.slice(1);
-  if (d.length === 10) return "+880" + d;
+  const country = getCountry(countryCode);
+  // BD legacy convenience
+  if (country?.code === "BD") {
+    if (d.startsWith("880")) return "+" + d;
+    if (d.startsWith("01") && d.length === 11) return "+880" + d.slice(1);
+    if (d.length === 10) return "+880" + d;
+    return "+" + d;
+  }
+  if (country) {
+    if (d.startsWith(country.dial)) return "+" + d;
+    return "+" + country.dial + d.replace(/^0+/, "");
+  }
   return "+" + d;
 }
 
@@ -56,6 +66,7 @@ export function LoginCard() {
   const [phone, setPhone] = useState("");
   const [pin, setPin] = useState("");
   const [loading, setLoading] = useState(false);
+  const [country, setCountry] = useState<string>(() => guessCountryCode());
   const [adminPhone, setAdminPhone] = useState(ADMIN_WA);
   const [postSignup, setPostSignup] = useState<null | "owner">(null);
   const [showForgotPin, setShowForgotPin] = useState(false);
@@ -88,8 +99,8 @@ export function LoginCard() {
   }, []);
 
   const validate = (): string | null => {
-    const ph = normalizePhone(phone);
-    if (!ph || ph.length < 10) return "সঠিক মোবাইল নম্বর দিন";
+    const ph = normalizePhone(phone, country);
+    if (!ph || ph.length < 8) return "সঠিক মোবাইল নম্বর দিন";
     if (!/^\d{4}$/.test(pin)) return "৪ সংখ্যার PIN দিন";
     if (mode === "signup") {
       if (name.trim().length < 2) return "আপনার নাম দিন";
@@ -111,7 +122,7 @@ export function LoginCard() {
     if (err) return toast.error(err);
     setLoading(true);
     try {
-      const ph = normalizePhone(phone);
+      const ph = normalizePhone(phone, country);
       if (mode === "signup") {
         if (role === "owner") {
           const r = await callFn("signup-with-pin", {
@@ -120,6 +131,7 @@ export function LoginCard() {
             shop_name: shopName.trim(),
             shop_type_code: shopTypeCode,
             pin,
+            country_code: country,
           });
           if (!r.ok) {
             if (r.error === "phone_exists") return toast.error("এই নম্বরে account আছে — লগইন করুন");
@@ -135,6 +147,7 @@ export function LoginCard() {
             phone: ph,
             full_name: name.trim(),
             pin,
+            country_code: country,
           });
           if (!r.ok) {
             if (r.error === "phone_exists") return toast.error("এই নম্বরে গ্রাহক account আছে — লগইন করুন");
@@ -214,14 +227,14 @@ export function LoginCard() {
   };
 
   const waUrl = () => {
-    const ph = normalizePhone(phone);
+    const ph = normalizePhone(phone, country);
     const text = encodeURIComponent(
       `আসসালামু আলাইকুম, আমার Tally Plus account এর PIN ভুলে গেছি।\nPhone: ${ph}\nদয়া করে PIN reset/সাহায্য করুন।`,
     );
     return `https://wa.me/${adminPhone}?text=${text}`;
   };
 
-  const phoneIsValid = normalizePhone(phone).length >= 10;
+  const phoneIsValid = normalizePhone(phone, country).length >= 8;
   const canShowForgotPin = mode === "login" && showForgotPin && phoneIsValid;
 
   if (postSignup === "owner") {
