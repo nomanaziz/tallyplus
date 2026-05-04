@@ -62,8 +62,8 @@ export function TransferShopDialog({
       const { data, error } = await supabase.rpc("request_shop_transfer", {
         _shop_id: shop.id,
         _to_phone: phone.trim(),
-        _reason: reason.trim() || "",
-        _payment_proof_url: proofUrl ?? "",
+        _reason: (reason.trim() || null) as unknown as string,
+        _payment_proof_url: (proofUrl ?? null) as unknown as string,
       });
       if (error) { toast.error(error.message); return; }
       const res = data as { ok: boolean; error?: string } | null;
