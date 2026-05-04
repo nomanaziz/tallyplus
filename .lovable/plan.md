@@ -1,101 +1,66 @@
 ## Goal
 
-Give every newly registered shop owner an automatic **1-month free trial with full (lifetime-equivalent) access**. Admin can enable/disable the trial system globally and configure its duration. Show countdown warnings near expiry. After expiry, the user automatically falls back to the **free plan limits** (10 products, 10 sales etc.) until they purchase a subscription.
+Personal account (consumer) এর left sidebar-এ যে menu items missing সেগুলো add করা, এবং dashboard-এ আরও বেশি information (দেনা, পাওনা, total order, favourite shops, services ইত্যাদি) দেখানো।
 
----
+## Current state
 
-## 1. Database changes (migration)
+**Sidebar (`CustomerLayout.tsx`)** এ এখন মাত্র ৬টি item আছে:
+Dashboard, আমার ফর্দ, আমার অর্ডার, আমার সার্ভিস, প্রিয় দোকান, প্রোফাইল।
 
-**a) New `trial_settings` table** (single-row global config, admin-managed):
+কিন্তু পেজ আছে আরও অনেক — **Money (আয়-ব্যয়), Notes (নোট), Training (ট্রেনিং), Create Fordo (নতুন ফর্দ)** — এগুলো sidebar-এ নেই, তাই desktop থেকে directly access করা যাচ্ছে না (শুধু dashboard shortcut থেকে)।
+
+**Dashboard** এখন দেখায়: এ-মাসের আয়/ব্যয়/ব্যালেন্স + ৯টা shortcut tile (যার মধ্যে পাব/দেব শুধু amount দেখায়)। কিন্তু total orders, favourite shops count, my services count — এসব নেই।
+
+## Changes
+
+### 1. Sidebar এ missing menu add করা (`src/pages/customer/CustomerLayout.tsx`)
+
+`NAV` array টা update করে নতুন order:
+
+```text
+- ড্যাশবোর্ড          (Home)
+- আমার ফর্দ           (ListChecks)
+- নতুন ফর্দ তৈরি করুন   (Plus)        ← নতুন
+- আমার অর্ডার          (ShoppingBag)
+- আমার সার্ভিস         (Wrench)
+- প্রিয় দোকান         (Heart)
+- আয়-ব্যয়            (Wallet)       ← নতুন
+- নোট                (StickyNote)   ← নতুন
+- ট্রেনিং             (GraduationCap)← নতুন
+- প্রোফাইল            (User)
 ```
-id boolean PK default true (single row guard)
-is_enabled boolean default true
-duration_days int default 30
-warn_days_before int default 5         -- start showing warning N days before expiry
-created_at, updated_at
+
+Mobile bottom nav-এ ১০টা item দেখানো ঠিক হবে না (এখন `grid-cols-6`)। Mobile-এ ৫টা most important রাখব: Dashboard, আমার ফর্দ, আমার অর্ডার, আয়-ব্যয়, প্রোফাইল — `grid-cols-5`। বাকিগুলো dashboard shortcuts + desktop sidebar থেকে access হবে।
+
+### 2. Dashboard-এ আরও information add করা (`src/pages/customer/Dashboard.tsx`)
+
+বর্তমান ৩টা summary card (আয়/ব্যয়/ব্যালেন্স) এর নিচে একটা নতুন **"মোট সারসংক্ষেপ"** section add করব ৬টা compact stat card সহ:
+
+```text
+┌─────────────────────────────────────────────────────────┐
+│  পাব          দেব          মোট অর্ডার                  │
+│  ৳ 1,200      ৳ 500        12টি                        │
+├─────────────────────────────────────────────────────────┤
+│  আমার ফর্দ    প্রিয় দোকান   সার্ভিস বুকিং              │
+│  3টি         2টি           1টি                         │
+└─────────────────────────────────────────────────────────┘
 ```
-RLS: anyone authenticated can SELECT; only admins can UPDATE (via `is_admin(auth.uid())`).
 
-**b) New `trial` plan row** in `subscription_plans`:
-- `code='trial'`, `name_bn='ফ্রি ট্রায়াল'`, `price_bdt=0`, `duration_days=30`, `max_shops=2`, `is_active=true` (hidden from Subscribe page via filter).
+Data sources (সব Promise.all-এ একসাথে fetch হবে, hook সবই আগে থেকেই আছে):
 
-**c) `usage_limits` for `trial` plan**: copy from `lifetime` (all `-1` = unlimited) so trial = full access.
+- **পাব / দেব** — `consumer_loans` (already fetched, just promote into prominent cards)
+- **মোট অর্ডার** — `marketplace_orders` count where `customer_user_id = user.id`
+- **আমার ফর্দ** — already counted (`fordoCount`)
+- **প্রিয় দোকান** — `consumer_favourite_shops` count where `user_id = user.id`
+- **সার্ভিস বুকিং** — `service_bookings` count where `customer_user_id = user.id` (যদি table থাকে; না-থাকলে skip)
 
-**d) Extend `subscription_status` enum** to include `'trial'` so we can distinguish trials from paid subscriptions in the existing `subscriptions` table — no new tables needed for tracking.
+এর নিচেই বর্তমান ৯টা shortcut tile section আগের মতই থাকবে (quick access হিসেবে কাজ করবে), শুধু "পাব"/"দেব" tile দুটো remove করব কারণ সেগুলো এখন উপরের stat row-তে আরও prominent ভাবে দেখা যাচ্ছে।
 
-**e) Trigger `tg_grant_trial_on_signup`** on `auth.users` AFTER INSERT (also fires from `handle_new_user` for owner accounts only):
-- If `trial_settings.is_enabled` and the user has no existing subscription → insert into `subscriptions(user_id, plan_id=trial, status='trial', expires_at = now()+duration_days)`.
-- Skip for `consumer` accounts.
+### 3. কোনো DB / migration লাগবে না
 
-**f) Update `user_active_plan_code(_user_id)`**: also accept `status='trial'` (currently filters `status='active'`). Same change for `has_active_subscription` and `user_shop_limit`.
+সব table আর data এক্সিস্ট করে — শুধু frontend-এ query + UI add।
 
-**g) Backfill**: for every existing owner with no active subscription, if trial is enabled, insert a trial row using `created_at` of the user (capped so already-old users don't get a fresh trial — only users created within the last `duration_days` get the remaining time).
+## Out of scope
 
----
-
-## 2. Admin UI — `src/pages/admin/Settings.tsx` (or new section)
-
-Add a **"Free Trial Settings"** card:
-- Toggle: Enable free trial for new users
-- Number input: Trial duration (days), default 30
-- Number input: Warning days before expiry, default 5
-- Save button → upserts into `trial_settings`.
-
-Reads/writes via `supabase.from('trial_settings')`.
-
----
-
-## 3. Frontend — Trial banner & warnings
-
-**New hook `src/hooks/useSubscriptionStatus.ts`**:
-Returns `{ planCode, status, expiresAt, daysLeft, isTrial, isExpiringSoon }` by querying the latest active/trial subscription for `user.id`.
-
-**New component `src/components/app/TrialBanner.tsx`** mounted in the app layout (above page content):
-- If `isTrial` and `daysLeft > warn_days_before` → green pill "ফ্রি ট্রায়াল চলছে — আর X দিন বাকি"
-- If `isTrial` and `daysLeft ≤ warn_days_before` → amber/red banner "আপনার ফ্রি ট্রায়াল আর মাত্র X দিন বাকি — এখনই Full Version কিনুন" with a CTA button → `/app/subscribe`
-- If trial just expired (no active sub) → red banner "ফ্রি ট্রায়াল শেষ — আপনি এখন Free প্ল্যানে আছেন (১০টি পণ্যের সীমা)" with Subscribe CTA.
-- Dismissible per-day via `localStorage` (but the urgent ≤5 days banner reappears on refresh).
-
-**Subscribe page**: show trial status row at top ("ট্রায়াল শেষ হবে: ২০২৬-০৫-৩০") instead of "Free".
-
----
-
-## 4. Auto-fallback to free plan
-
-No data deletion. Existing `tg_enforce_usage_limit` triggers and `user_active_plan_code()` already enforce the free-plan limits the moment the trial subscription's `expires_at` passes (because `user_active_plan_code` falls back to `'free'` when no active/trial sub exists). 
-
-**Daily cleanup**: scheduled job (pg_cron) that flips `subscriptions.status` from `'trial'` to `'expired'` once `expires_at < now()`. This keeps the data clean and ensures `has_active_subscription` returns false.
-
----
-
-## 5. Files to create / edit
-
-**Migrations** (one new file):
-- `trial_settings` table + RLS + seed row
-- `trial` plan + `usage_limits` rows
-- enum extension `subscription_status += 'trial'`
-- updated `user_active_plan_code` / `has_active_subscription` / `user_shop_limit`
-- updated `handle_new_user` to grant trial
-- backfill for existing users
-- pg_cron daily job to expire trials
-
-**Code**:
-- `src/hooks/useSubscriptionStatus.ts` (new)
-- `src/components/app/TrialBanner.tsx` (new)
-- `src/pages/admin/Settings.tsx` (edit — add Trial Settings card) *or* new `src/pages/admin/TrialSettings.tsx` linked from admin nav
-- App layout file (where shop pages are wrapped) → mount `<TrialBanner />`
-- `src/pages/app/Subscribe.tsx` → show trial expiry instead of "Free" when on trial
-
----
-
-## 6. Behavior summary
-
-| State | Plan code | Limits | UI |
-|---|---|---|---|
-| Just signed up (admin trial ON) | `trial` | unlimited | Green "trial active" pill |
-| Trial, ≤ 5 days left | `trial` | unlimited | Amber/red warning + Subscribe CTA |
-| Trial expired, no purchase | `free` (fallback) | 10 products etc. | Red "trial ended" banner + CTA |
-| Purchased subscription | `monthly`/`yearly`/`lifetime` | unlimited | No banner |
-| Admin trial OFF (new signups) | `free` | 10 products etc. | No trial granted |
-
-After approval I will create the migration and code in one go.
+- Sidebar collapse/mini-variant — বর্তমান layout sticky sidebar (220px) ব্যবহার করছে, এটা পরিবর্তন করা হচ্ছে না।
+- নতুন কোনো consumer feature page তৈরি হচ্ছে না — শুধু existing pages গুলোকে discoverable করা হচ্ছে।
