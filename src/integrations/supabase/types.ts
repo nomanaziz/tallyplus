@@ -946,7 +946,15 @@ export type Database = {
           id?: string
           shop_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "consumer_favourite_shops_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       consumer_fordo_schedules: {
         Row: {
