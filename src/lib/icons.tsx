@@ -1,11 +1,10 @@
-// Lucide-based icon registry. Each key maps to a Lucide React component.
-// Use either `<AppIcon name="..." />` or pull a component out: `const I = icons.foo; <I className="..." />`.
+// Lucide-based icon registry.
 import {
   Home, ShoppingCart, ShoppingBag, Zap, Wallet, Package, Boxes,
   Users, ListOrdered, ClipboardList, HandCoins, Receipt, AlertCircle,
   ShieldCheck, Trash2, KeyRound, Printer, BarChart3, Megaphone,
   Store, GraduationCap, BadgeDollarSign, Bookmark, Clock, User,
-  UserCog, Banknote, ArrowDownToLine, ArrowUpFromLine,
+  UserCog, Banknote, ArrowDownToLine, ArrowUpFromLine, ArrowLeftRight,
   Heart, Bell, Languages, Settings, Search, Plus, UserPlus, ImagePlus,
   Pencil, Eye, EyeOff, Download, FileText, RefreshCw, Image as ImageIcon,
   Network, LayoutDashboard, ShieldAlert, ArrowDownCircle, ArrowUpCircle,
@@ -45,7 +44,7 @@ export const icons = {
   alert: AlertCircle,
   cash: Banknote,
   cashRegister: Wallet,
-  transaction: ArrowLeftRightSafe,
+  transaction: ArrowLeftRight,
   wishlist: BookOpen,
   notification: Bell,
   language: Languages,
@@ -86,15 +85,10 @@ export const icons = {
 
 export type IconKey = keyof typeof icons;
 
-// Local alias: lucide doesn't export ArrowLeftRightSafe — use ArrowDownToLine fallback wouldn't fit semantics.
-// So we re-import the proper one here.
-import { ArrowLeftRight as ArrowLeftRightSafe } from "lucide-react";
-
 export function AppIcon({
   name,
-  className,
   ...rest
 }: { name: IconKey } & ComponentProps<LucideIcon>) {
   const I = icons[name];
-  return <I className={className} {...rest} />;
+  return <I {...rest} />;
 }
