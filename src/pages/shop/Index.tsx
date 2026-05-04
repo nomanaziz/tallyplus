@@ -18,8 +18,10 @@ import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetHeader } from "@/co
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SiteHeader } from "@/components/site/SiteHeader";
 import { SiteFooter } from "@/components/site/SiteFooter";
-import { Search, Store, SlidersHorizontal, RotateCcw, ShoppingBag, MapPin, FileText, Heart } from "lucide-react";
+import { Search, Store, SlidersHorizontal, RotateCcw, ShoppingBag, MapPin, FileText, Heart, Wrench, Home } from "lucide-react";
 import { MarketplaceProductCard } from "@/components/marketplace/MarketplaceProductCard";
+import { MarketplaceServiceCard } from "@/components/marketplace/MarketplaceServiceCard";
+import { BdLocationPicker, type BdLocation } from "@/components/shared/BdLocationPicker";
 import { VendorGridSkeleton, ProductGridSkeleton } from "@/components/marketplace/MarketplaceSkeleton";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
@@ -39,7 +41,7 @@ type Product = { id: string; name: string; image_url: string | null; unit: strin
 type ShopType = { code: string; name_bn: string; name_en: string };
 
 type Sort = "newest" | "price_asc" | "price_desc";
-type View = "products" | "vendors";
+type View = "products" | "vendors" | "services";
 type WholesaleFilter = "all" | "wholesale" | "retail";
 
 type SearchParams = {
@@ -52,6 +54,11 @@ type SearchParams = {
   sort?: Sort;
   view?: View;
   wholesale?: WholesaleFilter;
+  homeService?: boolean;
+  category?: string;
+  division?: string;
+  district?: string;
+  upazila?: string;
 };
 
 
@@ -77,6 +84,13 @@ function MarketplacePage() {
   const page = search.page ?? 1;
   const pageSize = 24;
   const view: View = (search.view as View) ?? "vendors";
+  const [svcLoc, setSvcLoc] = useState<BdLocation>({
+    division: search.division ?? null,
+    district: search.district ?? null,
+    upazila: search.upazila ?? null,
+    area: null,
+  });
+  const [svcCats, setSvcCats] = useState<{ id: string; name: string }[]>([]);
 
   useEffect(() => {
     void supabase
@@ -86,6 +100,17 @@ function MarketplacePage() {
       .order("sort_order", { ascending: true })
       .then(({ data }) => setShopTypes((data as ShopType[] | null) ?? []));
   }, []);
+
+  useEffect(() => {
+    if (view !== "services") return;
+    void supabase.functions
+      .invoke("marketplace-public", { body: { action: "list-service-categories" } })
+      .then(({ data }) => {
+        if (data && Array.isArray((data as { categories?: unknown }).categories)) {
+          setSvcCats((data as { categories: { id: string; name: string }[] }).categories);
+        }
+      });
+  }, [view]);
 
   // Load this user's favourite shops once so hearts render in the right state.
   useEffect(() => {
@@ -205,6 +230,58 @@ function MarketplacePage() {
   const vendorTotal = vendorsQ.data?.total ?? 0;
   const vendorLoading = vendorsQ.isLoading;
 
+  // Services query — only runs when services view is active
+  const servicesQ = useQuery({
+    queryKey: [
+      "marketplace",
+      "services",
+      search.q ?? "",
+      search.min ?? null,
+      search.max ?? null,
+      search.sort ?? "newest",
+      page,
+      typeKey,
+      search.homeService ?? false,
+      search.category ?? "",
+      search.division ?? "",
+      search.district ?? "",
+      search.upazila ?? "",
+    ],
+    enabled: view === "services",
+    staleTime: 60_000,
+    gcTime: 5 * 60_000,
+    placeholderData: keepPreviousData,
+    queryFn: async () => {
+      const { data, error } = await supabase.functions.invoke("marketplace-public", {
+        body: {
+          action: "list-services",
+          q: search.q ?? "",
+          page,
+          pageSize,
+          min_price: search.min,
+          max_price: search.max,
+          shop_type: search.type,
+          sort: search.sort ?? "newest",
+          home_service: search.homeService ? true : undefined,
+          category_id: search.category || undefined,
+          division: search.division || undefined,
+          district: search.district || undefined,
+          upazila: search.upazila || undefined,
+        },
+      });
+      if (error || !data || (data as { error?: string }).error) {
+        return { services: [] as Array<Record<string, unknown>>, shops: {} as Record<string, Shop>, total: 0 };
+      }
+      return data as { services: Array<Record<string, unknown>>; shops: Record<string, Shop>; total: number };
+    },
+  });
+
+  const services = servicesQ.data?.services ?? [];
+  const serviceShops = servicesQ.data?.shops ?? {};
+  const serviceTotal = servicesQ.data?.total ?? 0;
+  const servicesLoading = servicesQ.isLoading;
+  const serviceTotalPages = Math.max(1, Math.ceil(serviceTotal / pageSize));
+
   const submitSearch = (e: React.FormEvent) => {
     e.preventDefault();
     void navigate({ search: (prev) => ({ ...prev, q: q.trim() || undefined, page: 1 }) });
@@ -247,6 +324,7 @@ function MarketplacePage() {
     setQ("");
     setMinP("");
     setMaxP("");
+    setSvcLoc({ division: null, district: null, upazila: null, area: null });
     void navigate({ search: () => ({ page: 1 }) });
   };
 
@@ -375,7 +453,7 @@ function MarketplacePage() {
             <Tabs
               value={view}
               onValueChange={(v) =>
-                navigate({ search: (prev) => ({ ...prev, view: v === "products" ? "products" : undefined, page: 1 }) })
+                navigate({ search: (prev) => ({ ...prev, view: v === "vendors" ? undefined : (v as View), page: 1 }) })
               }
             >
               <TabsList className="h-9">
@@ -384,6 +462,9 @@ function MarketplacePage() {
                 </TabsTrigger>
                 <TabsTrigger value="products" className="gap-1.5">
                   <ShoppingBag className="h-3.5 w-3.5" /> পণ্য
+                </TabsTrigger>
+                <TabsTrigger value="services" className="gap-1.5">
+                  <Wrench className="h-3.5 w-3.5" /> সার্ভিস
                 </TabsTrigger>
               </TabsList>
             </Tabs>
