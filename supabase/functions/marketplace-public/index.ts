@@ -606,7 +606,13 @@ Deno.serve(async (req) => {
       if (!shop || !(shop as { marketplace_enabled: boolean }).marketplace_enabled) {
         return json({ error: "এই দোকান এখন অনলাইনে নেই" }, 404);
       }
-      return json({ service: s, shop });
+      // Public payment provider info (so consumer can send bKash/Nagad)
+      const { data: pay } = await admin
+        .from("payment_gateway_settings")
+        .select("provider, is_enabled")
+        .eq("id", true)
+        .maybeSingle();
+      return json({ service: s, shop, payment: pay ?? null });
     }
 
     if (action === "list-service-categories") {
@@ -651,6 +657,114 @@ Deno.serve(async (req) => {
         .eq("is_active", true)
         .order("name");
       return json({ services: services ?? [] }, 200, PUBLIC_CACHE);
+    }
+
+    if (action === "create-service-booking") {
+      const serviceId = String(body.service_id ?? "").trim();
+      if (!serviceId) return json({ error: "Invalid service_id" }, 400);
+      const customer_name = String(body.customer_name ?? "").trim();
+      const customer_phone = String(body.customer_phone ?? "").trim();
+      if (!customer_name || !customer_phone) {
+        return json({ error: "নাম ও ফোন আবশ্যক" }, 400);
+      }
+
+      const { data: svc } = await admin
+        .from("services")
+        .select("id, shop_id, name, price, advance_amount, advance_required, booking_enabled, is_marketplace_published, deleted_at")
+        .eq("id", serviceId)
+        .maybeSingle();
+      if (!svc || (svc as { deleted_at: string | null }).deleted_at) {
+        return json({ error: "সার্ভিস পাওয়া যায়নি" }, 404);
+      }
+      const s = svc as Record<string, unknown>;
+      if (!s.booking_enabled) return json({ error: "এই সার্ভিসে অনলাইন বুকিং বন্ধ" }, 400);
+
+      const advanceRequired = !!s.advance_required;
+      const advance_payment_method = body.advance_payment_method ? String(body.advance_payment_method).trim() : null;
+      const advance_txn_id = body.advance_txn_id ? String(body.advance_txn_id).trim() : null;
+      if (advanceRequired && (!advance_payment_method || !advance_txn_id)) {
+        return json({ error: "এই সার্ভিসে অগ্রিম বাধ্যতামূলক — পেমেন্ট মাধ্যম ও TxnID দিন" }, 400);
+      }
+
+      // Try to identify the consumer from the bearer token (optional)
+      let consumer_user_id: string | null = null;
+      const auth = req.headers.get("authorization");
+      if (auth?.startsWith("Bearer ")) {
+        try {
+          const userClient = createClient(
+            Deno.env.get("SUPABASE_URL")!,
+            Deno.env.get("SUPABASE_ANON_KEY")!,
+            { global: { headers: { Authorization: auth } } },
+          );
+          const { data: u } = await userClient.auth.getUser();
+          if (u?.user?.id) consumer_user_id = u.user.id;
+        } catch (_) { /* ignore */ }
+      }
+
+      const insertRow = {
+        shop_id: s.shop_id as string,
+        service_id: s.id as string,
+        consumer_user_id,
+        customer_name,
+        customer_phone,
+        customer_address: body.customer_address ? String(body.customer_address).trim() : null,
+        division: body.division ? String(body.division).trim() : null,
+        district: body.district ? String(body.district).trim() : null,
+        upazila: body.upazila ? String(body.upazila).trim() : null,
+        area: body.area ? String(body.area).trim() : null,
+        scheduled_at: body.scheduled_at ? new Date(String(body.scheduled_at)).toISOString() : null,
+        note: body.note ? String(body.note).trim() : null,
+        service_name: s.name as string,
+        service_price: Number(s.price ?? 0),
+        advance_amount: Number(s.advance_amount ?? 0),
+        advance_paid: false,
+        advance_payment_method,
+        advance_txn_id,
+        status: "pending",
+      };
+      const { data: row, error } = await admin
+        .from("service_bookings")
+        .insert(insertRow)
+        .select("id")
+        .single();
+      if (error) return json({ error: error.message }, 400);
+      return json({ ok: true, id: (row as { id: string }).id });
+    }
+
+    if (action === "list-my-service-bookings") {
+      const auth = req.headers.get("authorization");
+      if (!auth?.startsWith("Bearer ")) return json({ error: "auth_required" }, 401);
+      const userClient = createClient(
+        Deno.env.get("SUPABASE_URL")!,
+        Deno.env.get("SUPABASE_ANON_KEY")!,
+        { global: { headers: { Authorization: auth } } },
+      );
+      const { data: u } = await userClient.auth.getUser();
+      const uid = u?.user?.id;
+      if (!uid) return json({ error: "auth_required" }, 401);
+      const { data: phonesData } = await userClient.rpc("my_phones");
+      const phones: string[] = Array.isArray(phonesData) ? (phonesData as string[]) : [];
+
+      let q = admin
+        .from("service_bookings")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(100);
+      if (phones.length > 0) {
+        q = q.or(`consumer_user_id.eq.${uid},customer_phone.in.(${phones.map((p) => `"${p}"`).join(",")})`);
+      } else {
+        q = q.eq("consumer_user_id", uid);
+      }
+      const { data: rows, error } = await q;
+      if (error) return json({ error: error.message }, 500);
+      const list = (rows as Array<Record<string, unknown>>) ?? [];
+      const shopIds = Array.from(new Set(list.map((r) => String(r.shop_id))));
+      const { data: shops } = shopIds.length
+        ? await admin.from("shops").select("id, name, logo_url, phone, slug, username").in("id", shopIds)
+        : { data: [] };
+      const shopMap: Record<string, unknown> = {};
+      ((shops as Array<{ id: string }> | null) ?? []).forEach((s) => (shopMap[s.id] = s));
+      return json({ bookings: list, shops: shopMap });
     }
 
     return json({ error: "Unknown action" }, 400);
