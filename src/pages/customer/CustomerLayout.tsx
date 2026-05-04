@@ -6,6 +6,7 @@ import { SiteFooter } from "@/components/site/SiteFooter";
 import { Loader2, LogOut, Home, ListChecks, ShoppingBag, Heart, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AdSlot } from "@/components/ads/AdSlot";
+import { homePathFor } from "@/lib/home-redirect";
 
 const NAV = [
   { to: "/customer/dashboard", label: "ড্যাশবোর্ড", Icon: Home },
@@ -16,7 +17,7 @@ const NAV = [
 ];
 
 export default function CustomerLayout() {
-  const { session, loading, signOut } = useAuth();
+  const { session, loading, accountReady, isOwner, isAdmin, signOut } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -24,7 +25,17 @@ export default function CustomerLayout() {
     if (!session?.user) navigate("/", { replace: true });
   }, [session, loading, navigate]);
 
-  if (loading || !session?.user) {
+  useEffect(() => {
+    if (loading || !accountReady || !session?.user) return;
+    if (isOwner || isAdmin) {
+      navigate({
+        to: homePathFor({ loggedIn: true, isOwner, isAdmin }),
+        replace: true,
+      });
+    }
+  }, [loading, accountReady, session?.user, isOwner, isAdmin, navigate]);
+
+  if (loading || !accountReady || !session?.user || isOwner || isAdmin) {
     return (
       <div className="flex min-h-screen flex-col bg-background">
         <SiteHeader />

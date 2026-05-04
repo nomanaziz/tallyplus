@@ -11,7 +11,7 @@ import { Loader2 } from "lucide-react";
  * - Logged-in  → auto-redirect to role-aware dashboard
  */
 function Index() {
-  const { session, loading, isOwner, isAdmin, ensureProfile } = useAuth();
+  const { session, loading, accountReady, isOwner, isAdmin, ensureProfile } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -19,13 +19,13 @@ function Index() {
   }, [session?.user, ensureProfile]);
 
   useEffect(() => {
-    if (loading) return;
+    if (loading || !accountReady) return;
     if (!session?.user) return;
     const target = homePathFor({ loggedIn: true, isOwner, isAdmin });
     navigate({ to: target, replace: true });
-  }, [loading, session?.user, isOwner, isAdmin, navigate]);
+  }, [loading, accountReady, session?.user, isOwner, isAdmin, navigate]);
 
-  if (loading || session?.user) {
+  if (loading || (session?.user && !accountReady) || session?.user) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />

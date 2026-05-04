@@ -17,8 +17,8 @@ import { useCartCount } from "@/lib/consumer-cart";
 
 export function SiteHeader() {
   const { t, lang } = useI18n();
-  const { user, isOwner } = useAuth();
-  const homeTarget = homePathFor({ loggedIn: !!user, isOwner });
+  const { user, isOwner, isAdmin } = useAuth();
+  const homeTarget = homePathFor({ loggedIn: !!user, isOwner, isAdmin });
   const marketLabel = lang === "bn" ? "মার্কেটপ্লেস" : "Marketplace";
   const fordoLabel = lang === "bn" ? "ফর্দ" : "Fordo";
   const cartCount = useCartCount();
