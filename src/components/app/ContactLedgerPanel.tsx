@@ -151,7 +151,7 @@ export function ContactLedgerPanel({ contact, onChanged }: { contact: LedgerCont
             generatePdfFromHtml(
               buildStatementHtml({
                 lang,
-                shop: { name: current?.name ?? "", address: (current as any)?.address ?? null, phone: (current as any)?.phone ?? null },
+                shop: { name: current?.name ?? "", address: current?.address ?? null, phone: current?.phone ?? null },
                 contact: { name: contact.name, phone: contact.phone },
                 from,
                 to,
