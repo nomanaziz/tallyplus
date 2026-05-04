@@ -3,13 +3,28 @@ import { Link } from "@/lib/router";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { Card } from "@/components/ui/card";
-import { TrendingUp, TrendingDown, Wallet, Loader2 } from "lucide-react";
+import {
+  TrendingUp,
+  TrendingDown,
+  Wallet,
+  Loader2,
+  ShoppingBag,
+  ListChecks,
+  Heart,
+  Wrench,
+  ArrowDownCircle,
+  ArrowUpCircle,
+} from "lucide-react";
 import { icons } from "@/lib/icons";
 
 type Tx = { id: string; type: string; amount: number; tx_date: string };
 
 function bdt(n: number) {
   return new Intl.NumberFormat("bn-BD", { maximumFractionDigits: 0 }).format(n) + " ৳";
+}
+
+function bn(n: number) {
+  return new Intl.NumberFormat("bn-BD").format(n);
 }
 
 export default function CustomerDashboard() {
@@ -21,6 +36,9 @@ export default function CustomerDashboard() {
   const [noteCount, setNoteCount] = useState(0);
   const [willGet, setWillGet] = useState(0);
   const [willGive, setWillGive] = useState(0);
+  const [orderCount, setOrderCount] = useState(0);
+  const [favShopCount, setFavShopCount] = useState(0);
+  const [serviceCount, setServiceCount] = useState(0);
 
   useEffect(() => {
     if (!user) return;
@@ -30,7 +48,7 @@ export default function CustomerDashboard() {
       monthStart.setDate(1);
       monthStart.setHours(0, 0, 0, 0);
       const since = monthStart.toISOString().slice(0, 10);
-      const [tx, fordoRes, notes, loans] = await Promise.all([
+      const [tx, fordoRes, notes, loans, favShops, phonesRes, services] = await Promise.all([
         supabase
           .from("consumer_transactions")
           .select("type, amount")
@@ -46,6 +64,14 @@ export default function CustomerDashboard() {
           .select("type, amount")
           .eq("user_id", user.id)
           .eq("is_settled", false),
+        supabase
+          .from("consumer_favourite_shops")
+          .select("id", { count: "exact", head: true })
+          .eq("user_id", user.id),
+        supabase.rpc("my_phones"),
+        supabase.functions.invoke("marketplace-public", {
+          body: { action: "list-my-service-bookings" },
+        }),
       ]);
       if (cancelled) return;
       const rows = (tx.data ?? []) as Tx[];
@@ -69,6 +95,25 @@ export default function CustomerDashboard() {
       const activeFordoCount = fordoList.filter((w) => !w.deleted_at).length;
       setFordoCount(activeFordoCount);
       setNoteCount(notes.count ?? 0);
+      setFavShopCount(favShops.count ?? 0);
+
+      // Orders: match by user id OR known phone numbers (consistent with MyOrders).
+      const phones = Array.isArray(phonesRes.data) ? (phonesRes.data as string[]).filter(Boolean) : [];
+      let oq = supabase
+        .from("marketplace_orders")
+        .select("id", { count: "exact", head: true });
+      if (phones.length > 0) {
+        const phoneList = phones.map((p) => `"${p}"`).join(",");
+        oq = oq.or(`consumer_user_id.eq.${user.id},customer_phone.in.(${phoneList})`);
+      } else {
+        oq = oq.eq("consumer_user_id", user.id);
+      }
+      const { count: oCount } = await oq;
+      if (!cancelled) setOrderCount(oCount ?? 0);
+
+      const sd = (services.data ?? {}) as { bookings?: Array<unknown> };
+      setServiceCount((sd.bookings ?? []).length);
+
       setLoading(false);
     })();
     return () => {
@@ -119,18 +164,56 @@ export default function CustomerDashboard() {
         </Card>
       </div>
 
+      {/* মোট সারসংক্ষেপ — দেনা, পাওনা, total order, ফর্দ, প্রিয় দোকান, সার্ভিস */}
+      <div>
+        <h2 className="mb-2 text-sm font-semibold text-muted-foreground">মোট সারসংক্ষেপ</h2>
+        <div className="grid grid-cols-3 gap-2 sm:gap-3">
+          <StatCard label="পাব (পাওনা)" value={bdt(willGet)} Icon={ArrowDownCircle} tone="text-emerald-600" to="/customer/money" />
+          <StatCard label="দেব (দেনা)" value={bdt(willGive)} Icon={ArrowUpCircle} tone="text-rose-600" to="/customer/money" />
+          <StatCard label="মোট অর্ডার" value={`${bn(orderCount)}টি`} Icon={ShoppingBag} tone="text-indigo-600" to="/customer/my-orders" />
+          <StatCard label="আমার ফর্দ" value={`${bn(fordoCount)}টি`} Icon={ListChecks} tone="text-violet-600" to="/customer/my-fordo" />
+          <StatCard label="প্রিয় দোকান" value={`${bn(favShopCount)}টি`} Icon={Heart} tone="text-pink-600" to="/customer/favorite-shops" />
+          <StatCard label="সার্ভিস বুকিং" value={`${bn(serviceCount)}টি`} Icon={Wrench} tone="text-amber-600" to="/customer/my-services" />
+        </div>
+      </div>
+
       <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 sm:gap-3">
         <Shortcut to="/customer/my-fordo" label="আমার ফর্দ" sub={`${fordoCount}টি`} img={icons.wishlist} tone="violet" />
         <Shortcut to="/customer/my-orders" label="আমার অর্ডার" img={icons.order} tone="indigo" />
         <Shortcut to="/customer/favorite-shops" label="প্রিয় দোকান" img={icons.favorite} tone="rose" />
         <Shortcut to="/customer/money" label="আয়-ব্যয়" img={icons.money} tone="emerald" />
         <Shortcut to="/customer/notes" label="নোট" sub={`${noteCount}টি`} img={icons.note} tone="amber" />
-        <Shortcut to="/customer/money" label="পাব" sub={bdt(willGet)} img={icons.willGet} tone="green" />
-        <Shortcut to="/customer/money" label="দেব" sub={bdt(willGive)} img={icons.willGive} tone="red" />
         <Shortcut to="/customer/training" label="ট্রেনিং" img={icons.customerTraining} tone="sky" />
         <Shortcut to="/customer/profile" label="প্রোফাইল" img={icons.profile} tone="orange" />
       </div>
     </div>
+  );
+}
+
+function StatCard({
+  label,
+  value,
+  Icon,
+  tone,
+  to,
+}: {
+  label: string;
+  value: string;
+  Icon: React.ComponentType<{ className?: string }>;
+  tone: string;
+  to: string;
+}) {
+  return (
+    <Link
+      to={to}
+      className="block rounded-2xl border bg-card p-3 shadow-sm transition hover:border-primary/40 hover:shadow-md sm:p-4"
+    >
+      <div className="flex items-center justify-between gap-1 text-[11px] text-muted-foreground sm:text-xs">
+        <span className="truncate">{label}</span>
+        <Icon className={`h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4 ${tone}`} />
+      </div>
+      <div className={`mt-1 text-base font-bold sm:mt-2 sm:text-xl ${tone}`}>{value}</div>
+    </Link>
   );
 }
 
