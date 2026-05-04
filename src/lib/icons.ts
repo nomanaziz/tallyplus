@@ -1,144 +1,100 @@
-// Hishabee-style illustrated icons. Imported as URL strings — used in <img> tags.
-import home from "@/assets/icons/home.svg";
-import sell from "@/assets/icons/sell.svg";
-import purchase from "@/assets/icons/purchase.svg";
-import quickSell from "@/assets/icons/quick-sell.svg";
-import cashbox from "@/assets/icons/cashbox.png";
-import productList from "@/assets/icons/product-list.svg";
-import stock from "@/assets/icons/stock.svg";
-import contact from "@/assets/icons/contact.svg";
-import salesList from "@/assets/icons/sales-list.svg";
-import purchaseList from "@/assets/icons/purchase-list.svg";
-import due from "@/assets/icons/due.svg";
-import expense from "@/assets/icons/expense.svg";
-import expired from "@/assets/icons/expired.png";
-import warranty from "@/assets/icons/warranty.png";
-import recycle from "@/assets/icons/recycle-bin.png";
-import access from "@/assets/icons/access.svg";
-import printer from "@/assets/icons/printer.svg";
-import businessReport from "@/assets/icons/business-report.svg";
-import marketing from "@/assets/icons/marketing.svg";
-import onlineShop from "@/assets/icons/online-shop.svg";
-import training from "@/assets/icons/training.svg";
-import buySubscription from "@/assets/icons/buy-subscription.png";
-import brandHishabee from "@/assets/icons/brand-hishabee.svg";
-import brandBee from "@/assets/icons/brand-bee.svg";
-import bookmark from "@/assets/icons/bookmark.svg";
-import activeWarranty from "@/assets/icons/active-warranty.png";
-import pendingOrder from "@/assets/icons/pending-order.png";
-import customer from "@/assets/icons/customer.png";
-import employee from "@/assets/icons/employee.png";
-import alert from "@/assets/icons/alert.png";
-import cash from "@/assets/icons/cash.png";
-import cashRegister from "@/assets/icons/cash-register.png";
-import transaction from "@/assets/icons/transaction.png";
-import wishlist from "@/assets/icons/wishlist.png";
-import notification from "@/assets/icons/notification.png";
-import language from "@/assets/icons/language.png";
-import settings from "@/assets/icons/settings.png";
-import search from "@/assets/icons/search.png";
-import add from "@/assets/icons/add.png";
-import addUser from "@/assets/icons/add-user-male.png";
-import addImage from "@/assets/icons/add-image.png";
-import edit from "@/assets/icons/edit-pencil.png";
-import del from "@/assets/icons/delete.png";
-import eye from "@/assets/icons/eye.png";
-import eyeOff from "@/assets/icons/invisible.png";
-import download from "@/assets/icons/download.png";
-import exportPdf from "@/assets/icons/export-pdf.png";
-import refresh from "@/assets/icons/refresh.png";
-import imageFile from "@/assets/icons/image-file.png";
-import mindMap from "@/assets/icons/mind-map.png";
-import ownerDashboard from "@/assets/icons/owner-dashboard.png";
-import moneyProtection from "@/assets/icons/money-protection.png";
-import cashIn from "@/assets/icons/cash-in.png";
-import cashOut from "@/assets/icons/cash-out.png";
-import trackOrder from "@/assets/icons/track-order.png";
-import truck from "@/assets/icons/truck.png";
-import bill from "@/assets/icons/bill.png";
-import supplier from "@/assets/icons/supplier.png";
-import trending from "@/assets/icons/trending.png";
-import comboChart from "@/assets/icons/combo-chart.png";
-import backArrow from "@/assets/icons/back-arrow.png";
-import profile from "@/assets/icons/profile.png";
-import customerTraining from "@/assets/icons/customer-training.png";
-import willGet from "@/assets/icons/will-get.png";
-import willGive from "@/assets/icons/will-give.png";
-import money from "@/assets/icons/money.png";
-import order from "@/assets/icons/order.png";
-import favorite from "@/assets/icons/favorite.png";
-import note from "@/assets/icons/note.png";
+// Lucide-based icon registry. Each key maps to a Lucide React component.
+// Use either `<AppIcon name="..." />` or pull a component out: `const I = icons.foo; <I className="..." />`.
+import {
+  Home, ShoppingCart, ShoppingBag, Zap, Wallet, Package, Boxes,
+  Users, ListOrdered, ClipboardList, HandCoins, Receipt, AlertCircle,
+  ShieldCheck, Trash2, KeyRound, Printer, BarChart3, Megaphone,
+  Store, GraduationCap, BadgeDollarSign, Bookmark, Clock, User,
+  UserCog, Banknote, ArrowDownToLine, ArrowUpFromLine,
+  Heart, Bell, Languages, Settings, Search, Plus, UserPlus, ImagePlus,
+  Pencil, Eye, EyeOff, Download, FileText, RefreshCw, Image as ImageIcon,
+  Network, LayoutDashboard, ShieldAlert, ArrowDownCircle, ArrowUpCircle,
+  Truck, FileSpreadsheet, TrendingUp, PieChart, ArrowLeft,
+  StickyNote, BookOpen, type LucideIcon,
+} from "lucide-react";
+import type { ComponentProps } from "react";
 
 export const icons = {
-  home,
-  sell,
-  purchase,
-  quickSell,
-  cashbox,
-  productList,
-  stock,
-  contact,
-  salesList,
-  purchaseList,
-  due,
-  expense,
-  expired,
-  warranty,
-  recycle,
-  access,
-  printer,
-  businessReport,
-  marketing,
-  onlineShop,
-  training,
-  buySubscription,
-  brandHishabee,
-  brandBee,
-  bookmark,
-  activeWarranty,
-  pendingOrder,
-  customer,
-  employee,
-  alert,
-  cash,
-  cashRegister,
-  transaction,
-  wishlist,
-  notification,
-  language,
-  settings,
-  search,
-  add,
-  addUser,
-  addImage,
-  edit,
-  delete: del,
-  eye,
-  eyeOff,
-  download,
-  exportPdf,
-  refresh,
-  imageFile,
-  mindMap,
-  ownerDashboard,
-  moneyProtection,
-  cashIn,
-  cashOut,
-  trackOrder,
-  truck,
-  bill,
-  supplier,
-  trending,
-  comboChart,
-  backArrow,
-  profile,
-  customerTraining,
-  willGet,
-  willGive,
-  money,
-  order,
-  favorite,
-  note,
-} as const;
+  home: Home,
+  sell: ShoppingCart,
+  purchase: ShoppingBag,
+  quickSell: Zap,
+  cashbox: Wallet,
+  productList: Package,
+  stock: Boxes,
+  contact: Users,
+  salesList: ListOrdered,
+  purchaseList: ClipboardList,
+  due: HandCoins,
+  expense: Receipt,
+  expired: AlertCircle,
+  warranty: ShieldCheck,
+  recycle: Trash2,
+  access: KeyRound,
+  printer: Printer,
+  businessReport: BarChart3,
+  marketing: Megaphone,
+  onlineShop: Store,
+  training: GraduationCap,
+  buySubscription: BadgeDollarSign,
+  bookmark: Bookmark,
+  activeWarranty: ShieldCheck,
+  pendingOrder: Clock,
+  customer: User,
+  employee: UserCog,
+  alert: AlertCircle,
+  cash: Banknote,
+  cashRegister: Wallet,
+  transaction: ArrowLeftRightSafe,
+  wishlist: BookOpen,
+  notification: Bell,
+  language: Languages,
+  settings: Settings,
+  search: Search,
+  add: Plus,
+  addUser: UserPlus,
+  addImage: ImagePlus,
+  edit: Pencil,
+  delete: Trash2,
+  eye: Eye,
+  eyeOff: EyeOff,
+  download: Download,
+  exportPdf: FileText,
+  refresh: RefreshCw,
+  imageFile: ImageIcon,
+  mindMap: Network,
+  ownerDashboard: LayoutDashboard,
+  moneyProtection: ShieldAlert,
+  cashIn: ArrowDownCircle,
+  cashOut: ArrowUpCircle,
+  trackOrder: Truck,
+  truck: Truck,
+  bill: FileSpreadsheet,
+  supplier: Truck,
+  trending: TrendingUp,
+  comboChart: PieChart,
+  backArrow: ArrowLeft,
+  profile: User,
+  customerTraining: GraduationCap,
+  willGet: ArrowDownToLine,
+  willGive: ArrowUpFromLine,
+  money: Banknote,
+  order: ShoppingBag,
+  favorite: Heart,
+  note: StickyNote,
+} satisfies Record<string, LucideIcon>;
 
 export type IconKey = keyof typeof icons;
+
+// Local alias: lucide doesn't export ArrowLeftRightSafe — use ArrowDownToLine fallback wouldn't fit semantics.
+// So we re-import the proper one here.
+import { ArrowLeftRight as ArrowLeftRightSafe } from "lucide-react";
+
+export function AppIcon({
+  name,
+  className,
+  ...rest
+}: { name: IconKey } & ComponentProps<LucideIcon>) {
+  const I = icons[name];
+  return <I className={className} {...rest} />;
+}
