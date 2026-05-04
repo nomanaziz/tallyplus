@@ -1402,6 +1402,7 @@ export type Database = {
       customers: {
         Row: {
           address: string | null
+          contact_kind: string
           created_at: string
           deleted_at: string | null
           due_balance: number
@@ -1413,6 +1414,7 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          contact_kind?: string
           created_at?: string
           deleted_at?: string | null
           due_balance?: number
@@ -1424,6 +1426,7 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          contact_kind?: string
           created_at?: string
           deleted_at?: string | null
           due_balance?: number
