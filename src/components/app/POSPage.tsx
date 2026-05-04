@@ -7,6 +7,7 @@ import { useShop } from "@/lib/shop";
 import { useAuth } from "@/lib/auth";
 import { useI18n, fmtMoney, bnNum } from "@/lib/i18n";
 import { productsLiteQuery } from "@/lib/queries";
+import { servicesLiteQuery, durationToText, type Service } from "@/lib/services-queries";
 import { SerialPickDialog } from "@/components/app/SerialPickDialog";
 import { BarcodeScannerButton } from "@/components/app/BarcodeScannerButton";
 import { useHardwareScanner } from "@/hooks/useHardwareScanner";
@@ -16,6 +17,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Wrench, Clock, Shield } from "lucide-react";
 import { EmptyState } from "@/components/app/EmptyState";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -43,7 +45,9 @@ type Product = {
 };
 
 type CartItem = {
-  product_id: string;
+  product_id: string | null;
+  service_id?: string | null;
+  item_type?: "product" | "service";
   name: string;
   qty: number;
   price: number;
@@ -57,6 +61,11 @@ type CartItem = {
   is_serialized?: boolean;
   serial_id?: string | null;
   serial_no?: string | null;
+  // Service-specific
+  warranty_enabled?: boolean;
+  warranty_value?: number | null;
+  warranty_unit?: string | null;
+  duration_label?: string | null;
 };
 
 function applyBulkPricing(item: CartItem): CartItem {
