@@ -123,7 +123,7 @@ function AppLayoutWithShop() {
 }
 
 function AppLayout({ ownsShop }: { ownsShop: boolean }) {
-  const { t, lang } = useI18n();
+  const { lang } = useI18n();
   const { user, loading, ensureProfile } = useAuth();
   const { shops, current, loading: shopsLoading } = useShop();
   const nav = useNavigate();
