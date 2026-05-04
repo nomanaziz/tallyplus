@@ -98,6 +98,9 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
   const qc = useQueryClient();
   const { data: productsData = [], refetch } = useQuery(productsLiteQuery(current?.id ?? null));
   const products = productsData as unknown as Product[];
+  const { data: servicesData = [] } = useQuery(servicesLiteQuery(current?.id ?? null));
+  const services = servicesData as Service[];
+  const [pickerTab, setPickerTab] = useState<"products" | "services">("products");
   const [search, setSearch] = useState("");
   const [cart, setCart] = useState<CartItem[]>([]);
   const [discount, setDiscount] = useState<string>("0");
