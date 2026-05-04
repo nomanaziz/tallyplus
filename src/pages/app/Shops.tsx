@@ -5,8 +5,9 @@ import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { AddShopDialog } from "@/components/app/AddShopDialog";
-import { LogOut, Plus, Store, CheckCircle2, Lock, Trash2 } from "lucide-react";
+import { LogOut, Plus, Store, CheckCircle2, Lock, Trash2, ArrowRightLeft } from "lucide-react";
 import { DeleteShopDialog } from "@/components/app/DeleteShopDialog";
+import { TransferShopDialog } from "@/components/app/TransferShopDialog";
 import logo from "@/assets/logo.png";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -21,6 +22,7 @@ function ShopsPage() {
   const [addOpen, setAddOpen] = useState(false);
   const [limit, setLimit] = useState<number>(1);
   const [delTarget, setDelTarget] = useState<{ id: string; name: string } | null>(null);
+  const [transferTarget, setTransferTarget] = useState<{ id: string; name: string } | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -121,15 +123,26 @@ function ShopsPage() {
                       : lang === "bn" ? "সিলেক্ট করুন" : "Select"}
                   </Button>
                   {user?.id === s.owner_id && (
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="h-10 w-10 border-rose-300 text-rose-600 hover:bg-rose-50 hover:text-rose-700"
-                      onClick={() => setDelTarget({ id: s.id, name: s.name })}
-                      title={lang === "bn" ? "দোকান মুছুন" : "Delete shop"}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    <>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-10 w-10 border-amber-300 text-amber-600 hover:bg-amber-50 hover:text-amber-700"
+                        onClick={() => setTransferTarget({ id: s.id, name: s.name })}
+                        title={lang === "bn" ? "দোকান হস্তান্তর" : "Transfer shop"}
+                      >
+                        <ArrowRightLeft className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-10 w-10 border-rose-300 text-rose-600 hover:bg-rose-50 hover:text-rose-700"
+                        onClick={() => setDelTarget({ id: s.id, name: s.name })}
+                        title={lang === "bn" ? "দোকান মুছুন" : "Delete shop"}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </>
                   )}
                 </div>
               </div>
@@ -179,6 +192,11 @@ function ShopsPage() {
       />
 
       <AddShopDialog open={addOpen} onOpenChange={setAddOpen} onCreated={() => { /* refresh in dialog */ }} />
+      <TransferShopDialog
+        open={!!transferTarget}
+        onOpenChange={(v) => { if (!v) setTransferTarget(null); }}
+        shop={transferTarget}
+      />
     </div>
   );
 }
