@@ -4661,6 +4661,10 @@ export type Database = {
         Args: { _aff_id: string }
         Returns: undefined
       }
+      check_usage_limit: {
+        Args: { _feature: string; _shop_id: string }
+        Returns: Json
+      }
       dashboard_summary: {
         Args: { _shop_id: string; _since: string }
         Returns: {
@@ -4743,6 +4747,7 @@ export type Database = {
       }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
+      user_active_plan_code: { Args: { _user_id: string }; Returns: string }
       user_active_shop_count: { Args: { _user_id: string }; Returns: number }
       user_phones: { Args: { _uid: string }; Returns: string[] }
       user_shop_limit: { Args: { _user_id: string }; Returns: number }

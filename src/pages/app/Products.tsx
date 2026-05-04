@@ -42,6 +42,8 @@ import { usePagination } from "@/hooks/use-pagination";
 import { Checkbox } from "@/components/ui/checkbox";
 import { CheckSquare } from "lucide-react";
 import { printTableReport } from "@/lib/print-report";
+import { useUsageLimit, parseLimitError } from "@/lib/usage-limits";
+import { UsageLimitBanner } from "@/components/app/UsageLimitBanner";
 
 type Product = {
   id: string;
@@ -77,6 +79,10 @@ function ProductsPage() {
   const { user } = useAuth();
   const qc = useQueryClient();
   const { data: items = [], isLoading: loading, refetch } = useQuery(productsListQuery(current?.id ?? null));
+  const { data: usage, refresh: refreshUsage } = useUsageLimit(current?.id ?? null, "products");
+  const limitReached = !!usage && usage.limit !== -1 && usage.used >= usage.limit;
+  // Re-check usage whenever the products list size changes (after add/delete).
+  useEffect(() => { void refreshUsage(); }, [items.length, refreshUsage]);
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState<string>("name_asc");
   const [filterBy, setFilterBy] = useState<string>("all");
@@ -436,9 +442,13 @@ function ProductsPage() {
                 <Sparkles className="h-4 w-4 text-primary" />
                 {lang === "bn" ? "স্যাম্পল ইম্পোর্ট" : "Import Sample"}
               </Button>
-              <Button className="h-9 gap-1.5 px-3 sm:h-10 sm:gap-2 sm:px-4" onClick={() => {
+              <Button className="h-9 gap-1.5 px-3 sm:h-10 sm:gap-2 sm:px-4" disabled={limitReached} onClick={() => {
                 if (!current?.id) {
                   toast.error(lang === "bn" ? "আগে দোকান নির্বাচন করুন" : "Select a shop first");
+                  return;
+                }
+                if (limitReached) {
+                  toast.error(lang === "bn" ? "ফ্রি প্ল্যানের সীমা শেষ — আপগ্রেড করুন" : "Free plan limit reached — upgrade");
                   return;
                 }
                 setEditing(null);
@@ -521,6 +531,7 @@ function ProductsPage() {
       )}
 
       <div className="mt-2 sm:mt-4 [&_input]:h-9 sm:[&_input]:h-10 [&_button]:h-9 sm:[&_button]:h-10">
+        <UsageLimitBanner data={usage} label_bn="পণ্য" label_en="products" />
         <DataToolbar
           search={search}
           onSearch={setSearch}
@@ -1227,7 +1238,10 @@ function ProductFormDialog({
     setBusy(false);
     if (error) {
       const code = (error as { code?: string }).code;
-      if (code === "42501") {
+      const li = parseLimitError(error.message);
+      if (li) {
+        toast.error(lang === "bn" ? "ফ্রি প্ল্যানের সীমা শেষ — আপগ্রেড করুন" : "Free plan limit reached — upgrade");
+      } else if (code === "42501") {
         toast.error(lang === "bn"
           ? "এই দোকানে প্রোডাক্ট যোগ করার অনুমতি নেই"
           : "You don't have permission to add products in this shop");

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, Pencil, Trash2, Globe, Clock, Shield, Home, Wrench, Search, MapPin, CalendarClock, Phone, BadgeDollarSign } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -21,6 +21,8 @@ import { BdLocationPicker, type BdLocation } from "@/components/shared/BdLocatio
 import { X } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { useUsageLimit, parseLimitError } from "@/lib/usage-limits";
+import { UsageLimitBanner } from "@/components/app/UsageLimitBanner";
 
 function ServicesPage() {
   const { lang } = useI18n();
@@ -31,6 +33,9 @@ function ServicesPage() {
   const [search, setSearch] = useState("");
   const [openForm, setOpenForm] = useState(false);
   const [editing, setEditing] = useState<Service | null>(null);
+  const { data: usage, refresh: refreshUsage } = useUsageLimit(current?.id ?? null, "services");
+  const limitReached = !!usage && usage.limit !== -1 && usage.used >= usage.limit;
+  useEffect(() => { void refreshUsage(); }, [items.length, refreshUsage]);
   const [tab, setTab] = useState<string>(() => {
     if (typeof window === "undefined") return "list";
     const sp = new URLSearchParams(window.location.search);
@@ -43,6 +48,31 @@ function ServicesPage() {
   }, [items, search]);
 
   const refresh = () => qc.invalidateQueries({ queryKey: ["services"] });
+
+  const seedDemoService = async () => {
+    if (!current) return;
+    const { error } = await supabase.from("services").insert({
+      shop_id: current.id,
+      name: lang === "bn" ? "ফ্রি ডেলিভারি সার্ভিস" : "Free delivery service",
+      description: lang === "bn" ? "ডেমো — পরে এডিট করতে পারবেন" : "Demo — edit anytime",
+      price: 100,
+      unit: "service",
+      duration_minutes: 30,
+      home_service: true,
+      is_marketplace_published: false,
+      booking_enabled: true,
+      service_areas: [],
+    } as never);
+    if (error) {
+      const li = parseLimitError(error.message);
+      if (li) toast.error(lang === "bn" ? "সীমা শেষ — আপগ্রেড করুন" : "Limit reached — upgrade");
+      else toast.error(error.message);
+      return;
+    }
+    toast.success(lang === "bn" ? "ডেমো সার্ভিস যোগ হয়েছে" : "Demo service added");
+    refresh();
+    void refreshUsage();
+  };
 
   const onDelete = async (s: Service) => {
     if (!confirm(lang === "bn" ? `"${s.name}" মুছে ফেলবেন?` : `Delete "${s.name}"?`)) return;
@@ -83,10 +113,23 @@ function ServicesPage() {
             {lang === "bn" ? "আপনার সার্ভিসের তালিকা ও মূল্য পরিচালনা করুন" : "Manage your services and pricing"}
           </div>
         </div>
-        <Button onClick={() => { setEditing(null); setOpenForm(true); }} className="gap-2">
+        <Button
+          onClick={() => {
+            if (limitReached) {
+              toast.error(lang === "bn" ? "সীমা শেষ — আপগ্রেড করুন" : "Limit reached — upgrade");
+              return;
+            }
+            setEditing(null);
+            setOpenForm(true);
+          }}
+          className="gap-2"
+          disabled={limitReached}
+        >
           <Plus className="h-4 w-4" /> {lang === "bn" ? "নতুন সার্ভিস" : "New Service"}
         </Button>
       </div>
+
+      <UsageLimitBanner data={usage} label_bn="সার্ভিস" label_en="services" />
 
       <Tabs value={tab} onValueChange={setTab} className="mb-3">
         <TabsList>
@@ -110,6 +153,16 @@ function ServicesPage() {
         <EmptyState
           icon={<Wrench className="h-6 w-6" />}
           title={lang === "bn" ? "কোনো সার্ভিস নেই" : "No services yet"}
+          action={
+            <div className="flex flex-wrap justify-center gap-2">
+              <Button onClick={() => { if (!limitReached) { setEditing(null); setOpenForm(true); } }} disabled={limitReached} className="gap-1">
+                <Plus className="h-4 w-4" /> {lang === "bn" ? "নতুন সার্ভিস" : "New service"}
+              </Button>
+              <Button onClick={seedDemoService} variant="outline" disabled={limitReached} className="gap-1">
+                <Wrench className="h-4 w-4" /> {lang === "bn" ? "ডেমো সার্ভিস যোগ করুন" : "Add demo service"}
+              </Button>
+            </div>
+          }
         />
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -263,7 +316,10 @@ function ServiceFormSheet({ open, onClose, editing, shopId, categories, onSaved 
       onSaved();
       onClose();
     } catch (e) {
-      toast.error((e as Error).message);
+      const msg = (e as Error).message;
+      const li = parseLimitError(msg);
+      if (li) toast.error(lang === "bn" ? "ফ্রি প্ল্যানের সীমা শেষ — আপগ্রেড করুন" : "Free plan limit reached — upgrade");
+      else toast.error(msg);
     } finally {
       setSaving(false);
     }

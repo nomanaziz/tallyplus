@@ -120,6 +120,20 @@ export const FEATURE_GROUPS: FeatureGroup[] = [
     ],
   },
   {
+    key: "services",
+    title_bn: "সার্ভিস",
+    title_en: "Services",
+    icon: "🛠️",
+    items: [
+      { key: "view", label_bn: "সার্ভিস তালিকা", label_en: "Services" },
+      { key: "add", label_bn: "যোগ করুন", label_en: "Add" },
+      { key: "edit", label_bn: "এডিট করুন", label_en: "Edit" },
+      { key: "delete", label_bn: "মুছে ফেলুন", label_en: "Delete" },
+      { key: "bookings", label_bn: "বুকিং ম্যানেজ", label_en: "Manage bookings" },
+      { key: "publish", label_bn: "অনলাইন পাবলিশ", label_en: "Publish online" },
+    ],
+  },
+  {
     key: "stock",
     title_bn: "স্টকের হিসাব",
     title_en: "Stock",
@@ -370,6 +384,7 @@ export const ROLE_PRESETS: Record<RoleKey, PermissionMap> = {
     sell: ["sell", "quick_sell", "cart_edit"],
     contacts: ["view", "customers", "add_customer"],
     products: ["view"],
+    services: ["view"],
   },
   MANAGER: {
     dashboard: ["view", "summary", "quick_actions"],
@@ -378,6 +393,7 @@ export const ROLE_PRESETS: Record<RoleKey, PermissionMap> = {
     expense: ["expense", "list", "add"],
     contacts: ["view", "customers", "suppliers", "add_customer", "add_supplier"],
     products: ["view", "add", "edit", "details"],
+    services: ["view", "add", "edit", "bookings"],
     stock: ["view", "history", "update", "edit"],
     cashbox: ["view", "cash_in", "cash_out", "history"],
     wishlist: ["view", "convert"],
