@@ -77,7 +77,14 @@ export function MoneyDueEntryDialog({
       } else {
         const { data, error } = await supabase
           .from("customers")
-          .insert({ shop_id: current.id, name: name.trim(), phone: phone.trim(), address: address.trim() || null, due_balance: dir === "giving" ? amt : 0 })
+          .insert({
+            shop_id: current.id,
+            name: name.trim(),
+            phone: phone.trim(),
+            address: address.trim() || null,
+            due_balance: dir === "giving" ? amt : 0,
+            contact_kind: party === "employee" ? "employee" : "customer",
+          })
           .select("id").single();
         if (error) throw error;
         contactId = data.id;

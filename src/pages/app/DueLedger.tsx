@@ -3,20 +3,17 @@ import { useNavigate } from "@/lib/router";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Search, FileText, RefreshCw, History, Calendar } from "lucide-react";
+import { Plus, Search, FileText, RefreshCw, History } from "lucide-react";
 import { useI18n, fmtMoney } from "@/lib/i18n";
 import { useShop } from "@/lib/shop";
 import { supabase } from "@/integrations/supabase/client";
 import { DueTypePickerDialog, type DueDirection } from "@/components/app/DueTypePickerDialog";
 import { MoneyDueEntryDialog } from "@/components/app/MoneyDueEntryDialog";
-import { DueReminderDialog } from "@/components/app/DueReminderDialog";
-import { EmptyState } from "@/components/app/EmptyState";
+import { ContactLedgerPanel, type LedgerContact } from "@/components/app/ContactLedgerPanel";
 import { icons } from "@/lib/icons";
 
-
-
 type PartyTab = "customer" | "supplier" | "employee";
-type Contact = { id: string; name: string; phone: string | null; due_balance: number };
+type Contact = { id: string; name: string; phone: string | null; due_balance: number; contact_kind?: string | null };
 
 function DueLedgerPage() {
   const { lang } = useI18n();
@@ -30,21 +27,33 @@ function DueLedgerPage() {
   const [moneyOpen, setMoneyOpen] = useState(false);
   const [moneyDir, setMoneyDir] = useState<DueDirection>("giving");
   const [refreshTick, setRefreshTick] = useState(0);
-  const [reminderOpen, setReminderOpen] = useState(false);
-  const [reminderTarget, setReminderTarget] = useState<Contact | null>(null);
+  const [selected, setSelected] = useState<LedgerContact | null>(null);
 
   useEffect(() => {
     if (!current?.id) return;
     let cancelled = false;
     (async () => {
-      const table = tab === "supplier" ? "suppliers" : "customers";
-      const { data } = await supabase
-        .from(table)
-        .select("id,name,phone,due_balance")
-        .eq("shop_id", current.id)
-        .is("deleted_at", null)
-        .order("created_at", { ascending: false });
-      if (!cancelled) setContacts((data ?? []) as Contact[]);
+      let data: Contact[] = [];
+      if (tab === "supplier") {
+        const { data: rows } = await supabase
+          .from("suppliers")
+          .select("id,name,phone,due_balance")
+          .eq("shop_id", current.id)
+          .is("deleted_at", null)
+          .order("created_at", { ascending: false });
+        data = (rows ?? []) as Contact[];
+      } else {
+        const wantKind = tab === "employee" ? "employee" : "customer";
+        const { data: rows } = await supabase
+          .from("customers")
+          .select("id,name,phone,due_balance,contact_kind")
+          .eq("shop_id", current.id)
+          .eq("contact_kind", wantKind)
+          .is("deleted_at", null)
+          .order("created_at", { ascending: false });
+        data = (rows ?? []) as Contact[];
+      }
+      if (!cancelled) setContacts(data);
 
       const [{ data: c }, { data: s }] = await Promise.all([
         supabase.from("customers").select("due_balance").eq("shop_id", current.id).is("deleted_at", null),
@@ -52,17 +61,24 @@ function DueLedgerPage() {
       ]);
       if (!cancelled) {
         setTotals({
-          receivable: (c ?? []).reduce((a, r) => a + Number(r.due_balance || 0), 0),
-          payable: (s ?? []).reduce((a, r) => a + Number(r.due_balance || 0), 0),
+          receivable: (c ?? []).reduce((a, r) => a + Math.max(Number(r.due_balance || 0), 0), 0),
+          payable: (s ?? []).reduce((a, r) => a + Math.max(Number(r.due_balance || 0), 0), 0),
         });
+        if (selected) {
+          const fresh = data.find((x) => x.id === selected.id);
+          if (fresh) setSelected({ ...selected, due_balance: Number(fresh.due_balance || 0) });
+        }
       }
     })();
     return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [current?.id, tab, refreshTick]);
 
   const filtered = contacts.filter((c) =>
     !search.trim() || c.name.toLowerCase().includes(search.toLowerCase()) || (c.phone ?? "").includes(search),
   );
+
+  const partyForTab: "customer" | "supplier" = tab === "supplier" ? "supplier" : "customer";
 
   return (
     <div className="flex h-full flex-col">
@@ -95,7 +111,7 @@ function DueLedgerPage() {
         {/* Left: contacts */}
         <div className="flex flex-col border-r overflow-hidden">
           <div className="border-b p-3 space-y-3">
-            <Tabs value={tab} onValueChange={(v) => setTab(v as PartyTab)}>
+            <Tabs value={tab} onValueChange={(v) => { setTab(v as PartyTab); setSelected(null); }}>
               <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="customer">{lang === "bn" ? "কাস্টমার" : "Customer"}</TabsTrigger>
                 <TabsTrigger value="supplier">{lang === "bn" ? "সাপ্লায়ার" : "Supplier"}</TabsTrigger>
@@ -118,47 +134,58 @@ function DueLedgerPage() {
               </div>
             ) : (
               <ul className="divide-y">
-                {filtered.map((c) => (
-                  <li key={c.id} className="flex items-center justify-between gap-3 px-4 py-3 hover:bg-accent/50">
-                    <div className="min-w-0 flex-1">
-                      <div className="truncate font-medium">{c.name}</div>
-                      <div className="truncate text-xs text-muted-foreground">{c.phone ?? "—"}</div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className={`text-sm font-semibold ${Number(c.due_balance) > 0 ? "text-emerald-600" : "text-muted-foreground"}`}>
-                        {fmtMoney(Number(c.due_balance || 0), lang)}
+                {filtered.map((c) => {
+                  const bal = Number(c.due_balance || 0);
+                  const isActive = selected?.id === c.id;
+                  const showRed = bal > 0;
+                  const showAdvance = bal < 0;
+                  return (
+                    <li
+                      key={c.id}
+                      className={`flex cursor-pointer items-center justify-between gap-3 px-4 py-3 transition border-l-4 ${isActive ? "bg-accent border-primary" : "border-transparent hover:bg-accent/50"}`}
+                      onClick={() => setSelected({
+                        id: c.id,
+                        name: c.name,
+                        phone: c.phone,
+                        due_balance: bal,
+                        party: partyForTab,
+                        kind: tab,
+                      })}
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate font-medium">{c.name}</div>
+                        <div className="truncate text-xs text-muted-foreground">{c.phone ?? "—"}</div>
                       </div>
-                      {tab === "customer" && Number(c.due_balance) > 0 && c.phone && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="h-8 gap-1 px-2 text-xs"
-                          onClick={(e) => { e.stopPropagation(); setReminderTarget(c); setReminderOpen(true); }}
-                        >
-                          {lang === "bn" ? "রিমাইন্ডার" : "Remind"}
-                        </Button>
-                      )}
-                    </div>
-                  </li>
-                ))}
+                      <div className="flex flex-col items-end gap-1">
+                        <div className={`text-sm font-semibold ${showRed ? "text-rose-600" : showAdvance ? "text-blue-600" : "text-muted-foreground"}`}>
+                          {fmtMoney(Math.abs(bal), lang)}
+                        </div>
+                        {showRed && (
+                          <span className="rounded bg-rose-100 px-1.5 py-0.5 text-[10px] font-semibold text-rose-700 dark:bg-rose-950/50 dark:text-rose-300">
+                            {tab === "supplier" ? (lang === "bn" ? "দিতে হবে" : "OWED") : (lang === "bn" ? "বাকি" : "DUE")}
+                          </span>
+                        )}
+                        {showAdvance && (
+                          <span className="rounded bg-blue-100 px-1.5 py-0.5 text-[10px] font-semibold text-blue-700 dark:bg-blue-950/50 dark:text-blue-300">
+                            {lang === "bn" ? "অগ্রিম" : "ADVANCE"}
+                          </span>
+                        )}
+                        {!showRed && !showAdvance && (
+                          <span className="rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">
+                            {lang === "bn" ? "পরিশোধিত" : "PAID"}
+                          </span>
+                        )}
+                      </div>
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </div>
         </div>
 
-        {/* Right: detail empty */}
-        <div className="flex flex-col">
-          <div className="flex items-center justify-end gap-2 border-b bg-background px-4 py-2">
-            <Button variant="outline" size="sm" className="gap-1.5">
-              <Calendar className="h-4 w-4" />
-              <span>Jan 01, 2000 - Dec 31, 2026</span>
-            </Button>
-            <Button variant="outline" size="icon"><RefreshCw className="h-4 w-4" /></Button>
-          </div>
-          <div className="flex flex-1 items-center justify-center">
-            <EmptyState title={lang === "bn" ? "আপনার কোন লেনদেন নেই" : "No transactions yet"} />
-          </div>
-        </div>
+        {/* Right: full ledger panel */}
+        <ContactLedgerPanel contact={selected} onChanged={() => setRefreshTick((t) => t + 1)} />
       </div>
 
       <DueTypePickerDialog
@@ -171,11 +198,6 @@ function DueLedgerPage() {
         onOpenChange={setMoneyOpen}
         defaultDirection={moneyDir}
         onSaved={() => setRefreshTick((t) => t + 1)}
-      />
-      <DueReminderDialog
-        open={reminderOpen}
-        onOpenChange={setReminderOpen}
-        customer={reminderTarget}
       />
     </div>
   );
