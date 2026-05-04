@@ -25,6 +25,11 @@ import { useUsageLimit, parseLimitError } from "@/lib/usage-limits";
 import { UsageLimitBanner } from "@/components/app/UsageLimitBanner";
 import { QuickAddServiceDialog } from "@/components/app/QuickAddServiceDialog";
 import { Zap } from "lucide-react";
+import { AdvancePaymentInfoCard } from "@/components/app/AdvancePaymentInfoCard";
+import { CompleteServiceDialog, type CompleteBooking } from "@/components/app/CompleteServiceDialog";
+import { ServiceHistoryTab } from "@/components/app/ServiceHistoryTab";
+import { History, CheckCircle2, Printer } from "lucide-react";
+import { InvoiceDialog, type InvoiceData } from "@/components/app/InvoiceDialog";
 
 function ServicesPage() {
   const { lang } = useI18n();
@@ -156,9 +161,15 @@ function ServicesPage() {
           <TabsTrigger value="bookings" className="gap-1.5">
             <CalendarClock className="h-3.5 w-3.5" /> {lang === "bn" ? "বুকিং" : "Bookings"}
           </TabsTrigger>
+          <TabsTrigger value="history" className="gap-1.5">
+            <History className="h-3.5 w-3.5" /> {lang === "bn" ? "ইতিহাস" : "History"}
+          </TabsTrigger>
         </TabsList>
         <TabsContent value="bookings" className="mt-3">
           <ServiceBookingsTab shopId={current.id} />
+        </TabsContent>
+        <TabsContent value="history" className="mt-3">
+          <ServiceHistoryTab shopId={current.id} />
         </TabsContent>
         <TabsContent value="list" className="mt-3">
       <div className="mb-3 relative max-w-md">
