@@ -20,7 +20,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { icons } from "@/lib/icons";
+import { icons, AppIcon } from "@/lib/icons";
 
 type Expense = {
   id: string;
@@ -79,7 +79,7 @@ function ExpenseLedgerPage() {
           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => nav({ to: "/app/dashboard" })}>
             <ArrowLeft className="h-4 w-4" />
           </Button>
-          <img src={icons.expense} alt="" className="h-6 w-6" />
+          <AppIcon name="expense" className="h-6 w-6" />
           <h1 className="text-xl font-extrabold md:text-2xl">{lang === "bn" ? "খরচের খাতা" : "Expense Ledger"}</h1>
         </div>
       </div>

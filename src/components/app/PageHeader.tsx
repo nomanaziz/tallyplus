@@ -1,6 +1,6 @@
 import { useNavigate } from "@/lib/router";
 import { Button } from "@/components/ui/button";
-import { icons } from "@/lib/icons";
+import { icons, AppIcon } from "@/lib/icons";
 import type { ReactNode } from "react";
 
 export function PageHeader({
@@ -24,7 +24,7 @@ export function PageHeader({
         <div className="flex min-w-0 flex-1 items-center gap-2">
           {back && (
             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => nav({ to: ".." as never })}>
-              <img src={icons.backArrow} alt="back" className="h-4 w-4" />
+              <AppIcon name="backArrow" className="h-4 w-4" />
             </Button>
           )}
           <h1 className="truncate text-lg font-extrabold md:text-xl">{title}</h1>

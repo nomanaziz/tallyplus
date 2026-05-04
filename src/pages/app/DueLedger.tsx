@@ -10,7 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { DueTypePickerDialog, type DueDirection } from "@/components/app/DueTypePickerDialog";
 import { MoneyDueEntryDialog } from "@/components/app/MoneyDueEntryDialog";
 import { ContactLedgerPanel, type LedgerContact } from "@/components/app/ContactLedgerPanel";
-import { icons } from "@/lib/icons";
+import { icons, AppIcon } from "@/lib/icons";
 
 type PartyTab = "customer" | "supplier" | "employee";
 type Contact = { id: string; name: string; phone: string | null; due_balance: number; contact_kind?: string | null };
@@ -85,7 +85,7 @@ function DueLedgerPage() {
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3 border-b bg-background px-4 py-3">
         <div className="flex items-center gap-2">
-          <img src={icons.due} alt="" className="h-6 w-6" />
+          <AppIcon name="due" className="h-6 w-6" />
           <h1 className="text-lg font-bold">{lang === "bn" ? "বাকির খাতা" : "Due Ledger"}</h1>
         </div>
         <div className="flex flex-wrap items-center gap-2">

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { EmptyState } from "@/components/app/EmptyState";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { icons } from "@/lib/icons";
+import { icons, AppIcon } from "@/lib/icons";
 import { Play, Search, GraduationCap } from "lucide-react";
 
 type Video = {
@@ -75,7 +75,7 @@ function TrainingPage() {
   return (
     <div className="container px-4 py-4">
       <div className="flex items-center gap-2">
-        <img src={icons.training} alt="" className="h-7 w-7" />
+        <AppIcon name="training" className="h-7 w-7" />
         <h1 className="text-xl font-extrabold md:text-2xl">
           {lang === "bn" ? "অ্যাপ ট্রেনিং" : "App Training"}
         </h1>

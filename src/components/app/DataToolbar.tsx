@@ -1,5 +1,5 @@
 import { ScanLine } from "lucide-react";
-import { icons } from "@/lib/icons";
+import { icons, AppIcon } from "@/lib/icons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useI18n } from "@/lib/i18n";
@@ -38,7 +38,7 @@ export function DataToolbar({
       {middleExtra}
       {onRefresh && (
         <Button variant="outline" onClick={onRefresh} className="h-10 gap-2">
-          <img src={icons.refresh} alt="" className="h-4 w-4" />
+          <AppIcon name="refresh" className="h-4 w-4" />
           {lang === "bn" ? "রিফ্রেশ" : "Refresh"}
         </Button>
       )}

@@ -5,7 +5,7 @@ import { useShop } from "@/lib/shop";
 import { useI18n, fmtMoney } from "@/lib/i18n";
 import { dashboardSummaryQuery, dashboardOverviewQuery } from "@/lib/queries";
 import { Package, Truck, Globe, Clock } from "lucide-react";
-import { icons } from "@/lib/icons";
+import { icons, AppIcon } from "@/lib/icons";
 import { DashboardBannerCarousel } from "@/components/app/DashboardBannerCarousel";
 import { SECTIONS, type SidebarItem } from "@/components/app/AppSidebar";
 import { usePermissions } from "@/lib/permissions-hook";
@@ -89,7 +89,7 @@ function Dashboard() {
               ))}
             </div>
             <button onClick={load} disabled={loading} aria-label="refresh" className="ml-0.5 inline-flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground hover:bg-background">
-              <img src={icons.refresh} alt="" className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
+              <AppIcon name="refresh" className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
             </button>
           </div>
         </div>
