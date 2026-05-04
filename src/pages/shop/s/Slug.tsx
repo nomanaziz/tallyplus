@@ -3,8 +3,10 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { SiteHeader } from "@/components/site/SiteHeader";
 import { SiteFooter } from "@/components/site/SiteFooter";
-import { Loader2, MapPin, Phone, ShoppingBag, Store, ArrowLeft, Heart } from "lucide-react";
+import { Loader2, MapPin, Phone, ShoppingBag, Store, ArrowLeft, Heart, Wrench } from "lucide-react";
 import { MarketplaceProductCard } from "@/components/marketplace/MarketplaceProductCard";
+import { MarketplaceServiceCard } from "@/components/marketplace/MarketplaceServiceCard";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
@@ -15,6 +17,13 @@ type Shop = {
   cover_url: string | null; tagline: string | null; address: string | null; phone: string | null;
 };
 type Product = { id: string; name: string; image_url: string | null; unit: string | null };
+type Service = {
+  id: string; shop_id: string; name: string; description?: string | null;
+  price: number; duration_minutes?: number | null; duration_label?: string | null;
+  unit?: string | null; image_url?: string | null;
+  home_service?: boolean | null; service_charge_extra?: number | null;
+  service_areas?: string[] | null;
+};
 
 
 
@@ -25,6 +34,7 @@ function ShopPage() {
   const [shop, setShop] = useState<Shop | null>(null);
   const [listings, setListings] = useState<Listing[]>([]);
   const [products, setProducts] = useState<Record<string, Product>>({});
+  const [services, setServices] = useState<Service[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [favId, setFavId] = useState<string | null>(null);
   const [favLoading, setFavLoading] = useState(false);
@@ -39,10 +49,11 @@ function ShopPage() {
         if (error || !data || (data as { error?: string }).error) {
           setError((data as { error?: string })?.error ?? error?.message ?? "ত্রুটি");
         } else {
-          const d = data as { shop: Shop; listings: Listing[]; products: Record<string, Product> };
+          const d = data as { shop: Shop; listings: Listing[]; products: Record<string, Product>; services?: Service[] };
           setShop(d.shop);
           setListings(d.listings ?? []);
           setProducts(d.products ?? {});
+          setServices(d.services ?? []);
         }
         setLoading(false);
       });
