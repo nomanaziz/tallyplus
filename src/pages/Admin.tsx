@@ -6,6 +6,7 @@ import { Loader2, LogOut, Menu } from "lucide-react";
 import { toast } from "sonner";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { NotificationBell } from "@/components/app/NotificationBell";
 
 
 
@@ -89,6 +90,7 @@ function AdminLayout() {
           </div>
           <div className="flex items-center gap-3">
             <span className="hidden text-xs text-muted-foreground sm:inline">{email}</span>
+            <NotificationBell />
             <Button variant="outline" size="sm" onClick={handleLogout}>
               <LogOut className="mr-1 h-4 w-4" /> Logout
             </Button>
