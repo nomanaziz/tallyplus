@@ -1,5 +1,5 @@
 import { Link } from "@/lib/router";
-import { Clock, Home, MapPin, Store, Wrench } from "lucide-react";
+import { CalendarPlus, Clock, Home, MapPin, Phone, Store, Wrench } from "lucide-react";
 
 export type ServiceCardItem = {
   id: string;
@@ -23,6 +23,7 @@ export type ServiceCardShop = {
   username?: string | null;
   logo_url?: string | null;
   address?: string | null;
+  phone?: string | null;
 };
 
 function durationText(s: ServiceCardItem) {
@@ -91,11 +92,32 @@ export function MarketplaceServiceCard({
           </div>
         )}
         {showShopChip && shop && (
-          <div className="mt-1 inline-flex items-center gap-1 truncate rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
-            <Store className="h-3 w-3" />
-            <span className="truncate">{shop.name}</span>
+          <div className="mt-1 flex items-center gap-1.5">
+            <div className="h-5 w-5 flex-none overflow-hidden rounded-full border bg-muted">
+              {shop.logo_url ? (
+                <img src={shop.logo_url} alt={shop.name} className="h-full w-full object-cover" />
+              ) : (
+                <div className="flex h-full items-center justify-center"><Store className="h-3 w-3 text-muted-foreground" /></div>
+              )}
+            </div>
+            <span className="truncate text-[11px] font-medium">{shop.name}</span>
           </div>
         )}
+        <div className="mt-1.5 flex items-center gap-1">
+          <span className="inline-flex flex-1 items-center justify-center gap-1 rounded-md bg-primary px-2 py-1 text-[11px] font-bold text-primary-foreground">
+            <CalendarPlus className="h-3 w-3" /> বুক করুন
+          </span>
+          {shop?.phone && (
+            <a
+              href={`tel:${shop.phone}`}
+              onClick={(e) => e.stopPropagation()}
+              className="inline-flex items-center justify-center gap-1 rounded-md border px-2 py-1 text-[11px] font-semibold hover:bg-accent"
+              title={`কল ${shop.phone}`}
+            >
+              <Phone className="h-3 w-3" />
+            </a>
+          )}
+        </div>
       </div>
     </Link>
   );
