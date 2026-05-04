@@ -120,7 +120,12 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
           !active && !it.highlight && "hover:bg-sidebar-accent",
         )}
       >
-        <it.icon className="h-5 w-5 flex-none" />
+        <span className={cn(
+          "flex h-7 w-7 flex-none items-center justify-center rounded-md bg-primary text-primary-foreground shadow-sm",
+          active && "ring-2 ring-primary/40",
+        )}>
+          <it.icon className="h-4 w-4 icon-inherit" />
+        </span>
         <span className="truncate">{lang === "bn" ? it.bn : it.en}</span>
       </Link>
     );
@@ -172,7 +177,9 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
                     }}
                     className="group flex items-center gap-2.5 rounded-md px-2 py-1.5 text-[13px] leading-tight text-emerald-700 transition-colors hover:bg-sidebar-accent dark:text-emerald-400"
                   >
-                    <Download className="h-5 w-5 flex-none" />
+                    <span className="flex h-7 w-7 flex-none items-center justify-center rounded-md bg-primary text-primary-foreground shadow-sm">
+                      <Download className="h-4 w-4 icon-inherit" />
+                    </span>
                     <span className="truncate">{lang === "bn" ? "অ্যাপ ইনস্টল করুন" : "Install App"}</span>
                   </button>
                 )}

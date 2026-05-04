@@ -368,7 +368,9 @@ function Section({
             to={it.to as never}
             className="group flex flex-col items-center gap-1 rounded-lg p-2 text-center hover:bg-accent"
           >
-            <it.icon className="h-9 w-9" />
+            <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm">
+              <it.icon className="h-6 w-6 icon-inherit" />
+            </span>
             <span className="text-[11px] font-semibold leading-tight">{lang === "bn" ? it.bn : it.en}</span>
           </Link>
         ))}
