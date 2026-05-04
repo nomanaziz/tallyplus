@@ -10,14 +10,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from "@/components/ui/sheet";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { EmptyState } from "@/components/app/EmptyState";
 import { toast } from "sonner";
 import { RequirePerm } from "@/components/app/RequirePerm";
 import { ServiceCatalogPicker } from "@/components/app/ServiceCatalogPicker";
-import { BD_DIVISIONS, type CatalogItem } from "@/lib/service-catalog";
+import { type CatalogItem } from "@/lib/service-catalog";
+import { BdLocationPicker, type BdLocation } from "@/components/shared/BdLocationPicker";
+import { X } from "lucide-react";
 
 function ServicesPage() {
   const { lang } = useI18n();
@@ -125,11 +126,7 @@ function ServicesPage() {
                     {(() => {
                       const areas = s.service_areas ?? [];
                       if (areas.length === 0) return lang === "bn" ? "সর্বত্র উপলব্ধ" : "Available everywhere";
-                      const names = areas.map((c) => {
-                        const d = BD_DIVISIONS.find((x) => x.code === c);
-                        return d ? (lang === "bn" ? d.name_bn : d.name_en) : c;
-                      });
-                      return (lang === "bn" ? "উপলব্ধ: " : "Available in: ") + names.join(", ");
+                      return (lang === "bn" ? "উপলব্ধ: " : "Available in: ") + areas.join(", ");
                     })()}
                   </span>
                 </div>
