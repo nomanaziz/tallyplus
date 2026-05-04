@@ -152,16 +152,17 @@ function ServicesPage() {
         <EmptyState
           icon={<Wrench className="h-6 w-6" />}
           title={lang === "bn" ? "কোনো সার্ভিস নেই" : "No services yet"}
-        >
-          <div className="mt-3 flex flex-wrap justify-center gap-2">
-            <Button onClick={() => { if (!limitReached) { setEditing(null); setOpenForm(true); } }} disabled={limitReached} className="gap-1">
-              <Plus className="h-4 w-4" /> {lang === "bn" ? "নতুন সার্ভিস" : "New service"}
-            </Button>
-            <Button onClick={seedDemoService} variant="outline" disabled={limitReached} className="gap-1">
-              <Wrench className="h-4 w-4" /> {lang === "bn" ? "ডেমো সার্ভিস যোগ করুন" : "Add demo service"}
-            </Button>
-          </div>
-        </EmptyState>
+          action={
+            <div className="flex flex-wrap justify-center gap-2">
+              <Button onClick={() => { if (!limitReached) { setEditing(null); setOpenForm(true); } }} disabled={limitReached} className="gap-1">
+                <Plus className="h-4 w-4" /> {lang === "bn" ? "নতুন সার্ভিস" : "New service"}
+              </Button>
+              <Button onClick={seedDemoService} variant="outline" disabled={limitReached} className="gap-1">
+                <Wrench className="h-4 w-4" /> {lang === "bn" ? "ডেমো সার্ভিস যোগ করুন" : "Add demo service"}
+              </Button>
+            </div>
+          }
+        />
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((s) => {
