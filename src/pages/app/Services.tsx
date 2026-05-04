@@ -247,6 +247,11 @@ function ServicesPage() {
         categories={cats}
         onSaved={refresh}
       />
+      <QuickAddServiceDialog
+        open={quickOpen}
+        onClose={() => setQuickOpen(false)}
+        onAdded={() => { refresh(); void refreshUsage(); }}
+      />
     </div>
   );
 }
