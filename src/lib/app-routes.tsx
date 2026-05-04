@@ -122,6 +122,7 @@ const LSharedFordo = lazy(() => import("@/pages/f/Share"));
 
 export const appRoutes: RouteObject[] = [
 { index: true, element: <Suspense fallback={<RouteFallback/>}><L0/></Suspense> },
+{ path: "xbd-login", element: <Suspense fallback={<RouteFallback/>}><L8/></Suspense> },
 { path: "admin", element: <Suspense fallback={<RouteFallback/>}><L1/></Suspense>, children: [
 { path: "ads", element: <Suspense fallback={<RouteFallback/>}><L2/></Suspense> },
 { path: "affiliates", element: <Suspense fallback={<RouteFallback/>}><L3/></Suspense> },
