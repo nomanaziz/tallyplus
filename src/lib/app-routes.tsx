@@ -199,6 +199,8 @@ export const appRoutes: RouteObject[] = [
 { path: "usage-limits", element: <Suspense fallback={<RouteFallback/>}><L54/></Suspense> },
 { path: "warranty", element: <Suspense fallback={<RouteFallback/>}><L55/></Suspense> }
 ,
+{ path: "services", element: <Suspense fallback={<RouteFallback/>}><LServices/></Suspense> }
+,
 { path: "subscribe", element: <Suspense fallback={<RouteFallback/>}><LSubscribe/></Suspense> }
 ,
 { path: "subscribe/callback", element: <Suspense fallback={<RouteFallback/>}><LSubscribeCallback/></Suspense> }
