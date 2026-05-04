@@ -355,7 +355,7 @@ function Section({
   lang,
 }: {
   title: string;
-  items: { to: string; icon: string; bn: string; en: string }[];
+  items: { to: string; icon: React.ComponentType<{ className?: string }>; bn: string; en: string }[];
   lang: "bn" | "en";
 }) {
   return (
@@ -368,7 +368,7 @@ function Section({
             to={it.to as never}
             className="group flex flex-col items-center gap-1 rounded-lg p-2 text-center hover:bg-accent"
           >
-            <img src={it.icon} alt="" className="h-9 w-9" />
+            <it.icon className="h-9 w-9" />
             <span className="text-[11px] font-semibold leading-tight">{lang === "bn" ? it.bn : it.en}</span>
           </Link>
         ))}
