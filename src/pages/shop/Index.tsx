@@ -18,8 +18,10 @@ import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetHeader } from "@/co
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SiteHeader } from "@/components/site/SiteHeader";
 import { SiteFooter } from "@/components/site/SiteFooter";
-import { Search, Store, SlidersHorizontal, RotateCcw, ShoppingBag, MapPin, FileText, Heart } from "lucide-react";
+import { Search, Store, SlidersHorizontal, RotateCcw, ShoppingBag, MapPin, FileText, Heart, Wrench, Home } from "lucide-react";
 import { MarketplaceProductCard } from "@/components/marketplace/MarketplaceProductCard";
+import { MarketplaceServiceCard } from "@/components/marketplace/MarketplaceServiceCard";
+import { BdLocationPicker, type BdLocation } from "@/components/shared/BdLocationPicker";
 import { VendorGridSkeleton, ProductGridSkeleton } from "@/components/marketplace/MarketplaceSkeleton";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
@@ -39,7 +41,7 @@ type Product = { id: string; name: string; image_url: string | null; unit: strin
 type ShopType = { code: string; name_bn: string; name_en: string };
 
 type Sort = "newest" | "price_asc" | "price_desc";
-type View = "products" | "vendors";
+type View = "products" | "vendors" | "services";
 type WholesaleFilter = "all" | "wholesale" | "retail";
 
 type SearchParams = {
@@ -52,6 +54,11 @@ type SearchParams = {
   sort?: Sort;
   view?: View;
   wholesale?: WholesaleFilter;
+  homeService?: boolean;
+  category?: string;
+  division?: string;
+  district?: string;
+  upazila?: string;
 };
 
 
@@ -77,6 +84,13 @@ function MarketplacePage() {
   const page = search.page ?? 1;
   const pageSize = 24;
   const view: View = (search.view as View) ?? "vendors";
+  const [svcLoc, setSvcLoc] = useState<BdLocation>({
+    division: search.division ?? null,
+    district: search.district ?? null,
+    upazila: search.upazila ?? null,
+    area: null,
+  });
+  const [svcCats, setSvcCats] = useState<{ id: string; name: string }[]>([]);
 
   useEffect(() => {
     void supabase
@@ -86,6 +100,17 @@ function MarketplacePage() {
       .order("sort_order", { ascending: true })
       .then(({ data }) => setShopTypes((data as ShopType[] | null) ?? []));
   }, []);
+
+  useEffect(() => {
+    if (view !== "services") return;
+    void supabase.functions
+      .invoke("marketplace-public", { body: { action: "list-service-categories" } })
+      .then(({ data }) => {
+        if (data && Array.isArray((data as { categories?: unknown }).categories)) {
+          setSvcCats((data as { categories: { id: string; name: string }[] }).categories);
+        }
+      });
+  }, [view]);
 
   // Load this user's favourite shops once so hearts render in the right state.
   useEffect(() => {
@@ -205,6 +230,58 @@ function MarketplacePage() {
   const vendorTotal = vendorsQ.data?.total ?? 0;
   const vendorLoading = vendorsQ.isLoading;
 
+  // Services query — only runs when services view is active
+  const servicesQ = useQuery({
+    queryKey: [
+      "marketplace",
+      "services",
+      search.q ?? "",
+      search.min ?? null,
+      search.max ?? null,
+      search.sort ?? "newest",
+      page,
+      typeKey,
+      search.homeService ?? false,
+      search.category ?? "",
+      search.division ?? "",
+      search.district ?? "",
+      search.upazila ?? "",
+    ],
+    enabled: view === "services",
+    staleTime: 60_000,
+    gcTime: 5 * 60_000,
+    placeholderData: keepPreviousData,
+    queryFn: async () => {
+      const { data, error } = await supabase.functions.invoke("marketplace-public", {
+        body: {
+          action: "list-services",
+          q: search.q ?? "",
+          page,
+          pageSize,
+          min_price: search.min,
+          max_price: search.max,
+          shop_type: search.type,
+          sort: search.sort ?? "newest",
+          home_service: search.homeService ? true : undefined,
+          category_id: search.category || undefined,
+          division: search.division || undefined,
+          district: search.district || undefined,
+          upazila: search.upazila || undefined,
+        },
+      });
+      if (error || !data || (data as { error?: string }).error) {
+        return { services: [] as Array<Record<string, unknown>>, shops: {} as Record<string, Shop>, total: 0 };
+      }
+      return data as { services: Array<Record<string, unknown>>; shops: Record<string, Shop>; total: number };
+    },
+  });
+
+  const services = servicesQ.data?.services ?? [];
+  const serviceShops = servicesQ.data?.shops ?? {};
+  const serviceTotal = servicesQ.data?.total ?? 0;
+  const servicesLoading = servicesQ.isLoading;
+  const serviceTotalPages = Math.max(1, Math.ceil(serviceTotal / pageSize));
+
   const submitSearch = (e: React.FormEvent) => {
     e.preventDefault();
     void navigate({ search: (prev) => ({ ...prev, q: q.trim() || undefined, page: 1 }) });
@@ -247,6 +324,7 @@ function MarketplacePage() {
     setQ("");
     setMinP("");
     setMaxP("");
+    setSvcLoc({ division: null, district: null, upazila: null, area: null });
     void navigate({ search: () => ({ page: 1 }) });
   };
 
@@ -332,6 +410,88 @@ function MarketplacePage() {
     </div>
   );
 
+  const servicesFilterPanel = (
+    <div className="space-y-5">
+      <div>
+        <Label className="mb-2 block text-sm font-semibold">মূল্যসীমা (৳)</Label>
+        <div className="flex items-center gap-2">
+          <Input type="number" placeholder="সর্বনিম্ন" value={minP} onChange={(e) => setMinP(e.target.value)} className="h-9" />
+          <span className="text-muted-foreground">–</span>
+          <Input type="number" placeholder="সর্বোচ্চ" value={maxP} onChange={(e) => setMaxP(e.target.value)} className="h-9" />
+        </div>
+        <Button size="sm" variant="outline" className="mt-2 w-full" onClick={applyPrice}>প্রয়োগ করুন</Button>
+      </div>
+
+      <div className="flex items-center justify-between rounded-lg border bg-card p-3">
+        <Label htmlFor="homeService" className="inline-flex items-center gap-1.5 text-sm font-medium">
+          <Home className="h-3.5 w-3.5" /> বাসায় সার্ভিস
+        </Label>
+        <Switch
+          id="homeService"
+          checked={!!search.homeService}
+          onCheckedChange={(v) => navigate({ search: (prev) => ({ ...prev, homeService: v ? true : undefined, page: 1 }) })}
+        />
+      </div>
+
+      <div>
+        <Label className="mb-2 block text-sm font-semibold">ক্যাটাগরি</Label>
+        <Select
+          value={search.category ?? "all"}
+          onValueChange={(v) => navigate({ search: (prev) => ({ ...prev, category: v === "all" ? undefined : v, page: 1 }) })}
+        >
+          <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">সব ক্যাটাগরি</SelectItem>
+            {svcCats.map((c) => (
+              <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div>
+        <Label className="mb-2 block text-sm font-semibold inline-flex items-center gap-1.5">
+          <MapPin className="h-3.5 w-3.5" /> এলাকা
+        </Label>
+        <BdLocationPicker value={svcLoc} onChange={setSvcLoc} showArea={false} />
+        <Button
+          size="sm"
+          variant="outline"
+          className="mt-2 w-full"
+          onClick={() =>
+            navigate({
+              search: (prev) => ({
+                ...prev,
+                division: svcLoc.division ?? undefined,
+                district: svcLoc.district ?? undefined,
+                upazila: svcLoc.upazila ?? undefined,
+                page: 1,
+              }),
+            })
+          }
+        >
+          এলাকা প্রয়োগ করুন
+        </Button>
+      </div>
+
+      <div>
+        <Label className="mb-2 block text-sm font-semibold">সাজান</Label>
+        <Select value={search.sort ?? "newest"} onValueChange={(v) => setSort(v as Sort)}>
+          <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="newest">নতুন আগে</SelectItem>
+            <SelectItem value="price_asc">দাম: কম → বেশি</SelectItem>
+            <SelectItem value="price_desc">দাম: বেশি → কম</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <Button variant="ghost" size="sm" className="w-full gap-2" onClick={reset}>
+        <RotateCcw className="h-4 w-4" /> সব ফিল্টার রিসেট
+      </Button>
+    </div>
+  );
+
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <SiteHeader />
@@ -365,7 +525,7 @@ function MarketplacePage() {
                 <SheetHeader>
                   <SheetTitle>ফিল্টার</SheetTitle>
                 </SheetHeader>
-                <div className="mt-4">{filterPanel}</div>
+                <div className="mt-4">{view === "services" ? servicesFilterPanel : filterPanel}</div>
               </SheetContent>
             </Sheet>
           </form>
@@ -375,7 +535,7 @@ function MarketplacePage() {
             <Tabs
               value={view}
               onValueChange={(v) =>
-                navigate({ search: (prev) => ({ ...prev, view: v === "products" ? "products" : undefined, page: 1 }) })
+                navigate({ search: (prev) => ({ ...prev, view: v === "vendors" ? undefined : (v as View), page: 1 }) })
               }
             >
               <TabsList className="h-9">
@@ -384,6 +544,9 @@ function MarketplacePage() {
                 </TabsTrigger>
                 <TabsTrigger value="products" className="gap-1.5">
                   <ShoppingBag className="h-3.5 w-3.5" /> পণ্য
+                </TabsTrigger>
+                <TabsTrigger value="services" className="gap-1.5">
+                  <Wrench className="h-3.5 w-3.5" /> সার্ভিস
                 </TabsTrigger>
               </TabsList>
             </Tabs>
@@ -436,13 +599,53 @@ function MarketplacePage() {
                   </span>
                 )}
               </div>
-              {filterPanel}
+              {view === "services" ? servicesFilterPanel : filterPanel}
             </div>
           </aside>
 
           {/* Results */}
           <section className="min-w-0 flex-1">
-            {view === "vendors" ? (
+            {view === "services" ? (
+              servicesLoading ? (
+                <ProductGridSkeleton count={10} />
+              ) : services.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-20 text-center">
+                  <Wrench className="mb-4 h-12 w-12 text-muted-foreground" />
+                  <p className="text-lg font-medium">কোনো সার্ভিস পাওয়া যায়নি</p>
+                  <p className="mt-1 text-sm text-muted-foreground">ফিল্টার বদলে আবার চেষ্টা করুন।</p>
+                </div>
+              ) : (
+                <>
+                  <div className="mb-3 text-sm text-muted-foreground">{serviceTotal} টি সার্ভিস</div>
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5">
+                    {services.map((s) => {
+                      const svc = s as unknown as {
+                        id: string; shop_id: string; name: string; description?: string | null;
+                        price: number; duration_minutes?: number | null; duration_label?: string | null;
+                        unit?: string | null; image_url?: string | null;
+                        home_service?: boolean | null; service_charge_extra?: number | null;
+                        service_areas?: string[] | null;
+                      };
+                      const sh = serviceShops[svc.shop_id];
+                      return <MarketplaceServiceCard key={svc.id} service={svc} shop={sh} />;
+                    })}
+                  </div>
+                  {serviceTotalPages > 1 && (
+                    <div className="mt-8 flex items-center justify-center gap-2">
+                      <Button variant="outline" size="sm" disabled={page <= 1}
+                        onClick={() => navigate({ search: (prev) => ({ ...prev, page: page - 1 }) })}>
+                        পূর্ববর্তী
+                      </Button>
+                      <span className="text-sm text-muted-foreground">পৃষ্ঠা {page} / {serviceTotalPages}</span>
+                      <Button variant="outline" size="sm" disabled={page >= serviceTotalPages}
+                        onClick={() => navigate({ search: (prev) => ({ ...prev, page: page + 1 }) })}>
+                        পরবর্তী
+                      </Button>
+                    </div>
+                  )}
+                </>
+              )
+            ) : view === "vendors" ? (
               vendorLoading ? (
                 <VendorGridSkeleton count={8} />
               ) : vendors.length === 0 ? (

@@ -477,6 +477,182 @@ Deno.serve(async (req) => {
       return json({ zones: data ?? [] }, 200, PUBLIC_CACHE);
     }
 
+    // ============================================================
+    // SERVICES — public marketplace endpoints
+    // ============================================================
+
+    if (action === "list-services") {
+      const q = String(body.q ?? "").trim().toLowerCase();
+      const page = Math.max(1, parseInt(String(body.page ?? "1"), 10) || 1);
+      const pageSize = Math.min(48, Math.max(1, parseInt(String(body.pageSize ?? "24"), 10) || 24));
+      const from = (page - 1) * pageSize;
+      const to = from + pageSize - 1;
+
+      const minPrice = body.min_price !== undefined && body.min_price !== "" ? Number(body.min_price) : null;
+      const maxPrice = body.max_price !== undefined && body.max_price !== "" ? Number(body.max_price) : null;
+      const sort = String(body.sort ?? "newest");
+      const homeService = body.home_service === true || body.home_service === "true";
+      const division = String(body.division ?? "").trim();
+      const district = String(body.district ?? "").trim();
+      const upazila = String(body.upazila ?? "").trim();
+      const categoryId = String(body.category_id ?? "").trim();
+      const shopTypesRaw = body.shop_type ?? body.shop_types;
+      const shopTypes: string[] = Array.isArray(shopTypesRaw)
+        ? shopTypesRaw.map((s) => String(s)).filter(Boolean)
+        : typeof shopTypesRaw === "string" && shopTypesRaw.length > 0
+          ? shopTypesRaw.split(",").map((s) => s.trim()).filter(Boolean)
+          : [];
+
+      // marketplace-enabled shops
+      let enabledShopsQ = admin
+        .from("shops")
+        .select("id")
+        .eq("marketplace_enabled", true)
+        .is("deleted_at", null);
+      if (shopTypes.length > 0) enabledShopsQ = enabledShopsQ.in("shop_type_code", shopTypes);
+      const { data: enabledShops } = await enabledShopsQ;
+      const enabledShopIds = (enabledShops as { id: string }[] | null ?? []).map((s) => s.id);
+      if (enabledShopIds.length === 0) {
+        return json({ services: [], shops: {}, total: 0, page, pageSize });
+      }
+
+      // Get published service listings to know which services to show
+      const { data: listingRows } = await admin
+        .from("marketplace_service_listings")
+        .select("service_id, shop_id")
+        .eq("is_published", true)
+        .in("shop_id", enabledShopIds);
+      const allowedServiceIds = ((listingRows as { service_id: string; shop_id: string }[] | null) ?? []).map((r) => r.service_id);
+      if (allowedServiceIds.length === 0) {
+        return json({ services: [], shops: {}, total: 0, page, pageSize });
+      }
+
+      let query = admin
+        .from("services")
+        .select("id, shop_id, category_id, name, description, price, duration_minutes, duration_label, unit, warranty_enabled, warranty_value, warranty_unit, image_url, home_service, service_charge_extra, service_areas, created_at", { count: "exact" })
+        .eq("is_active", true)
+        .is("deleted_at", null)
+        .in("id", allowedServiceIds)
+        .range(from, to);
+
+      if (minPrice !== null && !Number.isNaN(minPrice)) query = query.gte("price", minPrice);
+      if (maxPrice !== null && !Number.isNaN(maxPrice)) query = query.lte("price", maxPrice);
+      if (homeService) query = query.eq("home_service", true);
+      if (categoryId) query = query.eq("category_id", categoryId);
+      if (q) query = query.ilike("name", `%${q}%`);
+
+      // Service area filter — match if any area string contains the chosen division/district/upazila
+      // service_areas format: "Division › District › Upazila" (• area)
+      const areaTerms = [division, district, upazila].filter((s) => s.length > 0);
+      // We can't easily filter `text[]` for substring on each element via PostgREST,
+      // so we apply this filter post-fetch.
+
+      if (sort === "price_asc") query = query.order("price", { ascending: true });
+      else if (sort === "price_desc") query = query.order("price", { ascending: false });
+      else query = query.order("created_at", { ascending: false });
+
+      const { data: services, count } = await query;
+      let rows = (services as Array<Record<string, unknown>> | null) ?? [];
+
+      if (areaTerms.length > 0) {
+        rows = rows.filter((s) => {
+          const areas = (s.service_areas as string[] | null) ?? [];
+          if (areas.length === 0) return false;
+          return areas.some((a) => areaTerms.every((t) => a.toLowerCase().includes(t.toLowerCase())));
+        });
+      }
+
+      // Attach shop info
+      const shopIds = Array.from(new Set(rows.map((r) => String(r.shop_id))));
+      const { data: shops } = shopIds.length > 0
+        ? await admin
+            .from("shops")
+            .select("id, name, slug, username, logo_url, address, phone, shop_type_code")
+            .in("id", shopIds)
+        : { data: [] as ShopRow[] };
+      const shopMap: Record<string, ShopRow> = {};
+      ((shops as ShopRow[] | null) ?? []).forEach((s) => (shopMap[s.id] = s));
+
+      return json({ services: rows, shops: shopMap, total: count ?? rows.length, page, pageSize }, 200, PUBLIC_CACHE);
+    }
+
+    if (action === "service-detail") {
+      const id = String(body.id ?? "").trim();
+      if (!id) return json({ error: "Invalid id" }, 400);
+      const { data: service } = await admin
+        .from("services")
+        .select("*")
+        .eq("id", id)
+        .is("deleted_at", null)
+        .maybeSingle();
+      if (!service) return json({ error: "সার্ভিস পাওয়া যায়নি" }, 404);
+      const s = service as Record<string, unknown>;
+
+      // Confirm there's a published listing
+      const { data: listing } = await admin
+        .from("marketplace_service_listings")
+        .select("id, is_published")
+        .eq("service_id", id)
+        .eq("is_published", true)
+        .maybeSingle();
+      if (!listing) return json({ error: "এই সার্ভিস এখন অনলাইনে নেই" }, 404);
+
+      const { data: shop } = await admin
+        .from("shops")
+        .select("id, name, slug, username, logo_url, cover_url, tagline, address, phone, shop_type_code, marketplace_enabled, whatsapp_number")
+        .eq("id", s.shop_id as string)
+        .is("deleted_at", null)
+        .maybeSingle();
+      if (!shop || !(shop as { marketplace_enabled: boolean }).marketplace_enabled) {
+        return json({ error: "এই দোকান এখন অনলাইনে নেই" }, 404);
+      }
+      return json({ service: s, shop });
+    }
+
+    if (action === "list-service-categories") {
+      // Distinct service categories used across published services
+      const { data: listings } = await admin
+        .from("marketplace_service_listings")
+        .select("service_id")
+        .eq("is_published", true);
+      const sids = ((listings as { service_id: string }[] | null) ?? []).map((l) => l.service_id);
+      if (sids.length === 0) return json({ categories: [] });
+      const { data: services } = await admin
+        .from("services")
+        .select("category_id")
+        .in("id", sids)
+        .is("deleted_at", null)
+        .not("category_id", "is", null);
+      const catIds = Array.from(new Set(((services as { category_id: string | null }[] | null) ?? []).map((s) => s.category_id).filter(Boolean) as string[]));
+      if (catIds.length === 0) return json({ categories: [] });
+      const { data: cats } = await admin
+        .from("service_categories")
+        .select("id, name")
+        .in("id", catIds)
+        .order("name");
+      return json({ categories: cats ?? [] }, 200, PUBLIC_CACHE);
+    }
+
+    if (action === "shop-services") {
+      const shopId = String(body.shop_id ?? "").trim();
+      if (!shopId) return json({ error: "Invalid shop_id" }, 400);
+      const { data: listings } = await admin
+        .from("marketplace_service_listings")
+        .select("service_id")
+        .eq("shop_id", shopId)
+        .eq("is_published", true);
+      const sids = ((listings as { service_id: string }[] | null) ?? []).map((l) => l.service_id);
+      if (sids.length === 0) return json({ services: [] }, 200, PUBLIC_CACHE);
+      const { data: services } = await admin
+        .from("services")
+        .select("id, shop_id, name, description, price, duration_minutes, duration_label, unit, image_url, home_service, service_charge_extra, service_areas, warranty_enabled, warranty_value, warranty_unit")
+        .in("id", sids)
+        .is("deleted_at", null)
+        .eq("is_active", true)
+        .order("name");
+      return json({ services: services ?? [] }, 200, PUBLIC_CACHE);
+    }
+
     return json({ error: "Unknown action" }, 400);
   } catch (e) {
     return json({ error: (e as Error).message }, 500);
