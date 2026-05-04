@@ -1,66 +1,102 @@
 ## Goal
 
-Personal account (consumer) এর left sidebar-এ যে menu items missing সেগুলো add করা, এবং dashboard-এ আরও বেশি information (দেনা, পাওনা, total order, favourite shops, services ইত্যাদি) দেখানো।
+Redesign the Service Bookings tab into a complete service-job lifecycle: see the advance payment proof clearly, complete the job with extra products + discount, generate one unified invoice (printable / shareable to the customer), record everything in shop accounts, and track per-service warranty.
 
-## Current state
+---
 
-**Sidebar (`CustomerLayout.tsx`)** এ এখন মাত্র ৬টি item আছে:
-Dashboard, আমার ফর্দ, আমার অর্ডার, আমার সার্ভিস, প্রিয় দোকান, প্রোফাইল।
+## 1. Booking card — show + copy advance payment info
 
-কিন্তু পেজ আছে আরও অনেক — **Money (আয়-ব্যয়), Notes (নোট), Training (ট্রেনিং), Create Fordo (নতুন ফর্দ)** — এগুলো sidebar-এ নেই, তাই desktop থেকে directly access করা যাচ্ছে না (শুধু dashboard shortcut থেকে)।
+In `src/pages/app/Services.tsx` `ServiceBookingsTab`, when `advance_amount > 0` show a structured "অগ্রিম পেমেন্ট" panel with two copy buttons:
 
-**Dashboard** এখন দেখায়: এ-মাসের আয়/ব্যয়/ব্যালেন্স + ৯টা shortcut tile (যার মধ্যে পাব/দেব শুধু amount দেখায়)। কিন্তু total orders, favourite shops count, my services count — এসব নেই।
+- **পাঠানোর নাম্বার** (the customer phone — `customer_phone` is already the sender phone for bKash/Nagad submissions) → "Copy" button.
+- **TxnID** (`advance_txn_id`) → "Copy" button.
+- Method badge (`advance_payment_method`), amount, paid/unpaid status.
 
-## Changes
+Both copy buttons use `navigator.clipboard.writeText` + toast confirmation. (No schema change — `customer_phone` already represents the sender; we'll relabel it as "পাঠানো নাম্বার / গ্রাহক ফোন".)
 
-### 1. Sidebar এ missing menu add করা (`src/pages/customer/CustomerLayout.tsx`)
+If the customer wants to record a *different* sender number than their contact phone, we add an optional `advance_payer_phone text` column to `service_bookings` and an optional field in `ServiceBookingDialog`. Falls back to `customer_phone` when null.
 
-`NAV` array টা update করে নতুন order:
+---
 
-```text
-- ড্যাশবোর্ড          (Home)
-- আমার ফর্দ           (ListChecks)
-- নতুন ফর্দ তৈরি করুন   (Plus)        ← নতুন
-- আমার অর্ডার          (ShoppingBag)
-- আমার সার্ভিস         (Wrench)
-- প্রিয় দোকান         (Heart)
-- আয়-ব্যয়            (Wallet)       ← নতুন
-- নোট                (StickyNote)   ← নতুন
-- ট্রেনিং             (GraduationCap)← নতুন
-- প্রোফাইল            (User)
+## 2. "Complete service" flow → invoice + accounts
+
+Replace the plain "Mark completed" status change with a **"সম্পন্ন করুন ও ইনভয়েস তৈরি করুন"** dialog (`CompleteServiceDialog`). Inside:
+
+- Shows the booked service line: name + booked price, editable **final service charge** (so user can charge less / more than the listed `service_price`).
+- **Add extra products** section — reuses the existing product picker (same component used in Sell page) to add line items with qty/price; supports both stocked products and free-text items. Stock is decremented (existing `sales` flow already handles this).
+- **Discount** field (flat ৳ or %).
+- **Advance adjustment** — auto-deducts `advance_amount` (if `advance_paid`) from the amount due.
+- **Customer**: link to existing customer (auto-created if phone matches) so the sale ties to a customer record + due ledger.
+- Live total: `service_charge + extras − discount − advance = total / due`.
+- Payment method + paid amount → goes into `cash_movements` & `customers.due_balance` via existing sale triggers.
+
+On submit:
+1. Insert one row in `public.sales` with `note = 'Service: <name>'`, link to customer.
+2. Insert sale_items: one row with `item_type='service'`, `service_id`, name, qty=1, price=final_charge; plus one row per extra product (`item_type='product'`).
+3. Update `service_bookings`: `status='completed'`, store `sale_id` (new column) for traceability.
+4. If the service has `warranty_enabled`, insert `service_warranties` row with `starts_at = now()`, `expires_at = now() + warranty_value warranty_unit`, link `customer_id`, `sale_id`, `service_id`.
+
+**Schema additions (one migration):**
+```sql
+alter table public.service_bookings
+  add column if not exists advance_payer_phone text,
+  add column if not exists sale_id uuid references public.sales(id) on delete set null,
+  add column if not exists completed_at timestamptz,
+  add column if not exists final_amount numeric,
+  add column if not exists discount_amount numeric default 0;
 ```
 
-Mobile bottom nav-এ ১০টা item দেখানো ঠিক হবে না (এখন `grid-cols-6`)। Mobile-এ ৫টা most important রাখব: Dashboard, আমার ফর্দ, আমার অর্ডার, আয়-ব্যয়, প্রোফাইল — `grid-cols-5`। বাকিগুলো dashboard shortcuts + desktop sidebar থেকে access হবে।
+---
 
-### 2. Dashboard-এ আরও information add করা (`src/pages/customer/Dashboard.tsx`)
+## 3. Unified invoice (one print for service + extras)
 
-বর্তমান ৩টা summary card (আয়/ব্যয়/ব্যালেন্স) এর নিচে একটা নতুন **"মোট সারসংক্ষেপ"** section add করব ৬টা compact stat card সহ:
+Reuse the existing sales invoice (`src/lib/print-report.ts` already has `printSalesInvoice` patterns — verify and extend if needed). Because step 2 stores everything as **one `sales` row with mixed item_type rows**, the existing invoice renderer naturally prints service line + extra products + discount + advance + total in one document.
 
-```text
-┌─────────────────────────────────────────────────────────┐
-│  পাব          দেব          মোট অর্ডার                  │
-│  ৳ 1,200      ৳ 500        12টি                        │
-├─────────────────────────────────────────────────────────┤
-│  আমার ফর্দ    প্রিয় দোকান   সার্ভিস বুকিং              │
-│  3টি         2টি           1টি                         │
-└─────────────────────────────────────────────────────────┘
-```
+Add buttons on the booking card (when `status='completed'` and `sale_id` set):
+- "ইনভয়েস প্রিন্ট" → opens print view.
+- "WhatsApp/SMS share" → sends a short link / text with invoice summary to `customer_phone` (use existing share helpers).
 
-Data sources (সব Promise.all-এ একসাথে fetch হবে, hook সবই আগে থেকেই আছে):
+Customer side: on `/customer/MyServices`, show the invoice link for completed bookings (read via `sale_id`).
 
-- **পাব / দেব** — `consumer_loans` (already fetched, just promote into prominent cards)
-- **মোট অর্ডার** — `marketplace_orders` count where `customer_user_id = user.id`
-- **আমার ফর্দ** — already counted (`fordoCount`)
-- **প্রিয় দোকান** — `consumer_favourite_shops` count where `user_id = user.id`
-- **সার্ভিস বুকিং** — `service_bookings` count where `customer_user_id = user.id` (যদি table থাকে; না-থাকলে skip)
+---
 
-এর নিচেই বর্তমান ৯টা shortcut tile section আগের মতই থাকবে (quick access হিসেবে কাজ করবে), শুধু "পাব"/"দেব" tile দুটো remove করব কারণ সেগুলো এখন উপরের stat row-তে আরও prominent ভাবে দেখা যাচ্ছে।
+## 4. Service history & warranty tracking
 
-### 3. কোনো DB / migration লাগবে না
+Add a third tab next to "সার্ভিস তালিকা / বুকিং" → **"সার্ভিস ইতিহাস"**:
 
-সব table আর data এক্সিস্ট করে — শুধু frontend-এ query + UI add।
+- Lists completed bookings (joined with `customers`, `services`, `service_warranties`).
+- Filters: date range, customer name/phone, service.
+- Each row shows: date, customer + address/area, service name, total ৳, warranty status badge:
+  - **Active** — green, with "X দিন বাকি" countdown from `expires_at`.
+  - **Expired** — gray.
+  - **None** — if service has no warranty.
+- Click row → opens detail drawer: full invoice items, advance info, warranty start/expiry, "Print invoice", "Re-service under warranty" button (creates a new booking flagged as warranty claim, free of charge).
 
-## Out of scope
+Customer-side `MyServices` page also gets a warranty badge per completed service.
 
-- Sidebar collapse/mini-variant — বর্তমান layout sticky sidebar (220px) ব্যবহার করছে, এটা পরিবর্তন করা হচ্ছে না।
-- নতুন কোনো consumer feature page তৈরি হচ্ছে না — শুধু existing pages গুলোকে discoverable করা হচ্ছে।
+---
+
+## Technical breakdown
+
+**Files to add:**
+- `src/components/app/CompleteServiceDialog.tsx` — the completion + invoice modal (extras picker, discount, payment).
+- `src/components/app/AdvancePaymentInfoCard.tsx` — copyable advance row used inside booking card.
+- `src/components/app/ServiceHistoryTab.tsx` — the new tab.
+
+**Files to edit:**
+- `src/pages/app/Services.tsx` — add 3rd tab, swap status select for the completion dialog, render advance info card.
+- `src/pages/customer/MyServices.tsx` — add warranty badge + invoice link.
+- `src/lib/print-report.ts` — confirm/extend invoice template to render mixed service+product rows nicely with "অগ্রিম পরিশোধিত" line.
+- `supabase/migrations/<new>.sql` — columns above.
+
+**Reused infra:**
+- `sales`, `sale_items`, `customers.due_balance`, `cash_movements` triggers — already wire payments into the shop's accounts (no new accounting code needed).
+- `service_warranties` table — already exists with the right shape.
+- `tg_notify_new_service_booking` notification path — works as-is.
+
+---
+
+## Out of scope (not in this change)
+- Partial / multiple advances (only one advance per booking).
+- Multi-currency.
+- Recurring services.
