@@ -21,6 +21,7 @@ const FEATURES: { key: string; bn: string; en: string }[] = [
   { key: "sale",              bn: "বিক্রয়",                  en: "Sale" },
   { key: "expense",           bn: "খরচ",                     en: "Expense" },
   { key: "products",          bn: "পণ্যের তালিকা",          en: "Products" },
+  { key: "services",          bn: "সার্ভিসের তালিকা",       en: "Services" },
   { key: "due",               bn: "বাকি",                    en: "Due" },
   { key: "contacts_customer", bn: "যোগাযোগ তালিকা - গ্রাহক", en: "Contacts - Customer" },
   { key: "contacts_supplier", bn: "যোগাযোগ তালিকা - সাপ্লায়ার", en: "Contacts - Supplier" },
@@ -83,12 +84,13 @@ export default function UsageLimitsPage() {
         cnt("suppliers", { deleted: true }),
         supabase.from("shop_members").select("id", { count: "exact", head: true }).eq("shop_id", sid).then(r => r.count ?? 0),
       ]);
+      const services = await cnt("services", { deleted: true });
       // Due count: customers with positive due
       const { count: dueCnt } = await supabase
         .from("customers").select("id", { count: "exact", head: true })
         .eq("shop_id", sid).is("deleted_at", null).gt("due_balance", 0);
       setUsage({
-        purchase, sale, expense, products,
+        purchase, sale, expense, products, services,
         contacts_customer: customers, contacts_supplier: suppliers, contacts_employee: employees,
         due: dueCnt ?? 0, stock: products,
       });
