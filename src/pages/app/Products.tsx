@@ -1236,7 +1236,10 @@ function ProductFormDialog({
     setBusy(false);
     if (error) {
       const code = (error as { code?: string }).code;
-      if (code === "42501") {
+      const li = parseLimitError(error.message);
+      if (li) {
+        toast.error(lang === "bn" ? "ফ্রি প্ল্যানের সীমা শেষ — আপগ্রেড করুন" : "Free plan limit reached — upgrade");
+      } else if (code === "42501") {
         toast.error(lang === "bn"
           ? "এই দোকানে প্রোডাক্ট যোগ করার অনুমতি নেই"
           : "You don't have permission to add products in this shop");
