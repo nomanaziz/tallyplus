@@ -16,6 +16,15 @@ function AdminLoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
+  const [captcha, setCaptcha] = useState<{ a: number; b: number }>(() => ({
+    a: Math.floor(Math.random() * 9) + 1,
+    b: Math.floor(Math.random() * 9) + 1,
+  }));
+  const [captchaAns, setCaptchaAns] = useState("");
+  const regenCaptcha = () => {
+    setCaptcha({ a: Math.floor(Math.random() * 9) + 1, b: Math.floor(Math.random() * 9) + 1 });
+    setCaptchaAns("");
+  };
 
   // If already signed in as admin, skip straight to dashboard
   useEffect(() => {
@@ -41,6 +50,11 @@ function AdminLoginPage() {
     e.preventDefault();
     if (!email.trim() || !password) {
       toast.error("Email এবং password দিন");
+      return;
+    }
+    if (parseInt(captchaAns, 10) !== captcha.a + captcha.b) {
+      toast.error("Captcha উত্তর সঠিক নয়");
+      regenCaptcha();
       return;
     }
     setBusy(true);
@@ -72,6 +86,7 @@ function AdminLoginPage() {
       nav({ to: "/admin" });
     } catch (err: any) {
       toast.error(err?.message ?? "Login ব্যর্থ হয়েছে");
+      regenCaptcha();
     } finally {
       setBusy(false);
     }
@@ -117,6 +132,22 @@ function AdminLoginPage() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="••••••••"
+            disabled={busy}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="admin-captcha">
+            Captcha: {captcha.a} + {captcha.b} = ?
+          </Label>
+          <Input
+            id="admin-captcha"
+            type="text"
+            inputMode="numeric"
+            autoComplete="off"
+            value={captchaAns}
+            onChange={(e) => setCaptchaAns(e.target.value.replace(/[^0-9-]/g, ""))}
+            placeholder="উত্তর লিখুন"
             disabled={busy}
           />
         </div>
