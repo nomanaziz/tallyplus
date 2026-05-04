@@ -523,6 +523,28 @@ export default function MyFordo() {
                             <Button size="sm" variant="outline" onClick={() => openSaveTemplate(w)}>
                               <Save className="mr-1 h-3.5 w-3.5" /> টেমপ্লেট সংরক্ষণ
                             </Button>
+                            {w.share_token && (
+                              <>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={async () => {
+                                    const ok = await copyFordoShareLink(w.share_token!);
+                                    toast[ok ? "success" : "error"](ok ? "লিংক কপি হয়েছে" : "কপি করা যায়নি");
+                                  }}
+                                >
+                                  <Share2 className="mr-1 h-3.5 w-3.5" /> লিংক শেয়ার
+                                </Button>
+                                <a
+                                  href={whatsappFordoShareUrl(w.share_token!)}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="inline-flex h-9 items-center rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 text-xs font-medium text-emerald-700 hover:bg-emerald-500/20"
+                                >
+                                  WhatsApp
+                                </a>
+                              </>
+                            )}
                             {total > 0 && (
                               <Button
                                 size="sm"
