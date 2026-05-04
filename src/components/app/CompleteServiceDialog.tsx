@@ -178,7 +178,17 @@ export function CompleteServiceDialog({
       const saleId = (sale as { id: string }).id;
 
       // Sale items
-      const items: Array<Record<string, unknown>> = [];
+      type SaleItemInsert = {
+        sale_id: string;
+        product_id: string | null;
+        service_id: string | null;
+        item_type: string;
+        name: string;
+        qty: number;
+        price: number;
+        total: number;
+      };
+      const items: SaleItemInsert[] = [];
       items.push({
         sale_id: saleId,
         product_id: null,
