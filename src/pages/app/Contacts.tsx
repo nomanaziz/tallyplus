@@ -61,6 +61,8 @@ function ContactsPage() {
   const [editing, setEditing] = useState<Contact | null>(null);
   const [openEmployee, setOpenEmployee] = useState(false);
   const [reminderOpen, setReminderOpen] = useState(false);
+  const [bulkPickerOpen, setBulkPickerOpen] = useState(false);
+  const [bulkBusy, setBulkBusy] = useState(false);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -136,6 +138,62 @@ function ContactsPage() {
     }
   };
 
+  const handleBulkImport = async (picked: PhonebookContact[]) => {
+    if (!current || tab === "employees") return;
+    const table = tab as "customers" | "suppliers";
+    setBulkBusy(true);
+    try {
+      // Normalize + dedupe within selection by phone
+      const seen = new Set<string>();
+      const cleaned = picked
+        .map((c) => ({
+          name: (c.name || c.phone || "").trim(),
+          phone: (c.phone || "").replace(/\s+/g, "") || null,
+        }))
+        .filter((c) => c.name)
+        .filter((c) => {
+          const k = c.phone || `name:${c.name}`;
+          if (seen.has(k)) return false;
+          seen.add(k);
+          return true;
+        });
+      if (cleaned.length === 0) {
+        toast.error(lang === "bn" ? "যোগ করার মতো কিছু নেই" : "Nothing to add");
+        return;
+      }
+      // Pre-fetch existing phones in this shop to skip duplicates
+      const phones = cleaned.map((c) => c.phone).filter((p): p is string => !!p);
+      let existing = new Set<string>();
+      if (phones.length > 0) {
+        const { data: rows } = await supabase
+          .from(table)
+          .select("phone")
+          .eq("shop_id", current.id)
+          .is("deleted_at", null)
+          .in("phone", phones);
+        existing = new Set((rows ?? []).map((r: any) => r.phone).filter(Boolean));
+      }
+      const toInsert = cleaned
+        .filter((c) => !c.phone || !existing.has(c.phone))
+        .map((c) => ({ name: c.name, phone: c.phone, shop_id: current.id }));
+      const skipped = cleaned.length - toInsert.length;
+      if (toInsert.length === 0) {
+        toast.info(lang === "bn" ? "সবাই ইতিমধ্যেই আছে" : "All already exist");
+        return;
+      }
+      const { error } = await supabase.from(table).insert(toInsert);
+      if (error) { toast.error(error.message); return; }
+      toast.success(
+        lang === "bn"
+          ? `${bnNum(toInsert.length)} জন যুক্ত হয়েছে${skipped ? ` · ${bnNum(skipped)} জন বাদ` : ""}`
+          : `Added ${toInsert.length}${skipped ? ` · skipped ${skipped}` : ""}`,
+      );
+      void refresh();
+    } finally {
+      setBulkBusy(false);
+    }
+  };
+
   const employeeRoleName = (id: string) => {
     const row = membersRaw?.rows.find((r: any) => r.id === id) as any;
     if (!row) return "EMPLOYEE";
@@ -150,10 +208,23 @@ function ContactsPage() {
     <div className="container px-4 py-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-extrabold">{lang === "bn" ? "যোগাযোগ" : "Contacts"}</h1>
-        <Button onClick={handleAdd} className="gap-1.5">
-          <Plus className="h-4 w-4" />
-          {lang === "bn" ? "যুক্ত করুন" : "Add"}
-        </Button>
+        <div className="flex items-center gap-2">
+          {tab !== "employees" && (
+            <Button
+              variant="outline"
+              onClick={() => setBulkPickerOpen(true)}
+              disabled={bulkBusy}
+              className="gap-1.5"
+            >
+              <BookUser className="h-4 w-4" />
+              {lang === "bn" ? "ফোনবুক থেকে অনেকজন" : "Bulk from phonebook"}
+            </Button>
+          )}
+          <Button onClick={handleAdd} className="gap-1.5">
+            <Plus className="h-4 w-4" />
+            {lang === "bn" ? "যুক্ত করুন" : "Add"}
+          </Button>
+        </div>
       </div>
 
       <div className="mt-4 grid gap-4 lg:grid-cols-[360px_1fr]">
@@ -377,6 +448,12 @@ function ContactsPage() {
         open={reminderOpen}
         onOpenChange={setReminderOpen}
         customer={selected && tab === "customers" ? { id: selected.id, name: selected.name, phone: selected.phone, due_balance: Number(selected.due_balance || 0) } : null}
+      />
+
+      <PhonebookPickerDialog
+        open={bulkPickerOpen}
+        onOpenChange={setBulkPickerOpen}
+        onPickMany={(cs) => { void handleBulkImport(cs); }}
       />
     </div>
   );
