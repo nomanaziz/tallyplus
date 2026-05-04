@@ -23,6 +23,8 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { useUsageLimit, parseLimitError } from "@/lib/usage-limits";
 import { UsageLimitBanner } from "@/components/app/UsageLimitBanner";
+import { QuickAddServiceDialog } from "@/components/app/QuickAddServiceDialog";
+import { Zap } from "lucide-react";
 
 function ServicesPage() {
   const { lang } = useI18n();
@@ -33,6 +35,7 @@ function ServicesPage() {
   const [search, setSearch] = useState("");
   const [openForm, setOpenForm] = useState(false);
   const [editing, setEditing] = useState<Service | null>(null);
+  const [quickOpen, setQuickOpen] = useState(false);
   const { data: usage, refresh: refreshUsage } = useUsageLimit(current?.id ?? null, "services");
   const limitReached = !!usage && usage.limit !== -1 && usage.used >= usage.limit;
   useEffect(() => { void refreshUsage(); }, [items.length, refreshUsage]);
@@ -113,20 +116,36 @@ function ServicesPage() {
             {lang === "bn" ? "আপনার সার্ভিসের তালিকা ও মূল্য পরিচালনা করুন" : "Manage your services and pricing"}
           </div>
         </div>
-        <Button
-          onClick={() => {
-            if (limitReached) {
-              toast.error(lang === "bn" ? "সীমা শেষ — আপগ্রেড করুন" : "Limit reached — upgrade");
-              return;
-            }
-            setEditing(null);
-            setOpenForm(true);
-          }}
-          className="gap-2"
-          disabled={limitReached}
-        >
-          <Plus className="h-4 w-4" /> {lang === "bn" ? "নতুন সার্ভিস" : "New Service"}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={() => {
+              if (limitReached) {
+                toast.error(lang === "bn" ? "সীমা শেষ — আপগ্রেড করুন" : "Limit reached — upgrade");
+                return;
+              }
+              setQuickOpen(true);
+            }}
+            className="gap-2"
+            disabled={limitReached}
+          >
+            <Zap className="h-4 w-4" /> {lang === "bn" ? "দ্রুত যোগ" : "Quick add"}
+          </Button>
+          <Button
+            onClick={() => {
+              if (limitReached) {
+                toast.error(lang === "bn" ? "সীমা শেষ — আপগ্রেড করুন" : "Limit reached — upgrade");
+                return;
+              }
+              setEditing(null);
+              setOpenForm(true);
+            }}
+            className="gap-2"
+            disabled={limitReached}
+          >
+            <Plus className="h-4 w-4" /> {lang === "bn" ? "নতুন সার্ভিস" : "New Service"}
+          </Button>
+        </div>
       </div>
 
       <UsageLimitBanner data={usage} label_bn="সার্ভিস" label_en="services" />
@@ -227,6 +246,11 @@ function ServicesPage() {
         shopId={current.id}
         categories={cats}
         onSaved={refresh}
+      />
+      <QuickAddServiceDialog
+        open={quickOpen}
+        onClose={() => setQuickOpen(false)}
+        onAdded={() => { refresh(); void refreshUsage(); }}
       />
     </div>
   );

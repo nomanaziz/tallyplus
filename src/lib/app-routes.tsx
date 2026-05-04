@@ -255,11 +255,10 @@ export const appRoutes: RouteObject[] = [
 { path: "pricing", element: <Suspense fallback={<RouteFallback/>}><L66/></Suspense> },
 { path: "privacy", element: <Suspense fallback={<RouteFallback/>}><L67/></Suspense> },
 { path: "about", element: <Suspense fallback={<RouteFallback/>}><L83/></Suspense> },
-{ path: "shop", element: <Suspense fallback={<RouteFallback/>}><L68/></Suspense>, children: [
-{ path: "p/:id", element: <Suspense fallback={<RouteFallback/>}><L69/></Suspense> },
-{ path: "s/:slug", element: <Suspense fallback={<RouteFallback/>}><L70/></Suspense> },
-{ path: "service/:id", element: <Suspense fallback={<RouteFallback/>}><L70b/></Suspense> }
-] },
+{ path: "shop", element: <Suspense fallback={<RouteFallback/>}><L68/></Suspense> },
+{ path: "shop/p/:id", element: <Suspense fallback={<RouteFallback/>}><L69/></Suspense> },
+{ path: "shop/s/:slug", element: <Suspense fallback={<RouteFallback/>}><L70/></Suspense> },
+{ path: "shop/service/:id", element: <Suspense fallback={<RouteFallback/>}><L70b/></Suspense> },
 { path: "terms", element: <Suspense fallback={<RouteFallback/>}><L71/></Suspense> },
 { path: "vendor/:username", element: <Suspense fallback={<RouteFallback/>}><L72/></Suspense> },
 { path: "cart", element: <Suspense fallback={<RouteFallback/>}><LCart/></Suspense> },
