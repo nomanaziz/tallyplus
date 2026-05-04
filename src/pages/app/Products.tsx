@@ -81,6 +81,8 @@ function ProductsPage() {
   const { data: items = [], isLoading: loading, refetch } = useQuery(productsListQuery(current?.id ?? null));
   const { data: usage, refresh: refreshUsage } = useUsageLimit(current?.id ?? null, "products");
   const limitReached = !!usage && usage.limit !== -1 && usage.used >= usage.limit;
+  // Re-check usage whenever the products list size changes (after add/delete).
+  useEffect(() => { void refreshUsage(); }, [items.length, refreshUsage]);
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState<string>("name_asc");
   const [filterBy, setFilterBy] = useState<string>("all");
