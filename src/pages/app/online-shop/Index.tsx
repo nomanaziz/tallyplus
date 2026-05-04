@@ -14,16 +14,17 @@ import {
   Tag, Eye, ExternalLink,
 } from "lucide-react";
 import { QrCodeDialog } from "@/components/app/online-shop/QrCodeDialog";
-import productListIcon from "@/assets/icons/product-list.svg?url";
-import salesListIcon from "@/assets/icons/sales-list.svg?url";
-import accessIcon from "@/assets/icons/access.svg?url";
-import marketingIcon from "@/assets/icons/marketing.svg?url";
-import quickSellIcon from "@/assets/icons/quick-sell.svg?url";
-import warrantyIcon from "@/assets/icons/warranty.png";
-import purchaseIcon from "@/assets/icons/purchase.svg?url";
-import contactIcon from "@/assets/icons/contact.svg?url";
-import onlineShopIcon from "@/assets/icons/online-shop.svg?url";
-import businessReportIcon from "@/assets/icons/business-report.svg?url";
+import { icons } from "@/lib/icons";
+const productListIcon = icons.productList;
+const salesListIcon = icons.salesList;
+const accessIcon = icons.access;
+const marketingIcon = icons.marketing;
+const quickSellIcon = icons.quickSell;
+const warrantyIcon = icons.warranty;
+const purchaseIcon = icons.purchase;
+const contactIcon = icons.contact;
+const onlineShopIcon = icons.onlineShop;
+const businessReportIcon = icons.businessReport;
 
 
 
@@ -119,7 +120,7 @@ function OnlineShopDashboard() {
 
   const tiles: Array<{
     icon?: typeof Settings;
-    img?: string;
+    img?: React.ComponentType<{ className?: string }>;
     bn: string;
     en: string;
     onClick: () => void;
@@ -193,7 +194,7 @@ function OnlineShopDashboard() {
           const inner = (
             <>
               {t.img ? (
-                <img src={t.img} alt="" className="mb-2 h-8 w-8 object-contain" />
+                <t.img className={`mb-2 h-7 w-7 ${t.color}`} />
               ) : t.icon ? (
                 <t.icon className={`mb-2 h-7 w-7 ${t.color}`} />
               ) : null}
@@ -241,15 +242,15 @@ function bnNumIf(lang: string, n: number) {
   return lang === "bn" ? bnNum(n) : String(n);
 }
 
-function StatCard({ icon: Icon, img, label, value, accent, to }: { icon?: typeof Settings; img?: string; label: string; value: string; accent: string; to?: string }) {
+function StatCard({ icon: Icon, img: Img, label, value, accent, to }: { icon?: typeof Settings; img?: React.ComponentType<{ className?: string }>; label: string; value: string; accent: string; to?: string }) {
   const accentMap: Record<string, string> = {
     amber: "text-amber-500", emerald: "text-emerald-500", blue: "text-blue-500", violet: "text-violet-500",
   };
   const inner = (
     <>
       <div className="flex items-center gap-2 text-xs text-muted-foreground">
-        {img ? (
-          <img src={img} alt="" className="h-4 w-4 object-contain" />
+        {Img ? (
+          <Img className={`h-4 w-4 ${accentMap[accent] ?? ""}`} />
         ) : Icon ? (
           <Icon className={`h-4 w-4 ${accentMap[accent] ?? ""}`} />
         ) : null}
@@ -272,15 +273,15 @@ function StatCard({ icon: Icon, img, label, value, accent, to }: { icon?: typeof
   );
 }
 
-function ActionCard({ icon: Icon, img, label, onClick }: { icon?: typeof Globe; img?: string; label: string; onClick: () => void }) {
+function ActionCard({ icon: Icon, img: Img, label, onClick }: { icon?: typeof Globe; img?: React.ComponentType<{ className?: string }>; label: string; onClick: () => void }) {
   return (
     <button
       type="button"
       onClick={onClick}
       className="flex flex-col items-center justify-center gap-1.5 rounded-xl border bg-card p-4 shadow-sm transition-all hover:scale-[1.02] hover:shadow-md"
     >
-      {img ? (
-        <img src={img} alt="" className="h-6 w-6 object-contain" />
+      {Img ? (
+        <Img className="h-6 w-6 text-primary" />
       ) : Icon ? (
         <Icon className="h-5 w-5 text-primary" />
       ) : null}

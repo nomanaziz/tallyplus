@@ -1,6 +1,7 @@
 import { Link, useLocation } from "@/lib/router";
 import { useI18n } from "@/lib/i18n";
 import { icons } from "@/lib/icons";
+import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import logo from "@/assets/logo.png";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -9,7 +10,7 @@ import { usePwaInstall } from "@/hooks/use-pwa-install";
 import { Download } from "lucide-react";
 import { toast } from "sonner";
 
-export type SidebarItem = { to: string; bn: string; en: string; icon: string; highlight?: boolean; perm?: string };
+export type SidebarItem = { to: string; bn: string; en: string; icon: LucideIcon; highlight?: boolean; perm?: string };
 export type SidebarSection = { id: string; bn: string; en: string; items: SidebarItem[] };
 
 export const SECTIONS: SidebarSection[] = [
@@ -119,7 +120,7 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
           !active && !it.highlight && "hover:bg-sidebar-accent",
         )}
       >
-        <img src={it.icon} alt="" className="h-5 w-5 flex-none" />
+        <it.icon className="h-5 w-5 flex-none" />
         <span className="truncate">{lang === "bn" ? it.bn : it.en}</span>
       </Link>
     );

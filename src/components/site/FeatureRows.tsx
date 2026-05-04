@@ -79,7 +79,7 @@ export function FeatureRows() {
             <div key={r.bnTitle} className={`grid gap-8 md:grid-cols-2 md:items-center ${reverse ? "md:[&>*:first-child]:order-2" : ""}`}>
               <div className="relative mx-auto flex h-56 w-56 items-center justify-center rounded-[2rem] bg-primary/10 shadow-inner md:h-72 md:w-72">
                 <div className="absolute inset-3 rounded-[1.5rem] bg-card shadow-md" aria-hidden />
-                <img src={icons[r.iconKey]} alt="" className="relative h-28 w-28 md:h-36 md:w-36" loading="lazy" />
+                {(() => { const I = icons[r.iconKey]; return <I className="relative h-24 w-24 text-primary md:h-32 md:w-32" />; })()}
               </div>
               <div>
                 <h3 className="text-2xl font-extrabold leading-tight md:text-3xl">

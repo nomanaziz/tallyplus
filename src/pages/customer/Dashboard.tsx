@@ -233,13 +233,13 @@ function Shortcut({
   to,
   label,
   sub,
-  img,
+  img: Img,
   tone = "indigo",
 }: {
   to: string;
   label: string;
   sub?: string;
-  img: string;
+  img: React.ComponentType<{ className?: string }>;
   tone?: keyof typeof TONE;
 }) {
   return (
@@ -248,7 +248,7 @@ function Shortcut({
       className="group flex flex-col items-center gap-1.5 rounded-2xl border bg-card p-3 text-center shadow-sm transition hover:border-primary/40 hover:shadow-md sm:p-4"
     >
       <div className={`flex h-12 w-12 items-center justify-center rounded-2xl sm:h-14 sm:w-14 ${TONE[tone]}`}>
-        <img src={img} alt="" className="h-8 w-8 object-contain sm:h-9 sm:w-9" />
+        <Img className="h-7 w-7 sm:h-8 sm:w-8" />
       </div>
       <div className="text-[11px] font-semibold leading-tight sm:text-sm">{label}</div>
       {sub ? <div className="text-[10px] text-muted-foreground">{sub}</div> : null}
