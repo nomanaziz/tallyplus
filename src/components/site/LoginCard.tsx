@@ -156,7 +156,7 @@ export function LoginCard() {
           if (!r.ok) {
             if (r.error === "admin_must_use_email") {
               toast.error("Admin হিসেবে email + password দিয়ে login করুন");
-              navigate({ to: "/admin/login" });
+              navigate({ to: "/xbd-login" });
               return;
             }
             if (r.error === "employee_must_use_email") {
