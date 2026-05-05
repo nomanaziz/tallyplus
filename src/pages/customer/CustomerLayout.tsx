@@ -16,6 +16,8 @@ import {
   Wallet,
   StickyNote,
   GraduationCap,
+  History,
+  Crown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AdSlot } from "@/components/ads/AdSlot";
@@ -29,6 +31,8 @@ const NAV = [
   { to: "/customer/my-services", label: "আমার সার্ভিস", Icon: Wrench },
   { to: "/customer/favorite-shops", label: "প্রিয় দোকান", Icon: Heart },
   { to: "/customer/money", label: "আয়-ব্যয়", Icon: Wallet },
+  { to: "/customer/history", label: "ইতিহাস", Icon: History },
+  { to: "/customer/subscription", label: "সাবস্ক্রিপশন", Icon: Crown },
   { to: "/customer/notes", label: "নোট", Icon: StickyNote },
   { to: "/customer/training", label: "ট্রেনিং", Icon: GraduationCap },
   { to: "/customer/profile", label: "প্রোফাইল", Icon: User },
