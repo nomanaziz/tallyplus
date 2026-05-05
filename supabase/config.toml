@@ -38,6 +38,9 @@ verify_jwt = false
 [functions.voice-to-fordo]
 verify_jwt = false
 
+[functions.parse-fordo-image]
+verify_jwt = false
+
 [functions.recharge-create-payment]
 verify_jwt = true
 
