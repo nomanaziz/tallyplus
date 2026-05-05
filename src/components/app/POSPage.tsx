@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Plus, Minus, X, Package, ShoppingCart, ChevronDown, MessageSquare, RefreshCw, Search, UserRound } from "lucide-react";
+import { ArrowLeft, Plus, Minus, X, Package, ShoppingCart, ChevronDown, MessageSquare, RefreshCw, Search, UserRound, LayoutGrid, List as ListIcon } from "lucide-react";
 import { useNavigate } from "@/lib/router";
 import { supabase } from "@/integrations/supabase/client";
 import { useShop } from "@/lib/shop";
@@ -112,6 +112,15 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
   useEffect(() => { if (autoOpenDue) setDueOpen(true); }, [autoOpenDue]);
   const [mobileTab, setMobileTab] = useState<"products" | "cart">("products");
   const [serialPick, setSerialPick] = useState<Product | null>(null);
+
+  // View mode: grid (default) or list
+  const [viewMode, setViewMode] = useState<"grid" | "list">(() => {
+    if (typeof window === "undefined") return "grid";
+    return (localStorage.getItem("pos-view") as "grid" | "list") || "grid";
+  });
+  useEffect(() => {
+    if (typeof window !== "undefined") localStorage.setItem("pos-view", viewMode);
+  }, [viewMode]);
 
   const isSell = mode === "sell";
   const titleBn = isSell ? "বিক্রয়" : "ক্রয়";
@@ -231,6 +240,26 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
           </Button>
           <h1 className="text-xl font-extrabold md:text-2xl">{lang === "bn" ? titleBn : titleEn}</h1>
         </div>
+        <div className="inline-flex rounded-full border bg-card p-0.5 shadow-sm">
+          <button
+            type="button"
+            onClick={() => setViewMode("grid")}
+            className={`flex h-7 w-9 items-center justify-center rounded-full transition-colors ${viewMode === "grid" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"}`}
+            aria-label="Grid view"
+            title={lang === "bn" ? "গ্রিড ভিউ" : "Grid view"}
+          >
+            <LayoutGrid className="h-3.5 w-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={() => setViewMode("list")}
+            className={`flex h-7 w-9 items-center justify-center rounded-full transition-colors ${viewMode === "list" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"}`}
+            aria-label="List view"
+            title={lang === "bn" ? "লিস্ট ভিউ" : "List view"}
+          >
+            <ListIcon className="h-3.5 w-3.5" />
+          </button>
+        </div>
       </div>
 
       {/* Mobile tabs */}
@@ -340,6 +369,54 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
           <div className="max-h-[60vh] overflow-y-auto px-3 pb-3">
             {filtered.length === 0 ? (
               <EmptyState icon={<Package className="h-6 w-6" />} title={lang === "bn" ? "কোনো পণ্য নেই" : "No products"} />
+            ) : viewMode === "grid" ? (
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+                {filtered.slice(0, 200).map((p) => {
+                  const inCart = cart.find((c) => c.product_id === p.id);
+                  const price = isSell ? Number(p.sale_price) : Number(p.cost_price);
+                  return (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => addToCart(p)}
+                      className={`group relative flex flex-col overflow-hidden rounded-xl border bg-background text-left transition-all hover:shadow-md ${inCart ? "ring-2 ring-primary/60" : ""}`}
+                    >
+                      <div className="relative aspect-square w-full overflow-hidden bg-muted/40">
+                        {p.image_url ? (
+                          <img src={p.image_url} alt={p.name} loading="lazy" decoding="async" className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105" />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center text-muted-foreground/40">
+                            <Package className="h-8 w-8" />
+                          </div>
+                        )}
+                        {inCart && (
+                          <span className="absolute left-1.5 top-1.5 rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-bold text-primary-foreground shadow">
+                            ×{lang === "bn" ? bnNum(inCart.qty) : inCart.qty}
+                          </span>
+                        )}
+                        <span className="absolute bottom-1.5 right-1.5 flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg ring-2 ring-background transition-transform group-hover:scale-110">
+                          <Plus className="h-4 w-4" strokeWidth={3} />
+                        </span>
+                      </div>
+                      <div className="space-y-0.5 p-2">
+                        <div className="flex items-baseline gap-1">
+                          <span className="text-sm font-extrabold text-primary">{fmtMoney(price, lang)}</span>
+                          {p.unit && <span className="text-[10px] text-muted-foreground">/{p.unit}</span>}
+                        </div>
+                        <div className="line-clamp-2 min-h-[2.1em] text-[11px] font-medium leading-tight text-foreground">
+                          {p.name}
+                        </div>
+                        <div className="text-[10px] text-muted-foreground">
+                          {lang === "bn" ? "স্টক" : "Stock"}:{" "}
+                          <span className={p.stock <= 0 ? "font-semibold text-destructive" : ""}>
+                            {lang === "bn" ? bnNum(p.stock) : p.stock}
+                          </span>
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
             ) : (
               <ul className="divide-y">
                 {filtered.map((p) => {

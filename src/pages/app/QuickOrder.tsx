@@ -1,6 +1,6 @@
 import { useNavigate } from "@/lib/router";
-import { useEffect, useMemo, useRef, useState, memo } from "react";
-import { Loader2, Plus, Printer, ReceiptText, Search, ShoppingCart, Trash2, X, Check, LayoutGrid, List as ListIcon, ImageOff } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Loader2, Plus, Printer, ReceiptText, Search, ShoppingCart, Trash2, X, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useShop } from "@/lib/shop";
 import { useI18n, type Lang } from "@/lib/i18n";
@@ -25,7 +25,6 @@ type StoreProduct = {
   stock: number;
   sku: string | null;
   barcode: string | null;
-  image_url?: string | null;
 };
 
 type Row = {
@@ -93,84 +92,6 @@ function QuickOrderInner() {
   // Active tab (mobile/tablet)
   const [activeTab, setActiveTab] = useState<"products" | "cart">("products");
 
-  // View mode
-  const [viewMode, setViewMode] = useState<"grid" | "list">(() => {
-    if (typeof window === "undefined") return "grid";
-    return (localStorage.getItem("quick-order-view") as "grid" | "list") || "grid";
-  });
-  useEffect(() => {
-    if (typeof window !== "undefined") localStorage.setItem("quick-order-view", viewMode);
-  }, [viewMode]);
-
-  // Grid pagination
-  const PAGE_SIZE = 30;
-  const [gridProducts, setGridProducts] = useState<StoreProduct[]>([]);
-  const [gridPage, setGridPage] = useState(0);
-  const [gridLoading, setGridLoading] = useState(false);
-  const [gridDone, setGridDone] = useState(false);
-  const sentinelRef = useRef<HTMLDivElement | null>(null);
-
-  // Debounced query for grid (separate from list-mode autosuggest)
-  const [gridQuery, setGridQuery] = useState("");
-  useEffect(() => {
-    const t = window.setTimeout(() => setGridQuery(query.trim()), 250);
-    return () => window.clearTimeout(t);
-  }, [query]);
-
-  // Reset grid when shop / search / view changes
-  useEffect(() => {
-    if (viewMode !== "grid") return;
-    setGridProducts([]);
-    setGridPage(0);
-    setGridDone(false);
-  }, [viewMode, current?.id, gridQuery]);
-
-  // Fetch a page
-  useEffect(() => {
-    if (viewMode !== "grid" || !current?.id || gridDone) return;
-    let cancelled = false;
-    (async () => {
-      setGridLoading(true);
-      const from = gridPage * PAGE_SIZE;
-      const to = from + PAGE_SIZE - 1;
-      let qb = supabase
-        .from("products")
-        .select("id,name,sale_price,cost_price,unit,stock,sku,barcode,image_url")
-        .eq("shop_id", current.id)
-        .is("deleted_at", null)
-        .order("name", { ascending: true })
-        .range(from, to);
-      const q = gridQuery.replace(/[%,]/g, "");
-      if (q) qb = qb.or(`name.ilike.%${q}%,sku.ilike.%${q}%,barcode.ilike.%${q}%`);
-      const { data, error } = await qb;
-      if (cancelled) return;
-      if (error) {
-        toast.error(error.message);
-        setGridLoading(false);
-        return;
-      }
-      const fetched = (data as StoreProduct[]) ?? [];
-      setGridProducts((prev) => (gridPage === 0 ? fetched : [...prev, ...fetched]));
-      if (fetched.length < PAGE_SIZE) setGridDone(true);
-      setGridLoading(false);
-    })();
-    return () => { cancelled = true; };
-  }, [viewMode, current?.id, gridPage, gridDone, gridQuery]);
-
-  // Infinite scroll
-  useEffect(() => {
-    if (viewMode !== "grid") return;
-    const node = sentinelRef.current;
-    if (!node) return;
-    const io = new IntersectionObserver((entries) => {
-      if (entries[0].isIntersecting && !gridLoading && !gridDone) {
-        setGridPage((p) => p + 1);
-      }
-    }, { rootMargin: "400px" });
-    io.observe(node);
-    return () => io.disconnect();
-  }, [viewMode, gridLoading, gridDone, gridProducts.length]);
-
   const inputRef = useRef<HTMLInputElement | null>(null);
   const debTimer = useRef<number | null>(null);
 
@@ -229,7 +150,7 @@ function QuickOrderInner() {
     setQuery("");
     setSuggestions([]);
     setShowDrop(false);
-    if (viewMode === "list") setTimeout(() => inputRef.current?.focus(), 30);
+    setTimeout(() => inputRef.current?.focus(), 30);
   };
 
   const addExternal = (name: string) => {
@@ -289,12 +210,6 @@ function QuickOrderInner() {
     [rows],
   );
   const totalProfit = total - totalCost;
-
-  const cartQtyMap = useMemo(() => {
-    const m = new Map<string, number>();
-    for (const r of rows) if (r.productId) m.set(r.productId, (m.get(r.productId) || 0) + r.qty);
-    return m;
-  }, [rows]);
 
   const convertToSale = async () => {
     if (!current?.id || !user) return;
@@ -431,26 +346,6 @@ function QuickOrderInner() {
           {lang === "bn" ? "দ্রুত বিক্রি" : "Quick Sell"}
         </h1>
         <div className="flex flex-wrap items-center gap-2">
-          <div className="inline-flex rounded-full border bg-card p-0.5 shadow-sm">
-            <button
-              type="button"
-              onClick={() => setViewMode("grid")}
-              className={`flex h-7 w-9 items-center justify-center rounded-full transition-colors ${viewMode === "grid" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"}`}
-              aria-label="Grid view"
-              title={lang === "bn" ? "গ্রিড ভিউ" : "Grid view"}
-            >
-              <LayoutGrid className="h-3.5 w-3.5" />
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode("list")}
-              className={`flex h-7 w-9 items-center justify-center rounded-full transition-colors ${viewMode === "list" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"}`}
-              aria-label="List view"
-              title={lang === "bn" ? "লিস্ট ভিউ" : "List view"}
-            >
-              <ListIcon className="h-3.5 w-3.5" />
-            </button>
-          </div>
           <label className="inline-flex items-center gap-2 rounded-full border bg-card px-3 py-1.5 text-xs shadow-sm">
             <Switch checked={allowExternal} onCheckedChange={setAllowExternal} />
             <span className="font-medium">
@@ -498,15 +393,13 @@ function QuickOrderInner() {
               setQuery(e.target.value);
               setShowDrop(true);
             }}
-            onFocus={() => { if (viewMode === "list") setShowDrop(true); }}
+            onFocus={() => setShowDrop(true)}
             onBlur={() => setTimeout(() => setShowDrop(false), 150)}
             onKeyDown={onKeyDown}
-            placeholder={viewMode === "grid"
-              ? (lang === "bn" ? "পণ্য খুঁজুন..." : "Search products...")
-              : (lang === "bn" ? "পণ্য টাইপ করুন... (Enter চাপুন)" : "Type product... (press Enter)")}
+            placeholder={lang === "bn" ? "পণ্য টাইপ করুন... (Enter চাপুন)" : "Type product... (press Enter)"}
             className="h-11 pl-9 text-base"
           />
-          {viewMode === "list" && showDrop && query.trim() && (
+          {showDrop && query.trim() && (
             <div className="absolute left-0 right-0 top-full z-30 mt-1 max-h-72 overflow-auto rounded-xl border bg-popover shadow-lg">
               {searching ? (
                 <div className="flex items-center gap-2 px-3 py-2 text-xs text-muted-foreground">
@@ -561,48 +454,9 @@ function QuickOrderInner() {
           )}
         </div>
         <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
-          {viewMode === "grid"
-            ? (lang === "bn" ? "নিচের গ্রিড থেকে + চেপে কার্টে যোগ করুন।" : "Tap + on a card to add to cart.")
-            : (lang === "bn" ? "দোকানের পণ্য বাছাই করলে দাম ও একক স্বয়ংক্রিয় আসবে।" : "Pick a store product and price + unit auto-fill.")}
+          {lang === "bn" ? "দোকানের পণ্য বাছাই করলে দাম ও একক স্বয়ংক্রিয় আসবে।" : "Pick a store product and price + unit auto-fill."}
         </p>
       </div>
-
-      {/* Grid view: paginated product picker */}
-      {viewMode === "grid" && (
-        <div className="rounded-2xl border bg-card p-3 shadow-sm sm:p-4">
-          {gridProducts.length === 0 && !gridLoading ? (
-            <div className="flex flex-col items-center justify-center gap-2 py-12 text-center text-sm text-muted-foreground">
-              <ImageOff className="h-8 w-8 opacity-50" />
-              <div>{gridQuery
-                ? (lang === "bn" ? "এই নামে কোনো পণ্য পাওয়া যায়নি" : "No products match")
-                : (lang === "bn" ? "এই দোকানে এখনো কোনো পণ্য নেই" : "No products in this shop yet")}</div>
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7">
-              {gridProducts.map((p) => (
-                <ProductGridCard
-                  key={p.id}
-                  product={p}
-                  inCartQty={cartQtyMap.get(p.id) || 0}
-                  onAdd={addStoreProduct}
-                />
-              ))}
-            </div>
-          )}
-          <div ref={sentinelRef} className="h-8" />
-          {gridLoading && (
-            <div className="flex justify-center py-3 text-xs text-muted-foreground">
-              <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-              {lang === "bn" ? "লোড হচ্ছে..." : "Loading..."}
-            </div>
-          )}
-          {gridDone && gridProducts.length > 0 && (
-            <div className="py-2 text-center text-[11px] text-muted-foreground">
-              {lang === "bn" ? `মোট ${gridProducts.length} টি পণ্য` : `${gridProducts.length} products`}
-            </div>
-          )}
-        </div>
-      )}
 
       </div>
 
@@ -987,61 +841,3 @@ function PrintDialog({
 }
 
 export default QuickOrderPage;
-
-const ProductGridCard = memo(function ProductGridCard({
-  product,
-  inCartQty,
-  onAdd,
-}: {
-  product: StoreProduct;
-  inCartQty: number;
-  onAdd: (p: StoreProduct) => void;
-}) {
-  const inCart = inCartQty > 0;
-  return (
-    <div
-      className={`group relative flex flex-col overflow-hidden rounded-xl border bg-background transition-all hover:shadow-md ${inCart ? "ring-2 ring-primary/60" : ""}`}
-    >
-      <div className="relative aspect-square w-full overflow-hidden bg-muted/40">
-        {product.image_url ? (
-          <img
-            src={product.image_url}
-            alt={product.name}
-            loading="lazy"
-            decoding="async"
-            className="h-full w-full object-contain transition-transform duration-200 group-hover:scale-105"
-          />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center text-muted-foreground/40">
-            <ImageOff className="h-8 w-8" />
-          </div>
-        )}
-        {inCart && (
-          <span className="absolute left-1.5 top-1.5 rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-bold text-primary-foreground shadow">
-            ×{inCartQty}
-          </span>
-        )}
-        <button
-          type="button"
-          onClick={() => onAdd(product)}
-          aria-label="Add to cart"
-          className="absolute bottom-1.5 right-1.5 flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg ring-2 ring-background transition-transform hover:scale-110 active:scale-95"
-        >
-          <Plus className="h-4 w-4" strokeWidth={3} />
-        </button>
-      </div>
-      <div className="space-y-0.5 p-2">
-        <div className="flex items-baseline gap-1">
-          <span className="text-sm font-extrabold text-primary">৳{Number(product.sale_price).toFixed(0)}</span>
-          <span className="text-[10px] text-muted-foreground">/{product.unit || "pcs"}</span>
-        </div>
-        <div className="line-clamp-2 min-h-[2.1em] text-[11px] font-medium leading-tight text-foreground">
-          {product.name}
-        </div>
-        <div className="text-[10px] text-muted-foreground">
-          Stock: <span className={product.stock <= 0 ? "text-destructive font-semibold" : ""}>{product.stock}</span>
-        </div>
-      </div>
-    </div>
-  );
-});

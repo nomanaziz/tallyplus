@@ -1374,6 +1374,7 @@ export type Database = {
       }
       customer_wishlist_items: {
         Row: {
+          cost_price: number | null
           created_at: string
           done: boolean
           fulfillment_status: string
@@ -1381,12 +1382,14 @@ export type Database = {
           name: string
           position: number
           price: number | null
+          profit: number | null
           qty: number | null
           shopkeeper_note: string | null
           unit: string | null
           wishlist_id: string
         }
         Insert: {
+          cost_price?: number | null
           created_at?: string
           done?: boolean
           fulfillment_status?: string
@@ -1394,12 +1397,14 @@ export type Database = {
           name: string
           position?: number
           price?: number | null
+          profit?: number | null
           qty?: number | null
           shopkeeper_note?: string | null
           unit?: string | null
           wishlist_id: string
         }
         Update: {
+          cost_price?: number | null
           created_at?: string
           done?: boolean
           fulfillment_status?: string
@@ -1407,6 +1412,7 @@ export type Database = {
           name?: string
           position?: number
           price?: number | null
+          profit?: number | null
           qty?: number | null
           shopkeeper_note?: string | null
           unit?: string | null
