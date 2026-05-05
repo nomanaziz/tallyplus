@@ -1,48 +1,52 @@
-## ফর্দ শেয়ার ও লাইভ ট্র্যাকিং
+## ধার ও cash-on-hand integration
 
-বর্তমানে শেয়ার লিংক ও WhatsApp শেয়ার আছে (`/share/fordo/:token`)। তিনটা জিনিস যোগ করব:
+**সমস্যা:** এখন `consumer_loans` (ধার দেওয়া/নেওয়া) আলাদা ট্র্যাক হয়, কিন্তু এর সাথে account balance (নগদ/বিকাশ) connected না। ফলে wife যখন ৫০০ টাকা ধার দেয়, তার "নগদ" balance unchanged থাকে — যেটা ভুল।
 
-### ১. ডাউনলোডযোগ্য স্লিপ (PDF/Image)
-- শেয়ার পেজ ও MyFordo-এ "ডাউনলোড স্লিপ" বাটন
-- সিম্পল লেআউট: শুধু নাম + পরিমাণ (kg/পিস) + টিক বক্স
-- jsPDF দিয়ে A5/থার্মাল-সাইজ PDF তৈরি — দাম optional toggle
-- ফাইল নাম: `fordo-{customer-name}-{date}.pdf`
+**সমাধান:** ধার = টাকা চলাচল, কিন্তু আয়/ব্যয় না। তাই account balance update করব, কিন্তু income/expense rollup-এ ঢুকবে না।
 
-### ২. লাইভ চেকলিস্ট (Husband/Wife use case)
-- শেয়ার পেজে প্রতিটা item-এর পাশে চেকবক্স
-- কেউ লিংকে গিয়ে টিক দিলে DB-তে `customer_wishlist_items.done = true` হবে
-- Owner (যে ফর্দ বানাইছে) MyFordo পেজে realtime দেখবে কোনগুলো কেনা হইছে
-- Progress bar: "৫/১০ কেনা হইছে"
+### ১. নিয়ম (চারটা ঘটনা)
 
-### ৩. শেয়ার পার্মিশন কন্ট্রোল
-- ফর্দ owner টগল করতে পারবে: "অন্যরা টিক দিতে পারবে কিনা" (`allow_check` flag)
-- Default: ON
+| ঘটনা | account-এ effect | আয়/ব্যয়? |
+|---|---|---|
+| ধার দিলাম (lent) | নগদ −৫০০ | না |
+| ধার ফেরত পেলাম | নগদ +৫০০ | না |
+| ধার নিলাম (borrowed) | নগদ +৫০০ | না |
+| ধার ফেরত দিলাম | নগদ −৫০০ | না |
 
-### Technical details
+### ২. DB পরিবর্তন
 
-**DB migration:**
-- `consumer_fordos` (বা `customer_wishlists`) টেবিলে `allow_public_check boolean default true` কলাম
-- নতুন RPC `toggle_shared_fordo_item(_token, _item_id, _done)` — SECURITY DEFINER, `allow_public_check=true` ও token valid হলেই update; rate-limit per IP optional
-- বা existing `get_shared_fordo` RPC-র সাথে paired update RPC
+- `consumer_loans` টেবিলে `account_id` কলাম যোগ — কোন account থেকে ধার দিল/পেল
+- `consumer_loan_payments` টেবিলে `account_id` কলাম যোগ
+- নতুন column `consumer_transactions.kind` (default 'regular') — values: `regular`, `loan_out`, `loan_in`, `loan_repay_out`, `loan_repay_in`
+- `consumer_transactions.source_loan_id`, `source_loan_payment_id` (FK) — duplicate রোধে unique
+- **Trigger** `tg_consumer_loan_movement`:
+  - INSERT consumer_loans → একটা hidden tx তৈরি (type: expense if lent, income if borrowed; kind: loan_out/loan_in; amount = principal; account_id = loan.account_id)
+  - INSERT consumer_loan_payments → hidden tx (type: income if repaying lent loan, expense if repaying borrowed; kind: loan_repay_in/loan_repay_out)
+  - DELETE → reverse tx ও মুছে যাবে (cascade)
+- `consumer_transactions` queries যেখানে আয়/ব্যয় summary দেখানো হয় (Dashboard, Money page rollup) — `kind = 'regular'` filter যোগ করতে হবে যাতে আয়-ব্যয়ে loan টাকা না দেখায়
+- কিন্তু account balance calculation-এ সব tx (kind সহ) যোগ হবে — তাই হাতে টাকা সঠিক থাকবে
 
-**Frontend:**
-- `src/pages/f/Share.tsx`:
-  - প্রতিটা row-এ Checkbox (allow_public_check হলে)
-  - Optimistic update + RPC call
-  - Supabase realtime subscription on `customer_wishlist_items` filtered by wishlist_id (owner side)
-  - "ডাউনলোড স্লিপ" বাটন
-- `src/lib/fordo-pdf.ts` (নতুন): jsPDF দিয়ে slip generate
-- `src/pages/customer/MyFordo.tsx`:
-  - Realtime subscribe — done count update
-  - প্রতিটা ফর্দ কার্ডে "৩/৭ কেনা" badge
-  - "অন্যরা টিক দিতে পারবে" toggle switch
-  - PDF download বাটন
+### ৩. UI পরিবর্তন
 
-**Dependencies:** `bun add jspdf` (lightweight, edge-safe)
+- **LoansTab "ধার যোগ করুন" form**: account dropdown যোগ ("কোন account থেকে দিচ্ছেন/পাচ্ছেন")
+- **Repay sheet**: account dropdown ("কোন account-এ আসছে/যাচ্ছে")
+- **Money page hand-cash card**: তিনটা ভাগে দেখাব
+  - মোট হাতে: ৳X (income + ধার নেওয়া − ব্যয় − ধার দেওয়া)
+  - এর মধ্যে: পাবো ৳A, দিতে হবে ৳B
+- নতুন **"টাকার উৎস" breakdown** (optional toggle):
+  - নিজের আয় থেকে: ৳
+  - ধার নেওয়া থেকে: ৳
+  - মোট হাতে: ৳
 
-**Files:**
-- create: `src/lib/fordo-pdf.ts`, `src/components/customer/FordoSlipDownload.tsx`
-- edit: `src/pages/f/Share.tsx`, `src/pages/customer/MyFordo.tsx`, `src/lib/share-fordo.ts`
-- migration: `allow_public_check` column + `toggle_shared_fordo_item` RPC + RLS-bypass trigger via SECURITY DEFINER
+### ৪. Migration safety
 
-Approve করলে migration ও code একসাথে শুরু করব।
+- নতুন কলাম nullable — পুরাতন data unaffected
+- পুরনো loan গুলোর জন্য `account_id` null থাকবে, balance impact হবে না (backfill optional, user চাইলে later)
+- নতুন loan থেকে rule apply
+
+### Files
+
+- migration: `consumer_loans.account_id`, `consumer_loan_payments.account_id`, `consumer_transactions.kind`, `source_loan_id`, `source_loan_payment_id`, trigger function
+- edit: `src/components/customer/LoansTab.tsx` (account dropdown + form/repay), `src/pages/customer/Money.tsx` ও `src/pages/customer/Dashboard.tsx` (kind='regular' filter on income/expense summaries; account balance unchanged), `src/pages/customer/History.tsx` (loan tx visually আলাদা label)
+
+Approve করলে migration আগে দেব, তারপর code।
