@@ -34,6 +34,8 @@ import {
   Youtube,
   BookOpen,
   Mail,
+  User as UserIcon,
+  Store,
 } from "lucide-react";
 
 const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -185,7 +187,11 @@ export function SettingsSheet({ open, onOpenChange }: { open: boolean; onOpenCha
         <div className="flex-1 overflow-y-auto px-4 py-3">
           {/* Profile header */}
           {(profile?.full_name || profile?.phone) && (
-            <div className="mb-3 flex items-center gap-3 rounded-xl border bg-card p-3">
+            <button
+              type="button"
+              onClick={() => go("/app/profile")}
+              className="mb-3 flex w-full items-center gap-3 rounded-xl border bg-card p-3 text-left transition hover:bg-accent"
+            >
               <div className="flex h-11 w-11 flex-none items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
                 {(profile?.full_name || current?.name || "U")
                   .split(" ")
@@ -201,7 +207,8 @@ export function SettingsSheet({ open, onOpenChange }: { open: boolean; onOpenCha
                   <div className="truncate text-xs text-muted-foreground">{profile.phone}</div>
                 )}
               </div>
-            </div>
+              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+            </button>
           )}
 
           <button
@@ -218,6 +225,16 @@ export function SettingsSheet({ open, onOpenChange }: { open: boolean; onOpenCha
               icon={<LayoutDashboard className="h-4 w-4" />}
               label={lang === "bn" ? "কম্বাইন্ড রিপোর্ট" : "Combined Report"}
               onClick={() => go("/app/combined-report")}
+            />
+            <Row
+              icon={<UserIcon className="h-4 w-4" />}
+              label={lang === "bn" ? "আমার প্রোফাইল" : "My Profile"}
+              onClick={() => go("/app/profile")}
+            />
+            <Row
+              icon={<Store className="h-4 w-4" />}
+              label={lang === "bn" ? "দোকানের সেটিংস ও ব্যাকআপ" : "Shop Settings & Backup"}
+              onClick={() => go("/app/shop-settings")}
             />
             <Row
               icon={<Crown className="h-4 w-4" />}
