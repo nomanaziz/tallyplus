@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Copy, Share2, MessageCircle, Phone, Trash2, Check, RefreshCw, Loader2, ListChecks, ExternalLink, Receipt, Package } from "lucide-react";
+import { Copy, Share2, MessageCircle, Phone, Trash2, Check, RefreshCw, Loader2, ListChecks, ExternalLink, Receipt, Package, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useShop } from "@/lib/shop";
 import { useI18n } from "@/lib/i18n";
@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { ConvertWishlistToSaleDialog } from "@/components/app/ConvertWishlistToSaleDialog";
+import { QuickFordoDialog } from "@/components/app/QuickFordoDialog";
 
 
 
@@ -69,6 +70,7 @@ function CustomerWishlistPage() {
   const [username, setUsername] = useState<string | null>(null);
   const [shopSlug, setShopSlug] = useState<string | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
+  const [quickOpen, setQuickOpen] = useState(false);
 
   // Fetch slug from shops (we can read our own shop)
   useEffect(() => {
@@ -153,10 +155,16 @@ function CustomerWishlistPage() {
         <h1 className="text-xl font-extrabold">
           {lang === "bn" ? "গ্রাহক ফর্দ" : "Customer Fordo"}
         </h1>
-        <Button variant="outline" size="sm" onClick={() => listQ.refetch()} disabled={listQ.isFetching}>
-          <RefreshCw className={`mr-1 h-3.5 w-3.5 ${listQ.isFetching ? "animate-spin" : ""}`} />
-          {lang === "bn" ? "রিফ্রেশ" : "Refresh"}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button size="sm" onClick={() => setQuickOpen(true)} className="gap-1">
+            <Plus className="h-3.5 w-3.5" />
+            {lang === "bn" ? "নিজে ফর্দ তৈরি" : "Create Fordo"}
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => listQ.refetch()} disabled={listQ.isFetching}>
+            <RefreshCw className={`mr-1 h-3.5 w-3.5 ${listQ.isFetching ? "animate-spin" : ""}`} />
+            {lang === "bn" ? "রিফ্রেশ" : "Refresh"}
+          </Button>
+        </div>
       </div>
 
       {/* Share card */}
@@ -253,6 +261,12 @@ function CustomerWishlistPage() {
         wishlistId={openId}
         onOpenChange={(v) => !v && setOpenId(null)}
         onChange={() => qc.invalidateQueries({ queryKey: ["customer-wishlists", current?.id] })}
+      />
+
+      <QuickFordoDialog
+        open={quickOpen}
+        onOpenChange={setQuickOpen}
+        onSaved={() => qc.invalidateQueries({ queryKey: ["customer-wishlists", current?.id] })}
       />
     </div>
   );
