@@ -240,6 +240,26 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
           </Button>
           <h1 className="text-xl font-extrabold md:text-2xl">{lang === "bn" ? titleBn : titleEn}</h1>
         </div>
+        <div className="inline-flex rounded-full border bg-card p-0.5 shadow-sm">
+          <button
+            type="button"
+            onClick={() => setViewMode("grid")}
+            className={`flex h-7 w-9 items-center justify-center rounded-full transition-colors ${viewMode === "grid" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"}`}
+            aria-label="Grid view"
+            title={lang === "bn" ? "গ্রিড ভিউ" : "Grid view"}
+          >
+            <LayoutGrid className="h-3.5 w-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={() => setViewMode("list")}
+            className={`flex h-7 w-9 items-center justify-center rounded-full transition-colors ${viewMode === "list" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"}`}
+            aria-label="List view"
+            title={lang === "bn" ? "লিস্ট ভিউ" : "List view"}
+          >
+            <ListIcon className="h-3.5 w-3.5" />
+          </button>
+        </div>
       </div>
 
       {/* Mobile tabs */}
