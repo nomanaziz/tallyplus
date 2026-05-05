@@ -1,46 +1,55 @@
+## লক্ষ্য
+`/app/sell` ও `/app/purchase`-এর Grid ভিউতে প্রতি page-এ অনেক বেশি product দেখা — mobile-এ যাতে এক row-এ ৩টা card ধরে এবং card গুলো অনেক ছোট হয়।
 
-## কী কী করব
+## ফাইল
+শুধু `src/components/app/POSPage.tsx` (লাইন ৩৭৩–৪১৯, grid block)।
 
-### ১. QuickOrder (দ্রুত বিক্রি) থেকে গ্রিড সরানো
-`src/pages/app/QuickOrder.tsx` — যে grid/list toggle, infinite scroll, `ProductGridCard`, view-mode state, `gridProducts` ইত্যাদি যোগ করা হয়েছিল সব সরিয়ে আগের list-only UI-তে ফিরিয়ে দেব। দ্রুত বিক্রির core কাজ (নাম লিখে add, কেনা/বেচা/লাভ, ফর্দ print, বিক্রিতে রূপান্তর) **অপরিবর্তিত থাকবে** — এগুলো আপনি ভালো বলেছেন।
+## পরিবর্তন
 
-### ২. বিক্রয় + ক্রয় (Sell/Purchase) — গ্রিড ভিউ যোগ
-`src/components/app/POSPage.tsx` (এটাই `/app/sell` ও `/app/purchase` দু'টোতেই চলে)। যা যুক্ত হবে:
+### 1. Grid columns — mobile-এ ৩, ধাপে ধাপে বেশি
+```
+grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7
+gap-1.5
+```
+(আগে ছিল `grid-cols-2 ... xl:grid-cols-5 gap-2`)
 
-- **উপরে একটা view toggle** — Grid (default) ↔ List (পুরোনো)। `localStorage["pos-view"]`-এ মনে থাকবে।
-- **Grid mode-এ infinite scroll** — একসাথে ৩০টা product, scroll-এ আরও load হবে। হাজার product হলেও mobile slow হবে না।
-- **Compact gorgeous card** — image (lazy), নাম, দাম/একক, stock badge, floating "+" button। আগের mockup style।
-- **Server-side search (debounced 250ms)** — name/SKU/barcode।
-- **একই product আবার click → cart-এ qty+1** (নতুন row নয়), badge দেখাবে cart-এ কত আছে।
-- **Mobile/tablet** এ পুরোনো "পণ্য | কার্ট" tab UI-ই থাকবে; desktop-এ side-by-side।
+### 2. Image ছোট ও price overlay
+- `aspect-square` রাখব কিন্তু card নিজেই ছোট হবে কলাম বাড়ানোয়।
+- Image-এর নিচে একটা semi-transparent gradient strip বসিয়ে তার উপরে **price** দেখাব — text block থেকে price সরিয়ে দেব, ফলে নিচের text block অনেক ছোট হবে।
+- Floating "+" button ছোট: `h-7 w-7` (ছিল `h-8 w-8`), icon `h-3.5 w-3.5`। Cart badge ও ছোট: `text-[9px] px-1`।
 
-### ৩. CustomerWishlist (গ্রাহক ফর্দ) — দোকানদারের জন্য "দ্রুত ফর্দ তৈরি"
-`src/pages/app/CustomerWishlist.tsx`-এ উপরে একটা নতুন button: **"নিজে ফর্দ তৈরি করুন"**। Click করলে একটা dialog খুলবে — পুরোটাই QuickOrder-এর মতো দ্রুত typing flow, কিন্তু এটা **wishlist হিসেবে save** হবে, সরাসরি বিক্রি নয়।
+```
+<div className="relative aspect-square ...">
+  <img ... />
+  <div className="absolute inset-x-0 bottom-0 flex items-end justify-between
+                  bg-gradient-to-t from-black/70 via-black/35 to-transparent
+                  px-1 pb-0.5 pt-3">
+    <span className="text-[11px] font-extrabold leading-none text-white drop-shadow">
+      {fmtMoney(price, lang)}
+    </span>
+    {p.unit && <span className="text-[9px] text-white/85">/{p.unit}</span>}
+  </div>
+  {/* + button + cart badge — smaller */}
+</div>
+```
 
-Dialog-এ যা থাকবে:
-- গ্রাহকের নাম, ফোন, ঠিকানা (optional), নোট
-- **Product input row** — নাম লিখলে দোকানের product list থেকে suggest দেবে; না মিললে টাইপ-করা নামটাই use হবে (list-এ থাকা **বাধ্যতামূলক না**)
-- প্রতিটা row-এ: **নাম, পরিমাণ, একক, কেনা দাম, বেচা দাম, লাভ** — তিনটার যেকোনো দু'টো দিলে তৃতীয়টা auto (কেনা+লাভ=বেচা, বেচা−কেনা=লাভ)
-- নিচে total দেখাবে
-- দু'টা button:
-  - **"ফর্দ হিসেবে save"** → `customer_wishlists` + `customer_wishlist_items`-এ insert হবে, list-এ চলে আসবে
-  - **"ফর্দ print"** → একই print flow যেটা QuickOrder-এ আছে
+### 3. নিচের text block — শুধু নাম + stock, padding কম
+```
+<div className="px-1.5 py-1">
+  <div className="line-clamp-2 min-h-[1.9em] text-[10.5px] font-medium leading-tight">
+    {p.name}
+  </div>
+  <div className="mt-0.5 text-[9px] text-muted-foreground">
+    স্টক: <span className={p.stock<=0 ? "font-semibold text-destructive" : ""}>
+      {lang==="bn"?bnNum(p.stock):p.stock}
+    </span>
+  </div>
+</div>
+```
+- Card border radius: `rounded-lg` (ছিল `rounded-xl`) — আরও tight।
+- Stock যদি জায়গা বাঁচাতে চান, পরে `0` হলে শুধু একটা ছোট red dot করা যেতে পারে — এই round-এ করব না, শুধু font ছোট করব।
 
-এতে আপনি wishlist page থেকেই দ্রুত ফর্দ বানাতে পারবেন এবং সেটা history-তেও থাকবে।
+### ফলাফল
+390px viewport-এ এক স্ক্রিনে ৪টার বদলে ~৯–১২টা product দেখা যাবে; price image-এর উপরে থাকায় text block দু'লাইনে শেষ হবে।
 
-## Database
-
-`customer_wishlist_items`-এ ইতিমধ্যে `name, qty, unit, price` আছে — যথেষ্ট। কেনা দাম + লাভ track করার জন্য দু'টা optional column যোগ করব:
-- `cost_price numeric null`
-- `profit numeric null` (computed: sale − cost; null হলে hide)
-
-Migration approval চাইব এই দু'টা column-এর জন্য (existing রেকর্ডে null থাকবে, কোনো কিছু ভাঙবে না)।
-
-## Tech notes
-
-- POSPage-এর product card-কে `React.memo` করব, IntersectionObserver `rootMargin: "400px"`, image `loading="lazy"` + skeleton fallback।
-- Search server-side `or(name.ilike, sku.ilike, barcode.ilike)` — ১০০০+ products হলেও fast।
-- Fordo dialog-এ row-add শুধু client state, save-এ এক shot insert।
-- QuickOrder revert-এর সময় `localStorage["quick-order-view"]` clean করব।
-
-Approve করলে শুরু করছি।
+কোনো logic, search, infinite-scroll, cart বা list-view পরিবর্তন হবে না।
