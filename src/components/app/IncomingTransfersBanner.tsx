@@ -60,6 +60,11 @@ export function IncomingTransfersBanner() {
               {lang === "bn" ? "দোকান হস্তান্তর অনুরোধ" : "Shop transfer request"} — {r.shop_name ?? r.shop_id.slice(0, 8)}
             </div>
             {r.reason && <div className="text-xs text-amber-800">{r.reason}</div>}
+            <div className="mt-1 text-[11px] text-amber-700">
+              {lang === "bn"
+                ? "Accept করলে admin চূড়ান্ত করবে। Subscription না থাকলে এই দোকানে ৩০ দিনের ফ্রি Trial পাবেন।"
+                : "After you accept, admin finalizes. If you have no subscription, you'll get a 30-day free trial for this shop."}
+            </div>
           </div>
           <Button size="sm" variant="outline" disabled={busy === r.id} onClick={() => respond(r.id, false)}>
             <X className="mr-1 h-4 w-4" /> {lang === "bn" ? "বাতিল" : "Reject"}
