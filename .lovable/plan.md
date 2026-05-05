@@ -1,65 +1,100 @@
-# Shop Transfer — Online + Manual Payment
+# তিনটা কাজ — Shop Reset, Profile Edit, Desktop Install Button
 
-বর্তমানে Transfer dialog-এ শুধু একটা ছবি (proof) আপলোডের অপশন আছে। আপনি চান:
+## ১. Profile Edit (নাম, ফোন, ঠিকানা পরিবর্তন)
 
-1. **Manual** — admin-এর সেট করা নম্বর/instructions clearly দেখাবে (কোন নম্বর, personal/merchant/payment type), user ছবি ও **Transaction ID** দেবে → admin verify করবে।
-2. **Online** — আমাদের existing **Recharge Server** gateway দিয়ে ৳200 (admin-set) charge instantly নেবে → success হলে auto-verify হয়ে recipient-এর কাছে accept-এর জন্য চলে যাবে।
-3. Admin চাইলে পরে **refund** করতে পারবে (note রাখার সুযোগ)।
+**নতুন page:** `/app/profile`
+- Owner নিজের `profiles` row edit করতে পারবে: `full_name`, `phone` (read-only — auth.users থেকে), `address`, `country_code`, optional avatar
+- Zod validation: name 2-100 char, phone format, address ≤ 200 char
+- Save → `profiles` table update (RLS already covers self-update)
+- SettingsSheet-এ একটা নতুন entry: **"আমার প্রোফাইল"** (top, profile picture-এর নিচে)
 
----
+## ২. Shop Reset + Backup/Restore
 
-## Changes
+**SettingsSheet → "Danger Zone" section** এ ৩টা button:
+- **দোকানের তথ্য Edit** — shop name, address, phone, logo update (`shops` table)
+- **Backup নিন** — পুরো dataset JSON download
+- **দোকান Reset করুন** — confirm dialog (টাইপ "RESET" + shop name) → সব data মুছে যাবে, shop টিকে থাকবে
 
-### 1. Database
-- `transfer_settings`-এ নতুন কলাম: `payment_number text`, `payment_account_type text` (personal/merchant/agent), `payment_provider_label text` (bKash/Nagad/Rocket ইত্যাদি)। Existing `payment_instructions` থাকবে।
-- `shop_transfer_requests`-এ নতুন কলাম:
-  - `payment_method text` ('manual' | 'online')
-  - `payment_txn_id text` (manual transaction ID)
-  - `payment_transaction_id uuid` (FK → `payment_transactions.id` for online)
-  - `refunded_at timestamptz`, `refund_note text`, `refund_amount numeric`
-- `payment_transactions`-এ `kind` ব্যবহার করে নতুন value `'shop_transfer'`, এবং `shop_transfer_id uuid` কলাম যোগ।
+### Backup format (JSON file)
 
-### 2. New Edge Function: `transfer-create-payment`
-Existing `recharge-create-payment` / `sms-create-payment`-এর মতই — Recharge Server checkout session create করবে `kind=shop_transfer`, success URL: `/app/shops/transfer-callback?...`। Server side-এ `request_shop_transfer` কে `pending_payment` state-এ insert করে transaction-এর সাথে link করবে।
+```
+{
+  "version": 1,
+  "exported_at": "...",
+  "shop": { name, address, phone, currency, shop_type_code },
+  "tables": {
+    "categories": [...],
+    "products": [...],
+    "customers": [...],
+    "suppliers": [...],
+    "services": [...],
+    "expenses_categories": [...],
+    "shop_delivery_zones": [...]
+    // optional: sales/purchases/expenses/payments যদি user চায়
+  }
+}
+```
 
-### 3. Update `recharge-verify-payment`
-`tx.kind === 'shop_transfer'` হলে: linked `shop_transfer_requests` row-এর status `pending_payment` → `pending_recipient` করবে এবং admin-verify auto-bypass হবে (since gateway = trusted)।
+Two backup modes via checkbox:
+- **শুধু Master data** (products, customers, suppliers, categories, services) — restore-friendly
+- **সবকিছু** (transactions সহ) — পুরো archive, কিন্তু restore-এ skip হবে transaction lines (নতুন shop-এ duplicate id problem এড়ানোর জন্য)
 
-### 4. New Page: `/app/shops/transfer-callback`
-SMS callback-এর মতই — verify করে success/failure দেখাবে, তারপর Shops পেজে redirect।
+### Reset flow (Edge Function `shop-reset`)
 
-### 5. `TransferShopDialog.tsx` overhaul
-Tab/Radio দিয়ে দুটো option:
-- **অনলাইন পেমেন্ট (instant)** — Recharge Server দিয়ে ৳{charge} pay করুন button → `transfer-create-payment` → redirect।
-- **ম্যানুয়াল পেমেন্ট** — admin-set details prominently দেখাবে:
-  - "এই নম্বরে পাঠান: **01XXXXXXXXX** (bKash — Merchant)"
-  - "Amount: **৳200**"
-  - Free-text instructions
-  - তারপর Screenshot upload + **Transaction ID** input → submit।
+Edge function admin-priv দিয়ে এই tables থেকে `shop_id = X` rows hard-delete করবে:
+`sales_items, sales, purchases_items, purchases, expenses, payments, cash_movements, products, categories, customers, suppliers, services, service_bookings, customer_wishlists, customer_wishlist_items, online_orders, online_order_items, shop_delivery_zones, returns, ...` (প্রকৃত list pre-flight query করে নেব)
 
-`request_shop_transfer` RPC-তে নতুন params: `_payment_method`, `_payment_txn_id`। Online হলে dialog skip করে gateway-এ যাবে।
+- `shops` row নিজে delete হবে না — owner & settings অক্ষুণ্ণ
+- নতুন default delivery zones trigger আবার seed করে দেবে (already exists)
+- Audit log: `shop_reset_logs` table — কে, কখন, কোন shop reset করল
 
-### 6. Admin Settings (`/admin/transfers` বা Settings)
-`transfer_settings` form-এ নতুন fields edit করার UI:
-- Payment provider (bKash/Nagad/Rocket/Other)
-- Account type (Personal / Merchant / Agent)
-- Number
-- Instructions (existing)
-- Charge amount (existing)
+**Validation (DB-side):** RPC `request_shop_reset(_shop_id, _confirmation_text)` — only owner, confirmation must equal shop name।
 
-### 7. Admin Transfers Page (`/admin/transfers`)
-Each row-এ দেখাবে: payment_method (manual/online), txn_id/proof URL, gateway transaction_id। Manual হলে "Verify Payment" button (existing flow)। Online verified হলে directly recipient-এর accept-এ থাকবে।
+### Restore/Import (`Backup নিন` page বা separate Import button)
 
-নতুন **Refund** action: approved/rejected যেকোনো request-এ admin "Refund" mark করতে পারবে — note + amount log হবে (gateway refund manual-ই thakbe, just record রাখবো)।
+- File upload → JSON parse → **Zod schema validation** (version, table shapes, required fields)
+- Preview dialog: কতটা product/customer/etc import হবে দেখাবে, conflict (duplicate name/SKU) flag করবে
+- Per-row validation — যেকোনো error থাকলে "ঠিক করে আবার upload করুন" message + error rows-এর line number list
+- Atomic insert via Edge Function `shop-restore` (transaction)
 
-### 8. Notification
-Manual submit হলে admin-এর কাছে existing notification যাবে। Online success হলে recipient-এর কাছে সরাসরি "নতুন দোকান হস্তান্তর অনুরোধ" notification যাবে।
+## ৩. Desktop PWA Install Button (address bar pasher icon)
 
----
+**সমস্যা:** Chrome desktop install icon তখনই দেখায় যখন PWA installability criteria পুরোপুরি পূরণ হয় — এর মধ্যে গুরুত্বপূর্ণ:
+- valid `manifest.webmanifest` ✅ (আছে)
+- registered service worker with `fetch` handler ❌ (নেই — `rg` দিয়ে service worker খুঁজে পাইনি)
+- HTTPS ✅
+- 192x192 ও 512x512 icons ✅
 
-## Acceptance
-- Admin Settings-এ payment number/type/provider/instructions/charge সব edit করা যাবে।
-- Owner Transfer dialog খুললে দুটো clear option — Online ও Manual।
-- Manual flow-এ admin-এর সেট করা নম্বর + amount + instructions দেখা যাবে; screenshot + Transaction ID submit করা যাবে।
-- Online flow Recharge Server-এ redirect করবে; success-এ auto pending_recipient হবে।
-- Admin payment refund mark করতে পারবে।
+**Fix:**
+1. **Vite PWA plugin add:** `bun add -D vite-plugin-pwa workbox-window`
+2. `vite.config.ts`-এ `VitePWA({ registerType: 'autoUpdate', manifest: ... , workbox: { ... } })` plugin add
+3. `src/main.tsx`-এ service worker registration (`registerSW({ immediate: true })`)
+4. Existing `public/manifest.webmanifest` plugin manifest-এর সাথে merge (duplicate avoid)
+5. Manifest-এ `id: "/"` add (Chrome desktop-এ install button reliably দেখাতে সাহায্য করে)
+
+এর পর Chrome address bar-এ install icon (computer + arrow) দেখাবে।
+
+## Files
+
+**New:**
+- `src/pages/app/Profile.tsx`
+- `src/pages/app/ShopSettings.tsx` (shop name/address edit + backup + reset)
+- `src/components/app/ResetShopDialog.tsx`
+- `src/components/app/RestoreBackupDialog.tsx`
+- `src/lib/backup.ts` (export/import + Zod schemas)
+- `supabase/functions/shop-reset/index.ts`
+- `supabase/functions/shop-restore/index.ts`
+- Migration: `request_shop_reset` RPC + `shop_reset_logs` table
+
+**Edited:**
+- `src/components/app/SettingsSheet.tsx` (নতুন entries: Profile, Shop Settings, Backup, Reset)
+- `src/lib/app-routes.tsx` (২টা route)
+- `vite.config.ts` (VitePWA plugin)
+- `src/main.tsx` (registerSW)
+- `public/manifest.webmanifest` (add `id`)
+
+## Validation Highlights
+
+- All forms: Zod schemas, trim, length limits, Bengali error messages
+- Restore: per-table schema check, foreign key sanity check (parent_id existence), price/qty numeric check, duplicate name detection
+- Reset: double confirmation (type shop name) + RPC re-checks ownership
