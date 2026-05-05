@@ -26,14 +26,37 @@ if (typeof window !== "undefined" && "serviceWorker" in navigator) {
 
   if (isInIframe || isPreviewHost) {
     // Inside the Lovable editor preview iframe — make sure no SW is installed
+    // AND clear any caches left behind by a previously-installed SW. Stale
+    // cached index.html can reference asset hashes that no longer exist on
+    // the new deploy, causing "Failed to fetch dynamically imported module".
     navigator.serviceWorker.getRegistrations().then((regs) => {
       regs.forEach((r) => r.unregister());
     }).catch(() => { /* ignore */ });
+    if ("caches" in window) {
+      caches.keys().then((keys) => keys.forEach((k) => caches.delete(k))).catch(() => { /* ignore */ });
+    }
   } else {
     window.addEventListener("load", () => {
       navigator.serviceWorker.register("/sw.js").catch(() => { /* ignore */ });
     });
   }
+}
+
+// Self-heal: if a lazy chunk fails to load (typically because the user has
+// a stale index.html from a previous deploy referencing old hashed assets),
+// hard-reload once to fetch the latest HTML + chunks.
+if (typeof window !== "undefined") {
+  const RELOAD_KEY = "__chunk_reload_at";
+  window.addEventListener("error", (e) => {
+    const msg = String((e as ErrorEvent).message || "");
+    if (msg.includes("Failed to fetch dynamically imported module") || msg.includes("Importing a module script failed")) {
+      const last = Number(sessionStorage.getItem(RELOAD_KEY) || 0);
+      if (Date.now() - last > 10_000) {
+        sessionStorage.setItem(RELOAD_KEY, String(Date.now()));
+        window.location.reload();
+      }
+    }
+  });
 }
 
 const queryClient = new QueryClient({
