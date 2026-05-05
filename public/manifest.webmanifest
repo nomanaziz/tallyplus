@@ -1,6 +1,7 @@
 {
   "name": "Tally Plus",
   "short_name": "Tally Plus",
+  "id": "/",
   "description": "দোকানের হিসাব এক ক্লিকেই",
   "start_url": "/",
   "scope": "/",

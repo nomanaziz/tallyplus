@@ -3847,6 +3847,38 @@ export type Database = {
         }
         Relationships: []
       }
+      shop_reset_logs: {
+        Row: {
+          created_at: string
+          id: string
+          performed_by: string
+          shop_id: string
+          summary: Json
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          performed_by: string
+          shop_id: string
+          summary?: Json
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          performed_by?: string
+          shop_id?: string
+          summary?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shop_reset_logs_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shop_secrets: {
         Row: {
           fb_pixel_test_id: string | null
@@ -5091,6 +5123,10 @@ export type Database = {
       }
       register_active_device: {
         Args: { _device_id: string; _user_agent: string }
+        Returns: Json
+      }
+      request_shop_reset: {
+        Args: { _confirm_text: string; _shop_id: string }
         Returns: Json
       }
       request_shop_transfer:

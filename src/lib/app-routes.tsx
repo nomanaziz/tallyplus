@@ -123,6 +123,8 @@ const LOSPromoCodes = lazy(() => import("@/pages/app/online-shop/PromoCodes"));
 const LSubscribe = lazy(() => import("@/pages/app/Subscribe"));
 const LSubscribeCallback = lazy(() => import("@/pages/app/SubscribeCallback"));
 const LSharedFordo = lazy(() => import("@/pages/f/Share"));
+const LProfile = lazy(() => import("@/pages/app/Profile"));
+const LShopSettings = lazy(() => import("@/pages/app/ShopSettings"));
 
 export const appRoutes: RouteObject[] = [
 { index: true, element: <Suspense fallback={<RouteFallback/>}><L0/></Suspense> },
@@ -214,6 +216,10 @@ export const appRoutes: RouteObject[] = [
 { path: "subscribe", element: <Suspense fallback={<RouteFallback/>}><LSubscribe/></Suspense> }
 ,
 { path: "subscribe/callback", element: <Suspense fallback={<RouteFallback/>}><LSubscribeCallback/></Suspense> }
+,
+{ path: "profile", element: <Suspense fallback={<RouteFallback/>}><LProfile/></Suspense> }
+,
+{ path: "shop-settings", element: <Suspense fallback={<RouteFallback/>}><LShopSettings/></Suspense> }
 ,
 { path: "online-shop", children: [
   { index: true, element: <Suspense fallback={<RouteFallback/>}><LOnlineShop/></Suspense> },
