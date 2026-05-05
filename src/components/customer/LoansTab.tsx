@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { writeWithOffline } from "@/lib/useOfflineWrite";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -107,19 +108,23 @@ export default function LoansTab() {
     const amt = Number(amount);
     if (!amt || amt <= 0) return toast.error("সঠিক টাকা দিন");
     setSaving(true);
-    const { error } = await supabase.from("consumer_loans").insert({
-      user_id: user.id,
-      party_name: partyName.trim(),
-      party_phone: partyPhone.trim() || null,
-      type,
-      amount: amt,
-      loan_date: date,
-      due_date: dueDate || null,
-      note: note.trim() || null,
+    const res = await writeWithOffline({
+      table: "consumer_loans",
+      op: "insert",
+      payload: {
+        user_id: user.id,
+        party_name: partyName.trim(),
+        party_phone: partyPhone.trim() || null,
+        type,
+        amount: amt,
+        loan_date: date,
+        due_date: dueDate || null,
+        note: note.trim() || null,
+      },
     });
     setSaving(false);
-    if (error) return toast.error(error.message);
-    toast.success("যোগ হয়েছে — Cash on Hand-এ যোগ হলো");
+    if (res.error) return toast.error(res.error);
+    if (!res.queued) toast.success("যোগ হয়েছে — Cash on Hand-এ যোগ হলো");
     reset();
     setOpen(false);
     void load();
@@ -149,33 +154,45 @@ export default function LoansTab() {
     const outstanding = Math.max(Number(payLoan.amount) - Number(payLoan.paid_amount || 0), 0);
     if (amt > outstanding + 0.001) return toast.error(`সর্বোচ্চ ${bdt(outstanding)} পরিশোধযোগ্য`);
     setPaySaving(true);
-    const { error } = await supabase.from("consumer_loan_payments").insert({
-      loan_id: payLoan.id,
-      user_id: user.id,
-      amount: amt,
-      paid_via: payVia,
-      paid_date: payDate,
-      note: payNote.trim() || null,
+    const res = await writeWithOffline({
+      table: "consumer_loan_payments",
+      op: "insert",
+      payload: {
+        loan_id: payLoan.id,
+        user_id: user.id,
+        amount: amt,
+        paid_via: payVia,
+        paid_date: payDate,
+        note: payNote.trim() || null,
+      },
     });
     setPaySaving(false);
-    if (error) return toast.error(error.message);
-    toast.success("পরিশোধ যোগ হলো");
+    if (res.error) return toast.error(res.error);
+    if (!res.queued) toast.success("পরিশোধ যোগ হলো");
     setPayOpen(false);
     void load();
   };
 
   const removePayment = async (id: string) => {
     if (!confirm("এই পরিশোধ মুছবেন?")) return;
-    const { error } = await supabase.from("consumer_loan_payments").delete().eq("id", id);
-    if (error) return toast.error(error.message);
+    const res = await writeWithOffline({
+      table: "consumer_loan_payments",
+      op: "delete",
+      payload: { id },
+    });
+    if (res.error) return toast.error(res.error);
     setPayHistory((prev) => prev.filter((p) => p.id !== id));
     void load();
   };
 
   const remove = async (id: string) => {
     if (!confirm("Entry মুছবেন?")) return;
-    const { error } = await supabase.from("consumer_loans").delete().eq("id", id);
-    if (error) return toast.error(error.message);
+    const res = await writeWithOffline({
+      table: "consumer_loans",
+      op: "delete",
+      payload: { id },
+    });
+    if (res.error) return toast.error(res.error);
     void load();
   };
 
