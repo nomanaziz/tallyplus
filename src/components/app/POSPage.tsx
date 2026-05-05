@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Plus, Minus, X, Package, ShoppingCart, ChevronDown, MessageSquare, RefreshCw, Search, UserRound, LayoutGrid, List as ListIcon } from "lucide-react";
+import { ArrowLeft, Plus, Minus, X, Package, ShoppingCart, ChevronDown, MessageSquare, RefreshCw, Search, UserRound, LayoutGrid, List as ListIcon, RotateCcw } from "lucide-react";
+import { Slider } from "@/components/ui/slider";
 import { useNavigate } from "@/lib/router";
 import { supabase } from "@/integrations/supabase/client";
 import { useShop } from "@/lib/shop";
@@ -121,6 +122,37 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
   useEffect(() => {
     if (typeof window !== "undefined") localStorage.setItem("pos-view", viewMode);
   }, [viewMode]);
+
+  // Screen tier (mobile / tablet / desktop) for per-tier grid column preset
+  const [tier, setTier] = useState<"mobile" | "tablet" | "desktop">(() => {
+    if (typeof window === "undefined") return "desktop";
+    const w = window.innerWidth;
+    return w < 768 ? "mobile" : w < 1024 ? "tablet" : "desktop";
+  });
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const onResize = () => {
+      const w = window.innerWidth;
+      setTier(w < 768 ? "mobile" : w < 1024 ? "tablet" : "desktop");
+    };
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+  const defaultCols = { mobile: 3, tablet: 4, desktop: 7 } as const;
+  const [colsByTier, setColsByTier] = useState<{ mobile: number; tablet: number; desktop: number }>(() => {
+    if (typeof window === "undefined") return { ...defaultCols };
+    try {
+      const raw = localStorage.getItem("pos-grid-cols");
+      if (raw) return { ...defaultCols, ...JSON.parse(raw) };
+    } catch { /* ignore */ }
+    return { ...defaultCols };
+  });
+  useEffect(() => {
+    if (typeof window !== "undefined") localStorage.setItem("pos-grid-cols", JSON.stringify(colsByTier));
+  }, [colsByTier]);
+  const cols = colsByTier[tier];
+  const setCols = (n: number) => setColsByTier((prev) => ({ ...prev, [tier]: n }));
+  const resetCols = () => setColsByTier((prev) => ({ ...prev, [tier]: defaultCols[tier] }));
 
   const isSell = mode === "sell";
   const titleBn = isSell ? "বিক্রয়" : "ক্রয়";
@@ -370,7 +402,25 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
             {filtered.length === 0 ? (
               <EmptyState icon={<Package className="h-6 w-6" />} title={lang === "bn" ? "কোনো পণ্য নেই" : "No products"} />
             ) : viewMode === "grid" ? (
-              <div className="grid grid-cols-3 gap-1.5 md:grid-cols-4 lg:grid-cols-7">
+              <>
+              <div className="mb-2 flex items-center gap-2 rounded-md border bg-muted/30 px-2 py-1.5">
+                <span className="text-[10px] font-semibold uppercase text-muted-foreground">
+                  {lang === "bn" ? (tier === "mobile" ? "মোবাইল" : tier === "tablet" ? "ট্যাবলেট" : "ডেস্কটপ") : tier}
+                </span>
+                <Slider
+                  value={[cols]}
+                  min={2}
+                  max={tier === "desktop" ? 12 : tier === "tablet" ? 8 : 6}
+                  step={1}
+                  onValueChange={(v) => setCols(v[0] ?? cols)}
+                  className="flex-1"
+                />
+                <span className="w-6 text-center text-xs font-bold tabular-nums">{lang === "bn" ? bnNum(cols) : cols}</span>
+                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={resetCols} title={lang === "bn" ? "রিসেট" : "Reset"}>
+                  <RotateCcw className="h-3 w-3" />
+                </Button>
+              </div>
+              <div className="grid gap-1.5" style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
                 {filtered.slice(0, 200).map((p) => {
                   const inCart = cart.find((c) => c.product_id === p.id);
                   const price = isSell ? Number(p.sale_price) : Number(p.cost_price);
@@ -419,6 +469,7 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
                   );
                 })}
               </div>
+              </>
             ) : (
               <ul className="divide-y">
                 {filtered.map((p) => {
