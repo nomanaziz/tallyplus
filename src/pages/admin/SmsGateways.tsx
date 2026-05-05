@@ -114,6 +114,16 @@ export default function AdminSmsGateways() {
   const [editingPkg, setEditingPkg] = useState<(Omit<Pkg, "id"> & { id?: string }) | null>(null);
   const [templates, setTemplates] = useState<Template[]>([]);
   const [editingTpl, setEditingTpl] = useState<(Omit<Template, "id"> & { id?: string }) | null>(null);
+  const [pkgSearch, setPkgSearch] = useState("");
+  const [tplSearch, setTplSearch] = useState("");
+  const filteredPackages = useMemo(
+    () => packages.filter((p) => matches(pkgSearch, p.name_bn, p.name_en, String(p.sms_count), String(p.price_bdt))),
+    [packages, pkgSearch],
+  );
+  const filteredTemplates = useMemo(
+    () => templates.filter((t) => matches(tplSearch, t.name_bn, t.code, t.body_template)),
+    [templates, tplSearch],
+  );
 
   // ========== Load ==========
   const loadAll = async () => {
