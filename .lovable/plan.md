@@ -1,46 +1,37 @@
-তিনটা আলাদা সমস্যা — তিনটাই fix করব।
+## Image Library — Admin
 
-## 1) "মার্কেটপ্লেস ক্যাটাগরি / সাবক্যাটাগরি" field — Seller product dialog থেকে সরাবো
+Admin-এর জন্য একটা নতুন page যেখানে marketplace product-এ upload করা সব image gallery আকারে দেখা যাবে এবং reuse করা যাবে।
 
-**বর্তমান অবস্থা:** `src/pages/app/Products.tsx` (line 1443–1483)-এ shop owner-এর product add/edit dialog-এ দুইটা dropdown দেখানো হচ্ছে — Marketplace Category এবং Subcategory। এগুলো `products.marketplace_category_id` field-এ save হয়।
+### নতুন page: `/admin/image-library`
 
-**সমস্যা:** এটা platform-level taxonomy — admin manage করে। Shop owner-কে এটা দেখানোর কোনো কারণ নাই; সে যখন catalog থেকে product pick করে তখন category এমনিতেই inherit হয়। User confused — "এটা admin portal না product add?"
+**Data sources (২টা একসাথে merge করব):**
+1. **Storage bucket scan** — `supabase.storage.from("product-images").list("marketplace", { limit: 1000, sortBy: { column: "created_at", order: "desc" } })` দিয়ে uploaded সব file আনব। প্রতিটার public URL generate করব।
+2. **DB usage scan** — `marketplace_products.image_url` এবং `marketplace_product_variants.image_url` query করে দেখব কোন image কোন product/variant-এ ব্যবহার হচ্ছে।
 
-**সমাধান:**
-- Seller-এর product dialog থেকে দুইটা Select সরিয়ে দেব।
-- Catalog-linked product হলে তার marketplace_category_id automatic backfill হবে catalog row থেকে (`marketplace_products` join)।
-- Manual product হলে field empty থাকবে — admin দরকার হলে assign করবে।
-- Save handler থেকে `mpCategoryId` / `mpSubcategoryId` state ও payload field বাদ যাবে।
+দুইটা একসাথে join করে দেখাব: যেসব URL DB-তে আছে কিন্তু storage-এ নাই (manually paste করা external URL) সেগুলোও show করব "External" tag দিয়ে।
 
-## 2) Variant editor-এ column header যোগ করব (admin Marketplace dialog)
+**UI:**
+- Responsive grid (mobile 2-col, sm 3, md 4, lg 6)
+- প্রতিটা card-এ:
+  - Image preview (square, object-cover)
+  - নিচে truncated URL (full URL hover/tap-এ tooltip)
+  - Usage count badge ("৩টি product")
+  - Copy URL button (clipboard) — toast confirmation
+  - Open-in-new-tab icon
+- Top bar:
+  - Search box (URL/filename match)
+  - Filter chips: "সব" / "ব্যবহৃত" / "অব্যবহৃত" / "External"
+  - Total count
+- Click → বড় preview dialog: full URL copyable + which products/variants ব্যবহার করছে তার list (clickable name, variant হলে label সহ)
 
-**বর্তমান অবস্থা:** `src/components/admin/MarketplaceVariantEditor.tsx` (line 260–278)-এ "Variants (7)" এর নিচে প্রতি row-তে চারটা input থাকে কোনো header ছাড়া — শুধু placeholder text (Price / Cost / Pack / Barc)। Screenshot-এ দেখা যাচ্ছে label না থাকায় কনফিউশন।
+**Wiring:**
+- `src/pages/admin/ImageLibrary.tsx` (new) — page implementation
+- `src/lib/admin-perms.ts` — `"image_library"` perm যোগ + label
+- `src/components/admin/AdminSidebar.tsx` — sidebar entry (Images icon)
+- `src/lib/app-routes.tsx` — lazy import + route `/admin/image-library`
 
-**সমাধান:**
-- "Variants (N)" heading-এর নিচে একটা sticky header row বসাবো একই 12-col grid-এ:
-  - col-span-4: "Variant"
-  - col-span-2: "Sale Price (৳)"
-  - col-span-2: "Cost Price (৳)"
-  - col-span-2: "Pack Size"
-  - col-span-1: "Barcode"
-  - col-span-1: (action)
-- Header bn/en bilingual: "Variant / ভ্যারিয়েন্ট", "বিক্রয় মূল্য", "ক্রয় মূল্য", "প্যাক", "বারকোড"।
-- Header `bg-muted text-xs font-semibold` — scrollable list-এর top-এ stick করবে।
+### কোনো DB migration লাগবে না
+শুধু read; storage bucket আগেই public।
 
-## 3) Sell-এ variant-aware picker
-
-**বর্তমান অবস্থা:** Variant-যুক্ত catalog product যখন seller add করে, প্রত্যেক variant আলাদা product row হিসাবে save হয় (`parent_product_id` দিয়ে link)। Sell page (`src/pages/app/Sell.tsx`)-এ এগুলো আলাদা আলাদা product হিসাবে দেখায় — list-এ "Diaper — XL", "Diaper — L" আলাদা item। User বলছেন বিক্রির সময় variant pick করার একটা proper UX দরকার।
-
-**সমাধান:**
-- Sell-এর product picker-এ যেসব row-এর `parent_product_id` আছে সেগুলো parent name-এর নিচে group করব (visually nested badge)। List item-এ variant_label badge দেখাবে (e.g. "XL", "500g", রঙের swatch)।
-- Parent product (যেটা stock=0 placeholder) hide করব list থেকে — সে শুধু grouping shell।
-- Search "Diaper" type করলে সব children show করবে; variant_label-ও searchable।
-- কোনো extra dialog লাগবে না — flat list-এ variant badge সবচেয়ে fast (mobile-friendly)।
-
-## Files
-
-- `src/pages/app/Products.tsx` — marketplace category dropdown ও related state/payload remove
-- `src/components/admin/MarketplaceVariantEditor.tsx` — column header row যোগ
-- `src/pages/app/Sell.tsx` — product list query-তে parent placeholder filter, variant_label badge rendering, search match update
-
-কোনো DB migration লাগবে না।
+### Future hook (এই PR-এ না)
+পরে চাইলে variant editor / product image picker-এ "Choose from library" button দিয়ে এই gallery থেকে select করার flow add করা যাবে। এই PR শুধু view + copy URL দেবে।
