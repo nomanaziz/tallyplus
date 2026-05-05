@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Plus, Trash2, ArrowDownLeft, ArrowUpRight, CheckCircle2, Phone } from "lucide-react";
+import { Loader2, Plus, Trash2, ArrowDownLeft, ArrowUpRight, Phone, HandCoins } from "lucide-react";
 import { toast } from "sonner";
 
 type Loan = {
@@ -15,11 +15,22 @@ type Loan = {
   party_phone: string | null;
   type: "lent" | "borrowed";
   amount: number;
+  paid_amount: number;
   loan_date: string;
   due_date: string | null;
   note: string | null;
   is_settled: boolean;
   settled_at: string | null;
+};
+
+type Payment = {
+  id: string;
+  loan_id: string;
+  amount: number;
+  paid_via: string;
+  note: string | null;
+  paid_date: string;
+  created_at: string;
 };
 
 function bdt(n: number) {
@@ -40,6 +51,16 @@ export default function LoansTab() {
   const [note, setNote] = useState("");
   const [filter, setFilter] = useState<"all" | "unsettled" | "settled">("unsettled");
   const [saving, setSaving] = useState(false);
+
+  // Partial repay sheet
+  const [payOpen, setPayOpen] = useState(false);
+  const [payLoan, setPayLoan] = useState<Loan | null>(null);
+  const [payAmount, setPayAmount] = useState("");
+  const [payVia, setPayVia] = useState<"cash" | "bkash" | "nagad" | "rocket" | "bank">("cash");
+  const [payDate, setPayDate] = useState(new Date().toISOString().slice(0, 10));
+  const [payNote, setPayNote] = useState("");
+  const [paySaving, setPaySaving] = useState(false);
+  const [payHistory, setPayHistory] = useState<Payment[]>([]);
 
   const load = async () => {
     if (!user) return;
@@ -62,8 +83,9 @@ export default function LoansTab() {
     let willGive = 0;
     for (const r of rows) {
       if (r.is_settled) continue;
-      if (r.type === "lent") willGet += Number(r.amount);
-      else willGive += Number(r.amount);
+      const outstanding = Math.max(Number(r.amount) - Number(r.paid_amount || 0), 0);
+      if (r.type === "lent") willGet += outstanding;
+      else willGive += outstanding;
     }
     return { willGet, willGive, net: willGet - willGive };
   }, [rows]);
@@ -85,7 +107,7 @@ export default function LoansTab() {
     const amt = Number(amount);
     if (!amt || amt <= 0) return toast.error("সঠিক টাকা দিন");
     setSaving(true);
-    const { data: created, error } = await supabase.from("consumer_loans").insert({
+    const { error } = await supabase.from("consumer_loans").insert({
       user_id: user.id,
       party_name: partyName.trim(),
       party_phone: partyPhone.trim() || null,
@@ -94,60 +116,64 @@ export default function LoansTab() {
       loan_date: date,
       due_date: dueDate || null,
       note: note.trim() || null,
-    }).select("id").single();
+    });
     setSaving(false);
     if (error) return toast.error(error.message);
-    // Hit the account balance immediately:
-    //  - "lent" (ধার দিলাম) → টাকা বের হলো → expense
-    //  - "borrowed" (ঋণ নিলাম) → টাকা ঢুকলো → income
-    if (created?.id) {
-      await supabase.from("consumer_transactions").insert({
-        user_id: user.id,
-        type: type === "lent" ? "expense" : "income",
-        amount: amt,
-        category: type === "lent" ? "ধার দিলাম" : "ঋণ নিলাম",
-        note: `${partyName.trim()} — দেনা-পাওনা`,
-        tx_date: date,
-        source_loan_id: created.id,
-        source_loan_event: "created",
-      });
-    }
-    toast.success("যোগ হয়েছে");
+    toast.success("যোগ হয়েছে — Cash on Hand-এ যোগ হলো");
     reset();
     setOpen(false);
     void load();
   };
 
-  const settle = async (loan: Loan) => {
-    if (!confirm(`${loan.party_name} এর সাথে ${bdt(Number(loan.amount))} ${loan.type === "lent" ? "ফেরত পেলেন" : "পরিশোধ করলেন"}?`)) return;
-    const { error } = await supabase
-      .from("consumer_loans")
-      .update({ is_settled: true, settled_at: new Date().toISOString() })
-      .eq("id", loan.id);
+  const openRepay = async (loan: Loan) => {
+    setPayLoan(loan);
+    const outstanding = Math.max(Number(loan.amount) - Number(loan.paid_amount || 0), 0);
+    setPayAmount(String(outstanding));
+    setPayVia("cash");
+    setPayDate(new Date().toISOString().slice(0, 10));
+    setPayNote("");
+    setPayOpen(true);
+    // Load history for this loan
+    const { data } = await supabase
+      .from("consumer_loan_payments")
+      .select("*")
+      .eq("loan_id", loan.id)
+      .order("paid_date", { ascending: false });
+    setPayHistory((data ?? []) as Payment[]);
+  };
+
+  const submitPayment = async () => {
+    if (!user || !payLoan) return;
+    const amt = Number(payAmount);
+    if (!amt || amt <= 0) return toast.error("সঠিক টাকা দিন");
+    const outstanding = Math.max(Number(payLoan.amount) - Number(payLoan.paid_amount || 0), 0);
+    if (amt > outstanding + 0.001) return toast.error(`সর্বোচ্চ ${bdt(outstanding)} পরিশোধযোগ্য`);
+    setPaySaving(true);
+    const { error } = await supabase.from("consumer_loan_payments").insert({
+      loan_id: payLoan.id,
+      user_id: user.id,
+      amount: amt,
+      paid_via: payVia,
+      paid_date: payDate,
+      note: payNote.trim() || null,
+    });
+    setPaySaving(false);
     if (error) return toast.error(error.message);
-    // Settle reverses the original loan flow:
-    //  - "lent" settled → টাকা ফেরত পেলাম → income
-    //  - "borrowed" settled → টাকা পরিশোধ করলাম → expense
-    if (user) {
-      await supabase.from("consumer_transactions").insert({
-        user_id: user.id,
-        type: loan.type === "lent" ? "income" : "expense",
-        amount: Number(loan.amount),
-        category: loan.type === "lent" ? "ধার ফেরত পেলাম" : "ঋণ পরিশোধ",
-        note: `${loan.party_name} — দেনা-পাওনা settle`,
-        tx_date: new Date().toISOString().slice(0, 10),
-        source_loan_id: loan.id,
-        source_loan_event: "settled",
-      });
-    }
-    toast.success("Settle হয়েছে");
+    toast.success("পরিশোধ যোগ হলো");
+    setPayOpen(false);
+    void load();
+  };
+
+  const removePayment = async (id: string) => {
+    if (!confirm("এই পরিশোধ মুছবেন?")) return;
+    const { error } = await supabase.from("consumer_loan_payments").delete().eq("id", id);
+    if (error) return toast.error(error.message);
+    setPayHistory((prev) => prev.filter((p) => p.id !== id));
     void load();
   };
 
   const remove = async (id: string) => {
     if (!confirm("Entry মুছবেন?")) return;
-    // Remove related auto-transactions so the account balance reverses.
-    await supabase.from("consumer_transactions").delete().eq("source_loan_id", id);
     const { error } = await supabase.from("consumer_loans").delete().eq("id", id);
     if (error) return toast.error(error.message);
     void load();
@@ -200,7 +226,8 @@ export default function LoansTab() {
         ) : (
           <ul className="divide-y">
             {filtered.map((r) => (
-              <li key={r.id} className={`flex items-center gap-3 px-4 py-3 ${r.is_settled ? "opacity-60" : ""}`}>
+              <li key={r.id} className={`px-4 py-3 ${r.is_settled ? "opacity-60" : ""}`}>
+                <div className="flex items-center gap-3">
                 <div className={`flex h-9 w-9 flex-none items-center justify-center rounded-full ${r.type === "lent" ? "bg-emerald-500/10 text-emerald-600" : "bg-rose-500/10 text-rose-600"}`}>
                   {r.type === "lent" ? <ArrowDownLeft className="h-4 w-4" /> : <ArrowUpRight className="h-4 w-4" />}
                 </div>
@@ -220,13 +247,27 @@ export default function LoansTab() {
                   {bdt(Number(r.amount))}
                 </div>
                 {!r.is_settled && (
-                  <button onClick={() => settle(r)} className="rounded-md p-1.5 text-emerald-600 hover:bg-emerald-500/10" aria-label="Settle">
-                    <CheckCircle2 className="h-4 w-4" />
+                  <button onClick={() => openRepay(r)} className="rounded-md p-1.5 text-emerald-600 hover:bg-emerald-500/10" aria-label="পরিশোধ">
+                    <HandCoins className="h-4 w-4" />
                   </button>
                 )}
                 <button onClick={() => remove(r.id)} className="rounded-md p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive" aria-label="মুছুন">
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>
+                </div>
+                {Number(r.paid_amount || 0) > 0 && !r.is_settled && (
+                  <div className="ml-12 mt-2">
+                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                      <div
+                        className={r.type === "lent" ? "h-full bg-emerald-500" : "h-full bg-rose-500"}
+                        style={{ width: `${Math.min(100, (Number(r.paid_amount) / Number(r.amount)) * 100)}%` }}
+                      />
+                    </div>
+                    <div className="mt-1 text-[10px] text-muted-foreground">
+                      পরিশোধ {bdt(Number(r.paid_amount))} • বাকি {bdt(Math.max(Number(r.amount) - Number(r.paid_amount), 0))}
+                    </div>
+                  </div>
+                )}
               </li>
             ))}
           </ul>
@@ -272,6 +313,85 @@ export default function LoansTab() {
               {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} সংরক্ষণ
             </Button>
           </div>
+        </SheetContent>
+      </Sheet>
+
+      {/* Partial repayment sheet */}
+      <Sheet open={payOpen} onOpenChange={setPayOpen}>
+        <SheetContent side="bottom" className="rounded-t-3xl max-h-[90vh] overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>
+              {payLoan?.type === "lent" ? "ফেরত পেলাম" : "পরিশোধ করলাম"} — {payLoan?.party_name}
+            </SheetTitle>
+          </SheetHeader>
+          {payLoan && (
+            <div className="mt-4 space-y-3">
+              <div className="rounded-lg border bg-muted/30 p-3 text-sm">
+                মোট: <b>{bdt(Number(payLoan.amount))}</b> • পরিশোধ: <b>{bdt(Number(payLoan.paid_amount || 0))}</b> •{" "}
+                বাকি:{" "}
+                <b className={payLoan.type === "lent" ? "text-emerald-600" : "text-rose-600"}>
+                  {bdt(Math.max(Number(payLoan.amount) - Number(payLoan.paid_amount || 0), 0))}
+                </b>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() =>
+                    setPayAmount(String(Math.max(Number(payLoan.amount) - Number(payLoan.paid_amount || 0), 0)))
+                  }
+                >
+                  পুরোটা পরিশোধ
+                </Button>
+              </div>
+              <Input
+                inputMode="decimal"
+                placeholder="পরিমাণ"
+                value={payAmount}
+                onChange={(e) => setPayAmount(e.target.value.replace(/[^0-9.]/g, ""))}
+                className="h-12 text-lg"
+              />
+              <Select value={payVia} onValueChange={(v) => setPayVia(v as typeof payVia)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="cash">নগদ</SelectItem>
+                  <SelectItem value="bkash">bKash</SelectItem>
+                  <SelectItem value="nagad">Nagad</SelectItem>
+                  <SelectItem value="rocket">Rocket</SelectItem>
+                  <SelectItem value="bank">Bank</SelectItem>
+                </SelectContent>
+              </Select>
+              <Input type="date" value={payDate} onChange={(e) => setPayDate(e.target.value)} />
+              <Input placeholder="নোট (ইচ্ছাধীন)" value={payNote} onChange={(e) => setPayNote(e.target.value)} />
+              <Button
+                onClick={submitPayment}
+                disabled={paySaving}
+                className={`w-full ${payLoan.type === "lent" ? "bg-emerald-600 hover:bg-emerald-700" : "bg-rose-600 hover:bg-rose-700"} text-white`}
+              >
+                {paySaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} সংরক্ষণ
+              </Button>
+
+              {payHistory.length > 0 && (
+                <div className="mt-4">
+                  <div className="mb-2 text-xs font-semibold text-muted-foreground">পরিশোধের ইতিহাস</div>
+                  <ul className="divide-y rounded-md border">
+                    {payHistory.map((p) => (
+                      <li key={p.id} className="flex items-center gap-2 px-3 py-2 text-sm">
+                        <div className="flex-1">
+                          <div className="font-medium">{bdt(Number(p.amount))} <span className="ml-1 text-[10px] uppercase text-muted-foreground">{p.paid_via}</span></div>
+                          <div className="text-[11px] text-muted-foreground">{p.paid_date}{p.note ? ` • ${p.note}` : ""}</div>
+                        </div>
+                        <button onClick={() => removePayment(p.id)} className="rounded p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive">
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
         </SheetContent>
       </Sheet>
     </div>
