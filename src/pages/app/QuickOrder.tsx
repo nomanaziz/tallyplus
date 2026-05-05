@@ -150,7 +150,7 @@ function QuickOrderInner() {
     setQuery("");
     setSuggestions([]);
     setShowDrop(false);
-    if (viewMode === "list") setTimeout(() => inputRef.current?.focus(), 30);
+    setTimeout(() => inputRef.current?.focus(), 30);
   };
 
   const addExternal = (name: string) => {
@@ -352,26 +352,6 @@ function QuickOrderInner() {
           {lang === "bn" ? "দ্রুত বিক্রি" : "Quick Sell"}
         </h1>
         <div className="flex flex-wrap items-center gap-2">
-          <div className="inline-flex rounded-full border bg-card p-0.5 shadow-sm">
-            <button
-              type="button"
-              onClick={() => setViewMode("grid")}
-              className={`flex h-7 w-9 items-center justify-center rounded-full transition-colors ${viewMode === "grid" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"}`}
-              aria-label="Grid view"
-              title={lang === "bn" ? "গ্রিড ভিউ" : "Grid view"}
-            >
-              <LayoutGrid className="h-3.5 w-3.5" />
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode("list")}
-              className={`flex h-7 w-9 items-center justify-center rounded-full transition-colors ${viewMode === "list" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"}`}
-              aria-label="List view"
-              title={lang === "bn" ? "লিস্ট ভিউ" : "List view"}
-            >
-              <ListIcon className="h-3.5 w-3.5" />
-            </button>
-          </div>
           <label className="inline-flex items-center gap-2 rounded-full border bg-card px-3 py-1.5 text-xs shadow-sm">
             <Switch checked={allowExternal} onCheckedChange={setAllowExternal} />
             <span className="font-medium">
