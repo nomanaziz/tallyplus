@@ -1,37 +1,60 @@
-## Image Library — Admin
+## লক্ষ্য
+Admin → Image Library page এ user যেন **যেকোনো image (এমনকি product/variant এ ব্যবহৃত হলেও, এমনকি external URL হলেও) সম্পূর্ণভাবে delete** করতে পারেন, এবং একসাথে অনেকগুলো select করে **bulk delete** করতে পারেন।
 
-Admin-এর জন্য একটা নতুন page যেখানে marketplace product-এ upload করা সব image gallery আকারে দেখা যাবে এবং reuse করা যাবে।
+বর্তমানে শুধু storage source এর unused image delete বোতাম দেখা যায়, external URL বা used image মুছে ফেলার উপায় নেই।
 
-### নতুন page: `/admin/image-library`
+## কী যোগ হবে
 
-**Data sources (২টা একসাথে merge করব):**
-1. **Storage bucket scan** — `supabase.storage.from("product-images").list("marketplace", { limit: 1000, sortBy: { column: "created_at", order: "desc" } })` দিয়ে uploaded সব file আনব। প্রতিটার public URL generate করব।
-2. **DB usage scan** — `marketplace_products.image_url` এবং `marketplace_product_variants.image_url` query করে দেখব কোন image কোন product/variant-এ ব্যবহার হচ্ছে।
+### 1. প্রতিটি image-এ delete option (সব ক্ষেত্রে)
+- **Storage image**: Supabase storage থেকে file remove + DB তে যেসব product/variant এই URL ব্যবহার করছে তাদের `image_url = NULL` করে দেওয়া।
+- **External image**: শুধু DB তে যেসব row এই URL ব্যবহার করছে তাদের `image_url = NULL` করে clear করা (URL টা library থেকেও চলে যাবে)।
+- Used image delete করার সময় confirm dialog এ স্পষ্ট warning — "X টি product/variant এর ছবি মুছে যাবে"।
 
-দুইটা একসাথে join করে দেখাব: যেসব URL DB-তে আছে কিন্তু storage-এ নাই (manually paste করা external URL) সেগুলোও show করব "External" tag দিয়ে।
+### 2. Multi-select + Bulk delete
+- প্রতিটি card এর কোনায় checkbox।
+- "Select all (filtered)" বোতাম — current filter (যেমন "অব্যবহৃত" বা "External") অনুযায়ী সব select।
+- Top toolbar এ **"Delete selected (N)"** বোতাম — confirm করার পর সবগুলো একসাথে মুছবে।
+- Progress toast: "X/Y deleted…"।
 
-**UI:**
-- Responsive grid (mobile 2-col, sm 3, md 4, lg 6)
-- প্রতিটা card-এ:
-  - Image preview (square, object-cover)
-  - নিচে truncated URL (full URL hover/tap-এ tooltip)
-  - Usage count badge ("৩টি product")
-  - Copy URL button (clipboard) — toast confirmation
-  - Open-in-new-tab icon
-- Top bar:
-  - Search box (URL/filename match)
-  - Filter chips: "সব" / "ব্যবহৃত" / "অব্যবহৃত" / "External"
-  - Total count
-- Click → বড় preview dialog: full URL copyable + which products/variants ব্যবহার করছে তার list (clickable name, variant হলে label সহ)
+### 3. "Delete ALL unused" quick action
+- এক ক্লিকে সব unused storage image মুছে ফেলার shortcut (storage cleanup এর জন্য সবচেয়ে নিরাপদ option, তাই আলাদা button)।
 
-**Wiring:**
-- `src/pages/admin/ImageLibrary.tsx` (new) — page implementation
-- `src/lib/admin-perms.ts` — `"image_library"` perm যোগ + label
-- `src/components/admin/AdminSidebar.tsx` — sidebar entry (Images icon)
-- `src/lib/app-routes.tsx` — lazy import + route `/admin/image-library`
+## Technical details
 
-### কোনো DB migration লাগবে না
-শুধু read; storage bucket আগেই public।
+ফাইল: `src/pages/admin/ImageLibrary.tsx` (একমাত্র পরিবর্তন)।
 
-### Future hook (এই PR-এ না)
-পরে চাইলে variant editor / product image picker-এ "Choose from library" button দিয়ে এই gallery থেকে select করার flow add করা যাবে। এই PR শুধু view + copy URL দেবে।
+Delete logic:
+```ts
+async function deleteImages(items: ImageItem[]) {
+  const urls = items.map(i => i.url);
+  const storagePaths = items.filter(i => i.path).map(i => i.path!);
+
+  // 1. DB তে references clear (product + variant)
+  await supabase.from("marketplace_products")
+    .update({ image_url: null }).in("image_url", urls);
+  await supabase.from("marketplace_product_variants")
+    .update({ image_url: null }).in("image_url", urls);
+
+  // 2. Storage থেকে files remove (একবারে batch)
+  if (storagePaths.length) {
+    await supabase.storage.from(BUCKET).remove(storagePaths);
+  }
+}
+```
+
+UI changes:
+- নতুন `Set<string>` state — `selected` (URL দিয়ে track)।
+- Card এ top-left checkbox (existing "External" badge এর পাশে)।
+- Toolbar এ conditional bar: যখন `selected.size > 0` — "N selected | Clear | Delete selected"।
+- Existing single-image delete confirm dialog কে generic করে fix — items array নেবে।
+- Delete button সব image এ দেখানো হবে (storage + external উভয়)।
+
+Permissions / RLS:
+- Admin portal এ already `image_library` permission check আছে — extra change লাগবে না।
+- `marketplace_products` / `marketplace_product_variants` UPDATE policy admin দের জন্য already exist (Marketplace admin page থেকে edit হয়), তাই নতুন migration লাগবে না।
+- Storage bucket `product-images` এর delete policy admin role এর জন্য already enabled (বর্তমান single delete কাজ করছে)।
+
+## যা পরিবর্তন হবে না
+- কোনো DB migration নেই।
+- অন্য page অপরিবর্তিত।
+- Marketplace product/variant data delete হবে না — শুধু তাদের `image_url` field null হবে, যাতে product/variant অক্ষত থাকে কিন্তু broken image দেখা না যায়।
