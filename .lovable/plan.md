@@ -1,43 +1,46 @@
-## Quick Sell — Grid View (default) যোগ করব
 
-ফাইল: `src/pages/app/QuickOrder.tsx` (একমাত্র পরিবর্তন, কোনো DB migration নেই)।
+## কী কী করব
 
-### 1. View toggle (header এ)
-- দুটি icon button: **Grid | List** (rounded pill toggle)।
-- Default: **grid**।
-- User-এর choice `localStorage["quick-order-view"]` এ save।
+### ১. QuickOrder (দ্রুত বিক্রি) থেকে গ্রিড সরানো
+`src/pages/app/QuickOrder.tsx` — যে grid/list toggle, infinite scroll, `ProductGridCard`, view-mode state, `gridProducts` ইত্যাদি যোগ করা হয়েছিল সব সরিয়ে আগের list-only UI-তে ফিরিয়ে দেব। দ্রুত বিক্রির core কাজ (নাম লিখে add, কেনা/বেচা/লাভ, ফর্দ print, বিক্রিতে রূপান্তর) **অপরিবর্তিত থাকবে** — এগুলো আপনি ভালো বলেছেন।
 
-### 2. Grid view — paginated + infinite scroll
-- Search bar এর নিচে product grid render হবে (existing search dropdown grid mode-এ off)।
-- প্রথম load: শুধু **30টি** product (`range(0, 29)`, `order: name asc`)।
-- নিচে invisible sentinel `<div>` — `IntersectionObserver` দিয়ে viewport-এ এলে পরের 30টি fetch।
-- Search query থাকলে list reset হয়ে filtered query চলবে (debounced 250ms, server-side `or(name.ilike,sku.ilike,barcode.ilike)`)।
-- হাজার product হলেও কখনো একসাথে সব load হবে না।
+### ২. বিক্রয় + ক্রয় (Sell/Purchase) — গ্রিড ভিউ যোগ
+`src/components/app/POSPage.tsx` (এটাই `/app/sell` ও `/app/purchase` দু'টোতেই চলে)। যা যুক্ত হবে:
 
-### 3. Card design (uploaded reference + polish)
-- Responsive: `grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7`
-- Card: aspect-square image area (muted bg, `loading="lazy"`, `decoding="async"`, fallback `ImageOff` icon যদি `image_url` null হয়)
-- নিচে: bold price (৳), product name (line-clamp-2), unit + stock muted text
-- নিচ-ডানে floating round **primary "+"** button (gradient, hover scale-105) — click করলে cart এ add
-- Already-in-cart card-এ subtle primary ring + corner badge `×N` (qty দেখাবে)
+- **উপরে একটা view toggle** — Grid (default) ↔ List (পুরোনো)। `localStorage["pos-view"]`-এ মনে থাকবে।
+- **Grid mode-এ infinite scroll** — একসাথে ৩০টা product, scroll-এ আরও load হবে। হাজার product হলেও mobile slow হবে না।
+- **Compact gorgeous card** — image (lazy), নাম, দাম/একক, stock badge, floating "+" button। আগের mockup style।
+- **Server-side search (debounced 250ms)** — name/SKU/barcode।
+- **একই product আবার click → cart-এ qty+1** (নতুন row নয়), badge দেখাবে cart-এ কত আছে।
+- **Mobile/tablet** এ পুরোনো "পণ্য | কার্ট" tab UI-ই থাকবে; desktop-এ side-by-side।
 
-### 4. Smart cart behavior
-- একই product বার বার click করলে **নতুন row হবে না** — existing row এর qty++ হবে।
-- External (out-of-stock) item add list view এর search box থেকে আগের মতই কাজ করবে।
+### ৩. CustomerWishlist (গ্রাহক ফর্দ) — দোকানদারের জন্য "দ্রুত ফর্দ তৈরি"
+`src/pages/app/CustomerWishlist.tsx`-এ উপরে একটা নতুন button: **"নিজে ফর্দ তৈরি করুন"**। Click করলে একটা dialog খুলবে — পুরোটাই QuickOrder-এর মতো দ্রুত typing flow, কিন্তু এটা **wishlist হিসেবে save** হবে, সরাসরি বিক্রি নয়।
 
-### 5. Mobile-first performance
-- Image lazy-load — off-screen image browser নিজে skip করে
-- Card React.memo — cart update হলে পুরো grid re-render হবে না
-- Sticky search header (existing) — scroll করার সময় হারাবে না
-- 2-column minimum — ছোট ফোনেও fit হয়
-- "+" button minimum 36×36 px touch target
+Dialog-এ যা থাকবে:
+- গ্রাহকের নাম, ফোন, ঠিকানা (optional), নোট
+- **Product input row** — নাম লিখলে দোকানের product list থেকে suggest দেবে; না মিললে টাইপ-করা নামটাই use হবে (list-এ থাকা **বাধ্যতামূলক না**)
+- প্রতিটা row-এ: **নাম, পরিমাণ, একক, কেনা দাম, বেচা দাম, লাভ** — তিনটার যেকোনো দু'টো দিলে তৃতীয়টা auto (কেনা+লাভ=বেচা, বেচা−কেনা=লাভ)
+- নিচে total দেখাবে
+- দু'টা button:
+  - **"ফর্দ হিসেবে save"** → `customer_wishlists` + `customer_wishlist_items`-এ insert হবে, list-এ চলে আসবে
+  - **"ফর্দ print"** → একই print flow যেটা QuickOrder-এ আছে
 
-### 6. List view অপরিবর্তিত
-- বর্তমান search → typing → enter flow পুরোপুরি একই রকম থাকবে
-- শুধু toggle করে user যেকোনো সময় switch করতে পারবে
+এতে আপনি wishlist page থেকেই দ্রুত ফর্দ বানাতে পারবেন এবং সেটা history-তেও থাকবে।
 
-### Technical notes
-- নতুন state: `viewMode`, `gridProducts`, `gridPage`, `gridLoading`, `gridDone`, `sentinelRef`
-- নতুন memoized: `cartQtyMap` (productId → cart qty)
-- `addStoreProduct` modify — duplicate detect করে qty bump
-- DB-তে `products.image_url` already আছে — schema change লাগবে না
+## Database
+
+`customer_wishlist_items`-এ ইতিমধ্যে `name, qty, unit, price` আছে — যথেষ্ট। কেনা দাম + লাভ track করার জন্য দু'টা optional column যোগ করব:
+- `cost_price numeric null`
+- `profit numeric null` (computed: sale − cost; null হলে hide)
+
+Migration approval চাইব এই দু'টা column-এর জন্য (existing রেকর্ডে null থাকবে, কোনো কিছু ভাঙবে না)।
+
+## Tech notes
+
+- POSPage-এর product card-কে `React.memo` করব, IntersectionObserver `rootMargin: "400px"`, image `loading="lazy"` + skeleton fallback।
+- Search server-side `or(name.ilike, sku.ilike, barcode.ilike)` — ১০০০+ products হলেও fast।
+- Fordo dialog-এ row-add শুধু client state, save-এ এক shot insert।
+- QuickOrder revert-এর সময় `localStorage["quick-order-view"]` clean করব।
+
+Approve করলে শুরু করছি।
