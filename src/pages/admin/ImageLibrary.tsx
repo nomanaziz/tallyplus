@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Loader2, Copy, ExternalLink, Image as ImageIcon, RefreshCw, Search, Upload, Trash2 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Loader2, Copy, ExternalLink, Image as ImageIcon, RefreshCw, Search, Upload, Trash2, X, CheckSquare } from "lucide-react";
 import { toast } from "sonner";
 
 type ImageItem = {
@@ -28,6 +29,7 @@ export default function AdminImageLibraryPage() {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<"all" | "used" | "unused" | "external">("all");
   const [preview, setPreview] = useState<ImageItem | null>(null);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
 
   const load = async () => {
     setLoading(true);
@@ -100,7 +102,7 @@ export default function AdminImageLibraryPage() {
   useEffect(() => { void load(); }, []);
 
   const [uploading, setUploading] = useState(false);
-  const [confirmDel, setConfirmDel] = useState<ImageItem | null>(null);
+  const [confirmDel, setConfirmDel] = useState<ImageItem[] | null>(null);
   const [deleting, setDeleting] = useState(false);
 
   const uploadFiles = async (files: FileList | null) => {
@@ -125,15 +127,40 @@ export default function AdminImageLibraryPage() {
   };
 
   const doDelete = async () => {
-    if (!confirmDel || !confirmDel.path) return;
+    if (!confirmDel || confirmDel.length === 0) return;
     setDeleting(true);
-    const { error } = await supabase.storage.from(BUCKET).remove([confirmDel.path]);
-    setDeleting(false);
-    if (error) { toast.error(error.message); return; }
-    toast.success("Image deleted");
-    setConfirmDel(null);
-    setPreview(null);
-    await load();
+    try {
+      const urls = confirmDel.map((i) => i.url);
+      const storagePaths = confirmDel.filter((i) => i.path).map((i) => i.path!);
+
+      // 1. Clear DB references so used images don't show broken
+      const { error: pErr } = await supabase
+        .from("marketplace_products")
+        .update({ image_url: null })
+        .in("image_url", urls);
+      if (pErr) throw pErr;
+      const { error: vErr } = await supabase
+        .from("marketplace_product_variants")
+        .update({ image_url: null })
+        .in("image_url", urls);
+      if (vErr) throw vErr;
+
+      // 2. Remove from storage (batch)
+      if (storagePaths.length > 0) {
+        const { error: sErr } = await supabase.storage.from(BUCKET).remove(storagePaths);
+        if (sErr) throw sErr;
+      }
+
+      toast.success(`${confirmDel.length} টি image delete হয়েছে`);
+      setConfirmDel(null);
+      setPreview(null);
+      setSelected(new Set());
+      await load();
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setDeleting(false);
+    }
   };
 
   const filtered = useMemo(() => {
@@ -162,6 +189,19 @@ export default function AdminImageLibraryPage() {
     unused: items.filter((i) => i.usedBy.length === 0).length,
     external: items.filter((i) => i.source === "external").length,
   }), [items]);
+
+  const toggleSelect = (url: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(url)) next.delete(url); else next.add(url);
+      return next;
+    });
+  };
+  const selectAllFiltered = () => setSelected(new Set(filtered.map((i) => i.url)));
+  const clearSelection = () => setSelected(new Set());
+  const selectedItems = useMemo(() => items.filter((i) => selected.has(i.url)), [items, selected]);
+  const totalUsageInSelected = selectedItems.reduce((n, i) => n + i.usedBy.length, 0);
+  const unusedItems = useMemo(() => items.filter((i) => i.usedBy.length === 0 && i.source === "storage"), [items]);
 
   return (
     <div className="mx-auto w-full max-w-7xl space-y-4 p-3 sm:p-6">
@@ -214,6 +254,44 @@ export default function AdminImageLibraryPage() {
         </div>
       </div>
 
+      {/* Bulk action bar */}
+      <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border bg-muted/30 p-2">
+        <div className="flex flex-wrap items-center gap-2 text-sm">
+          {selected.size > 0 ? (
+            <>
+              <span className="font-semibold">{selected.size} selected</span>
+              <Button size="sm" variant="ghost" onClick={clearSelection}>
+                <X className="mr-1 h-3.5 w-3.5" /> Clear
+              </Button>
+            </>
+          ) : (
+            <span className="text-xs text-muted-foreground">Card-এ click করে select করুন, অথবা একসাথে delete করতে নিচের button ব্যবহার করুন</span>
+          )}
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Button size="sm" variant="outline" onClick={selectAllFiltered} disabled={filtered.length === 0}>
+            <CheckSquare className="mr-1 h-3.5 w-3.5" /> Select all ({filtered.length})
+          </Button>
+          <Button
+            size="sm"
+            variant="destructive"
+            disabled={selected.size === 0}
+            onClick={() => setConfirmDel(selectedItems)}
+          >
+            <Trash2 className="mr-1 h-3.5 w-3.5" /> Delete selected ({selected.size})
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={unusedItems.length === 0}
+            onClick={() => setConfirmDel(unusedItems)}
+            title="সব unused storage image মুছে ফেলুন"
+          >
+            <Trash2 className="mr-1 h-3.5 w-3.5" /> Delete all unused ({unusedItems.length})
+          </Button>
+        </div>
+      </div>
+
       <Card>
         <CardContent className="p-3 sm:p-4">
           {loading ? (
@@ -234,8 +312,17 @@ export default function AdminImageLibraryPage() {
                       className="relative block aspect-square w-full overflow-hidden bg-muted"
                     >
                       <img src={it.url} alt={it.name} loading="lazy" className="h-full w-full object-cover transition group-hover:scale-105" />
+                      <span
+                        role="button"
+                        tabIndex={0}
+                        onClick={(e) => { e.stopPropagation(); toggleSelect(it.url); }}
+                        onKeyDown={(e) => { if (e.key === " " || e.key === "Enter") { e.preventDefault(); e.stopPropagation(); toggleSelect(it.url); } }}
+                        className="absolute left-1 top-1 inline-flex items-center justify-center rounded bg-background/80 p-1 backdrop-blur"
+                      >
+                        <Checkbox checked={selected.has(it.url)} className="h-4 w-4" />
+                      </span>
                       {it.source === "external" && (
-                        <span className="absolute left-1 top-1 rounded bg-amber-500/90 px-1.5 py-0.5 text-[9px] font-bold uppercase text-white">External</span>
+                        <span className="absolute left-9 top-1 rounded bg-amber-500/90 px-1.5 py-0.5 text-[9px] font-bold uppercase text-white">External</span>
                       )}
                       {it.usedBy.length > 0 ? (
                         <span className="absolute right-1 top-1 rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-bold text-primary-foreground">{it.usedBy.length}</span>
@@ -256,17 +343,15 @@ export default function AdminImageLibraryPage() {
                       <a href={it.url} target="_blank" rel="noreferrer" className="inline-flex h-7 w-7 items-center justify-center rounded hover:bg-accent" title="Open">
                         <ExternalLink className="h-3.5 w-3.5" />
                       </a>
-                      {it.source === "storage" && (
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-7 w-7 text-destructive hover:text-destructive"
-                          onClick={() => setConfirmDel(it)}
-                          title="Delete"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
-                      )}
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-7 w-7 text-destructive hover:text-destructive"
+                        onClick={() => setConfirmDel([it])}
+                        title="Delete"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
                     </div>
                   </div>
                 ))}
@@ -289,11 +374,9 @@ export default function AdminImageLibraryPage() {
                 <div className="flex gap-2">
                   <Input readOnly value={preview.url} className="text-xs" onFocus={(e) => e.currentTarget.select()} />
                   <Button onClick={() => copy(preview.url)} size="sm"><Copy className="mr-1 h-3.5 w-3.5" />Copy</Button>
-                  {preview.source === "storage" && (
-                    <Button onClick={() => setConfirmDel(preview)} size="sm" variant="destructive">
-                      <Trash2 className="mr-1 h-3.5 w-3.5" />Delete
-                    </Button>
-                  )}
+                  <Button onClick={() => setConfirmDel([preview])} size="sm" variant="destructive">
+                    <Trash2 className="mr-1 h-3.5 w-3.5" />Delete
+                  </Button>
                 </div>
               </div>
               <div className="grid grid-cols-3 gap-2 text-xs">
@@ -324,15 +407,21 @@ export default function AdminImageLibraryPage() {
       <AlertDialog open={!!confirmDel} onOpenChange={(o) => !o && setConfirmDel(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete this image?</AlertDialogTitle>
+            <AlertDialogTitle>
+              {confirmDel && confirmDel.length > 1 ? `Delete ${confirmDel.length} images?` : "Delete this image?"}
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              {confirmDel?.usedBy.length ? (
-                <span className="text-destructive">
-                  সতর্কতা: এই image {confirmDel.usedBy.length} টি product/variant-এ ব্যবহৃত হচ্ছে। Delete করলে সেগুলোর ছবি ভেঙে যাবে।
-                </span>
-              ) : (
-                "এই image টি storage থেকে স্থায়ীভাবে মুছে যাবে।"
-              )}
+              {(() => {
+                const usage = (confirmDel ?? []).reduce((n, i) => n + i.usedBy.length, 0);
+                if (usage > 0) {
+                  return (
+                    <span className="text-destructive">
+                      সতর্কতা: নির্বাচিত image গুলো মোট {usage} টি product/variant-এ ব্যবহৃত হচ্ছে। Delete করলে তাদের ছবি field খালি হয়ে যাবে (product/variant data থাকবে)। Storage file স্থায়ীভাবে মুছে যাবে।
+                    </span>
+                  );
+                }
+                return "নির্বাচিত image স্থায়ীভাবে মুছে যাবে।";
+              })()}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
