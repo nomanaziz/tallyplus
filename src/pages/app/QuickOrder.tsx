@@ -1,6 +1,6 @@
 import { useNavigate } from "@/lib/router";
-import { useEffect, useMemo, useRef, useState, memo } from "react";
-import { Loader2, Plus, Printer, ReceiptText, Search, ShoppingCart, Trash2, X, Check, LayoutGrid, List as ListIcon, ImageOff } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Loader2, Plus, Printer, ReceiptText, Search, ShoppingCart, Trash2, X, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useShop } from "@/lib/shop";
 import { useI18n, type Lang } from "@/lib/i18n";
@@ -25,7 +25,6 @@ type StoreProduct = {
   stock: number;
   sku: string | null;
   barcode: string | null;
-  image_url?: string | null;
 };
 
 type Row = {
