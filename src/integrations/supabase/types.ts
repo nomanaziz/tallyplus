@@ -4980,6 +4980,10 @@ export type Database = {
       }
       expire_old_subscriptions: { Args: never; Returns: number }
       get_shared_fordo: { Args: { _token: string }; Returns: Json }
+      grant_post_transfer_trial: {
+        Args: { _shop_id: string; _user_id: string }
+        Returns: string
+      }
       grant_trial_subscription: { Args: { _user_id: string }; Returns: string }
       has_active_subscription: { Args: { _user_id: string }; Returns: boolean }
       has_admin_perm: {
