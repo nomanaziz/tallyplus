@@ -2795,6 +2795,93 @@ export type Database = {
           },
         ]
       }
+      push_campaigns: {
+        Row: {
+          body: string
+          created_at: string
+          failed_count: number
+          icon: string | null
+          id: string
+          sent_by: string | null
+          sent_count: number
+          target_count: number
+          target_segment: Json
+          title: string
+          url: string | null
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          failed_count?: number
+          icon?: string | null
+          id?: string
+          sent_by?: string | null
+          sent_count?: number
+          target_count?: number
+          target_segment?: Json
+          title: string
+          url?: string | null
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          failed_count?: number
+          icon?: string | null
+          id?: string
+          sent_by?: string | null
+          sent_count?: number
+          target_count?: number
+          target_segment?: Json
+          title?: string
+          url?: string | null
+        }
+        Relationships: []
+      }
+      push_subscriptions: {
+        Row: {
+          auth: string
+          created_at: string
+          device_type: string | null
+          display_mode: string | null
+          endpoint: string
+          id: string
+          language: string | null
+          last_seen_at: string
+          p256dh: string
+          revoked_at: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          auth: string
+          created_at?: string
+          device_type?: string | null
+          display_mode?: string | null
+          endpoint: string
+          id?: string
+          language?: string | null
+          last_seen_at?: string
+          p256dh: string
+          revoked_at?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          auth?: string
+          created_at?: string
+          device_type?: string | null
+          display_mode?: string | null
+          endpoint?: string
+          id?: string
+          language?: string | null
+          last_seen_at?: string
+          p256dh?: string
+          revoked_at?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       quotation_items: {
         Row: {
           created_at: string
@@ -5121,6 +5208,14 @@ export type Database = {
           provider: string
         }[]
       }
+      push_audience_count: {
+        Args: {
+          _device_type?: string
+          _display_mode?: string
+          _logged_in_only?: boolean
+        }
+        Returns: number
+      }
       register_active_device: {
         Args: { _device_id: string; _user_agent: string }
         Returns: Json
@@ -5172,6 +5267,18 @@ export type Database = {
       }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
+      upsert_push_subscription: {
+        Args: {
+          _auth: string
+          _device_type: string
+          _display_mode: string
+          _endpoint: string
+          _language: string
+          _p256dh: string
+          _user_agent: string
+        }
+        Returns: string
+      }
       user_active_plan_code: { Args: { _user_id: string }; Returns: string }
       user_active_shop_count: { Args: { _user_id: string }; Returns: number }
       user_phones: { Args: { _uid: string }; Returns: string[] }
