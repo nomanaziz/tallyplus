@@ -22,14 +22,10 @@ export function IncomingTransfersBanner() {
 
   const load = async () => {
     if (!user) return;
-    const { data } = await supabase
-      .from("shop_transfer_requests")
-      .select("id,shop_id,reason,charge_amount,shops!inner(name)")
-      .eq("to_user_id", user.id)
-      .eq("status", "pending_recipient");
-    type Row = { id: string; shop_id: string; reason: string | null; charge_amount: number; shops: { name: string } | null };
+    const { data } = await supabase.rpc("my_incoming_shop_transfers");
+    type Row = { id: string; shop_id: string; reason: string | null; charge_amount: number; shop_name: string | null };
     setReqs(((data as Row[] | null) ?? []).map((r) => ({
-      id: r.id, shop_id: r.shop_id, reason: r.reason, charge_amount: r.charge_amount, shop_name: r.shops?.name,
+      id: r.id, shop_id: r.shop_id, reason: r.reason, charge_amount: r.charge_amount, shop_name: r.shop_name ?? undefined,
     })));
   };
 

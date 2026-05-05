@@ -5007,6 +5007,17 @@ export type Database = {
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
       my_account: { Args: never; Returns: Json }
       my_account_resolve: { Args: never; Returns: Json }
+      my_incoming_shop_transfers: {
+        Args: never
+        Returns: {
+          charge_amount: number
+          created_at: string
+          id: string
+          reason: string
+          shop_id: string
+          shop_name: string
+        }[]
+      }
       my_phones: { Args: never; Returns: string[] }
       my_shop_perms: { Args: { _shop_id: string }; Returns: Json }
       notify_admins: {
