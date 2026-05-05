@@ -1,60 +1,51 @@
-## Admin "টাকা পাইতে গেলে" Telegram alerts — সব revenue/action events এ notify
+# Product Delete — Reference Guard
 
-### Goal
+## সমস্যা
+এখন `src/pages/app/Products.tsx`-এ delete করলে শুধু `products.deleted_at` set হয়। কোনো check নেই — তাই যে product আগে বিক্রি/ক্রয় হয়েছে সেটাও silently soft-delete হয়ে যায়, ফলে ledger/report-এ orphan reference ও confusion তৈরি হয়।
 
-Admin-এর income source হয় বা admin-এর verification ছাড়া এগোয় না — এমন প্রতিটা event-এ Telegram alert পাঠাব। ফর্দ/সাইনআপ-এর মত pure customer activity বাদ (admin involve না), শুধু admin-related order:
+User চান: stock-ই main। কোনো product delete করতে গেলে যদি ওই product আগে কোথাও sell/purchase/quotation/return/online-order হয়ে থাকে, তাহলে delete **block** হবে এবং user-কে বলা হবে — আগে ওই related records delete করুন, তারপর product delete করুন।
 
-| ঘটনা | কেন admin জানা দরকার | Trigger source |
-|---|---|---|
-| 💰 অনলাইন পেমেন্ট সফল | Admin-এর আয় ঢুকছে | `payment_transactions` (status `pending` → `completed`) |
-| ❌ অনলাইন পেমেন্ট ব্যর্থ | Follow-up call করতে হবে | `payment_transactions` insert/update with status `failed` |
-| 📥 Manual subscription request | Admin verify না করলে টাকা বুঝবে না | `subscription_requests` insert (status `pending`) |
-| 🏪 Shop transfer request | Admin charge verify করতে হবে | `shop_transfer_requests` insert |
-| 💳 Manual transfer payment proof | Admin verify দরকার | `shop_transfer_requests` update with `payment_proof_url` set |
-| 🛒 নতুন marketplace order | Admin commission/process | already exists |
+## যে tables-এ reference check করব
+- `sale_items` — বিক্রয়
+- `purchase_items` — ক্রয়
+- `sale_return_items` — return
+- `quotation_items` — quotation
+- `marketplace_order_items` — online shop order
+- `marketplace_listings` — online shop-এ listed কিনা
 
-(ফর্দ ও সাইনআপ trigger বাদ দেব না — already শব্দ আছে; কিন্তু default events list-এ income-related গুলো আলাদা key দেব যাতে subscriber বেছে নিতে পারে।)
+(`stock_movements` এবং `product_serials` parent record delete হলে এমনিই clear হবে — আলাদা block লাগবে না।)
 
-### ১. Migration — নতুন trigger function ও triggers
+## পরিবর্তন
 
-`dispatch_admin_telegram(_event_type, _title, _body, _link)` already আছে — reuse করব।
+### 1. `src/pages/app/Products.tsx`
+নতুন helper `checkProductReferences(productIds: string[])` যেটা উপরের ৬টা table-এ `select id, count` (head:true, count:'exact') চালিয়ে প্রতিটার count আনবে। মোট > 0 হলে reference details return করবে।
 
-নতুন trigger functions:
-- `trg_notify_payment_completed` — AFTER UPDATE on `payment_transactions` WHEN OLD.status IS DISTINCT FROM NEW.status AND NEW.status='completed'. Title: `💰 পেমেন্ট সফল ৳<amount>`. Body: provider, plan name, user phone। event_type: `payment_paid`.
-- `trg_notify_payment_failed` — AFTER INSERT OR UPDATE on `payment_transactions` WHEN NEW.status='failed' (and (TG_OP='INSERT' OR OLD.status<>'failed')). event_type: `payment_failed`. Body: amount, reason, user phone, provider.
-- `trg_notify_subscription_request` — AFTER INSERT on `subscription_requests`. event_type: `sub_request`. Title: `📥 Manual subscription request`. Body: user phone, plan name, txn_id, payment_method।
-- `trg_notify_transfer_request` — AFTER INSERT on `shop_transfer_requests`. event_type: `transfer_request`. Body: shop name, from→to phone, charge, method।
-- `trg_notify_transfer_proof_uploaded` — AFTER UPDATE on `shop_transfer_requests` WHEN OLD.payment_proof_url IS NULL AND NEW.payment_proof_url IS NOT NULL. event_type: `transfer_proof`.
+**Single delete (`onDelete`)**:
+- confirm-এর আগে `checkProductReferences([p.id])` কল।
+- যদি reference থাকে — confirm dialog না দেখিয়ে একটা **AlertDialog** দেখাবে যেখানে list থাকবে:
+  - "বিক্রয় (সেল): 3টি" → "বিক্রয় তালিকা" link `/app/sell`
+  - "ক্রয়: 1টি" → `/app/purchase`
+  - "Quotation: 2টি" → `/app/sell` (quotation tab)
+  - "বিক্রয় ফেরত: 1টি" → `/app/returns`
+  - "অনলাইন অর্ডার: 1টি" → `/app/online-shop`
+  - "অনলাইন listing আছে" → `/app/online-shop`
+- Message: "এই পণ্যটি delete করার আগে উপরের সব related entries আগে delete করতে হবে।"
+- কোনো reference না থাকলে আগের মতই soft-delete চালাবে।
 
-প্রতিটায় link বসাবে relevant admin page-এ:
-- `payment_paid`/`payment_failed` → `/admin/payment-attempts`
-- `sub_request` → `/admin/subscription-requests`
-- `transfer_request`/`transfer_proof` → `/admin/transfers`
+**Bulk delete (`confirmBulkDelete`)**:
+- type-"delete" confirm-এর আগে selected ids দিয়ে check।
+- যদি কোনো id-তে reference থাকে — যেগুলো clean সেগুলোর count দেখিয়ে option দেবে: "X টি product delete করা যাবে, Y টি product-এ reference আছে। শুধু clean গুলো delete করব?" → "হ্যাঁ" / "বাতিল"।
+- "হ্যাঁ" → শুধু clean ids soft-delete হবে; blocked ids-এর জন্য toast: "Y টি product reference থাকার কারণে skip হয়েছে।"
 
-### ২. UI — TelegramAlerts page
+### 2. UX detail
+- Reference check parallel `Promise.all` দিয়ে — fast।
+- Bulk-এর জন্য একটা single query: `select product_id from sale_items where product_id in (...)` ইত্যাদি, তারপর Set বানিয়ে blocked ids বের করব। Round-trips কম।
+- নতুন AlertDialog Bangla/English দুই language support করবে (existing `lang` pattern follow)।
 
-`src/pages/admin/TelegramAlerts.tsx`-এ EVENT_OPTIONS array-এ নতুন items যোগ:
+### 3. কোনো DB migration দরকার নেই
+সব check client-side query দিয়েই হবে। RLS already এই tables-এ shop-scoped, তাই count সঠিকই আসবে।
 
-```ts
-{ key: "all", label: "সব" },
-{ key: "payment_paid", label: "💰 পেমেন্ট সফল" },
-{ key: "payment_failed", label: "❌ পেমেন্ট ব্যর্থ" },
-{ key: "sub_request", label: "📥 Subscription request" },
-{ key: "transfer_request", label: "🏪 Shop transfer request" },
-{ key: "transfer_proof", label: "💳 Transfer proof uploaded" },
-{ key: "order", label: "🛒 নতুন অর্ডার" },
-{ key: "fordo", label: "নতুন ফর্দ" },
-{ key: "signup", label: "নতুন সাইনআপ" },
-```
-
-`telegram-notify` edge function-এর fan-out logic ইতিমধ্যে event_type filter করে — কোন change লাগবে না।
-
-### ৩. Files
-
-**Migration (নতুন):**
-- `supabase/migrations/<timestamp>_admin_revenue_telegram_alerts.sql` — উপরের ৫টা trigger function ও triggers।
-
-**Edit:**
-- `src/pages/admin/TelegramAlerts.tsx` — EVENT_OPTIONS list extend।
-
-কোনো edge function পরিবর্তন লাগবে না, কোনো নতুন secret লাগবে না (existing telegram_dispatch_settings reuse)। Approve করলে migration আগে run হবে।
+## Out of scope
+- Hard delete বা cascade delete করব না — soft-delete pattern অপরিবর্তিত।
+- Stock movement / serials-এর জন্য আলাদা UI message দেব না।
+- RecycleBin থেকে restore flow-এ পরিবর্তন নেই।

@@ -17,6 +17,16 @@ import { Switch } from "@/components/ui/switch";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from "@/components/ui/sheet";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { DataToolbar } from "@/components/app/DataToolbar";
 import { EmptyState } from "@/components/app/EmptyState";
@@ -121,6 +131,54 @@ function ProductsPage() {
   const [confirmText, setConfirmText] = useState("");
   const [bulkDeleting, setBulkDeleting] = useState(false);
 
+  // Reference-block dialog (shown when product(s) cannot be deleted)
+  type RefCounts = {
+    sales: number;
+    purchases: number;
+    quotations: number;
+    returns: number;
+    onlineOrders: number;
+    listings: number;
+  };
+  const [refBlock, setRefBlock] = useState<{
+    mode: "single" | "bulk";
+    productName?: string;
+    counts: RefCounts;
+    cleanIds?: string[];
+    blockedCount?: number;
+  } | null>(null);
+
+  const REF_TABLES: Array<{ key: keyof RefCounts; table: string }> = [
+    { key: "sales", table: "sale_items" },
+    { key: "purchases", table: "purchase_items" },
+    { key: "quotations", table: "quotation_items" },
+    { key: "returns", table: "sale_return_items" },
+    { key: "onlineOrders", table: "marketplace_order_items" },
+    { key: "listings", table: "marketplace_listings" },
+  ];
+
+  // Returns counts (total) and blocked product ids across all reference tables.
+  const checkProductReferences = async (productIds: string[]) => {
+    const counts: RefCounts = { sales: 0, purchases: 0, quotations: 0, returns: 0, onlineOrders: 0, listings: 0 };
+    const blocked = new Set<string>();
+    await Promise.all(
+      REF_TABLES.map(async ({ key, table }) => {
+        const { data, error } = await supabase
+          .from(table as never)
+          .select("product_id")
+          .in("product_id", productIds)
+          .limit(10000);
+        if (error || !data) return;
+        counts[key] = data.length;
+        for (const row of data as Array<{ product_id: string }>) {
+          if (row.product_id) blocked.add(row.product_id);
+        }
+      }),
+    );
+    const total = Object.values(counts).reduce((a, b) => a + b, 0);
+    return { counts, blocked, total };
+  };
+
   const load = async () => {
     await qc.invalidateQueries({ queryKey: ["products"] });
     await refetch();
@@ -221,6 +279,11 @@ function ProductsPage() {
   }, [history, historyPicked]);
 
   const onDelete = async (p: Product) => {
+    const { counts, total } = await checkProductReferences([p.id]);
+    if (total > 0) {
+      setRefBlock({ mode: "single", productName: p.name, counts });
+      return;
+    }
     if (!confirm(lang === "bn" ? "ডিলিট করবেন?" : "Delete this product?")) return;
     const { error } = await supabase.from("products").update({ deleted_at: new Date().toISOString() }).eq("id", p.id);
     if (error) { toast.error(error.message); return; }
@@ -256,6 +319,15 @@ function ProductsPage() {
     const ids = Array.from(selected);
     if (ids.length === 0) return;
     setBulkDeleting(true);
+    const { counts, blocked } = await checkProductReferences(ids);
+    const cleanIds = ids.filter((id) => !blocked.has(id));
+    if (blocked.size > 0) {
+      setBulkDeleting(false);
+      setConfirmOpen(false);
+      setConfirmText("");
+      setRefBlock({ mode: "bulk", counts, cleanIds, blockedCount: blocked.size });
+      return;
+    }
     const { error } = await supabase
       .from("products")
       .update({ deleted_at: new Date().toISOString() })
@@ -272,6 +344,34 @@ function ProductsPage() {
     );
     setConfirmOpen(false);
     setConfirmText("");
+    cancelSelect();
+    void load();
+  };
+
+  // Soft-delete only the clean ids from the bulk-block dialog.
+  const proceedDeleteCleanOnly = async () => {
+    if (!refBlock || refBlock.mode !== "bulk" || !refBlock.cleanIds) return;
+    const cleanIds = refBlock.cleanIds;
+    const blockedCount = refBlock.blockedCount ?? 0;
+    setRefBlock(null);
+    if (cleanIds.length === 0) {
+      toast.error(
+        lang === "bn"
+          ? "কোনো প্রোডাক্ট ডিলিট করা যায়নি — সব গুলোতে reference আছে।"
+          : "No products could be deleted — all have references.",
+      );
+      return;
+    }
+    const { error } = await supabase
+      .from("products")
+      .update({ deleted_at: new Date().toISOString() })
+      .in("id", cleanIds);
+    if (error) { toast.error(error.message); return; }
+    toast.success(
+      lang === "bn"
+        ? `${cleanIds.length}টি ডিলিট হয়েছে, ${blockedCount}টি skip হয়েছে (reference আছে)।`
+        : `${cleanIds.length} deleted, ${blockedCount} skipped (have references).`,
+    );
     cancelSelect();
     void load();
   };
@@ -1061,6 +1161,64 @@ function ProductsPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!refBlock} onOpenChange={(o) => { if (!o) setRefBlock(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {lang === "bn" ? "ডিলিট করা যাবে না" : "Cannot delete"}
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3">
+                <div>
+                  {refBlock?.mode === "single"
+                    ? (lang === "bn"
+                        ? <>প্রোডাক্ট <b>{refBlock?.productName}</b>-এর সাথে নিচের data যুক্ত আছে। আগে ওগুলো ডিলিট করুন, তারপর প্রোডাক্ট ডিলিট করতে পারবেন।</>
+                        : <>Product <b>{refBlock?.productName}</b> has the related data below. Delete those first, then you can delete the product.</>)
+                    : (lang === "bn"
+                        ? <>{bnNum(refBlock?.blockedCount ?? 0)}টি প্রোডাক্ট-এর সাথে reference যুক্ত আছে। ওগুলোর related data আগে ডিলিট করতে হবে।</>
+                        : <>{refBlock?.blockedCount ?? 0} product(s) have references. Delete the related data first.</>)}
+                </div>
+                <ul className="space-y-1 text-sm">
+                  {refBlock && refBlock.counts.sales > 0 && (
+                    <li>• <a className="underline text-primary" href="/app/sales-ledger">{lang === "bn" ? "বিক্রয়" : "Sales"}: {lang === "bn" ? bnNum(refBlock.counts.sales) : refBlock.counts.sales}</a></li>
+                  )}
+                  {refBlock && refBlock.counts.purchases > 0 && (
+                    <li>• <a className="underline text-primary" href="/app/purchase-ledger">{lang === "bn" ? "ক্রয়" : "Purchases"}: {lang === "bn" ? bnNum(refBlock.counts.purchases) : refBlock.counts.purchases}</a></li>
+                  )}
+                  {refBlock && refBlock.counts.quotations > 0 && (
+                    <li>• <a className="underline text-primary" href="/app/sell">{lang === "bn" ? "Quotation" : "Quotations"}: {lang === "bn" ? bnNum(refBlock.counts.quotations) : refBlock.counts.quotations}</a></li>
+                  )}
+                  {refBlock && refBlock.counts.returns > 0 && (
+                    <li>• <a className="underline text-primary" href="/app/returns">{lang === "bn" ? "বিক্রয় ফেরত" : "Sales returns"}: {lang === "bn" ? bnNum(refBlock.counts.returns) : refBlock.counts.returns}</a></li>
+                  )}
+                  {refBlock && refBlock.counts.onlineOrders > 0 && (
+                    <li>• <a className="underline text-primary" href="/app/online-shop">{lang === "bn" ? "অনলাইন অর্ডার" : "Online orders"}: {lang === "bn" ? bnNum(refBlock.counts.onlineOrders) : refBlock.counts.onlineOrders}</a></li>
+                  )}
+                  {refBlock && refBlock.counts.listings > 0 && (
+                    <li>• <a className="underline text-primary" href="/app/online-shop">{lang === "bn" ? "অনলাইন listing" : "Online listing"}: {lang === "bn" ? bnNum(refBlock.counts.listings) : refBlock.counts.listings}</a></li>
+                  )}
+                </ul>
+                {refBlock?.mode === "bulk" && (refBlock.cleanIds?.length ?? 0) > 0 && (
+                  <div className="rounded-md border bg-muted/40 p-2 text-sm">
+                    {lang === "bn"
+                      ? <>{bnNum(refBlock.cleanIds!.length)}টি প্রোডাক্ট-এ কোনো reference নেই — শুধু ওগুলো এখনই ডিলিট করতে পারেন।</>
+                      : <>{refBlock.cleanIds!.length} product(s) have no references — you can delete only those now.</>}
+                  </div>
+                )}
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{lang === "bn" ? "বাতিল" : "Cancel"}</AlertDialogCancel>
+            {refBlock?.mode === "bulk" && (refBlock.cleanIds?.length ?? 0) > 0 && (
+              <AlertDialogAction onClick={proceedDeleteCleanOnly}>
+                {lang === "bn" ? "শুধু clean গুলো ডিলিট করুন" : "Delete clean ones only"}
+              </AlertDialogAction>
+            )}
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
