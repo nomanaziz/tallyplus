@@ -1,55 +1,59 @@
-## দুইটা পরিবর্তন
+# Chaldal Product Import → Marketplace Catalog
 
-### 1) Marketplace Category / Subcategory fields — কাজ করানো (delete নয়)
+আপনি scraping function চান না — তাই আমি এক-বার ব্যাক-এন্ড স্ক্রিপ্ট চালিয়ে Chaldal-এর পুরো catalog আপনার `marketplace_categories` + `marketplace_products` টেবিলে ঢেলে দেব। Admin UI-তে শুধু একটা ছোট "Marketplace Catalog" view থাকবে যেখান থেকে আপনি import-এর ফলাফল দেখতে / edit / delete / re-run করতে পারবেন।
 
-**বর্তমান অবস্থা:** Admin → Marketplace Categories module-এ tree আছে, এবং admin → Marketplace (curated catalog) product edit dialog-এ dropdown আছে। কিন্তু **seller-এর নিজের product form-এ (`src/pages/app/Products.tsx` → `ProductFormDialog`) এই fields নেই** — তাই seller যে product online-এ publish করে, সেটা marketplace-এ category-wise filter হয় না। Customer browse page (`/shop`)-এ products tab-এ category filter-ও নাই (শুধু services tab-এ আছে)।
+## পরিকল্পনা
 
-**Plan:**
-- `ProductFormDialog`-এ "Online sell" toggle-এর কাছাকাছি দুইটা select যোগ করব:
-  - **Marketplace Category** (top-level `marketplace_categories` rows)
-  - **Subcategory** (selected category-র children)
-- `products` table-এ ইতিমধ্যে `category_id` ও `sub_category_id` columns আছে — শুধু marketplace tree-র id store করব। Save payload-এ এগুলো আছে already; শুধু UI বসাতে হবে।
-- `marketplace-publish` flow-এ এই দুইটা id `marketplace_listings`/listing payload-এ pass হবে যাতে browse page filter কাজ করে।
-- **Customer browse (`/shop` products tab):** sidebar-এ "ক্যাটাগরি" filter যোগ করব (services-এর মতো) যা `marketplace_categories` থেকে আসবে এবং `marketplace-public` list-products edge function-এ `category_id` filter pass করবে।
-- Edge function (`supabase/functions/marketplace-public/index.ts`)-এর product list query-তে `category_id` filter logic যোগ করব।
+### ১. Data source
+Chaldal একটা public JSON API expose করে (`/api/v1/...` — প্রতিটা category page-এ AJAX দিয়ে JSON দেয়), category tree সহ। আমি সেটাই ব্যবহার করব — HTML scrape না, তাই দ্রুত ও নির্ভরযোগ্য।
 
-### 2) Brand / Company name — seller-এর জন্য
+পাওয়া যাবে: name (EN+BN), image, category, sub-category, pack size, price, brand, description.
 
-**Plan:**
-- নতুন table `product_brands`:
-  ```
-  id uuid pk, name text, name_bn text null,
-  shop_id uuid null references shops(id) on delete cascade,
-  is_global boolean default false,
-  created_by uuid null, created_at timestamptz
-  unique(coalesce(shop_id::text,'global'), lower(name))
-  ```
-  - `shop_id NULL + is_global = true` → admin-defined default brand (সবার দেখা যাবে)
-  - `shop_id = X` → শুধু সেই shop-এর custom brand
-- RLS:
-  - SELECT: `is_global = true OR shop_id IN (user's shops)`
-  - INSERT: admin (global only) OR shop owner/staff (own shop only)
-  - DELETE/UPDATE: same as insert
-- `products` table-এ `brand text null` column যোগ করব (denormalized — name save হবে, id না, যাতে rename simple)।
-- **Admin module:** `src/pages/admin/MarketplaceCategories.tsx`-এর pattern-এ একটা নতুন page `src/pages/admin/Brands.tsx` — admin global brand list manage (add/edit/delete, search bar, bulk delete)। Sidebar-এ link।
-- **Seller product form:** Brand input-কে একটা **Combobox** বানাবো (existing `CategoryCombobox` pattern-এ): global + own-shop brands suggest করবে, সাথে free-type "+ যোগ করুন" option — typed value নতুন হলে auto-insert হবে `product_brands` (shop scope) এবং product-এ name save হবে।
-- Bilingual placeholder: "ব্র্যান্ড / কোম্পানি (optional)"।
+### ২. One-time import script (`scripts/import-chaldal.ts`)
+- Bun দিয়ে চলবে: `bun run scripts/import-chaldal.ts`
+- Service-role Supabase client ব্যবহার করবে (RLS bypass)
+- ধাপ:
+  1. Chaldal-এর সব top-level + sub-category fetch → `marketplace_categories` upsert (parent/child tree, slug, name_bn/name_en)
+  2. প্রতিটা sub-category-র সব product page করে JSON fetch → `marketplace_products` upsert (slug দিয়ে dedupe)
+  3. প্রতিটা product-এ `category_id` + `subcategory_id` link, image_url, brand, pack_size, default_price ভরবে
+  4. Progress log (কত category, কত product done)
+- Re-run safe: সব upsert (slug unique key)
 
-## Files
+### ৩. Admin Portal page: `/admin/marketplace-products`
+নতুন একটা page যাতে আপনি ফলাফল manage করতে পারেন:
+- Search + filter (category, brand)
+- List view (image, name, category, price, active toggle)
+- Edit dialog (name, price, image, category, active)
+- Bulk delete / activate / deactivate
+- "Re-run Chaldal import" button → একটা server function trigger করবে যা script-এর import logic চালাবে (background, progress toast)
+- AdminSidebar-এ "Marketplace Products" link (`Package` icon, `marketplace` permission)
 
-**Migration:**
-- `product_brands` table + RLS policies + unique index
-- `products.brand text null` column
+### ৪. Server function: `runChaldalImport`
+- `src/server/marketplace-import.functions.ts`
+- admin-only (role check)
+- Same logic as script, called from Admin UI button
+- Returns summary: `{ categoriesAdded, productsAdded, productsUpdated, errors }`
 
-**New:**
-- `src/pages/admin/Brands.tsx` (admin CRUD)
-- `src/components/app/BrandCombobox.tsx` (seller picker, suggest+create)
+### ৫. Files
 
-**Edit:**
-- `src/pages/app/Products.tsx` — `ProductFormDialog`-এ Brand field + Marketplace Category/Subcategory selects; save payload-এ brand
-- `src/pages/shop/Index.tsx` — products tab sidebar-এ category filter
-- `supabase/functions/marketplace-public/index.ts` — product list-এ `category_id` filter
-- `src/lib/marketplace-publish.ts` — category_id/subcategory_id propagate
-- `src/lib/app-routes.tsx` + `src/components/admin/AdminSidebar.tsx` — `/admin/brands` route + nav link
+```text
+NEW  scripts/import-chaldal.ts                          # CLI script
+NEW  src/server/marketplace-import.server.ts            # core fetch + upsert logic
+NEW  src/server/marketplace-import.functions.ts         # createServerFn wrapper (admin-only)
+NEW  src/pages/admin/MarketplaceProducts.tsx            # CRUD + import UI
+EDIT src/lib/admin-perms.ts                             # already has "marketplace"
+EDIT src/components/admin/AdminSidebar.tsx              # add link
+EDIT src/lib/app-routes.tsx                             # add route
+```
 
-কোন migration বা types regenerate user-approval দরকার — implementation-এ proceed করব।
+### ৬. কোনো DB schema change লাগবে না
+`marketplace_products` + `marketplace_categories` টেবিল আগেই আছে এবং সব দরকারি column (brand, image_url, pack_size, category_id, subcategory_id) ready।
+
+## সতর্কতা
+
+- Chaldal-এর rate-limit এড়াতে script-এ ছোট delay (200ms/request) থাকবে।
+- Image URL Chaldal-এর CDN-এর reference হিসেবে রাখব (re-host করব না — storage খরচ এড়াতে)। চাইলে পরে S3-এ copy করার option add করা যাবে।
+- আনুমানিক ~১৫,০০০ product → প্রথম import ~৩০-৪৫ মিনিট লাগতে পারে। Server function timeout এড়াতে UI button category-by-category batch trigger করবে; CLI script এক-শটে চালাতে পারবেন।
+- Legal: Chaldal-এর data আপনি নিজের platform-এ পুনঃপ্রকাশ করছেন — দায়িত্ব আপনার।
+
+Approve করলে আমি ১, ২, ৩, ৪ build করে ফেলব এবং প্রথম import test-run করে দেখাব।
