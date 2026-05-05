@@ -1,46 +1,101 @@
-# Three fixes
+## Goal
 
-## 1. Shop card — show transfer status
+Make the landing/home stats real, drop the fake app rating, and make the desktop (PC) install affordance discoverable.
 
-In `src/pages/app/Shops.tsx`, alongside loading shops, fetch any `shop_transfer_requests` rows for the current user's shops where `status` starts with `pending` (or recently `approved`/`rejected`). For each shop card show a coloured badge in the top-right when a request exists:
+---
 
-- `pending_payment` — amber "পেমেন্ট যাচাই বাকি / Awaiting payment review"
-- `pending_admin` — purple "Admin verification চলছে / Pending admin"
-- `pending_recipient` — blue "নতুন owner accept করেননি / Awaiting recipient"
-- `approved` (last 24h) — emerald "হস্তান্তর সম্পন্ন / Transferred"
-- `rejected_admin` / `rejected_recipient` — rose "প্রত্যাখ্যাত / Rejected"
+## 1) Dynamic landing stats (Hero + StatsStrip)
 
-Also disable the Transfer button (ArrowRightLeft) when a pending row already exists for that shop, with a tooltip "একটি request ইতিমধ্যে চলছে".
+Currently both `HeroSection.tsx` and `StatsAndCta.tsx → StatsStrip` render hard‑coded values:
+- `১০,০০,০০০+ ব্যবসায়ী` (fake)
+- `৪.৪★ অ্যাপ রেটিং` (fake — and there is no app store listing yet)
+- `২৪/৭ কাস্টমার সাপোর্ট`
 
-Query shape:
-```ts
-supabase.from("shop_transfer_requests")
-  .select("shop_id,status,created_at")
-  .in("shop_id", shops.map(s => s.id))
-  .order("created_at", { ascending: false });
-```
-Pick latest row per shop id client-side and map to badge.
+**Real numbers available in DB:**
+- `profiles` → owners/employees count
+- `shops` → registered shops
+- `consumer_profiles` → personal/customer users
+- `auth.users` → total users
 
-## 2. Subscribe page — keep both payment modes (no change)
+Counts on those tables aren't readable to anonymous visitors via RLS, so we add a tiny public edge function.
 
-Confirm `src/pages/app/Subscribe.tsx` already shows the "Choose how to pay" step with both Online (auto) and Manual cards. No code change required; verify the gateway-disabled fallback still allows manual.
+### New edge function: `supabase/functions/public-stats/index.ts`
+- No auth required (verify_jwt = false in `supabase/config.toml`).
+- Uses service‑role key server‑side to run:
+  - `select count(*) from shops`
+  - `select count(*) from profiles`
+  - `select count(*) from consumer_profiles`
+  - `select count(*) from auth.users` (via admin API)
+- Returns `{ shops, owners, customers, totalUsers }`, cached `Cache-Control: public, max-age=300`.
 
-## 3. Customer page split: Subscription / Money history / Report history
+### New hook: `src/lib/use-public-stats.ts`
+- `useQuery(["public-stats"], …)` → calls the edge function with 5‑minute `staleTime`.
+- Returns `{ shops, owners, customers, totalUsers, isLoading }`.
 
-Currently `src/pages/customer/Money.tsx` mixes income–expense entries, the locked-history subscription gate, and the plan-purchase dialog into one screen. Split into three dedicated routes so subscription stands alone:
+### Update `src/components/site/HeroSection.tsx`
+Replace the two‑tile strip with three real tiles:
+1. **মোট ব্যবহারকারী / Total users** → `totalUsers`
+2. **নিবন্ধিত দোকান / Shops registered** → `shops`
+3. **গ্রাহক / Customers** → `customers`
 
-a) **`/customer/money`** — keep only the current month income/expense entry + add buttons + summary tiles + loans tab. Remove the "Subscription দেখুন" CTA inline; instead show a small banner "পুরোনো মাসের বিস্তারিত দেখতে → Subscription নিন" linking to `/customer/subscription`.
+Numbers formatted with `bnNum` in BN. While loading, show a small skeleton (`—`).
 
-b) **`/customer/history`** (new file `src/pages/customer/History.tsx`) — the month navigator + locked/unlocked detail list (income–expense history) + report-style monthly totals. Move `canAccessMonthDetail` gating here. If locked, show CTA → `/customer/subscription`.
+### Update `src/components/site/StatsAndCta.tsx → StatsStrip`
+Same three real items (replaces the current 3 hard‑coded ones). Drop `App Rating`. Keep the `24/7 Customer Support` line moved to a sub‑caption under the strip if desired, OR replace with **"নিবন্ধিত দোকান"**. Final 3 tiles:
+1. মোট ব্যবহারকারী
+2. নিবন্ধিত দোকান
+3. গ্রাহক / সক্রিয় কাস্টমার
 
-c) **`/customer/subscription`** (new file `src/pages/customer/Subscription.tsx`) — list `consumer_history_*` plans, current active subscription card, request-plan flow (the existing `requestPlan` insert into `subscription_requests`). This is the *only* place plans are shown.
+(If counts are still small, still show real numbers — no inflation.)
 
-Wire-up:
-- Register the two new routes in `src/lib/app-routes.tsx` (or wherever customer routes live — confirm in `app-routes.tsx`).
-- Add nav entries in `src/pages/customer/CustomerLayout.tsx`:
-  - Desktop `NAV`: insert "ইতিহাস" (History icon) and "সাবস্ক্রিপশন" (Crown icon) after "আয়-ব্যয়".
-  - Mobile `MOBILE_NAV`: keep 5 — replace "প্রোফাইল" only if needed; otherwise leave mobile unchanged and rely on profile menu link.
-- Move `Plan` type, `loadPlans`, `loadSub`, `requestPlan`, `showPlans` dialog out of `Money.tsx` into `Subscription.tsx`.
-- `History.tsx` imports `loadSub` to know gating; or call a shared helper in `src/lib/consumer-history-access.ts`.
+### i18n
+Add keys in `src/lib/i18n.tsx`: `statTotalUsers`, `statShops`, `statCustomers` (BN/EN).
 
-No schema changes needed for any of the three items.
+---
+
+## 2) PC install button visible everywhere
+
+Today `InstallAppButton` is only mounted in `AppTopbar` (logged‑in app). On the public landing/home there is nothing, and even inside the app the button silently hides when `canInstall=false` (Chrome desktop often delays `beforeinstallprompt` or never fires it inside the Lovable preview iframe — that's why you don't see it).
+
+### Changes
+**a. `src/hooks/use-pwa-install.ts`**
+- Add `isDesktop` detection (no touch + wide viewport + not iOS).
+- Keep `canInstall` flag unchanged.
+
+**b. `src/components/app/InstallAppPrompt.tsx → InstallAppButton`**
+- Remove the early‑return `if (!canInstall && !isIos) return null`.
+- Always render the button when not `installed`.
+- Click behavior:
+  - If `canInstall` → call `promptInstall()` (native prompt).
+  - Else if `isIos` → existing iOS dialog.
+  - Else (desktop with no BIP yet) → open a new **"Install on desktop"** dialog with browser‑specific instructions:
+    - Chrome / Edge: address bar → install icon (⊕) → Install.
+    - Brave / Opera: same install icon.
+    - Firefox: explain limited support, suggest Chrome/Edge, or "Add to Home Screen" via a PWA add‑on.
+- Label remains "অ্যাপ ইনস্টল / Install app", `Download` icon.
+
+**c. `src/components/site/SiteHeader.tsx`**
+- Mount `<InstallAppButton />` next to the language/theme toggles so it shows on the public landing & marketing pages too. Hidden automatically once `installed=true`.
+
+**d. `src/components/app/InstallAppPrompt.tsx → InstallAppPrompt` (auto popup)**
+- Allow it to also surface on desktop after `SHOW_DELAY_MS` if not installed (today it's gated to `canInstall || isIos`). On desktop without BIP, clicking opens the new instructions dialog instead of the native prompt.
+
+### Notes
+- Inside the Lovable editor preview iframe `beforeinstallprompt` will not fire — install will only become a true one‑click on the published `tallyplus.lovable.app` site or any standalone tab. The instructions dialog covers that gap so users on PC always see *some* path to install.
+
+---
+
+## Files touched
+
+Created:
+- `supabase/functions/public-stats/index.ts`
+- `src/lib/use-public-stats.ts`
+
+Edited:
+- `supabase/config.toml` (register `public-stats`, `verify_jwt = false`)
+- `src/components/site/HeroSection.tsx`
+- `src/components/site/StatsAndCta.tsx`
+- `src/lib/i18n.tsx`
+- `src/hooks/use-pwa-install.ts`
+- `src/components/app/InstallAppPrompt.tsx`
+- `src/components/site/SiteHeader.tsx`
