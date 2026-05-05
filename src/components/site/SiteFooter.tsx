@@ -50,9 +50,9 @@ export function SiteFooter() {
           )}
         </div>
         <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
-          <a href="/#features" className="hover:text-foreground">{t("features")}</a>
-          <a href="/#pricing" className="hover:text-foreground">{t("pricing")}</a>
-          <a href="/#contact" className="hover:text-foreground">{t("contact")}</a>
+          <Link to="/about" hash="features" className="hover:text-foreground">{t("features")}</Link>
+          <Link to="/about" hash="pricing" className="hover:text-foreground">{t("pricing")}</Link>
+          <Link to="/about" hash="contact" className="hover:text-foreground">{t("contact")}</Link>
           <Link to="/privacy" className="hover:text-foreground">
             {lang === "bn" ? "প্রাইভেসি পলিসি" : "Privacy Policy"}
           </Link>
