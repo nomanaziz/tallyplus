@@ -18,7 +18,7 @@ import {
 import { icons } from "@/lib/icons";
 import { InstallAppCard } from "@/components/app/InstallAppCard";
 
-type Tx = { id: string; type: string; amount: number; tx_date: string };
+type Tx = { id: string; type: string; amount: number; tx_date: string; kind?: string | null; transfer_group_id?: string | null };
 type LoanSummary = { type: "lent" | "borrowed"; amount: number; paid_amount: number };
 
 function bdt(n: number) {
@@ -52,7 +52,7 @@ export default function CustomerDashboard() {
     const [tx, fordoRes, notes, loans, favShops, phonesRes, services, cashSummary] = await Promise.all([
       supabase
         .from("consumer_transactions")
-        .select("type, amount")
+        .select("type, amount, kind, transfer_group_id")
         .eq("user_id", user.id)
         .gte("tx_date", since),
       supabase.functions.invoke("consumer-fordo-history", { body: {} }),
@@ -80,6 +80,8 @@ export default function CustomerDashboard() {
     let inc = 0;
     let exp = 0;
     for (const r of rows) {
+      if (r.transfer_group_id) continue;
+      if (r.kind && r.kind !== "regular") continue;
       if (r.type === "income") inc += Number(r.amount);
       else exp += Number(r.amount);
     }

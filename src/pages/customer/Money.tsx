@@ -32,6 +32,7 @@ type Tx = {
   account_id?: string | null;
   subcategory_id?: string | null;
   transfer_group_id?: string | null;
+  kind?: string | null;
 };
 
 function bdt(n: number) {
@@ -99,6 +100,7 @@ export default function CustomerMoney() {
     let inc = 0, exp = 0;
     for (const r of monthRows) {
       if (r.transfer_group_id) continue; // exclude transfers from income/expense totals
+      if (r.kind && r.kind !== "regular") continue; // exclude loan movements
       if (r.type === "income") inc += Number(r.amount);
       else exp += Number(r.amount);
     }

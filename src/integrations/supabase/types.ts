@@ -1215,6 +1215,7 @@ export type Database = {
       }
       consumer_loan_payments: {
         Row: {
+          account_id: string | null
           amount: number
           created_at: string
           id: string
@@ -1225,6 +1226,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          account_id?: string | null
           amount: number
           created_at?: string
           id?: string
@@ -1235,6 +1237,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          account_id?: string | null
           amount?: number
           created_at?: string
           id?: string
@@ -1246,6 +1249,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "consumer_loan_payments_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "consumer_accounts"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "consumer_loan_payments_loan_id_fkey"
             columns: ["loan_id"]
             isOneToOne: false
@@ -1256,6 +1266,7 @@ export type Database = {
       }
       consumer_loans: {
         Row: {
+          account_id: string | null
           amount: number
           created_at: string
           due_date: string | null
@@ -1272,6 +1283,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          account_id?: string | null
           amount: number
           created_at?: string
           due_date?: string | null
@@ -1288,6 +1300,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          account_id?: string | null
           amount?: number
           created_at?: string
           due_date?: string | null
@@ -1303,7 +1316,15 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "consumer_loans_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "consumer_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       consumer_notes: {
         Row: {
@@ -1489,10 +1510,12 @@ export type Database = {
           category: string | null
           created_at: string
           id: string
+          kind: string
           note: string | null
           recurring_rule_id: string | null
           source_loan_event: string | null
           source_loan_id: string | null
+          source_loan_payment_id: string | null
           source_wishlist_id: string | null
           subcategory_id: string | null
           transfer_group_id: string | null
@@ -1507,10 +1530,12 @@ export type Database = {
           category?: string | null
           created_at?: string
           id?: string
+          kind?: string
           note?: string | null
           recurring_rule_id?: string | null
           source_loan_event?: string | null
           source_loan_id?: string | null
+          source_loan_payment_id?: string | null
           source_wishlist_id?: string | null
           subcategory_id?: string | null
           transfer_group_id?: string | null
@@ -1525,10 +1550,12 @@ export type Database = {
           category?: string | null
           created_at?: string
           id?: string
+          kind?: string
           note?: string | null
           recurring_rule_id?: string | null
           source_loan_event?: string | null
           source_loan_id?: string | null
+          source_loan_payment_id?: string | null
           source_wishlist_id?: string | null
           subcategory_id?: string | null
           transfer_group_id?: string | null
@@ -1550,6 +1577,13 @@ export type Database = {
             columns: ["recurring_rule_id"]
             isOneToOne: false
             referencedRelation: "consumer_recurring_rules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "consumer_transactions_source_loan_payment_id_fkey"
+            columns: ["source_loan_payment_id"]
+            isOneToOne: false
+            referencedRelation: "consumer_loan_payments"
             referencedColumns: ["id"]
           },
           {

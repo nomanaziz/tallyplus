@@ -34,6 +34,8 @@ type Payment = {
   created_at: string;
 };
 
+type Account = { id: string; name: string; kind: string };
+
 function bdt(n: number) {
   return new Intl.NumberFormat("bn-BD", { maximumFractionDigits: 0 }).format(n) + " ৳";
 }
@@ -52,6 +54,9 @@ export default function LoansTab() {
   const [note, setNote] = useState("");
   const [filter, setFilter] = useState<"all" | "unsettled" | "settled">("unsettled");
   const [saving, setSaving] = useState(false);
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [accountId, setAccountId] = useState<string>("");
+  const [payAccountId, setPayAccountId] = useState<string>("");
 
   // Partial repay sheet
   const [payOpen, setPayOpen] = useState(false);
@@ -78,6 +83,24 @@ export default function LoansTab() {
   };
 
   useEffect(() => { void load(); }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+    void (async () => {
+      const { data } = await supabase
+        .from("consumer_accounts")
+        .select("id,name,kind")
+        .eq("user_id", user.id)
+        .eq("is_archived", false)
+        .order("name");
+      const list = (data ?? []) as Account[];
+      setAccounts(list);
+      if (list[0]) {
+        setAccountId((cur) => cur || list[0].id);
+        setPayAccountId((cur) => cur || list[0].id);
+      }
+    })();
+  }, [user]);
 
   const summary = useMemo(() => {
     let willGet = 0;
@@ -120,6 +143,7 @@ export default function LoansTab() {
         loan_date: date,
         due_date: dueDate || null,
         note: note.trim() || null,
+        account_id: accountId || null,
       },
     });
     setSaving(false);
@@ -137,6 +161,7 @@ export default function LoansTab() {
     setPayVia("cash");
     setPayDate(new Date().toISOString().slice(0, 10));
     setPayNote("");
+    if (!payAccountId && accounts[0]) setPayAccountId(accounts[0].id);
     setPayOpen(true);
     // Load history for this loan
     const { data } = await supabase
@@ -164,6 +189,7 @@ export default function LoansTab() {
         paid_via: payVia,
         paid_date: payDate,
         note: payNote.trim() || null,
+        account_id: payAccountId || null,
       },
     });
     setPaySaving(false);
@@ -315,6 +341,20 @@ export default function LoansTab() {
               onChange={(e) => setAmount(e.target.value.replace(/[^0-9.]/g, ""))}
               className="h-12 text-lg"
             />
+            <div>
+              <div className="mb-1 text-xs text-muted-foreground">
+                {type === "lent" ? "কোন account থেকে দিচ্ছেন" : "কোন account-এ আসবে"}
+              </div>
+              <Select value={accountId} onValueChange={setAccountId}>
+                <SelectTrigger><SelectValue placeholder="Account নির্বাচন" /></SelectTrigger>
+                <SelectContent>
+                  {accounts.map((a) => (
+                    <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="mt-1 text-[10px] text-muted-foreground">এই account-এ স্বয়ংক্রিয়ভাবে balance update হবে — আয়/ব্যয়ে যোগ হবে না</p>
+            </div>
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <div className="mb-1 text-xs text-muted-foreground">তারিখ</div>
@@ -379,6 +419,19 @@ export default function LoansTab() {
                   <SelectItem value="bank">Bank</SelectItem>
                 </SelectContent>
               </Select>
+              <div>
+                <div className="mb-1 text-xs text-muted-foreground">
+                  {payLoan.type === "lent" ? "কোন account-এ ফেরত পেলেন" : "কোন account থেকে দিচ্ছেন"}
+                </div>
+                <Select value={payAccountId} onValueChange={setPayAccountId}>
+                  <SelectTrigger><SelectValue placeholder="Account" /></SelectTrigger>
+                  <SelectContent>
+                    {accounts.map((a) => (
+                      <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
               <Input type="date" value={payDate} onChange={(e) => setPayDate(e.target.value)} />
               <Input placeholder="নোট (ইচ্ছাধীন)" value={payNote} onChange={(e) => setPayNote(e.target.value)} />
               <Button

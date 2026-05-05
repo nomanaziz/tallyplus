@@ -22,6 +22,8 @@ type Tx = {
   category: string | null;
   note: string | null;
   tx_date: string;
+  kind?: string | null;
+  transfer_group_id?: string | null;
 };
 
 function bdt(n: number) {
@@ -80,6 +82,8 @@ export default function CustomerHistory() {
   const summary = useMemo(() => {
     let inc = 0, exp = 0;
     for (const r of monthRows) {
+      if (r.transfer_group_id) continue;
+      if (r.kind && r.kind !== "regular") continue;
       if (r.type === "income") inc += Number(r.amount);
       else exp += Number(r.amount);
     }
