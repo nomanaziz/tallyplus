@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { TrendingUp, Wallet, GraduationCap, Share2, UserPlus, Coins } from "lucide-react";
+import { BrandWordmark } from "@/components/brand/BrandWordmark";
 
 type Tier = { id: string; name: string; min_sales: number; commission_pct: number; bonus_pct: number; sort_order: number };
 
@@ -26,7 +27,7 @@ function AffiliateLanding() {
       {/* Header */}
       <header className="sticky top-0 z-30 border-b bg-background/85 backdrop-blur">
         <div className="container mx-auto flex h-14 items-center justify-between px-4">
-          <Link to="/" className="text-base font-extrabold">Tally Plus <span className="text-primary">Growth Partner</span></Link>
+          <Link to="/" className="text-base font-extrabold inline-flex items-center gap-1"><BrandWordmark /> <span className="text-primary">Growth Partner</span></Link>
           <div className="flex items-center gap-2">
             <Link to="/affiliate/register" className="text-sm font-semibold text-primary hover:underline">রেজিস্ট্রেশন</Link>
             <Link to="/"><Button size="sm" variant="outline">লগইন</Button></Link>
