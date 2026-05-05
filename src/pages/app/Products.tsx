@@ -1415,6 +1415,58 @@ function ProductFormDialog({
             <Input value={sku} onChange={(e) => setSku(e.target.value)} placeholder="Optional" />
           </div>
 
+          <div className="grid gap-1.5">
+            <Label>{lang === "bn" ? "ব্র্যান্ড / কোম্পানি" : "Brand / Company"}</Label>
+            <BrandCombobox
+              value={brand}
+              shopId={shopId}
+              onChange={setBrand}
+              placeholder={lang === "bn" ? "ব্র্যান্ড / কোম্পানি (optional)" : "Brand / Company (optional)"}
+            />
+          </div>
+
+          {/* Marketplace Category (platform-wide, used for online filter) */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="grid gap-1.5">
+              <Label>{lang === "bn" ? "মার্কেটপ্লেস ক্যাটাগরি" : "Marketplace Category"}</Label>
+              <Select
+                value={mpCategoryId ?? "__none"}
+                onValueChange={(v) => {
+                  setMpCategoryId(v === "__none" ? null : v);
+                  setMpSubcategoryId(null);
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={lang === "bn" ? "বাছাই করুন" : "Select"} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none">— None —</SelectItem>
+                  {mpCats.filter((c) => !c.parent_id).map((c) => (
+                    <SelectItem key={c.id} value={c.id}>{c.name_bn} / {c.name_en}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-1.5">
+              <Label>{lang === "bn" ? "সাবক্যাটাগরি" : "Subcategory"}</Label>
+              <Select
+                value={mpSubcategoryId ?? "__none"}
+                onValueChange={(v) => setMpSubcategoryId(v === "__none" ? null : v)}
+                disabled={!mpCategoryId}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={mpCategoryId ? (lang === "bn" ? "বাছাই" : "Select") : (lang === "bn" ? "আগে ক্যাটাগরি" : "Pick category first")} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none">— None —</SelectItem>
+                  {mpCats.filter((c) => c.parent_id === mpCategoryId).map((c) => (
+                    <SelectItem key={c.id} value={c.id}>{c.name_bn} / {c.name_en}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
           {/* Category & Sub-Category */}
           <div className="grid grid-cols-2 gap-3">
             <div className="grid gap-1.5">
