@@ -1,11 +1,13 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Loader2, Check, X } from "lucide-react";
 import { toast } from "sonner";
+import { AdminSearchBar, matches } from "@/components/admin/AdminSearchBar";
 
 
 
@@ -25,6 +27,8 @@ function RequestsPage() {
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [notes, setNotes] = useState<Record<string, string>>({});
+  const [search, setSearch] = useState("");
+  const [selected, setSelected] = useState<Set<string>>(new Set());
 
   const load = async () => {
     setLoading(true);
@@ -53,6 +57,26 @@ function RequestsPage() {
   useEffect(() => {
     void load();
   }, []);
+
+  const filtered = useMemo(
+    () =>
+      items.filter((r) =>
+        matches(search, r.profile?.full_name, r.profile?.phone, r.txn_id, r.payment_method, r.plan?.name_bn),
+      ),
+    [items, search],
+  );
+
+  const toggle = (id: string) => {
+    setSelected((s) => {
+      const n = new Set(s);
+      n.has(id) ? n.delete(id) : n.add(id);
+      return n;
+    });
+  };
+  const toggleAll = () => {
+    if (selected.size === filtered.length) setSelected(new Set());
+    else setSelected(new Set(filtered.map((r) => r.id)));
+  };
 
   const approve = async (r: any) => {
     const planDays = r.plan?.duration_days ?? 30;
@@ -84,26 +108,66 @@ function RequestsPage() {
     void load();
   };
 
+  const bulk = async (action: "approve" | "reject") => {
+    const targets = filtered.filter((r) => selected.has(r.id));
+    if (!targets.length) return;
+    const fn = action === "approve" ? approve : reject;
+    let ok = 0, fail = 0;
+    for (const r of targets) {
+      try { await fn(r); ok++; } catch { fail++; }
+    }
+    setSelected(new Set());
+    toast.success(`${ok} ${action}d${fail ? `, ${fail} failed` : ""}`);
+  };
+
   return (
     <div className="mx-auto max-w-4xl space-y-4 p-3 sm:space-y-6 sm:p-6">
       <div>
         <h1 className="text-2xl font-bold">Subscription Requests</h1>
         <p className="text-sm text-muted-foreground">Pending payment proof approval</p>
       </div>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <AdminSearchBar
+          value={search}
+          onChange={setSearch}
+          count={filtered.length}
+          placeholder="Phone, txn ID, plan দিয়ে খুঁজুন"
+        />
+        {selected.size > 0 && (
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">{selected.size} selected</span>
+            <Button size="sm" onClick={() => bulk("approve")}>
+              <Check className="mr-1 h-4 w-4" /> Approve selected
+            </Button>
+            <Button size="sm" variant="destructive" onClick={() => bulk("reject")}>
+              <X className="mr-1 h-4 w-4" /> Reject selected
+            </Button>
+          </div>
+        )}
+      </div>
+      {filtered.length > 0 && (
+        <label className="flex items-center gap-2 text-xs text-muted-foreground">
+          <Checkbox checked={selected.size === filtered.length && filtered.length > 0} onCheckedChange={toggleAll} />
+          Select all ({filtered.length})
+        </label>
+      )}
       {loading ? (
         <div className="flex justify-center p-12">
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
         </div>
-      ) : items.length === 0 ? (
-        <Card><CardContent className="p-8 text-center text-muted-foreground">কোন pending request নেই</CardContent></Card>
+      ) : filtered.length === 0 ? (
+        <Card><CardContent className="p-8 text-center text-muted-foreground">{search ? "কোনো ফলাফল নেই" : "কোন pending request নেই"}</CardContent></Card>
       ) : (
-        items.map((r) => (
+        filtered.map((r) => (
           <Card key={r.id}>
             <CardContent className="p-5 space-y-3">
-              <div className="flex items-start justify-between">
-                <div>
-                  <div className="font-semibold">{r.profile?.full_name ?? "Unknown"}</div>
-                  <div className="text-xs text-muted-foreground">{r.profile?.phone}</div>
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex items-start gap-3">
+                  <Checkbox checked={selected.has(r.id)} onCheckedChange={() => toggle(r.id)} className="mt-1" />
+                  <div>
+                    <div className="font-semibold">{r.profile?.full_name ?? "Unknown"}</div>
+                    <div className="text-xs text-muted-foreground">{r.profile?.phone}</div>
+                  </div>
                 </div>
                 <Badge>{r.payment_method}</Badge>
               </div>
