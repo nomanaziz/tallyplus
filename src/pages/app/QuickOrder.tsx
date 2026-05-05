@@ -399,15 +399,13 @@ function QuickOrderInner() {
               setQuery(e.target.value);
               setShowDrop(true);
             }}
-            onFocus={() => { if (viewMode === "list") setShowDrop(true); }}
+            onFocus={() => setShowDrop(true)}
             onBlur={() => setTimeout(() => setShowDrop(false), 150)}
             onKeyDown={onKeyDown}
-            placeholder={viewMode === "grid"
-              ? (lang === "bn" ? "পণ্য খুঁজুন..." : "Search products...")
-              : (lang === "bn" ? "পণ্য টাইপ করুন... (Enter চাপুন)" : "Type product... (press Enter)")}
+            placeholder={lang === "bn" ? "পণ্য টাইপ করুন... (Enter চাপুন)" : "Type product... (press Enter)"}
             className="h-11 pl-9 text-base"
           />
-          {viewMode === "list" && showDrop && query.trim() && (
+          {showDrop && query.trim() && (
             <div className="absolute left-0 right-0 top-full z-30 mt-1 max-h-72 overflow-auto rounded-xl border bg-popover shadow-lg">
               {searching ? (
                 <div className="flex items-center gap-2 px-3 py-2 text-xs text-muted-foreground">
@@ -462,48 +460,9 @@ function QuickOrderInner() {
           )}
         </div>
         <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
-          {viewMode === "grid"
-            ? (lang === "bn" ? "নিচের গ্রিড থেকে + চেপে কার্টে যোগ করুন।" : "Tap + on a card to add to cart.")
-            : (lang === "bn" ? "দোকানের পণ্য বাছাই করলে দাম ও একক স্বয়ংক্রিয় আসবে।" : "Pick a store product and price + unit auto-fill.")}
+          {lang === "bn" ? "দোকানের পণ্য বাছাই করলে দাম ও একক স্বয়ংক্রিয় আসবে।" : "Pick a store product and price + unit auto-fill."}
         </p>
       </div>
-
-      {/* Grid view: paginated product picker */}
-      {viewMode === "grid" && (
-        <div className="rounded-2xl border bg-card p-3 shadow-sm sm:p-4">
-          {gridProducts.length === 0 && !gridLoading ? (
-            <div className="flex flex-col items-center justify-center gap-2 py-12 text-center text-sm text-muted-foreground">
-              <ImageOff className="h-8 w-8 opacity-50" />
-              <div>{gridQuery
-                ? (lang === "bn" ? "এই নামে কোনো পণ্য পাওয়া যায়নি" : "No products match")
-                : (lang === "bn" ? "এই দোকানে এখনো কোনো পণ্য নেই" : "No products in this shop yet")}</div>
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7">
-              {gridProducts.map((p) => (
-                <ProductGridCard
-                  key={p.id}
-                  product={p}
-                  inCartQty={cartQtyMap.get(p.id) || 0}
-                  onAdd={addStoreProduct}
-                />
-              ))}
-            </div>
-          )}
-          <div ref={sentinelRef} className="h-8" />
-          {gridLoading && (
-            <div className="flex justify-center py-3 text-xs text-muted-foreground">
-              <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-              {lang === "bn" ? "লোড হচ্ছে..." : "Loading..."}
-            </div>
-          )}
-          {gridDone && gridProducts.length > 0 && (
-            <div className="py-2 text-center text-[11px] text-muted-foreground">
-              {lang === "bn" ? `মোট ${gridProducts.length} টি পণ্য` : `${gridProducts.length} products`}
-            </div>
-          )}
-        </div>
-      )}
 
       </div>
 
