@@ -341,6 +341,20 @@ export default function LoansTab() {
               onChange={(e) => setAmount(e.target.value.replace(/[^0-9.]/g, ""))}
               className="h-12 text-lg"
             />
+            <div>
+              <div className="mb-1 text-xs text-muted-foreground">
+                {type === "lent" ? "কোন account থেকে দিচ্ছেন" : "কোন account-এ আসবে"}
+              </div>
+              <Select value={accountId} onValueChange={setAccountId}>
+                <SelectTrigger><SelectValue placeholder="Account নির্বাচন" /></SelectTrigger>
+                <SelectContent>
+                  {accounts.map((a) => (
+                    <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="mt-1 text-[10px] text-muted-foreground">এই account-এ স্বয়ংক্রিয়ভাবে balance update হবে — আয়/ব্যয়ে যোগ হবে না</p>
+            </div>
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <div className="mb-1 text-xs text-muted-foreground">তারিখ</div>
@@ -405,6 +419,19 @@ export default function LoansTab() {
                   <SelectItem value="bank">Bank</SelectItem>
                 </SelectContent>
               </Select>
+              <div>
+                <div className="mb-1 text-xs text-muted-foreground">
+                  {payLoan.type === "lent" ? "কোন account-এ ফেরত পেলেন" : "কোন account থেকে দিচ্ছেন"}
+                </div>
+                <Select value={payAccountId} onValueChange={setPayAccountId}>
+                  <SelectTrigger><SelectValue placeholder="Account" /></SelectTrigger>
+                  <SelectContent>
+                    {accounts.map((a) => (
+                      <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
               <Input type="date" value={payDate} onChange={(e) => setPayDate(e.target.value)} />
               <Input placeholder="নোট (ইচ্ছাধীন)" value={payNote} onChange={(e) => setPayNote(e.target.value)} />
               <Button
