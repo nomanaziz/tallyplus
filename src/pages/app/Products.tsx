@@ -1084,6 +1084,8 @@ function ProductFormDialog({
   const [name, setName] = useState("");
   const [sku, setSku] = useState("");
   const [barcode, setBarcode] = useState("");
+  const [variantPickerOpen, setVariantPickerOpen] = useState(false);
+  const [variantCatalogProduct, setVariantCatalogProduct] = useState<CatalogProduct | null>(null);
   const [unit, setUnit] = useState("pcs");
   const [cost, setCost] = useState("0");
   const [sale, setSale] = useState("0");
