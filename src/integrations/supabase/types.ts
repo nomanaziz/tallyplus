@@ -927,6 +927,42 @@ export type Database = {
           },
         ]
       }
+      consumer_accounts: {
+        Row: {
+          color: string | null
+          created_at: string
+          id: string
+          is_archived: boolean
+          kind: string
+          name: string
+          opening_balance: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          id?: string
+          is_archived?: boolean
+          kind?: string
+          name: string
+          opening_balance?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          id?: string
+          is_archived?: boolean
+          kind?: string
+          name?: string
+          opening_balance?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       consumer_cash_movements: {
         Row: {
           amount: number
@@ -965,6 +1001,56 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      consumer_categories: {
+        Row: {
+          color: string | null
+          created_at: string
+          icon: string | null
+          id: string
+          is_archived: boolean
+          kind: string
+          name: string
+          parent_id: string | null
+          sort_order: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          icon?: string | null
+          id?: string
+          is_archived?: boolean
+          kind: string
+          name: string
+          parent_id?: string | null
+          sort_order?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          icon?: string | null
+          id?: string
+          is_archived?: boolean
+          kind?: string
+          name?: string
+          parent_id?: string | null
+          sort_order?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "consumer_categories_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "consumer_categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       consumer_favourite_shops: {
         Row: {
@@ -1267,6 +1353,75 @@ export type Database = {
         }
         Relationships: []
       }
+      consumer_recurring_rules: {
+        Row: {
+          account_id: string | null
+          amount: number
+          category: string | null
+          created_at: string
+          day_of_month: number | null
+          frequency: string
+          id: string
+          is_active: boolean
+          last_run_date: string | null
+          next_run_date: string
+          note: string | null
+          subcategory_id: string | null
+          type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          account_id?: string | null
+          amount: number
+          category?: string | null
+          created_at?: string
+          day_of_month?: number | null
+          frequency: string
+          id?: string
+          is_active?: boolean
+          last_run_date?: string | null
+          next_run_date: string
+          note?: string | null
+          subcategory_id?: string | null
+          type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          account_id?: string | null
+          amount?: number
+          category?: string | null
+          created_at?: string
+          day_of_month?: number | null
+          frequency?: string
+          id?: string
+          is_active?: boolean
+          last_run_date?: string | null
+          next_run_date?: string
+          note?: string | null
+          subcategory_id?: string | null
+          type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "consumer_recurring_rules_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "consumer_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "consumer_recurring_rules_subcategory_id_fkey"
+            columns: ["subcategory_id"]
+            isOneToOne: false
+            referencedRelation: "consumer_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       consumer_saved_carts: {
         Row: {
           consumer_user_id: string
@@ -1296,48 +1451,82 @@ export type Database = {
       }
       consumer_transactions: {
         Row: {
+          account_id: string | null
           amount: number
           category: string | null
           created_at: string
           id: string
           note: string | null
+          recurring_rule_id: string | null
           source_loan_event: string | null
           source_loan_id: string | null
           source_wishlist_id: string | null
+          subcategory_id: string | null
+          transfer_group_id: string | null
           tx_date: string
           type: string
           updated_at: string
           user_id: string
         }
         Insert: {
+          account_id?: string | null
           amount: number
           category?: string | null
           created_at?: string
           id?: string
           note?: string | null
+          recurring_rule_id?: string | null
           source_loan_event?: string | null
           source_loan_id?: string | null
           source_wishlist_id?: string | null
+          subcategory_id?: string | null
+          transfer_group_id?: string | null
           tx_date?: string
           type: string
           updated_at?: string
           user_id: string
         }
         Update: {
+          account_id?: string | null
           amount?: number
           category?: string | null
           created_at?: string
           id?: string
           note?: string | null
+          recurring_rule_id?: string | null
           source_loan_event?: string | null
           source_loan_id?: string | null
           source_wishlist_id?: string | null
+          subcategory_id?: string | null
+          transfer_group_id?: string | null
           tx_date?: string
           type?: string
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "consumer_transactions_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "consumer_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "consumer_transactions_recurring_rule_id_fkey"
+            columns: ["recurring_rule_id"]
+            isOneToOne: false
+            referencedRelation: "consumer_recurring_rules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "consumer_transactions_subcategory_id_fkey"
+            columns: ["subcategory_id"]
+            isOneToOne: false
+            referencedRelation: "consumer_categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       customer_reminder_log: {
         Row: {
@@ -5394,7 +5583,18 @@ export type Database = {
         Args: { _feature: string; _shop_id: string }
         Returns: Json
       }
+      consumer_account_balances: {
+        Args: never
+        Returns: {
+          account_id: string
+          balance: number
+          color: string
+          kind: string
+          name: string
+        }[]
+      }
       consumer_cash_summary: { Args: never; Returns: Json }
+      consumer_run_recurring: { Args: never; Returns: number }
       dashboard_summary: {
         Args: { _shop_id: string; _since: string }
         Returns: {
