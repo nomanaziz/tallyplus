@@ -94,7 +94,38 @@ export function NotificationBell() {
       await supabase.from("notifications").update({ is_read: true }).eq("id", n.id);
       void qc.invalidateQueries({ queryKey: ["notifications", user?.id] });
     }
-    if (n.link) nav({ to: n.link as never });
+    if (n.link) {
+      // When viewing the admin portal, never navigate to client/owner /app/*
+      // pages — those carry actions the admin can't perform. Route to the
+      // matching admin section instead.
+      const inAdmin =
+        typeof window !== "undefined" && window.location.pathname.startsWith("/admin");
+      let target = n.link;
+      if (inAdmin && target.startsWith("/app")) {
+        switch (n.type) {
+          case "shop_transfer":
+            target = "/admin/transfers";
+            break;
+          case "subscription":
+          case "subscription_request":
+            target = "/admin/subscription-requests";
+            break;
+          case "withdrawal":
+            target = "/admin/affiliates";
+            break;
+          case "sms_purchase":
+            target = "/admin/sms-gateways";
+            break;
+          case "signup":
+          case "shop_created":
+            target = "/admin/users";
+            break;
+          default:
+            target = "/admin";
+        }
+      }
+      nav({ to: target as never });
+    }
   };
 
   return (
