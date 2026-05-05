@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link } from "@/lib/router";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
@@ -18,6 +18,7 @@ import {
 import { icons } from "@/lib/icons";
 
 type Tx = { id: string; type: string; amount: number; tx_date: string };
+type LoanSummary = { type: "lent" | "borrowed"; amount: number; paid_amount: number };
 
 function bdt(n: number) {
   return new Intl.NumberFormat("bn-BD", { maximumFractionDigits: 0 }).format(n) + " ৳";
@@ -39,87 +40,113 @@ export default function CustomerDashboard() {
   const [orderCount, setOrderCount] = useState(0);
   const [favShopCount, setFavShopCount] = useState(0);
   const [serviceCount, setServiceCount] = useState(0);
+  const [cashOnHand, setCashOnHand] = useState(0);
+
+  const loadDashboard = useCallback(async () => {
+    if (!user) return;
+    const monthStart = new Date();
+    monthStart.setDate(1);
+    monthStart.setHours(0, 0, 0, 0);
+    const since = monthStart.toISOString().slice(0, 10);
+    const [tx, fordoRes, notes, loans, favShops, phonesRes, services, cashSummary] = await Promise.all([
+      supabase
+        .from("consumer_transactions")
+        .select("type, amount")
+        .eq("user_id", user.id)
+        .gte("tx_date", since),
+      supabase.functions.invoke("consumer-fordo-history", { body: {} }),
+      supabase
+        .from("consumer_notes")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", user.id),
+      supabase
+        .from("consumer_loans")
+        .select("type, amount, paid_amount")
+        .eq("user_id", user.id)
+        .eq("is_settled", false),
+      supabase
+        .from("consumer_favourite_shops")
+        .select("id", { count: "exact", head: true })
+        .eq("consumer_id", user.id),
+      supabase.rpc("my_phones"),
+      supabase.functions.invoke("marketplace-public", {
+        body: { action: "list-my-service-bookings" },
+      }),
+      supabase.rpc("consumer_cash_summary"),
+    ]);
+
+    const rows = (tx.data ?? []) as Tx[];
+    let inc = 0;
+    let exp = 0;
+    for (const r of rows) {
+      if (r.type === "income") inc += Number(r.amount);
+      else exp += Number(r.amount);
+    }
+    setIncome(inc);
+    setExpense(exp);
+
+    let lentSum = 0;
+    let borrowedSum = 0;
+    for (const l of (loans.data ?? []) as LoanSummary[]) {
+      const outstanding = Math.max(Number(l.amount) - Number(l.paid_amount || 0), 0);
+      if (l.type === "lent") lentSum += outstanding;
+      else borrowedSum += outstanding;
+    }
+    setWillGet(lentSum);
+    setWillGive(borrowedSum);
+
+    if (cashSummary.data && typeof cashSummary.data === "object" && "balance" in (cashSummary.data as Record<string, unknown>)) {
+      setCashOnHand(Number((cashSummary.data as { balance?: number }).balance) || 0);
+    }
+
+    const fordoData = (fordoRes.data ?? {}) as { wishlists?: Array<{ id: string; deleted_at?: string | null }> };
+    const fordoList = fordoData.wishlists ?? [];
+    const activeFordoCount = fordoList.filter((w) => !w.deleted_at).length;
+    setFordoCount(activeFordoCount);
+    setNoteCount(notes.count ?? 0);
+    setFavShopCount(favShops.count ?? 0);
+
+    const phones = Array.isArray(phonesRes.data) ? (phonesRes.data as string[]).filter(Boolean) : [];
+    let oq = supabase
+      .from("marketplace_orders")
+      .select("id", { count: "exact", head: true });
+    if (phones.length > 0) {
+      const phoneList = phones.map((p) => `"${p}"`).join(",");
+      oq = oq.or(`consumer_user_id.eq.${user.id},customer_phone.in.(${phoneList})`);
+    } else {
+      oq = oq.eq("consumer_user_id", user.id);
+    }
+    const { count: oCount } = await oq;
+    setOrderCount(oCount ?? 0);
+
+    const sd = (services.data ?? {}) as { bookings?: Array<unknown> };
+    setServiceCount((sd.bookings ?? []).length);
+    setLoading(false);
+  }, [user]);
+
+  useEffect(() => {
+    void loadDashboard();
+  }, [loadDashboard]);
 
   useEffect(() => {
     if (!user) return;
-    let cancelled = false;
-    void (async () => {
-      const monthStart = new Date();
-      monthStart.setDate(1);
-      monthStart.setHours(0, 0, 0, 0);
-      const since = monthStart.toISOString().slice(0, 10);
-      const [tx, fordoRes, notes, loans, favShops, phonesRes, services] = await Promise.all([
-        supabase
-          .from("consumer_transactions")
-          .select("type, amount")
-          .eq("user_id", user.id)
-          .gte("tx_date", since),
-        supabase.functions.invoke("consumer-fordo-history", { body: {} }),
-        supabase
-          .from("consumer_notes")
-          .select("id", { count: "exact", head: true })
-          .eq("user_id", user.id),
-        supabase
-          .from("consumer_loans")
-          .select("type, amount")
-          .eq("user_id", user.id)
-          .eq("is_settled", false),
-        supabase
-          .from("consumer_favourite_shops")
-          .select("id", { count: "exact", head: true })
-          .eq("consumer_id", user.id),
-        supabase.rpc("my_phones"),
-        supabase.functions.invoke("marketplace-public", {
-          body: { action: "list-my-service-bookings" },
-        }),
-      ]);
-      if (cancelled) return;
-      const rows = (tx.data ?? []) as Tx[];
-      let inc = 0;
-      let exp = 0;
-      for (const r of rows) {
-        if (r.type === "income") inc += Number(r.amount);
-        else exp += Number(r.amount);
-      }
-      setIncome(inc);
-      setExpense(exp);
-      let lentSum = 0, borrowedSum = 0;
-      for (const l of (loans.data ?? []) as Array<{ type: string; amount: number }>) {
-        if (l.type === "lent") lentSum += Number(l.amount);
-        else borrowedSum += Number(l.amount);
-      }
-      setWillGet(lentSum);
-      setWillGive(borrowedSum);
-      const fordoData = (fordoRes.data ?? {}) as { wishlists?: Array<{ id: string; deleted_at?: string | null }> };
-      const fordoList = fordoData.wishlists ?? [];
-      const activeFordoCount = fordoList.filter((w) => !w.deleted_at).length;
-      setFordoCount(activeFordoCount);
-      setNoteCount(notes.count ?? 0);
-      setFavShopCount(favShops.count ?? 0);
+    const ch = supabase
+      .channel(`customer-dashboard-${user.id}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "consumer_loans", filter: `user_id=eq.${user.id}` }, () => {
+        void loadDashboard();
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "consumer_loan_payments", filter: `user_id=eq.${user.id}` }, () => {
+        void loadDashboard();
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "consumer_cash_movements", filter: `user_id=eq.${user.id}` }, () => {
+        void loadDashboard();
+      })
+      .subscribe();
 
-      // Orders: match by user id OR known phone numbers (consistent with MyOrders).
-      const phones = Array.isArray(phonesRes.data) ? (phonesRes.data as string[]).filter(Boolean) : [];
-      let oq = supabase
-        .from("marketplace_orders")
-        .select("id", { count: "exact", head: true });
-      if (phones.length > 0) {
-        const phoneList = phones.map((p) => `"${p}"`).join(",");
-        oq = oq.or(`consumer_user_id.eq.${user.id},customer_phone.in.(${phoneList})`);
-      } else {
-        oq = oq.eq("consumer_user_id", user.id);
-      }
-      const { count: oCount } = await oq;
-      if (!cancelled) setOrderCount(oCount ?? 0);
-
-      const sd = (services.data ?? {}) as { bookings?: Array<unknown> };
-      setServiceCount((sd.bookings ?? []).length);
-
-      setLoading(false);
-    })();
     return () => {
-      cancelled = true;
+      void supabase.removeChannel(ch);
     };
-  }, [user]);
+  }, [loadDashboard, user]);
 
   if (loading) {
     return (
@@ -170,6 +197,7 @@ export default function CustomerDashboard() {
         <div className="grid grid-cols-3 gap-2 sm:gap-3">
           <StatCard label="পাব (পাওনা)" value={bdt(willGet)} Icon={ArrowDownCircle} tone="text-emerald-600" to="/customer/money" />
           <StatCard label="দেব (দেনা)" value={bdt(willGive)} Icon={ArrowUpCircle} tone="text-rose-600" to="/customer/money" />
+          <StatCard label="হাতে নগদ" value={bdt(cashOnHand)} Icon={Wallet} tone={cashOnHand >= 0 ? "text-amber-600" : "text-rose-600"} to="/customer/money" />
           <StatCard label="মোট অর্ডার" value={`${bn(orderCount)}টি`} Icon={ShoppingBag} tone="text-indigo-600" to="/customer/my-orders" />
           <StatCard label="আমার ফর্দ" value={`${bn(fordoCount)}টি`} Icon={ListChecks} tone="text-violet-600" to="/customer/my-fordo" />
           <StatCard label="প্রিয় দোকান" value={`${bn(favShopCount)}টি`} Icon={Heart} tone="text-pink-600" to="/customer/favorite-shops" />

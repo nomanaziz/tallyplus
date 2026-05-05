@@ -116,10 +116,13 @@ export function InstallAppButton({ className }: { className?: string }) {
     <>
       <button
         onClick={onClick}
+        type="button"
+        aria-label={lang === "bn" ? "অ্যাপ ইনস্টল" : "Install app"}
+        title={lang === "bn" ? "অ্যাপ ইনস্টল" : "Install app"}
         className={className ?? "flex h-9 items-center gap-1.5 rounded-full px-2 text-sm font-medium text-muted-foreground hover:bg-accent"}
       >
         <Download className="h-4 w-4" />
-        <span className="hidden md:inline">{lang === "bn" ? "অ্যাপ ইনস্টল" : "Install app"}</span>
+        <span className="inline md:inline">{lang === "bn" ? "অ্যাপ ইনস্টল" : "Install app"}</span>
       </button>
       <Dialog open={iosOpen} onOpenChange={setIosOpen}>
         <DialogContent className="max-w-sm">
