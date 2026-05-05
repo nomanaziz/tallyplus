@@ -4,12 +4,14 @@ import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { TrendingUp, MessageCircle, ArrowRight } from "lucide-react";
 import { LoginCard } from "./LoginCard";
+import { usePublicStats } from "@/lib/use-public-stats";
 
 export function HeroSection() {
   const { t, lang } = useI18n();
   const { user } = useAuth();
-  const million = lang === "bn" ? `${bnNum(10)},০০,০০০+` : "1,000,000+";
-  const rating = lang === "bn" ? `${bnNum(4.4)}★` : "4.4★";
+  const stats = usePublicStats();
+  const fmt = (n: number) => (lang === "bn" ? bnNum(n) : String(n));
+  const dash = stats.isLoading ? "—" : null;
   return (
     <section className="relative overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-br from-primary/25 via-background to-background" aria-hidden />
@@ -49,14 +51,18 @@ export function HeroSection() {
               </a>
             </Button>
           </div>
-          <div className="mt-10 flex gap-10">
+          <div className="mt-10 flex flex-wrap gap-10">
             <div>
-              <div className="text-2xl font-extrabold md:text-3xl">{million}</div>
-              <div className="text-xs text-muted-foreground">{lang === "bn" ? "ব্যবসায়ী ব্যবহার করছেন" : "Businessman using"}</div>
+              <div className="text-2xl font-extrabold md:text-3xl">{dash ?? fmt(stats.totalUsers)}</div>
+              <div className="text-xs text-muted-foreground">{lang === "bn" ? "মোট ব্যবহারকারী" : "Total users"}</div>
             </div>
             <div>
-              <div className="text-2xl font-extrabold md:text-3xl">{rating}</div>
-              <div className="text-xs text-muted-foreground">{lang === "bn" ? "অ্যাপ রেটিং" : "App Rating"}</div>
+              <div className="text-2xl font-extrabold md:text-3xl">{dash ?? fmt(stats.shops)}</div>
+              <div className="text-xs text-muted-foreground">{lang === "bn" ? "নিবন্ধিত দোকান" : "Shops registered"}</div>
+            </div>
+            <div>
+              <div className="text-2xl font-extrabold md:text-3xl">{dash ?? fmt(stats.customers)}</div>
+              <div className="text-xs text-muted-foreground">{lang === "bn" ? "গ্রাহক" : "Customers"}</div>
             </div>
           </div>
         </div>
