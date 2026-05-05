@@ -68,12 +68,22 @@ export function useSpeechRecognition(opts: Options = {}) {
     }
   }, []);
 
-  const start = useCallback(() => {
+  const start = useCallback(async () => {
     if (typeof window === "undefined") return;
     const SR =
       (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SR) {
-      setError("Browser এ voice support নেই");
+      setError("এই device-এ voice support নেই — Chrome (Android) ব্যবহার করুন");
+      return;
+    }
+    // Pre-flight mic permission so mobile Chrome reliably shows the prompt
+    try {
+      if (navigator.mediaDevices?.getUserMedia) {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        stream.getTracks().forEach((t) => t.stop());
+      }
+    } catch (err: any) {
+      setError("Microphone permission নেই — অনুমতি দিন");
       return;
     }
     setError(null);

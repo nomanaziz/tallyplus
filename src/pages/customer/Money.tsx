@@ -15,6 +15,8 @@ import {
 import { toast } from "sonner";
 import LoansTab from "@/components/customer/LoansTab";
 import { monthKey, startOfMonth } from "@/lib/consumer-history-access";
+import { VoiceTextMic } from "@/components/app/VoiceTextMic";
+import { Coins } from "lucide-react";
 
 type Tx = {
   id: string;
@@ -43,20 +45,27 @@ export default function CustomerMoney() {
   const [note, setNote] = useState("");
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [saving, setSaving] = useState(false);
+  const [cashBalance, setCashBalance] = useState<number>(0);
 
   const load = async () => {
     if (!user) return;
     const monthStart = startOfMonth(new Date()).toISOString().slice(0, 10);
-    const { data, error } = await supabase
+    const [{ data, error }, { data: cash }] = await Promise.all([
+      supabase
       .from("consumer_transactions")
       .select("*")
       .eq("user_id", user.id)
       .gte("tx_date", monthStart)
       .order("tx_date", { ascending: false })
       .order("created_at", { ascending: false })
-      .limit(500);
+      .limit(500),
+      supabase.rpc("consumer_cash_summary"),
+    ]);
     if (error) toast.error(error.message);
     setRows((data ?? []) as Tx[]);
+    if (cash && typeof cash === "object" && "balance" in (cash as any)) {
+      setCashBalance(Number((cash as any).balance) || 0);
+    }
     setLoading(false);
   };
 
@@ -138,7 +147,7 @@ export default function CustomerMoney() {
             </Button>
           </div>
 
-          <div className="grid grid-cols-3 gap-2 sm:gap-3">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
             <Card className="p-3 sm:p-4">
               <div className="flex items-center justify-between gap-1 text-[11px] text-muted-foreground sm:text-xs">
                 <span className="truncate">আয়</span><TrendingUp className="h-3.5 w-3.5 shrink-0 text-emerald-600 sm:h-4 sm:w-4" />
@@ -156,6 +165,13 @@ export default function CustomerMoney() {
                 <span className="truncate">ব্যালেন্স</span><Wallet className="h-3.5 w-3.5 shrink-0 text-primary sm:h-4 sm:w-4" />
               </div>
               <div className={`mt-1 text-base font-bold sm:text-xl ${summary.balance >= 0 ? "text-foreground" : "text-rose-600"}`}>{bdt(summary.balance)}</div>
+            </Card>
+            <Card className="p-3 sm:p-4">
+              <div className="flex items-center justify-between gap-1 text-[11px] text-muted-foreground sm:text-xs">
+                <span className="truncate">হাতে নগদ</span><Coins className="h-3.5 w-3.5 shrink-0 text-amber-600 sm:h-4 sm:w-4" />
+              </div>
+              <div className={`mt-1 text-base font-bold sm:text-xl ${cashBalance >= 0 ? "text-amber-700" : "text-rose-600"}`}>{bdt(cashBalance)}</div>
+              <div className="mt-0.5 text-[10px] text-muted-foreground">দেনা-পাওনা থেকে</div>
             </Card>
           </div>
 
@@ -218,7 +234,19 @@ export default function CustomerMoney() {
               </SelectContent>
             </Select>
             <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
-            <Input placeholder="নোট (ইচ্ছাধীন)" value={note} onChange={(e) => setNote(e.target.value)} />
+            <div className="flex items-center gap-2">
+              <Input
+                placeholder={type === "expense" ? "কী কারণে খরচ? (ইচ্ছাধীন)" : "নোট (ইচ্ছাধীন)"}
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                className="flex-1"
+              />
+              <VoiceTextMic
+                size="sm"
+                title="কথা বলে কারণ লিখুন"
+                onText={(t) => setNote((prev) => (prev ? prev + " " + t : t))}
+              />
+            </div>
             <Button onClick={submit} disabled={saving} className={`w-full ${type === "income" ? "bg-emerald-600 hover:bg-emerald-700" : "bg-rose-600 hover:bg-rose-700"} text-white`}>
               {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} সংরক্ষণ
             </Button>
