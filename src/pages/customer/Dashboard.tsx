@@ -16,6 +16,7 @@ import {
   ArrowUpCircle,
 } from "lucide-react";
 import { icons } from "@/lib/icons";
+import { InstallAppCard } from "@/components/app/InstallAppCard";
 
 type Tx = { id: string; type: string; amount: number; tx_date: string };
 type LoanSummary = { type: "lent" | "borrowed"; amount: number; paid_amount: number };
@@ -164,6 +165,8 @@ export default function CustomerDashboard() {
         <h1 className="text-2xl font-bold">স্বাগতম 👋</h1>
         <p className="text-sm text-muted-foreground">এই মাসের একটি সংক্ষিপ্ত সারসংক্ষেপ</p>
       </div>
+
+      <InstallAppCard />
 
       <div className="grid grid-cols-3 gap-2 sm:gap-3">
         <Card className="p-3 sm:p-4">
