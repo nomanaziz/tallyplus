@@ -60,7 +60,7 @@ export default function ProfilePage() {
   return (
     <div className="min-h-full bg-muted/30">
       <header className="flex items-center gap-2 border-b bg-background px-4 py-3">
-        <Button variant="ghost" size="icon" onClick={() => nav(-1 as never)}>
+        <Button variant="ghost" size="icon" onClick={() => nav({ to: "/app/dashboard" })}>
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <h1 className="text-lg font-bold">{lang === "bn" ? "আমার প্রোফাইল" : "My Profile"}</h1>
