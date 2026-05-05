@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/sheet";
 import { Menu, Store, Home as HomeIcon, ScrollText, ShoppingCart } from "lucide-react";
 import logo from "@/assets/logo.png";
+import { BrandWordmark } from "@/components/brand/BrandWordmark";
 import { homePathFor } from "@/lib/home-redirect";
 import { useCartCount } from "@/lib/consumer-cart";
 import { InstallAppButton } from "@/components/app/InstallAppPrompt";
@@ -28,7 +29,7 @@ export function SiteHeader() {
       <div className="container mx-auto flex h-16 md:h-20 items-center justify-between px-3 md:px-4 gap-2">
         <Link to={homeTarget} className="flex items-center gap-2 md:gap-3 min-w-0">
           <img src={logo} alt="Tally Plus" width={40} height={40} className="h-7 w-7 md:h-9 md:w-9 object-contain flex-none" />
-          <span className="text-base md:text-2xl font-extrabold leading-tight tracking-tight truncate py-1">{t("appName")}</span>
+          <BrandWordmark className="text-base md:text-2xl font-extrabold leading-tight tracking-tight truncate py-1" />
         </Link>
         <nav className="hidden items-center gap-1 text-sm font-medium md:flex">
           <Link
@@ -88,7 +89,7 @@ export function SiteHeader() {
               <SheetHeader className="border-b px-4 py-3 text-left">
                 <SheetTitle className="flex items-center gap-2 leading-tight">
                   <img src={logo} alt="" className="h-7 w-7 object-contain flex-none" />
-                  <span className="py-0.5">{t("appName")}</span>
+                  <BrandWordmark className="py-0.5" />
                 </SheetTitle>
               </SheetHeader>
               <nav className="flex-1 overflow-y-auto p-3 space-y-1 text-sm font-medium">
