@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +12,7 @@ import {
   Plus, Pencil, Trash2, GripVertical, ArrowUp, ArrowDown, CreditCard, Smartphone, Building2, Wallet,
 } from "lucide-react";
 import { toast } from "sonner";
+import { AdminSearchBar, matches } from "@/components/admin/AdminSearchBar";
 
 type GatewaySettings = {
   provider: string;
@@ -69,6 +70,12 @@ export default function AdminPaymentGateway() {
 
   const [methods, setMethods] = useState<PaymentMethod[]>([]);
   const [editing, setEditing] = useState<(Omit<PaymentMethod, "id"> & { id?: string }) | null>(null);
+  const [search, setSearch] = useState("");
+
+  const filteredMethods = useMemo(
+    () => methods.filter((m) => matches(search, m.name, m.type, m.account_number, m.account_holder)),
+    [methods, search],
+  );
 
   const loadAll = async () => {
     const [{ data: gw }, { data: pm }] = await Promise.all([
@@ -206,13 +213,17 @@ export default function AdminPaymentGateway() {
           </Button>
         </div>
 
-        {methods.length === 0 ? (
+        <div className="mt-3">
+          <AdminSearchBar value={search} onChange={setSearch} count={filteredMethods.length} placeholder="Method, account দিয়ে খুঁজুন" />
+        </div>
+
+        {filteredMethods.length === 0 ? (
           <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
-            কোনো method add করা হয়নি। উপরের "Add" বাটনে ক্লিক করুন।
+            {search ? "কোনো ফলাফল নেই" : "কোনো method add করা হয়নি। উপরের \"Add\" বাটনে ক্লিক করুন।"}
           </div>
         ) : (
           <div className="space-y-2">
-            {methods.map((m, idx) => (
+            {filteredMethods.map((m, idx) => (
               <div key={m.id} className="flex items-center gap-3 rounded-lg border bg-card p-3">
                 <div className="flex items-center justify-center rounded-md text-2xl"
                      style={{ backgroundColor: m.color + "22", width: 44, height: 44 }}>

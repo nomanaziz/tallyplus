@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dialog";
 import { Plus, Pencil, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { AdminSearchBar, matches } from "@/components/admin/AdminSearchBar";
 
 
 
@@ -36,6 +37,12 @@ function ShopTypesAdmin() {
   const [editing, setEditing] = useState<Partial<ShopType> | null>(null);
   const [catText, setCatText] = useState("");
   const [saving, setSaving] = useState(false);
+  const [search, setSearch] = useState("");
+
+  const filtered = useMemo(
+    () => items.filter((s) => matches(search, s.code, s.name_bn, s.name_en)),
+    [items, search],
+  );
 
   const load = async () => {
     setLoading(true);
@@ -93,13 +100,15 @@ function ShopTypesAdmin() {
         </Button>
       </div>
 
+      <AdminSearchBar value={search} onChange={setSearch} count={filtered.length} placeholder="Code বা name দিয়ে খুঁজুন" />
+
       {loading ? (
         <div className="flex justify-center p-12">
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
         </div>
       ) : (
         <div className="grid gap-3 md:grid-cols-2">
-          {items.map((s) => (
+          {filtered.map((s) => (
             <Card key={s.id}>
               <CardContent className="p-4">
                 <div className="flex items-start justify-between">

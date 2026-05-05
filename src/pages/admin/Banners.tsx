@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,8 +6,10 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Card, CardContent } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, Pencil, Trash2, Loader2, Upload } from "lucide-react";
 import { toast } from "sonner";
+import { AdminSearchBar, matches } from "@/components/admin/AdminSearchBar";
 
 
 
@@ -27,6 +29,13 @@ function BannersAdmin() {
   const [editing, setEditing] = useState<Partial<Banner> | null>(null);
   const [busy, setBusy] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [search, setSearch] = useState("");
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+
+  const filtered = useMemo(
+    () => items.filter((b) => matches(search, b.title_bn, b.title_en, b.link_url)),
+    [items, search],
+  );
 
   const load = async () => {
     setLoading(true);
@@ -92,6 +101,20 @@ function BannersAdmin() {
     void load();
   };
 
+  const bulkDelete = async () => {
+    if (!selected.size) return;
+    if (!confirm(`Delete ${selected.size} banner(s)?`)) return;
+    const ids = [...selected];
+    const { error } = await supabase.from("dashboard_banners").delete().in("id", ids);
+    if (error) { toast.error(error.message); return; }
+    toast.success(`${ids.length} deleted`);
+    setSelected(new Set());
+    void load();
+  };
+
+  const toggle = (id: string) =>
+    setSelected((s) => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
+
   const toggleActive = async (b: Banner) => {
     const { error } = await supabase
       .from("dashboard_banners")
@@ -113,16 +136,28 @@ function BannersAdmin() {
         </Button>
       </div>
 
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <AdminSearchBar value={search} onChange={setSearch} count={filtered.length} placeholder="Title বা link দিয়ে খুঁজুন" />
+        {selected.size > 0 && (
+          <Button size="sm" variant="destructive" onClick={() => void bulkDelete()}>
+            <Trash2 className="mr-1 h-4 w-4" /> Delete {selected.size}
+          </Button>
+        )}
+      </div>
+
       {loading ? (
         <div className="flex justify-center py-10"><Loader2 className="h-6 w-6 animate-spin" /></div>
-      ) : items.length === 0 ? (
-        <Card><CardContent className="p-8 text-center text-sm text-muted-foreground">No banners yet. Add one to get started.</CardContent></Card>
+      ) : filtered.length === 0 ? (
+        <Card><CardContent className="p-8 text-center text-sm text-muted-foreground">{search ? "কোনো ফলাফল নেই" : "No banners yet. Add one to get started."}</CardContent></Card>
       ) : (
         <div className="grid gap-3 md:grid-cols-2">
-          {items.map((b) => (
+          {filtered.map((b) => (
             <Card key={b.id} className={b.is_active ? "" : "opacity-60"}>
               <CardContent className="p-3">
-                <img src={b.image_url} alt="" className="h-32 w-full rounded object-cover" />
+                <div className="flex items-start gap-2">
+                  <Checkbox checked={selected.has(b.id)} onCheckedChange={() => toggle(b.id)} className="mt-1" />
+                  <img src={b.image_url} alt="" className="h-32 w-full rounded object-cover" />
+                </div>
                 <div className="mt-2 flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <div className="truncate text-sm font-semibold">{b.title_bn || b.title_en || "(no title)"}</div>

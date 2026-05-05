@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dialog";
 import { Plus, Pencil, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { AdminSearchBar, matches } from "@/components/admin/AdminSearchBar";
 
 
 
@@ -41,6 +42,12 @@ function PlansPage() {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<Partial<Plan> | null>(null);
   const [saving, setSaving] = useState(false);
+  const [search, setSearch] = useState("");
+
+  const filtered = useMemo(
+    () => plans.filter((p) => matches(search, p.code, p.name_bn, p.name_en)),
+    [plans, search],
+  );
 
   const load = async () => {
     setLoading(true);
@@ -96,13 +103,15 @@ function PlansPage() {
         </Button>
       </div>
 
+      <AdminSearchBar value={search} onChange={setSearch} count={filtered.length} placeholder="Code বা name দিয়ে খুঁজুন" />
+
       {loading ? (
         <div className="flex justify-center p-12">
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
-          {plans.map((p) => (
+          {filtered.map((p) => (
             <Card key={p.id}>
               <CardContent className="p-5">
                 <div className="flex items-start justify-between">
@@ -124,9 +133,9 @@ function PlansPage() {
               </CardContent>
             </Card>
           ))}
-          {plans.length === 0 && (
+          {filtered.length === 0 && (
             <p className="text-sm text-muted-foreground col-span-2 text-center py-8">
-              কোন plan নেই। নতুন plan তৈরি করুন।
+              {search ? "কোনো ফলাফল নেই" : "কোন plan নেই। নতুন plan তৈরি করুন।"}
             </p>
           )}
         </div>

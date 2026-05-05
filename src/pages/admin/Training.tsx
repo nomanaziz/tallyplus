@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,8 @@ import {
 } from "@/components/ui/dialog";
 import { Plus, Pencil, Trash2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { Checkbox } from "@/components/ui/checkbox";
+import { AdminSearchBar, matches } from "@/components/admin/AdminSearchBar";
 
 
 
@@ -67,6 +69,27 @@ function TrainingAdmin() {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<Partial<Video> | null>(null);
   const [busy, setBusy] = useState(false);
+  const [search, setSearch] = useState("");
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+
+  const filtered = useMemo(
+    () => items.filter((v) => matches(search, v.title_bn, v.title_en, v.category, v.youtube_id)),
+    [items, search],
+  );
+
+  const toggle = (id: string) =>
+    setSelected((s) => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
+
+  const bulkDelete = async () => {
+    if (!selected.size) return;
+    if (!confirm(`Delete ${selected.size} video(s)?`)) return;
+    const ids = [...selected];
+    const { error } = await supabase.from("training_videos").delete().in("id", ids);
+    if (error) { toast.error(error.message); return; }
+    toast.success(`${ids.length} deleted`);
+    setSelected(new Set());
+    void load();
+  };
 
   const load = async () => {
     setLoading(true);
@@ -132,17 +155,29 @@ function TrainingAdmin() {
         </Button>
       </div>
 
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
+        <AdminSearchBar value={search} onChange={setSearch} count={filtered.length} placeholder="Title, category, ID দিয়ে খুঁজুন" />
+        {selected.size > 0 && (
+          <Button size="sm" variant="destructive" onClick={() => void bulkDelete()}>
+            <Trash2 className="mr-1 h-4 w-4" /> Delete {selected.size}
+          </Button>
+        )}
+      </div>
+
       {loading ? (
         <div className="mt-10 flex justify-center"><Loader2 className="h-6 w-6 animate-spin" /></div>
-      ) : items.length === 0 ? (
+      ) : filtered.length === 0 ? (
         <Card className="mt-6"><CardContent className="py-10 text-center text-muted-foreground">
-          No training videos yet. Click "Add Video" to add the first one.
+          {search ? "কোনো ফলাফল নেই" : "No training videos yet. Click \"Add Video\" to add the first one."}
         </CardContent></Card>
       ) : (
         <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {items.map((v) => (
+          {filtered.map((v) => (
             <Card key={v.id} className="overflow-hidden">
               <div className="relative aspect-video bg-muted">
+                <div className="absolute top-2 left-2 z-10 rounded bg-background/80 p-1">
+                  <Checkbox checked={selected.has(v.id)} onCheckedChange={() => toggle(v.id)} />
+                </div>
                 <img
                   src={`https://img.youtube.com/vi/${v.youtube_id}/hqdefault.jpg`}
                   alt={v.title_bn || v.title_en}

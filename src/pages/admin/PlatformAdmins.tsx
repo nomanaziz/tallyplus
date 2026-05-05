@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { Card, CardContent } from "@/components/ui/card";
@@ -20,6 +20,7 @@ import {
 import { Plus, Loader2, ShieldOff, ShieldCheck, Crown, Settings2 } from "lucide-react";
 import { toast } from "sonner";
 import { ADMIN_PERMISSION_KEYS, ADMIN_PERMISSION_LABELS, type AdminPermKey } from "@/lib/admin-perms";
+import { AdminSearchBar, matches } from "@/components/admin/AdminSearchBar";
 
 type AdminRow = {
   user_id: string;
@@ -62,6 +63,7 @@ function PlatformAdminsPage() {
   const { isSuperAdmin, user } = useAuth();
   const [rows, setRows] = useState<AdminRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
 
   // Add dialog
   const [openAdd, setOpenAdd] = useState(false);
@@ -95,6 +97,11 @@ function PlatformAdminsPage() {
   };
 
   useEffect(() => { void load(); }, []);
+
+  const filtered = useMemo(
+    () => rows.filter((r) => matches(search, r.full_name, r.email)),
+    [rows, search],
+  );
 
   const submit = async () => {
     if (name.trim().length < 2) return toast.error("নাম দিন");
@@ -177,6 +184,8 @@ function PlatformAdminsPage() {
         )}
       </div>
 
+      <AdminSearchBar value={search} onChange={setSearch} count={filtered.length} placeholder="Name বা email দিয়ে খুঁজুন" />
+
       <Card>
         <CardContent className="p-0">
           {loading ? (
@@ -196,13 +205,13 @@ function PlatformAdminsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {rows.length === 0 ? (
+                  {filtered.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={5} className="py-8 text-center text-muted-foreground">
-                        কোনো admin নেই
+                        {search ? "কোনো ফলাফল নেই" : "কোনো admin নেই"}
                       </TableCell>
                     </TableRow>
-                  ) : rows.map((r) => {
+                  ) : filtered.map((r) => {
                     const isMe = r.user_id === user?.id;
                     const permCount = r.permissions
                       ? ADMIN_PERMISSION_KEYS.filter((k) => r.permissions?.[k]).length

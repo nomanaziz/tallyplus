@@ -1,15 +1,17 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Loader2 } from "lucide-react";
+import { AdminSearchBar, matches } from "@/components/admin/AdminSearchBar";
 
 
 
 function SubsPage() {
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
     (async () => {
@@ -36,12 +38,18 @@ function SubsPage() {
 
   const isExpired = (s: any) => new Date(s.expires_at) < new Date();
 
+  const filtered = useMemo(
+    () => items.filter((s) => matches(search, s.profile?.full_name, s.profile?.phone, s.plan?.name_bn, s.status)),
+    [items, search],
+  );
+
   return (
     <div className="mx-auto max-w-6xl space-y-4 p-3 sm:space-y-6 sm:p-6">
       <div>
         <h1 className="text-2xl font-bold">Subscriptions</h1>
         <p className="text-sm text-muted-foreground">সকল subscription</p>
       </div>
+      <AdminSearchBar value={search} onChange={setSearch} count={filtered.length} placeholder="Name, phone, plan, status" />
       <Card>
         <CardContent className="p-0">
           {loading ? (
@@ -60,7 +68,7 @@ function SubsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {items.map((s) => (
+                {filtered.map((s) => (
                   <TableRow key={s.id}>
                     <TableCell>
                       <div className="font-medium">{s.profile?.full_name ?? "—"}</div>
@@ -80,10 +88,10 @@ function SubsPage() {
                     <TableCell className="text-xs">{new Date(s.expires_at).toLocaleDateString("en-GB")}</TableCell>
                   </TableRow>
                 ))}
-                {items.length === 0 && (
+                {filtered.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                      কোন subscription নেই
+                      {search ? "কোনো ফলাফল নেই" : "কোন subscription নেই"}
                     </TableCell>
                   </TableRow>
                 )}

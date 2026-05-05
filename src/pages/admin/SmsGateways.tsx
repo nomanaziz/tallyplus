@@ -27,6 +27,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { toast } from "sonner";
+import { AdminSearchBar, matches } from "@/components/admin/AdminSearchBar";
 
 // ============================================================
 // Provider options shown in the SMS Settings dropdown
@@ -113,6 +114,16 @@ export default function AdminSmsGateways() {
   const [editingPkg, setEditingPkg] = useState<(Omit<Pkg, "id"> & { id?: string }) | null>(null);
   const [templates, setTemplates] = useState<Template[]>([]);
   const [editingTpl, setEditingTpl] = useState<(Omit<Template, "id"> & { id?: string }) | null>(null);
+  const [pkgSearch, setPkgSearch] = useState("");
+  const [tplSearch, setTplSearch] = useState("");
+  const filteredPackages = useMemo(
+    () => packages.filter((p) => matches(pkgSearch, p.name_bn, p.name_en, String(p.sms_count), String(p.price_bdt))),
+    [packages, pkgSearch],
+  );
+  const filteredTemplates = useMemo(
+    () => templates.filter((t) => matches(tplSearch, t.name_bn, t.code, t.body_template)),
+    [templates, tplSearch],
+  );
 
   // ========== Load ==========
   const loadAll = async () => {
@@ -397,15 +408,16 @@ export default function AdminSmsGateways() {
 
             {/* ===== Packages ===== */}
             <TabsContent value="packages" className="mt-3 space-y-3">
-              <div className="flex justify-end">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <AdminSearchBar value={pkgSearch} onChange={setPkgSearch} count={filteredPackages.length} placeholder="Package name" />
                 <Button onClick={() => setEditingPkg({ name_bn: "", name_en: "", sms_count: 100, price_bdt: 100, is_active: true, sort_order: 0 })} className="gap-1">
                   <Plus className="h-4 w-4" /> Add Package
                 </Button>
               </div>
               <div className="rounded-xl border bg-background">
-                {packages.length === 0 ? (
-                  <div className="p-8 text-center text-sm text-muted-foreground">No packages yet.</div>
-                ) : packages.map((p) => (
+                {filteredPackages.length === 0 ? (
+                  <div className="p-8 text-center text-sm text-muted-foreground">{pkgSearch ? "কোনো ফলাফল নেই" : "No packages yet."}</div>
+                ) : filteredPackages.map((p) => (
                   <div key={p.id} className="flex flex-wrap items-center gap-3 border-b p-3 last:border-b-0">
                     <div className="min-w-0 flex-1">
                       <div className="font-semibold">{p.name_bn} <span className="text-xs text-muted-foreground">({p.name_en})</span></div>
@@ -423,8 +435,11 @@ export default function AdminSmsGateways() {
               <div className="rounded-md border bg-muted/30 p-3 text-xs text-muted-foreground">
                 Placeholders: <code>{"{name}"}</code>, <code>{"{amount}"}</code>, <code>{"{due}"}</code>. Shop signature is appended automatically.
               </div>
+              <AdminSearchBar value={tplSearch} onChange={setTplSearch} count={filteredTemplates.length} placeholder="Template name বা code" />
               <div className="rounded-xl border bg-background">
-                {templates.map((t) => (
+                {filteredTemplates.length === 0 ? (
+                  <div className="p-8 text-center text-sm text-muted-foreground">{tplSearch ? "কোনো ফলাফল নেই" : "No templates"}</div>
+                ) : filteredTemplates.map((t) => (
                   <div key={t.id} className="flex flex-wrap items-start gap-3 border-b p-3 last:border-b-0">
                     <div className="min-w-0 flex-1">
                       <div className="font-semibold">{t.name_bn} <span className="text-xs text-muted-foreground">({t.code})</span></div>

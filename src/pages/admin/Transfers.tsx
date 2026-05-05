@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2, ExternalLink, Save, Undo2 } from "lucide-react";
 import { toast } from "sonner";
+import { AdminSearchBar, matches } from "@/components/admin/AdminSearchBar";
 
 type Row = {
   id: string;
@@ -44,6 +45,7 @@ export default function AdminTransfers() {
   const qc = useQueryClient();
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
 
   const q = useQuery({
     queryKey: ["admin-transfers"],
@@ -88,8 +90,15 @@ export default function AdminTransfers() {
   };
 
   const rows = q.data ?? [];
-  const pending = rows.filter((r) => r.status.startsWith("pending"));
-  const done = rows.filter((r) => !r.status.startsWith("pending"));
+  const filtered = useMemo(
+    () =>
+      rows.filter((r) =>
+        matches(search, r.shops?.name, r.to_phone, r.status, r.payment_txn_id, r.payment_transaction_id, r.reason),
+      ),
+    [rows, search],
+  );
+  const pending = filtered.filter((r) => r.status.startsWith("pending"));
+  const done = filtered.filter((r) => !r.status.startsWith("pending"));
 
   return (
     <div className="mx-auto w-full max-w-6xl space-y-4 p-3 sm:p-6">
@@ -99,6 +108,13 @@ export default function AdminTransfers() {
       </div>
 
       <TransferSettingsCard />
+
+      <AdminSearchBar
+        value={search}
+        onChange={setSearch}
+        count={filtered.length}
+        placeholder="Shop, phone, status, txn ID দিয়ে খুঁজুন"
+      />
 
       {q.isLoading ? (
         <div className="flex justify-center py-10"><Loader2 className="h-5 w-5 animate-spin" /></div>
