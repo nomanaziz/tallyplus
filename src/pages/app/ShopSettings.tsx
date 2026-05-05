@@ -73,7 +73,7 @@ export default function ShopSettingsPage() {
       const shopId = current.id;
       const [cats, prods, custs, sups, svcs] = await Promise.all([
         supabase.from("categories").select("name,parent_id,id").eq("shop_id", shopId),
-        supabase.from("products").select("name,sku,barcode,unit,cost_price,sale_price,wholesale_price,stock,low_stock_alert,description,image_url,category_id").eq("shop_id", shopId).is("deleted_at", null),
+        supabase.from("products").select("name,sku,barcode,unit,cost_price,sale_price,stock,low_stock_alert,description,image_url,category_id").eq("shop_id", shopId).is("deleted_at", null),
         supabase.from("customers").select("name,phone,address,email").eq("shop_id", shopId).is("deleted_at", null),
         supabase.from("suppliers").select("name,phone,address,email").eq("shop_id", shopId).is("deleted_at", null),
         supabase.from("services").select("name,price,description,duration_minutes").eq("shop_id", shopId).is("deleted_at", null),
