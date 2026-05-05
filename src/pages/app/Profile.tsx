@@ -12,7 +12,7 @@ import { z } from "zod";
 
 export default function ProfilePage() {
   const { lang } = useI18n();
-  const { user, profile, refreshProfile } = useAuth() as ReturnType<typeof useAuth> & { refreshProfile?: () => Promise<void> };
+  const { user, profile, refresh } = useAuth();
   const nav = useNavigate();
   const [fullName, setFullName] = useState("");
   const [address, setAddress] = useState("");
@@ -49,7 +49,7 @@ export default function ProfilePage() {
         .eq("id", user.id);
       if (error) throw error;
       toast.success(lang === "bn" ? "প্রোফাইল আপডেট হয়েছে" : "Profile updated");
-      if (typeof refreshProfile === "function") await refreshProfile();
+      if (typeof refresh === "function") await refresh();
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
