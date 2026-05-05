@@ -161,6 +161,8 @@ export const appRoutes: RouteObject[] = [
 { path: "transfers", element: <Suspense fallback={<RouteFallback/>}><LAdminTransfers/></Suspense> }
 ,
 { path: "brands", element: <Suspense fallback={<RouteFallback/>}><LAdminBrands/></Suspense> }
+,
+{ path: "variant-presets", element: <Suspense fallback={<RouteFallback/>}><LAdminVariantPresets/></Suspense> }
 ] },
 { path: "affiliate", element: <Suspense fallback={<RouteFallback/>}><L22/></Suspense>, children: [
 { path: "register", element: <Suspense fallback={<RouteFallback/>}><L23/></Suspense> }
