@@ -14,6 +14,7 @@ import { Menu, Store, Home as HomeIcon, ScrollText, ShoppingCart } from "lucide-
 import logo from "@/assets/logo.png";
 import { homePathFor } from "@/lib/home-redirect";
 import { useCartCount } from "@/lib/consumer-cart";
+import { InstallAppButton } from "@/components/app/InstallAppPrompt";
 
 export function SiteHeader() {
   const { t, lang } = useI18n();
@@ -56,6 +57,7 @@ export function SiteHeader() {
           </Link>
         </nav>
         <div className="flex items-center gap-1.5 md:gap-2">
+          <InstallAppButton className="hidden md:inline-flex h-9 items-center gap-1.5 rounded-full border px-3 text-sm font-medium hover:bg-accent" />
           <Link
             to="/cart"
             aria-label="Cart"
