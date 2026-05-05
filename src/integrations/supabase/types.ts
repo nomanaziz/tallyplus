@@ -122,6 +122,39 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_telegram_subscribers: {
+        Row: {
+          chat_id: string
+          created_at: string
+          created_by: string | null
+          events: string[]
+          id: string
+          is_active: boolean
+          label: string | null
+          updated_at: string
+        }
+        Insert: {
+          chat_id: string
+          created_at?: string
+          created_by?: string | null
+          events?: string[]
+          id?: string
+          is_active?: boolean
+          label?: string | null
+          updated_at?: string
+        }
+        Update: {
+          chat_id?: string
+          created_at?: string
+          created_by?: string | null
+          events?: string[]
+          id?: string
+          is_active?: boolean
+          label?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       affiliate_agents: {
         Row: {
           agent_referral_code: string
@@ -5273,6 +5306,27 @@ export type Database = {
           },
         ]
       }
+      telegram_dispatch_settings: {
+        Row: {
+          anon_key: string
+          enabled: boolean
+          function_url: string
+          id: number
+        }
+        Insert: {
+          anon_key?: string
+          enabled?: boolean
+          function_url?: string
+          id?: number
+        }
+        Update: {
+          anon_key?: string
+          enabled?: boolean
+          function_url?: string
+          id?: number
+        }
+        Relationships: []
+      }
       training_videos: {
         Row: {
           audience: string
@@ -5607,6 +5661,15 @@ export type Database = {
           sales: number
           stock_value: number
         }[]
+      }
+      dispatch_admin_telegram: {
+        Args: {
+          _body: string
+          _event_type: string
+          _link?: string
+          _title: string
+        }
+        Returns: undefined
       }
       ensure_affiliate_wallet: { Args: { _aff_id: string }; Returns: undefined }
       ensure_default_categories: {
