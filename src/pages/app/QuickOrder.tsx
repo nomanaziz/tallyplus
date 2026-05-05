@@ -211,12 +211,6 @@ function QuickOrderInner() {
   );
   const totalProfit = total - totalCost;
 
-  const cartQtyMap = useMemo(() => {
-    const m = new Map<string, number>();
-    for (const r of rows) if (r.productId) m.set(r.productId, (m.get(r.productId) || 0) + r.qty);
-    return m;
-  }, [rows]);
-
   const convertToSale = async () => {
     if (!current?.id || !user) return;
     if (rows.length === 0) {
