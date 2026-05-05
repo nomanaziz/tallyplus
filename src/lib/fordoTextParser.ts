@@ -203,6 +203,18 @@ function splitChunkIntoItems(rawChunk: string): ParsedItem[] {
 
   if (qty === null && pendingHalf > 0) qty = pendingHalf;
   flush();
+
+  // Post-process: an item that is ONLY a bracketed annotation (e.g. "(নরম দেখে)")
+  // should be appended to the previous item's name rather than standing alone.
+  for (let j = items.length - 1; j > 0; j--) {
+    const it = items[j];
+    const onlyBracket = !!it.name && /^[(\[].*[)\]]$/.test(it.name) && !it.qty && !it.unit;
+    if (onlyBracket) {
+      items[j - 1].name = `${items[j - 1].name} ${it.name}`.trim();
+      items.splice(j, 1);
+    }
+  }
+
   return items;
 }
 
