@@ -1090,6 +1090,12 @@ function ProductFormDialog({
   const [trackStock, setTrackStock] = useState(true);
   const [busy, setBusy] = useState(false);
   const [description, setDescription] = useState("");
+  const [brand, setBrand] = useState("");
+  // Marketplace category state (separate from per-shop category tree)
+  const [mpCategoryId, setMpCategoryId] = useState<string | null>(null);
+  const [mpSubcategoryId, setMpSubcategoryId] = useState<string | null>(null);
+  type MpCat = { id: string; parent_id: string | null; name_bn: string; name_en: string };
+  const [mpCats, setMpCats] = useState<MpCat[]>([]);
   // Category state
   const [categoryId, setCategoryId] = useState<string | null>(null);
   const [subCategoryId, setSubCategoryId] = useState<string | null>(null);
