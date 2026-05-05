@@ -6,10 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "@/lib/router";
 import {
   Loader2, Store, ListChecks, Plus, FileText, CalendarClock,
-  Trash2, Pause, Play, Star, Check, X, Clock, Save, Copy, Calendar, Wallet, Share2,
+  Trash2, Pause, Play, Star, Check, X, Clock, Save, Copy, Calendar, Wallet, Share2, Download,
 } from "lucide-react";
 import { toast } from "sonner";
 import { copyFordoShareLink, whatsappFordoShareUrl } from "@/lib/share-fordo";
+import { downloadFordoSlip } from "@/lib/fordo-pdf";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
@@ -28,6 +29,7 @@ type Wishlist = {
   note: string | null;
   created_at: string;
   share_token?: string | null;
+  allow_public_check?: boolean | null;
 };
 
 type WLItem = {
@@ -153,6 +155,31 @@ export default function MyFordo() {
     })();
     return () => { cancelled = true; };
   }, [user]);
+
+  // Realtime: when recipient ticks items on a shared link, reflect here live.
+  useEffect(() => {
+    const ids = items.map((w) => w.id);
+    if (ids.length === 0) return;
+    const ch = supabase
+      .channel(`my-fordo-items-${ids[0]}`)
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "customer_wishlist_items", filter: `wishlist_id=in.(${ids.join(",")})` },
+        (payload) => {
+          const u = payload.new as Partial<WLItem> & { id: string; wishlist_id: string };
+          setItemsByWl((prev) => {
+            const list = prev[u.wishlist_id];
+            if (!list) return prev;
+            return {
+              ...prev,
+              [u.wishlist_id]: list.map((it) => it.id === u.id ? { ...it, ...u } as WLItem : it),
+            };
+          });
+        },
+      )
+      .subscribe();
+    return () => { void supabase.removeChannel(ch); };
+  }, [items]);
 
   const deleteTemplate = async (id: string) => {
     if (!confirm("টেমপ্লেট মুছবেন?")) return;
@@ -482,6 +509,21 @@ export default function MyFordo() {
                         <span className="font-bold text-primary tabular-nums">৳ {total.toLocaleString("bn-BD", { maximumFractionDigits: 2 })}</span>
                       )}
                     </div>
+                    {wlItems.length > 0 && (() => {
+                      const dn = wlItems.filter((i) => i.done).length;
+                      const pct = Math.round((dn / wlItems.length) * 100);
+                      return (
+                        <div className="mt-2">
+                          <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+                            <span>লাইভ: {dn}/{wlItems.length} কেনা হয়েছে</span>
+                            <span>{pct}%</span>
+                          </div>
+                          <div className="mt-1 h-1.5 overflow-hidden rounded bg-muted">
+                            <div className="h-full bg-emerald-500 transition-all" style={{ width: `${pct}%` }} />
+                          </div>
+                        </div>
+                      );
+                    })()}
                     {wlItems.length > 0 && (
                       <>
                         <button
@@ -545,6 +587,21 @@ export default function MyFordo() {
                                 </a>
                               </>
                             )}
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => downloadFordoSlip({
+                                customerName: w.customer_name,
+                                customerPhone: w.customer_phone,
+                                shopName: shops[w.shop_id]?.name ?? null,
+                                note: w.note,
+                                createdAt: w.created_at,
+                                withPrices: total > 0,
+                                items: wlItems.map((i) => ({ name: i.name, qty: i.qty, unit: i.unit, price: i.price, done: i.done })),
+                              })}
+                            >
+                              <Download className="mr-1 h-3.5 w-3.5" /> স্লিপ ডাউনলোড
+                            </Button>
                             {total > 0 && (
                               <Button
                                 size="sm"

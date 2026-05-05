@@ -1652,6 +1652,7 @@ export type Database = {
       }
       customer_wishlists: {
         Row: {
+          allow_public_check: boolean
           buyer_shop_id: string | null
           color: string
           consumer_user_id: string | null
@@ -1672,6 +1673,7 @@ export type Database = {
           wishlist_customer_id: string | null
         }
         Insert: {
+          allow_public_check?: boolean
           buyer_shop_id?: string | null
           color?: string
           consumer_user_id?: string | null
@@ -1692,6 +1694,7 @@ export type Database = {
           wishlist_customer_id?: string | null
         }
         Update: {
+          allow_public_check?: boolean
           buyer_shop_id?: string | null
           color?: string
           consumer_user_id?: string | null
@@ -5798,6 +5801,10 @@ export type Database = {
       }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
+      toggle_shared_fordo_item: {
+        Args: { _done: boolean; _item_id: string; _token: string }
+        Returns: Json
+      }
       upsert_push_subscription: {
         Args: {
           _auth: string
