@@ -54,6 +54,7 @@ const ITEMS: Item[] = [
   { to: "/admin/marketplace", label: "Marketplace", icon: Store, perm: "marketplace" },
   { to: "/admin/marketplace-categories", label: "Marketplace Categories", icon: Tags, perm: "marketplace_categories" },
   { to: "/admin/brands", label: "Brands / Companies", icon: Tag, perm: "brands" },
+  { to: "/admin/variant-presets", label: "Variant Presets", icon: Tag, perm: "variant_presets" },
   { to: "/admin/banners", label: "Dashboard Banners", icon: Image, perm: "banners" },
   { to: "/admin/training", label: "Training Videos", icon: GraduationCap, perm: "training" },
   { to: "/admin/affiliates", label: "Affiliate Program", icon: Handshake, perm: "affiliates" },
