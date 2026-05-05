@@ -30,6 +30,7 @@ import {
 import { toast } from "sonner";
 import { publishProductToMarketplace } from "@/lib/marketplace-publish";
 import { CatalogProductPicker, type CatalogProduct } from "@/components/app/CatalogProductPicker";
+import { VariantPickerSheet } from "@/components/app/VariantPickerSheet";
 import { ensureDefaultCategories } from "@/lib/default-categories";
 import { SampleProductImportSheet } from "@/components/app/SampleProductImportSheet";
 import { ProductBulkImportDialog } from "@/components/app/ProductBulkImportDialog";
