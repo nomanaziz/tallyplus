@@ -2549,6 +2549,8 @@ export type Database = {
           is_serialized: boolean
           low_stock_alert: number | null
           manufacturing_date: string | null
+          marketplace_category_id: string | null
+          marketplace_subcategory_id: string | null
           name: string
           sale_price: number
           shop_id: string
@@ -2585,6 +2587,8 @@ export type Database = {
           is_serialized?: boolean
           low_stock_alert?: number | null
           manufacturing_date?: string | null
+          marketplace_category_id?: string | null
+          marketplace_subcategory_id?: string | null
           name: string
           sale_price?: number
           shop_id: string
@@ -2621,6 +2625,8 @@ export type Database = {
           is_serialized?: boolean
           low_stock_alert?: number | null
           manufacturing_date?: string | null
+          marketplace_category_id?: string | null
+          marketplace_subcategory_id?: string | null
           name?: string
           sale_price?: number
           shop_id?: string
@@ -2641,6 +2647,20 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_marketplace_category_id_fkey"
+            columns: ["marketplace_category_id"]
+            isOneToOne: false
+            referencedRelation: "marketplace_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_marketplace_subcategory_id_fkey"
+            columns: ["marketplace_subcategory_id"]
+            isOneToOne: false
+            referencedRelation: "marketplace_categories"
             referencedColumns: ["id"]
           },
           {
