@@ -1,52 +1,68 @@
-## ধার ও cash-on-hand integration
+## Customer subscription — Recharge gateway, না manual request
 
-**সমস্যা:** এখন `consumer_loans` (ধার দেওয়া/নেওয়া) আলাদা ট্র্যাক হয়, কিন্তু এর সাথে account balance (নগদ/বিকাশ) connected না। ফলে wife যখন ৫০০ টাকা ধার দেয়, তার "নগদ" balance unchanged থাকে — যেটা ভুল।
+### সমস্যা
 
-**সমাধান:** ধার = টাকা চলাচল, কিন্তু আয়/ব্যয় না। তাই account balance update করব, কিন্তু income/expense rollup-এ ঢুকবে না।
+এখন `src/pages/customer/Subscription.tsx`-এ subscribe করতে গেলে শুধু `subscription_requests` table-এ একটা pending row insert হয় — admin manually approve না করা পর্যন্ত কিছুই হয় না। Shop subscription (`src/pages/app/Subscribe.tsx`)-এ অনলাইন payment gateway (Recharge Server) আছে, তাত্ক্ষণিক active হয়। Consumer-এ একই system দরকার।
 
-### ১. নিয়ম (চারটা ঘটনা)
+পাশাপাশি payment attempts (failed সহ), subscriptions, ও shop ownership transfers — এই তিনটার জন্য already-existing infra reuse করতে হবে, নতুন কিছু না।
 
-| ঘটনা | account-এ effect | আয়/ব্যয়? |
-|---|---|---|
-| ধার দিলাম (lent) | নগদ −৫০০ | না |
-| ধার ফেরত পেলাম | নগদ +৫০০ | না |
-| ধার নিলাম (borrowed) | নগদ +৫০০ | না |
-| ধার ফেরত দিলাম | নগদ −৫০০ | না |
+### সমাধান
 
-### ২. DB পরিবর্তন
+Consumer subscription-কে shop subscribe-এর মতই দুটো option দেব:
+1. **অনলাইন পেমেন্ট** — Recharge Server (instant active)
+2. **ম্যানুয়াল পেমেন্ট** — bKash/Nagad TxnID submit, admin verify (existing flow)
 
-- `consumer_loans` টেবিলে `account_id` কলাম যোগ — কোন account থেকে ধার দিল/পেল
-- `consumer_loan_payments` টেবিলে `account_id` কলাম যোগ
-- নতুন column `consumer_transactions.kind` (default 'regular') — values: `regular`, `loan_out`, `loan_in`, `loan_repay_out`, `loan_repay_in`
-- `consumer_transactions.source_loan_id`, `source_loan_payment_id` (FK) — duplicate রোধে unique
-- **Trigger** `tg_consumer_loan_movement`:
-  - INSERT consumer_loans → একটা hidden tx তৈরি (type: expense if lent, income if borrowed; kind: loan_out/loan_in; amount = principal; account_id = loan.account_id)
-  - INSERT consumer_loan_payments → hidden tx (type: income if repaying lent loan, expense if repaying borrowed; kind: loan_repay_in/loan_repay_out)
-  - DELETE → reverse tx ও মুছে যাবে (cascade)
-- `consumer_transactions` queries যেখানে আয়/ব্যয় summary দেখানো হয় (Dashboard, Money page rollup) — `kind = 'regular'` filter যোগ করতে হবে যাতে আয়-ব্যয়ে loan টাকা না দেখায়
-- কিন্তু account balance calculation-এ সব tx (kind সহ) যোগ হবে — তাই হাতে টাকা সঠিক থাকবে
+সব কিছুই existing tables (`payment_transactions`, `subscriptions`, `subscription_requests`) ও existing edge functions reuse করবে। Admin-এর **Payment Attempts**, **Subscriptions**, **Transfers** page-এ consumer subscription গুলোও আসবে কারণ same tables।
 
-### ৩. UI পরিবর্তন
+### ১. Edge function reuse / minor change
 
-- **LoansTab "ধার যোগ করুন" form**: account dropdown যোগ ("কোন account থেকে দিচ্ছেন/পাচ্ছেন")
-- **Repay sheet**: account dropdown ("কোন account-এ আসছে/যাচ্ছে")
-- **Money page hand-cash card**: তিনটা ভাগে দেখাব
-  - মোট হাতে: ৳X (income + ধার নেওয়া − ব্যয় − ধার দেওয়া)
-  - এর মধ্যে: পাবো ৳A, দিতে হবে ৳B
-- নতুন **"টাকার উৎস" breakdown** (optional toggle):
-  - নিজের আয় থেকে: ৳
-  - ধার নেওয়া থেকে: ৳
-  - মোট হাতে: ৳
+`recharge-create-payment` (existing) — ইতিমধ্যে যেকোনো plan_id accept করে, consumer plans (`consumer_history_*`) সহ। কিছু পরিবর্তন লাগবে কিনা check করব:
+- `subscription_plans` filter — consumer plans-এও `is_active=true` থাকলে allow করছে। ✅
+- success/cancel URL — consumer-এর জন্য আলাদা callback route লাগবে: `/customer/subscribe/callback` (নতুন, optional `redirect_to` parameter দিয়েও করা যায়)। সহজ approach: function-এ `redirect_path` body param যোগ, না দিলে default `/app/subscribe/callback`।
 
-### ৪. Migration safety
+`recharge-verify-payment` — already plan code দেখে `subscriptions` row insert/update করে; consumer plans automatically handle হবে।
 
-- নতুন কলাম nullable — পুরাতন data unaffected
-- পুরনো loan গুলোর জন্য `account_id` null থাকবে, balance impact হবে না (backfill optional, user চাইলে later)
-- নতুন loan থেকে rule apply
+`recharge-mark-failed` — same, no change।
 
-### Files
+### ২. নতুন callback route (consumer)
 
-- migration: `consumer_loans.account_id`, `consumer_loan_payments.account_id`, `consumer_transactions.kind`, `source_loan_id`, `source_loan_payment_id`, trigger function
-- edit: `src/components/customer/LoansTab.tsx` (account dropdown + form/repay), `src/pages/customer/Money.tsx` ও `src/pages/customer/Dashboard.tsx` (kind='regular' filter on income/expense summaries; account balance unchanged), `src/pages/customer/History.tsx` (loan tx visually আলাদা label)
+`src/pages/customer/SubscribeCallback.tsx` — `src/pages/app/SubscribeCallback.tsx`-এর consumer version (success হলে `/customer/subscription`-এ redirect, layout consumer-এর)।
 
-Approve করলে migration আগে দেব, তারপর code।
+Route registration: `src/lib/app-routes.tsx`-এ `/customer/subscribe/callback` যোগ।
+
+### ৩. `src/pages/customer/Subscription.tsx` redesign
+
+বর্তমান "আবেদন করুন" button-এর জায়গায় shop Subscribe page-এর pattern হুবহু copy:
+- Plan card-এ "নির্বাচন করুন" button
+- নিচে step-2 panel: "অনলাইন পেমেন্ট" / "ম্যানুয়াল পেমেন্ট" choice
+- Online → `recharge-create-payment` invoke (with `redirect_path: "/customer/subscribe/callback"`), gateway URL-এ redirect
+- Manual → existing `subscription_requests` insert (payment_method, txn_id, admin_note সহ — যেমন shop flow করে)
+- `payment_methods` table থেকে active methods load (shop flow-এ আছে)
+- `payment_gateway_public` RPC দিয়ে gateway enabled কিনা check; disabled হলে শুধু manual show
+
+### ৪. Admin-side already covered
+
+কোনো change লাগবে না:
+- `src/pages/admin/PaymentAttempts.tsx` — `payment_transactions` table দেখায়, consumer recharge attempts automatic দেখাবে (provider=`recharge_server`, plan code দিয়ে চিনবে)
+- `src/pages/admin/Subscriptions.tsx` — সব active subscriptions দেখায়, consumer plan-গুলোও আসবে
+- `src/pages/admin/SubscriptionRequests.tsx` — manual request সব দেখায়, consumer-গুলোও আসবে
+- `src/pages/admin/Transfers.tsx` — shop transfer flow, যেমন আছে তেমন (এটা already gateway integrated)
+
+কেবল ভাল UX-এর জন্য PaymentAttempts table-এ plan label/badge-এ "Consumer" vs "Shop" indicator দেখানো যেতে পারে — plan code prefix (`consumer_history_`) দেখে। ছোট cosmetic addition।
+
+### ৫. Files
+
+**নতুন:**
+- `src/pages/customer/SubscribeCallback.tsx`
+
+**Edit:**
+- `supabase/functions/recharge-create-payment/index.ts` — optional `redirect_path` body param accept (default existing behaviour)
+- `src/pages/customer/Subscription.tsx` — full redesign (plan grid + pay-step panel)
+- `src/lib/app-routes.tsx` — register `/customer/subscribe/callback`
+- `src/pages/admin/PaymentAttempts.tsx` — small "Consumer/Shop" badge based on plan code (cosmetic)
+
+### ৬. কেন migration লাগছে না
+
+`payment_transactions`, `subscriptions`, `subscription_requests`, `subscription_plans`, `payment_methods` — সব ইতিমধ্যে exist করে এবং plan_id দিয়ে consumer plans handle করতে পারে। সম্পূর্ণ code-only change।
+
+Approve করলে edge function update আগে, তারপর consumer page + callback + route + admin badge — এক সাথেই।
