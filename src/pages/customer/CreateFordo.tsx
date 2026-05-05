@@ -590,6 +590,35 @@ export default function CreateFordo() {
           });
         }}
       />
+
+      <ImageToFordoDialog
+        open={showImage}
+        onOpenChange={setShowImage}
+        onAdd={(parsed) => {
+          setItems((cur) => {
+            const next = [...cur];
+            let idx = 0;
+            for (const it of parsed) {
+              const emptyAt = next.findIndex((r) => !r.name.trim());
+              if (emptyAt >= 0 && idx === 0) {
+                next[emptyAt] = {
+                  name: it.name,
+                  qty: it.qty ?? next[emptyAt].qty,
+                  unit: it.unit ?? next[emptyAt].unit,
+                };
+              } else {
+                next.push({
+                  name: it.name,
+                  qty: it.qty ?? "",
+                  unit: it.unit ?? "",
+                });
+              }
+              idx++;
+            }
+            return next;
+          });
+        }}
+      />
     </div>
   );
 }
