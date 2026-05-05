@@ -8,6 +8,7 @@ import { AuthProvider } from "@/lib/auth";
 import { RefCaptureProvider } from "@/lib/referral";
 import { Toaster } from "@/components/ui/sonner";
 import { InstallAppPrompt } from "@/components/app/InstallAppPrompt";
+import { OfflineBanner } from "@/components/app/OfflineBanner";
 import { appRoutes } from "@/lib/app-routes";
 import { startRoutePreloading } from "@/lib/preload-routes";
 import "@/styles.css";
@@ -63,6 +64,7 @@ createRoot(document.getElementById("root")!).render(
                 <AppRoutes />
                 <Toaster richColors position="top-center" />
                 <InstallAppPrompt />
+                <OfflineBanner />
               </RefCaptureProvider>
             </AuthProvider>
           </ThemeProvider>
