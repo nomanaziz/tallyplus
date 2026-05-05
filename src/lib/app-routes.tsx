@@ -31,6 +31,7 @@ const LMyCredentials = lazy(() => import("@/pages/admin/MyCredentials"));
 const LAdminTransfers = lazy(() => import("@/pages/admin/Transfers"));
 const LAdminBrands = lazy(() => import("@/pages/admin/Brands"));
 const LAdminVariantPresets = lazy(() => import("@/pages/admin/VariantPresets"));
+const LAdminImageLibrary = lazy(() => import("@/pages/admin/ImageLibrary"));
 const L22 = lazy(() => import("@/pages/Affiliate"));
 const L23 = lazy(() => import("@/pages/affiliate/Register"));
 const L24 = lazy(() => import("@/pages/app/AppLayout"));
@@ -163,6 +164,8 @@ export const appRoutes: RouteObject[] = [
 { path: "brands", element: <Suspense fallback={<RouteFallback/>}><LAdminBrands/></Suspense> }
 ,
 { path: "variant-presets", element: <Suspense fallback={<RouteFallback/>}><LAdminVariantPresets/></Suspense> }
+,
+{ path: "image-library", element: <Suspense fallback={<RouteFallback/>}><LAdminImageLibrary/></Suspense> }
 ] },
 { path: "affiliate", element: <Suspense fallback={<RouteFallback/>}><L22/></Suspense>, children: [
 { path: "register", element: <Suspense fallback={<RouteFallback/>}><L23/></Suspense> }
