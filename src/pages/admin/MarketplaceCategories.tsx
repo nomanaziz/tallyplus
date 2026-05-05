@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Plus, Pencil, Trash2, ChevronRight, Loader2, FolderTree } from "lucide-react";
 import { toast } from "sonner";
+import { AdminSearchBar, matches } from "@/components/admin/AdminSearchBar";
 
 type Cat = {
   id: string;
@@ -31,6 +32,7 @@ export default function MarketplaceCategoriesPage() {
   const [parentForNew, setParentForNew] = useState<string | null>(null);
   const [confirmDel, setConfirmDel] = useState<Cat | null>(null);
   const [saving, setSaving] = useState(false);
+  const [search, setSearch] = useState("");
 
   const load = async () => {
     setLoading(true);
@@ -45,8 +47,16 @@ export default function MarketplaceCategoriesPage() {
   };
   useEffect(() => { void load(); }, []);
 
-  const roots = items.filter((c) => !c.parent_id);
-  const childrenOf = (id: string) => items.filter((c) => c.parent_id === id);
+  const visible = useMemo(() => {
+    if (!search.trim()) return items;
+    const matched = items.filter((c) => matches(search, c.name_bn, c.name_en, c.slug));
+    // Include parents of matched children so the tree still renders
+    const set = new Set(matched.map((c) => c.id));
+    matched.forEach((c) => { if (c.parent_id) set.add(c.parent_id); });
+    return items.filter((c) => set.has(c.id));
+  }, [items, search]);
+  const roots = visible.filter((c) => !c.parent_id);
+  const childrenOf = (id: string) => visible.filter((c) => c.parent_id === id);
 
   const save = async () => {
     if (!editing?.name_bn || !editing?.name_en) {
@@ -95,6 +105,8 @@ export default function MarketplaceCategoriesPage() {
           <Plus className="mr-1 h-4 w-4" /> New Category
         </Button>
       </div>
+
+      <AdminSearchBar value={search} onChange={setSearch} count={visible.length} placeholder="Name বা slug দিয়ে খুঁজুন" />
 
       <Card>
         <CardContent className="p-3 sm:p-4">
