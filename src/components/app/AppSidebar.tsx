@@ -135,7 +135,7 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
     <aside className="flex h-full w-52 flex-col border-r bg-sidebar">
       <div className="flex h-14 flex-none items-center gap-2 border-b px-3">
         <img src={logo} alt="" className="h-6 w-6 object-contain" />
-        <span className="text-sm font-extrabold tracking-tight">Tally Plus</span>
+        <BrandWordmark className="text-sm font-extrabold tracking-tight" />
       </div>
       <ScrollArea className="flex-1">
         <nav className="flex flex-col gap-0.5 px-1.5 py-2">
