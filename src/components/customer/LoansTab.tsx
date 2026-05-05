@@ -34,6 +34,8 @@ type Payment = {
   created_at: string;
 };
 
+type Account = { id: string; name: string; kind: string };
+
 function bdt(n: number) {
   return new Intl.NumberFormat("bn-BD", { maximumFractionDigits: 0 }).format(n) + " ৳";
 }
@@ -52,6 +54,9 @@ export default function LoansTab() {
   const [note, setNote] = useState("");
   const [filter, setFilter] = useState<"all" | "unsettled" | "settled">("unsettled");
   const [saving, setSaving] = useState(false);
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [accountId, setAccountId] = useState<string>("");
+  const [payAccountId, setPayAccountId] = useState<string>("");
 
   // Partial repay sheet
   const [payOpen, setPayOpen] = useState(false);
@@ -78,6 +83,24 @@ export default function LoansTab() {
   };
 
   useEffect(() => { void load(); }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+    void (async () => {
+      const { data } = await supabase
+        .from("consumer_accounts")
+        .select("id,name,kind")
+        .eq("user_id", user.id)
+        .eq("is_archived", false)
+        .order("name");
+      const list = (data ?? []) as Account[];
+      setAccounts(list);
+      if (list[0]) {
+        setAccountId((cur) => cur || list[0].id);
+        setPayAccountId((cur) => cur || list[0].id);
+      }
+    })();
+  }, [user]);
 
   const summary = useMemo(() => {
     let willGet = 0;
@@ -120,6 +143,7 @@ export default function LoansTab() {
         loan_date: date,
         due_date: dueDate || null,
         note: note.trim() || null,
+        account_id: accountId || null,
       },
     });
     setSaving(false);
@@ -137,6 +161,7 @@ export default function LoansTab() {
     setPayVia("cash");
     setPayDate(new Date().toISOString().slice(0, 10));
     setPayNote("");
+    if (!payAccountId && accounts[0]) setPayAccountId(accounts[0].id);
     setPayOpen(true);
     // Load history for this loan
     const { data } = await supabase
@@ -164,6 +189,7 @@ export default function LoansTab() {
         paid_via: payVia,
         paid_date: payDate,
         note: payNote.trim() || null,
+        account_id: payAccountId || null,
       },
     });
     setPaySaving(false);
