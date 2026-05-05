@@ -1,10 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
-type SpeechRecognitionResult = {
-  transcript: string;
-  isFinal: boolean;
-};
-
 type Options = {
   lang?: string;
   silenceTimeoutMs?: number; // close after this much silence (after speech started)
@@ -16,6 +11,17 @@ type Options = {
   onSegment?: (text: string) => void;
   onClose?: () => void;
 };
+
+/** Mobile Chrome on Android stops the SpeechRecognition session every few
+ * seconds regardless of `continuous`. Restarting too eagerly causes the
+ * "mic on / off / on / off" flicker. We rate-limit restarts so the user
+ * sees a single steady "listening" state. */
+const MOBILE_RESTART_MIN_MS = 1200;
+
+function isMobileUA(): boolean {
+  if (typeof navigator === "undefined") return false;
+  return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+}
 
 export function useSpeechRecognition(opts: Options = {}) {
   const {
@@ -43,6 +49,8 @@ export function useSpeechRecognition(opts: Options = {}) {
   const onCloseRef = useRef(onClose);
   const restartingRef = useRef(false);
   const manuallyStoppedRef = useRef(false);
+  const lastRestartAtRef = useRef<number>(0);
+  const restartTimerRef = useRef<number | null>(null);
   onFinalRef.current = onFinal;
   onSegmentRef.current = onSegment;
   onCloseRef.current = onClose;
@@ -68,6 +76,10 @@ export function useSpeechRecognition(opts: Options = {}) {
   const stop = useCallback(() => {
     manuallyStoppedRef.current = true;
     clearTimers();
+    if (restartTimerRef.current) {
+      window.clearTimeout(restartTimerRef.current);
+      restartTimerRef.current = null;
+    }
     try {
       recognitionRef.current?.stop();
     } catch {
@@ -83,13 +95,16 @@ export function useSpeechRecognition(opts: Options = {}) {
       setError("এই device-এ voice support নেই — Chrome (Android) ব্যবহার করুন");
       return;
     }
-    // Pre-flight mic permission so mobile Chrome reliably shows the prompt
+    // Pre-flight mic permission so mobile Chrome reliably shows the prompt.
+    // IMPORTANT: stop the stream tracks BEFORE starting SpeechRecognition,
+    // otherwise on Android the two getUserMedia owners conflict and the
+    // recognizer keeps stopping ("mic on/off/on/off" flicker).
     try {
       if (navigator.mediaDevices?.getUserMedia) {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         stream.getTracks().forEach((t) => t.stop());
       }
-    } catch (err: any) {
+    } catch {
       setError("Microphone permission নেই — অনুমতি দিন");
       return;
     }
@@ -98,11 +113,15 @@ export function useSpeechRecognition(opts: Options = {}) {
     finalTextRef.current = "";
     manuallyStoppedRef.current = false;
     restartingRef.current = false;
+    lastRestartAtRef.current = 0;
 
     const r = new SR();
     r.lang = lang;
     r.interimResults = true;
-    r.continuous = continuous;
+    // Mobile Chrome ignores `continuous` after a few seconds; we restart
+    // ourselves on `onend`. Setting it false on mobile actually behaves
+    // more predictably (single segment per session, then we restart).
+    r.continuous = isMobileUA() ? false : continuous;
     r.maxAlternatives = 1;
 
     r.onstart = () => {
@@ -152,32 +171,53 @@ export function useSpeechRecognition(opts: Options = {}) {
         if (!keepAlive) {
           setError("কথা শোনা যায়নি — আরেকটু স্পষ্ট করে বলুন");
         }
+        // In keepAlive mode, "no-speech" is normal between phrases — just
+        // let onend restart us.
       } else if (code === "not-allowed" || code === "service-not-allowed") {
-        setError("Microphone permission নেই");
+        setError("Microphone permission নেই — ব্রাউজার সেটিংসে অনুমতি দিন");
+        manuallyStoppedRef.current = true;
       } else if (code === "audio-capture") {
-        setError("Microphone পাওয়া যাচ্ছে না — অন্য app microphone ব্যবহার করছে কি না দেখুন");
+        setError("Microphone পাওয়া যাচ্ছে না — অন্য app microphone ব্যবহার করছে কি না দেখুন");
+        manuallyStoppedRef.current = true;
       } else if (code === "network") {
-        setError("ভয়েস সার্ভিসে সংযোগ সমস্যা হচ্ছে — ইন্টারনেট বা Chrome speech service চেক করুন");
-      } else if (code !== "aborted") {
+        setError("ভয়েস সার্ভিসে সংযোগ সমস্যা — ইন্টারনেট চেক করুন");
+      } else if (code === "aborted") {
+        // benign — stop() was called
+      } else {
         setError(`Voice error: ${code}`);
       }
     };
 
     r.onend = () => {
       clearTimers();
-      setListening(false);
-      if (keepAlive && !manuallyStoppedRef.current && !restartingRef.current) {
+      if (keepAlive && !manuallyStoppedRef.current) {
+        // Keep UI in "listening" state across the brief restart gap so the
+        // user does NOT see the mic button flicker on mobile.
         restartingRef.current = true;
-        window.setTimeout(() => {
+        const since = Date.now() - lastRestartAtRef.current;
+        const minGap = isMobileUA() ? MOBILE_RESTART_MIN_MS : 200;
+        const delay = Math.max(minGap - since, isMobileUA() ? 400 : 160);
+        if (restartTimerRef.current) window.clearTimeout(restartTimerRef.current);
+        restartTimerRef.current = window.setTimeout(() => {
+          restartTimerRef.current = null;
           restartingRef.current = false;
+          if (manuallyStoppedRef.current) {
+            setListening(false);
+            const final = finalTextRef.current.trim();
+            if (final && onFinalRef.current) onFinalRef.current(final);
+            if (onCloseRef.current) onCloseRef.current();
+            return;
+          }
+          lastRestartAtRef.current = Date.now();
           try {
             r.start();
           } catch {
-            // ignore restart failure
+            // start() throws if already running — safe to ignore.
           }
-        }, 160);
+        }, delay);
         return;
       }
+      setListening(false);
       const final = finalTextRef.current.trim();
       if (final && onFinalRef.current) onFinalRef.current(final);
       if (onCloseRef.current) onCloseRef.current();
@@ -185,6 +225,7 @@ export function useSpeechRecognition(opts: Options = {}) {
 
     recognitionRef.current = r;
     try {
+      lastRestartAtRef.current = Date.now();
       r.start();
     } catch (e) {
       setError((e as Error).message);
@@ -196,6 +237,10 @@ export function useSpeechRecognition(opts: Options = {}) {
     return () => {
       clearTimers();
       manuallyStoppedRef.current = true;
+      if (restartTimerRef.current) {
+        window.clearTimeout(restartTimerRef.current);
+        restartTimerRef.current = null;
+      }
       try {
         recognitionRef.current?.abort();
       } catch {
