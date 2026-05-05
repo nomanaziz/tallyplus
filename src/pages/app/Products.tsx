@@ -30,6 +30,7 @@ import {
 import { toast } from "sonner";
 import { publishProductToMarketplace } from "@/lib/marketplace-publish";
 import { CatalogProductPicker, type CatalogProduct } from "@/components/app/CatalogProductPicker";
+import { VariantPickerSheet } from "@/components/app/VariantPickerSheet";
 import { ensureDefaultCategories } from "@/lib/default-categories";
 import { SampleProductImportSheet } from "@/components/app/SampleProductImportSheet";
 import { ProductBulkImportDialog } from "@/components/app/ProductBulkImportDialog";
@@ -1083,6 +1084,8 @@ function ProductFormDialog({
   const [name, setName] = useState("");
   const [sku, setSku] = useState("");
   const [barcode, setBarcode] = useState("");
+  const [variantPickerOpen, setVariantPickerOpen] = useState(false);
+  const [variantCatalogProduct, setVariantCatalogProduct] = useState<CatalogProduct | null>(null);
   const [unit, setUnit] = useState("pcs");
   const [cost, setCost] = useState("0");
   const [sale, setSale] = useState("0");
@@ -1352,7 +1355,19 @@ function ProductFormDialog({
             <CatalogProductPicker
               value={name}
               onChange={setName}
-              onSelect={(p: CatalogProduct) => {
+              onSelect={async (p: CatalogProduct) => {
+                // Check if catalog product has variants
+                const { data: vs } = await supabase
+                  .from("marketplace_product_variants")
+                  .select("id")
+                  .eq("marketplace_product_id", p.id)
+                  .eq("is_active", true)
+                  .limit(1);
+                if ((vs?.length ?? 0) > 0 && !product) {
+                  setVariantCatalogProduct(p);
+                  setVariantPickerOpen(true);
+                  return;
+                }
                 const fullName = p.name_bn + (p.pack_size ? ` (${p.pack_size})` : "");
                 setName(fullName);
                 if (p.barcode) { setBarcode(p.barcode); setBarcodeOn(true); }
@@ -1707,6 +1722,17 @@ function ProductFormDialog({
           </DialogContent>
         </Dialog>
       </SheetContent>
+      <VariantPickerSheet
+        open={variantPickerOpen}
+        onOpenChange={setVariantPickerOpen}
+        catalogProduct={variantCatalogProduct}
+        shopId={shopId ?? ""}
+        trackStock={trackStock}
+        onDone={() => {
+          onOpenChange(false);
+          onSaved(null);
+        }}
+      />
     </Sheet>
   );
 }

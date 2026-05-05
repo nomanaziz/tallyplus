@@ -1913,6 +1913,65 @@ export type Database = {
           },
         ]
       }
+      marketplace_product_variants: {
+        Row: {
+          attributes: Json
+          barcode: string | null
+          created_at: string
+          default_cost: number | null
+          default_price: number | null
+          id: string
+          image_url: string | null
+          is_active: boolean
+          marketplace_product_id: string
+          pack_size: string | null
+          sort_order: number
+          updated_at: string
+          variant_label_bn: string | null
+          variant_label_en: string
+        }
+        Insert: {
+          attributes?: Json
+          barcode?: string | null
+          created_at?: string
+          default_cost?: number | null
+          default_price?: number | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          marketplace_product_id: string
+          pack_size?: string | null
+          sort_order?: number
+          updated_at?: string
+          variant_label_bn?: string | null
+          variant_label_en: string
+        }
+        Update: {
+          attributes?: Json
+          barcode?: string | null
+          created_at?: string
+          default_cost?: number | null
+          default_price?: number | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          marketplace_product_id?: string
+          pack_size?: string | null
+          sort_order?: number
+          updated_at?: string
+          variant_label_bn?: string | null
+          variant_label_en?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketplace_product_variants_marketplace_product_id_fkey"
+            columns: ["marketplace_product_id"]
+            isOneToOne: false
+            referencedRelation: "marketplace_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       marketplace_products: {
         Row: {
           barcode: string | null
@@ -2552,6 +2611,7 @@ export type Database = {
           marketplace_category_id: string | null
           marketplace_subcategory_id: string | null
           name: string
+          parent_product_id: string | null
           sale_price: number
           shop_id: string
           sku: string | null
@@ -2559,6 +2619,8 @@ export type Database = {
           sub_category_id: string | null
           unit: string | null
           updated_at: string
+          variant_attributes: Json
+          variant_label: string | null
           vat_enabled: boolean
           vat_pct: number | null
           warranty_enabled: boolean
@@ -2590,6 +2652,7 @@ export type Database = {
           marketplace_category_id?: string | null
           marketplace_subcategory_id?: string | null
           name: string
+          parent_product_id?: string | null
           sale_price?: number
           shop_id: string
           sku?: string | null
@@ -2597,6 +2660,8 @@ export type Database = {
           sub_category_id?: string | null
           unit?: string | null
           updated_at?: string
+          variant_attributes?: Json
+          variant_label?: string | null
           vat_enabled?: boolean
           vat_pct?: number | null
           warranty_enabled?: boolean
@@ -2628,6 +2693,7 @@ export type Database = {
           marketplace_category_id?: string | null
           marketplace_subcategory_id?: string | null
           name?: string
+          parent_product_id?: string | null
           sale_price?: number
           shop_id?: string
           sku?: string | null
@@ -2635,6 +2701,8 @@ export type Database = {
           sub_category_id?: string | null
           unit?: string | null
           updated_at?: string
+          variant_attributes?: Json
+          variant_label?: string | null
           vat_enabled?: boolean
           vat_pct?: number | null
           warranty_enabled?: boolean
@@ -2661,6 +2729,13 @@ export type Database = {
             columns: ["marketplace_subcategory_id"]
             isOneToOne: false
             referencedRelation: "marketplace_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_parent_product_id_fkey"
+            columns: ["parent_product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
             referencedColumns: ["id"]
           },
           {
@@ -5174,6 +5249,45 @@ export type Database = {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
+        }
+        Relationships: []
+      }
+      variant_attribute_presets: {
+        Row: {
+          attribute_type: string
+          created_at: string
+          id: string
+          is_active: boolean
+          is_default: boolean
+          name_bn: string
+          name_en: string
+          sort_order: number
+          updated_at: string
+          values: Json
+        }
+        Insert: {
+          attribute_type?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          name_bn: string
+          name_en: string
+          sort_order?: number
+          updated_at?: string
+          values?: Json
+        }
+        Update: {
+          attribute_type?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          name_bn?: string
+          name_en?: string
+          sort_order?: number
+          updated_at?: string
+          values?: Json
         }
         Relationships: []
       }
