@@ -4,6 +4,7 @@ import { icons } from "@/lib/icons";
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import logo from "@/assets/logo.png";
+import { BrandWordmark } from "@/components/brand/BrandWordmark";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { usePermissions } from "@/lib/permissions-hook";
 import { usePwaInstall } from "@/hooks/use-pwa-install";
