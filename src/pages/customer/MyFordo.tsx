@@ -547,6 +547,21 @@ export default function MyFordo() {
                                 </a>
                               </>
                             )}
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => downloadFordoSlip({
+                                customerName: w.customer_name,
+                                customerPhone: w.customer_phone,
+                                shopName: shops[w.shop_id]?.name ?? null,
+                                note: w.note,
+                                createdAt: w.created_at,
+                                withPrices: total > 0,
+                                items: wlItems.map((i) => ({ name: i.name, qty: i.qty, unit: i.unit, price: i.price, done: i.done })),
+                              })}
+                            >
+                              <Download className="mr-1 h-3.5 w-3.5" /> স্লিপ ডাউনলোড
+                            </Button>
                             {total > 0 && (
                               <Button
                                 size="sm"
