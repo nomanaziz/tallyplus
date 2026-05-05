@@ -1355,7 +1355,19 @@ function ProductFormDialog({
             <CatalogProductPicker
               value={name}
               onChange={setName}
-              onSelect={(p: CatalogProduct) => {
+              onSelect={async (p: CatalogProduct) => {
+                // Check if catalog product has variants
+                const { data: vs } = await supabase
+                  .from("marketplace_product_variants")
+                  .select("id")
+                  .eq("marketplace_product_id", p.id)
+                  .eq("is_active", true)
+                  .limit(1);
+                if ((vs?.length ?? 0) > 0 && !product) {
+                  setVariantCatalogProduct(p);
+                  setVariantPickerOpen(true);
+                  return;
+                }
                 const fullName = p.name_bn + (p.pack_size ? ` (${p.pack_size})` : "");
                 setName(fullName);
                 if (p.barcode) { setBarcode(p.barcode); setBarcodeOn(true); }
