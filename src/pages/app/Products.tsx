@@ -279,6 +279,11 @@ function ProductsPage() {
   }, [history, historyPicked]);
 
   const onDelete = async (p: Product) => {
+    const { counts, total } = await checkProductReferences([p.id]);
+    if (total > 0) {
+      setRefBlock({ mode: "single", productName: p.name, counts });
+      return;
+    }
     if (!confirm(lang === "bn" ? "ডিলিট করবেন?" : "Delete this product?")) return;
     const { error } = await supabase.from("products").update({ deleted_at: new Date().toISOString() }).eq("id", p.id);
     if (error) { toast.error(error.message); return; }
@@ -314,6 +319,15 @@ function ProductsPage() {
     const ids = Array.from(selected);
     if (ids.length === 0) return;
     setBulkDeleting(true);
+    const { counts, blocked } = await checkProductReferences(ids);
+    const cleanIds = ids.filter((id) => !blocked.has(id));
+    if (blocked.size > 0) {
+      setBulkDeleting(false);
+      setConfirmOpen(false);
+      setConfirmText("");
+      setRefBlock({ mode: "bulk", counts, cleanIds, blockedCount: blocked.size });
+      return;
+    }
     const { error } = await supabase
       .from("products")
       .update({ deleted_at: new Date().toISOString() })
@@ -330,6 +344,34 @@ function ProductsPage() {
     );
     setConfirmOpen(false);
     setConfirmText("");
+    cancelSelect();
+    void load();
+  };
+
+  // Soft-delete only the clean ids from the bulk-block dialog.
+  const proceedDeleteCleanOnly = async () => {
+    if (!refBlock || refBlock.mode !== "bulk" || !refBlock.cleanIds) return;
+    const cleanIds = refBlock.cleanIds;
+    const blockedCount = refBlock.blockedCount ?? 0;
+    setRefBlock(null);
+    if (cleanIds.length === 0) {
+      toast.error(
+        lang === "bn"
+          ? "কোনো প্রোডাক্ট ডিলিট করা যায়নি — সব গুলোতে reference আছে।"
+          : "No products could be deleted — all have references.",
+      );
+      return;
+    }
+    const { error } = await supabase
+      .from("products")
+      .update({ deleted_at: new Date().toISOString() })
+      .in("id", cleanIds);
+    if (error) { toast.error(error.message); return; }
+    toast.success(
+      lang === "bn"
+        ? `${cleanIds.length}টি ডিলিট হয়েছে, ${blockedCount}টি skip হয়েছে (reference আছে)।`
+        : `${cleanIds.length} deleted, ${blockedCount} skipped (have references).`,
+    );
     cancelSelect();
     void load();
   };
