@@ -1,109 +1,113 @@
-# Admin Web Push Notifications
+# Personal Loans — Partial Repay + Cash on Hand + Voice for Notes
 
-ব্রাউজার-based Web Push (VAPID) দিয়ে যেসব user app open/install করেছে তাদের কাছে admin portal থেকে notification পাঠানোর system। Segment করা যাবে: All / Installed PWA / Web browser / Mobile browser / Desktop browser।
+## 1. Partial repayment for personal loans (consumer)
 
-## 1. Database (migration)
-
-নতুন table `push_subscriptions`:
+**DB migration** — new table `consumer_loan_payments`:
 ```
-id          uuid PK
-user_id     uuid null  -- যদি logged-in হয়, না হলে anonymous
-endpoint    text unique not null
-p256dh      text not null
-auth        text not null
-display_mode text  -- 'standalone' (installed PWA) | 'browser'
-device_type text   -- 'mobile' | 'desktop' | 'tablet'
-user_agent  text
-language    text   -- 'bn' | 'en'
-last_seen_at timestamptz default now()
-created_at  timestamptz default now()
-revoked_at  timestamptz null
+id uuid PK
+loan_id uuid FK consumer_loans
+user_id uuid
+amount numeric  -- positive
+paid_via text   -- 'cash' | 'bkash' | 'nagad' | 'rocket' | 'bank'
+note text
+paid_date date default current_date
+created_at timestamptz
 ```
-Index: `(display_mode)`, `(device_type)`, `(user_id)`.
-RLS:
-- INSERT/UPDATE: anyone (anon/auth) can upsert their own endpoint (`with check true`); UPDATE only by matching endpoint via RPC.
-- SELECT/DELETE: admin-only (`is_admin(auth.uid())`).
+RLS: only owner (`auth.uid() = user_id`)।
 
-নতুন table `push_campaigns`:
+`consumer_loans`-এ যোগ:
+- `paid_amount numeric default 0` (denormalized running total — trigger maintains)
+
+Trigger `tg_consumer_loan_payment_sync`:
+- AFTER INSERT/UPDATE/DELETE on `consumer_loan_payments`:
+  - recompute `paid_amount = SUM(amount)` for that loan
+  - যদি `paid_amount >= amount` হয় → `is_settled = true, settled_at = now()`, নাহয় `is_settled = false`
+  - **No more auto consumer_transactions** for partial pay (see #2)
+
+## 2. Loans excluded from income/expense — দেনা/পাওনা cash-only
+
+বর্তমানে `LoansTab.submit()` এবং `settle()` `consumer_transactions`-এ row insert করে → ফলে summary-তে আয়/ব্যয় হিসেবে দেখায়। এটা ভুল — ধার আয় না, ফেরত খরচ না।
+
+**পরিবর্তন:**
+- `LoansTab.tsx` থেকে `consumer_transactions` insert সম্পূর্ণভাবে সরাও (create + settle + payment তিনটাতেই)।
+- পরিবর্তে নতুন **Cash on Hand** ledger maintain করা হবে (নিচে #3)।
+- One-time data fix migration: `DELETE FROM consumer_transactions WHERE source_loan_id IS NOT NULL` যাতে পুরোনো ভুল entry summary থেকে সরে যায়।
+
+Money page-এর Income/Expense summary আর `consumer_transactions`-এর উপরই depend করে, তাই loan rows বাদ পড়লে স্বাভাবিকভাবে exclude হয়ে যাবে।
+
+## 3. Cash on Hand (ব্যক্তিগত নগদ)
+
+নতুন derived view OR টেবিল `consumer_cash_movements`:
 ```
-id, title, body, url, icon, target_segment jsonb,
-sent_count int, failed_count int,
-sent_by uuid, created_at timestamptz
+id uuid PK
+user_id uuid
+amount numeric (signed: + in / − out)
+direction text 'in' | 'out'
+source text  -- 'loan_borrowed' | 'loan_lent' | 'loan_repay_received' | 'loan_repay_paid' | 'manual_adjust'
+ref_loan_id uuid null
+ref_payment_id uuid null
+note text
+tx_date date
+created_at timestamptz
 ```
-RLS: admin only।
+RLS: own user only।
 
-RPC `upsert_push_subscription(_endpoint, _p256dh, _auth, _display_mode, _device_type, _ua, _lang)` SECURITY DEFINER — anyone can call, sets `user_id = auth.uid()` (or null)।
+**Auto-population via DB triggers** (so client কোডে duplicate লজিক নেই):
+- `consumer_loans` INSERT:
+  - `borrowed` → cash IN (+amount, source `loan_borrowed`)
+  - `lent` → cash OUT (−amount, source `loan_lent`)
+- `consumer_loans` DELETE: reverse the rows (CASCADE-style)
+- `consumer_loan_payments` INSERT:
+  - parent `lent` → cash IN (পাওনা ফেরত পেলেন, +amount, source `loan_repay_received`)
+  - parent `borrowed` → cash OUT (দেনা পরিশোধ করলেন, −amount, source `loan_repay_paid`)
 
-## 2. Service worker (`public/sw.js`)
+**RPC** `consumer_cash_summary(_user_id)` → `{ cash_in, cash_out, balance }`।
 
-বর্তমান passthrough SW-এ যোগ:
-- `push` event → parse JSON `{title, body, url, icon}` → `self.registration.showNotification(...)`
-- `notificationclick` → `clients.openWindow(url)` বা existing tab focus
-- Default icon: `/logo.png`, badge: `/badge.png`
+**Money page (`src/pages/customer/Money.tsx`)**:
+- নতুন **Cash on Hand** stat card top-এ (balance), green/red অনুসারে।
+- Loan tab balance card-এ "নিট" আগের মতই।
 
-## 3. Subscription registration (`src/lib/push.ts` — new)
+## 4. UI — partial repay sheet in `LoansTab.tsx`
 
-`registerPushSubscription()`:
-- `Notification.permission` চেক, prompt
-- `navigator.serviceWorker.ready` → `pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: VAPID_PUBLIC })`
-- detect display_mode (`matchMedia('(display-mode: standalone)')`), device_type (UA), language (i18n)
-- POST to `upsert_push_subscription` RPC
-- localStorage flag যাতে repeat না হয়
+- Settle (✓) button → bottom Sheet "পরিশোধ যোগ করুন":
+  - Outstanding amount badge (`amount - paid_amount`)
+  - Quick buttons: "পুরোটা পরিশোধ" (auto-fills outstanding), custom amount input
+  - Paid via select, date, note
+  - Save → INSERT into `consumer_loan_payments`
+- Loan list item-এ progress bar `paid_amount / amount` দেখাও, "৳X বাকি" text।
+- "Payments" expandable history per loan (দেখা ও মুছা যাবে)।
 
-VAPID public key `.env`-এ `VITE_VAPID_PUBLIC_KEY` (publishable, fine in code)।
+## 5. Voice mic for expense reason (Money page)
 
-Trigger: 
-- App-এ login successful হলে একটি soft prompt component (`<EnablePushPrompt/>`) যেটা AppLayout-এ একবার দেখাবে
-- Settings → Notifications toggle (manual enable/disable)
+`src/pages/customer/Money.tsx` add Sheet-এর "নোট" (cause) input-এ একটা ছোট mic button:
+- `useSpeechRecognition({ lang: 'bn-BD', onFinal: (t) => setNote(prev => prev ? prev + ' ' + t : t) })`
+- যখন `type === 'expense'` only দেখাবে (চাইলে income-এও — keep universal).
+- Same pattern পরে চাইলে অন্যান্য ফর্মেও reuse করা যাবে।
 
-## 4. Edge function `send-push` (new)
+Component: `src/components/app/VoiceTextMic.tsx` (NEW, generic) — accepts `onText: (t)=>void`, identical mic UI as VoiceFordoMic but no parsing।
 
-Input: `{ title, body, url?, icon?, segment: { display_mode?, device_type?, user_id? } }`
-- Verify caller is admin (`is_admin(auth.uid())`)
-- Query `push_subscriptions` filtered by segment, `revoked_at is null`
-- For each: send Web Push using **`web-push` via npm:** import (`import webpush from "npm:web-push@3"`) with VAPID keys from `Deno.env`
-- 410/404 response → mark `revoked_at = now()`
-- Insert row into `push_campaigns`
+## 6. Voice fordo on mobile — already wired
 
-Secrets needed:
-- `VAPID_PUBLIC_KEY`
-- `VAPID_PRIVATE_KEY`
-- `VAPID_SUBJECT` (e.g. `mailto:admin@tallyplus.app`)
+`VoiceFordoMic` already exists এবং `CreateFordo.tsx`-এ mounted। User report করেছে mobile-এ কাজ করে না → সম্ভাব্য কারণ:
+- Web Speech API mobile Chrome-এ requires HTTPS + mic permission prompt
+- iOS Safari-এ `webkitSpeechRecognition` সাপোর্ট নাই (silently false)
 
-## 5. Admin UI: `src/pages/admin/PushNotifications.tsx` (new route `/admin/push`)
+**Fix steps:**
+- `useSpeechRecognition.ts`-এ better error message: যদি `!supported` → toast "এই device-এ voice support নেই, Chrome/Android ব্যবহার করুন" এবং **Cloud fallback** option suggest করার বদলে এখন স্পষ্ট error দেখাও।
+- Permission request আগেই trigger করতে `navigator.mediaDevices.getUserMedia({ audio: true })` start-এর আগে call (একবার), যাতে mobile Chrome এ permission dialog reliably আসে।
+- Mobile-এ `continuous: true` Chrome Android-এ buggy → mobile detect করে `continuous: false` use করা ও re-start করা; অথবা MediaRecorder-based fallback (পরে আলাদা PR)।
 
-- Form: Title, Body, URL (optional), Icon URL (optional)
-- Segment chips (multi-select):
-  - All / Installed only / Web browser only / Mobile only / Desktop only / Logged-in users only
-- Live audience count (queries `push_subscriptions` with selected filter)
-- "Send Test to Me" button
-- "Send Now" button → calls `send-push` edge function → shows sent/failed counts
-- History table: last 50 `push_campaigns` rows with sent_count/failed_count
+এই PR-এ minimum permission-prefetch + clearer error যোগ করব — mobile Chrome-এ এতেই 90% solve হয়। iOS users-এর জন্য in-UI ছোট hint লেখা থাকবে।
 
-Sidebar entry in `src/pages/admin/Index.tsx` (admin nav) + route in `app-routes.tsx`।
+## Files to change/create
 
-## 6. Files
-
-| File | Type |
+| File | Action |
 |---|---|
-| `supabase/migrations/<ts>_push.sql` | NEW — tables, RLS, RPC |
-| `public/sw.js` | EDIT — push + notificationclick handlers |
-| `src/lib/push.ts` | NEW — subscribe/unsubscribe helpers |
-| `src/components/app/EnablePushPrompt.tsx` | NEW |
-| `src/pages/app/AppLayout.tsx` | EDIT — mount prompt |
-| `src/components/app/SettingsSheet.tsx` | EDIT — notification toggle |
-| `src/pages/admin/PushNotifications.tsx` | NEW |
-| `src/pages/admin/Index.tsx` | EDIT — sidebar link |
-| `src/lib/app-routes.tsx` | EDIT — `/admin/push` route |
-| `supabase/functions/send-push/index.ts` | NEW — VAPID send |
-| `.env` | add `VITE_VAPID_PUBLIC_KEY` |
+| `supabase/migrations/<ts>_loans_partial.sql` | NEW — `consumer_loan_payments` table + paid_amount column + triggers + `consumer_cash_movements` table + triggers + cleanup query |
+| `src/components/customer/LoansTab.tsx` | EDIT — remove consumer_transactions writes, add Repay sheet, progress bar, payments history |
+| `src/pages/customer/Money.tsx` | EDIT — add Cash on Hand stat, mount `<VoiceTextMic/>` next to note input |
+| `src/components/app/VoiceTextMic.tsx` | NEW — generic mic that appends transcript to a text setter |
+| `src/lib/useSpeechRecognition.ts` | EDIT — pre-request mic permission, better mobile error messaging, mobile-friendly continuous mode |
+| `src/integrations/supabase/types.ts` | auto after migration |
 
-## 7. Secrets to add (after approval)
-
-`VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` — generated via `npx web-push generate-vapid-keys`। Approval পেলে আমি keys generate করার একটা one-shot script চালাবো এবং তারপর secrets add request পাঠাবো।
-
-## Notes / Limitations
-
-- iOS Safari Web Push: শুধু **installed PWA** (Add to Home Screen)-এ কাজ করে — segment "Installed only" এই device গুলাও পাবে। Regular iOS Safari tab subscribe করতে পারবে না (browser limitation)।
-- Android Chrome/Firefox/Edge: web tab + installed PWA দুটাই কাজ করবে।
-- Desktop: Chrome/Edge/Firefox কাজ করবে।
+কোনো secret লাগবে না (সব Supabase + browser API)।
