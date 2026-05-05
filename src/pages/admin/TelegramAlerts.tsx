@@ -13,7 +13,12 @@ import { toast } from "sonner";
 
 const EVENT_OPTIONS: { key: string; label: string }[] = [
   { key: "all", label: "সব" },
-  { key: "order", label: "নতুন অর্ডার" },
+  { key: "payment_paid", label: "💰 পেমেন্ট সফল" },
+  { key: "payment_failed", label: "❌ পেমেন্ট ব্যর্থ" },
+  { key: "sub_request", label: "📥 Subscription request" },
+  { key: "transfer_request", label: "🏪 Shop transfer request" },
+  { key: "transfer_proof", label: "💳 Transfer proof uploaded" },
+  { key: "order", label: "🛒 নতুন অর্ডার" },
   { key: "fordo", label: "নতুন ফর্দ" },
   { key: "signup", label: "নতুন সাইনআপ" },
 ];
