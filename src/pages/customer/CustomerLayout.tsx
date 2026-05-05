@@ -22,6 +22,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { AdSlot } from "@/components/ads/AdSlot";
 import { homePathFor } from "@/lib/home-redirect";
+import { IncomingTransfersBanner } from "@/components/app/IncomingTransfersBanner";
 
 const NAV = [
   { to: "/customer/dashboard", label: "ড্যাশবোর্ড", Icon: Home },
@@ -115,6 +116,7 @@ export default function CustomerLayout() {
           </aside>
 
           <section className="min-w-0">
+            <div className="mb-4"><IncomingTransfersBanner /></div>
             <Outlet />
             {/* Small ad at bottom of the consumer area. Only renders for
                 logged-in consumers; never for paid subscribers. */}
