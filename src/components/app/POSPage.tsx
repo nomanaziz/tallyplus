@@ -262,8 +262,8 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
         </div>
       </div>
 
-      {/* Mobile tabs */}
-      <div className="mb-3 md:hidden">
+      {/* Mobile/Tablet tabs */}
+      <div className="mb-3 lg:hidden">
         <Tabs value={mobileTab} onValueChange={(v) => setMobileTab(v as "products" | "cart")}>
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="products">
@@ -276,9 +276,9 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
         </Tabs>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 lg:grid-cols-2">
         {/* Product picker */}
-        <div className={`rounded-xl border bg-card ${mobileTab === "cart" ? "hidden md:block" : ""}`}>
+        <div className={`rounded-xl border bg-card ${mobileTab === "cart" ? "hidden lg:block" : ""}`}>
           <div className="flex items-center justify-between border-b p-3">
             <div className="text-sm font-semibold">
               {lang === "bn" ? "নির্বাচন করুন" : "Select"}
@@ -370,7 +370,7 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
             {filtered.length === 0 ? (
               <EmptyState icon={<Package className="h-6 w-6" />} title={lang === "bn" ? "কোনো পণ্য নেই" : "No products"} />
             ) : viewMode === "grid" ? (
-              <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7">
+              <div className="grid grid-cols-3 gap-1.5 md:grid-cols-4 lg:grid-cols-7">
                 {filtered.slice(0, 200).map((p) => {
                   const inCart = cart.find((c) => c.product_id === p.id);
                   const price = isSell ? Number(p.sale_price) : Number(p.cost_price);
@@ -483,7 +483,7 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
         </div>
 
         {/* Cart */}
-        <div className={`rounded-xl border bg-card ${mobileTab === "products" ? "hidden md:block" : ""}`}>
+        <div className={`rounded-xl border bg-card ${mobileTab === "products" ? "hidden lg:block" : ""}`}>
           <div className="flex items-center justify-between border-b p-3">
             <div className="text-sm font-semibold">
               {lang === "bn" ? `পণ্য নির্বাচন করেছেন (${bnNum(cart.length)})` : `Selected items (${cart.length})`}

@@ -1,55 +1,90 @@
 ## লক্ষ্য
-`/app/sell` ও `/app/purchase`-এর Grid ভিউতে প্রতি page-এ অনেক বেশি product দেখা — mobile-এ যাতে এক row-এ ৩টা card ধরে এবং card গুলো অনেক ছোট হয়।
+`/app/sell` ও `/app/purchase` এর POS পেজে তিনটা ছোট পরিবর্তন।
 
 ## ফাইল
-শুধু `src/components/app/POSPage.tsx` (লাইন ৩৭৩–৪১৯, grid block)।
+শুধু `src/components/app/POSPage.tsx`।
 
-## পরিবর্তন
+## ১) Grid কলাম ratio ঠিক করা
 
-### 1. Grid columns — mobile-এ ৩, ধাপে ধাপে বেশি
+বর্তমান:
 ```
 grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7
-gap-1.5
-```
-(আগে ছিল `grid-cols-2 ... xl:grid-cols-5 gap-2`)
-
-### 2. Image ছোট ও price overlay
-- `aspect-square` রাখব কিন্তু card নিজেই ছোট হবে কলাম বাড়ানোয়।
-- Image-এর নিচে একটা semi-transparent gradient strip বসিয়ে তার উপরে **price** দেখাব — text block থেকে price সরিয়ে দেব, ফলে নিচের text block অনেক ছোট হবে।
-- Floating "+" button ছোট: `h-7 w-7` (ছিল `h-8 w-8`), icon `h-3.5 w-3.5`। Cart badge ও ছোট: `text-[9px] px-1`।
-
-```
-<div className="relative aspect-square ...">
-  <img ... />
-  <div className="absolute inset-x-0 bottom-0 flex items-end justify-between
-                  bg-gradient-to-t from-black/70 via-black/35 to-transparent
-                  px-1 pb-0.5 pt-3">
-    <span className="text-[11px] font-extrabold leading-none text-white drop-shadow">
-      {fmtMoney(price, lang)}
-    </span>
-    {p.unit && <span className="text-[9px] text-white/85">/{p.unit}</span>}
-  </div>
-  {/* + button + cart badge — smaller */}
-</div>
 ```
 
-### 3. নিচের text block — শুধু নাম + stock, padding কম
+নতুন (mobile 3, tablet 4, desktop 7):
 ```
-<div className="px-1.5 py-1">
-  <div className="line-clamp-2 min-h-[1.9em] text-[10.5px] font-medium leading-tight">
-    {p.name}
-  </div>
-  <div className="mt-0.5 text-[9px] text-muted-foreground">
-    স্টক: <span className={p.stock<=0 ? "font-semibold text-destructive" : ""}>
-      {lang==="bn"?bnNum(p.stock):p.stock}
-    </span>
-  </div>
-</div>
+grid-cols-3 md:grid-cols-4 lg:grid-cols-7
 ```
-- Card border radius: `rounded-lg` (ছিল `rounded-xl`) — আরও tight।
-- Stock যদি জায়গা বাঁচাতে চান, পরে `0` হলে শুধু একটা ছোট red dot করা যেতে পারে — এই round-এ করব না, শুধু font ছোট করব।
+(`sm`/`xl` step বাদ — সরাসরি ৩ → ৪ → ৭।)
 
-### ফলাফল
-390px viewport-এ এক স্ক্রিনে ৪টার বদলে ~৯–১২টা product দেখা যাবে; price image-এর উপরে থাকায় text block দু'লাইনে শেষ হবে।
+## ২) Tablet (md) ভিউতেও Mobile-এর মতো Tab toggle
 
-কোনো logic, search, infinite-scroll, cart বা list-view পরিবর্তন হবে না।
+বর্তমানে `md:` থেকেই product+cart side-by-side দেখায়, ফলে ট্যাবলেটে দুই কলাম চিপে যায়।
+
+পরিবর্তন:
+- Mobile tab bar `md:hidden` → `lg:hidden` (ট্যাবলেটেও Products/Cart toggle থাকবে)।
+- Outer grid `md:grid-cols-2` → `lg:grid-cols-2` (lg থেকে side-by-side)।
+- Product panel hide class: `mobileTab === "cart" ? "hidden md:block" : ""` → `"hidden lg:block"`।
+- Cart panel hide class: `mobileTab === "products" ? "hidden md:block" : ""` → `"hidden lg:block"`।
+
+ফলে tablet (md, 768–1023px) এ mobile-এর মতোই এক side এ পণ্য, tap করে cart।
+
+## ৩) Cart row → Invoice-style table
+
+বর্তমান card layout (নাম উপরে, ৩-column grid নিচে — প্রতি row বড়) সরিয়ে compact table:
+
+| # | পণ্য | মূল্য | পরিমাণ | মোট | 🗑 |
+
+Markup স্কেচ:
+```
+<table className="w-full text-xs">
+  <thead className="text-[10px] uppercase text-muted-foreground">
+    <tr className="border-b">
+      <th className="w-6 py-1 text-left">#</th>
+      <th className="py-1 text-left">পণ্য</th>
+      <th className="w-16 py-1 text-right">মূল্য</th>
+      <th className="w-14 py-1 text-center">পরিমাণ</th>
+      <th className="w-16 py-1 text-right">মোট</th>
+      <th className="w-7"></th>
+    </tr>
+  </thead>
+  <tbody>
+    {cart.map((it, idx) => (
+      <tr className="border-b align-middle">
+        <td className="py-1 text-muted-foreground">{idx+1}</td>
+        <td className="py-1">
+          <div className="line-clamp-2 break-words font-medium leading-tight">{it.name}</div>
+          {it.is_bulk && <span className="text-[9px] text-primary">[বাল্ক]</span>}
+        </td>
+        <td className="py-1">
+          <Input type="number" value={it.price}
+            className="h-7 w-full px-1 text-right text-xs"
+            onChange={...} />
+        </td>
+        <td className="py-1">
+          <Input type="number" value={it.qty}
+            className="h-7 w-full px-1 text-center text-xs"
+            onChange={...} />
+        </td>
+        <td className="py-1 text-right font-semibold">{fmtMoney(it.qty*it.price, lang)}</td>
+        <td className="py-1">
+          <Button variant="ghost" size="icon" className="h-6 w-6"
+            onClick={() => removeCart(idx)}>
+            <X className="h-3 w-3" />
+          </Button>
+        </td>
+      </tr>
+    ))}
+  </tbody>
+</table>
+```
+
+- লম্বা নাম `line-clamp-2 break-words` দিয়ে দুই লাইনে wrap হবে।
+- +/- button বাদ (compactness-এর জন্য) — সরাসরি qty input edit।
+- Label, large input, icon button সব সরে যাওয়ায় row উচ্চতা ~৭০% কমবে।
+
+কোনো logic / state / handler পরিবর্তন হবে না — শুধু render markup।
+
+## পরিবর্তন হবে না
+- Search, infinite scroll, services tab, totals, payment buttons, dialogs।
+- Grid card design (আগের round এ যেটা ঠিক করা হয়েছে)।
