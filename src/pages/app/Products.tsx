@@ -39,6 +39,7 @@ import { BarcodeScannerButton } from "@/components/app/BarcodeScannerButton";
 import { SerialCaptureDialog } from "@/components/app/SerialCaptureDialog";
 import { ProductDetailsDialog, type ProductFull } from "@/components/app/ProductDetailsDialog";
 import { UpdateStockDialog } from "@/components/app/UpdateStockDialog";
+import { BrandCombobox } from "@/components/app/BrandCombobox";
 import { DataPagination } from "@/components/app/DataPagination";
 import { usePagination } from "@/hooks/use-pagination";
 import { Checkbox } from "@/components/ui/checkbox";
