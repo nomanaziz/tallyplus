@@ -27,6 +27,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { toast } from "sonner";
+import { AdminSearchBar, matches } from "@/components/admin/AdminSearchBar";
 
 // ============================================================
 // Provider options shown in the SMS Settings dropdown
