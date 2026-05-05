@@ -42,7 +42,7 @@ export default function AdminVariantPresetsPage() {
       .order("sort_order")
       .order("name_en");
     if (error) toast.error(error.message);
-    setItems((data as Preset[]) ?? []);
+    setItems(((data as unknown) as Preset[]) ?? []);
     setLoading(false);
   };
   useEffect(() => { void load(); }, []);
