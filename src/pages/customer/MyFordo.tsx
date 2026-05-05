@@ -484,6 +484,21 @@ export default function MyFordo() {
                         <span className="font-bold text-primary tabular-nums">৳ {total.toLocaleString("bn-BD", { maximumFractionDigits: 2 })}</span>
                       )}
                     </div>
+                    {wlItems.length > 0 && (() => {
+                      const dn = wlItems.filter((i) => i.done).length;
+                      const pct = Math.round((dn / wlItems.length) * 100);
+                      return (
+                        <div className="mt-2">
+                          <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+                            <span>লাইভ: {dn}/{wlItems.length} কেনা হয়েছে</span>
+                            <span>{pct}%</span>
+                          </div>
+                          <div className="mt-1 h-1.5 overflow-hidden rounded bg-muted">
+                            <div className="h-full bg-emerald-500 transition-all" style={{ width: `${pct}%` }} />
+                          </div>
+                        </div>
+                      );
+                    })()}
                     {wlItems.length > 0 && (
                       <>
                         <button
