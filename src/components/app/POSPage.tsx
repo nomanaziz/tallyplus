@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Plus, Minus, X, Package, ShoppingCart, ChevronDown, MessageSquare, RefreshCw, Search, UserRound } from "lucide-react";
+import { ArrowLeft, Plus, Minus, X, Package, ShoppingCart, ChevronDown, MessageSquare, RefreshCw, Search, UserRound, LayoutGrid, List as ListIcon } from "lucide-react";
 import { useNavigate } from "@/lib/router";
 import { supabase } from "@/integrations/supabase/client";
 import { useShop } from "@/lib/shop";
@@ -112,6 +112,15 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
   useEffect(() => { if (autoOpenDue) setDueOpen(true); }, [autoOpenDue]);
   const [mobileTab, setMobileTab] = useState<"products" | "cart">("products");
   const [serialPick, setSerialPick] = useState<Product | null>(null);
+
+  // View mode: grid (default) or list
+  const [viewMode, setViewMode] = useState<"grid" | "list">(() => {
+    if (typeof window === "undefined") return "grid";
+    return (localStorage.getItem("pos-view") as "grid" | "list") || "grid";
+  });
+  useEffect(() => {
+    if (typeof window !== "undefined") localStorage.setItem("pos-view", viewMode);
+  }, [viewMode]);
 
   const isSell = mode === "sell";
   const titleBn = isSell ? "বিক্রয়" : "ক্রয়";
