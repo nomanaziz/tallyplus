@@ -822,7 +822,7 @@ function QuickOrderInner() {
       </div>
 
       {/* Actions */}
-      <div className="sticky bottom-2 z-10 flex flex-col gap-2 rounded-2xl border bg-background/95 p-3 shadow-lg backdrop-blur sm:flex-row">
+      <div className="sticky bottom-2 z-10 flex flex-col gap-2 rounded-2xl border bg-background/95 p-3 shadow-lg backdrop-blur">
         <Button
           variant="outline"
           className="flex-1 h-12 text-base font-semibold"
