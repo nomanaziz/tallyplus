@@ -1181,6 +1181,9 @@ function ProductFormDialog({
       setDescription(String((p?.description as string) ?? ""));
       setCategoryId((p?.category_id as string | null) ?? null);
       setSubCategoryId((p?.sub_category_id as string | null) ?? null);
+      setBrand(((p as Record<string, unknown> | null)?.brand as string | null) ?? "");
+      setMpCategoryId(((p as Record<string, unknown> | null)?.marketplace_category_id as string | null) ?? null);
+      setMpSubcategoryId(((p as Record<string, unknown> | null)?.marketplace_subcategory_id as string | null) ?? null);
       setOnlineOn(Boolean(p?.is_marketplace_published));
       setBulkOn(Boolean(p?.bulk_enabled));
       setBulkPrice(p?.bulk_price != null ? String(p.bulk_price) : "");
