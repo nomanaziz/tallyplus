@@ -498,53 +498,47 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
             {cart.length === 0 ? (
               <EmptyState icon={<ShoppingCart className="h-6 w-6" />} title={lang === "bn" ? "কার্ট খালি" : "Cart is empty"} />
             ) : (
-              <ul className="space-y-2">
-                {cart.map((it, idx) => (
-                  <li key={idx} className="rounded-lg border p-3">
-                    <div className="mb-2 flex items-start justify-between gap-2">
-                      <div className="font-medium">{it.name}</div>
-                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => removeCart(idx)}>
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    <div className="grid grid-cols-3 gap-2">
-                      <div>
-                        <Label className="text-[10px] uppercase text-muted-foreground">{lang === "bn" ? "পরিমাণ" : "Qty"}</Label>
-                        <div className="flex items-center">
-                          <Button variant="outline" size="icon" className="h-9 w-9 rounded-r-none"
-                            onClick={() => updateCart(idx, { qty: Math.max(1, it.qty - 1) })}>
-                            <Minus className="h-3 w-3" />
-                          </Button>
-                          <Input type="number" value={it.qty} className="h-9 rounded-none text-center"
-                            onChange={(e) => updateCart(idx, { qty: Math.max(1, Number(e.target.value) || 1) })} />
-                          <Button variant="outline" size="icon" className="h-9 w-9 rounded-l-none"
-                            onClick={() => updateCart(idx, { qty: it.qty + 1 })}>
-                            <Plus className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      </div>
-                      <div>
-                        <Label className="text-[10px] uppercase text-muted-foreground">
-                          {lang === "bn" ? "মূল্য" : "Price"}
-                          {it.is_bulk ? (
-                            <span className="ml-1 rounded bg-primary/10 px-1 py-0.5 text-[9px] font-semibold text-primary">
-                              [{lang === "bn" ? "বাল্ক রেট" : "Bulk Rate"}]
-                            </span>
-                          ) : null}
-                        </Label>
-                        <Input type="number" value={it.price} className="h-9"
+              <table className="w-full text-xs">
+                <thead className="text-[10px] uppercase text-muted-foreground">
+                  <tr className="border-b">
+                    <th className="w-6 py-1 text-left font-medium">#</th>
+                    <th className="py-1 text-left font-medium">{lang === "bn" ? "পণ্য" : "Item"}</th>
+                    <th className="w-16 py-1 text-right font-medium">{lang === "bn" ? "মূল্য" : "Price"}</th>
+                    <th className="w-14 py-1 text-center font-medium">{lang === "bn" ? "পরিমাণ" : "Qty"}</th>
+                    <th className="w-16 py-1 text-right font-medium">{lang === "bn" ? "মোট" : "Total"}</th>
+                    <th className="w-7" />
+                  </tr>
+                </thead>
+                <tbody>
+                  {cart.map((it, idx) => (
+                    <tr key={idx} className="border-b align-middle">
+                      <td className="py-1 text-muted-foreground">{lang === "bn" ? bnNum(idx + 1) : idx + 1}</td>
+                      <td className="py-1 pr-1">
+                        <div className="line-clamp-2 break-words font-medium leading-tight">{it.name}</div>
+                        {it.is_bulk && (
+                          <span className="text-[9px] font-semibold text-primary">[{lang === "bn" ? "বাল্ক" : "Bulk"}]</span>
+                        )}
+                      </td>
+                      <td className="py-1">
+                        <Input type="number" value={it.price}
+                          className="h-7 w-full px-1 text-right text-xs"
                           onChange={(e) => updateCart(idx, { price: Number(e.target.value) || 0 })} />
-                      </div>
-                      <div>
-                        <Label className="text-[10px] uppercase text-muted-foreground">{lang === "bn" ? "মোট" : "Total"}</Label>
-                        <div className="flex h-9 items-center justify-end rounded-md border bg-muted/30 px-2 text-sm font-semibold">
-                          {fmtMoney(it.qty * it.price, lang)}
-                        </div>
-                      </div>
-                    </div>
-                  </li>
-                ))}
-              </ul>
+                      </td>
+                      <td className="py-1">
+                        <Input type="number" value={it.qty}
+                          className="h-7 w-full px-1 text-center text-xs"
+                          onChange={(e) => updateCart(idx, { qty: Math.max(1, Number(e.target.value) || 1) })} />
+                      </td>
+                      <td className="py-1 text-right font-semibold">{fmtMoney(it.qty * it.price, lang)}</td>
+                      <td className="py-1">
+                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => removeCart(idx)}>
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             )}
           </div>
 
