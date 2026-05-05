@@ -1,49 +1,55 @@
-## Goal
-Add a consistent search box to every admin module page, plus light bulk actions where relevant. Currently only Users / Affiliates / PaymentAttempts / Marketplace have any search; the rest (Admin Team, Subscription Requests, Subscriptions, Plans, Transfers, Banners, Training, ShopTypes, MarketplaceCategories, Locations, PromoPopups, PaymentGateway, SmsGateways, UsageLimits, Ads, Landing, Settings list rows) have none.
+## দুইটা পরিবর্তন
 
-## Approach
-1. Create a small reusable `AdminSearchBar` component (`src/components/admin/AdminSearchBar.tsx`) — input + clear button + optional result count, matching the existing admin styling. Debounced (200ms) controlled value.
-2. For each admin page below, add a top-right search input that filters the already-loaded list client-side over the listed fields. No DB schema changes needed — all these lists are small admin tables already fetched in full.
+### 1) Marketplace Category / Subcategory fields — কাজ করানো (delete নয়)
 
-### Pages + searchable fields
+**বর্তমান অবস্থা:** Admin → Marketplace Categories module-এ tree আছে, এবং admin → Marketplace (curated catalog) product edit dialog-এ dropdown আছে। কিন্তু **seller-এর নিজের product form-এ (`src/pages/app/Products.tsx` → `ProductFormDialog`) এই fields নেই** — তাই seller যে product online-এ publish করে, সেটা marketplace-এ category-wise filter হয় না। Customer browse page (`/shop`)-এ products tab-এ category filter-ও নাই (শুধু services tab-এ আছে)।
 
-| Page | Fields searched |
-|---|---|
-| PlatformAdmins | full_name, email |
-| SubscriptionRequests | shop name, owner phone, transaction id, plan code, status |
-| Subscriptions | user email/phone, plan code, status |
-| Plans | code, name |
-| Transfers | from/to phone, shop name, status, transaction id |
-| Banners | title, link |
-| Training | title, category, youtube id |
-| ShopTypes | name (bn/en), slug |
-| MarketplaceCategories | name, slug |
-| Locations | division/district/upazila/union name |
-| PromoPopups | title, audience |
-| PaymentGateway | name, provider |
-| SmsGateways | name, provider, sender id |
-| UsageLimits | plan code, key |
-| Ads | placement, label |
-| Landing | section key, title |
-| Users (existing) | extend to also match email + shop name |
-| Affiliates (existing) | keep, normalize to new component |
-| PaymentAttempts (existing) | keep, normalize to new component |
-| Marketplace (existing) | keep |
+**Plan:**
+- `ProductFormDialog`-এ "Online sell" toggle-এর কাছাকাছি দুইটা select যোগ করব:
+  - **Marketplace Category** (top-level `marketplace_categories` rows)
+  - **Subcategory** (selected category-র children)
+- `products` table-এ ইতিমধ্যে `category_id` ও `sub_category_id` columns আছে — শুধু marketplace tree-র id store করব। Save payload-এ এগুলো আছে already; শুধু UI বসাতে হবে।
+- `marketplace-publish` flow-এ এই দুইটা id `marketplace_listings`/listing payload-এ pass হবে যাতে browse page filter কাজ করে।
+- **Customer browse (`/shop` products tab):** sidebar-এ "ক্যাটাগরি" filter যোগ করব (services-এর মতো) যা `marketplace_categories` থেকে আসবে এবং `marketplace-public` list-products edge function-এ `category_id` filter pass করবে।
+- Edge function (`supabase/functions/marketplace-public/index.ts`)-এর product list query-তে `category_id` filter logic যোগ করব।
 
-### Bulk actions (only where it has clear value)
-- **SubscriptionRequests**: checkbox per row + "Approve selected" / "Reject selected" buttons (loops existing single-row mutations).
-- **Transfers**: checkbox per row + "Mark complete selected" using existing single-row action.
-- **Banners / PromoPopups / Training**: checkbox + "Delete selected" (calls existing delete in a loop).
-Other pages get search only — bulk doesn't fit (single-row config rows, plans, gateways, etc.).
+### 2) Brand / Company name — seller-এর জন্য
 
-## Technical notes
-- Pure client-side filter via `useMemo` over the existing query data — no new Supabase queries, no migrations.
-- Bulk actions reuse the existing per-row mutation functions inside a `Promise.allSettled` loop with a single toast summary ("3 succeeded, 1 failed").
-- Search state is local `useState`; not persisted to URL (admin pages here don't currently use search params).
-- Bilingual placeholder via existing `useI18n()` ("খুঁজুন..." / "Search...").
+**Plan:**
+- নতুন table `product_brands`:
+  ```
+  id uuid pk, name text, name_bn text null,
+  shop_id uuid null references shops(id) on delete cascade,
+  is_global boolean default false,
+  created_by uuid null, created_at timestamptz
+  unique(coalesce(shop_id::text,'global'), lower(name))
+  ```
+  - `shop_id NULL + is_global = true` → admin-defined default brand (সবার দেখা যাবে)
+  - `shop_id = X` → শুধু সেই shop-এর custom brand
+- RLS:
+  - SELECT: `is_global = true OR shop_id IN (user's shops)`
+  - INSERT: admin (global only) OR shop owner/staff (own shop only)
+  - DELETE/UPDATE: same as insert
+- `products` table-এ `brand text null` column যোগ করব (denormalized — name save হবে, id না, যাতে rename simple)।
+- **Admin module:** `src/pages/admin/MarketplaceCategories.tsx`-এর pattern-এ একটা নতুন page `src/pages/admin/Brands.tsx` — admin global brand list manage (add/edit/delete, search bar, bulk delete)। Sidebar-এ link।
+- **Seller product form:** Brand input-কে একটা **Combobox** বানাবো (existing `CategoryCombobox` pattern-এ): global + own-shop brands suggest করবে, সাথে free-type "+ যোগ করুন" option — typed value নতুন হলে auto-insert হবে `product_brands` (shop scope) এবং product-এ name save হবে।
+- Bilingual placeholder: "ব্র্যান্ড / কোম্পানি (optional)"।
 
 ## Files
-- New: `src/components/admin/AdminSearchBar.tsx`
-- Edited: all 18 admin page files listed above (small additions: import, useState, filter useMemo, JSX search bar; bulk pages also add a checkbox column + action bar).
 
-No DB, RLS, edge function, or routing changes.
+**Migration:**
+- `product_brands` table + RLS policies + unique index
+- `products.brand text null` column
+
+**New:**
+- `src/pages/admin/Brands.tsx` (admin CRUD)
+- `src/components/app/BrandCombobox.tsx` (seller picker, suggest+create)
+
+**Edit:**
+- `src/pages/app/Products.tsx` — `ProductFormDialog`-এ Brand field + Marketplace Category/Subcategory selects; save payload-এ brand
+- `src/pages/shop/Index.tsx` — products tab sidebar-এ category filter
+- `supabase/functions/marketplace-public/index.ts` — product list-এ `category_id` filter
+- `src/lib/marketplace-publish.ts` — category_id/subcategory_id propagate
+- `src/lib/app-routes.tsx` + `src/components/admin/AdminSidebar.tsx` — `/admin/brands` route + nav link
+
+কোন migration বা types regenerate user-approval দরকার — implementation-এ proceed করব।
