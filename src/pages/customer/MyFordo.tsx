@@ -6,10 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "@/lib/router";
 import {
   Loader2, Store, ListChecks, Plus, FileText, CalendarClock,
-  Trash2, Pause, Play, Star, Check, X, Clock, Save, Copy, Calendar, Wallet, Share2,
+  Trash2, Pause, Play, Star, Check, X, Clock, Save, Copy, Calendar, Wallet, Share2, Download,
 } from "lucide-react";
 import { toast } from "sonner";
 import { copyFordoShareLink, whatsappFordoShareUrl } from "@/lib/share-fordo";
+import { downloadFordoSlip } from "@/lib/fordo-pdf";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
@@ -28,6 +29,7 @@ type Wishlist = {
   note: string | null;
   created_at: string;
   share_token?: string | null;
+  allow_public_check?: boolean | null;
 };
 
 type WLItem = {
