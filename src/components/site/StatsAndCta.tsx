@@ -3,19 +3,22 @@ import { useI18n, bnNum } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Download, Globe } from "lucide-react";
+import { usePublicStats } from "@/lib/use-public-stats";
 
 export function StatsStrip() {
   const { lang } = useI18n();
+  const s = usePublicStats();
+  const fmt = (n: number) => (s.isLoading ? "—" : lang === "bn" ? bnNum(n) : String(n));
   const items = lang === "bn"
     ? [
-        { v: `${bnNum(10)},০০,০০০+`, l: "ব্যবসায়ী ব্যবহার করছেন" },
-        { v: `${bnNum(4.4)}★`, l: "অ্যাপ রেটিং" },
-        { v: `${bnNum(24)}/${bnNum(7)}`, l: "কাস্টমার সাপোর্ট" },
+        { v: fmt(s.totalUsers), l: "মোট ব্যবহারকারী" },
+        { v: fmt(s.shops), l: "নিবন্ধিত দোকান" },
+        { v: fmt(s.customers), l: "গ্রাহক" },
       ]
     : [
-        { v: "1,000,000+", l: "Businessman using" },
-        { v: "4.4★", l: "App Rating" },
-        { v: "24/7", l: "Customer Support" },
+        { v: fmt(s.totalUsers), l: "Total users" },
+        { v: fmt(s.shops), l: "Shops registered" },
+        { v: fmt(s.customers), l: "Customers" },
       ];
   return (
     <section className="border-y bg-primary/10">

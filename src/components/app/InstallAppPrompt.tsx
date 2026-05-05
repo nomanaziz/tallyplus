@@ -3,7 +3,7 @@ import { usePwaInstall } from "@/hooks/use-pwa-install";
 import { useI18n } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Download, Share, X, Plus } from "lucide-react";
+import { Download, Share, X, Plus, MonitorDown } from "lucide-react";
 
 const DISMISS_KEY = "pwa-install-dismissed-at";
 const HIDE_DAYS = 7;
@@ -14,11 +14,11 @@ export function InstallAppPrompt() {
   const { canInstall, installed, isIos, promptInstall } = usePwaInstall();
   const [show, setShow] = useState(false);
   const [iosOpen, setIosOpen] = useState(false);
+  const [desktopOpen, setDesktopOpen] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (installed) return;
-    if (!canInstall && !isIos) return;
     const dismissedAt = Number(localStorage.getItem(DISMISS_KEY) || 0);
     if (Date.now() - dismissedAt < HIDE_DAYS * 86400_000) return;
     const t = setTimeout(() => setShow(true), SHOW_DELAY_MS);
@@ -31,12 +31,13 @@ export function InstallAppPrompt() {
   };
 
   const onInstall = async () => {
-    if (isIos && !canInstall) {
-      setIosOpen(true);
+    if (canInstall) {
+      await promptInstall();
+      setShow(false);
       return;
     }
-    await promptInstall();
-    setShow(false);
+    if (isIos) { setIosOpen(true); return; }
+    setDesktopOpen(true);
   };
 
   if (installed) return null;
@@ -92,6 +93,7 @@ export function InstallAppPrompt() {
           </ol>
         </DialogContent>
       </Dialog>
+      <DesktopInstallDialog open={desktopOpen} onOpenChange={setDesktopOpen} />
     </>
   );
 }
@@ -100,13 +102,14 @@ export function InstallAppButton({ className }: { className?: string }) {
   const { lang } = useI18n();
   const { canInstall, installed, isIos, promptInstall } = usePwaInstall();
   const [iosOpen, setIosOpen] = useState(false);
+  const [desktopOpen, setDesktopOpen] = useState(false);
 
   if (installed) return null;
-  if (!canInstall && !isIos) return null;
 
   const onClick = async () => {
-    if (isIos && !canInstall) { setIosOpen(true); return; }
-    await promptInstall();
+    if (canInstall) { await promptInstall(); return; }
+    if (isIos) { setIosOpen(true); return; }
+    setDesktopOpen(true);
   };
 
   return (
@@ -132,6 +135,57 @@ export function InstallAppButton({ className }: { className?: string }) {
           </ol>
         </DialogContent>
       </Dialog>
+      <DesktopInstallDialog open={desktopOpen} onOpenChange={setDesktopOpen} />
     </>
+  );
+}
+
+function DesktopInstallDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
+  const { lang } = useI18n();
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <MonitorDown className="h-5 w-5 text-primary" />
+            {lang === "bn" ? "পিসিতে অ্যাপ ইনস্টল করুন" : "Install on PC"}
+          </DialogTitle>
+          <DialogDescription>
+            {lang === "bn"
+              ? "আপনার ব্রাউজার অনুযায়ী নিচের ধাপগুলো অনুসরণ করুন"
+              : "Follow the steps for your browser"}
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4 text-sm">
+          <div>
+            <div className="font-bold">Chrome / Edge / Brave</div>
+            <ol className="ml-5 mt-1 list-decimal space-y-1 text-muted-foreground">
+              <li>{lang === "bn" ? "অ্যাড্রেস বারের ডান পাশে ইনস্টল আইকন (⊕ / মনিটর) এ ক্লিক করুন" : 'Click the install icon (⊕ / monitor) on the right of the address bar'}</li>
+              <li>{lang === "bn" ? "অথবা ⋮ মেনু → \"Install Tally Plus\" / \"Apps → Install this site\"" : 'Or ⋮ menu → "Install Tally Plus" / "Apps → Install this site"'}</li>
+              <li>{lang === "bn" ? "\"Install\" ক্লিক করুন" : 'Click "Install"'}</li>
+            </ol>
+          </div>
+          <div>
+            <div className="font-bold">Safari (Mac)</div>
+            <ol className="ml-5 mt-1 list-decimal space-y-1 text-muted-foreground">
+              <li>{lang === "bn" ? "File মেনু → \"Add to Dock\" সিলেক্ট করুন" : 'File menu → "Add to Dock"'}</li>
+            </ol>
+          </div>
+          <div>
+            <div className="font-bold">Firefox</div>
+            <p className="mt-1 text-muted-foreground">
+              {lang === "bn"
+                ? "Firefox এ ডেস্কটপে সরাসরি PWA ইনস্টল সাপোর্ট নেই — দয়া করে Chrome / Edge ব্যবহার করুন।"
+                : "Firefox does not natively support installing PWAs on desktop — please use Chrome or Edge."}
+            </p>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {lang === "bn"
+              ? "টিপ: যদি ইনস্টল আইকন না দেখায়, পেইজটি একবার রিলোড করুন।"
+              : "Tip: If you don't see an install icon, reload the page once."}
+          </p>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
