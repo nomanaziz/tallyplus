@@ -1,68 +1,60 @@
-## Customer subscription — Recharge gateway, না manual request
+## Admin "টাকা পাইতে গেলে" Telegram alerts — সব revenue/action events এ notify
 
-### সমস্যা
+### Goal
 
-এখন `src/pages/customer/Subscription.tsx`-এ subscribe করতে গেলে শুধু `subscription_requests` table-এ একটা pending row insert হয় — admin manually approve না করা পর্যন্ত কিছুই হয় না। Shop subscription (`src/pages/app/Subscribe.tsx`)-এ অনলাইন payment gateway (Recharge Server) আছে, তাত্ক্ষণিক active হয়। Consumer-এ একই system দরকার।
+Admin-এর income source হয় বা admin-এর verification ছাড়া এগোয় না — এমন প্রতিটা event-এ Telegram alert পাঠাব। ফর্দ/সাইনআপ-এর মত pure customer activity বাদ (admin involve না), শুধু admin-related order:
 
-পাশাপাশি payment attempts (failed সহ), subscriptions, ও shop ownership transfers — এই তিনটার জন্য already-existing infra reuse করতে হবে, নতুন কিছু না।
+| ঘটনা | কেন admin জানা দরকার | Trigger source |
+|---|---|---|
+| 💰 অনলাইন পেমেন্ট সফল | Admin-এর আয় ঢুকছে | `payment_transactions` (status `pending` → `completed`) |
+| ❌ অনলাইন পেমেন্ট ব্যর্থ | Follow-up call করতে হবে | `payment_transactions` insert/update with status `failed` |
+| 📥 Manual subscription request | Admin verify না করলে টাকা বুঝবে না | `subscription_requests` insert (status `pending`) |
+| 🏪 Shop transfer request | Admin charge verify করতে হবে | `shop_transfer_requests` insert |
+| 💳 Manual transfer payment proof | Admin verify দরকার | `shop_transfer_requests` update with `payment_proof_url` set |
+| 🛒 নতুন marketplace order | Admin commission/process | already exists |
 
-### সমাধান
+(ফর্দ ও সাইনআপ trigger বাদ দেব না — already শব্দ আছে; কিন্তু default events list-এ income-related গুলো আলাদা key দেব যাতে subscriber বেছে নিতে পারে।)
 
-Consumer subscription-কে shop subscribe-এর মতই দুটো option দেব:
-1. **অনলাইন পেমেন্ট** — Recharge Server (instant active)
-2. **ম্যানুয়াল পেমেন্ট** — bKash/Nagad TxnID submit, admin verify (existing flow)
+### ১. Migration — নতুন trigger function ও triggers
 
-সব কিছুই existing tables (`payment_transactions`, `subscriptions`, `subscription_requests`) ও existing edge functions reuse করবে। Admin-এর **Payment Attempts**, **Subscriptions**, **Transfers** page-এ consumer subscription গুলোও আসবে কারণ same tables।
+`dispatch_admin_telegram(_event_type, _title, _body, _link)` already আছে — reuse করব।
 
-### ১. Edge function reuse / minor change
+নতুন trigger functions:
+- `trg_notify_payment_completed` — AFTER UPDATE on `payment_transactions` WHEN OLD.status IS DISTINCT FROM NEW.status AND NEW.status='completed'. Title: `💰 পেমেন্ট সফল ৳<amount>`. Body: provider, plan name, user phone। event_type: `payment_paid`.
+- `trg_notify_payment_failed` — AFTER INSERT OR UPDATE on `payment_transactions` WHEN NEW.status='failed' (and (TG_OP='INSERT' OR OLD.status<>'failed')). event_type: `payment_failed`. Body: amount, reason, user phone, provider.
+- `trg_notify_subscription_request` — AFTER INSERT on `subscription_requests`. event_type: `sub_request`. Title: `📥 Manual subscription request`. Body: user phone, plan name, txn_id, payment_method।
+- `trg_notify_transfer_request` — AFTER INSERT on `shop_transfer_requests`. event_type: `transfer_request`. Body: shop name, from→to phone, charge, method।
+- `trg_notify_transfer_proof_uploaded` — AFTER UPDATE on `shop_transfer_requests` WHEN OLD.payment_proof_url IS NULL AND NEW.payment_proof_url IS NOT NULL. event_type: `transfer_proof`.
 
-`recharge-create-payment` (existing) — ইতিমধ্যে যেকোনো plan_id accept করে, consumer plans (`consumer_history_*`) সহ। কিছু পরিবর্তন লাগবে কিনা check করব:
-- `subscription_plans` filter — consumer plans-এও `is_active=true` থাকলে allow করছে। ✅
-- success/cancel URL — consumer-এর জন্য আলাদা callback route লাগবে: `/customer/subscribe/callback` (নতুন, optional `redirect_to` parameter দিয়েও করা যায়)। সহজ approach: function-এ `redirect_path` body param যোগ, না দিলে default `/app/subscribe/callback`।
+প্রতিটায় link বসাবে relevant admin page-এ:
+- `payment_paid`/`payment_failed` → `/admin/payment-attempts`
+- `sub_request` → `/admin/subscription-requests`
+- `transfer_request`/`transfer_proof` → `/admin/transfers`
 
-`recharge-verify-payment` — already plan code দেখে `subscriptions` row insert/update করে; consumer plans automatically handle হবে।
+### ২. UI — TelegramAlerts page
 
-`recharge-mark-failed` — same, no change।
+`src/pages/admin/TelegramAlerts.tsx`-এ EVENT_OPTIONS array-এ নতুন items যোগ:
 
-### ২. নতুন callback route (consumer)
+```ts
+{ key: "all", label: "সব" },
+{ key: "payment_paid", label: "💰 পেমেন্ট সফল" },
+{ key: "payment_failed", label: "❌ পেমেন্ট ব্যর্থ" },
+{ key: "sub_request", label: "📥 Subscription request" },
+{ key: "transfer_request", label: "🏪 Shop transfer request" },
+{ key: "transfer_proof", label: "💳 Transfer proof uploaded" },
+{ key: "order", label: "🛒 নতুন অর্ডার" },
+{ key: "fordo", label: "নতুন ফর্দ" },
+{ key: "signup", label: "নতুন সাইনআপ" },
+```
 
-`src/pages/customer/SubscribeCallback.tsx` — `src/pages/app/SubscribeCallback.tsx`-এর consumer version (success হলে `/customer/subscription`-এ redirect, layout consumer-এর)।
+`telegram-notify` edge function-এর fan-out logic ইতিমধ্যে event_type filter করে — কোন change লাগবে না।
 
-Route registration: `src/lib/app-routes.tsx`-এ `/customer/subscribe/callback` যোগ।
+### ৩. Files
 
-### ৩. `src/pages/customer/Subscription.tsx` redesign
-
-বর্তমান "আবেদন করুন" button-এর জায়গায় shop Subscribe page-এর pattern হুবহু copy:
-- Plan card-এ "নির্বাচন করুন" button
-- নিচে step-2 panel: "অনলাইন পেমেন্ট" / "ম্যানুয়াল পেমেন্ট" choice
-- Online → `recharge-create-payment` invoke (with `redirect_path: "/customer/subscribe/callback"`), gateway URL-এ redirect
-- Manual → existing `subscription_requests` insert (payment_method, txn_id, admin_note সহ — যেমন shop flow করে)
-- `payment_methods` table থেকে active methods load (shop flow-এ আছে)
-- `payment_gateway_public` RPC দিয়ে gateway enabled কিনা check; disabled হলে শুধু manual show
-
-### ৪. Admin-side already covered
-
-কোনো change লাগবে না:
-- `src/pages/admin/PaymentAttempts.tsx` — `payment_transactions` table দেখায়, consumer recharge attempts automatic দেখাবে (provider=`recharge_server`, plan code দিয়ে চিনবে)
-- `src/pages/admin/Subscriptions.tsx` — সব active subscriptions দেখায়, consumer plan-গুলোও আসবে
-- `src/pages/admin/SubscriptionRequests.tsx` — manual request সব দেখায়, consumer-গুলোও আসবে
-- `src/pages/admin/Transfers.tsx` — shop transfer flow, যেমন আছে তেমন (এটা already gateway integrated)
-
-কেবল ভাল UX-এর জন্য PaymentAttempts table-এ plan label/badge-এ "Consumer" vs "Shop" indicator দেখানো যেতে পারে — plan code prefix (`consumer_history_`) দেখে। ছোট cosmetic addition।
-
-### ৫. Files
-
-**নতুন:**
-- `src/pages/customer/SubscribeCallback.tsx`
+**Migration (নতুন):**
+- `supabase/migrations/<timestamp>_admin_revenue_telegram_alerts.sql` — উপরের ৫টা trigger function ও triggers।
 
 **Edit:**
-- `supabase/functions/recharge-create-payment/index.ts` — optional `redirect_path` body param accept (default existing behaviour)
-- `src/pages/customer/Subscription.tsx` — full redesign (plan grid + pay-step panel)
-- `src/lib/app-routes.tsx` — register `/customer/subscribe/callback`
-- `src/pages/admin/PaymentAttempts.tsx` — small "Consumer/Shop" badge based on plan code (cosmetic)
+- `src/pages/admin/TelegramAlerts.tsx` — EVENT_OPTIONS list extend।
 
-### ৬. কেন migration লাগছে না
-
-`payment_transactions`, `subscriptions`, `subscription_requests`, `subscription_plans`, `payment_methods` — সব ইতিমধ্যে exist করে এবং plan_id দিয়ে consumer plans handle করতে পারে। সম্পূর্ণ code-only change।
-
-Approve করলে edge function update আগে, তারপর consumer page + callback + route + admin badge — এক সাথেই।
+কোনো edge function পরিবর্তন লাগবে না, কোনো নতুন secret লাগবে না (existing telegram_dispatch_settings reuse)। Approve করলে migration আগে run হবে।
