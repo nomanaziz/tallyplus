@@ -1,60 +1,43 @@
-## লক্ষ্য
-Admin → Image Library page এ user যেন **যেকোনো image (এমনকি product/variant এ ব্যবহৃত হলেও, এমনকি external URL হলেও) সম্পূর্ণভাবে delete** করতে পারেন, এবং একসাথে অনেকগুলো select করে **bulk delete** করতে পারেন।
+## Quick Sell — Grid View (default) যোগ করব
 
-বর্তমানে শুধু storage source এর unused image delete বোতাম দেখা যায়, external URL বা used image মুছে ফেলার উপায় নেই।
+ফাইল: `src/pages/app/QuickOrder.tsx` (একমাত্র পরিবর্তন, কোনো DB migration নেই)।
 
-## কী যোগ হবে
+### 1. View toggle (header এ)
+- দুটি icon button: **Grid | List** (rounded pill toggle)।
+- Default: **grid**।
+- User-এর choice `localStorage["quick-order-view"]` এ save।
 
-### 1. প্রতিটি image-এ delete option (সব ক্ষেত্রে)
-- **Storage image**: Supabase storage থেকে file remove + DB তে যেসব product/variant এই URL ব্যবহার করছে তাদের `image_url = NULL` করে দেওয়া।
-- **External image**: শুধু DB তে যেসব row এই URL ব্যবহার করছে তাদের `image_url = NULL` করে clear করা (URL টা library থেকেও চলে যাবে)।
-- Used image delete করার সময় confirm dialog এ স্পষ্ট warning — "X টি product/variant এর ছবি মুছে যাবে"।
+### 2. Grid view — paginated + infinite scroll
+- Search bar এর নিচে product grid render হবে (existing search dropdown grid mode-এ off)।
+- প্রথম load: শুধু **30টি** product (`range(0, 29)`, `order: name asc`)।
+- নিচে invisible sentinel `<div>` — `IntersectionObserver` দিয়ে viewport-এ এলে পরের 30টি fetch।
+- Search query থাকলে list reset হয়ে filtered query চলবে (debounced 250ms, server-side `or(name.ilike,sku.ilike,barcode.ilike)`)।
+- হাজার product হলেও কখনো একসাথে সব load হবে না।
 
-### 2. Multi-select + Bulk delete
-- প্রতিটি card এর কোনায় checkbox।
-- "Select all (filtered)" বোতাম — current filter (যেমন "অব্যবহৃত" বা "External") অনুযায়ী সব select।
-- Top toolbar এ **"Delete selected (N)"** বোতাম — confirm করার পর সবগুলো একসাথে মুছবে।
-- Progress toast: "X/Y deleted…"।
+### 3. Card design (uploaded reference + polish)
+- Responsive: `grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7`
+- Card: aspect-square image area (muted bg, `loading="lazy"`, `decoding="async"`, fallback `ImageOff` icon যদি `image_url` null হয়)
+- নিচে: bold price (৳), product name (line-clamp-2), unit + stock muted text
+- নিচ-ডানে floating round **primary "+"** button (gradient, hover scale-105) — click করলে cart এ add
+- Already-in-cart card-এ subtle primary ring + corner badge `×N` (qty দেখাবে)
 
-### 3. "Delete ALL unused" quick action
-- এক ক্লিকে সব unused storage image মুছে ফেলার shortcut (storage cleanup এর জন্য সবচেয়ে নিরাপদ option, তাই আলাদা button)।
+### 4. Smart cart behavior
+- একই product বার বার click করলে **নতুন row হবে না** — existing row এর qty++ হবে।
+- External (out-of-stock) item add list view এর search box থেকে আগের মতই কাজ করবে।
 
-## Technical details
+### 5. Mobile-first performance
+- Image lazy-load — off-screen image browser নিজে skip করে
+- Card React.memo — cart update হলে পুরো grid re-render হবে না
+- Sticky search header (existing) — scroll করার সময় হারাবে না
+- 2-column minimum — ছোট ফোনেও fit হয়
+- "+" button minimum 36×36 px touch target
 
-ফাইল: `src/pages/admin/ImageLibrary.tsx` (একমাত্র পরিবর্তন)।
+### 6. List view অপরিবর্তিত
+- বর্তমান search → typing → enter flow পুরোপুরি একই রকম থাকবে
+- শুধু toggle করে user যেকোনো সময় switch করতে পারবে
 
-Delete logic:
-```ts
-async function deleteImages(items: ImageItem[]) {
-  const urls = items.map(i => i.url);
-  const storagePaths = items.filter(i => i.path).map(i => i.path!);
-
-  // 1. DB তে references clear (product + variant)
-  await supabase.from("marketplace_products")
-    .update({ image_url: null }).in("image_url", urls);
-  await supabase.from("marketplace_product_variants")
-    .update({ image_url: null }).in("image_url", urls);
-
-  // 2. Storage থেকে files remove (একবারে batch)
-  if (storagePaths.length) {
-    await supabase.storage.from(BUCKET).remove(storagePaths);
-  }
-}
-```
-
-UI changes:
-- নতুন `Set<string>` state — `selected` (URL দিয়ে track)।
-- Card এ top-left checkbox (existing "External" badge এর পাশে)।
-- Toolbar এ conditional bar: যখন `selected.size > 0` — "N selected | Clear | Delete selected"।
-- Existing single-image delete confirm dialog কে generic করে fix — items array নেবে।
-- Delete button সব image এ দেখানো হবে (storage + external উভয়)।
-
-Permissions / RLS:
-- Admin portal এ already `image_library` permission check আছে — extra change লাগবে না।
-- `marketplace_products` / `marketplace_product_variants` UPDATE policy admin দের জন্য already exist (Marketplace admin page থেকে edit হয়), তাই নতুন migration লাগবে না।
-- Storage bucket `product-images` এর delete policy admin role এর জন্য already enabled (বর্তমান single delete কাজ করছে)।
-
-## যা পরিবর্তন হবে না
-- কোনো DB migration নেই।
-- অন্য page অপরিবর্তিত।
-- Marketplace product/variant data delete হবে না — শুধু তাদের `image_url` field null হবে, যাতে product/variant অক্ষত থাকে কিন্তু broken image দেখা না যায়।
+### Technical notes
+- নতুন state: `viewMode`, `gridProducts`, `gridPage`, `gridLoading`, `gridDone`, `sentinelRef`
+- নতুন memoized: `cartQtyMap` (productId → cart qty)
+- `addStoreProduct` modify — duplicate detect করে qty bump
+- DB-তে `products.image_url` already আছে — schema change লাগবে না
