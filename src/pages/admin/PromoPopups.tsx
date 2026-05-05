@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +9,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Plus, Pencil, Trash2, Loader2, Upload } from "lucide-react";
 import { toast } from "sonner";
+import { Checkbox } from "@/components/ui/checkbox";
+import { AdminSearchBar, matches } from "@/components/admin/AdminSearchBar";
 
 type Popup = {
   id: string;
@@ -26,6 +28,27 @@ export default function AdminPromoPopups() {
   const [editing, setEditing] = useState<Partial<Popup> | null>(null);
   const [busy, setBusy] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [search, setSearch] = useState("");
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+
+  const filtered = useMemo(
+    () => items.filter((p) => matches(search, p.title_bn, p.title_en, p.body_bn, p.body_en, p.cta_link)),
+    [items, search],
+  );
+
+  const toggle = (id: string) =>
+    setSelected((s) => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
+
+  const bulkDelete = async () => {
+    if (!selected.size) return;
+    if (!confirm(`Delete ${selected.size} popup(s)?`)) return;
+    const ids = [...selected];
+    const { error } = await supabase.from("promo_popups").delete().in("id", ids);
+    if (error) return toast.error(error.message);
+    toast.success(`${ids.length} deleted`);
+    setSelected(new Set());
+    void load();
+  };
 
   const load = async () => {
     setLoading(true);
@@ -86,11 +109,23 @@ export default function AdminPromoPopups() {
         <Button onClick={() => setEditing({ is_active: true })}><Plus className="mr-1 h-4 w-4" />New</Button>
       </div>
 
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <AdminSearchBar value={search} onChange={setSearch} count={filtered.length} placeholder="Title, body, CTA" />
+        {selected.size > 0 && (
+          <Button size="sm" variant="destructive" onClick={() => void bulkDelete()}>
+            <Trash2 className="mr-1 h-4 w-4" /> Delete {selected.size}
+          </Button>
+        )}
+      </div>
+
       {loading ? <div className="flex justify-center p-12"><Loader2 className="h-6 w-6 animate-spin" /></div> : (
         <div className="grid gap-3 md:grid-cols-2">
-          {items.map((p) => (
+          {filtered.map((p) => (
             <Card key={p.id}>
               <CardContent className="p-4">
+                <div className="mb-2 flex items-center justify-between">
+                  <Checkbox checked={selected.has(p.id)} onCheckedChange={() => toggle(p.id)} />
+                </div>
                 {p.image_url && <img src={p.image_url} alt="" className="mb-3 h-32 w-full rounded object-cover" />}
                 <div className="font-semibold">{p.title_bn || p.title_en || "(untitled)"}</div>
                 <div className="mt-1 text-xs text-muted-foreground line-clamp-2">{p.body_bn || p.body_en}</div>
@@ -102,7 +137,7 @@ export default function AdminPromoPopups() {
               </CardContent>
             </Card>
           ))}
-          {items.length === 0 && <p className="col-span-2 py-8 text-center text-sm text-muted-foreground">কোনো popup নেই</p>}
+          {filtered.length === 0 && <p className="col-span-2 py-8 text-center text-sm text-muted-foreground">{search ? "কোনো ফলাফল নেই" : "কোনো popup নেই"}</p>}
         </div>
       )}
 
