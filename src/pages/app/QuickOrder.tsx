@@ -90,6 +90,9 @@ function QuickOrderInner() {
   const [printOpen, setPrintOpen] = useState(false);
   const [converting, setConverting] = useState(false);
 
+  // Active tab (mobile/tablet)
+  const [activeTab, setActiveTab] = useState<"products" | "cart">("products");
+
   // View mode
   const [viewMode, setViewMode] = useState<"grid" | "list">(() => {
     if (typeof window === "undefined") return "grid";
@@ -418,7 +421,7 @@ function QuickOrderInner() {
   };
 
   return (
-    <div className="container max-w-3xl space-y-4 px-4 py-4 pb-28">
+    <div className="container max-w-[1600px] space-y-4 px-3 py-4 pb-28 sm:px-4">
       <div className="text-xs text-muted-foreground">
         Home / {lang === "bn" ? "দ্রুত বিক্রি" : "Quick Sell"}
       </div>
@@ -457,6 +460,33 @@ function QuickOrderInner() {
         </div>
       </div>
 
+      {/* Mobile/Tablet tabs */}
+      <div className="flex gap-1 rounded-xl border bg-card p-1 shadow-sm lg:hidden">
+        <button
+          type="button"
+          onClick={() => setActiveTab("products")}
+          className={`flex-1 rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${activeTab === "products" ? "bg-primary text-primary-foreground shadow" : "text-muted-foreground hover:bg-accent"}`}
+        >
+          {lang === "bn" ? "পণ্য" : "Products"}
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab("cart")}
+          className={`flex-1 rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${activeTab === "cart" ? "bg-primary text-primary-foreground shadow" : "text-muted-foreground hover:bg-accent"}`}
+        >
+          <span className="inline-flex items-center gap-1.5">
+            <ShoppingCart className="h-3.5 w-3.5" />
+            {lang === "bn" ? "কার্ট" : "Cart"}
+            {rows.length > 0 && (
+              <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold ${activeTab === "cart" ? "bg-primary-foreground text-primary" : "bg-primary text-primary-foreground"}`}>{rows.length}</span>
+            )}
+          </span>
+        </button>
+      </div>
+
+      <div className="lg:grid lg:grid-cols-12 lg:gap-4 lg:items-start">
+      {/* === PRODUCTS COLUMN === */}
+      <div className={`${activeTab === "products" ? "block" : "hidden"} space-y-4 lg:block lg:col-span-8`}>
       {/* Smart input */}
       <div className="rounded-2xl border bg-card p-4 shadow-sm">
         <div className="relative">
@@ -574,6 +604,10 @@ function QuickOrderInner() {
         </div>
       )}
 
+      </div>
+
+      {/* === CART COLUMN === */}
+      <div className={`${activeTab === "cart" ? "block" : "hidden"} space-y-4 lg:block lg:col-span-4`}>
       {/* Items */}
       <div className="rounded-2xl border bg-card shadow-sm">
         {rows.length === 0 ? (
@@ -788,7 +822,7 @@ function QuickOrderInner() {
       </div>
 
       {/* Actions */}
-      <div className="sticky bottom-2 z-10 flex flex-col gap-2 rounded-2xl border bg-background/95 p-3 shadow-lg backdrop-blur sm:flex-row">
+      <div className="sticky bottom-2 z-10 flex flex-col gap-2 rounded-2xl border bg-background/95 p-3 shadow-lg backdrop-blur">
         <Button
           variant="outline"
           className="flex-1 h-12 text-base font-semibold"
@@ -806,6 +840,9 @@ function QuickOrderInner() {
           {converting ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <ReceiptText className="mr-2 h-5 w-5" />}
           {lang === "bn" ? "বিক্রিতে রূপান্তর" : "Convert to Sale"}
         </Button>
+      </div>
+
+      </div>
       </div>
 
       <PrintDialog
