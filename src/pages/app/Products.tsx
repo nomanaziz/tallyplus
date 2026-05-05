@@ -1161,6 +1161,64 @@ function ProductsPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!refBlock} onOpenChange={(o) => { if (!o) setRefBlock(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {lang === "bn" ? "ডিলিট করা যাবে না" : "Cannot delete"}
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3">
+                <div>
+                  {refBlock?.mode === "single"
+                    ? (lang === "bn"
+                        ? <>প্রোডাক্ট <b>{refBlock?.productName}</b>-এর সাথে নিচের data যুক্ত আছে। আগে ওগুলো ডিলিট করুন, তারপর প্রোডাক্ট ডিলিট করতে পারবেন।</>
+                        : <>Product <b>{refBlock?.productName}</b> has the related data below. Delete those first, then you can delete the product.</>)
+                    : (lang === "bn"
+                        ? <>{bnNum(refBlock?.blockedCount ?? 0)}টি প্রোডাক্ট-এর সাথে reference যুক্ত আছে। ওগুলোর related data আগে ডিলিট করতে হবে।</>
+                        : <>{refBlock?.blockedCount ?? 0} product(s) have references. Delete the related data first.</>)}
+                </div>
+                <ul className="space-y-1 text-sm">
+                  {refBlock && refBlock.counts.sales > 0 && (
+                    <li>• <a className="underline text-primary" href="/app/sales-ledger">{lang === "bn" ? "বিক্রয়" : "Sales"}: {lang === "bn" ? bnNum(refBlock.counts.sales) : refBlock.counts.sales}</a></li>
+                  )}
+                  {refBlock && refBlock.counts.purchases > 0 && (
+                    <li>• <a className="underline text-primary" href="/app/purchase-ledger">{lang === "bn" ? "ক্রয়" : "Purchases"}: {lang === "bn" ? bnNum(refBlock.counts.purchases) : refBlock.counts.purchases}</a></li>
+                  )}
+                  {refBlock && refBlock.counts.quotations > 0 && (
+                    <li>• <a className="underline text-primary" href="/app/sell">{lang === "bn" ? "Quotation" : "Quotations"}: {lang === "bn" ? bnNum(refBlock.counts.quotations) : refBlock.counts.quotations}</a></li>
+                  )}
+                  {refBlock && refBlock.counts.returns > 0 && (
+                    <li>• <a className="underline text-primary" href="/app/returns">{lang === "bn" ? "বিক্রয় ফেরত" : "Sales returns"}: {lang === "bn" ? bnNum(refBlock.counts.returns) : refBlock.counts.returns}</a></li>
+                  )}
+                  {refBlock && refBlock.counts.onlineOrders > 0 && (
+                    <li>• <a className="underline text-primary" href="/app/online-shop">{lang === "bn" ? "অনলাইন অর্ডার" : "Online orders"}: {lang === "bn" ? bnNum(refBlock.counts.onlineOrders) : refBlock.counts.onlineOrders}</a></li>
+                  )}
+                  {refBlock && refBlock.counts.listings > 0 && (
+                    <li>• <a className="underline text-primary" href="/app/online-shop">{lang === "bn" ? "অনলাইন listing" : "Online listing"}: {lang === "bn" ? bnNum(refBlock.counts.listings) : refBlock.counts.listings}</a></li>
+                  )}
+                </ul>
+                {refBlock?.mode === "bulk" && (refBlock.cleanIds?.length ?? 0) > 0 && (
+                  <div className="rounded-md border bg-muted/40 p-2 text-sm">
+                    {lang === "bn"
+                      ? <>{bnNum(refBlock.cleanIds!.length)}টি প্রোডাক্ট-এ কোনো reference নেই — শুধু ওগুলো এখনই ডিলিট করতে পারেন।</>
+                      : <>{refBlock.cleanIds!.length} product(s) have no references — you can delete only those now.</>}
+                  </div>
+                )}
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{lang === "bn" ? "বাতিল" : "Cancel"}</AlertDialogCancel>
+            {refBlock?.mode === "bulk" && (refBlock.cleanIds?.length ?? 0) > 0 && (
+              <AlertDialogAction onClick={proceedDeleteCleanOnly}>
+                {lang === "bn" ? "শুধু clean গুলো ডিলিট করুন" : "Delete clean ones only"}
+              </AlertDialogAction>
+            )}
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
