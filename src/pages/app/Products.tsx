@@ -131,6 +131,54 @@ function ProductsPage() {
   const [confirmText, setConfirmText] = useState("");
   const [bulkDeleting, setBulkDeleting] = useState(false);
 
+  // Reference-block dialog (shown when product(s) cannot be deleted)
+  type RefCounts = {
+    sales: number;
+    purchases: number;
+    quotations: number;
+    returns: number;
+    onlineOrders: number;
+    listings: number;
+  };
+  const [refBlock, setRefBlock] = useState<{
+    mode: "single" | "bulk";
+    productName?: string;
+    counts: RefCounts;
+    cleanIds?: string[];
+    blockedCount?: number;
+  } | null>(null);
+
+  const REF_TABLES: Array<{ key: keyof RefCounts; table: string }> = [
+    { key: "sales", table: "sale_items" },
+    { key: "purchases", table: "purchase_items" },
+    { key: "quotations", table: "quotation_items" },
+    { key: "returns", table: "sale_return_items" },
+    { key: "onlineOrders", table: "marketplace_order_items" },
+    { key: "listings", table: "marketplace_listings" },
+  ];
+
+  // Returns counts (total) and blocked product ids across all reference tables.
+  const checkProductReferences = async (productIds: string[]) => {
+    const counts: RefCounts = { sales: 0, purchases: 0, quotations: 0, returns: 0, onlineOrders: 0, listings: 0 };
+    const blocked = new Set<string>();
+    await Promise.all(
+      REF_TABLES.map(async ({ key, table }) => {
+        const { data, error } = await supabase
+          .from(table as never)
+          .select("product_id")
+          .in("product_id", productIds)
+          .limit(10000);
+        if (error || !data) return;
+        counts[key] = data.length;
+        for (const row of data as Array<{ product_id: string }>) {
+          if (row.product_id) blocked.add(row.product_id);
+        }
+      }),
+    );
+    const total = Object.values(counts).reduce((a, b) => a + b, 0);
+    return { counts, blocked, total };
+  };
+
   const load = async () => {
     await qc.invalidateQueries({ queryKey: ["products"] });
     await refetch();
