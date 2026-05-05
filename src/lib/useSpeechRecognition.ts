@@ -107,10 +107,11 @@ export function useSpeechRecognition(opts: Options = {}) {
 
     r.onstart = () => {
       setListening(true);
-      // 10s no-speech timeout
-      noSpeechTimerRef.current = window.setTimeout(() => {
-        stop();
-      }, noSpeechTimeoutMs);
+      if (noSpeechTimeoutMs > 0) {
+        noSpeechTimerRef.current = window.setTimeout(() => {
+          stop();
+        }, noSpeechTimeoutMs);
+      }
     };
 
     r.onresult = (event: any) => {
@@ -138,9 +139,11 @@ export function useSpeechRecognition(opts: Options = {}) {
 
       // reset silence timer — close after silence
       if (silenceTimerRef.current) window.clearTimeout(silenceTimerRef.current);
-      silenceTimerRef.current = window.setTimeout(() => {
-        stop();
-      }, silenceTimeoutMs);
+      if (silenceTimeoutMs > 0) {
+        silenceTimerRef.current = window.setTimeout(() => {
+          stop();
+        }, silenceTimeoutMs);
+      }
     };
 
     r.onerror = (e: any) => {
