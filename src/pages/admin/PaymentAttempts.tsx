@@ -21,7 +21,7 @@ type Row = {
 };
 
 type ProfileLite = { id: string; full_name: string | null; phone: string | null };
-type PlanLite = { id: string; name_en: string; name_bn: string };
+type PlanLite = { id: string; name_en: string; name_bn: string; code?: string };
 
 const STATUS_FILTERS = [
   { v: "all", label: "All" },
@@ -64,7 +64,7 @@ export default function PaymentAttempts() {
         ? supabase.from("profiles").select("id,full_name,phone").in("id", userIds)
         : Promise.resolve({ data: [] as ProfileLite[] }),
       planIds.length
-        ? supabase.from("subscription_plans").select("id,name_en,name_bn").in("id", planIds)
+        ? supabase.from("subscription_plans").select("id,name_en,name_bn,code").in("id", planIds)
         : Promise.resolve({ data: [] as PlanLite[] }),
     ]);
     const pm: Record<string, ProfileLite> = {};
@@ -172,7 +172,16 @@ export default function PaymentAttempts() {
                     <div className="font-semibold">{p?.full_name || "—"}</div>
                     <div className="text-xs text-muted-foreground">{p?.phone || "—"}</div>
                   </td>
-                  <td className="px-3 py-2.5">{plan?.name_en || "—"}</td>
+                  <td className="px-3 py-2.5">
+                    <div className="flex items-center gap-1.5">
+                      <span>{plan?.name_en || "—"}</span>
+                      {plan?.code?.startsWith("consumer_") ? (
+                        <Badge variant="outline" className="text-[10px]">Consumer</Badge>
+                      ) : plan ? (
+                        <Badge variant="outline" className="text-[10px]">Shop</Badge>
+                      ) : null}
+                    </div>
+                  </td>
                   <td className="whitespace-nowrap px-3 py-2.5 font-semibold">৳ {r.amount ?? 0}</td>
                   <td className="px-3 py-2.5"><StatusBadge s={r.status} /></td>
                   <td className="px-3 py-2.5 text-xs"><code className="font-mono">{r.transaction_id || "—"}</code></td>
