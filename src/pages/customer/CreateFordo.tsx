@@ -7,9 +7,10 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Plus, Trash2, ArrowLeft, ArrowRight, Send, Search, Store, MapPin, Save, CalendarClock, Star } from "lucide-react";
+import { Loader2, Plus, Trash2, ArrowLeft, ArrowRight, Send, Search, Store, MapPin, Save, CalendarClock, Star, ListChecks } from "lucide-react";
 import { toast } from "sonner";
 import { VoiceFordoMic } from "@/components/app/VoiceFordoMic";
+import { BulkTextToFordoDialog } from "@/components/app/BulkTextToFordoDialog";
 import { ScheduleFordoDialog } from "@/components/customer/ScheduleFordoDialog";
 import {
   Dialog,
@@ -42,6 +43,7 @@ export default function CreateFordo() {
   const [showSchedule, setShowSchedule] = useState(false);
   const [favourites, setFavourites] = useState<Shop[]>([]);
   const [favIds, setFavIds] = useState<Set<string>>(new Set());
+  const [showBulkText, setShowBulkText] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -304,10 +306,20 @@ export default function CreateFordo() {
             <div>
               <h2 className="text-base font-bold">পণ্যের তালিকা</h2>
               <p className="text-[11px] text-muted-foreground">
-                মাইকে চাপ দিয়ে কথা বলে যোগ করুন
+                মাইকে কথা বলে, অথবা পুরো লিস্ট একসাথে paste করে যোগ করুন
               </p>
             </div>
-            <VoiceFordoMic
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setShowBulkText(true)}
+                className="h-9"
+              >
+                <ListChecks className="mr-1 h-4 w-4" /> টেক্সট থেকে
+              </Button>
+              <VoiceFordoMic
               onItems={(spoken) => {
                 setItems((cur) => {
                   const next = [...cur];
@@ -332,7 +344,8 @@ export default function CreateFordo() {
                   return next;
                 });
               }}
-            />
+              />
+            </div>
           </div>
           {items.map((it, i) => (
             <div key={i} className="grid grid-cols-12 gap-2">
@@ -536,6 +549,35 @@ export default function CreateFordo() {
         onOpenChange={setShowSchedule}
         items={items}
         note={note}
+      />
+
+      <BulkTextToFordoDialog
+        open={showBulkText}
+        onOpenChange={setShowBulkText}
+        onAdd={(parsed) => {
+          setItems((cur) => {
+            const next = [...cur];
+            let idx = 0;
+            for (const it of parsed) {
+              const emptyAt = next.findIndex((r) => !r.name.trim());
+              if (emptyAt >= 0 && idx === 0) {
+                next[emptyAt] = {
+                  name: it.name,
+                  qty: it.qty ?? next[emptyAt].qty,
+                  unit: it.unit ?? next[emptyAt].unit,
+                };
+              } else {
+                next.push({
+                  name: it.name,
+                  qty: it.qty ?? "",
+                  unit: it.unit ?? "",
+                });
+              }
+              idx++;
+            }
+            return next;
+          });
+        }}
       />
     </div>
   );
