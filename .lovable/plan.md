@@ -1,113 +1,60 @@
-# Personal Loans — Partial Repay + Cash on Hand + Voice for Notes
+## Goal
+Finalize the two repeated issues:
+1. Desktop Chrome install should trigger the real install flow when available instead of always falling back to instructions.
+2. Mobile Fordo voice input should stop rapidly turning the mic on/off and behave reliably on phones.
 
-## 1. Partial repayment for personal loans (consumer)
+## What I found
+- Your screenshot and my browser checks both confirm the app-level install buttons are visible.
+- Clicking those buttons currently opens the fallback desktop instruction modal instead of a native install prompt.
+- The published site is serving a valid manifest and `sw.js`, so the missing native prompt is a detection/installability problem, not a missing button problem.
+- The current speech implementation opens extra microphone access through `useMicLevel()` while `SpeechRecognition` is also using the mic. That double mic usage is a likely cause of mobile Chrome repeatedly stopping/restarting.
+- The current speech hook also restarts recognition aggressively, which is more fragile on mobile than on desktop.
 
-**DB migration** — new table `consumer_loan_payments`:
-```
-id uuid PK
-loan_id uuid FK consumer_loans
-user_id uuid
-amount numeric  -- positive
-paid_via text   -- 'cash' | 'bkash' | 'nagad' | 'rocket' | 'bank'
-note text
-paid_date date default current_date
-created_at timestamptz
-```
-RLS: only owner (`auth.uid() = user_id`)।
+## Plan
+### 1) Fix desktop install flow
+- Audit the current `usePwaInstall` hook and install button behavior.
+- Improve detection so the UI distinguishes between:
+  - native install prompt available now
+  - installable but browser did not expose `beforeinstallprompt`
+  - unsupported / already installed
+- Add stronger desktop fallback behavior:
+  - keep the button visible
+  - show clearer status text for Chrome/Edge/Brave
+  - avoid implying the prompt is unavailable when it may simply not have fired yet
+- Add lightweight runtime diagnostics so we can confirm whether `beforeinstallprompt` is firing on the user’s machine on the next report.
+- Verify behavior on the published domain and make the fallback copy match Chrome’s actual install paths.
 
-`consumer_loans`-এ যোগ:
-- `paid_amount numeric default 0` (denormalized running total — trigger maintains)
+### 2) Stabilize mobile Fordo voice input
+- Refactor `useSpeechRecognition` for mobile-safe behavior:
+  - prevent overlapping start/stop/restart cycles
+  - separate manual stop from auto-recovery
+  - reduce restart thrashing on Android Chrome
+  - handle permission and no-speech states more gracefully
+- Remove the extra microphone stream conflict during dictation UI:
+  - stop `useMicLevel()` from competing with speech recognition on mobile, or gate/replace it while recording
+- Update `VoiceFordoMic` to use a mobile-optimized recognition mode with steadier continuous capture.
+- Apply the same stability improvements to reusable text dictation where appropriate, without breaking the desktop experience.
 
-Trigger `tg_consumer_loan_payment_sync`:
-- AFTER INSERT/UPDATE/DELETE on `consumer_loan_payments`:
-  - recompute `paid_amount = SUM(amount)` for that loan
-  - যদি `paid_amount >= amount` হয় → `is_settled = true, settled_at = now()`, নাহয় `is_settled = false`
-  - **No more auto consumer_transactions** for partial pay (see #2)
+### 3) Verify end-to-end
+- Test desktop published install behavior again.
+- Test mobile-sized Fordo voice interaction in the browser tools as far as supported.
+- Confirm the UI gives accurate feedback when install prompt or mic permission is not available.
 
-## 2. Loans excluded from income/expense — দেনা/পাওনা cash-only
+## Technical details
+Files likely involved:
+- `src/hooks/use-pwa-install.ts`
+- `src/components/app/InstallAppPrompt.tsx`
+- `src/components/site/SiteHeader.tsx`
+- `src/lib/useSpeechRecognition.ts`
+- `src/components/app/VoiceFordoMic.tsx`
+- `src/components/app/VoiceTextMic.tsx`
+- `src/lib/useMicLevel.ts`
 
-বর্তমানে `LoansTab.submit()` এবং `settle()` `consumer_transactions`-এ row insert করে → ফলে summary-তে আয়/ব্যয় হিসেবে দেখায়। এটা ভুল — ধার আয় না, ফেরত খরচ না।
+Implementation notes:
+- I will preserve the existing manifest/service-worker approach and improve install detection/UX rather than replacing the whole PWA setup.
+- For voice, the main change will be making mobile recognition single-owner of the microphone during dictation, because the current visual mic-level analyzer likely conflicts with speech capture on phones.
+- If needed, I’ll add temporary logging to capture why Chrome is not exposing the native install prompt in your environment.
 
-**পরিবর্তন:**
-- `LoansTab.tsx` থেকে `consumer_transactions` insert সম্পূর্ণভাবে সরাও (create + settle + payment তিনটাতেই)।
-- পরিবর্তে নতুন **Cash on Hand** ledger maintain করা হবে (নিচে #3)।
-- One-time data fix migration: `DELETE FROM consumer_transactions WHERE source_loan_id IS NOT NULL` যাতে পুরোনো ভুল entry summary থেকে সরে যায়।
-
-Money page-এর Income/Expense summary আর `consumer_transactions`-এর উপরই depend করে, তাই loan rows বাদ পড়লে স্বাভাবিকভাবে exclude হয়ে যাবে।
-
-## 3. Cash on Hand (ব্যক্তিগত নগদ)
-
-নতুন derived view OR টেবিল `consumer_cash_movements`:
-```
-id uuid PK
-user_id uuid
-amount numeric (signed: + in / − out)
-direction text 'in' | 'out'
-source text  -- 'loan_borrowed' | 'loan_lent' | 'loan_repay_received' | 'loan_repay_paid' | 'manual_adjust'
-ref_loan_id uuid null
-ref_payment_id uuid null
-note text
-tx_date date
-created_at timestamptz
-```
-RLS: own user only।
-
-**Auto-population via DB triggers** (so client কোডে duplicate লজিক নেই):
-- `consumer_loans` INSERT:
-  - `borrowed` → cash IN (+amount, source `loan_borrowed`)
-  - `lent` → cash OUT (−amount, source `loan_lent`)
-- `consumer_loans` DELETE: reverse the rows (CASCADE-style)
-- `consumer_loan_payments` INSERT:
-  - parent `lent` → cash IN (পাওনা ফেরত পেলেন, +amount, source `loan_repay_received`)
-  - parent `borrowed` → cash OUT (দেনা পরিশোধ করলেন, −amount, source `loan_repay_paid`)
-
-**RPC** `consumer_cash_summary(_user_id)` → `{ cash_in, cash_out, balance }`।
-
-**Money page (`src/pages/customer/Money.tsx`)**:
-- নতুন **Cash on Hand** stat card top-এ (balance), green/red অনুসারে।
-- Loan tab balance card-এ "নিট" আগের মতই।
-
-## 4. UI — partial repay sheet in `LoansTab.tsx`
-
-- Settle (✓) button → bottom Sheet "পরিশোধ যোগ করুন":
-  - Outstanding amount badge (`amount - paid_amount`)
-  - Quick buttons: "পুরোটা পরিশোধ" (auto-fills outstanding), custom amount input
-  - Paid via select, date, note
-  - Save → INSERT into `consumer_loan_payments`
-- Loan list item-এ progress bar `paid_amount / amount` দেখাও, "৳X বাকি" text।
-- "Payments" expandable history per loan (দেখা ও মুছা যাবে)।
-
-## 5. Voice mic for expense reason (Money page)
-
-`src/pages/customer/Money.tsx` add Sheet-এর "নোট" (cause) input-এ একটা ছোট mic button:
-- `useSpeechRecognition({ lang: 'bn-BD', onFinal: (t) => setNote(prev => prev ? prev + ' ' + t : t) })`
-- যখন `type === 'expense'` only দেখাবে (চাইলে income-এও — keep universal).
-- Same pattern পরে চাইলে অন্যান্য ফর্মেও reuse করা যাবে।
-
-Component: `src/components/app/VoiceTextMic.tsx` (NEW, generic) — accepts `onText: (t)=>void`, identical mic UI as VoiceFordoMic but no parsing।
-
-## 6. Voice fordo on mobile — already wired
-
-`VoiceFordoMic` already exists এবং `CreateFordo.tsx`-এ mounted। User report করেছে mobile-এ কাজ করে না → সম্ভাব্য কারণ:
-- Web Speech API mobile Chrome-এ requires HTTPS + mic permission prompt
-- iOS Safari-এ `webkitSpeechRecognition` সাপোর্ট নাই (silently false)
-
-**Fix steps:**
-- `useSpeechRecognition.ts`-এ better error message: যদি `!supported` → toast "এই device-এ voice support নেই, Chrome/Android ব্যবহার করুন" এবং **Cloud fallback** option suggest করার বদলে এখন স্পষ্ট error দেখাও।
-- Permission request আগেই trigger করতে `navigator.mediaDevices.getUserMedia({ audio: true })` start-এর আগে call (একবার), যাতে mobile Chrome এ permission dialog reliably আসে।
-- Mobile-এ `continuous: true` Chrome Android-এ buggy → mobile detect করে `continuous: false` use করা ও re-start করা; অথবা MediaRecorder-based fallback (পরে আলাদা PR)।
-
-এই PR-এ minimum permission-prefetch + clearer error যোগ করব — mobile Chrome-এ এতেই 90% solve হয়। iOS users-এর জন্য in-UI ছোট hint লেখা থাকবে।
-
-## Files to change/create
-
-| File | Action |
-|---|---|
-| `supabase/migrations/<ts>_loans_partial.sql` | NEW — `consumer_loan_payments` table + paid_amount column + triggers + `consumer_cash_movements` table + triggers + cleanup query |
-| `src/components/customer/LoansTab.tsx` | EDIT — remove consumer_transactions writes, add Repay sheet, progress bar, payments history |
-| `src/pages/customer/Money.tsx` | EDIT — add Cash on Hand stat, mount `<VoiceTextMic/>` next to note input |
-| `src/components/app/VoiceTextMic.tsx` | NEW — generic mic that appends transcript to a text setter |
-| `src/lib/useSpeechRecognition.ts` | EDIT — pre-request mic permission, better mobile error messaging, mobile-friendly continuous mode |
-| `src/integrations/supabase/types.ts` | auto after migration |
-
-কোনো secret লাগবে না (সব Supabase + browser API)।
+## Expected result
+- Desktop users will either get the actual install flow when Chrome exposes it, or a more accurate fallback with less confusion.
+- Mobile Fordo dictation will stop flickering on/off and become much more reliable for continuous list creation.
