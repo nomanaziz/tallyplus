@@ -111,6 +111,7 @@ const LFavoriteShops = lazy(() => import("@/pages/customer/FavoriteShops"));
 const LMyServices = lazy(() => import("@/pages/customer/MyServices"));
 const LCustomerHistory = lazy(() => import("@/pages/customer/History"));
 const LCustomerSubscription = lazy(() => import("@/pages/customer/Subscription"));
+const LCustomerSubscribeCallback = lazy(() => import("@/pages/customer/SubscribeCallback"));
 const LOnlineShop = lazy(() => import("@/pages/app/online-shop/Index"));
 const LOSOrders = lazy(() => import("@/pages/app/online-shop/Orders"));
 const LOSProducts = lazy(() => import("@/pages/app/online-shop/Products"));
@@ -270,6 +271,8 @@ export const appRoutes: RouteObject[] = [
 { path: "history", element: <Suspense fallback={<RouteFallback/>}><LCustomerHistory/></Suspense> }
 ,
 { path: "subscription", element: <Suspense fallback={<RouteFallback/>}><LCustomerSubscription/></Suspense> }
+,
+{ path: "subscribe/callback", element: <Suspense fallback={<RouteFallback/>}><LCustomerSubscribeCallback/></Suspense> }
 ] },
 { path: "f/:slug", element: <Suspense fallback={<RouteFallback/>}><L64/></Suspense>, children: [
 { path: "my", element: <Suspense fallback={<RouteFallback/>}><L65/></Suspense> }

@@ -44,6 +44,13 @@ Deno.serve(async (req) => {
     if (!planId) return json({ error: "plan_id required" }, 400);
     if (!origin) return json({ error: "origin required" }, 400);
 
+    // Optional redirect path (defaults to shop subscribe callback).
+    // Accepts only safe app-internal paths starting with "/".
+    const rawRedirect = String(body?.redirect_path ?? "").trim();
+    const redirectPath = rawRedirect.startsWith("/") && !rawRedirect.startsWith("//")
+      ? rawRedirect
+      : "/app/subscribe/callback";
+
     const admin = createClient(url, serviceKey);
     const { data: plan, error: pErr } = await admin
       .from("subscription_plans")
@@ -70,8 +77,8 @@ Deno.serve(async (req) => {
       .single();
     if (tErr || !tx) return json({ error: tErr?.message ?? "Failed to create tx" }, 500);
 
-    const successUrl = `${origin}/app/subscribe/callback?status=success&local_id=${tx.id}`;
-    const cancelUrl = `${origin}/app/subscribe/callback?status=cancel&local_id=${tx.id}`;
+    const successUrl = `${origin}${redirectPath}?status=success&local_id=${tx.id}`;
+    const cancelUrl = `${origin}${redirectPath}?status=cancel&local_id=${tx.id}`;
 
     // Phone metadata is required by Recharge Server
     const phoneMeta = String(body?.phone ?? user.phone ?? user.email ?? "").slice(0, 20);
