@@ -482,6 +482,12 @@ function ProductsTab() {
       <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>{editing?.id ? "Edit Product" : "New Product"}</DialogTitle></DialogHeader>
+          <Tabs defaultValue="details">
+            <TabsList>
+              <TabsTrigger value="details">Details</TabsTrigger>
+              <TabsTrigger value="variants" disabled={!editing?.id}>Variants</TabsTrigger>
+            </TabsList>
+            <TabsContent value="details">
           <div className="grid gap-3">
             <div className="grid grid-cols-2 gap-3">
               <div><Label>নাম (Bangla)</Label><Input value={editing?.name_bn ?? ""} onChange={(e) => setEditing({ ...editing, name_bn: e.target.value })} /></div>
@@ -606,6 +612,19 @@ function ProductsTab() {
               <Label>Active</Label>
             </div>
           </div>
+            </TabsContent>
+            <TabsContent value="variants">
+              {editing?.id ? (
+                <MarketplaceVariantEditor
+                  productId={editing.id}
+                  defaultPrice={editing.default_price ?? null}
+                  defaultCost={editing.default_cost ?? null}
+                />
+              ) : (
+                <p className="py-6 text-center text-sm text-muted-foreground">প্রথমে product save করুন, তারপর variants যোগ করুন।</p>
+              )}
+            </TabsContent>
+          </Tabs>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditing(null)}>Cancel</Button>
             <Button onClick={save} disabled={saving}>{saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save"}</Button>
