@@ -4,13 +4,15 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Loader2, Copy, ExternalLink, Image as ImageIcon, RefreshCw, Search } from "lucide-react";
+import { Loader2, Copy, ExternalLink, Image as ImageIcon, RefreshCw, Search, Upload, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 type ImageItem = {
   url: string;
   name: string;
+  path?: string;
   source: "storage" | "external";
   createdAt?: string | null;
   sizeKb?: number | null;
@@ -65,6 +67,7 @@ export default function AdminImageLibraryPage() {
           return {
             url,
             name: f.name,
+            path,
             source: "storage",
             createdAt: f.created_at ?? null,
             sizeKb: f.metadata?.size ? Math.round(f.metadata.size / 1024) : null,
@@ -95,6 +98,43 @@ export default function AdminImageLibraryPage() {
   };
 
   useEffect(() => { void load(); }, []);
+
+  const [uploading, setUploading] = useState(false);
+  const [confirmDel, setConfirmDel] = useState<ImageItem | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const uploadFiles = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    setUploading(true);
+    let ok = 0, fail = 0;
+    for (const file of Array.from(files)) {
+      const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+      const path = `${FOLDER}/${crypto.randomUUID()}.${ext}`;
+      const { error } = await supabase.storage.from(BUCKET).upload(path, file, {
+        cacheControl: "3600",
+        upsert: false,
+        contentType: file.type || undefined,
+      });
+      if (error) { fail++; toast.error(`${file.name}: ${error.message}`); }
+      else ok++;
+    }
+    setUploading(false);
+    if (ok > 0) toast.success(`${ok} টি image upload হয়েছে`);
+    if (fail === 0) await load();
+    else await load();
+  };
+
+  const doDelete = async () => {
+    if (!confirmDel || !confirmDel.path) return;
+    setDeleting(true);
+    const { error } = await supabase.storage.from(BUCKET).remove([confirmDel.path]);
+    setDeleting(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Image deleted");
+    setConfirmDel(null);
+    setPreview(null);
+    await load();
+  };
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -135,6 +175,18 @@ export default function AdminImageLibraryPage() {
         <Button variant="outline" size="sm" onClick={load} disabled={loading}>
           <RefreshCw className={`mr-1 h-4 w-4 ${loading ? "animate-spin" : ""}`} /> Refresh
         </Button>
+        <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:opacity-90">
+          {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+          <span>{uploading ? "Uploading…" : "Upload images"}</span>
+          <input
+            type="file"
+            accept="image/*"
+            multiple
+            className="hidden"
+            disabled={uploading}
+            onChange={(e) => { void uploadFiles(e.target.files); e.currentTarget.value = ""; }}
+          />
+        </label>
       </div>
 
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
