@@ -9,6 +9,8 @@ type Options = {
   lang?: string;
   silenceTimeoutMs?: number; // close after this much silence (after speech started)
   noSpeechTimeoutMs?: number; // close if no speech ever detected
+  continuous?: boolean;
+  keepAlive?: boolean;
   onFinal?: (text: string) => void;
   /** Called every time the recognizer commits a final segment, in real time. */
   onSegment?: (text: string) => void;
@@ -20,6 +22,8 @@ export function useSpeechRecognition(opts: Options = {}) {
     lang = "bn-BD",
     silenceTimeoutMs = 12000,
     noSpeechTimeoutMs = 15000,
+    continuous = true,
+    keepAlive = false,
     onFinal,
     onSegment,
     onClose,
@@ -37,6 +41,8 @@ export function useSpeechRecognition(opts: Options = {}) {
   const onFinalRef = useRef(onFinal);
   const onSegmentRef = useRef(onSegment);
   const onCloseRef = useRef(onClose);
+  const restartingRef = useRef(false);
+  const manuallyStoppedRef = useRef(false);
   onFinalRef.current = onFinal;
   onSegmentRef.current = onSegment;
   onCloseRef.current = onClose;
@@ -60,6 +66,7 @@ export function useSpeechRecognition(opts: Options = {}) {
   };
 
   const stop = useCallback(() => {
+    manuallyStoppedRef.current = true;
     clearTimers();
     try {
       recognitionRef.current?.stop();
@@ -89,11 +96,13 @@ export function useSpeechRecognition(opts: Options = {}) {
     setError(null);
     setTranscript("");
     finalTextRef.current = "";
+    manuallyStoppedRef.current = false;
+    restartingRef.current = false;
 
     const r = new SR();
     r.lang = lang;
     r.interimResults = true;
-    r.continuous = true;
+    r.continuous = continuous;
     r.maxAlternatives = 1;
 
     r.onstart = () => {
@@ -137,9 +146,15 @@ export function useSpeechRecognition(opts: Options = {}) {
     r.onerror = (e: any) => {
       const code = e?.error || "unknown";
       if (code === "no-speech") {
-        // expected; just stop
+        if (!keepAlive) {
+          setError("কথা শোনা যায়নি — আরেকটু স্পষ্ট করে বলুন");
+        }
       } else if (code === "not-allowed" || code === "service-not-allowed") {
         setError("Microphone permission নেই");
+      } else if (code === "audio-capture") {
+        setError("Microphone পাওয়া যাচ্ছে না — অন্য app microphone ব্যবহার করছে কি না দেখুন");
+      } else if (code === "network") {
+        setError("ভয়েস সার্ভিসে সংযোগ সমস্যা হচ্ছে — ইন্টারনেট বা Chrome speech service চেক করুন");
       } else if (code !== "aborted") {
         setError(`Voice error: ${code}`);
       }
@@ -148,6 +163,18 @@ export function useSpeechRecognition(opts: Options = {}) {
     r.onend = () => {
       clearTimers();
       setListening(false);
+      if (keepAlive && !manuallyStoppedRef.current && !restartingRef.current) {
+        restartingRef.current = true;
+        window.setTimeout(() => {
+          restartingRef.current = false;
+          try {
+            r.start();
+          } catch {
+            // ignore restart failure
+          }
+        }, 160);
+        return;
+      }
       const final = finalTextRef.current.trim();
       if (final && onFinalRef.current) onFinalRef.current(final);
       if (onCloseRef.current) onCloseRef.current();
@@ -160,11 +187,12 @@ export function useSpeechRecognition(opts: Options = {}) {
       setError((e as Error).message);
       setListening(false);
     }
-  }, [lang, silenceTimeoutMs, noSpeechTimeoutMs, stop]);
+  }, [continuous, keepAlive, lang, silenceTimeoutMs, noSpeechTimeoutMs, stop]);
 
   useEffect(() => {
     return () => {
       clearTimers();
+      manuallyStoppedRef.current = true;
       try {
         recognitionRef.current?.abort();
       } catch {
