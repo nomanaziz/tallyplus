@@ -24,6 +24,7 @@ import {
   MessageSquareText,
   KeyRound,
   ArrowLeftRight,
+  Bot,
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useAuth } from "@/lib/auth";
@@ -63,6 +64,7 @@ const ITEMS: Item[] = [
   { to: "/admin/locations", label: "Locations (এলাকা)", icon: MapPin, perm: "locations" },
   { to: "/admin/ads", label: "Ads / Monetization", icon: DollarSign, perm: "ads" },
   { to: "/admin/settings", label: "Settings", icon: Settings, perm: "settings" },
+  { to: "/admin/telegram-alerts", label: "Telegram Alerts", icon: Bot, perm: "always" },
 ];
 
 export function AdminSidebar({ onNavigate }: { onNavigate?: () => void }) {
