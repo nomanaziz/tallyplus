@@ -156,6 +156,31 @@ export default function MyFordo() {
     return () => { cancelled = true; };
   }, [user]);
 
+  // Realtime: when recipient ticks items on a shared link, reflect here live.
+  useEffect(() => {
+    const ids = items.map((w) => w.id);
+    if (ids.length === 0) return;
+    const ch = supabase
+      .channel(`my-fordo-items-${ids[0]}`)
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "customer_wishlist_items", filter: `wishlist_id=in.(${ids.join(",")})` },
+        (payload) => {
+          const u = payload.new as Partial<WLItem> & { id: string; wishlist_id: string };
+          setItemsByWl((prev) => {
+            const list = prev[u.wishlist_id];
+            if (!list) return prev;
+            return {
+              ...prev,
+              [u.wishlist_id]: list.map((it) => it.id === u.id ? { ...it, ...u } as WLItem : it),
+            };
+          });
+        },
+      )
+      .subscribe();
+    return () => { void supabase.removeChannel(ch); };
+  }, [items]);
+
   const deleteTemplate = async (id: string) => {
     if (!confirm("টেমপ্লেট মুছবেন?")) return;
     const { error } = await supabase.from("consumer_fordo_templates").delete().eq("id", id);
