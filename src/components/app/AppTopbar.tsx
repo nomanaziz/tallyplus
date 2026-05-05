@@ -13,6 +13,7 @@ import {
 import { InstallAppButton } from "./InstallAppPrompt";
 import { NotificationBell } from "./NotificationBell";
 import { ChevronDown, LogOut, ArrowLeftRight, LayoutDashboard } from "lucide-react";
+import { BrandWordmark } from "@/components/brand/BrandWordmark";
 import { icons, AppIcon } from "@/lib/icons";
 
 const SettingsSheet = lazy(() =>
@@ -37,9 +38,11 @@ export function AppTopbar() {
   return (
     <header className="sticky top-0 z-30 flex h-14 flex-none items-center justify-between border-b bg-background/90 px-3 backdrop-blur">
       <div className="flex items-center gap-2">
-        <span className="text-sm font-extrabold tracking-tight md:hidden">
-          {current?.name ?? (lang === "bn" ? "Tally Plus" : "Tally Plus")}
-        </span>
+        {current?.name ? (
+          <span className="text-sm font-extrabold tracking-tight md:hidden">{current.name}</span>
+        ) : (
+          <BrandWordmark className="text-sm font-extrabold tracking-tight md:hidden" />
+        )}
       </div>
 
       <div className="flex items-center gap-1.5">

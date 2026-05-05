@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { DeleteShopDialog } from "@/components/app/DeleteShopDialog";
 import { TransferShopDialog } from "@/components/app/TransferShopDialog";
 import logo from "@/assets/logo.png";
+import { BrandWordmark } from "@/components/brand/BrandWordmark";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -91,7 +92,7 @@ function ShopsPage() {
       <header className="flex items-center justify-between border-b bg-background px-4 py-3">
         <Link to="/app/dashboard" className="flex items-center gap-2">
           <img src={logo} alt="" className="h-8 w-8 object-contain" />
-          <span className="text-lg font-extrabold">Tally Plus</span>
+          <BrandWordmark className="text-lg font-extrabold" />
         </Link>
         <Button
           variant="ghost"

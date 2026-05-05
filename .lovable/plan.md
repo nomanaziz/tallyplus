@@ -1,100 +1,80 @@
-# তিনটা কাজ — Shop Reset, Profile Edit, Desktop Install Button
+# Tally Plus Brand Color + Logo Wordmark
 
-## ১. Profile Edit (নাম, ফোন, ঠিকানা পরিবর্তন)
+লোগোর রঙ থেকে নেওয়া brand palette এবং সেটাকে app-এর default primary color বানানো হবে।
 
-**নতুন page:** `/app/profile`
-- Owner নিজের `profiles` row edit করতে পারবে: `full_name`, `phone` (read-only — auth.users থেকে), `address`, `country_code`, optional avatar
-- Zod validation: name 2-100 char, phone format, address ≤ 200 char
-- Save → `profiles` table update (RLS already covers self-update)
-- SettingsSheet-এ একটা নতুন entry: **"আমার প্রোফাইল"** (top, profile picture-এর নিচে)
+## 1. Brand color tokens (logo থেকে নেওয়া)
 
-## ২. Shop Reset + Backup/Restore
+লোগোর তিনটি রঙ:
+- **Deep Indigo** (Tally / তালি): `#1E2A5E` → `oklch(0.27 0.10 270)`
+- **Periwinkle Indigo** (Plus / প্লাস + ring): `#6F7BE0` → `oklch(0.62 0.16 275)` ← **PRIMARY**
+- **Coral Accent** (+ mark / book ribbon): `#FF6B5B` → `oklch(0.72 0.18 25)`
 
-**SettingsSheet → "Danger Zone" section** এ ৩টা button:
-- **দোকানের তথ্য Edit** — shop name, address, phone, logo update (`shops` table)
-- **Backup নিন** — পুরো dataset JSON download
-- **দোকান Reset করুন** — confirm dialog (টাইপ "RESET" + shop name) → সব data মুছে যাবে, shop টিকে থাকবে
+## 2. `src/styles.css` পরিবর্তন
 
-### Backup format (JSON file)
+- `:root` এর primary tokens (`--primary`, `--ring`, `--sidebar-primary`, `--accent`, `--secondary`, `--muted`, `--border`, `--input`, `--sidebar*`) সব hue 145 (green) থেকে hue **275 (indigo)** এ পরিবর্তন।
+- নতুন brand-only tokens যোগ করা হবে যাতে logo wordmark এ ব্যবহার করা যায়:
+  ```
+  --brand-deep:    oklch(0.27 0.10 270);  /* Tally / তালি */
+  --brand-primary: oklch(0.62 0.16 275);  /* Plus / প্লাস */
+  --brand-accent:  oklch(0.72 0.18 25);   /* + mark */
+  ```
+- `@theme inline` block-এ map: `--color-brand-deep`, `--color-brand-primary`, `--color-brand-accent` (Tailwind utilities `text-brand-deep` ইত্যাদি পাওয়ার জন্য)।
+- নতুন একটি theme variant: `[data-theme="indigo"]` (default brand palette) যোগ। বাকি green/blue/red/yellow/soft-dark variants intact থাকবে যাতে user চাইলে switch করতে পারে।
 
+## 3. `src/lib/theme.tsx`
+
+- `AppColor` type-এ `"indigo"` যোগ।
+- `DEFAULT` কে `"indigo"` করা।
+- `COLOR_OPTIONS` এ Indigo (Brand) entry সবার উপরে যোগ করা হবে label সহ: bn `"ব্র্যান্ড"`, en `"Brand (Indigo)"`, swatch `oklch(0.62 0.16 275)`।
+- পুরনো user যাদের localStorage এ `green` save আছে তাদের জন্য কোন migration নেই—তারা যা set করেছিল তা থাকবে; নতুন user-এর জন্য default Indigo।
+
+## 4. Logo wordmark "Tally Plus / টালি প্লাস" এ color split
+
+বর্তমানে `SiteHeader.tsx` ও আরও ১৫+ জায়গায় text এভাবে আছে:
+```tsx
+<span className="…font-extrabold…">{t("appName")}</span>
 ```
-{
-  "version": 1,
-  "exported_at": "...",
-  "shop": { name, address, phone, currency, shop_type_code },
-  "tables": {
-    "categories": [...],
-    "products": [...],
-    "customers": [...],
-    "suppliers": [...],
-    "services": [...],
-    "expenses_categories": [...],
-    "shop_delivery_zones": [...]
-    // optional: sales/purchases/expenses/payments যদি user চায়
-  }
+সব জায়গায় এক রকম style করার জন্য একটি reusable component তৈরি:
+
+**নতুন file:** `src/components/brand/BrandWordmark.tsx`
+```tsx
+export function BrandWordmark({ className }: { className?: string }) {
+  const { t, lang } = useI18n();           // appName = "Tally Plus" বা "টালি প্লাস"
+  const full = t("appName");
+  // English: "Tally Plus" → ["Tally", "Plus"]
+  // Bangla:  "টালি প্লাস" → ["টালি", "প্লাস"]
+  const [first, ...rest] = full.split(" ");
+  const second = rest.join(" ");
+  return (
+    <span className={className}>
+      <span className="text-brand-deep">{first}</span>
+      {second && <> <span className="text-brand-primary">{second}</span></>}
+      <sup className="text-brand-accent font-bold">+</sup>
+    </span>
+  );
 }
 ```
+(Hindi `"टैली प्लस"`-ও same split logic দিয়ে কাজ করবে।)
 
-Two backup modes via checkbox:
-- **শুধু Master data** (products, customers, suppliers, categories, services) — restore-friendly
-- **সবকিছু** (transactions সহ) — পুরো archive, কিন্তু restore-এ skip হবে transaction lines (নতুন shop-এ duplicate id problem এড়ানোর জন্য)
+তারপর existing `<span>{t("appName")}</span>` গুলোকে `<BrandWordmark className="…" />` দিয়ে replace করা হবে। প্রধান touch-points:
+- `src/components/site/SiteHeader.tsx`
+- `src/components/site/HeroSection.tsx`
+- `src/components/site/LoginCard.tsx`, `AuthEntry.tsx`
+- `src/components/app/AppTopbar.tsx`, `AppSidebar.tsx`, `InstallAppPrompt.tsx`, `NewUserAccessDialog.tsx`, `AddShopDialog.tsx`
+- `src/pages/app/Printer.tsx`, `Shops.tsx`, `Affiliate.tsx`
+- বাকি জায়গায় যেখানে শুধু plain text হিসেবে নাম দরকার (e.g. `<title>`, alt, manifest), সেখানে `t("appName")` ই থাকবে — বদলানো হবে না।
 
-### Reset flow (Edge Function `shop-reset`)
+## 5. Logo placement
 
-Edge function admin-priv দিয়ে এই tables থেকে `shop_id = X` rows hard-delete করবে:
-`sales_items, sales, purchases_items, purchases, expenses, payments, cash_movements, products, categories, customers, suppliers, services, service_bookings, customer_wishlists, customer_wishlist_items, online_orders, online_order_items, shop_delivery_zones, returns, ...` (প্রকৃত list pre-flight query করে নেব)
+বর্তমান long logo (`src/assets/logo.png`) যেখানে যেখানে আছে সেগুলো অপরিবর্তিত থাকবে (user বললেন "যেটা আছে এটাই থাকুক")। শুধু wordmark রঙ branding-এর সাথে মিলে যাবে।
 
-- `shops` row নিজে delete হবে না — owner & settings অক্ষুণ্ণ
-- নতুন default delivery zones trigger আবার seed করে দেবে (already exists)
-- Audit log: `shop_reset_logs` table — কে, কখন, কোন shop reset করল
+## Technical summary
 
-**Validation (DB-side):** RPC `request_shop_reset(_shop_id, _confirmation_text)` — only owner, confirmation must equal shop name।
+| File | Change |
+|---|---|
+| `src/styles.css` | hue 145 → 275 in `:root`, add brand-* tokens, add `[data-theme="indigo"]` |
+| `src/lib/theme.tsx` | add `"indigo"` option, set as DEFAULT, add to `COLOR_OPTIONS` |
+| `src/components/brand/BrandWordmark.tsx` | NEW — colored wordmark component |
+| ~12 site/app files | replace `<span>{t("appName")}</span>` with `<BrandWordmark/>` |
 
-### Restore/Import (`Backup নিন` page বা separate Import button)
-
-- File upload → JSON parse → **Zod schema validation** (version, table shapes, required fields)
-- Preview dialog: কতটা product/customer/etc import হবে দেখাবে, conflict (duplicate name/SKU) flag করবে
-- Per-row validation — যেকোনো error থাকলে "ঠিক করে আবার upload করুন" message + error rows-এর line number list
-- Atomic insert via Edge Function `shop-restore` (transaction)
-
-## ৩. Desktop PWA Install Button (address bar pasher icon)
-
-**সমস্যা:** Chrome desktop install icon তখনই দেখায় যখন PWA installability criteria পুরোপুরি পূরণ হয় — এর মধ্যে গুরুত্বপূর্ণ:
-- valid `manifest.webmanifest` ✅ (আছে)
-- registered service worker with `fetch` handler ❌ (নেই — `rg` দিয়ে service worker খুঁজে পাইনি)
-- HTTPS ✅
-- 192x192 ও 512x512 icons ✅
-
-**Fix:**
-1. **Vite PWA plugin add:** `bun add -D vite-plugin-pwa workbox-window`
-2. `vite.config.ts`-এ `VitePWA({ registerType: 'autoUpdate', manifest: ... , workbox: { ... } })` plugin add
-3. `src/main.tsx`-এ service worker registration (`registerSW({ immediate: true })`)
-4. Existing `public/manifest.webmanifest` plugin manifest-এর সাথে merge (duplicate avoid)
-5. Manifest-এ `id: "/"` add (Chrome desktop-এ install button reliably দেখাতে সাহায্য করে)
-
-এর পর Chrome address bar-এ install icon (computer + arrow) দেখাবে।
-
-## Files
-
-**New:**
-- `src/pages/app/Profile.tsx`
-- `src/pages/app/ShopSettings.tsx` (shop name/address edit + backup + reset)
-- `src/components/app/ResetShopDialog.tsx`
-- `src/components/app/RestoreBackupDialog.tsx`
-- `src/lib/backup.ts` (export/import + Zod schemas)
-- `supabase/functions/shop-reset/index.ts`
-- `supabase/functions/shop-restore/index.ts`
-- Migration: `request_shop_reset` RPC + `shop_reset_logs` table
-
-**Edited:**
-- `src/components/app/SettingsSheet.tsx` (নতুন entries: Profile, Shop Settings, Backup, Reset)
-- `src/lib/app-routes.tsx` (২টা route)
-- `vite.config.ts` (VitePWA plugin)
-- `src/main.tsx` (registerSW)
-- `public/manifest.webmanifest` (add `id`)
-
-## Validation Highlights
-
-- All forms: Zod schemas, trim, length limits, Bengali error messages
-- Restore: per-table schema check, foreign key sanity check (parent_id existence), price/qty numeric check, duplicate name detection
-- Reset: double confirmation (type shop name) + RPC re-checks ownership
+কোন database migration বা edge function পরিবর্তন লাগবে না। কোন breaking change নেই — user চাইলে settings থেকে পুরনো green/blue/red/yellow/soft-dark theme-এ switch করতে পারবে।
