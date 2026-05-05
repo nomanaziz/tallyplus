@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Loader2, Save } from "lucide-react";
 import { toast } from "sonner";
+import { AdminSearchBar, matches } from "@/components/admin/AdminSearchBar";
 
 const PLANS = ["free", "monthly", "yearly", "lifetime"];
 const FEATURES = [
@@ -24,6 +25,12 @@ export default function AdminUsageLimits() {
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [search, setSearch] = useState("");
+
+  const filteredFeatures = useMemo(
+    () => FEATURES.filter((f) => matches(search, f.key, f.label)),
+    [search],
+  );
 
   useEffect(() => {
     void (async () => {
@@ -68,6 +75,8 @@ export default function AdminUsageLimits() {
         </Button>
       </div>
 
+      <AdminSearchBar value={search} onChange={setSearch} count={filteredFeatures.length} placeholder="Feature দিয়ে খুঁজুন" />
+
       <div className="overflow-x-auto rounded-md border bg-background">
         <table className="w-full text-sm">
           <thead className="bg-muted/40">
@@ -77,7 +86,7 @@ export default function AdminUsageLimits() {
             </tr>
           </thead>
           <tbody>
-            {FEATURES.map((f) => (
+            {filteredFeatures.map((f) => (
               <tr key={f.key} className="border-t">
                 <td className="px-3 py-2">{f.label}</td>
                 {PLANS.map((p) => (
