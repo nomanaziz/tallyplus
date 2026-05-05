@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { ExternalLink, Pencil, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { AdminSearchBar, matches } from "@/components/admin/AdminSearchBar";
 
 
 
@@ -40,6 +41,12 @@ function LandingCMS() {
   const [jsonText, setJsonText] = useState("");
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+
+  const filtered = useMemo(
+    () => sections.filter((s) => matches(search, s.section, SECTION_LABELS[s.section])),
+    [sections, search],
+  );
 
   const load = async () => {
     setLoading(true);
@@ -104,13 +111,15 @@ function LandingCMS() {
         </Button>
       </div>
 
+      <AdminSearchBar value={search} onChange={setSearch} count={filtered.length} placeholder="Section দিয়ে খুঁজুন" />
+
       {loading ? (
         <div className="flex justify-center p-12">
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
-          {sections.map((s) => (
+          {filtered.map((s) => (
             <Card key={s.id}>
               <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0">
                 <div>
