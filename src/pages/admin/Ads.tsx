@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,7 @@ import {
 import { toast } from "sonner";
 import { Loader2, Pencil, Upload } from "lucide-react";
 import { invalidateAdConfigCache } from "@/components/ads/AdSlot";
+import { AdminSearchBar, matches } from "@/components/admin/AdminSearchBar";
 
 // Permissive cast: new tables; generated types regenerate after migration.
 const sb = supabase as unknown as {
@@ -61,6 +62,12 @@ function AdsAdmin() {
   const [editing, setEditing] = useState<Slot | null>(null);
   const [savingSlot, setSavingSlot] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [search, setSearch] = useState("");
+
+  const filteredSlots = useMemo(
+    () => slots.filter((s) => matches(search, s.slot_key, s.label, s.mode)),
+    [slots, search],
+  );
 
   const load = async () => {
     setLoading(true);
@@ -192,7 +199,8 @@ function AdsAdmin() {
       <Card>
         <CardHeader><CardTitle className="text-base">Ad Slots</CardTitle></CardHeader>
         <CardContent className="space-y-2">
-          {slots.map((s) => (
+          <AdminSearchBar value={search} onChange={setSearch} count={filteredSlots.length} placeholder="Slot key বা label" />
+          {filteredSlots.map((s) => (
             <div key={s.id} className="flex items-center justify-between gap-3 rounded border p-3">
               <div className="min-w-0">
                 <div className="text-sm font-semibold">{s.label}</div>
