@@ -1150,6 +1150,21 @@ function ProductFormDialog({
   }, [open, shopId]);
 
   useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from("marketplace_categories")
+        .select("id,parent_id,name_bn,name_en")
+        .eq("is_active", true)
+        .order("sort_order")
+        .order("name_en");
+      if (!cancelled) setMpCats((data as MpCat[] | null) ?? []);
+    })();
+    return () => { cancelled = true; };
+  }, [open]);
+
+  useEffect(() => {
     if (open) {
       const p = product as (Product & Record<string, unknown>) | null;
       setName(p?.name ?? "");
