@@ -1,77 +1,48 @@
-# Admin Telegram Notification System
+## ফর্দ শেয়ার ও লাইভ ট্র্যাকিং
 
-Admin সবসময় online থাকে না — তাই গুরুত্বপূর্ণ event (নতুন order, ফর্দ submission, user signup, ইত্যাদি) Telegram-এ instant push হবে।
+বর্তমানে শেয়ার লিংক ও WhatsApp শেয়ার আছে (`/share/fordo/:token`)। তিনটা জিনিস যোগ করব:
 
-## কিভাবে কাজ করবে (high level)
+### ১. ডাউনলোডযোগ্য স্লিপ (PDF/Image)
+- শেয়ার পেজ ও MyFordo-এ "ডাউনলোড স্লিপ" বাটন
+- সিম্পল লেআউট: শুধু নাম + পরিমাণ (kg/পিস) + টিক বক্স
+- jsPDF দিয়ে A5/থার্মাল-সাইজ PDF তৈরি — দাম optional toggle
+- ফাইল নাম: `fordo-{customer-name}-{date}.pdf`
 
-```
-[App event: order/ফর্দ/signup]
-        ↓
-[Supabase trigger / server-fn] → notify_admin_telegram()
-        ↓
-[Telegram connector gateway] → admin-এর Telegram chat
-```
+### ২. লাইভ চেকলিস্ট (Husband/Wife use case)
+- শেয়ার পেজে প্রতিটা item-এর পাশে চেকবক্স
+- কেউ লিংকে গিয়ে টিক দিলে DB-তে `customer_wishlist_items.done = true` হবে
+- Owner (যে ফর্দ বানাইছে) MyFordo পেজে realtime দেখবে কোনগুলো কেনা হইছে
+- Progress bar: "৫/১০ কেনা হইছে"
 
-## যা যা লাগবে আপনার থেকে
+### ৩. শেয়ার পার্মিশন কন্ট্রোল
+- ফর্দ owner টগল করতে পারবে: "অন্যরা টিক দিতে পারবে কিনা" (`allow_check` flag)
+- Default: ON
 
-### Step 1 — Telegram Bot তৈরি করুন
-1. Telegram-এ `@BotFather` খুলুন
-2. `/newbot` লিখে পাঠান
-3. Bot এর নাম দিন (যেমন: `TallyPlus Admin Alerts`)
-4. Username দিন (যেমন: `tallyplus_admin_bot`)
-5. BotFather একটা **token** দিবে — এটা পরে কাজে লাগবে
+### Technical details
 
-### Step 2 — Admin chat ID বের করুন
-1. নিজের নতুন bot-কে Telegram-এ search করে `/start` চাপুন
-2. Browser-এ যান: `https://api.telegram.org/bot<TOKEN>/getUpdates`
-3. Response-এ `"chat":{"id": 123456789}` — এই number আপনার **chat ID**
-4. (একাধিক admin চাইলে group তৈরি করে bot add করুন, group এর negative chat ID use হবে)
+**DB migration:**
+- `consumer_fordos` (বা `customer_wishlists`) টেবিলে `allow_public_check boolean default true` কলাম
+- নতুন RPC `toggle_shared_fordo_item(_token, _item_id, _done)` — SECURITY DEFINER, `allow_public_check=true` ও token valid হলেই update; rate-limit per IP optional
+- বা existing `get_shared_fordo` RPC-র সাথে paired update RPC
 
-### Step 3 — Lovable-এ Telegram connector connect করুন
-আমি plan approve হলে `Telegram` connector-এ connect করার flow দেখাবো — শুধু bot token দিতে হবে। Token সরাসরি code-এ যাবে না, secure storage-এ থাকবে।
+**Frontend:**
+- `src/pages/f/Share.tsx`:
+  - প্রতিটা row-এ Checkbox (allow_public_check হলে)
+  - Optimistic update + RPC call
+  - Supabase realtime subscription on `customer_wishlist_items` filtered by wishlist_id (owner side)
+  - "ডাউনলোড স্লিপ" বাটন
+- `src/lib/fordo-pdf.ts` (নতুন): jsPDF দিয়ে slip generate
+- `src/pages/customer/MyFordo.tsx`:
+  - Realtime subscribe — done count update
+  - প্রতিটা ফর্দ কার্ডে "৩/৭ কেনা" badge
+  - "অন্যরা টিক দিতে পারবে" toggle switch
+  - PDF download বাটন
 
----
+**Dependencies:** `bun add jspdf` (lightweight, edge-safe)
 
-## আমি যা build করবো (approve হলে)
+**Files:**
+- create: `src/lib/fordo-pdf.ts`, `src/components/customer/FordoSlipDownload.tsx`
+- edit: `src/pages/f/Share.tsx`, `src/pages/customer/MyFordo.tsx`, `src/lib/share-fordo.ts`
+- migration: `allow_public_check` column + `toggle_shared_fordo_item` RPC + RLS-bypass trigger via SECURITY DEFINER
 
-### 1. Database
-- `admin_telegram_subscribers` table: `chat_id`, `label`, `is_active`, `events[]` (কোন কোন event পাবে — `order`, `fordo`, `signup`, `payment`, `all`)
-- RLS: শুধু super-admin manage করতে পারবে
-
-### 2. Notification dispatch
-- **Server route** `/api/public/hooks/telegram-notify` (signature-verified) — Telegram gateway-এ message পাঠাবে
-- **DB trigger** orders, ফর্দ submissions, signups টেবিলে — pg_net দিয়ে উপরের endpoint hit করবে
-- Bangla message format with emoji:
-  ```
-  🛒 নতুন অর্ডার
-  গ্রাহক: রহিম মিয়া
-  পরিমাণ: ৳১২৫০
-  Items: ৫টি
-  Time: ৭:৩০ PM
-  [View →]
-  ```
-
-### 3. Admin UI — `/admin/notifications`
-- Telegram subscriber list (add/remove chat ID)
-- Per-event toggle (order alerts, fordo alerts, signup alerts, payment alerts)
-- "Send test message" button
-- Setup guide modal (BotFather steps উপরের মতো)
-
-### 4. Events covered (Phase 1)
-- নতুন order placed
-- নতুন ফর্দ created (image-fordo সহ)
-- নতুন user signup
-- Loan/EMI overdue (existing reminder system থেকে)
-
-পরে চাইলে: low stock alert, payment received, daily summary digest যোগ করা যাবে।
-
----
-
-## আপনার এখনকার action items
-
-1. ✅ BotFather থেকে bot বানিয়ে token নিন
-2. ✅ নিজের chat ID বের করুন
-3. ✅ এই plan approve করুন → আমি connector setup + code + UI সব করে দিবো
-4. Approve-এর পর আমি Telegram connector connect করতে বলবো — সেখানে token দিবেন
-
-কোনো event এই Phase 1-এ বাদ পড়েছে যেটা চান, বলুন।
+Approve করলে migration ও code একসাথে শুরু করব।
