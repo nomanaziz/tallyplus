@@ -200,7 +200,6 @@ export default function AdminImageLibraryPage() {
   const selectAllFiltered = () => setSelected(new Set(filtered.map((i) => i.url)));
   const clearSelection = () => setSelected(new Set());
   const selectedItems = useMemo(() => items.filter((i) => selected.has(i.url)), [items, selected]);
-  const totalUsageInSelected = selectedItems.reduce((n, i) => n + i.usedBy.length, 0);
   const unusedItems = useMemo(() => items.filter((i) => i.usedBy.length === 0 && i.source === "storage"), [items]);
 
   return (
