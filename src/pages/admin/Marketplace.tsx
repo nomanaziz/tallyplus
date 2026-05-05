@@ -18,6 +18,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Plus, Pencil, Loader2, Package, Store, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, X, Search, MoreHorizontal, Check, FolderOpen, Upload } from "lucide-react";
 import { toast } from "sonner";
+import { MarketplaceVariantEditor } from "@/components/admin/MarketplaceVariantEditor";
 
 
 
