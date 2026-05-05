@@ -256,6 +256,17 @@ export default function AdminImageLibraryPage() {
                       <a href={it.url} target="_blank" rel="noreferrer" className="inline-flex h-7 w-7 items-center justify-center rounded hover:bg-accent" title="Open">
                         <ExternalLink className="h-3.5 w-3.5" />
                       </a>
+                      {it.source === "storage" && (
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-7 w-7 text-destructive hover:text-destructive"
+                          onClick={() => setConfirmDel(it)}
+                          title="Delete"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -278,6 +289,11 @@ export default function AdminImageLibraryPage() {
                 <div className="flex gap-2">
                   <Input readOnly value={preview.url} className="text-xs" onFocus={(e) => e.currentTarget.select()} />
                   <Button onClick={() => copy(preview.url)} size="sm"><Copy className="mr-1 h-3.5 w-3.5" />Copy</Button>
+                  {preview.source === "storage" && (
+                    <Button onClick={() => setConfirmDel(preview)} size="sm" variant="destructive">
+                      <Trash2 className="mr-1 h-3.5 w-3.5" />Delete
+                    </Button>
+                  )}
                 </div>
               </div>
               <div className="grid grid-cols-3 gap-2 text-xs">
@@ -304,6 +320,33 @@ export default function AdminImageLibraryPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!confirmDel} onOpenChange={(o) => !o && setConfirmDel(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this image?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {confirmDel?.usedBy.length ? (
+                <span className="text-destructive">
+                  সতর্কতা: এই image {confirmDel.usedBy.length} টি product/variant-এ ব্যবহৃত হচ্ছে। Delete করলে সেগুলোর ছবি ভেঙে যাবে।
+                </span>
+              ) : (
+                "এই image টি storage থেকে স্থায়ীভাবে মুছে যাবে।"
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={(e) => { e.preventDefault(); void doDelete(); }}
+              disabled={deleting}
+            >
+              {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
