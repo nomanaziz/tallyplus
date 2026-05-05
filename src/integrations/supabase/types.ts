@@ -927,6 +927,45 @@ export type Database = {
           },
         ]
       }
+      consumer_cash_movements: {
+        Row: {
+          amount: number
+          created_at: string
+          direction: string
+          id: string
+          note: string | null
+          ref_loan_id: string | null
+          ref_payment_id: string | null
+          source: string
+          tx_date: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          direction: string
+          id?: string
+          note?: string | null
+          ref_loan_id?: string | null
+          ref_payment_id?: string | null
+          source: string
+          tx_date?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          direction?: string
+          id?: string
+          note?: string | null
+          ref_loan_id?: string | null
+          ref_payment_id?: string | null
+          source?: string
+          tx_date?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       consumer_favourite_shops: {
         Row: {
           consumer_id: string
@@ -1055,6 +1094,47 @@ export type Database = {
         }
         Relationships: []
       }
+      consumer_loan_payments: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          loan_id: string
+          note: string | null
+          paid_date: string
+          paid_via: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          loan_id: string
+          note?: string | null
+          paid_date?: string
+          paid_via?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          loan_id?: string
+          note?: string | null
+          paid_date?: string
+          paid_via?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "consumer_loan_payments_loan_id_fkey"
+            columns: ["loan_id"]
+            isOneToOne: false
+            referencedRelation: "consumer_loans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       consumer_loans: {
         Row: {
           amount: number
@@ -1064,6 +1144,7 @@ export type Database = {
           is_settled: boolean
           loan_date: string
           note: string | null
+          paid_amount: number
           party_name: string
           party_phone: string | null
           settled_at: string | null
@@ -1079,6 +1160,7 @@ export type Database = {
           is_settled?: boolean
           loan_date?: string
           note?: string | null
+          paid_amount?: number
           party_name: string
           party_phone?: string | null
           settled_at?: string | null
@@ -1094,6 +1176,7 @@ export type Database = {
           is_settled?: boolean
           loan_date?: string
           note?: string | null
+          paid_amount?: number
           party_name?: string
           party_phone?: string | null
           settled_at?: string | null
@@ -5127,6 +5210,7 @@ export type Database = {
         Args: { _feature: string; _shop_id: string }
         Returns: Json
       }
+      consumer_cash_summary: { Args: never; Returns: Json }
       dashboard_summary: {
         Args: { _shop_id: string; _since: string }
         Returns: {
