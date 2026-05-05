@@ -72,12 +72,12 @@ export function RestoreBackupDialog({
 
       // Customers, Suppliers, Services
       if (t.customers.length > 0) {
-        const rows = t.customers.map((c) => ({ shop_id: shopId, name: c.name, phone: c.phone || null, address: c.address || null, email: c.email || null }));
+        const rows = t.customers.map((c) => ({ shop_id: shopId, name: c.name, phone: c.phone || null, address: c.address || null }));
         const { error } = await supabase.from("customers").insert(rows);
         if (error) throw error;
       }
       if (t.suppliers.length > 0) {
-        const rows = t.suppliers.map((c) => ({ shop_id: shopId, name: c.name, phone: c.phone || null, address: c.address || null, email: c.email || null }));
+        const rows = t.suppliers.map((c) => ({ shop_id: shopId, name: c.name, phone: c.phone || null, address: c.address || null }));
         const { error } = await supabase.from("suppliers").insert(rows);
         if (error) throw error;
       }
