@@ -2208,6 +2208,7 @@ export type Database = {
           provider: string
           raw_response: Json
           shop_id: string | null
+          shop_transfer_id: string | null
           sms_package_id: string | null
           status: string
           transaction_id: string | null
@@ -2225,6 +2226,7 @@ export type Database = {
           provider?: string
           raw_response?: Json
           shop_id?: string | null
+          shop_transfer_id?: string | null
           sms_package_id?: string | null
           status?: string
           transaction_id?: string | null
@@ -2242,6 +2244,7 @@ export type Database = {
           provider?: string
           raw_response?: Json
           shop_id?: string | null
+          shop_transfer_id?: string | null
           sms_package_id?: string | null
           status?: string
           transaction_id?: string | null
@@ -2261,6 +2264,13 @@ export type Database = {
             columns: ["shop_id"]
             isOneToOne: false
             referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_transactions_shop_transfer_id_fkey"
+            columns: ["shop_transfer_id"]
+            isOneToOne: false
+            referencedRelation: "shop_transfer_requests"
             referencedColumns: ["id"]
           },
           {
@@ -3912,9 +3922,15 @@ export type Database = {
           created_at: string
           from_user_id: string
           id: string
+          payment_method: string | null
           payment_proof_url: string | null
+          payment_transaction_id: string | null
+          payment_txn_id: string | null
           reason: string | null
           recipient_decided_at: string | null
+          refund_amount: number | null
+          refund_note: string | null
+          refunded_at: string | null
           shop_id: string
           status: string
           to_phone: string
@@ -3928,9 +3944,15 @@ export type Database = {
           created_at?: string
           from_user_id: string
           id?: string
+          payment_method?: string | null
           payment_proof_url?: string | null
+          payment_transaction_id?: string | null
+          payment_txn_id?: string | null
           reason?: string | null
           recipient_decided_at?: string | null
+          refund_amount?: number | null
+          refund_note?: string | null
+          refunded_at?: string | null
           shop_id: string
           status?: string
           to_phone: string
@@ -3944,9 +3966,15 @@ export type Database = {
           created_at?: string
           from_user_id?: string
           id?: string
+          payment_method?: string | null
           payment_proof_url?: string | null
+          payment_transaction_id?: string | null
+          payment_txn_id?: string | null
           reason?: string | null
           recipient_decided_at?: string | null
+          refund_amount?: number | null
+          refund_note?: string | null
+          refunded_at?: string | null
           shop_id?: string
           status?: string
           to_phone?: string
@@ -3954,6 +3982,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "shop_transfer_requests_payment_transaction_id_fkey"
+            columns: ["payment_transaction_id"]
+            isOneToOne: false
+            referencedRelation: "payment_transactions"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "shop_transfer_requests_shop_id_fkey"
             columns: ["shop_id"]
@@ -4752,21 +4787,30 @@ export type Database = {
           charge_amount: number
           id: boolean
           is_enabled: boolean
+          payment_account_type: string | null
           payment_instructions: string | null
+          payment_number: string | null
+          payment_provider_label: string | null
           updated_at: string
         }
         Insert: {
           charge_amount?: number
           id?: boolean
           is_enabled?: boolean
+          payment_account_type?: string | null
           payment_instructions?: string | null
+          payment_number?: string | null
+          payment_provider_label?: string | null
           updated_at?: string
         }
         Update: {
           charge_amount?: number
           id?: boolean
           is_enabled?: boolean
+          payment_account_type?: string | null
           payment_instructions?: string | null
+          payment_number?: string | null
+          payment_provider_label?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -4951,6 +4995,10 @@ export type Database = {
         Args: { _action: string; _id: string; _notes: string }
         Returns: Json
       }
+      admin_refund_shop_transfer: {
+        Args: { _amount: number; _id: string; _note: string }
+        Returns: Json
+      }
       affiliate_pay_subscription: { Args: { _plan_id: string }; Returns: Json }
       affiliate_recalculate_tier: {
         Args: { _aff_id: string }
@@ -5045,15 +5093,27 @@ export type Database = {
         Args: { _device_id: string; _user_agent: string }
         Returns: Json
       }
-      request_shop_transfer: {
-        Args: {
-          _payment_proof_url: string
-          _reason: string
-          _shop_id: string
-          _to_phone: string
-        }
-        Returns: Json
-      }
+      request_shop_transfer:
+        | {
+            Args: {
+              _payment_proof_url: string
+              _reason: string
+              _shop_id: string
+              _to_phone: string
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              _payment_method?: string
+              _payment_proof_url: string
+              _payment_txn_id?: string
+              _reason: string
+              _shop_id: string
+              _to_phone: string
+            }
+            Returns: Json
+          }
       resolve_shop_by_handle: {
         Args: { _handle: string }
         Returns: {
@@ -5080,6 +5140,10 @@ export type Database = {
       user_active_shop_count: { Args: { _user_id: string }; Returns: number }
       user_phones: { Args: { _uid: string }; Returns: string[] }
       user_shop_limit: { Args: { _user_id: string }; Returns: number }
+      verify_transfer_payment: {
+        Args: { _payment_transaction_id: string; _transfer_id: string }
+        Returns: Json
+      }
     }
     Enums: {
       app_role: "admin" | "owner" | "manager" | "cashier" | "buyer" | "consumer"

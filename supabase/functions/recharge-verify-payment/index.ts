@@ -153,6 +153,14 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Shop transfer: auto-advance to pending_recipient
+    if (isPaid && tx?.kind === "shop_transfer" && tx?.shop_transfer_id) {
+      await admin.rpc("verify_transfer_payment", {
+        _transfer_id: tx.shop_transfer_id,
+        _payment_transaction_id: tx.id,
+      });
+    }
+
     return json({ ok: true, status: newStatus, paid: isPaid, details: rsData });
   } catch (e) {
     return json({ error: (e as Error).message }, 500);

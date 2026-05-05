@@ -37,6 +37,7 @@ const L26 = lazy(() => import("@/pages/app/Affiliate"));
 const L27 = lazy(() => import("@/pages/app/Assets"));
 const L28 = lazy(() => import("@/pages/app/BuySms"));
 const LSmsCallback = lazy(() => import("@/pages/app/SmsCallback"));
+const LTransferCallback = lazy(() => import("@/pages/app/TransferCallback"));
 const L29 = lazy(() => import("@/pages/app/Cashbox"));
 const L30 = lazy(() => import("@/pages/app/CombinedReport"));
 const L31 = lazy(() => import("@/pages/app/Contacts"));
@@ -164,6 +165,7 @@ export const appRoutes: RouteObject[] = [
 { path: "assets", element: <Suspense fallback={<RouteFallback/>}><L27/></Suspense> },
 { path: "buy-sms", element: <Suspense fallback={<RouteFallback/>}><L28/></Suspense> },
 { path: "sms/callback", element: <Suspense fallback={<RouteFallback/>}><LSmsCallback/></Suspense> },
+{ path: "shops/transfer-callback", element: <Suspense fallback={<RouteFallback/>}><LTransferCallback/></Suspense> },
 { path: "cashbox", element: <Suspense fallback={<RouteFallback/>}><L29/></Suspense> },
 { path: "combined-report", element: <Suspense fallback={<RouteFallback/>}><L30/></Suspense> },
 { path: "contacts", element: <Suspense fallback={<RouteFallback/>}><L31/></Suspense> },
