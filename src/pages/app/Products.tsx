@@ -1095,11 +1095,6 @@ function ProductFormDialog({
   const [busy, setBusy] = useState(false);
   const [description, setDescription] = useState("");
   const [brand, setBrand] = useState("");
-  // Marketplace category state (separate from per-shop category tree)
-  const [mpCategoryId, setMpCategoryId] = useState<string | null>(null);
-  const [mpSubcategoryId, setMpSubcategoryId] = useState<string | null>(null);
-  type MpCat = { id: string; parent_id: string | null; name_bn: string; name_en: string };
-  const [mpCats, setMpCats] = useState<MpCat[]>([]);
   // Category state
   const [categoryId, setCategoryId] = useState<string | null>(null);
   const [subCategoryId, setSubCategoryId] = useState<string | null>(null);
@@ -1154,21 +1149,6 @@ function ProductFormDialog({
   }, [open, shopId]);
 
   useEffect(() => {
-    if (!open) return;
-    let cancelled = false;
-    (async () => {
-      const { data } = await supabase
-        .from("marketplace_categories")
-        .select("id,parent_id,name_bn,name_en")
-        .eq("is_active", true)
-        .order("sort_order")
-        .order("name_en");
-      if (!cancelled) setMpCats((data as MpCat[] | null) ?? []);
-    })();
-    return () => { cancelled = true; };
-  }, [open]);
-
-  useEffect(() => {
     if (open) {
       const p = product as (Product & Record<string, unknown>) | null;
       setName(p?.name ?? "");
@@ -1186,8 +1166,6 @@ function ProductFormDialog({
       setCategoryId((p?.category_id as string | null) ?? null);
       setSubCategoryId((p?.sub_category_id as string | null) ?? null);
       setBrand(((p as Record<string, unknown> | null)?.brand as string | null) ?? "");
-      setMpCategoryId(((p as Record<string, unknown> | null)?.marketplace_category_id as string | null) ?? null);
-      setMpSubcategoryId(((p as Record<string, unknown> | null)?.marketplace_subcategory_id as string | null) ?? null);
       setOnlineOn(Boolean(p?.is_marketplace_published));
       setBulkOn(Boolean(p?.bulk_enabled));
       setBulkPrice(p?.bulk_price != null ? String(p.bulk_price) : "");
@@ -1265,8 +1243,6 @@ function ProductFormDialog({
       category_id: categoryId,
       sub_category_id: subCategoryId,
       brand: brand.trim() || null,
-      marketplace_category_id: mpCategoryId,
-      marketplace_subcategory_id: mpSubcategoryId,
       is_marketplace_published: onlineOn,
       bulk_enabled: bulkOn,
       bulk_price: bulkOn ? (Number(bulkPrice) || 0) : null,
@@ -1438,48 +1414,6 @@ function ProductFormDialog({
               onChange={setBrand}
               placeholder={lang === "bn" ? "ব্র্যান্ড / কোম্পানি (optional)" : "Brand / Company (optional)"}
             />
-          </div>
-
-          {/* Marketplace Category (platform-wide, used for online filter) */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="grid gap-1.5">
-              <Label>{lang === "bn" ? "মার্কেটপ্লেস ক্যাটাগরি" : "Marketplace Category"}</Label>
-              <Select
-                value={mpCategoryId ?? "__none"}
-                onValueChange={(v) => {
-                  setMpCategoryId(v === "__none" ? null : v);
-                  setMpSubcategoryId(null);
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={lang === "bn" ? "বাছাই করুন" : "Select"} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__none">— None —</SelectItem>
-                  {mpCats.filter((c) => !c.parent_id).map((c) => (
-                    <SelectItem key={c.id} value={c.id}>{c.name_bn} / {c.name_en}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid gap-1.5">
-              <Label>{lang === "bn" ? "সাবক্যাটাগরি" : "Subcategory"}</Label>
-              <Select
-                value={mpSubcategoryId ?? "__none"}
-                onValueChange={(v) => setMpSubcategoryId(v === "__none" ? null : v)}
-                disabled={!mpCategoryId}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={mpCategoryId ? (lang === "bn" ? "বাছাই" : "Select") : (lang === "bn" ? "আগে ক্যাটাগরি" : "Pick category first")} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__none">— None —</SelectItem>
-                  {mpCats.filter((c) => c.parent_id === mpCategoryId).map((c) => (
-                    <SelectItem key={c.id} value={c.id}>{c.name_bn} / {c.name_en}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
           </div>
 
           {/* Category & Sub-Category */}

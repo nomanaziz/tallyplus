@@ -125,8 +125,19 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
   };
 
   const filtered = useMemo(() => {
+    // Hide parent placeholder products — they're just grouping shells for variants.
+    const parentIds = new Set(
+      products
+        .map((p) => (p as unknown as { parent_product_id?: string | null }).parent_product_id)
+        .filter((x): x is string => !!x),
+    );
+    const visible = products.filter((p) => !parentIds.has(p.id));
     const q = search.trim().toLowerCase();
-    return q ? products.filter((p) => p.name.toLowerCase().includes(q)) : products;
+    if (!q) return visible;
+    return visible.filter((p) => {
+      const vl = (p as unknown as { variant_label?: string | null }).variant_label ?? "";
+      return p.name.toLowerCase().includes(q) || vl.toLowerCase().includes(q);
+    });
   }, [products, search]);
 
   const handleScannedCode = (code: string) => {
@@ -345,6 +356,11 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
                     <div className="min-w-0 flex-1">
                       <div className="truncate text-sm font-medium">
                         {p.name}
+                        {((p as unknown as { variant_label?: string | null }).variant_label) && (
+                          <span className="ml-2 rounded-full border border-primary/30 bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary">
+                            {(p as unknown as { variant_label?: string | null }).variant_label}
+                          </span>
+                        )}
                         {inCart && (
                           <span className="ml-2 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-bold text-primary">
                             × {lang === "bn" ? bnNum(inCart.qty) : inCart.qty}
