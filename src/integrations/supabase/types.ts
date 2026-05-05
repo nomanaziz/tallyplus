@@ -2429,6 +2429,47 @@ export type Database = {
           },
         ]
       }
+      product_brands: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          is_global: boolean
+          name: string
+          name_bn: string | null
+          shop_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_global?: boolean
+          name: string
+          name_bn?: string | null
+          shop_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_global?: boolean
+          name?: string
+          name_bn?: string | null
+          shop_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_brands_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_serials: {
         Row: {
           cost_price: number
@@ -2488,6 +2529,7 @@ export type Database = {
       products: {
         Row: {
           barcode: string | null
+          brand: string | null
           bulk_enabled: boolean
           bulk_min_qty: number | null
           bulk_price: number | null
@@ -2523,6 +2565,7 @@ export type Database = {
         }
         Insert: {
           barcode?: string | null
+          brand?: string | null
           bulk_enabled?: boolean
           bulk_min_qty?: number | null
           bulk_price?: number | null
@@ -2558,6 +2601,7 @@ export type Database = {
         }
         Update: {
           barcode?: string | null
+          brand?: string | null
           bulk_enabled?: boolean
           bulk_min_qty?: number | null
           bulk_price?: number | null
