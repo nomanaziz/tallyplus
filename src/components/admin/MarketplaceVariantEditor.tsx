@@ -260,7 +260,15 @@ export function MarketplaceVariantEditor({
       {visible.length > 0 && (
         <div className="space-y-2">
           <div className="text-sm font-medium">Variants ({visible.length})</div>
-          <div className="space-y-1.5 max-h-[40vh] overflow-y-auto pr-1">
+          <div className="grid grid-cols-12 gap-1.5 rounded-t border border-b-0 bg-muted px-2 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+            <div className="col-span-12 sm:col-span-4">Variant / ভ্যারিয়েন্ট</div>
+            <div className="col-span-6 sm:col-span-2">Sale ৳ / বিক্রয়</div>
+            <div className="col-span-6 sm:col-span-2">Cost ৳ / ক্রয়</div>
+            <div className="col-span-6 sm:col-span-2">Pack / প্যাক</div>
+            <div className="col-span-5 sm:col-span-1">Barcode</div>
+            <div className="col-span-1" />
+          </div>
+          <div className="space-y-1.5 max-h-[40vh] overflow-y-auto pr-1 -mt-2">
             {variants.map((v, idx) => v._delete ? null : (
               <div key={idx} className="grid grid-cols-12 gap-1.5 rounded border p-2">
                 <div className="col-span-12 sm:col-span-4 text-xs">
