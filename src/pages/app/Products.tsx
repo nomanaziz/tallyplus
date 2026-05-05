@@ -1722,6 +1722,17 @@ function ProductFormDialog({
           </DialogContent>
         </Dialog>
       </SheetContent>
+      <VariantPickerSheet
+        open={variantPickerOpen}
+        onOpenChange={setVariantPickerOpen}
+        catalogProduct={variantCatalogProduct}
+        shopId={shopId ?? ""}
+        trackStock={trackStock}
+        onDone={() => {
+          onOpenChange(false);
+          onSaved(null);
+        }}
+      />
     </Sheet>
   );
 }
