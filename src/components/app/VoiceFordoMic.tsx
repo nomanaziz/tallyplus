@@ -233,8 +233,10 @@ export function VoiceFordoMic({ onItems, className }: Props) {
 
   const { supported, listening, error, start, stop } = useSpeechRecognition({
     lang: "bn-BD",
-    silenceTimeoutMs: 12000,
-    noSpeechTimeoutMs: 15000,
+    silenceTimeoutMs: 0,
+    noSpeechTimeoutMs: 0,
+    keepAlive: true,
+    continuous: true,
     onSegment: (seg) => {
       const items = parseItems(seg);
       if (items.length > 0) {
@@ -301,7 +303,7 @@ export function VoiceFordoMic({ onItems, className }: Props) {
             : "bg-primary text-primary-foreground hover:bg-primary/90"
         }`}
         aria-label={listening ? "রেকর্ডিং বন্ধ করুন" : "কথা বলে পণ্য যোগ করুন"}
-        title={listening ? "রেকর্ডিং বন্ধ করুন (চুপ থাকলেও স্বয়ংক্রিয় বন্ধ হবে)" : "কথা বলে পণ্য যোগ করুন"}
+        title={listening ? "রেকর্ডিং বন্ধ করুন" : "কথা বলে পণ্য যোগ করুন"}
       >
         <Mic className="h-5 w-5" />
       </button>
