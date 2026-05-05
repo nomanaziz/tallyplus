@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { Loader2, MessageCircle, Sparkles } from "lucide-react";
 import { ShopTypePicker } from "@/components/app/ShopTypePicker";
 import { detectCountryFromPhone, normalizePhoneSimple } from "@/lib/countries";
+import { BrandWordmark } from "@/components/brand/BrandWordmark";
 
 type Mode = "login" | "signup";
 type Role = "owner" | "customer";
@@ -224,7 +225,7 @@ export function LoginCard() {
   return (
     <div className="w-full max-w-sm space-y-5 rounded-2xl border bg-card p-6 shadow-sm">
       <div className="text-center">
-        <h1 className="text-2xl font-bold">Tally Plus</h1>
+        <BrandWordmark className="text-2xl font-bold block" />
         <p className="mt-1 text-sm text-muted-foreground">
           {mode === "login" ? "Account-এ লগইন করুন" : "নতুন account তৈরি করুন"}
         </p>
