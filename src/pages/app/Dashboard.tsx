@@ -8,6 +8,7 @@ import { Package, Truck, Globe, Clock } from "lucide-react";
 import { icons, AppIcon } from "@/lib/icons";
 import { DashboardBannerCarousel } from "@/components/app/DashboardBannerCarousel";
 import { IncomingTransfersBanner } from "@/components/app/IncomingTransfersBanner";
+import { InstallAppCard } from "@/components/app/InstallAppCard";
 import { SECTIONS, type SidebarItem } from "@/components/app/AppSidebar";
 import { usePermissions } from "@/lib/permissions-hook";
 
@@ -59,6 +60,9 @@ function Dashboard() {
 
   return (
     <div className="w-full px-3 py-4 sm:px-4 xl:px-6 2xl:px-10">
+      <div className="mb-3">
+        <InstallAppCard />
+      </div>
       {/* Compact summary card — hishabee style */}
       <div className="rounded-xl border bg-card shadow-sm">
         <div className="flex items-center justify-between border-b px-3 py-2">

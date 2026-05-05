@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "@/lib/router";
 import { supabase } from "@/integrations/supabase/client";
+import { writeWithOffline } from "@/lib/useOfflineWrite";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -96,15 +97,19 @@ export default function CustomerMoney() {
     const amt = Number(amount);
     if (!amt || amt <= 0) return toast.error("সঠিক টাকা দিন");
     setSaving(true);
-    const { error } = await supabase.from("consumer_transactions").insert({
-      user_id: user.id, type, amount: amt,
-      category: category || null,
-      note: note.trim() || null,
-      tx_date: date,
+    const res = await writeWithOffline({
+      table: "consumer_transactions",
+      op: "insert",
+      payload: {
+        user_id: user.id, type, amount: amt,
+        category: category || null,
+        note: note.trim() || null,
+        tx_date: date,
+      },
     });
     setSaving(false);
-    if (error) return toast.error(error.message);
-    toast.success("যোগ হয়েছে");
+    if (res.error) return toast.error(res.error);
+    if (!res.queued) toast.success("যোগ হয়েছে");
     reset();
     setOpen(false);
     void load();
@@ -112,8 +117,12 @@ export default function CustomerMoney() {
 
   const remove = async (id: string) => {
     if (!confirm("Entry মুছবেন?")) return;
-    const { error } = await supabase.from("consumer_transactions").delete().eq("id", id);
-    if (error) return toast.error(error.message);
+    const res = await writeWithOffline({
+      table: "consumer_transactions",
+      op: "delete",
+      payload: { id },
+    });
+    if (res.error) return toast.error(res.error);
     void load();
   };
 
