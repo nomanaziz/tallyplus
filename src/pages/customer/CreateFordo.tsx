@@ -7,10 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Plus, Trash2, ArrowLeft, ArrowRight, Send, Search, Store, MapPin, Save, CalendarClock, Star, ListChecks } from "lucide-react";
+import { Loader2, Plus, Trash2, ArrowLeft, ArrowRight, Send, Search, Store, MapPin, Save, CalendarClock, Star, ListChecks, Camera } from "lucide-react";
 import { toast } from "sonner";
 import { VoiceFordoMic } from "@/components/app/VoiceFordoMic";
 import { BulkTextToFordoDialog } from "@/components/app/BulkTextToFordoDialog";
+import { ImageToFordoDialog } from "@/components/app/ImageToFordoDialog";
 import { ScheduleFordoDialog } from "@/components/customer/ScheduleFordoDialog";
 import {
   Dialog,
@@ -44,6 +45,7 @@ export default function CreateFordo() {
   const [favourites, setFavourites] = useState<Shop[]>([]);
   const [favIds, setFavIds] = useState<Set<string>>(new Set());
   const [showBulkText, setShowBulkText] = useState(false);
+  const [showImage, setShowImage] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -318,6 +320,15 @@ export default function CreateFordo() {
                 className="h-9"
               >
                 <ListChecks className="mr-1 h-4 w-4" /> টেক্সট থেকে
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setShowImage(true)}
+                className="h-9"
+              >
+                <Camera className="mr-1 h-4 w-4" /> ছবি থেকে
               </Button>
               <VoiceFordoMic
               onItems={(spoken) => {
