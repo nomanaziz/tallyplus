@@ -1,80 +1,46 @@
-## Goal: International readiness
+# Three fixes
 
-Three buckets of changes — (A) country tracking, (B) more languages with RTL, (C) international polish.
+## 1. Shop card — show transfer status
 
----
+In `src/pages/app/Shops.tsx`, alongside loading shops, fetch any `shop_transfer_requests` rows for the current user's shops where `status` starts with `pending` (or recently `approved`/`rejected`). For each shop card show a coloured badge in the top-right when a request exists:
 
-## A. Country tracking
+- `pending_payment` — amber "পেমেন্ট যাচাই বাকি / Awaiting payment review"
+- `pending_admin` — purple "Admin verification চলছে / Pending admin"
+- `pending_recipient` — blue "নতুন owner accept করেননি / Awaiting recipient"
+- `approved` (last 24h) — emerald "হস্তান্তর সম্পন্ন / Transferred"
+- `rejected_admin` / `rejected_recipient` — rose "প্রত্যাখ্যাত / Rejected"
 
-**Schema (migration, requires approval):**
-- `alter table public.profiles add column country_code text` — ISO-2 (BD, IN, PK, AE, SA, US…).
-- `alter table public.consumer_profiles add column country_code text`.
-- Optional index for admin grouping queries.
-- Update `public.handle_new_user()` to copy `raw_user_meta_data->>'country_code'` into both tables.
+Also disable the Transfer button (ArrowRightLeft) when a pending row already exists for that shop, with a tooltip "একটি request ইতিমধ্যে চলছে".
 
-**Static country data** (`src/lib/countries.ts`):
-- ~60 countries with `code`, `name_en`, `flag` emoji, `dial_code`, `default_currency`.
-- Helper to guess country from phone dial code or browser locale.
+Query shape:
+```ts
+supabase.from("shop_transfer_requests")
+  .select("shop_id,status,created_at")
+  .in("shop_id", shops.map(s => s.id))
+  .order("created_at", { ascending: false });
+```
+Pick latest row per shop id client-side and map to badge.
 
-**Signup capture:**
-- `src/components/site/LoginCard.tsx` — add a country selector (Combobox with flag + name) above the phone field. Pre-select via browser locale (`navigator.language` region) with BD as fallback.
-- Pass `country_code` to:
-  - `supabase.functions.invoke("signup-with-pin", { body: { …, country_code } })`
-  - `customer-signup-with-pin` and any consumer signup paths
-- Edge functions: accept `country_code`, store via `profiles.update({ country_code })` / `consumer_profiles.update({ country_code })`.
+## 2. Subscribe page — keep both payment modes (no change)
 
-**Admin visibility:**
-- `src/pages/admin/Users.tsx`:
-  - Load `country_code` along with profiles.
-  - New "Country" column with flag + code.
-  - New filter dropdown "By country" (built from distinct values).
-- New widget on `src/pages/admin/Index.tsx` — "Users by country" — top 10 list with counts (computed client-side from profiles query, no extra RPC).
+Confirm `src/pages/app/Subscribe.tsx` already shows the "Choose how to pay" step with both Online (auto) and Manual cards. No code change required; verify the gateway-disabled fallback still allows manual.
 
-**Profile editing:**
-- In `SettingsSheet` add a "Country" row (read+edit) so existing users can set theirs.
+## 3. Customer page split: Subscription / Money history / Report history
 
----
+Currently `src/pages/customer/Money.tsx` mixes income–expense entries, the locked-history subscription gate, and the plan-purchase dialog into one screen. Split into three dedicated routes so subscription stands alone:
 
-## B. Languages (Hindi, Tamil, Telugu, Urdu, Arabic) + RTL
+a) **`/customer/money`** — keep only the current month income/expense entry + add buttons + summary tiles + loans tab. Remove the "Subscription দেখুন" CTA inline; instead show a small banner "পুরোনো মাসের বিস্তারিত দেখতে → Subscription নিন" linking to `/customer/subscription`.
 
-**Update `src/lib/i18n.tsx`:**
-- Extend `Lang` union: `"bn" | "en" | "hi" | "ta" | "te" | "ur" | "ar"`.
-- Add full dictionary entries for each new language (translate the same key set used by `bn`/`en`).
-- Add `RTL_LANGS = new Set(["ur", "ar"])`.
-- In `I18nProvider` `useEffect`, set `document.documentElement.dir = RTL_LANGS.has(lang) ? "rtl" : "ltr"` and `document.documentElement.lang = lang`.
-- Number formatting: keep current `bnNum` for Bangla; add `arNum` for Arabic-Indic digits used in `ar`/`ur` (optional, off by default).
+b) **`/customer/history`** (new file `src/pages/customer/History.tsx`) — the month navigator + locked/unlocked detail list (income–expense history) + report-style monthly totals. Move `canAccessMonthDetail` gating here. If locked, show CTA → `/customer/subscription`.
 
-**Move language switcher into Settings only:**
-- `src/components/app/AppTopbar.tsx` — remove the EN/বাং toggle button and the dropdown "English/বাংলা" item.
-- `src/components/site/SiteFooter.tsx` — replace the toggle button with a small `<select>` listing all 7 languages (footer is a settings-ish surface, kept as a single discoverable switcher for logged-out users).
-- `src/components/app/SettingsSheet.tsx` — expand the existing language `<select>` to all 7 options with native names: বাংলা / English / हिन्दी / தமிழ் / తెలుగు / اردو / العربية.
+c) **`/customer/subscription`** (new file `src/pages/customer/Subscription.tsx`) — list `consumer_history_*` plans, current active subscription card, request-plan flow (the existing `requestPlan` insert into `subscription_requests`). This is the *only* place plans are shown.
 
-**Currency tweaks (small):**
-- `fmtMoney` in `i18n.tsx` currently hard-codes ৳. Replace with currency lookup driven by stored `tp_currency` (already settable in SettingsSheet) — symbols: ৳ BDT, $ USD, ₹ INR, ₨ PKR, د.إ AED, ﷼ SAR, € EUR, £ GBP. Sign placement honors RTL.
-- Add the new currencies to the SettingsSheet `<select>` and to `shops.currency` defaults map keyed on country.
+Wire-up:
+- Register the two new routes in `src/lib/app-routes.tsx` (or wherever customer routes live — confirm in `app-routes.tsx`).
+- Add nav entries in `src/pages/customer/CustomerLayout.tsx`:
+  - Desktop `NAV`: insert "ইতিহাস" (History icon) and "সাবস্ক্রিপশন" (Crown icon) after "আয়-ব্যয়".
+  - Mobile `MOBILE_NAV`: keep 5 — replace "প্রোফাইল" only if needed; otherwise leave mobile unchanged and rely on profile menu link.
+- Move `Plan` type, `loadPlans`, `loadSub`, `requestPlan`, `showPlans` dialog out of `Money.tsx` into `Subscription.tsx`.
+- `History.tsx` imports `loadSub` to know gating; or call a shared helper in `src/lib/consumer-history-access.ts`.
 
----
-
-## C. Where international polish matters most
-
-These are the highest-impact international touch-points beyond strings:
-
-1. **Phone normalization** — `signup-with-pin` and `login-with-pin` currently strip to digits; keep that, but accept full E.164 (the `+`country prefix already passes through). No code change needed today, but verify edge functions don't enforce a 11-digit BD shape — if they do, relax to 6–15 digits.
-2. **Default currency on shop creation** — `setupShop` should default `shops.currency` to the country's default currency rather than `BDT`.
-3. **Date formatting** — replace `toLocaleDateString("en-GB")` calls with `toLocaleDateString(lang)` where the user-facing locale should follow language.
-4. **Header marketing copy** (`SiteHeader`, `HeroSection`, etc.) — use `t()` keys so newly added languages benefit. No per-key translation work in this round beyond the dictionary above; English is the international fallback.
-
----
-
-## Implementation order (single batch after approval)
-
-1. Migration: add `country_code` columns + update `handle_new_user`.
-2. Add `src/lib/countries.ts`.
-3. Extend i18n dictionary + RTL effect; update `fmtMoney`.
-4. Update `LoginCard` to capture country; pass to edge functions.
-5. Update `signup-with-pin` and `customer-signup-with-pin` edge functions.
-6. Update `SettingsSheet` (language list, country row, currency list).
-7. Remove language switcher from `AppTopbar`; convert footer toggle to multi-language select.
-8. Update admin `Users.tsx` (column + filter) and `admin/Index.tsx` (country widget).
-
-No new dependencies. No new secrets. All work fits within existing Supabase + Tally stack.
+No schema changes needed for any of the three items.
