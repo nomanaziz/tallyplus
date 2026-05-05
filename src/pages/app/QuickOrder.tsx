@@ -950,3 +950,61 @@ function PrintDialog({
 }
 
 export default QuickOrderPage;
+
+const ProductGridCard = memo(function ProductGridCard({
+  product,
+  inCartQty,
+  onAdd,
+}: {
+  product: StoreProduct;
+  inCartQty: number;
+  onAdd: (p: StoreProduct) => void;
+}) {
+  const inCart = inCartQty > 0;
+  return (
+    <div
+      className={`group relative flex flex-col overflow-hidden rounded-xl border bg-background transition-all hover:shadow-md ${inCart ? "ring-2 ring-primary/60" : ""}`}
+    >
+      <div className="relative aspect-square w-full overflow-hidden bg-muted/40">
+        {product.image_url ? (
+          <img
+            src={product.image_url}
+            alt={product.name}
+            loading="lazy"
+            decoding="async"
+            className="h-full w-full object-contain transition-transform duration-200 group-hover:scale-105"
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center text-muted-foreground/40">
+            <ImageOff className="h-8 w-8" />
+          </div>
+        )}
+        {inCart && (
+          <span className="absolute left-1.5 top-1.5 rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-bold text-primary-foreground shadow">
+            ×{inCartQty}
+          </span>
+        )}
+        <button
+          type="button"
+          onClick={() => onAdd(product)}
+          aria-label="Add to cart"
+          className="absolute bottom-1.5 right-1.5 flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg ring-2 ring-background transition-transform hover:scale-110 active:scale-95"
+        >
+          <Plus className="h-4 w-4" strokeWidth={3} />
+        </button>
+      </div>
+      <div className="space-y-0.5 p-2">
+        <div className="flex items-baseline gap-1">
+          <span className="text-sm font-extrabold text-primary">৳{Number(product.sale_price).toFixed(0)}</span>
+          <span className="text-[10px] text-muted-foreground">/{product.unit || "pcs"}</span>
+        </div>
+        <div className="line-clamp-2 min-h-[2.1em] text-[11px] font-medium leading-tight text-foreground">
+          {product.name}
+        </div>
+        <div className="text-[10px] text-muted-foreground">
+          Stock: <span className={product.stock <= 0 ? "text-destructive font-semibold" : ""}>{product.stock}</span>
+        </div>
+      </div>
+    </div>
+  );
+});
