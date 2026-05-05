@@ -1,10 +1,10 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 
-export type AppColor = "green" | "blue" | "red" | "yellow" | "soft-dark";
+export type AppColor = "indigo" | "green" | "blue" | "red" | "yellow" | "soft-dark";
 
 const KEY = "tp_theme_color";
-const DEFAULT: AppColor = "green";
-const ALL: AppColor[] = ["green", "blue", "red", "yellow", "soft-dark"];
+const DEFAULT: AppColor = "indigo";
+const ALL: AppColor[] = ["indigo", "green", "blue", "red", "yellow", "soft-dark"];
 
 type Ctx = { color: AppColor; setColor: (c: AppColor) => void };
 const ThemeCtx = createContext<Ctx>({ color: DEFAULT, setColor: () => {} });
@@ -39,6 +39,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 export const useTheme = () => useContext(ThemeCtx);
 
 export const COLOR_OPTIONS: { value: AppColor; bn: string; en: string; swatch: string }[] = [
+  { value: "indigo",    bn: "ব্র্যান্ড",  en: "Brand (Indigo)", swatch: "oklch(0.62 0.16 275)" },
   { value: "green",     bn: "সবুজ",     en: "Green",     swatch: "oklch(0.62 0.18 145)" },
   { value: "blue",      bn: "নীল",      en: "Blue",      swatch: "oklch(0.55 0.20 255)" },
   { value: "red",       bn: "লাল",      en: "Red",       swatch: "oklch(0.58 0.22 25)" },
