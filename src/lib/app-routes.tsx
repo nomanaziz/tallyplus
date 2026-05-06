@@ -132,6 +132,8 @@ const LSubscribeCallback = lazy(() => import("@/pages/app/SubscribeCallback"));
 const LSharedFordo = lazy(() => import("@/pages/f/Share"));
 const LProfile = lazy(() => import("@/pages/app/Profile"));
 const LShopSettings = lazy(() => import("@/pages/app/ShopSettings"));
+const LCashBook = lazy(() => import("@/pages/app/CashBook"));
+const LCustomerCashBook = lazy(() => import("@/pages/customer/CashBook"));
 
 export const appRoutes: RouteObject[] = [
 { index: true, element: <Suspense fallback={<RouteFallback/>}><L0/></Suspense> },
@@ -205,6 +207,7 @@ export const appRoutes: RouteObject[] = [
 { path: "quick-order", element: <Suspense fallback={<RouteFallback/>}><L46/></Suspense> },
 { path: "recycle-bin", element: <Suspense fallback={<RouteFallback/>}><L47/></Suspense> },
 { path: "reports", element: <Suspense fallback={<RouteFallback/>}><L48/></Suspense> },
+{ path: "cash-book", element: <Suspense fallback={<RouteFallback/>}><LCashBook/></Suspense> },
 { path: "returns", element: <Suspense fallback={<RouteFallback/>}><L84/></Suspense> },
 { path: "returns/new", element: <Suspense fallback={<RouteFallback/>}><L85/></Suspense> },
 { path: "returns/:id", element: <Suspense fallback={<RouteFallback/>}><L86/></Suspense> },
@@ -263,6 +266,7 @@ export const appRoutes: RouteObject[] = [
 { path: "create-fordo", element: <Suspense fallback={<RouteFallback/>}><L58/></Suspense> },
 { path: "dashboard", element: <Suspense fallback={<RouteFallback/>}><L59/></Suspense> },
 { path: "money", element: <Suspense fallback={<RouteFallback/>}><L60/></Suspense> },
+{ path: "cash-book", element: <Suspense fallback={<RouteFallback/>}><LCustomerCashBook/></Suspense> },
 { path: "my-fordo", element: <Suspense fallback={<RouteFallback/>}><L61/></Suspense> },
 { path: "notes", element: <Suspense fallback={<RouteFallback/>}><L62/></Suspense> },
 { path: "profile", element: <Suspense fallback={<RouteFallback/>}><L63/></Suspense> },
