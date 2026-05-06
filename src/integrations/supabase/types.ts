@@ -3030,6 +3030,8 @@ export type Database = {
           language: string
           phone: string | null
           pin_hash: string | null
+          shop_limit_override: number | null
+          unlimited_shops: boolean
           updated_at: string
         }
         Insert: {
@@ -3042,6 +3044,8 @@ export type Database = {
           language?: string
           phone?: string | null
           pin_hash?: string | null
+          shop_limit_override?: number | null
+          unlimited_shops?: boolean
           updated_at?: string
         }
         Update: {
@@ -3054,6 +3058,8 @@ export type Database = {
           language?: string
           phone?: string | null
           pin_hash?: string | null
+          shop_limit_override?: number | null
+          unlimited_shops?: boolean
           updated_at?: string
         }
         Relationships: []
@@ -5828,10 +5834,21 @@ export type Database = {
         Args: { _action: string; _id: string; _notes: string }
         Returns: Json
       }
+      admin_grant_access: {
+        Args: {
+          _duration_days: number
+          _plan_id: string
+          _shop_limit: number
+          _unlimited_shops: boolean
+          _user_id: string
+        }
+        Returns: Json
+      }
       admin_refund_shop_transfer: {
         Args: { _amount: number; _id: string; _note: string }
         Returns: Json
       }
+      admin_revoke_access: { Args: { _user_id: string }; Returns: Json }
       affiliate_pay_subscription: { Args: { _plan_id: string }; Returns: Json }
       affiliate_recalculate_tier: {
         Args: { _aff_id: string }
