@@ -79,8 +79,8 @@ export default function ShopRecycleBinPage() {
       const { data, error } = await supabase.rpc("admin_decide_restore", {
         _req_id: decideOn.id,
         _approve: approve,
-        _payment_ref: paymentRef || null,
-        _note: note || null,
+        _payment_ref: paymentRef || "",
+        _note: note || "",
       });
       if (error) throw error;
       const res = data as { ok?: boolean; error?: string };
