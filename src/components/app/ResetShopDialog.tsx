@@ -8,6 +8,7 @@ import { useShop } from "@/lib/shop";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Loader2, AlertTriangle } from "lucide-react";
+import { Link } from "@/lib/router";
 
 export function ResetShopDialog({
   open,
@@ -75,6 +76,11 @@ export function ResetShopDialog({
           <div className="rounded-lg bg-rose-50 p-3 text-sm text-rose-900">
             {lang === "bn" ? "নিশ্চিতকরণের জন্য নিচে দোকানের নাম হুবহু লিখুন:" : "Type the shop name exactly to confirm:"}
             <div className="mt-1 font-mono font-semibold">{shopName}</div>
+          </div>
+          <div className="rounded-lg bg-amber-50 p-3 text-xs text-amber-900">
+            {lang === "bn"
+              ? <>এই reset-এর data ৩০ দিনের জন্য Admin-এর কাছে সংরক্ষিত থাকবে। প্রয়োজনে <Link to="/app/restore-requests" className="underline font-semibold">Restore Request</Link> পাঠাতে পারবেন (charge ৳৫০০)।</>
+              : <>This reset's data is kept by Admin for 30 days. You may send a <Link to="/app/restore-requests" className="underline font-semibold">Restore Request</Link> later (৳500 charge).</>}
           </div>
           <div>
             <Label>{lang === "bn" ? "দোকানের নাম" : "Shop name"}</Label>

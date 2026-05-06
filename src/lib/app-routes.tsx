@@ -33,6 +33,8 @@ const LAdminBrands = lazy(() => import("@/pages/admin/Brands"));
 const LAdminVariantPresets = lazy(() => import("@/pages/admin/VariantPresets"));
 const LAdminImageLibrary = lazy(() => import("@/pages/admin/ImageLibrary"));
 const LAdminTelegramAlerts = lazy(() => import("@/pages/admin/TelegramAlerts"));
+const LAdminShopRecycleBin = lazy(() => import("@/pages/admin/ShopRecycleBin"));
+const LAppRestoreRequests = lazy(() => import("@/pages/app/RestoreRequests"));
 const L22 = lazy(() => import("@/pages/Affiliate"));
 const L23 = lazy(() => import("@/pages/affiliate/Register"));
 const L24 = lazy(() => import("@/pages/app/AppLayout"));
@@ -170,6 +172,8 @@ export const appRoutes: RouteObject[] = [
 { path: "image-library", element: <Suspense fallback={<RouteFallback/>}><LAdminImageLibrary/></Suspense> }
 ,
 { path: "telegram-alerts", element: <Suspense fallback={<RouteFallback/>}><LAdminTelegramAlerts/></Suspense> }
+,
+{ path: "shop-recycle-bin", element: <Suspense fallback={<RouteFallback/>}><LAdminShopRecycleBin/></Suspense> }
 ] },
 { path: "affiliate", element: <Suspense fallback={<RouteFallback/>}><L22/></Suspense>, children: [
 { path: "register", element: <Suspense fallback={<RouteFallback/>}><L23/></Suspense> }
@@ -233,6 +237,8 @@ export const appRoutes: RouteObject[] = [
 { path: "profile", element: <Suspense fallback={<RouteFallback/>}><LProfile/></Suspense> }
 ,
 { path: "shop-settings", element: <Suspense fallback={<RouteFallback/>}><LShopSettings/></Suspense> }
+,
+{ path: "restore-requests", element: <Suspense fallback={<RouteFallback/>}><LAppRestoreRequests/></Suspense> }
 ,
 { path: "online-shop", children: [
   { index: true, element: <Suspense fallback={<RouteFallback/>}><LOnlineShop/></Suspense> },

@@ -194,6 +194,9 @@ export default function ShopSettingsPage() {
             <Button variant="destructive" className="w-full" onClick={() => setResetOpen(true)}>
               {lang === "bn" ? "দোকান Reset করুন" : "Reset Shop"}
             </Button>
+            <a href="/app/restore-requests" className="block text-center text-xs font-semibold text-rose-700 underline">
+              {lang === "bn" ? "Reset / Delete History ও Restore Request" : "Reset / Delete History & Restore Requests"}
+            </a>
           </div>
         )}
       </div>

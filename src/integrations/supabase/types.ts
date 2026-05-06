@@ -4453,6 +4453,98 @@ export type Database = {
           },
         ]
       }
+      shop_restore_requests: {
+        Row: {
+          admin_note: string | null
+          amount_bdt: number
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          id: string
+          kind: string
+          merge_mode: string
+          paid_at: string | null
+          payment_ref: string | null
+          requested_by: string
+          shop_id: string
+          snapshot_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          admin_note?: string | null
+          amount_bdt: number
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          id?: string
+          kind: string
+          merge_mode?: string
+          paid_at?: string | null
+          payment_ref?: string | null
+          requested_by: string
+          shop_id: string
+          snapshot_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          admin_note?: string | null
+          amount_bdt?: number
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          id?: string
+          kind?: string
+          merge_mode?: string
+          paid_at?: string | null
+          payment_ref?: string | null
+          requested_by?: string
+          shop_id?: string
+          snapshot_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shop_restore_requests_snapshot_id_fkey"
+            columns: ["snapshot_id"]
+            isOneToOne: false
+            referencedRelation: "shop_snapshots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shop_restore_settings: {
+        Row: {
+          delete_grace_days: number
+          delete_price_bdt: number
+          id: boolean
+          max_resets_per_user: number
+          reset_price_bdt: number
+          retention_days: number
+          updated_at: string
+        }
+        Insert: {
+          delete_grace_days?: number
+          delete_price_bdt?: number
+          id?: boolean
+          max_resets_per_user?: number
+          reset_price_bdt?: number
+          retention_days?: number
+          updated_at?: string
+        }
+        Update: {
+          delete_grace_days?: number
+          delete_price_bdt?: number
+          id?: boolean
+          max_resets_per_user?: number
+          reset_price_bdt?: number
+          retention_days?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       shop_secrets: {
         Row: {
           fb_pixel_test_id: string | null
@@ -4519,6 +4611,60 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      shop_snapshots: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          kind: string
+          payload: Json
+          performed_by: string
+          restored_at: string | null
+          restored_by: string | null
+          shop_id: string
+          shop_meta: Json
+          shop_name: string
+          shop_owner_id: string
+          size_bytes: number
+          status: string
+          summary: Json
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          kind: string
+          payload?: Json
+          performed_by: string
+          restored_at?: string | null
+          restored_by?: string | null
+          shop_id: string
+          shop_meta?: Json
+          shop_name: string
+          shop_owner_id: string
+          size_bytes?: number
+          status?: string
+          summary?: Json
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          kind?: string
+          payload?: Json
+          performed_by?: string
+          restored_at?: string | null
+          restored_by?: string | null
+          shop_id?: string
+          shop_meta?: Json
+          shop_name?: string
+          shop_owner_id?: string
+          size_bytes?: number
+          status?: string
+          summary?: Json
+        }
+        Relationships: []
       }
       shop_transfer_requests: {
         Row: {
@@ -4692,8 +4838,10 @@ export type Database = {
           facebook_url: string | null
           fb_pixel_id: string | null
           google_analytics_id: string | null
+          grace_expires_at: string | null
           gtm_id: string | null
           id: string
+          is_hidden: boolean
           is_wholesale: boolean
           logo_url: string | null
           marketplace_enabled: boolean
@@ -4739,8 +4887,10 @@ export type Database = {
           facebook_url?: string | null
           fb_pixel_id?: string | null
           google_analytics_id?: string | null
+          grace_expires_at?: string | null
           gtm_id?: string | null
           id?: string
+          is_hidden?: boolean
           is_wholesale?: boolean
           logo_url?: string | null
           marketplace_enabled?: boolean
@@ -4786,8 +4936,10 @@ export type Database = {
           facebook_url?: string | null
           fb_pixel_id?: string | null
           google_analytics_id?: string | null
+          grace_expires_at?: string | null
           gtm_id?: string | null
           id?: string
+          is_hidden?: boolean
           is_wholesale?: boolean
           logo_url?: string | null
           marketplace_enabled?: boolean
@@ -5653,9 +5805,24 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      _apply_snapshot_restore: {
+        Args: { _merge_mode: string; _snap_id: string }
+        Returns: undefined
+      }
+      _build_shop_snapshot: { Args: { _shop_id: string }; Returns: Json }
+      _build_shop_summary: { Args: { _shop_id: string }; Returns: Json }
       admin_credit_sms_balance: {
         Args: { _count: number; _shop_id: string }
         Returns: undefined
+      }
+      admin_decide_restore: {
+        Args: {
+          _approve: boolean
+          _note: string
+          _payment_ref: string
+          _req_id: string
+        }
+        Returns: Json
       }
       admin_decide_shop_transfer: {
         Args: { _action: string; _id: string; _notes: string }
@@ -5708,6 +5875,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      enforce_shop_grace: { Args: never; Returns: number }
       ensure_affiliate_wallet: { Args: { _aff_id: string }; Returns: undefined }
       ensure_default_categories: {
         Args: { _names: string[]; _shop_id: string }
@@ -5776,6 +5944,7 @@ export type Database = {
           provider: string
         }[]
       }
+      purge_expired_snapshots: { Args: never; Returns: number }
       push_audience_count: {
         Args: {
           _device_type?: string
@@ -5786,6 +5955,10 @@ export type Database = {
       }
       register_active_device: {
         Args: { _device_id: string; _user_agent: string }
+        Returns: Json
+      }
+      request_shop_delete: {
+        Args: { _confirm_text: string; _shop_id: string }
         Returns: Json
       }
       request_shop_reset: {
@@ -5835,6 +6008,10 @@ export type Database = {
       }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
+      submit_restore_request: {
+        Args: { _merge_mode: string; _snapshot_id: string }
+        Returns: Json
+      }
       toggle_shared_fordo_item: {
         Args: { _done: boolean; _item_id: string; _token: string }
         Returns: Json

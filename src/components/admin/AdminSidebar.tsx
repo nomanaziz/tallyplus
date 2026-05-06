@@ -25,6 +25,7 @@ import {
   KeyRound,
   ArrowLeftRight,
   Bot,
+  Trash2,
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useAuth } from "@/lib/auth";
@@ -65,6 +66,7 @@ const ITEMS: Item[] = [
   { to: "/admin/ads", label: "Ads / Monetization", icon: DollarSign, perm: "ads" },
   { to: "/admin/settings", label: "Settings", icon: Settings, perm: "settings" },
   { to: "/admin/telegram-alerts", label: "Telegram Alerts", icon: Bot, perm: "always" },
+  { to: "/admin/shop-recycle-bin", label: "Shop Recycle Bin", icon: Trash2, perm: "shop_recycle_bin" },
 ];
 
 export function AdminSidebar({ onNavigate }: { onNavigate?: () => void }) {
