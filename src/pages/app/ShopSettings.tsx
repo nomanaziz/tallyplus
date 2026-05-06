@@ -14,6 +14,7 @@ import { z } from "zod";
 import { ResetShopDialog } from "@/components/app/ResetShopDialog";
 import { RestoreBackupDialog } from "@/components/app/RestoreBackupDialog";
 import { downloadJson, BACKUP_VERSION } from "@/lib/backup";
+import { LocationPicker, type LocationValue } from "@/components/LocationPicker";
 
 export default function ShopSettingsPage() {
   const { lang } = useI18n();
@@ -25,6 +26,7 @@ export default function ShopSettingsPage() {
   const [name, setName] = useState("");
   const [address, setAddress] = useState("");
   const [phone, setPhone] = useState("");
+  const [location, setLocation] = useState<LocationValue>({ division: null, district: null, upazila: null, area: null });
   const [busy, setBusy] = useState(false);
   const [resetOpen, setResetOpen] = useState(false);
   const [restoreOpen, setRestoreOpen] = useState(false);
@@ -35,6 +37,19 @@ export default function ShopSettingsPage() {
     setName(current.name || "");
     setAddress(current.address || "");
     setPhone(current.phone || "");
+    void (async () => {
+      const { data } = await supabase
+        .from("seller_locations")
+        .select("division,district,upazila,area")
+        .eq("shop_id", current.id)
+        .maybeSingle();
+      setLocation({
+        division: data?.division ?? null,
+        district: data?.district ?? null,
+        upazila: data?.upazila ?? null,
+        area: data?.area ?? null,
+      });
+    })();
   }, [current?.id]);
 
   const schema = z.object({
@@ -57,6 +72,19 @@ export default function ShopSettingsPage() {
         .update({ name: parsed.data.name, address: parsed.data.address || null, phone: parsed.data.phone || null })
         .eq("id", current.id);
       if (error) throw error;
+      const { error: locErr } = await supabase
+        .from("seller_locations")
+        .upsert(
+          {
+            shop_id: current.id,
+            division: location.division,
+            district: location.district,
+            upazila: location.upazila,
+            area: location.area,
+          },
+          { onConflict: "shop_id" },
+        );
+      if (locErr) throw locErr;
       toast.success(lang === "bn" ? "দোকানের তথ্য আপডেট হয়েছে" : "Shop info updated");
       await refreshShops();
     } catch (e) {
@@ -143,6 +171,10 @@ export default function ShopSettingsPage() {
           <div>
             <Label>{lang === "bn" ? "ঠিকানা" : "Address"}</Label>
             <Textarea value={address} onChange={(e) => setAddress(e.target.value)} maxLength={200} disabled={!isOwner} className="mt-1" rows={2} />
+          </div>
+          <div className="space-y-2">
+            <Label>{lang === "bn" ? "এলাকা / অবস্থান (ঐচ্ছিক)" : "Location (optional)"}</Label>
+            <LocationPicker value={location} onChange={setLocation} disabled={!isOwner} />
           </div>
           <div>
             <Label>{lang === "bn" ? "ফোন" : "Phone"}</Label>
