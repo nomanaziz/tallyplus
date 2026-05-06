@@ -54,7 +54,7 @@ export function GrantAccessDialog({ open, onOpenChange, user, onDone }: Props) {
       _user_id: user.id,
       _plan_id: planId,
       _duration_days: days,
-      _shop_limit: shopLimit,
+      _shop_limit: shopLimit as unknown as number,
       _unlimited_shops: unlimited,
     });
     setSaving(false);
