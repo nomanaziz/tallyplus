@@ -205,7 +205,7 @@ export function SettingsSheet({ open, onOpenChange }: { open: boolean; onOpenCha
 
         <div className="flex-1 overflow-y-auto px-4 py-4">
           {/* Profile Hero */}
-          <div className="relative mb-4 overflow-hidden rounded-3xl border bg-gradient-to-br from-primary/15 via-primary/5 to-transparent p-4">
+          <div className="relative mb-4 overflow-hidden rounded-3xl border bg-background p-4">
             <div
               aria-hidden
               className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-primary/20 blur-3xl"
