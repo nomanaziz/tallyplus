@@ -128,11 +128,11 @@ export function buildInvoiceHtml(
     <div class="title">${lang === "bn" ? "ইনভয়েস" : "Invoice"}</div>
 
     <section class="meta-grid section">
-      <div><strong>${lang === "bn" ? (isSell ? "ক্রেতা: " : "সাপ্লায়ার: ") : (isSell ? "Customer: " : "Supplier: ")}</strong>${escapeHtml(data.party.name || (lang === "bn" ? "[দেওয়া হয়নি]" : "[Not given]"))}</div>
+      <div><strong>${lang === "bn" ? (isSell ? "ক্রেতা: " : "সাপ্লায়ার: ") : (isSell ? "Customer: " : "Supplier: ")}</strong>${escapeHtml(data.party.name || "")}</div>
       <div><strong>${lang === "bn" ? (isSell ? "বিক্রেতা: " : "কিনেছেন: ") : "Issued by: "}</strong>${escapeHtml(data.shop.name)}</div>
-      <div><strong>${lang === "bn" ? "মোবাইল: " : "Mobile: "}</strong>${escapeHtml(data.party.phone || (lang === "bn" ? "[দেওয়া হয়নি]" : "[Not given]"))}</div>
+      <div><strong>${lang === "bn" ? "মোবাইল: " : "Mobile: "}</strong>${escapeHtml(data.party.phone || "")}</div>
       <div><strong>${lang === "bn" ? "ইনভয়েস নম্বর: " : "Invoice no: "}</strong><span style="font-family: ui-monospace, monospace">${escapeHtml(data.invoiceNo)}</span></div>
-      <div><strong>${lang === "bn" ? "ঠিকানা: " : "Address: "}</strong>${escapeHtml(data.party.address || (lang === "bn" ? "[দেওয়া হয়নি]" : "[Not given]"))}</div>
+      <div><strong>${lang === "bn" ? "ঠিকানা: " : "Address: "}</strong>${escapeHtml(data.party.address || "")}</div>
       <div><strong>${lang === "bn" ? "তারিখ: " : "Date: "}</strong>${escapeHtml(dtStr)}</div>
     </section>
 

@@ -99,7 +99,7 @@ export function InvoiceDialog({
           <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs border-y py-2">
             <div>
               <span className="font-semibold">{lang === "bn" ? (isSell ? "ক্রেতা: " : "সাপ্লায়ার: ") : (isSell ? "Customer: " : "Supplier: ")}</span>
-              <span>{data.party.name || (lang === "bn" ? "[দেওয়া হয়নি]" : "[Not given]")}</span>
+              <span>{data.party.name || ""}</span>
             </div>
             <div className="text-right">
               <span className="font-semibold">{lang === "bn" ? (isSell ? "বিক্রেতা: " : "কিনেছেন: ") : "Issued by: "}</span>
@@ -107,7 +107,7 @@ export function InvoiceDialog({
             </div>
             <div>
               <span className="font-semibold">{lang === "bn" ? "মোবাইল: " : "Mobile: "}</span>
-              <span>{data.party.phone || (lang === "bn" ? "[দেওয়া হয়নি]" : "[Not given]")}</span>
+              <span>{data.party.phone || ""}</span>
             </div>
             <div className="text-right">
               <span className="font-semibold">{lang === "bn" ? "ইনভয়েস নম্বর: " : "Invoice no: "}</span>
@@ -115,7 +115,7 @@ export function InvoiceDialog({
             </div>
             <div>
               <span className="font-semibold">{lang === "bn" ? "ঠিকানা: " : "Address: "}</span>
-              <span>{data.party.address || (lang === "bn" ? "[দেওয়া হয়নি]" : "[Not given]")}</span>
+              <span>{data.party.address || ""}</span>
             </div>
             <div className="text-right">
               <span className="font-semibold">{lang === "bn" ? "তারিখ: " : "Date: "}</span>
