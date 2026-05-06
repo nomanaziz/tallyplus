@@ -121,7 +121,7 @@ function QuickTile({
       onClick={onClick}
       className={`group flex flex-col items-start gap-2 rounded-2xl border p-3 text-left transition active:scale-[0.98] ${tint}`}
     >
-      <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-background/70 backdrop-blur-sm shadow-sm">
+      <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-background shadow-sm">
         {icon}
       </span>
       <span className="text-xs font-semibold leading-tight text-foreground">{label}</span>
@@ -251,25 +251,25 @@ export function SettingsSheet({ open, onOpenChange }: { open: boolean; onOpenCha
           {/* Quick Actions */}
           <div className="mb-4 grid grid-cols-4 gap-2">
             <QuickTile
-              tint="border-primary/20 bg-primary/10"
+              tint="border-primary/30 bg-primary/15"
               icon={<LayoutDashboard className="h-4 w-4 text-primary" />}
               label={lang === "bn" ? "রিপোর্ট" : "Report"}
               onClick={() => go("/app/combined-report")}
             />
             <QuickTile
-              tint="border-amber-500/20 bg-amber-500/10"
+              tint="border-amber-500/30 bg-amber-500/15"
               icon={<Crown className="h-4 w-4 text-amber-600" />}
               label={lang === "bn" ? "সাবস্ক্রাইব" : "Subscribe"}
               onClick={() => go("/app/subscribe")}
             />
             <QuickTile
-              tint="border-emerald-500/20 bg-emerald-500/10"
+              tint="border-emerald-500/30 bg-emerald-500/15"
               icon={<GraduationCap className="h-4 w-4 text-emerald-600" />}
               label={lang === "bn" ? "ট্রেনিং" : "Training"}
               onClick={() => go("/app/training")}
             />
             <QuickTile
-              tint="border-sky-500/20 bg-sky-500/10"
+              tint="border-sky-500/30 bg-sky-500/15"
               icon={<BarChart3 className="h-4 w-4 text-sky-600" />}
               label={lang === "bn" ? "ব্যবহার" : "Usage"}
               onClick={() => go("/app/reports")}
