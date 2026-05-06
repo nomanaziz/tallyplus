@@ -7,7 +7,7 @@ import { businessReportQuery, rangeToIso } from "@/lib/queries";
 import { PageHeader } from "@/components/app/PageHeader";
 import { Button } from "@/components/ui/button";
 import { DateRangePicker, monthStartIso, todayIso, type DateRange } from "@/components/app/DateRangePicker";
-import { RefreshCw, Printer, Plus, TrendingUp, ShoppingCart, Wallet, Receipt, BarChart3, Users, UserCog, PieChart, FileText, Truck, DollarSign, Boxes, Package, UserCircle2 } from "lucide-react";
+import { RefreshCw, Printer, Plus, TrendingUp, ShoppingCart, Wallet, Receipt, BarChart3, Users, UserCog, PieChart, FileText, Truck, DollarSign, Boxes, Package, UserCircle2, BookOpen } from "lucide-react";
 import { printReport, type PrintRow } from "@/lib/print-report";
 
 
@@ -52,6 +52,7 @@ function ReportsPage() {
   };
 
   const subReports: { Icon: any; bn: string; en: string; to?: string }[] = [
+    { Icon: BookOpen, bn: "ক্যাশবুক (মাসিক)", en: "Cash Book (monthly)", to: "/app/cash-book" },
     { Icon: Wallet, bn: "মালিকের লেনদেন", en: "Owner ledger", to: "/app/owner-ledger" },
     { Icon: Package, bn: "দোকানের সম্পদ", en: "Shop assets", to: "/app/assets" },
     { Icon: UserCircle2, bn: "মালিকের রিপোর্ট", en: "Owner report", to: "/app/owner-report" },
