@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   Loader2, Plus, Minus, Trash2, TrendingUp, TrendingDown, Wallet,
-  History as HistoryIcon, Crown, Settings, ArrowLeftRight, Repeat,
+  History as HistoryIcon, Crown, Settings, ArrowLeftRight, Repeat, BookOpen,
 } from "lucide-react";
 import { toast } from "sonner";
 import LoansTab from "@/components/customer/LoansTab";
@@ -181,6 +181,9 @@ export default function CustomerMoney() {
           </Button>
           <Button asChild size="sm" variant="outline">
             <Link to="/customer/history"><HistoryIcon className="mr-1 h-4 w-4" /> ইতিহাস</Link>
+          </Button>
+          <Button asChild size="sm" variant="outline">
+            <Link to="/customer/cash-book"><BookOpen className="mr-1 h-4 w-4" /> ক্যাশবুক</Link>
           </Button>
           <Button asChild size="sm" variant="outline">
             <Link to="/customer/subscription"><Crown className="mr-1 h-4 w-4" /> সাবস্ক্রিপশন</Link>
