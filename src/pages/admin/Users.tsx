@@ -13,9 +13,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ShieldCheck, ShieldOff, Ban, Check, Loader2 } from "lucide-react";
+import { ShieldCheck, ShieldOff, Ban, Check, Loader2, Gift, XCircle, Infinity as InfinityIcon } from "lucide-react";
 import { toast } from "sonner";
 import { getCountry, COUNTRIES } from "@/lib/countries";
+import { GrantAccessDialog } from "@/components/admin/GrantAccessDialog";
+import { useState as useStateReact } from "react";
 
 
 
@@ -26,12 +28,16 @@ type Profile = {
   is_suspended: boolean;
   created_at: string;
   country_code: string | null;
+  shop_limit_override: number | null;
+  unlimited_shops: boolean | null;
 };
 
 type Row = Profile & {
   shopCount: number;
   isAdmin: boolean;
   hasWishlist: boolean;
+  planName?: string | null;
+  expiresAt?: string | null;
 };
 
 function UsersPage() {
@@ -40,28 +46,48 @@ function UsersPage() {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<"all" | "owner" | "admin" | "suspended">("all");
   const [countryFilter, setCountryFilter] = useState<string>("all");
+  const [grantTarget, setGrantTarget] = useState<Row | null>(null);
 
   const load = async () => {
     setLoading(true);
-    const [{ data: profiles }, { data: roles }, { data: shops }] = await Promise.all([
-      supabase.from("profiles").select("id,full_name,phone,is_suspended,created_at,country_code").order("created_at", { ascending: false }).limit(500),
+    const [{ data: profiles }, { data: roles }, { data: shops }, { data: subs }] = await Promise.all([
+      supabase.from("profiles").select("id,full_name,phone,is_suspended,created_at,country_code,shop_limit_override,unlimited_shops").order("created_at", { ascending: false }).limit(500),
       supabase.from("user_roles").select("user_id,role"),
       supabase.from("shops").select("owner_id").is("deleted_at", null),
+      supabase.from("subscriptions").select("user_id,expires_at,status,plan_id,subscription_plans(name_bn,code)").in("status", ["active","trial"]).gt("expires_at", new Date().toISOString()),
     ]);
     const adminSet = new Set((roles ?? []).filter((r: any) => r.role === "admin").map((r: any) => r.user_id));
     const shopCounts = new Map<string, number>();
     for (const s of shops ?? []) {
       shopCounts.set((s as any).owner_id, (shopCounts.get((s as any).owner_id) ?? 0) + 1);
     }
+    const subMap = new Map<string, { plan: string; expires: string }>();
+    for (const s of (subs ?? []) as any[]) {
+      const planName = s.subscription_plans?.name_bn || s.subscription_plans?.code || "—";
+      const prev = subMap.get(s.user_id);
+      if (!prev || new Date(s.expires_at) > new Date(prev.expires)) {
+        subMap.set(s.user_id, { plan: planName, expires: s.expires_at });
+      }
+    }
     const out: Row[] = ((profiles as Profile[]) ?? []).map((p) => ({
       ...p,
       isAdmin: adminSet.has(p.id),
       shopCount: shopCounts.get(p.id) ?? 0,
       hasWishlist: false,
+      planName: subMap.get(p.id)?.plan ?? null,
+      expiresAt: subMap.get(p.id)?.expires ?? null,
     }));
     setRows(out);
     setLoading(false);
   };
+  const revoke = async (r: Row) => {
+    if (!confirm(`Revoke access for ${r.full_name || r.phone || "user"}?`)) return;
+    const { error } = await supabase.rpc("admin_revoke_access", { _user_id: r.id });
+    if (error) return toast.error(error.message);
+    toast.success("Access revoked");
+    void load();
+  };
+
 
   useEffect(() => {
     void load();
@@ -187,6 +213,7 @@ function UsersPage() {
                   <TableHead>Country</TableHead>
                   <TableHead>Type</TableHead>
                   <TableHead>Shops</TableHead>
+                  <TableHead>Plan</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Joined</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
@@ -207,7 +234,24 @@ function UsersPage() {
                           {t}
                         </Badge>
                       </TableCell>
-                      <TableCell>{r.shopCount}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1">
+                          <span>{r.shopCount}</span>
+                          {r.unlimited_shops ? (
+                            <Badge variant="secondary" className="gap-0.5"><InfinityIcon className="h-3 w-3" />∞</Badge>
+                          ) : r.shop_limit_override ? (
+                            <Badge variant="secondary">/{r.shop_limit_override}</Badge>
+                          ) : null}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-xs">
+                        {r.planName ? (
+                          <div>
+                            <div className="font-medium">{r.planName}</div>
+                            <div className="text-muted-foreground">till {new Date(r.expiresAt!).toLocaleDateString("en-GB")}</div>
+                          </div>
+                        ) : <span className="text-muted-foreground">—</span>}
+                      </TableCell>
                       <TableCell>
                         {r.is_suspended ? (
                           <Badge variant="destructive">Suspended</Badge>
@@ -219,6 +263,14 @@ function UsersPage() {
                         {new Date(r.created_at).toLocaleDateString("en-GB")}
                       </TableCell>
                       <TableCell className="text-right space-x-2">
+                        <Button variant="default" size="sm" onClick={() => setGrantTarget(r)}>
+                          <Gift className="mr-1 h-3.5 w-3.5" />Grant
+                        </Button>
+                        {(r.planName || r.unlimited_shops || r.shop_limit_override) && (
+                          <Button variant="outline" size="sm" onClick={() => revoke(r)}>
+                            <XCircle className="mr-1 h-3.5 w-3.5" />Revoke
+                          </Button>
+                        )}
                         <Button variant="outline" size="sm" onClick={() => toggleAdmin(r)}>
                           {r.isAdmin ? (
                             <><ShieldOff className="mr-1 h-3.5 w-3.5" />Revoke</>
@@ -239,7 +291,7 @@ function UsersPage() {
                 })}
                 {filtered.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
                       কোন user পাওয়া যায়নি
                     </TableCell>
                   </TableRow>
@@ -250,6 +302,12 @@ function UsersPage() {
           )}
         </CardContent>
       </Card>
+      <GrantAccessDialog
+        open={!!grantTarget}
+        onOpenChange={(v) => !v && setGrantTarget(null)}
+        user={grantTarget}
+        onDone={() => void load()}
+      />
     </div>
   );
 }
