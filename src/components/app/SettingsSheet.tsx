@@ -251,25 +251,25 @@ export function SettingsSheet({ open, onOpenChange }: { open: boolean; onOpenCha
           {/* Quick Actions */}
           <div className="mb-4 grid grid-cols-4 gap-2">
             <QuickTile
-              tint="border-primary/30 bg-primary/15"
+              tint="border-primary/30 bg-card"
               icon={<LayoutDashboard className="h-4 w-4 text-primary" />}
               label={lang === "bn" ? "রিপোর্ট" : "Report"}
               onClick={() => go("/app/combined-report")}
             />
             <QuickTile
-              tint="border-amber-500/30 bg-amber-500/15"
+              tint="border-amber-500/40 bg-card"
               icon={<Crown className="h-4 w-4 text-amber-600" />}
               label={lang === "bn" ? "সাবস্ক্রাইব" : "Subscribe"}
               onClick={() => go("/app/subscribe")}
             />
             <QuickTile
-              tint="border-emerald-500/30 bg-emerald-500/15"
+              tint="border-emerald-500/40 bg-card"
               icon={<GraduationCap className="h-4 w-4 text-emerald-600" />}
               label={lang === "bn" ? "ট্রেনিং" : "Training"}
               onClick={() => go("/app/training")}
             />
             <QuickTile
-              tint="border-sky-500/30 bg-sky-500/15"
+              tint="border-sky-500/40 bg-card"
               icon={<BarChart3 className="h-4 w-4 text-sky-600" />}
               label={lang === "bn" ? "ব্যবহার" : "Usage"}
               onClick={() => go("/app/reports")}
