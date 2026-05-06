@@ -65,34 +65,67 @@ type AppLink = {
 type RowProps = {
   icon: React.ReactNode;
   label: string;
+  sub?: string;
   right?: React.ReactNode;
   onClick?: () => void;
+  iconTint?: string;
 };
 
-function Row({ icon, label, right, onClick }: RowProps) {
+function SettingsRow({ icon, label, sub, right, onClick, iconTint = "bg-muted text-muted-foreground" }: RowProps) {
+  const Comp = onClick ? "button" : "div";
+  return (
+    <Comp
+      type={onClick ? "button" : undefined}
+      onClick={onClick}
+      className="flex w-full items-center gap-3 px-3 py-2.5 text-left text-sm transition hover:bg-accent/40"
+    >
+      <span className={`flex h-9 w-9 flex-none items-center justify-center rounded-xl ${iconTint}`}>
+        {icon}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block truncate font-medium text-foreground">{label}</span>
+        {sub && <span className="block truncate text-[11px] text-muted-foreground">{sub}</span>}
+      </span>
+      <span className="flex flex-none items-center gap-1 text-xs text-muted-foreground">
+        {right ?? (onClick ? <ChevronRight className="h-4 w-4" /> : null)}
+      </span>
+    </Comp>
+  );
+}
+
+function SettingsGroup({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <section className="mb-4">
+      <h3 className="mb-2 px-1 text-xs font-semibold tracking-wide text-muted-foreground/80">{title}</h3>
+      <div className="overflow-hidden rounded-2xl border bg-card divide-y divide-border/60">
+        {children}
+      </div>
+    </section>
+  );
+}
+
+function QuickTile({
+  icon,
+  label,
+  onClick,
+  tint,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  onClick: () => void;
+  tint: string;
+}) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className="flex w-full items-center justify-between rounded-lg border bg-card px-3 py-2.5 text-sm transition hover:bg-accent"
+      className={`group flex flex-col items-start gap-2 rounded-2xl border p-3 text-left transition active:scale-[0.98] ${tint}`}
     >
-      <span className="flex items-center gap-2.5 text-foreground">
-        <span className="flex h-7 w-7 items-center justify-center text-muted-foreground">{icon}</span>
-        {label}
+      <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-background/70 backdrop-blur-sm shadow-sm">
+        {icon}
       </span>
-      <span className="flex items-center gap-1 text-xs text-muted-foreground">
-        {right ?? <ChevronRight className="h-4 w-4" />}
-      </span>
+      <span className="text-xs font-semibold leading-tight text-foreground">{label}</span>
     </button>
-  );
-}
-
-function SectionLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="my-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-      <span>{children}</span>
-      <span className="h-px flex-1 bg-border" />
-    </div>
   );
 }
 
@@ -124,24 +157,6 @@ export function SettingsSheet({ open, onOpenChange }: { open: boolean; onOpenCha
     }
     toast.success("Country updated");
   };
-  const CountryRow = () => (
-    <Row
-      icon={<Globe className="h-4 w-4" />}
-      label={lang === "bn" ? "দেশ" : "Country"}
-      right={
-        <select
-          className="rounded border bg-background px-2 py-1 text-xs"
-          value={country}
-          onChange={(e) => updateCountry(e.target.value)}
-          onClick={(e) => e.stopPropagation()}
-        >
-          {COUNTRIES.map((c) => (
-            <option key={c.code} value={c.code}>{c.flag} {c.name}</option>
-          ))}
-        </select>
-      }
-    />
-  );
 
   const { data: appLinks } = useQuery({
     queryKey: ["app_links", "other"],
@@ -176,77 +191,100 @@ export function SettingsSheet({ open, onOpenChange }: { open: boolean; onOpenCha
     nav({ to: to as never });
   };
 
+  const selectCls = "rounded-md border bg-background px-2 py-1 text-xs font-medium";
+  const initials = (profile?.full_name || current?.name || "U")
+    .split(" ").map((s) => s[0]).filter(Boolean).slice(0, 2).join("").toUpperCase();
+
   return (
     <>
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="flex w-full flex-col gap-0 p-0 sm:max-w-md">
-        <SheetHeader className="flex-none border-b px-4 py-3">
+      <SheetContent side="right" className="flex w-full flex-col gap-0 bg-muted/30 p-0 sm:max-w-md">
+        <SheetHeader className="flex-none border-b bg-background px-4 py-3">
           <SheetTitle className="text-left text-lg">{lang === "bn" ? "সেটিংস" : "Settings"}</SheetTitle>
         </SheetHeader>
 
-        <div className="flex-1 overflow-y-auto px-4 py-3">
-          {/* Profile header */}
-          {(profile?.full_name || profile?.phone) && (
+        <div className="flex-1 overflow-y-auto px-4 py-4">
+          {/* Profile Hero */}
+          <div className="relative mb-4 overflow-hidden rounded-3xl border bg-gradient-to-br from-primary/15 via-primary/5 to-transparent p-4">
+            <div
+              aria-hidden
+              className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-primary/20 blur-3xl"
+            />
             <button
               type="button"
               onClick={() => go("/app/profile")}
-              className="mb-3 flex w-full items-center gap-3 rounded-xl border bg-card p-3 text-left transition hover:bg-accent"
+              className="relative flex w-full items-center gap-3 text-left"
             >
-              <div className="flex h-11 w-11 flex-none items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
-                {(profile?.full_name || current?.name || "U")
-                  .split(" ")
-                  .map((s) => s[0])
-                  .filter(Boolean)
-                  .slice(0, 2)
-                  .join("")
-                  .toUpperCase()}
+              <div className="flex h-14 w-14 flex-none items-center justify-center rounded-2xl bg-primary text-base font-extrabold text-primary-foreground shadow-md">
+                {initials}
               </div>
               <div className="min-w-0 flex-1">
-                <div className="truncate text-sm font-semibold">{profile?.full_name || (lang === "bn" ? "ব্যবহারকারী" : "User")}</div>
-                {profile?.phone && (
-                  <div className="truncate text-xs text-muted-foreground">{profile.phone}</div>
-                )}
+                <div className="truncate text-base font-semibold">
+                  {profile?.full_name || (lang === "bn" ? "ব্যবহারকারী" : "User")}
+                </div>
+                <div className="truncate text-xs text-muted-foreground">
+                  {profile?.phone || (lang === "bn" ? "প্রোফাইল দেখুন" : "View profile")}
+                </div>
               </div>
-              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+              <ChevronRight className="h-5 w-5 text-muted-foreground" />
             </button>
-          )}
 
-          <button
-            onClick={() => go("/app/shops")}
-            className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-3 py-2.5 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90"
-          >
-            <ArrowLeftRight className="h-4 w-4" />
-            {lang === "bn" ? "দোকান পরিবর্তন করুন" : "Switch Shop"}
-          </button>
+            <div className="relative mt-3 grid grid-cols-2 gap-2">
+              <button
+                onClick={() => go("/app/shops")}
+                className="flex items-center justify-center gap-1.5 rounded-xl bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground shadow-sm transition active:scale-[0.98]"
+              >
+                <ArrowLeftRight className="h-3.5 w-3.5" />
+                {lang === "bn" ? "শপ সুইচ" : "Switch Shop"}
+              </button>
+              <button
+                onClick={() => go("/app/shop-settings")}
+                className="flex items-center justify-center gap-1.5 rounded-xl border bg-background/70 backdrop-blur px-3 py-2 text-xs font-semibold text-foreground shadow-sm transition active:scale-[0.98]"
+                title={current?.name}
+              >
+                <Store className="h-3.5 w-3.5" />
+                <span className="max-w-[8rem] truncate">{current?.name || (lang === "bn" ? "দোকান" : "Shop")}</span>
+              </button>
+            </div>
+          </div>
 
-          <SectionLabel>{lang === "bn" ? "অ্যাপ সেটিংস" : "App Settings"}</SectionLabel>
-          <div className="space-y-2">
-            <Row
-              icon={<LayoutDashboard className="h-4 w-4" />}
-              label={lang === "bn" ? "কম্বাইন্ড রিপোর্ট" : "Combined Report"}
+          {/* Quick Actions */}
+          <div className="mb-4 grid grid-cols-4 gap-2">
+            <QuickTile
+              tint="border-primary/20 bg-primary/10"
+              icon={<LayoutDashboard className="h-4 w-4 text-primary" />}
+              label={lang === "bn" ? "রিপোর্ট" : "Report"}
               onClick={() => go("/app/combined-report")}
             />
-            <Row
-              icon={<UserIcon className="h-4 w-4" />}
-              label={lang === "bn" ? "আমার প্রোফাইল" : "My Profile"}
-              onClick={() => go("/app/profile")}
-            />
-            <Row
-              icon={<Store className="h-4 w-4" />}
-              label={lang === "bn" ? "দোকানের সেটিংস ও ব্যাকআপ" : "Shop Settings & Backup"}
-              onClick={() => go("/app/shop-settings")}
-            />
-            <Row
-              icon={<Crown className="h-4 w-4" />}
-              label={lang === "bn" ? "সাবস্ক্রিপশন" : "Subscription"}
+            <QuickTile
+              tint="border-amber-500/20 bg-amber-500/10"
+              icon={<Crown className="h-4 w-4 text-amber-600" />}
+              label={lang === "bn" ? "সাবস্ক্রাইব" : "Subscribe"}
               onClick={() => go("/app/subscribe")}
             />
-            <Row
+            <QuickTile
+              tint="border-emerald-500/20 bg-emerald-500/10"
+              icon={<GraduationCap className="h-4 w-4 text-emerald-600" />}
+              label={lang === "bn" ? "ট্রেনিং" : "Training"}
+              onClick={() => go("/app/training")}
+            />
+            <QuickTile
+              tint="border-sky-500/20 bg-sky-500/10"
+              icon={<BarChart3 className="h-4 w-4 text-sky-600" />}
+              label={lang === "bn" ? "ব্যবহার" : "Usage"}
+              onClick={() => go("/app/reports")}
+            />
+          </div>
+
+          {/* Preferences */}
+          <SettingsGroup title={lang === "bn" ? "পছন্দসমূহ" : "Preferences"}>
+            <SettingsRow
+              iconTint="bg-blue-500/10 text-blue-600"
               icon={<Languages className="h-4 w-4" />}
               label={lang === "bn" ? "ভাষা" : "Language"}
               right={
                 <select
-                  className="rounded border bg-background px-2 py-1 text-xs"
+                  className={selectCls}
                   value={lang}
                   onChange={(e) => setLang(e.target.value as Lang)}
                   onClick={(e) => e.stopPropagation()}
@@ -257,13 +295,30 @@ export function SettingsSheet({ open, onOpenChange }: { open: boolean; onOpenCha
                 </select>
               }
             />
-            <CountryRow />
-            <Row
+            <SettingsRow
+              iconTint="bg-violet-500/10 text-violet-600"
+              icon={<Globe className="h-4 w-4" />}
+              label={lang === "bn" ? "দেশ" : "Country"}
+              right={
+                <select
+                  className={selectCls}
+                  value={country}
+                  onChange={(e) => updateCountry(e.target.value)}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {COUNTRIES.map((c) => (
+                    <option key={c.code} value={c.code}>{c.flag} {c.name}</option>
+                  ))}
+                </select>
+              }
+            />
+            <SettingsRow
+              iconTint="bg-emerald-500/10 text-emerald-600"
               icon={<Coins className="h-4 w-4" />}
               label={lang === "bn" ? "কারেন্সি" : "Currency"}
               right={
                 <select
-                  className="rounded border bg-background px-2 py-1 text-xs"
+                  className={selectCls}
                   value={currency}
                   onChange={(e) => { setCurrency(e.target.value); persist("tp_currency", e.target.value); }}
                   onClick={(e) => e.stopPropagation()}
@@ -274,25 +329,13 @@ export function SettingsSheet({ open, onOpenChange }: { open: boolean; onOpenCha
                 </select>
               }
             />
-            <Row
-              icon={<Sun className="h-4 w-4" />}
-              label={lang === "bn" ? "থিম" : "Theme"}
-              right={
-                null
-              }
-            />
-            <div className="rounded-lg border bg-card p-3">
-              <div className="mb-2 text-xs font-semibold text-muted-foreground">
-                {lang === "bn" ? "অ্যাপের রং" : "App Color"}
-              </div>
-              <ColorThemeInline />
-            </div>
-            <Row
+            <SettingsRow
+              iconTint="bg-slate-500/10 text-slate-600"
               icon={<Hash className="h-4 w-4" />}
-              label={lang === "bn" ? "দশমিক পয়েন্ট" : "Decimal Points"}
+              label={lang === "bn" ? "দশমিক" : "Decimals"}
               right={
                 <select
-                  className="rounded border bg-background px-2 py-1 text-xs"
+                  className={selectCls}
                   value={decimal}
                   onChange={(e) => {
                     const v = e.target.value as "0" | "2";
@@ -306,12 +349,37 @@ export function SettingsSheet({ open, onOpenChange }: { open: boolean; onOpenCha
                 </select>
               }
             />
-            <Row
-              icon={<BarChart3 className="h-4 w-4" />}
-              label={lang === "bn" ? "লিমিট চার্ট ও ব্যবহার" : "Usage & Limits"}
-              onClick={() => go("/app/reports")}
+            <div className="px-3 py-3">
+              <div className="mb-2 flex items-center gap-2 text-sm font-medium">
+                <span className="flex h-9 w-9 flex-none items-center justify-center rounded-xl bg-amber-500/10 text-amber-600">
+                  <Sun className="h-4 w-4" />
+                </span>
+                {lang === "bn" ? "অ্যাপের রং" : "App Color"}
+              </div>
+              <ColorThemeInline />
+            </div>
+          </SettingsGroup>
+
+          {/* Shop & Data */}
+          <SettingsGroup title={lang === "bn" ? "দোকান ও ডেটা" : "Shop & Data"}>
+            <SettingsRow
+              iconTint="bg-rose-500/10 text-rose-600"
+              icon={<Store className="h-4 w-4" />}
+              label={lang === "bn" ? "দোকানের সেটিংস ও ব্যাকআপ" : "Shop Settings & Backup"}
+              onClick={() => go("/app/shop-settings")}
             />
-            <Row
+            <SettingsRow
+              iconTint="bg-indigo-500/10 text-indigo-600"
+              icon={<UserIcon className="h-4 w-4" />}
+              label={lang === "bn" ? "আমার প্রোফাইল" : "My Profile"}
+              onClick={() => go("/app/profile")}
+            />
+          </SettingsGroup>
+
+          {/* Device */}
+          <SettingsGroup title={lang === "bn" ? "ডিভাইস" : "Device"}>
+            <SettingsRow
+              iconTint="bg-teal-500/10 text-teal-600"
               icon={<Smartphone className="h-4 w-4" />}
               label={
                 pwa.installed
@@ -347,45 +415,78 @@ export function SettingsSheet({ open, onOpenChange }: { open: boolean; onOpenCha
                 );
               }}
             />
-            <Row
-              icon={<GraduationCap className="h-4 w-4" />}
-              label={lang === "bn" ? "অ্যাপ ট্রেনিং" : "App Training"}
-              onClick={() => go("/app/training")}
-            />
-            <Row
+            <SettingsRow
+              iconTint="bg-fuchsia-500/10 text-fuchsia-600"
               icon={<Smartphone className="h-4 w-4" />}
-              label={lang === "bn" ? "লগইন device সমূহ ও লগআউট" : "Logged-in devices & sign out"}
+              label={lang === "bn" ? "লগইন ডিভাইস ও লগআউট" : "Logged-in devices"}
               onClick={() => setDevicesOpen(true)}
             />
-          </div>
+          </SettingsGroup>
 
-          <SectionLabel>{lang === "bn" ? "অন্যান্য" : "Other"}</SectionLabel>
-          <div className="space-y-2">
-            {(appLinks ?? []).map((link) => {
-              const Icon = ICON_MAP[link.icon] ?? LinkIcon;
-              return (
-                <Row
-                  key={link.key}
-                  icon={<Icon className="h-4 w-4" />}
-                  label={lang === "bn" ? link.label_bn : link.label_en}
-                  onClick={() => {
-                    if (link.link_type === "internal") {
-                      go(link.url);
-                    } else {
-                      onOpenChange(false);
-                      window.open(link.url, "_blank");
-                    }
-                  }}
-                />
-              );
-            })}
-          </div>
+          {/* Help & Links */}
+          {(appLinks ?? []).length > 0 && (
+            <SettingsGroup title={lang === "bn" ? "সহায়তা ও লিঙ্ক" : "Help & Links"}>
+              {(appLinks ?? []).slice(0, 3).map((link) => {
+                const Icon = ICON_MAP[link.icon] ?? LinkIcon;
+                return (
+                  <SettingsRow
+                    key={link.key}
+                    iconTint="bg-muted text-foreground/70"
+                    icon={<Icon className="h-4 w-4" />}
+                    label={lang === "bn" ? link.label_bn : link.label_en}
+                    onClick={() => {
+                      if (link.link_type === "internal") {
+                        go(link.url);
+                      } else {
+                        onOpenChange(false);
+                        window.open(link.url, "_blank");
+                      }
+                    }}
+                  />
+                );
+              })}
+              {(appLinks ?? []).length > 3 && (
+                <details className="group">
+                  <summary className="flex cursor-pointer items-center justify-between px-3 py-2.5 text-xs font-semibold text-muted-foreground hover:bg-accent/40">
+                    <span>{lang === "bn" ? "আরও দেখুন" : "Show more"}</span>
+                    <ChevronRight className="h-4 w-4 transition group-open:rotate-90" />
+                  </summary>
+                  <div className="divide-y divide-border/60 border-t">
+                    {(appLinks ?? []).slice(3).map((link) => {
+                      const Icon = ICON_MAP[link.icon] ?? LinkIcon;
+                      return (
+                        <SettingsRow
+                          key={link.key}
+                          iconTint="bg-muted text-foreground/70"
+                          icon={<Icon className="h-4 w-4" />}
+                          label={lang === "bn" ? link.label_bn : link.label_en}
+                          onClick={() => {
+                            if (link.link_type === "internal") {
+                              go(link.url);
+                            } else {
+                              onOpenChange(false);
+                              window.open(link.url, "_blank");
+                            }
+                          }}
+                        />
+                      );
+                    })}
+                  </div>
+                </details>
+              )}
+            </SettingsGroup>
+          )}
+
+          <p className="mt-2 text-center text-[10px] text-muted-foreground/70">
+            {lang === "bn" ? "Tally+ • আপনার ব্যবসার সঙ্গী" : "Tally+ • Your business companion"}
+          </p>
         </div>
 
         <div className="flex-none border-t bg-background p-3">
           <Button
+            variant="outline"
             onClick={() => signOut().then(() => { onOpenChange(false); nav({ to: "/" }); })}
-            className="h-11 w-full bg-rose-500 font-bold text-white hover:bg-rose-600"
+            className="h-11 w-full border-rose-200 font-semibold text-rose-600 hover:bg-rose-50 hover:text-rose-700"
           >
             <LogOut className="mr-2 h-4 w-4" />
             {lang === "bn" ? "লগআউট করুন" : "Log out"}
