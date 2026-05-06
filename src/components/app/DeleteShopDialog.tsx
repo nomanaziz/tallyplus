@@ -7,60 +7,9 @@ import { useI18n } from "@/lib/i18n";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { AlertTriangle, Loader2 } from "lucide-react";
+import { Link } from "@/lib/router";
 
 type ShopLite = { id: string; name: string };
-
-async function cascadeDeleteShop(shopId: string): Promise<void> {
-  const sales = await supabase.from("sales").select("id").eq("shop_id", shopId);
-  const saleIds = (sales.data ?? []).map((r: any) => r.id);
-  if (saleIds.length) {
-    const { error } = await supabase.from("sale_items").delete().in("sale_id", saleIds);
-    if (error) throw error;
-  }
-
-  const purchases = await supabase.from("purchases").select("id").eq("shop_id", shopId);
-  const purIds = (purchases.data ?? []).map((r: any) => r.id);
-  if (purIds.length) {
-    const { error } = await supabase.from("purchase_items").delete().in("purchase_id", purIds);
-    if (error) throw error;
-  }
-
-  const wishlists = await supabase.from("customer_wishlists").select("id").eq("shop_id", shopId);
-  const wIds = (wishlists.data ?? []).map((r: any) => r.id);
-  if (wIds.length) {
-    const { error } = await supabase.from("customer_wishlist_items").delete().in("wishlist_id", wIds);
-    if (error) throw error;
-  }
-
-  const tables = [
-    "sales",
-    "purchases",
-    "payments",
-    "expenses",
-    "other_income",
-    "cash_movements",
-    "products",
-    "categories",
-    "customers",
-    "suppliers",
-    "customer_wishlists",
-    "promo_codes",
-    "marketplace_listings",
-    "fraud_check_logs",
-    "assets",
-    "owner_transactions",
-    "shop_members",
-  ];
-  for (const t of tables) {
-    const { error } = await supabase.from(t as any).delete().eq("shop_id", shopId);
-    if (error && !/does not exist/i.test(error.message)) {
-      throw new Error(`${t}: ${error.message}`);
-    }
-  }
-
-  const { error } = await supabase.from("shops").delete().eq("id", shopId);
-  if (error) throw error;
-}
 
 export function DeleteShopDialog({
   open,
@@ -89,8 +38,14 @@ export function DeleteShopDialog({
     if (!matches || !shop) return;
     setBusy(true);
     try {
-      await cascadeDeleteShop(shop.id);
-      toast.success(lang === "bn" ? "দোকান মুছে ফেলা হয়েছে" : "Shop deleted");
+      const { data, error } = await supabase.rpc("request_shop_delete", {
+        _shop_id: shop.id,
+        _confirm_text: confirmName.trim(),
+      });
+      if (error) throw error;
+      const res = data as { ok?: boolean; error?: string };
+      if (!res?.ok) { toast.error(res?.error || "delete_failed"); return; }
+      toast.success(lang === "bn" ? "দোকান মুছে ফেলা হয়েছে — Snapshot Admin-এর কাছে ৩০ দিনের জন্য সংরক্ষিত।" : "Shop deleted — Snapshot kept by Admin for 30 days.");
       onOpenChange(false);
       await onDeleted();
     } catch (e: any) {
@@ -118,12 +73,18 @@ export function DeleteShopDialog({
                 <p className="mt-1">
                   <span className="font-bold">{shop.name}</span> দোকানের সকল ডেটা — বিক্রি, ক্রয়, পণ্য, কাস্টমার, সাপ্লায়ার, খরচ, আয়, পেমেন্ট, ক্যাশ, সম্পদ, মালিকের লেনদেন — সব স্থায়ীভাবে মুছে যাবে।
                 </p>
+                <p className="mt-2">
+                  ৩০ দিনের জন্য Admin-এর কাছে snapshot সংরক্ষিত থাকবে। ভুলে delete হলে <Link to="/app/restore-requests" className="underline font-semibold">Restore Request</Link> পাঠাতে পারবেন (charge ৳১০০০)।
+                </p>
               </>
             ) : (
               <>
                 <p className="font-semibold">This action cannot be undone.</p>
                 <p className="mt-1">
                   All data of <span className="font-bold">{shop.name}</span> — sales, purchases, products, customers, suppliers, expenses, income, payments, cash, assets, owner transactions — will be permanently deleted.
+                </p>
+                <p className="mt-2">
+                  A snapshot will be kept by Admin for 30 days. You can submit a <Link to="/app/restore-requests" className="underline font-semibold">Restore Request</Link> (৳1000 charge).
                 </p>
               </>
             )}

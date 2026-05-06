@@ -238,6 +238,8 @@ export const appRoutes: RouteObject[] = [
 ,
 { path: "shop-settings", element: <Suspense fallback={<RouteFallback/>}><LShopSettings/></Suspense> }
 ,
+{ path: "restore-requests", element: <Suspense fallback={<RouteFallback/>}><LAppRestoreRequests/></Suspense> }
+,
 { path: "online-shop", children: [
   { index: true, element: <Suspense fallback={<RouteFallback/>}><LOnlineShop/></Suspense> },
   { path: "orders", element: <Suspense fallback={<RouteFallback/>}><LOSOrders/></Suspense> },
