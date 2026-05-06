@@ -24,6 +24,7 @@ export const ADMIN_PERMISSION_KEYS = [
   "ads",
   "settings",
   "transfers",
+  "shop_recycle_bin",
 ] as const;
 
 export type AdminPermKey = (typeof ADMIN_PERMISSION_KEYS)[number];
@@ -53,6 +54,7 @@ export const ADMIN_PERMISSION_LABELS: Record<AdminPermKey, string> = {
   ads: "Ads / Monetization",
   settings: "Settings",
   transfers: "Ownership Transfers",
+  shop_recycle_bin: "Shop Recycle Bin",
 };
 
 export function hasPerm(
