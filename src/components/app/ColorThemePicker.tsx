@@ -6,7 +6,7 @@ import { Palette, Check } from "lucide-react";
 function Swatches({ color, onPick }: { color: AppColor; onPick: (c: AppColor) => void }) {
   const { lang } = useI18n();
   return (
-    <div className="grid grid-cols-5 gap-2">
+    <div className="flex flex-wrap items-center gap-1.5">
       {COLOR_OPTIONS.map((opt) => {
         const active = color === opt.value;
         return (
@@ -15,14 +15,14 @@ function Swatches({ color, onPick }: { color: AppColor; onPick: (c: AppColor) =>
             type="button"
             onClick={() => onPick(opt.value)}
             title={lang === "bn" ? opt.bn : opt.en}
-            className={`relative flex h-10 w-10 items-center justify-center rounded-full border-2 transition ${
+            className={`relative flex h-6 w-6 items-center justify-center rounded-full border-2 transition ${
               active ? "border-foreground scale-110 shadow-md" : "border-transparent hover:scale-105"
             }`}
             style={{ background: opt.swatch }}
             aria-label={opt.en}
             aria-pressed={active}
           >
-            {active && <Check className="h-4 w-4 text-white drop-shadow" />}
+            {active && <Check className="h-3 w-3 text-white drop-shadow" />}
           </button>
         );
       })}
