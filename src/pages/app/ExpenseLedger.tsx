@@ -73,14 +73,14 @@ function ExpenseLedgerPage() {
 
   return (
     <div className="container px-4 py-4">
-      <div className="mb-1 text-xs text-muted-foreground">Expense Ledger</div>
+      <div className="mb-1 text-xs text-muted-foreground">Expense Book</div>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => nav({ to: "/app/dashboard" })}>
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <AppIcon name="expense" className="h-6 w-6" />
-          <h1 className="text-xl font-extrabold md:text-2xl">{lang === "bn" ? "খরচের খাতা" : "Expense Ledger"}</h1>
+          <h1 className="text-xl font-extrabold md:text-2xl">{lang === "bn" ? "খরচের বই" : "Expense Book"}</h1>
         </div>
       </div>
 

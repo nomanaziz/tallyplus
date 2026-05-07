@@ -32,7 +32,7 @@ export const FEATURE_GROUPS: FeatureGroup[] = [
       { key: "cart_edit", label_bn: "কার্ট এডিট", label_en: "Cart edit" },
       { key: "discount", label_bn: "ডিসকাউন্ট", label_en: "Discount" },
       { key: "delivery", label_bn: "ডেলিভারী চার্জ", label_en: "Delivery" },
-      { key: "ledger", label_bn: "ক্রয়ের খাতা", label_en: "Ledger" },
+      { key: "ledger", label_bn: "ক্রয়ের বই", label_en: "Purchase Book" },
       { key: "edit", label_bn: "এডিট করুন", label_en: "Edit" },
       { key: "delete", label_bn: "মুছে ফেলুন", label_en: "Delete" },
     ],
@@ -176,11 +176,11 @@ export const FEATURE_GROUPS: FeatureGroup[] = [
   },
   {
     key: "owner_ledger",
-    title_bn: "মালিকের খাতা",
-    title_en: "Owner ledger",
+    title_bn: "মালিকের বই",
+    title_en: "Owner book",
     icon: "👔",
     items: [
-      { key: "view", label_bn: "মালিকের খাতা দেখা", label_en: "View owner ledger" },
+      { key: "view", label_bn: "মালিকের বই দেখা", label_en: "View owner book" },
       { key: "add", label_bn: "এন্ট্রি যোগ", label_en: "Add entry" },
       { key: "edit", label_bn: "এডিট", label_en: "Edit" },
       { key: "delete", label_bn: "ডিলিট", label_en: "Delete" },

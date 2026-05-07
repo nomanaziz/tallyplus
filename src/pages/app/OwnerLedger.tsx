@@ -59,14 +59,14 @@ function OwnerLedgerPage() {
 
   return (
     <div className="container px-4 py-4">
-      <div className="mb-1 text-xs text-muted-foreground">Owner Ledger</div>
+      <div className="mb-1 text-xs text-muted-foreground">Owner Book</div>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => nav({ to: "/app/dashboard" })}>
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <Wallet className="h-6 w-6 text-primary" />
-          <h1 className="text-xl font-extrabold md:text-2xl">{lang === "bn" ? "মালিকের লেনদেন" : "Owner Ledger"}</h1>
+          <h1 className="text-xl font-extrabold md:text-2xl">{lang === "bn" ? "মালিকের বই" : "Owner Book"}</h1>
         </div>
       </div>
 
