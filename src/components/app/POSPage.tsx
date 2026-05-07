@@ -871,6 +871,41 @@ function PaymentDialog(props: {
     setSaving(true);
 
     try {
+      // Stock guard for sales (race-safe: re-fetch latest stock)
+      if (isSell) {
+        const productIds = Array.from(new Set(
+          props.cart
+            .filter((c) => (c.item_type ?? "product") === "product" && c.product_id)
+            .map((c) => c.product_id as string)
+        ));
+        if (productIds.length > 0) {
+          const { data: stockRows } = await supabase
+            .from("products")
+            .select("id,name,stock")
+            .in("id", productIds);
+          const stockMap = new Map(
+            ((stockRows as { id: string; name: string; stock: number }[]) ?? [])
+              .map((r) => [r.id, r])
+          );
+          const aggregated = new Map<string, number>();
+          for (const c of props.cart) {
+            if ((c.item_type ?? "product") !== "product" || !c.product_id) continue;
+            aggregated.set(c.product_id, (aggregated.get(c.product_id) ?? 0) + c.qty);
+          }
+          for (const [pid, qty] of aggregated) {
+            const row = stockMap.get(pid);
+            const stock = Number(row?.stock ?? 0);
+            if (qty > stock) {
+              toast.error(lang === "bn"
+                ? `${row?.name ?? ""}: মাত্র ${stock}টি স্টকে আছে`
+                : `${row?.name ?? "Item"}: only ${stock} in stock`);
+              setSaving(false);
+              return;
+            }
+          }
+        }
+      }
+
       const paidNum = isCash ? props.grandTotal : (Number(paid) || 0);
       const dueNum = Math.max(0, props.grandTotal - paidNum);
       const createdAt = new Date(date).toISOString();
