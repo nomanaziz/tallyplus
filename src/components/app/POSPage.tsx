@@ -206,6 +206,23 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
       setSerialPick(p);
       return;
     }
+    // Stock guard (sell mode, store products only)
+    if (isSell && p.id) {
+      const inCartQty = cart.find((c) => c.product_id === p.id)?.qty ?? 0;
+      const stock = Number(p.stock) || 0;
+      if (stock <= 0) {
+        toast.error(lang === "bn"
+          ? "স্টক শেষ — আগে স্টক যোগ করুন"
+          : "Out of stock — please update stock first");
+        return;
+      }
+      if (inCartQty + 1 > stock) {
+        toast.error(lang === "bn"
+          ? `মাত্র ${bnNum(stock)}টি স্টকে আছে`
+          : `Only ${stock} in stock`);
+        return;
+      }
+    }
     let alreadyInCart = false;
     setCart((prev) => {
       const i = prev.findIndex((c) => c.product_id === p.id);
@@ -250,6 +267,22 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
         }
         // Recompute bulk pricing on qty changes
         if (Object.prototype.hasOwnProperty.call(patch, "qty")) {
+          // Stock cap (sell mode, store products only)
+          if (isSell && merged.product_id) {
+            const prod = products.find((pp) => pp.id === merged.product_id);
+            const stock = Number(prod?.stock ?? 0);
+            if (stock > 0 && merged.qty > stock) {
+              toast.error(lang === "bn"
+                ? `মাত্র ${bnNum(stock)}টি স্টকে আছে`
+                : `Only ${stock} in stock`);
+              merged.qty = stock;
+            } else if (stock <= 0) {
+              toast.error(lang === "bn"
+                ? "স্টক শেষ"
+                : "Out of stock");
+              merged.qty = 0;
+            }
+          }
           return applyBulkPricing(merged);
         }
         return merged;
