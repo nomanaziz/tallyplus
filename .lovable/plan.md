@@ -1,70 +1,29 @@
-## লক্ষ্য
+## Problem
 
-Admin portal-এ যেকোনো registered user-কে এক ক্লিকে একটি subscription "gift" করা যাবে — সাথে ঐ user কতগুলো দোকান বানাতে পারবে সেটাও admin override করতে পারবে (limited / unlimited / lifetime)।
+Shop owner `NewUserAccessDialog` থেকে employee তৈরি করলে শুধু **phone + PIN** set হয় (via `create-employee-user`)। কোনো email/password employee-কে দেওয়া হয় না।
 
----
+কিন্তু `login-with-pin` edge function এ একটা guard আছে:
 
-## কী add হবে — Admin UX
-
-`/admin/users` page-এর প্রতিটি row-তে নতুন **"Grant Access"** button (Gift icon)। ক্লিক করলে একটা dialog খুলবে:
-
-```text
-┌─ Grant Access — <user name / phone> ─────────────┐
-│  Plan:     [ Pro / Premium / Lifetime ▼ ]        │
-│  Duration: ( ) Use plan default (e.g. 30 days)   │
-│            ( ) Custom: [ 90 ] days               │
-│            ( ) Lifetime (10 years)               │
-│  Shops allowed:                                  │
-│            ( ) Use plan limit                    │
-│            ( ) Custom: [ 5 ]                     │
-│            ( ) Unlimited                         │
-│  Note (optional): [_________________]            │
-│                                                  │
-│   [ Cancel ]                 [ Grant Access ]    │
-└──────────────────────────────────────────────────┘
+```ts
+const { data: employeeRow } = await admin
+  .from("shop_members")
+  .select("user_id")
+  .eq("user_id", profile.id)
+  .limit(1)
+  .maybeSingle();
+if (employeeRow) return json({ ok: false, error: "employee_must_use_email" });
 ```
 
-User row-তে শো হবে: এখন কোন plan active, কবে expire, override shop limit থাকলে সেটা।
+এর মানে — যেহেতু user `shop_members` এ আছে, PIN-login block হয়ে যাচ্ছে এবং UI সেই message দেখাচ্ছে: "Employee হিসেবে email + password দিয়ে login করুন"। অথচ employee-র কোনো password-ই নেই → সে কোনোভাবেই ঢুকতে পারছে না।
 
-আরেকটা **"Revoke"** option থাকবে যা active subscription cancel করে এবং shop-limit override clear করে।
+## Fix
 
----
+`supabase/functions/login-with-pin/index.ts` থেকে employee block সম্পূর্ণ সরিয়ে দিতে হবে। Employees কে phone+PIN দিয়েই login করতে দেওয়া হবে (এটাই owner-এর share করা credential)। Admin block (`admin_must_use_email`) আগের মতই থাকবে — security-র জন্য।
 
-## Database changes
+## Frontend cleanup
 
-1. `profiles` table-এ নতুন nullable column:
-   - `shop_limit_override int` — admin set করলে এটাই কার্যকর হবে। `NULL` মানে plan-এর default।
-   - `unlimited_shops boolean default false` — true হলে কোনো cap নেই।
+`src/components/site/LoginCard.tsx`-এ `employee_must_use_email` error handling থাকতে পারে, তবে server থেকে আর never আসবে। কোনো বাড়তি UI পরিবর্তন দরকার নেই।
 
-2. `user_shop_limit(_user_id)` function update — override থাকলে সেটাই, `unlimited_shops` true হলে অনেক বড় সংখ্যা (e.g. 9999) return।
+## Verification
 
-3. নতুন admin-only RPC `admin_grant_access(_user_id, _plan_id, _duration_days, _shop_limit, _unlimited_shops)`:
-   - `is_admin(auth.uid())` check
-   - existing active subscription expire করে নতুনটা insert (status=`active`)
-   - `profiles.shop_limit_override` / `unlimited_shops` update
-   - audit row notify_admins
-
-4. `admin_revoke_access(_user_id)` RPC — active subscription expire + overrides clear।
-
-5. একটা "Lifetime" plan seed (যদি না থাকে) — `code='lifetime'`, duration_days=3650, max_shops=9999, price_bdt=0, is_active=false (যাতে public Pricing-এ না দেখায়, শুধু admin-grant এর জন্য)।
-
----
-
-## Frontend changes
-
-**নতুন file:** `src/components/admin/GrantAccessDialog.tsx` — Dialog with plan select, duration mode, shop-limit mode, calls RPC, toasts।
-
-**Edit:** `src/pages/admin/Users.tsx`
-- Load করার সময় active subscription + plan + `shop_limit_override`/`unlimited_shops` query
-- প্রতিটি row-তে "Plan/Expires" column যোগ
-- Actions-এ "Grant" + (active থাকলে) "Revoke" buttons
-
-কোনো client-side bypass নয় — সব validation RPC-তে server-side।
-
----
-
-## Out of scope
-
-- Bulk grant (একসাথে অনেক user)
-- Plan তৈরির flow বদল (Plans page অপরিবর্তিত)
-- Customer (consumer) গ্রাহকদের জন্য আলাদা grant — শুধু shop owner profiles
+Owner একটা new employee account তৈরি করার পর শেয়ার করা phone + 4-digit PIN দিয়ে "ব্যবসায়িক হিসাব" tab থেকে লগইন → `/app/dashboard` এ পৌঁছাবে এবং তার assigned permissions নিয়ে কাজ করতে পারবে।
