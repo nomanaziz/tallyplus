@@ -457,12 +457,14 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
                 {filtered.slice(0, 200).map((p) => {
                   const inCart = cart.find((c) => c.product_id === p.id);
                   const price = isSell ? Number(p.sale_price) : Number(p.cost_price);
+                  const outOfStock = isSell && Number(p.stock) <= 0;
                   return (
                     <button
                       key={p.id}
                       type="button"
                       onClick={() => addToCart(p)}
-                      className={`group relative flex flex-col overflow-hidden rounded-lg border bg-background text-left transition-all hover:shadow-md ${inCart ? "ring-2 ring-primary/60" : ""}`}
+                      disabled={outOfStock}
+                      className={`group relative flex flex-col overflow-hidden rounded-lg border bg-background text-left transition-all hover:shadow-md ${inCart ? "ring-2 ring-primary/60" : ""} ${outOfStock ? "opacity-50 cursor-not-allowed" : ""}`}
                     >
                       <div className="relative aspect-square w-full overflow-hidden bg-muted/40">
                         {p.image_url ? (
@@ -537,7 +539,7 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
                       </div>
                     </div>
                     <div className="flex">
-                      <Button size="sm" className="rounded-r-none px-3" onClick={() => addToCart(p)} aria-label={lang === "bn" ? "যোগ" : "Add"}>
+                      <Button size="sm" className="rounded-r-none px-3" onClick={() => addToCart(p)} disabled={isSell && Number(p.stock) <= 0} aria-label={lang === "bn" ? "যোগ" : "Add"}>
                         <Plus className="h-4 w-4" />
                       </Button>
                       <DropdownMenu>
