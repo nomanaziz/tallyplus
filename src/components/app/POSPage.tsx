@@ -870,6 +870,8 @@ function PaymentDialog(props: {
   const save = async () => {
     if (!current || !user) return;
     if (props.cart.length === 0) { toast.error(lang === "bn" ? "কার্ট খালি" : "Cart is empty"); return; }
+    if (!partyName.trim()) { toast.error(lang === "bn" ? "নাম দিতে হবে" : "Name is required"); return; }
+    if (!partyPhone.trim()) { toast.error(lang === "bn" ? "মোবাইল নাম্বার দিতে হবে" : "Mobile number is required"); return; }
     setSaving(true);
 
     try {
@@ -1143,11 +1145,12 @@ function PaymentDialog(props: {
 
   return (
     <Dialog open={props.open} onOpenChange={(o) => !o && props.onClose()}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="flex max-h-[90vh] max-w-lg flex-col overflow-hidden p-0">
         <DialogHeader>
-          <DialogTitle className="text-center text-lg font-bold">{lang === "bn" ? titleBn : titleEn}</DialogTitle>
+          <DialogTitle className="border-b px-6 py-4 text-center text-lg font-bold">{lang === "bn" ? titleBn : titleEn}</DialogTitle>
         </DialogHeader>
 
+        <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
         {!isCash && (
           <Tabs value={partyTab} onValueChange={(v) => setPartyTab(v as "customer" | "supplier")}>
             <TabsList className="grid w-full grid-cols-2">
@@ -1267,8 +1270,9 @@ function PaymentDialog(props: {
             </div>
           </div>
         </div>
+        </div>
 
-        <DialogFooter>
+        <DialogFooter className="border-t px-6 py-3">
           <Button variant="ghost" onClick={props.onClose}>{lang === "bn" ? "বাতিল" : "Cancel"}</Button>
           <Button onClick={save} disabled={saving}>
             {saving ? (lang === "bn" ? "সংরক্ষণ হচ্ছে..." : "Saving...") : (isCash ? (lang === "bn" ? "টাকা পেয়েছেন" : "Confirm payment") : (isSell ? (lang === "bn" ? "বিক্রি করুন" : "Sell now") : (lang === "bn" ? "সেভ করুন" : "Save")))}

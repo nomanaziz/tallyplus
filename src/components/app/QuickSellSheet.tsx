@@ -36,6 +36,8 @@ export function QuickSellSheet({ open, onOpenChange }: { open: boolean; onOpenCh
     if (!current?.id) { toast.error(lang === "bn" ? "শপ নির্বাচন করুন" : "Select a shop"); return; }
     const amt = Number(amount);
     if (!amt || amt <= 0) { toast.error(lang === "bn" ? "টাকার পরিমাণ দিন" : "Enter amount"); return; }
+    if (!custName.trim()) { toast.error(lang === "bn" ? "কাস্টমার নাম দিতে হবে" : "Customer name is required"); return; }
+    if (!custPhone.trim()) { toast.error(lang === "bn" ? "মোবাইল নাম্বার দিতে হবে" : "Mobile number is required"); return; }
     setSaving(true);
     try {
       let customer_id: string | null = null;
