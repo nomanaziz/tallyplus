@@ -315,6 +315,38 @@ export function NewUserAccessDialog({
             ) : (
               <div className="grid gap-4">
                 <div>
+                  <div className="mb-2 text-sm font-semibold">
+                    {lang === "bn" ? "অ্যাক্সেস স্কোপ" : "Access scope"}
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    {(["single", "all"] as const).map((k) => {
+                      const active = scope === k;
+                      const label_bn = k === "single" ? "শুধু এই দোকান" : "আমার সব দোকান";
+                      const label_en = k === "single" ? "Only this shop" : "All my shops";
+                      return (
+                        <button
+                          key={k}
+                          type="button"
+                          onClick={() => setScope(k)}
+                          className={
+                            "rounded-md border px-3 py-2 text-xs font-bold " +
+                            (active
+                              ? "border-emerald-500 bg-emerald-50 text-emerald-800"
+                              : "border-border bg-background text-muted-foreground hover:bg-accent")
+                          }
+                        >
+                          {lang === "bn" ? label_bn : label_en}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <p className="mt-1 text-[11px] text-muted-foreground">
+                    {lang === "bn"
+                      ? "“আমার সব দোকান” বাছলে ভবিষ্যতে নতুন দোকান যোগ হলে স্বয়ংক্রিয়ভাবে এই ইউজারও যুক্ত হবে।"
+                      : "If you pick \"All my shops\", this user will be auto-added to any new shop you create later."}
+                  </p>
+                </div>
+                <div>
                   <div className="mb-2 text-sm">
                     role <span className="text-rose-500">*</span>
                   </div>
