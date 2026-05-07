@@ -7,6 +7,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { UserRound, Plus, Copy, MessageCircle, Phone, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useShop } from "@/lib/shop";
+import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
 import {
   FEATURE_GROUPS,
@@ -38,6 +39,7 @@ export function NewUserAccessDialog({
 }) {
   const { lang } = useI18n();
   const { current } = useShop();
+  const { user } = useAuth();
 
   const [step, setStep] = useState<1 | 2>(1);
   const [fullName, setFullName] = useState("");
@@ -52,6 +54,7 @@ export function NewUserAccessDialog({
   const [openNewRole, setOpenNewRole] = useState(false);
   const [share, setShare] = useState<ShareInfo | null>(null);
   const [copied, setCopied] = useState(false);
+  const [scope, setScope] = useState<"single" | "all">("single");
 
   useEffect(() => {
     if (!open) {
@@ -65,6 +68,7 @@ export function NewUserAccessDialog({
       setPerms(ROLE_PRESETS.EMPLOYEE);
       setShare(null);
       setCopied(false);
+      setScope("single");
     }
   }, [open]);
 
@@ -118,24 +122,33 @@ export function NewUserAccessDialog({
       const userId: string = created.user_id;
       const normalizedPhone: string = created.phone;
 
-      // 2) Insert shop_member (or update if already a member of this shop)
+      // 2) Determine target shop ids based on scope
       const customRoleId =
         roleKey === "EMPLOYEE" || roleKey === "MANAGER" || roleKey === "OWNER" ? null : roleKey;
+      let shopIds: string[] = [current.id];
+      if (scope === "all" && user) {
+        const { data: ownerShops } = await supabase
+          .from("shops")
+          .select("id")
+          .eq("owner_id", user.id)
+          .is("deleted_at", null);
+        const ids = (ownerShops ?? []).map((s) => s.id as string);
+        if (ids.length > 0) shopIds = ids;
+      }
+      const rows = shopIds.map((sid) => ({
+        shop_id: sid,
+        user_id: userId,
+        role: dbRole,
+        full_name: fullName.trim(),
+        email: email.trim() || null,
+        address: address.trim() || null,
+        permissions: perms as any,
+        custom_role_id: customRoleId,
+        is_all_shops: scope === "all",
+      }));
       const { error: memberErr } = await supabase
         .from("shop_members")
-        .upsert(
-          {
-            shop_id: current.id,
-            user_id: userId,
-            role: dbRole,
-            full_name: fullName.trim(),
-            email: email.trim() || null,
-            address: address.trim() || null,
-            permissions: perms as any,
-            custom_role_id: customRoleId,
-          },
-          { onConflict: "shop_id,user_id" },
-        );
+        .upsert(rows, { onConflict: "shop_id,user_id" });
       if (memberErr) throw memberErr;
 
       // 3) Build the shareable login link (phone digits, login screen)
@@ -301,6 +314,38 @@ export function NewUserAccessDialog({
               </div>
             ) : (
               <div className="grid gap-4">
+                <div>
+                  <div className="mb-2 text-sm font-semibold">
+                    {lang === "bn" ? "অ্যাক্সেস স্কোপ" : "Access scope"}
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    {(["single", "all"] as const).map((k) => {
+                      const active = scope === k;
+                      const label_bn = k === "single" ? "শুধু এই দোকান" : "আমার সব দোকান";
+                      const label_en = k === "single" ? "Only this shop" : "All my shops";
+                      return (
+                        <button
+                          key={k}
+                          type="button"
+                          onClick={() => setScope(k)}
+                          className={
+                            "rounded-md border px-3 py-2 text-xs font-bold " +
+                            (active
+                              ? "border-emerald-500 bg-emerald-50 text-emerald-800"
+                              : "border-border bg-background text-muted-foreground hover:bg-accent")
+                          }
+                        >
+                          {lang === "bn" ? label_bn : label_en}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <p className="mt-1 text-[11px] text-muted-foreground">
+                    {lang === "bn"
+                      ? "“আমার সব দোকান” বাছলে ভবিষ্যতে নতুন দোকান যোগ হলে স্বয়ংক্রিয়ভাবে এই ইউজারও যুক্ত হবে।"
+                      : "If you pick \"All my shops\", this user will be auto-added to any new shop you create later."}
+                  </p>
+                </div>
                 <div>
                   <div className="mb-2 text-sm">
                     role <span className="text-rose-500">*</span>

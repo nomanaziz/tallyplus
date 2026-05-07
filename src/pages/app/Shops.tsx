@@ -68,6 +68,7 @@ function ShopsPage() {
   }, [user, shops.length]);
 
   const atLimit = shops.length >= limit;
+  const ownsAnyShop = !!user && shops.some((s) => s.owner_id === user.id);
 
   const onAddClick = () => {
     if (atLimit) {
@@ -197,6 +198,7 @@ function ShopsPage() {
             );
           })}
 
+          {ownsAnyShop && (
           <button
             type="button"
             onClick={onAddClick}
@@ -219,6 +221,7 @@ function ShopsPage() {
               {lang === "bn" ? `সর্বোচ্চ ${limit} টি অনুমোদিত` : `Max ${limit} allowed`}
             </span>
           </button>
+          )}
         </div>
       </div>
 

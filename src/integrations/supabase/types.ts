@@ -4325,6 +4325,7 @@ export type Database = {
           email: string | null
           full_name: string | null
           id: string
+          is_all_shops: boolean
           permissions: Json
           role: Database["public"]["Enums"]["app_role"]
           shop_id: string
@@ -4338,6 +4339,7 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id?: string
+          is_all_shops?: boolean
           permissions?: Json
           role?: Database["public"]["Enums"]["app_role"]
           shop_id: string
@@ -4351,6 +4353,7 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id?: string
+          is_all_shops?: boolean
           permissions?: Json
           role?: Database["public"]["Enums"]["app_role"]
           shop_id?: string

@@ -21,11 +21,13 @@ const SettingsSheet = lazy(() =>
 );
 
 export function AppTopbar() {
-  const { profile, signOut } = useAuth();
-  const { current } = useShop();
+  const { profile, signOut, user } = useAuth();
+  const { current, shops } = useShop();
   const { lang } = useI18n();
   const nav = useNavigate();
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const isOwner = !!(user && current && current.owner_id === user.id);
+  const canSwitchShop = isOwner && shops.length > 1;
 
   const initials = (profile?.full_name || current?.name || "FS")
     .split(" ")
@@ -73,10 +75,12 @@ export function AppTopbar() {
               <div className="text-muted-foreground">{profile?.phone}</div>
             </div>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => nav({ to: "/app/shops" })}>
-              <ArrowLeftRight className="mr-2 h-4 w-4" />
-              {lang === "bn" ? "দোকান পরিবর্তন" : "Switch Shop"}
-            </DropdownMenuItem>
+            {canSwitchShop && (
+              <DropdownMenuItem onClick={() => nav({ to: "/app/shops" })}>
+                <ArrowLeftRight className="mr-2 h-4 w-4" />
+                {lang === "bn" ? "দোকান পরিবর্তন" : "Switch Shop"}
+              </DropdownMenuItem>
+            )}
             <DropdownMenuItem onClick={() => nav({ to: "/app/combined-report" })}>
               <LayoutDashboard className="mr-2 h-4 w-4" />
               {lang === "bn" ? "কম্বাইন্ড রিপোর্ট" : "Combined Report"}

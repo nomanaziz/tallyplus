@@ -132,8 +132,10 @@ function QuickTile({
 export function SettingsSheet({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
   const { lang, setLang } = useI18n();
   const pwa = usePwaInstall();
-  const { current } = useShop();
-  const { signOut, profile } = useAuth();
+  const { current, shops } = useShop();
+  const { signOut, profile, user } = useAuth();
+  const isOwner = !!(user && current && current.owner_id === user.id);
+  const canSwitchShop = isOwner && shops.length > 1;
   const [devicesOpen, setDevicesOpen] = useState(false);
   const nav = useNavigate();
   const [country, setCountryState] = useState<string>(() =>
@@ -229,14 +231,16 @@ export function SettingsSheet({ open, onOpenChange }: { open: boolean; onOpenCha
               <ChevronRight className="h-5 w-5 text-muted-foreground" />
             </button>
 
-            <div className="relative mt-3 grid grid-cols-2 gap-2">
-              <button
-                onClick={() => go("/app/shops")}
-                className="flex items-center justify-center gap-1.5 rounded-xl bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground shadow-sm transition active:scale-[0.98]"
-              >
-                <ArrowLeftRight className="h-3.5 w-3.5" />
-                {lang === "bn" ? "শপ সুইচ" : "Switch Shop"}
-              </button>
+            <div className={"relative mt-3 grid gap-2 " + (canSwitchShop ? "grid-cols-2" : "grid-cols-1")}>
+              {canSwitchShop && (
+                <button
+                  onClick={() => go("/app/shops")}
+                  className="flex items-center justify-center gap-1.5 rounded-xl bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground shadow-sm transition active:scale-[0.98]"
+                >
+                  <ArrowLeftRight className="h-3.5 w-3.5" />
+                  {lang === "bn" ? "শপ সুইচ" : "Switch Shop"}
+                </button>
+              )}
               <button
                 onClick={() => go("/app/shop-settings")}
                 className="flex items-center justify-center gap-1.5 rounded-xl border bg-background/70 backdrop-blur px-3 py-2 text-xs font-semibold text-foreground shadow-sm transition active:scale-[0.98]"
