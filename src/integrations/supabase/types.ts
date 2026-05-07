@@ -5922,6 +5922,7 @@ export type Database = {
       }
       heartbeat_active_device: { Args: { _device_id: string }; Returns: Json }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
+      is_business_user: { Args: { _user_id: string }; Returns: boolean }
       is_consumer: { Args: { _user_id: string }; Returns: boolean }
       is_shop_member: {
         Args: { _shop_id: string; _user_id: string }
