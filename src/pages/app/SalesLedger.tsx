@@ -276,7 +276,12 @@ function SalesLedgerPage() {
                         <div className="text-xs text-muted-foreground">{c?.phone ?? "---"}</div>
                       </TableCell>
                       <TableCell className="font-mono text-xs">{s.invoice_no ?? s.id.slice(0, 12).toUpperCase()}</TableCell>
-                      <TableCell>{lang === "bn" ? bnNum(itemCounts[s.id] ?? 0) : (itemCounts[s.id] ?? 0)}</TableCell>
+                      <TableCell>
+                        <div>{lang === "bn" ? bnNum(itemCounts[s.id] ?? 0) : (itemCounts[s.id] ?? 0)}</div>
+                        {s.note && (
+                          <div className="text-[10px] text-muted-foreground">{s.note}</div>
+                        )}
+                      </TableCell>
                       <TableCell className="font-semibold">{fmtMoney(Number(s.total), lang)}</TableCell>
                       <TableCell className="text-xs">{fmtDate(s.created_at)}</TableCell>
                       <TableCell>
