@@ -1,60 +1,46 @@
 ## লক্ষ্য
 
-1. পুরো অ্যাপ জুড়ে "হিসাবের খাতা / Ledger" → "হিসাবের বই / Book" নামকরণ।
-2. Quick Sell দিয়ে বিক্রি করলে সেটা যেন Sales Book / বিক্রয়ের বই-তে দেখা যায় এবং row-এ "Quick Sell / কুইক বিক্রয়" title থাকে।
-3. ভবিষ্যতের যেকোনো transaction (বিক্রয় হলে বিক্রয়ের বই, ক্রয় হলে ক্রয়ের বই) সঠিক বইতে hit করার নিয়ম বজায় রাখা।
+বিক্রয়ের সময় কোনো product-এর stock-এর চেয়ে বেশি বিক্রি করা যাবে না। Stock minus হবে না, সর্বোচ্চ zero-তে নামবে। যদি কেউ আরো বিক্রি করতে চায়, আগে Products/Stock screen থেকে stock বাড়িয়ে নিতে হবে।
 
-## পরিবর্তনের তালিকা
+## Scope
 
-### 1. Label rename (খাতা → বই, Ledger → Book)
+শুধু **store products** (যেগুলোর `product_id` আছে) — এবং শুধু **sell mode**-এ enforce হবে।  
+Bypass হবে: `purchase` mode (ক্রয় বাড়ায়), services (stockless), Quick Order-এর external/typed items (`productId === null`)।
 
-নিচের জায়গাগুলোতে label/text বদলানো হবে। কোনো route URL, table name, বা business logic বদলাবে না — শুধু displayed text।
+## পরিবর্তন
 
-| File | কী বদলাবে |
-|---|---|
-| `src/lib/i18n.tsx` | EN: `Sales Ledger → Sales Book`, `Purchase Ledger → Purchase Book`, `Due Ledger → Due Book`, `Expense Ledger → Expense Book`। BN: `বিক্রয়ের খাতা → বিক্রয়ের বই`, `ক্রয়ের খাতা → ক্রয়ের বই`, `বাকির খাতা → বাকির বই`, `খরচের খাতা → খরচের বই`। |
-| `src/components/app/AppSidebar.tsx` | পাঁচটা menu item: ক্রয়ের বই / Purchase Book, বিক্রয়ের বই / Sales Book, বাকির বই / Due Book, খরচের বই / Expense Book, মালিকের বই / Owner Book। |
-| `src/components/app/MobileBackBar.tsx` | একই পাঁচটার BN/EN label। |
-| `src/pages/app/SalesLedger.tsx` | header text + "Sell History" → "Sales Book"। |
-| `src/pages/app/PurchaseLedger.tsx` | header text। |
-| `src/pages/app/DueLedger.tsx` | header text। |
-| `src/pages/app/ExpenseLedger.tsx` | header text। |
-| `src/pages/app/OwnerLedger.tsx` | header text → "মালিকের বই / Owner Book"। |
-| `src/lib/permissions.ts` | "ক্রয়ের খাতা" → "ক্রয়ের বই", "মালিকের খাতা..." labels → "মালিকের বই..."। |
+### 1. `src/components/app/POSPage.tsx`
 
-Route paths (`/app/sales-ledger` ইত্যাদি) এবং internal i18n key (`salesLedger`) এখনই পাল্টাবো না — এতে আরো ভাঙার ঝুঁকি নেই, শুধু ব্যবহারকারী যা দেখে সেটাই বদলাবে।
+ছোট helper: `cartQtyOf(productId)` যেটা cart-এ ওই product-এর বর্তমান qty রিটার্ন করে।
 
-### 2. Quick Sell → Sales Book hit (বাগ ফিক্স)
+- **`addToCart(p)`** — sell mode-এ entry বা increment হওয়ার আগে চেক:
+  - `p.stock <= 0` → toast error: "স্টক শেষ — আগে স্টক যোগ করুন / Out of stock — please update stock first"। কার্টে যোগ হবে না।
+  - `cartQtyOf(p.id) + 1 > p.stock` → toast error: "মাত্র {stock}টি স্টকে আছে / Only {stock} in stock"। যোগ হবে না।
+- **Quick `Add 2` / `Add 5` dropdown items (lines ~520)** — একই check; allowed delta = `min(requested, stock - inCart)`। 0 হলে block।
+- **`updateCart(idx, { qty })`** — নতুন qty `> p.stock` হলে cap করে দেবে এবং toast দেখাবে। (cart row-এর +/- বাটন এবং manual qty input দুটোই এই path দিয়ে যায়।)
+- **Checkout submit (lines ~870)** — final guard: cart-এর প্রতিটি product item-এর জন্য সদ্য-fetched `products.stock` query করে verify করবে; যদি কোনোটি বেশি হয়, toast error দিয়ে abort (race condition থেকে রক্ষা)।
+- **UI hints**:
+  - Product card/list-এ যখন `stock <= 0`, "+" বাটন `disabled` দেখাবে।
+  - Cart row qty input-এ `max={product.stock}` set করবে যাতে keyboard টিপলেও spinner বাড়ে না।
 
-`src/pages/app/QuickOrder.tsx`-এ ইতিমধ্যে `sales` + `sale_items` + `cash_movements` + `stock_movements`-এ insert হচ্ছে, কিন্তু React Query cache invalidate না হওয়ায় Sales Book-এ পুরোনো cached list দেখায়। Fix:
+### 2. `src/pages/app/QuickOrder.tsx`
 
-- Submit successful হলে `queryClient.invalidateQueries({ queryKey: ["sales"] })` এবং `["contacts"]`, `["products"]`, `["cash"]` invalidate করা হবে navigate-এর আগে।
-- যদি user note খালি থাকে, `sale.note` হিসেবে `"Quick Sell"` (BN: `"কুইক বিক্রয়"`) সেভ করা হবে — যাতে Sales Book row-তে স্পষ্ট দেখা যায় এটা Quick Sell থেকে এসেছে।
+`convertToSale` শুরুর আগে যে rows-এর `productId` আছে, সেগুলোর জন্য `products.stock` fetch করে check:
+- যদি `row.qty > stock` → toast error: "{name}: only {stock} in stock"। abort।
+- External rows (`productId === null`) skip।
 
-### 3. Sales Book-এ Quick Sell title visibility
+### 3. কোনো DB schema বা migration লাগবে না
 
-`src/pages/app/SalesLedger.tsx`-এ row rendering-এ যদি `note` field থাকে সেটা একটা ছোট badge/subtitle হিসেবে নাম/invoice-এর পাশে দেখানো হবে (যেমন: invoice number-এর নিচে muted text হিসেবে "Quick Sell")। যদি ইতিমধ্যে দেখায়, শুধু verify করা হবে।
+Existing `products.stock` column ব্যবহার হচ্ছে; insert path-এ ইতিমধ্যে `Math.max(0, ...)` আছে যেটা defense-in-depth হিসেবে রাখা হবে।
 
-### 4. সাধারণ নিয়ম (কোনো নতুন কাজ নয়, শুধু verify)
+## যা পরিবর্তন হবে না
 
-- `Sell.tsx`, `QuickOrder.tsx` → `sales` table → Sales Book ✅
-- `Purchase.tsx` → `purchases` table → Purchase Book ✅
-- `Returns.tsx` ইত্যাদি — এই plan-এ touch করছি না।
+- Purchase / stock-in flow।
+- Returns flow।
+- Services বা serialized products (already gated)।
+- Quick Sell sheet (amount-only, কোনো product line নেই)।
 
-## কোন ফাইল পরিবর্তন হবে
+## ফাইল
 
-- `src/lib/i18n.tsx`
-- `src/lib/permissions.ts`
-- `src/components/app/AppSidebar.tsx`
-- `src/components/app/MobileBackBar.tsx`
-- `src/pages/app/SalesLedger.tsx`
-- `src/pages/app/PurchaseLedger.tsx`
-- `src/pages/app/DueLedger.tsx`
-- `src/pages/app/ExpenseLedger.tsx`
-- `src/pages/app/OwnerLedger.tsx`
+- `src/components/app/POSPage.tsx`
 - `src/pages/app/QuickOrder.tsx`
-
-## ঝুঁকি / বাইরে রাখা
-
-- Route URL, DB table, query key, permission key — কোনো কিছু rename হবে না (পুরোনো link, bookmark, RLS অক্ষত থাকবে)।
-- পুরোনো logic ফেলা হবে না — শুধু label + cache invalidate + note default যোগ।
