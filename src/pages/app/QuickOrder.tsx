@@ -13,6 +13,7 @@ import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { RequirePerm } from "@/components/app/RequirePerm";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 
 
 
@@ -73,6 +74,7 @@ function QuickOrderInner() {
   const { lang } = useI18n();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const qc = useQueryClient();
 
   const [allowExternal, setAllowExternal] = useState(true);
   const [query, setQuery] = useState("");
@@ -270,7 +272,7 @@ function QuickOrderInner() {
           profit: profitAmt,
           payment_method: "cash",
           status: "completed",
-          note: note.trim() || null,
+          note: note.trim() || (lang === "bn" ? "কুইক বিক্রয়" : "Quick Sell"),
           created_by: user.id,
         })
         .select("id")
@@ -326,6 +328,13 @@ function QuickOrderInner() {
         created_by: user.id,
       });
 
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["sales"] }),
+        qc.invalidateQueries({ queryKey: ["contacts"] }),
+        qc.invalidateQueries({ queryKey: ["products"] }),
+        qc.invalidateQueries({ queryKey: ["cash"] }),
+        qc.invalidateQueries({ queryKey: ["dashboard"] }),
+      ]);
       toast.success(lang === "bn" ? "বিক্রি তৈরি হয়েছে" : "Sale created");
       navigate({ to: "/app/sales-ledger" });
     } catch (e) {

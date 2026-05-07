@@ -193,13 +193,13 @@ function SalesLedgerPage() {
 
   return (
     <div className="container px-4 py-4">
-      <div className="mb-1 text-xs text-muted-foreground">Sell History</div>
+      <div className="mb-1 text-xs text-muted-foreground">Sales Book</div>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => nav({ to: "/app/dashboard" })}>
             <ArrowLeft className="h-4 w-4" />
           </Button>
-          <h1 className="text-xl font-extrabold md:text-2xl">{lang === "bn" ? "লেনদেনের ইতিহাস" : "Transaction History"}</h1>
+          <h1 className="text-xl font-extrabold md:text-2xl">{lang === "bn" ? "বিক্রয়ের বই" : "Sales Book"}</h1>
         </div>
         <div className="flex items-center gap-2">
           <Button onClick={printAll} className="h-10 gap-2 bg-primary text-primary-foreground hover:bg-primary/90">
@@ -276,7 +276,12 @@ function SalesLedgerPage() {
                         <div className="text-xs text-muted-foreground">{c?.phone ?? "---"}</div>
                       </TableCell>
                       <TableCell className="font-mono text-xs">{s.invoice_no ?? s.id.slice(0, 12).toUpperCase()}</TableCell>
-                      <TableCell>{lang === "bn" ? bnNum(itemCounts[s.id] ?? 0) : (itemCounts[s.id] ?? 0)}</TableCell>
+                      <TableCell>
+                        <div>{lang === "bn" ? bnNum(itemCounts[s.id] ?? 0) : (itemCounts[s.id] ?? 0)}</div>
+                        {s.note && (
+                          <div className="text-[10px] text-muted-foreground">{s.note}</div>
+                        )}
+                      </TableCell>
                       <TableCell className="font-semibold">{fmtMoney(Number(s.total), lang)}</TableCell>
                       <TableCell className="text-xs">{fmtDate(s.created_at)}</TableCell>
                       <TableCell>

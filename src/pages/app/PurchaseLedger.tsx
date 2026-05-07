@@ -189,13 +189,13 @@ function PurchaseLedgerPage() {
 
   return (
     <div className="container px-4 py-4">
-      <div className="mb-1 text-xs text-muted-foreground">Purchase History</div>
+      <div className="mb-1 text-xs text-muted-foreground">Purchase Book</div>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => nav({ to: "/app/dashboard" })}>
             <ArrowLeft className="h-4 w-4" />
           </Button>
-          <h1 className="text-xl font-extrabold md:text-2xl">{lang === "bn" ? "লেনদেনের ইতিহাস" : "Transaction History"}</h1>
+          <h1 className="text-xl font-extrabold md:text-2xl">{lang === "bn" ? "ক্রয়ের বই" : "Purchase Book"}</h1>
         </div>
         <div className="flex items-center gap-2">
           <Button onClick={printAll} className="h-10 gap-2 bg-primary text-primary-foreground hover:bg-primary/90">

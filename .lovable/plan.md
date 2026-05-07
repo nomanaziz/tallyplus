@@ -1,62 +1,60 @@
-## Goal
+## লক্ষ্য
 
-Employee যেই shop-এর জন্য permission দেওয়া হয়েছে শুধু সেই shop-ই তার কাছে দেখাবে এবং সে অন্য কোনো shop-এ switch বা ঢুকতে পারবে না। Owner চাইলে এক click-এ "আমার সব দোকান"-এর access-ও দিতে পারবেন — তখন future নতুন দোকানেও সেই employee auto-যুক্ত হবে।
+1. পুরো অ্যাপ জুড়ে "হিসাবের খাতা / Ledger" → "হিসাবের বই / Book" নামকরণ।
+2. Quick Sell দিয়ে বিক্রি করলে সেটা যেন Sales Book / বিক্রয়ের বই-তে দেখা যায় এবং row-এ "Quick Sell / কুইক বিক্রয়" title থাকে।
+3. ভবিষ্যতের যেকোনো transaction (বিক্রয় হলে বিক্রয়ের বই, ক্রয় হলে ক্রয়ের বই) সঠিক বইতে hit করার নিয়ম বজায় রাখা।
 
-## Database
+## পরিবর্তনের তালিকা
 
-`shop_members`-এ একটি নতুন column যোগ:
+### 1. Label rename (খাতা → বই, Ledger → Book)
 
-- `is_all_shops boolean NOT NULL DEFAULT false` — এই row "সব দোকান" mode-এ create হয়েছিল কিনা চিহ্ন।
+নিচের জায়গাগুলোতে label/text বদলানো হবে। কোনো route URL, table name, বা business logic বদলাবে না — শুধু displayed text।
 
-পুরোনো কোনো logic বা column বদলানো হবে না। Existing single-shop entries by default `false` থাকবে।
+| File | কী বদলাবে |
+|---|---|
+| `src/lib/i18n.tsx` | EN: `Sales Ledger → Sales Book`, `Purchase Ledger → Purchase Book`, `Due Ledger → Due Book`, `Expense Ledger → Expense Book`। BN: `বিক্রয়ের খাতা → বিক্রয়ের বই`, `ক্রয়ের খাতা → ক্রয়ের বই`, `বাকির খাতা → বাকির বই`, `খরচের খাতা → খরচের বই`। |
+| `src/components/app/AppSidebar.tsx` | পাঁচটা menu item: ক্রয়ের বই / Purchase Book, বিক্রয়ের বই / Sales Book, বাকির বই / Due Book, খরচের বই / Expense Book, মালিকের বই / Owner Book। |
+| `src/components/app/MobileBackBar.tsx` | একই পাঁচটার BN/EN label। |
+| `src/pages/app/SalesLedger.tsx` | header text + "Sell History" → "Sales Book"। |
+| `src/pages/app/PurchaseLedger.tsx` | header text। |
+| `src/pages/app/DueLedger.tsx` | header text। |
+| `src/pages/app/ExpenseLedger.tsx` | header text। |
+| `src/pages/app/OwnerLedger.tsx` | header text → "মালিকের বই / Owner Book"। |
+| `src/lib/permissions.ts` | "ক্রয়ের খাতা" → "ক্রয়ের বই", "মালিকের খাতা..." labels → "মালিকের বই..."। |
 
-### Trigger: auto-add to new shops
+Route paths (`/app/sales-ledger` ইত্যাদি) এবং internal i18n key (`salesLedger`) এখনই পাল্টাবো না — এতে আরো ভাঙার ঝুঁকি নেই, শুধু ব্যবহারকারী যা দেখে সেটাই বদলাবে।
 
-`AFTER INSERT ON public.shops` trigger function:
+### 2. Quick Sell → Sales Book hit (বাগ ফিক্স)
 
-- New shop-এর `owner_id`-এর অন্য কোনো shop-এ যেসব user-এর `is_all_shops = true` row আছে, তাদের জন্য নতুন shop-এ একই `role`, `permissions`, `custom_role_id`, `full_name`, `email`, `address`, `avatar_url`, `is_all_shops = true` সহ row insert করবে (`ON CONFLICT (shop_id, user_id) DO NOTHING`).
+`src/pages/app/QuickOrder.tsx`-এ ইতিমধ্যে `sales` + `sale_items` + `cash_movements` + `stock_movements`-এ insert হচ্ছে, কিন্তু React Query cache invalidate না হওয়ায় Sales Book-এ পুরোনো cached list দেখায়। Fix:
 
-ফলে owner নতুন দোকান বানালে "all-shops" employees auto-পেয়ে যাবে।
+- Submit successful হলে `queryClient.invalidateQueries({ queryKey: ["sales"] })` এবং `["contacts"]`, `["products"]`, `["cash"]` invalidate করা হবে navigate-এর আগে।
+- যদি user note খালি থাকে, `sale.note` হিসেবে `"Quick Sell"` (BN: `"কুইক বিক্রয়"`) সেভ করা হবে — যাতে Sales Book row-তে স্পষ্ট দেখা যায় এটা Quick Sell থেকে এসেছে।
 
-## Backend (NewUserAccessDialog)
+### 3. Sales Book-এ Quick Sell title visibility
 
-`src/components/app/NewUserAccessDialog.tsx`-এর Step 2 form-এ একটি নতুন toggle যোগ:
+`src/pages/app/SalesLedger.tsx`-এ row rendering-এ যদি `note` field থাকে সেটা একটা ছোট badge/subtitle হিসেবে নাম/invoice-এর পাশে দেখানো হবে (যেমন: invoice number-এর নিচে muted text হিসেবে "Quick Sell")। যদি ইতিমধ্যে দেখায়, শুধু verify করা হবে।
 
-```
-( ) শুধু এই দোকানের জন্য (default)
-( ) আমার সব দোকানের জন্য
-```
+### 4. সাধারণ নিয়ম (কোনো নতুন কাজ নয়, শুধু verify)
 
-`save()` flow আপডেট:
+- `Sell.tsx`, `QuickOrder.tsx` → `sales` table → Sales Book ✅
+- `Purchase.tsx` → `purchases` table → Purchase Book ✅
+- `Returns.tsx` ইত্যাদি — এই plan-এ touch করছি না।
 
-1. আগের মতো `create-employee-user` call করে `userId` পাওয়া।
-2. **Single shop** হলে আগের মতো শুধু `current.id`-তে upsert (`is_all_shops: false`)।
-3. **All shops** হলে: owner-এর সব active shop fetch (`shops where owner_id = auth.uid() and deleted_at is null`), প্রতিটিতে একই role/permissions দিয়ে upsert (`is_all_shops: true`)।
+## কোন ফাইল পরিবর্তন হবে
 
-এই dialog already current shop scope-এ insert করে — তাই default behavior অপরিবর্তিত।
+- `src/lib/i18n.tsx`
+- `src/lib/permissions.ts`
+- `src/components/app/AppSidebar.tsx`
+- `src/components/app/MobileBackBar.tsx`
+- `src/pages/app/SalesLedger.tsx`
+- `src/pages/app/PurchaseLedger.tsx`
+- `src/pages/app/DueLedger.tsx`
+- `src/pages/app/ExpenseLedger.tsx`
+- `src/pages/app/OwnerLedger.tsx`
+- `src/pages/app/QuickOrder.tsx`
 
-## Frontend visibility / UX
+## ঝুঁকি / বাইরে রাখা
 
-বর্তমানে `shops` RLS policy ইতিমধ্যেই employee-কে শুধু member shops দেখায়। Bug-প্রবণ UX hide করা হবে যাতে employee ভুলেও multi-shop UI না দেখে:
-
-1. **`src/components/app/AppTopbar.tsx`** — "দোকান পরিবর্তন / Switch Shop" menu item hide করা যখন:
-   - `shops.length <= 1`, অথবা
-   - current user shop owner নয় (i.e., `current.owner_id !== user.id`).
-2. **`src/pages/app/Shops.tsx`** — non-owner হলে "Add shop", "Delete", "Transfer" action buttons hide। শুধু accessible shop-গুলো list দেখাবে।
-3. **`src/pages/app/AppLayout.tsx`** (যদি initial redirect single-shop ধরে থাকে) — কোনো পরিবর্তন না; `useShop` already first accessible shop select করে।
-
-`__owner__` permission gating ইতিমধ্যেই sidebar-এ Recycle Bin / Access ইত্যাদি hide করছে — সেটা যেমন আছে তেমনি থাকবে।
-
-## Files Changed
-
-- New migration: `shop_members.is_all_shops` column + `tg_shops_propagate_all_shops_members` trigger function + trigger।
-- `src/components/app/NewUserAccessDialog.tsx` — scope toggle UI + multi-shop insert path।
-- `src/components/app/AppTopbar.tsx` — conditional "Switch Shop" menu item।
-- `src/pages/app/Shops.tsx` — owner-only action buttons।
-
-## Verification
-
-1. Owner A (2 shops: X, Y), employee E-কে শুধু X-এর permission দিলে → E login করলে শুধু X দেখাবে, Switch Shop menu আসবে না।
-2. Owner A, employee F-কে "সব দোকান" দিলে → F login করলে X ও Y দুটোই দেখাবে, Switch Shop চলবে।
-3. Owner A নতুন shop Z create করলে → F-এর X ও Y এর `is_all_shops=true` rows-এর সাথে Z-তেও auto row তৈরি হবে; E-এর কোনো শাখায় Z যোগ হবে না।
-4. Employee Z থেকে settings/transfer/delete option দেখতে পাবে না।
+- Route URL, DB table, query key, permission key — কোনো কিছু rename হবে না (পুরোনো link, bookmark, RLS অক্ষত থাকবে)।
+- পুরোনো logic ফেলা হবে না — শুধু label + cache invalidate + note default যোগ।
