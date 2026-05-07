@@ -225,6 +225,35 @@ function QuickOrderInner() {
     }
     setConverting(true);
     try {
+      // Stock guard: prevent overselling for store-linked rows
+      const productRows = rows.filter((r) => r.productId);
+      if (productRows.length > 0) {
+        const aggregated = new Map<string, number>();
+        for (const r of productRows) {
+          aggregated.set(r.productId as string, (aggregated.get(r.productId as string) ?? 0) + r.qty);
+        }
+        const ids = Array.from(aggregated.keys());
+        const { data: stockRows } = await supabase
+          .from("products")
+          .select("id,name,stock")
+          .in("id", ids);
+        const stockMap = new Map(
+          ((stockRows as { id: string; name: string; stock: number }[]) ?? [])
+            .map((r) => [r.id, r])
+        );
+        for (const [pid, qty] of aggregated) {
+          const row = stockMap.get(pid);
+          const stock = Number(row?.stock ?? 0);
+          if (qty > stock) {
+            toast.error(lang === "bn"
+              ? `${row?.name ?? ""}: মাত্র ${stock}টি স্টকে আছে`
+              : `${row?.name ?? "Item"}: only ${stock} in stock`);
+            setConverting(false);
+            return;
+          }
+        }
+      }
+
       // Optional customer
       let customerId: string | null = null;
       if (custName.trim()) {

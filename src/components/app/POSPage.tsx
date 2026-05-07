@@ -206,6 +206,23 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
       setSerialPick(p);
       return;
     }
+    // Stock guard (sell mode, store products only)
+    if (isSell && p.id) {
+      const inCartQty = cart.find((c) => c.product_id === p.id)?.qty ?? 0;
+      const stock = Number(p.stock) || 0;
+      if (stock <= 0) {
+        toast.error(lang === "bn"
+          ? "স্টক শেষ — আগে স্টক যোগ করুন"
+          : "Out of stock — please update stock first");
+        return;
+      }
+      if (inCartQty + 1 > stock) {
+        toast.error(lang === "bn"
+          ? `মাত্র ${bnNum(stock)}টি স্টকে আছে`
+          : `Only ${stock} in stock`);
+        return;
+      }
+    }
     let alreadyInCart = false;
     setCart((prev) => {
       const i = prev.findIndex((c) => c.product_id === p.id);
@@ -250,6 +267,22 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
         }
         // Recompute bulk pricing on qty changes
         if (Object.prototype.hasOwnProperty.call(patch, "qty")) {
+          // Stock cap (sell mode, store products only)
+          if (isSell && merged.product_id) {
+            const prod = products.find((pp) => pp.id === merged.product_id);
+            const stock = Number(prod?.stock ?? 0);
+            if (stock > 0 && merged.qty > stock) {
+              toast.error(lang === "bn"
+                ? `মাত্র ${bnNum(stock)}টি স্টকে আছে`
+                : `Only ${stock} in stock`);
+              merged.qty = stock;
+            } else if (stock <= 0) {
+              toast.error(lang === "bn"
+                ? "স্টক শেষ"
+                : "Out of stock");
+              merged.qty = 0;
+            }
+          }
           return applyBulkPricing(merged);
         }
         return merged;
@@ -424,12 +457,14 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
                 {filtered.slice(0, 200).map((p) => {
                   const inCart = cart.find((c) => c.product_id === p.id);
                   const price = isSell ? Number(p.sale_price) : Number(p.cost_price);
+                  const outOfStock = isSell && Number(p.stock) <= 0;
                   return (
                     <button
                       key={p.id}
                       type="button"
                       onClick={() => addToCart(p)}
-                      className={`group relative flex flex-col overflow-hidden rounded-lg border bg-background text-left transition-all hover:shadow-md ${inCart ? "ring-2 ring-primary/60" : ""}`}
+                      disabled={outOfStock}
+                      className={`group relative flex flex-col overflow-hidden rounded-lg border bg-background text-left transition-all hover:shadow-md ${inCart ? "ring-2 ring-primary/60" : ""} ${outOfStock ? "opacity-50 cursor-not-allowed" : ""}`}
                     >
                       <div className="relative aspect-square w-full overflow-hidden bg-muted/40">
                         {p.image_url ? (
@@ -504,7 +539,7 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
                       </div>
                     </div>
                     <div className="flex">
-                      <Button size="sm" className="rounded-r-none px-3" onClick={() => addToCart(p)} aria-label={lang === "bn" ? "যোগ" : "Add"}>
+                      <Button size="sm" className="rounded-r-none px-3" onClick={() => addToCart(p)} disabled={isSell && Number(p.stock) <= 0} aria-label={lang === "bn" ? "যোগ" : "Add"}>
                         <Plus className="h-4 w-4" />
                       </Button>
                       <DropdownMenu>
@@ -838,6 +873,41 @@ function PaymentDialog(props: {
     setSaving(true);
 
     try {
+      // Stock guard for sales (race-safe: re-fetch latest stock)
+      if (isSell) {
+        const productIds = Array.from(new Set(
+          props.cart
+            .filter((c) => (c.item_type ?? "product") === "product" && c.product_id)
+            .map((c) => c.product_id as string)
+        ));
+        if (productIds.length > 0) {
+          const { data: stockRows } = await supabase
+            .from("products")
+            .select("id,name,stock")
+            .in("id", productIds);
+          const stockMap = new Map(
+            ((stockRows as { id: string; name: string; stock: number }[]) ?? [])
+              .map((r) => [r.id, r])
+          );
+          const aggregated = new Map<string, number>();
+          for (const c of props.cart) {
+            if ((c.item_type ?? "product") !== "product" || !c.product_id) continue;
+            aggregated.set(c.product_id, (aggregated.get(c.product_id) ?? 0) + c.qty);
+          }
+          for (const [pid, qty] of aggregated) {
+            const row = stockMap.get(pid);
+            const stock = Number(row?.stock ?? 0);
+            if (qty > stock) {
+              toast.error(lang === "bn"
+                ? `${row?.name ?? ""}: মাত্র ${stock}টি স্টকে আছে`
+                : `${row?.name ?? "Item"}: only ${stock} in stock`);
+              setSaving(false);
+              return;
+            }
+          }
+        }
+      }
+
       const paidNum = isCash ? props.grandTotal : (Number(paid) || 0);
       const dueNum = Math.max(0, props.grandTotal - paidNum);
       const createdAt = new Date(date).toISOString();
