@@ -870,6 +870,8 @@ function PaymentDialog(props: {
   const save = async () => {
     if (!current || !user) return;
     if (props.cart.length === 0) { toast.error(lang === "bn" ? "কার্ট খালি" : "Cart is empty"); return; }
+    if (!partyName.trim()) { toast.error(lang === "bn" ? "নাম দিতে হবে" : "Name is required"); return; }
+    if (!partyPhone.trim()) { toast.error(lang === "bn" ? "মোবাইল নাম্বার দিতে হবে" : "Mobile number is required"); return; }
     setSaving(true);
 
     try {
