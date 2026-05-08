@@ -484,7 +484,7 @@ function ContactsPage() {
   );
 }
 
-function EmployeeBiodataPanel({ row, lang }: { row: any; lang: "bn" | "en" }) {
+function EmployeeBiodataPanel({ row, lang }: { row: any; lang: string }) {
   if (!row) {
     return (
       <div className="p-4 text-sm text-muted-foreground">
