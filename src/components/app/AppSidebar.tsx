@@ -64,7 +64,7 @@ export const SECTIONS: SidebarSection[] = [
     bn: "গ্রাহক ও যোগাযোগ",
     en: "Customers",
     items: [
-      { to: "/app/contacts", bn: "যোগাযোগ", en: "Contacts", icon: icons.contact, perm: "contacts" },
+      { to: "/app/contacts", bn: "কাস্টমার ও স্টাফ", en: "Customer & Staff", icon: icons.contact, perm: "contacts" },
       { to: "/app/customer-wishlist", bn: "গ্রাহক ফর্দ", en: "Customer Fordo", icon: icons.contact, perm: "contacts" },
       { to: "/app/fordo-history", bn: "ফর্দ ইতিহাস", en: "Fordo History", icon: icons.contact, perm: "contacts" },
       { to: "/app/marketing", bn: "মার্কেটিং", en: "Marketing", icon: icons.marketing, perm: "sms" },
