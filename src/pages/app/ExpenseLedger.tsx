@@ -1,5 +1,5 @@
 import { useNavigate } from "@/lib/router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Coins, ArrowLeft, MoreVertical, Pencil, Trash2, Home, Truck, Zap, User, MoreHorizontal } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
