@@ -1,7 +1,7 @@
 import { useNavigate } from "@/lib/router";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, FileText, ArrowLeft, MoreVertical, Printer, Eye, Trash2, Download, RefreshCw, Search, Calendar } from "lucide-react";
+import { Plus, FileText, ArrowLeft, MoreVertical, Printer, Eye, Trash2, Download, RefreshCw, Search, Calendar, Pencil } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useShop } from "@/lib/shop";
 import { useI18n, fmtMoney, bnNum } from "@/lib/i18n";
@@ -15,6 +15,7 @@ import { usePagination } from "@/hooks/use-pagination";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { InvoiceDialog, type InvoiceData } from "@/components/app/InvoiceDialog";
+import { InvoiceEditDialog, type InvoiceEditTarget } from "@/components/app/InvoiceEditDialog";
 import { toast } from "sonner";
 import { usePermissions } from "@/lib/permissions-hook";
 import { printTableReport } from "@/lib/print-report";
@@ -105,6 +106,7 @@ function PurchaseLedgerPage() {
   const refresh = async () => { await qc.invalidateQueries({ queryKey: ["purchases"] }); await refetch(); };
 
   const [invoice, setInvoice] = useState<InvoiceData | null>(null);
+  const [editTarget, setEditTarget] = useState<InvoiceEditTarget | null>(null);
 
   const openInvoice = async (p: Purchase) => {
     const { data: items } = await supabase
@@ -267,7 +269,11 @@ function PurchaseLedgerPage() {
                   const sup = supMap[p.supplier_id ?? ""];
                   const isPaid = Number(p.due) === 0;
                   return (
-                    <TableRow key={p.id}>
+                    <TableRow
+                      key={p.id}
+                      className="cursor-pointer hover:bg-muted/40"
+                      onClick={() => void openInvoice(p)}
+                    >
                       <TableCell>
                         <div className="font-medium">{sup?.name ?? "—"}</div>
                         <div className="text-xs text-muted-foreground">{sup?.phone ?? "---"}</div>
@@ -282,7 +288,7 @@ function PurchaseLedgerPage() {
                           {isPaid ? (lang === "bn" ? "নগদ টাকা" : "Cash") : (lang === "bn" ? "বাকি" : "Due")}
                         </span>
                       </TableCell>
-                      <TableCell className="text-right print:hidden">
+                      <TableCell className="text-right print:hidden" onClick={(e) => e.stopPropagation()}>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -294,6 +300,12 @@ function PurchaseLedgerPage() {
                               <Eye className="mr-2 h-4 w-4" />
                               {lang === "bn" ? "ইনভয়েস দেখুন/প্রিন্ট" : "View / Print invoice"}
                             </DropdownMenuItem>
+                            {canDelete && (
+                              <DropdownMenuItem onClick={() => setEditTarget({ kind: "purchase", id: p.id, shopId: current?.id ?? "" })}>
+                                <Pencil className="mr-2 h-4 w-4" />
+                                {lang === "bn" ? "ইনভয়েস এডিট" : "Edit invoice"}
+                              </DropdownMenuItem>
+                            )}
                             <DropdownMenuItem onClick={() => void openInvoice(p)}>
                               <Printer className="mr-2 h-4 w-4" />
                               {lang === "bn" ? "প্রিন্ট" : "Print"}
@@ -327,6 +339,11 @@ function PurchaseLedgerPage() {
       </div>
 
       <InvoiceDialog open={!!invoice} onClose={() => setInvoice(null)} data={invoice} />
+      <InvoiceEditDialog
+        target={editTarget}
+        onOpenChange={(o) => !o && setEditTarget(null)}
+        onSaved={() => { setEditTarget(null); void refresh(); }}
+      />
     </div>
   );
 }
