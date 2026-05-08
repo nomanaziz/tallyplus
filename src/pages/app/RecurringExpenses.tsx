@@ -1,4 +1,4 @@
-import { useNavigate, Link } from "@/lib/router";
+import { useNavigate } from "@/lib/router";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Plus, Pencil, Pause, Play, Trash2, Wallet, AlertCircle } from "lucide-react";
@@ -540,4 +540,3 @@ function PayDueDialog({ target, onOpenChange, onSaved }: { target: DueRow | null
 }
 
 export default RecurringExpensesPage;
-export { Link };
