@@ -320,9 +320,14 @@ function RecExpDialog({ open, onOpenChange, editing, onSaved }: { open: boolean;
     if (!current || !user) return;
     if (!name.trim()) { toast.error(lang === "bn" ? "নাম দিন" : "Enter a name"); return; }
     const d = Math.max(1, Math.min(28, Number(day || 1)));
-    const payload: Record<string, unknown> = {
+    const payload = {
       shop_id: current.id, created_by: user.id,
       name: name.trim(), category, kind, day_of_month: d, note: note.trim() || null,
+      amount: 0,
+      loan_principal: null as number | null,
+      loan_annual_interest_rate: null as number | null,
+      loan_term_months: null as number | null,
+      loan_mode: null as LoanMode | null,
     };
     if (kind === "loan") {
       payload.loan_principal = Number(principal || 0);
@@ -332,8 +337,6 @@ function RecExpDialog({ open, onOpenChange, editing, onSaved }: { open: boolean;
       payload.amount = previewMonthly;
     } else {
       payload.amount = Number(amount || 0);
-      payload.loan_principal = null; payload.loan_annual_interest_rate = null;
-      payload.loan_term_months = null; payload.loan_mode = null;
     }
     setBusy(true);
     const { error } = editing
