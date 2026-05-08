@@ -8,25 +8,38 @@ import { BrandWordmark } from "@/components/brand/BrandWordmark";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { usePermissions } from "@/lib/permissions-hook";
 import { usePwaInstall } from "@/hooks/use-pwa-install";
-import { Download, ChevronsLeft, ChevronsRight, ChevronDown } from "lucide-react";
+import {
+  Download,
+  ChevronsLeft,
+  ChevronsRight,
+  ChevronDown,
+  ArrowLeftRight,
+  BookOpen,
+  Package,
+  Users,
+  BarChart3,
+  MoreHorizontal,
+} from "lucide-react";
 import { toast } from "sonner";
 import { useEffect, useState } from "react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 export type SidebarItem = { to: string; bn: string; en: string; icon: LucideIcon; highlight?: boolean; perm?: string };
-export type SidebarSection = { id: string; bn: string; en: string; items: SidebarItem[] };
+export type SidebarSection = { id: string; bn: string; en: string; icon: LucideIcon; items: SidebarItem[] };
+
+export const DASHBOARD_ITEM: SidebarItem = {
+  to: "/app/dashboard",
+  bn: "ড্যাশবোর্ড",
+  en: "Dashboard",
+  icon: icons.home,
+};
 
 export const SECTIONS: SidebarSection[] = [
-  {
-    id: "main",
-    bn: "মূল",
-    en: "Main",
-    items: [{ to: "/app/dashboard", bn: "ড্যাশবোর্ড", en: "Dashboard", icon: icons.home }],
-  },
   {
     id: "transactions",
     bn: "লেনদেন",
     en: "Transactions",
+    icon: ArrowLeftRight,
     items: [
       { to: "/app/purchase", bn: "ক্রয়", en: "Purchase", icon: icons.purchase, perm: "purchase" },
       { to: "/app/sell", bn: "বিক্রয়", en: "Sell", icon: icons.sell, perm: "sell" },
@@ -38,6 +51,7 @@ export const SECTIONS: SidebarSection[] = [
     id: "ledgers",
     bn: "হিসাবের বই",
     en: "Books",
+    icon: BookOpen,
     items: [
       { to: "/app/purchase-ledger", bn: "ক্রয়ের বই", en: "Purchase Book", icon: icons.purchaseList, perm: "purchase" },
       { to: "/app/sales-ledger", bn: "বিক্রয়ের বই", en: "Sales Book", icon: icons.salesList, perm: "sell" },
@@ -51,6 +65,7 @@ export const SECTIONS: SidebarSection[] = [
     id: "inventory",
     bn: "পণ্য ও স্টক",
     en: "Inventory",
+    icon: Package,
     items: [
       { to: "/app/products", bn: "প্রোডাক্ট ও স্টক", en: "Products & Stock", icon: icons.productList, perm: "products" },
       { to: "/app/services", bn: "সার্ভিস", en: "Services", icon: icons.training, perm: "services" },
@@ -63,6 +78,7 @@ export const SECTIONS: SidebarSection[] = [
     id: "customers",
     bn: "গ্রাহক ও যোগাযোগ",
     en: "Customers",
+    icon: Users,
     items: [
       { to: "/app/contacts", bn: "যোগাযোগ", en: "Contacts", icon: icons.contact, perm: "contacts" },
       { to: "/app/customer-wishlist", bn: "গ্রাহক ফর্দ", en: "Customer Fordo", icon: icons.contact, perm: "contacts" },
@@ -75,6 +91,7 @@ export const SECTIONS: SidebarSection[] = [
     id: "reports",
     bn: "রিপোর্ট ও সেটিংস",
     en: "Reports & Settings",
+    icon: BarChart3,
     items: [
       { to: "/app/reports", bn: "ব্যবসার রিপোর্ট", en: "Business Report", icon: icons.businessReport, perm: "report" },
       { to: "/app/owner-report", bn: "মালিকের রিপোর্ট", en: "Owner Report", icon: icons.businessReport, perm: "report" },
@@ -88,6 +105,7 @@ export const SECTIONS: SidebarSection[] = [
     id: "more",
     bn: "অন্যান্য",
     en: "Others",
+    icon: MoreHorizontal,
     items: [
       { to: "/app/training", bn: "অ্যাপ ট্রেনিং", en: "App Training", icon: icons.training },
       { to: "/app/affiliate", bn: "গ্রোথ পার্টনার", en: "Growth Partner", icon: icons.contact },
@@ -111,16 +129,16 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
   }, [collapsed]);
 
   // Accordion: only one section open at a time. The section containing the
-  // active route is auto-opened on navigation.
+  // active route is auto-opened on navigation. Defaults to "transactions".
   const activeSectionId = (() => {
     for (const s of SECTIONS) {
       if (s.items.some((it) => loc.pathname === it.to || loc.pathname.startsWith(it.to + "/"))) {
         return s.id;
       }
     }
-    return SECTIONS[0]?.id ?? null;
+    return null;
   })();
-  const [openId, setOpenId] = useState<string | null>(activeSectionId);
+  const [openId, setOpenId] = useState<string | null>(activeSectionId ?? "transactions");
   useEffect(() => {
     if (activeSectionId) setOpenId(activeSectionId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -133,25 +151,29 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
     return canGroup(it.perm);
   };
 
-  const renderItem = (it: SidebarItem) => {
+  const renderItem = (it: SidebarItem, variant: "top" | "child" = "top") => {
     const active = loc.pathname === it.to || loc.pathname.startsWith(it.to + "/");
+    const isChild = variant === "child" && !collapsed;
     const node = (
       <Link
         to={it.to as never}
         onClick={onNavigate}
         className={cn(
-          "group flex items-center gap-2.5 rounded-md py-1.5 text-[13px] leading-tight transition-colors",
-          collapsed ? "justify-center px-1" : "px-2",
+          "group flex items-center rounded-md transition-colors",
+          isChild ? "gap-2 py-1 px-1.5 text-[12px]" : "gap-2.5 py-1.5 text-[13px]",
+          collapsed ? "justify-center px-1" : !isChild && "px-2",
+          "leading-tight",
           it.highlight && !active && "bg-primary/15 font-semibold hover:bg-primary/25",
           active && "bg-primary/25 font-semibold text-foreground",
           !active && !it.highlight && "hover:bg-sidebar-accent",
         )}
       >
         <span className={cn(
-          "flex h-7 w-7 flex-none items-center justify-center rounded-md bg-primary text-primary-foreground shadow-sm",
+          "flex flex-none items-center justify-center rounded-md bg-primary text-primary-foreground shadow-sm",
+          isChild ? "h-5 w-5" : "h-7 w-7",
           active && "ring-2 ring-primary/40",
         )}>
-          <it.icon className="h-4 w-4 icon-inherit" />
+          <it.icon className={cn("icon-inherit", isChild ? "h-3.5 w-3.5" : "h-4 w-4")} />
         </span>
         {!collapsed && <span className="truncate">{lang === "bn" ? it.bn : it.en}</span>}
       </Link>
@@ -198,82 +220,103 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
         )}
         <ScrollArea className="flex-1">
           <nav className={cn("flex flex-col gap-0.5 py-2", collapsed ? "px-1" : "px-1.5")}>
+            {/* Standalone Dashboard row */}
+            {renderItem(DASHBOARD_ITEM, "top")}
+
             {SECTIONS.map((section) => {
               const items = section.items.filter(isVisible);
               if (items.length === 0) return null;
-              const isOpen = collapsed ? true : openId === section.id;
+              const isOpen = collapsed ? false : openId === section.id;
               const showInstall = section.id === "more" && !pwa.installed;
-              return (
-                <div key={section.id} className="mt-1 flex flex-col gap-0.5 border-t border-border/60 pt-1 first:mt-1 first:border-t-0 first:pt-0">
-                  {!collapsed && (
-                    <button
-                      type="button"
-                      onClick={() => setOpenId((cur) => (cur === section.id ? null : section.id))}
-                      className="flex w-full items-center justify-between rounded-md px-2 py-1.5 text-left text-[11px] font-semibold uppercase tracking-wider text-muted-foreground hover:bg-sidebar-accent"
-                      aria-expanded={isOpen}
-                    >
-                      <span>{lang === "bn" ? section.bn : section.en}</span>
-                      <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", isOpen ? "rotate-0" : "-rotate-90")} />
-                    </button>
-                  )}
-                  {isOpen && items.map(renderItem)}
-                  {isOpen && showInstall && (
-                    collapsed ? (
-                      <Tooltip delayDuration={150}>
-                        <TooltipTrigger asChild>
-                          <button
-                            type="button"
-                            onClick={async () => {
-                              if (pwa.canInstall) {
-                                await pwa.promptInstall();
-                              } else {
-                                toast.info(lang === "bn" ? "ব্রাউজার মেনু থেকে 'Install app'" : "Use browser → Install app");
-                              }
-                            }}
-                            className="flex justify-center rounded-md px-1 py-1.5 text-emerald-700 hover:bg-sidebar-accent dark:text-emerald-400"
-                          >
-                            <span className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-primary-foreground shadow-sm">
-                              <Download className="h-4 w-4 icon-inherit" />
-                            </span>
-                          </button>
-                        </TooltipTrigger>
-                        <TooltipContent side="right" className="text-xs">
-                          {lang === "bn" ? "অ্যাপ ইনস্টল করুন" : "Install App"}
-                        </TooltipContent>
-                      </Tooltip>
-                    ) : (
+              const SectionIcon = section.icon;
+              const sectionLabel = lang === "bn" ? section.bn : section.en;
+              const containsActive = items.some(
+                (it) => loc.pathname === it.to || loc.pathname.startsWith(it.to + "/"),
+              );
+
+              if (collapsed) {
+                // Collapsed: show only the section's main icon as a button.
+                // Clicking expands the sidebar and opens the section.
+                return (
+                  <Tooltip key={section.id} delayDuration={150}>
+                    <TooltipTrigger asChild>
                       <button
                         type="button"
-                        onClick={async () => {
-                          if (pwa.canInstall) {
-                            const outcome = await pwa.promptInstall();
-                            if (outcome === "accepted") {
-                              toast.success(lang === "bn" ? "অ্যাপ ইনস্টল হচ্ছে…" : "Installing app…");
-                            }
-                          } else if (pwa.isIos) {
-                            toast.info(
-                              lang === "bn"
-                                ? "Safari Share → 'Add to Home Screen' সিলেক্ট করুন"
-                                : "Tap Safari Share → 'Add to Home Screen'",
-                              { duration: 6000 },
-                            );
-                          } else {
-                            toast.info(
-                              lang === "bn"
-                                ? "ব্রাউজার মেনু থেকে 'Install app' সিলেক্ট করুন"
-                                : "Use browser menu → 'Install app'",
-                              { duration: 6000 },
-                            );
-                          }
+                        onClick={() => {
+                          setCollapsed(false);
+                          setOpenId(section.id);
                         }}
-                        className="group flex items-center gap-2.5 rounded-md px-2 py-1.5 text-[13px] leading-tight text-emerald-700 transition-colors hover:bg-sidebar-accent dark:text-emerald-400"
+                        className={cn(
+                          "mt-1 flex justify-center rounded-md py-1.5 transition-colors hover:bg-sidebar-accent",
+                          containsActive && "bg-primary/10",
+                        )}
                       >
-                        <span className="flex h-7 w-7 flex-none items-center justify-center rounded-md bg-primary text-primary-foreground shadow-sm">
-                          <Download className="h-4 w-4 icon-inherit" />
+                        <span className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-primary-foreground shadow-sm">
+                          <SectionIcon className="h-4 w-4 icon-inherit" />
                         </span>
-                        <span className="truncate">{lang === "bn" ? "অ্যাপ ইনস্টল করুন" : "Install App"}</span>
                       </button>
-                    )
+                    </TooltipTrigger>
+                    <TooltipContent side="right" className="text-xs">
+                      {sectionLabel}
+                    </TooltipContent>
+                  </Tooltip>
+                );
+              }
+
+              return (
+                <div key={section.id} className="mt-1 flex flex-col">
+                  <button
+                    type="button"
+                    onClick={() => setOpenId((cur) => (cur === section.id ? null : section.id))}
+                    className={cn(
+                      "group flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-left text-[13px] leading-tight transition-colors hover:bg-sidebar-accent",
+                      (isOpen || containsActive) && "bg-sidebar-accent/60",
+                    )}
+                    aria-expanded={isOpen}
+                  >
+                    <span className="flex h-7 w-7 flex-none items-center justify-center rounded-md bg-primary text-primary-foreground shadow-sm">
+                      <SectionIcon className="h-4 w-4 icon-inherit" />
+                    </span>
+                    <span className="flex-1 truncate font-semibold">{sectionLabel}</span>
+                    <ChevronDown className={cn("h-3.5 w-3.5 text-muted-foreground transition-transform", isOpen ? "rotate-0" : "-rotate-90")} />
+                  </button>
+                  {isOpen && (
+                    <div className="ml-4 mt-1 flex flex-col gap-0.5 border-l border-border pl-2">
+                      {items.map((it) => renderItem(it, "child"))}
+                      {showInstall && (
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            if (pwa.canInstall) {
+                              const outcome = await pwa.promptInstall();
+                              if (outcome === "accepted") {
+                                toast.success(lang === "bn" ? "অ্যাপ ইনস্টল হচ্ছে…" : "Installing app…");
+                              }
+                            } else if (pwa.isIos) {
+                              toast.info(
+                                lang === "bn"
+                                  ? "Safari Share → 'Add to Home Screen' সিলেক্ট করুন"
+                                  : "Tap Safari Share → 'Add to Home Screen'",
+                                { duration: 6000 },
+                              );
+                            } else {
+                              toast.info(
+                                lang === "bn"
+                                  ? "ব্রাউজার মেনু থেকে 'Install app' সিলেক্ট করুন"
+                                  : "Use browser menu → 'Install app'",
+                                { duration: 6000 },
+                              );
+                            }
+                          }}
+                          className="group flex items-center gap-2 rounded-md px-1.5 py-1 text-[12px] leading-tight text-emerald-700 transition-colors hover:bg-sidebar-accent dark:text-emerald-400"
+                        >
+                          <span className="flex h-5 w-5 flex-none items-center justify-center rounded-md bg-primary text-primary-foreground shadow-sm">
+                            <Download className="h-3.5 w-3.5 icon-inherit" />
+                          </span>
+                          <span className="truncate">{lang === "bn" ? "অ্যাপ ইনস্টল করুন" : "Install App"}</span>
+                        </button>
+                      )}
+                    </div>
                   )}
                 </div>
               );
