@@ -48,6 +48,7 @@ export default function Subscribe() {
   const [pickedMethodId, setPickedMethodId] = useState<string | null>(null);
   const [currentCode, setCurrentCode] = useState<string>("free");
   const [currentExpires, setCurrentExpires] = useState<string | null>(null);
+  const [hasUsedTrial, setHasUsedTrial] = useState(false);
   const [selected, setSelected] = useState<Plan | null>(null);
   const [payMode, setPayMode] = useState<"choose" | "online" | "manual">("choose");
   const [txnId, setTxnId] = useState("");
@@ -56,7 +57,7 @@ export default function Subscribe() {
 
   useEffect(() => {
     void (async () => {
-      const [{ data: pl }, { data: gw }, { data: pm }, sub] = await Promise.all([
+      const [{ data: pl }, { data: gw }, { data: pm }, sub, trialUsed] = await Promise.all([
         supabase.from("subscription_plans")
           .select("id,code,name_bn,name_en,price_bdt,old_price_bdt,duration_days,max_shops,is_lifetime,perks,description_bn,description_en,discount_pct")
           .eq("is_active", true).order("price_bdt"),
@@ -69,8 +70,17 @@ export default function Subscribe() {
           .gt("expires_at", new Date().toISOString())
           .order("expires_at", { ascending: false }).limit(1).maybeSingle()
           : Promise.resolve({ data: null } as any),
+        user ? supabase
+          .from("subscriptions")
+          .select("id, subscription_plans!inner(code)")
+          .eq("user_id", user.id)
+          .eq("subscription_plans.code", "trial")
+          .limit(1)
+          .maybeSingle()
+          : Promise.resolve({ data: null } as any),
       ]);
-      setPlans((pl as Plan[]) ?? []);
+      const allPlans = (pl as Plan[]) ?? [];
+      setPlans(allPlans.filter((p) => !p.code.startsWith("consumer_history_")));
       setGatewayEnabled(!!gw?.is_enabled);
       const list = (pm as PaymentMethodRow[]) ?? [];
       setMethods(list);
@@ -79,6 +89,7 @@ export default function Subscribe() {
       const code = (subRow as any)?.subscription_plans?.code ?? "free";
       setCurrentCode(code);
       setCurrentExpires((subRow as any)?.expires_at ?? null);
+      setHasUsedTrial(!!(trialUsed as any)?.data || !!(trialUsed as any)?.id);
       setLoading(false);
     })();
   }, [user?.id]);
@@ -210,7 +221,7 @@ export default function Subscribe() {
           </Button>
         </div>
 
-        {plans.map((p) => {
+        {plans.filter((p) => p.code !== "trial" || !hasUsedTrial).map((p) => {
           const fp = finalPrice(p);
           const isLifetime = p.is_lifetime;
           const isCurrent = currentCode === p.code;
