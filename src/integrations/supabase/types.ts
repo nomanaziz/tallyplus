@@ -3517,6 +3517,128 @@ export type Database = {
           },
         ]
       }
+      recurring_expense_dues: {
+        Row: {
+          bill_amount: number
+          created_at: string
+          due_month: string
+          expense_id: string | null
+          id: string
+          note: string | null
+          paid_at: string | null
+          paid_via: string | null
+          recurring_expense_id: string
+          shop_id: string
+          status: Database["public"]["Enums"]["recurring_expense_due_status"]
+          updated_at: string
+        }
+        Insert: {
+          bill_amount?: number
+          created_at?: string
+          due_month: string
+          expense_id?: string | null
+          id?: string
+          note?: string | null
+          paid_at?: string | null
+          paid_via?: string | null
+          recurring_expense_id: string
+          shop_id: string
+          status?: Database["public"]["Enums"]["recurring_expense_due_status"]
+          updated_at?: string
+        }
+        Update: {
+          bill_amount?: number
+          created_at?: string
+          due_month?: string
+          expense_id?: string | null
+          id?: string
+          note?: string | null
+          paid_at?: string | null
+          paid_via?: string | null
+          recurring_expense_id?: string
+          shop_id?: string
+          status?: Database["public"]["Enums"]["recurring_expense_due_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recurring_expense_dues_recurring_expense_id_fkey"
+            columns: ["recurring_expense_id"]
+            isOneToOne: false
+            referencedRelation: "recurring_expenses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recurring_expenses: {
+        Row: {
+          amount: number
+          category: string
+          created_at: string
+          created_by: string | null
+          day_of_month: number
+          deleted_at: string | null
+          end_month: string | null
+          id: string
+          is_active: boolean
+          kind: Database["public"]["Enums"]["recurring_expense_kind"]
+          loan_annual_interest_rate: number | null
+          loan_mode: Database["public"]["Enums"]["recurring_loan_mode"] | null
+          loan_principal: number | null
+          loan_start_date: string | null
+          loan_term_months: number | null
+          name: string
+          note: string | null
+          shop_id: string
+          start_month: string
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          day_of_month?: number
+          deleted_at?: string | null
+          end_month?: string | null
+          id?: string
+          is_active?: boolean
+          kind?: Database["public"]["Enums"]["recurring_expense_kind"]
+          loan_annual_interest_rate?: number | null
+          loan_mode?: Database["public"]["Enums"]["recurring_loan_mode"] | null
+          loan_principal?: number | null
+          loan_start_date?: string | null
+          loan_term_months?: number | null
+          name: string
+          note?: string | null
+          shop_id: string
+          start_month?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          day_of_month?: number
+          deleted_at?: string | null
+          end_month?: string | null
+          id?: string
+          is_active?: boolean
+          kind?: Database["public"]["Enums"]["recurring_expense_kind"]
+          loan_annual_interest_rate?: number | null
+          loan_mode?: Database["public"]["Enums"]["recurring_loan_mode"] | null
+          loan_principal?: number | null
+          loan_start_date?: string | null
+          loan_term_months?: number | null
+          name?: string
+          note?: string | null
+          shop_id?: string
+          start_month?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       sale_adjustments: {
         Row: {
           amount: number
@@ -5857,6 +5979,17 @@ export type Database = {
         Args: { _aff_id: string }
         Returns: undefined
       }
+      calc_recurring_monthly_amount: {
+        Args: {
+          _amount: number
+          _annual_rate: number
+          _kind: Database["public"]["Enums"]["recurring_expense_kind"]
+          _mode: Database["public"]["Enums"]["recurring_loan_mode"]
+          _principal: number
+          _term_months: number
+        }
+        Returns: number
+      }
       check_usage_limit: {
         Args: { _feature: string; _shop_id: string }
         Returns: Json
@@ -5902,6 +6035,10 @@ export type Database = {
         Returns: undefined
       }
       expire_old_subscriptions: { Args: never; Returns: number }
+      generate_recurring_dues_for_shop: {
+        Args: { _shop_id: string }
+        Returns: number
+      }
       get_shared_fordo: { Args: { _token: string }; Returns: Json }
       grant_post_transfer_trial: {
         Args: { _shop_id: string; _user_id: string }
@@ -6070,6 +6207,9 @@ export type Database = {
         | "card"
         | "due"
         | "other"
+      recurring_expense_due_status: "pending" | "paid" | "skipped"
+      recurring_expense_kind: "fixed" | "variable" | "loan"
+      recurring_loan_mode: "interest_only" | "emi"
       sale_status: "completed" | "draft" | "returned" | "cancelled"
       serial_status: "in_stock" | "sold" | "returned" | "damaged"
       subscription_request_status: "pending" | "approved" | "rejected"
@@ -6213,6 +6353,9 @@ export const Constants = {
         "due",
         "other",
       ],
+      recurring_expense_due_status: ["pending", "paid", "skipped"],
+      recurring_expense_kind: ["fixed", "variable", "loan"],
+      recurring_loan_mode: ["interest_only", "emi"],
       sale_status: ["completed", "draft", "returned", "cancelled"],
       serial_status: ["in_stock", "sold", "returned", "damaged"],
       subscription_request_status: ["pending", "approved", "rejected"],
