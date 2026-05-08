@@ -110,6 +110,22 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
     localStorage.setItem("app-sidebar-collapsed", collapsed ? "1" : "0");
   }, [collapsed]);
 
+  // Accordion: only one section open at a time. The section containing the
+  // active route is auto-opened on navigation.
+  const activeSectionId = (() => {
+    for (const s of SECTIONS) {
+      if (s.items.some((it) => loc.pathname === it.to || loc.pathname.startsWith(it.to + "/"))) {
+        return s.id;
+      }
+    }
+    return SECTIONS[0]?.id ?? null;
+  })();
+  const [openId, setOpenId] = useState<string | null>(activeSectionId);
+  useEffect(() => {
+    if (activeSectionId) setOpenId(activeSectionId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loc.pathname]);
+
   const isVisible = (it: SidebarItem) => {
     if (!it.perm) return true;
     if (loading) return true;
