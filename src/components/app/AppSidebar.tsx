@@ -201,17 +201,23 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
             {SECTIONS.map((section) => {
               const items = section.items.filter(isVisible);
               if (items.length === 0) return null;
+              const isOpen = collapsed ? true : openId === section.id;
+              const showInstall = section.id === "more" && !pwa.installed;
               return (
-                <div key={section.id} className="mt-2 flex flex-col gap-0.5 border-t border-border/60 pt-2 first:mt-1 first:border-t-0 first:pt-0">
+                <div key={section.id} className="mt-1 flex flex-col gap-0.5 border-t border-border/60 pt-1 first:mt-1 first:border-t-0 first:pt-0">
                   {!collapsed && (
-                    <div className="px-2 pb-0.5">
-                      <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                        {lang === "bn" ? section.bn : section.en}
-                      </span>
-                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setOpenId((cur) => (cur === section.id ? null : section.id))}
+                      className="flex w-full items-center justify-between rounded-md px-2 py-1.5 text-left text-[11px] font-semibold uppercase tracking-wider text-muted-foreground hover:bg-sidebar-accent"
+                      aria-expanded={isOpen}
+                    >
+                      <span>{lang === "bn" ? section.bn : section.en}</span>
+                      <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", isOpen ? "rotate-0" : "-rotate-90")} />
+                    </button>
                   )}
-                  {items.map(renderItem)}
-                  {section.id === "more" && !pwa.installed && (
+                  {isOpen && items.map(renderItem)}
+                  {isOpen && showInstall && (
                     collapsed ? (
                       <Tooltip delayDuration={150}>
                         <TooltipTrigger asChild>
