@@ -13,6 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ContactActionsBar } from "@/components/app/ContactActionsBar";
 import { NewUserAccessDialog } from "@/components/app/NewUserAccessDialog";
+import { EmployeeEditDialog, type EmployeeEditData } from "@/components/app/EmployeeEditDialog";
 import { DueReminderDialog } from "@/components/app/DueReminderDialog";
 import { PhonebookPickerDialog, type PhonebookContact } from "@/components/app/PhonebookPickerDialog";
 import { toast } from "sonner";
@@ -60,6 +61,7 @@ function ContactsPage() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Contact | null>(null);
   const [openEmployee, setOpenEmployee] = useState(false);
+  const [editingEmployee, setEditingEmployee] = useState<EmployeeEditData | null>(null);
   const [reminderOpen, setReminderOpen] = useState(false);
   const [bulkPickerOpen, setBulkPickerOpen] = useState(false);
   const [bulkBusy, setBulkBusy] = useState(false);
@@ -207,7 +209,7 @@ function ContactsPage() {
   return (
     <div className="container px-4 py-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-extrabold">{lang === "bn" ? "যোগাযোগ" : "Contacts"}</h1>
+        <h1 className="text-2xl font-extrabold">{lang === "bn" ? "কাস্টমার ও স্টাফ" : "Customer & Staff"}</h1>
         <div className="flex items-center gap-2">
           {tab !== "employees" && (
             <Button
@@ -338,17 +340,34 @@ function ContactsPage() {
                     phone={selected.phone}
                     due={Number(selected.due_balance) || 0}
                   />
-                  {tab !== "employees" && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="gap-1.5"
-                      onClick={() => { setEditing(selected); setOpen(true); }}
-                    >
-                      <Pencil className="h-4 w-4" />
-                      {lang === "bn" ? "এডিট করুন" : "Edit"}
-                    </Button>
-                  )}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5"
+                    onClick={() => {
+                      if (tab === "employees") {
+                        const row = membersRaw?.rows.find((r: any) => r.id === selected.id) as any;
+                        if (!row) return;
+                        setEditingEmployee({
+                          id: row.id,
+                          full_name: row.full_name ?? selected.name,
+                          address: row.address ?? null,
+                          salary: row.salary ?? null,
+                          nid: row.nid ?? null,
+                          permanent_address: row.permanent_address ?? null,
+                          father_name: row.father_name ?? null,
+                          mother_name: row.mother_name ?? null,
+                          emergency_phone: row.emergency_phone ?? null,
+                        });
+                      } else {
+                        setEditing(selected);
+                        setOpen(true);
+                      }
+                    }}
+                  >
+                    <Pencil className="h-4 w-4" />
+                    {lang === "bn" ? "এডিট করুন" : "Edit"}
+                  </Button>
                   {tab === "customers" && Number(selected.due_balance) > 0 && selected.phone && (
                     <Button
                       size="sm"
@@ -417,11 +436,10 @@ function ContactsPage() {
                   )}
                 </div>
               ) : (
-                <div className="p-4 text-sm text-muted-foreground">
-                  {lang === "bn"
-                    ? "এই কর্মচারীর এক্সেস এডিট করতে এক্সেস ম্যানেজমেন্ট পেজে যান।"
-                    : "Manage this employee's access from the Access Management page."}
-                </div>
+                <EmployeeBiodataPanel
+                  row={membersRaw?.rows.find((r: any) => r.id === selected.id) as any}
+                  lang={lang}
+                />
               )}
             </>
           )}
@@ -455,6 +473,49 @@ function ContactsPage() {
         onOpenChange={setBulkPickerOpen}
         onPickMany={(cs) => { void handleBulkImport(cs); }}
       />
+
+      <EmployeeEditDialog
+        open={!!editingEmployee}
+        onOpenChange={(v) => !v && setEditingEmployee(null)}
+        employee={editingEmployee}
+        onSaved={refresh}
+      />
+    </div>
+  );
+}
+
+function EmployeeBiodataPanel({ row, lang }: { row: any; lang: string }) {
+  if (!row) {
+    return (
+      <div className="p-4 text-sm text-muted-foreground">
+        {lang === "bn" ? "তথ্য লোড হচ্ছে…" : "Loading…"}
+      </div>
+    );
+  }
+  const items: { label_bn: string; label_en: string; value: string | number | null | undefined }[] = [
+    { label_bn: "মাসিক বেতন", label_en: "Monthly salary", value: row.salary != null ? `৳ ${row.salary}` : null },
+    { label_bn: "NID নম্বর", label_en: "NID number", value: row.nid },
+    { label_bn: "বর্তমান ঠিকানা", label_en: "Current address", value: row.address },
+    { label_bn: "স্থায়ী ঠিকানা", label_en: "Permanent address", value: row.permanent_address },
+    { label_bn: "পিতার নাম", label_en: "Father's name", value: row.father_name },
+    { label_bn: "মাতার নাম", label_en: "Mother's name", value: row.mother_name },
+    { label_bn: "জরুরি যোগাযোগ", label_en: "Emergency contact", value: row.emergency_phone },
+  ];
+  return (
+    <div className="p-4">
+      <div className="grid gap-3 sm:grid-cols-2">
+        {items.map((it, i) => (
+          <div key={i} className="rounded-lg border bg-background p-3">
+            <div className="text-xs text-muted-foreground">{lang === "bn" ? it.label_bn : it.label_en}</div>
+            <div className="mt-0.5 text-sm font-medium">{it.value || "—"}</div>
+          </div>
+        ))}
+      </div>
+      <div className="mt-4 rounded-lg border border-dashed bg-muted/30 p-3 text-xs text-muted-foreground">
+        {lang === "bn"
+          ? "এক্সেস/পারমিশন পরিবর্তন করতে এক্সেস ম্যানেজমেন্ট পেজে যান।"
+          : "Manage permissions from the Access Management page."}
+      </div>
     </div>
   );
 }

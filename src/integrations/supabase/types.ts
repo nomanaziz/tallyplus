@@ -4463,11 +4463,17 @@ export type Database = {
           created_at: string
           custom_role_id: string | null
           email: string | null
+          emergency_phone: string | null
+          father_name: string | null
           full_name: string | null
           id: string
           is_all_shops: boolean
+          mother_name: string | null
+          nid: string | null
+          permanent_address: string | null
           permissions: Json
           role: Database["public"]["Enums"]["app_role"]
+          salary: number | null
           shop_id: string
           user_id: string
         }
@@ -4477,11 +4483,17 @@ export type Database = {
           created_at?: string
           custom_role_id?: string | null
           email?: string | null
+          emergency_phone?: string | null
+          father_name?: string | null
           full_name?: string | null
           id?: string
           is_all_shops?: boolean
+          mother_name?: string | null
+          nid?: string | null
+          permanent_address?: string | null
           permissions?: Json
           role?: Database["public"]["Enums"]["app_role"]
+          salary?: number | null
           shop_id: string
           user_id: string
         }
@@ -4491,11 +4503,17 @@ export type Database = {
           created_at?: string
           custom_role_id?: string | null
           email?: string | null
+          emergency_phone?: string | null
+          father_name?: string | null
           full_name?: string | null
           id?: string
           is_all_shops?: boolean
+          mother_name?: string | null
+          nid?: string | null
+          permanent_address?: string | null
           permissions?: Json
           role?: Database["public"]["Enums"]["app_role"]
+          salary?: number | null
           shop_id?: string
           user_id?: string
         }
