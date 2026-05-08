@@ -318,7 +318,7 @@ function KpiTile({
         ) : null}
       </div>
       <div>
-        <div className="text-2xl font-extrabold tabular-nums text-foreground">{value}</div>
+        <div className="text-[26px] leading-tight font-extrabold tabular-nums text-foreground">{value}</div>
         {sub ? <div className="text-[10px] text-foreground/70">{sub}</div> : null}
         <div className={`mt-1.5 text-[11px] font-medium ${t.link} group-hover:underline`}>
           {lang === "bn" ? "বিস্তারিত দেখুন →" : "View details →"}
