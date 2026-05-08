@@ -1765,9 +1765,15 @@ export type Database = {
           created_at: string
           deleted_at: string | null
           due_balance: number
+          emergency_phone: string | null
+          father_name: string | null
           id: string
+          mother_name: string | null
           name: string
+          nid: string | null
+          permanent_address: string | null
           phone: string | null
+          salary: number | null
           shop_id: string
           updated_at: string
         }
@@ -1777,9 +1783,15 @@ export type Database = {
           created_at?: string
           deleted_at?: string | null
           due_balance?: number
+          emergency_phone?: string | null
+          father_name?: string | null
           id?: string
+          mother_name?: string | null
           name: string
+          nid?: string | null
+          permanent_address?: string | null
           phone?: string | null
+          salary?: number | null
           shop_id: string
           updated_at?: string
         }
@@ -1789,9 +1801,15 @@ export type Database = {
           created_at?: string
           deleted_at?: string | null
           due_balance?: number
+          emergency_phone?: string | null
+          father_name?: string | null
           id?: string
+          mother_name?: string | null
           name?: string
+          nid?: string | null
+          permanent_address?: string | null
           phone?: string | null
+          salary?: number | null
           shop_id?: string
           updated_at?: string
         }
@@ -6025,6 +6043,30 @@ export type Database = {
           _event_type: string
           _link?: string
           _title: string
+        }
+        Returns: undefined
+      }
+      edit_purchase_invoice: {
+        Args: {
+          p_created_at: string
+          p_discount: number
+          p_items: Json
+          p_note: string
+          p_paid: number
+          p_purchase_id: string
+          p_supplier_id: string
+        }
+        Returns: undefined
+      }
+      edit_sale_invoice: {
+        Args: {
+          p_created_at: string
+          p_customer_id: string
+          p_discount: number
+          p_items: Json
+          p_note: string
+          p_paid: number
+          p_sale_id: string
         }
         Returns: undefined
       }
