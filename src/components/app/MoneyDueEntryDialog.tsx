@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,10 +14,11 @@ import { useShop } from "@/lib/shop";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { UserRound, Calendar, Link2 } from "lucide-react";
+import { UserRound, Calendar, Link2, Search } from "lucide-react";
 import type { DueDirection } from "./DueTypePickerDialog";
 
 type PartyType = "customer" | "supplier" | "employee";
+type ContactOpt = { id: string; name: string; phone: string | null; address: string | null };
 
 export function MoneyDueEntryDialog({
   open,
@@ -43,12 +45,64 @@ export function MoneyDueEntryDialog({
   const [note, setNote] = useState("");
   const [sms, setSms] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [contacts, setContacts] = useState<ContactOpt[]>([]);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   useEffect(() => { if (open) setDir(defaultDirection); }, [open, defaultDirection]);
 
+  // Load saved contacts for current party tab
+  useEffect(() => {
+    if (!open || !current?.id) return;
+    let cancelled = false;
+    (async () => {
+      let rows: ContactOpt[] = [];
+      if (party === "supplier") {
+        const { data } = await supabase
+          .from("suppliers")
+          .select("id,name,phone,address")
+          .eq("shop_id", current.id)
+          .is("deleted_at", null)
+          .order("name", { ascending: true });
+        rows = (data ?? []) as ContactOpt[];
+      } else {
+        const wantKind = party === "employee" ? "employee" : "customer";
+        const { data } = await supabase
+          .from("customers")
+          .select("id,name,phone,address,contact_kind")
+          .eq("shop_id", current.id)
+          .eq("contact_kind", wantKind)
+          .is("deleted_at", null)
+          .order("name", { ascending: true });
+        rows = (data ?? []) as ContactOpt[];
+      }
+      if (!cancelled) setContacts(rows);
+    })();
+    return () => { cancelled = true; };
+  }, [open, current?.id, party]);
+
+  // Reset selection when switching party tabs
+  useEffect(() => { setSelectedId(null); }, [party]);
+
+  const pickContact = (c: ContactOpt) => {
+    setSelectedId(c.id);
+    setName(c.name);
+    setPhone(c.phone ?? "");
+    setAddress(c.address ?? "");
+    setPickerOpen(false);
+    setSearch("");
+  };
+
+  const filteredContacts = contacts.filter((c) => {
+    const q = search.trim().toLowerCase();
+    if (!q) return true;
+    return c.name.toLowerCase().includes(q) || (c.phone ?? "").includes(q);
+  });
+
   const reset = () => {
     setParty("customer"); setDate(today); setAmount(""); setName("");
-    setPhone(""); setAddress(""); setNote(""); setSms(false);
+    setPhone(""); setAddress(""); setNote(""); setSms(false); setSelectedId(null);
   };
 
   const partyLabel = () => {
@@ -65,9 +119,27 @@ export function MoneyDueEntryDialog({
     if (!phone.trim()) { toast.error(lang === "bn" ? "ফোন নাম্বার দিন" : "Enter phone"); return; }
     setSaving(true);
     try {
-      // Insert into the right party table (employee → also customers row marked via note)
       let contactId: string | null = null;
-      if (party === "supplier") {
+      if (selectedId) {
+        // Update existing contact's due_balance via RPC-free increment
+        const table = party === "supplier" ? "suppliers" : "customers";
+        const delta = party === "supplier"
+          ? (dir === "taking" ? amt : -amt)   // we owe supplier when taking goods/loan
+          : (dir === "giving" ? amt : -amt);  // customer/employee owes us when we give
+        const { data: cur, error: rErr } = await supabase
+          .from(table)
+          .select("due_balance")
+          .eq("id", selectedId)
+          .single();
+        if (rErr) throw rErr;
+        const newBal = Number(cur?.due_balance || 0) + delta;
+        const { error: uErr } = await supabase
+          .from(table)
+          .update({ due_balance: newBal })
+          .eq("id", selectedId);
+        if (uErr) throw uErr;
+        contactId = selectedId;
+      } else if (party === "supplier") {
         const { data, error } = await supabase
           .from("suppliers")
           .insert({ shop_id: current.id, name: name.trim(), phone: phone.trim(), address: address.trim() || null, due_balance: dir === "taking" ? amt : 0 })
@@ -171,8 +243,61 @@ export function MoneyDueEntryDialog({
           <div className="space-y-1.5">
             <Label>{partyLabel()} <span className="text-destructive">*</span></Label>
             <div className="relative">
-              <Input placeholder={partyLabel()} value={name} onChange={(e) => setName(e.target.value)} className="pr-10" />
-              <UserRound className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder={partyLabel()}
+                value={name}
+                onChange={(e) => { setName(e.target.value); if (selectedId) setSelectedId(null); }}
+                className="pr-10"
+              />
+              <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
+                <PopoverTrigger asChild>
+                  <button
+                    type="button"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-muted-foreground hover:bg-muted"
+                    aria-label={lang === "bn" ? "সংরক্ষিত থেকে বাছাই" : "Pick saved"}
+                  >
+                    <UserRound className="h-4 w-4" />
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent align="end" className="w-[300px] p-0">
+                  <div className="border-b p-2">
+                    <div className="relative">
+                      <Search className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        autoFocus
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        placeholder={lang === "bn" ? "নাম বা ফোন খুঁজুন" : "Search name or phone"}
+                        className="h-9 pl-8"
+                      />
+                    </div>
+                  </div>
+                  <div className="max-h-60 overflow-y-auto">
+                    {filteredContacts.length === 0 ? (
+                      <div className="px-3 py-6 text-center text-sm text-muted-foreground">
+                        {lang === "bn" ? "কোন সংরক্ষিত কন্টাক্ট নেই" : "No saved contacts"}
+                      </div>
+                    ) : (
+                      <ul className="divide-y">
+                        {filteredContacts.map((c) => (
+                          <li key={c.id}>
+                            <button
+                              type="button"
+                              onClick={() => pickContact(c)}
+                              className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left hover:bg-accent"
+                            >
+                              <span className="min-w-0 flex-1">
+                                <span className="block truncate text-sm font-medium">{c.name}</span>
+                                <span className="block truncate text-xs text-muted-foreground">{c.phone ?? "—"}</span>
+                              </span>
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
 
