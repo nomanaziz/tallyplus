@@ -52,6 +52,7 @@ export function AppTopbar() {
         <InstallAppButton />
         <button
           onClick={() => setSettingsOpen(true)}
+          data-tour="profile"
           className="flex h-9 items-center gap-1.5 rounded-full px-2 text-sm font-medium text-muted-foreground hover:bg-accent"
         >
           <AppIcon name="settings" className="h-4 w-4" />
