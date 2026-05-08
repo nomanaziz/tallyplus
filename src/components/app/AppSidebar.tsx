@@ -8,7 +8,7 @@ import { BrandWordmark } from "@/components/brand/BrandWordmark";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { usePermissions } from "@/lib/permissions-hook";
 import { usePwaInstall } from "@/hooks/use-pwa-install";
-import { Download, ChevronsLeft, ChevronsRight, ChevronDown } from "lucide-react";
+import { Download, ChevronsLeft, ChevronsRight } from "lucide-react";
 import { toast } from "sonner";
 import { useEffect, useState } from "react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -110,22 +110,6 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
     localStorage.setItem("app-sidebar-collapsed", collapsed ? "1" : "0");
   }, [collapsed]);
 
-  // Accordion: only one section open at a time. The section containing the
-  // active route is auto-opened on navigation.
-  const activeSectionId = (() => {
-    for (const s of SECTIONS) {
-      if (s.items.some((it) => loc.pathname === it.to || loc.pathname.startsWith(it.to + "/"))) {
-        return s.id;
-      }
-    }
-    return SECTIONS[0]?.id ?? null;
-  })();
-  const [openId, setOpenId] = useState<string | null>(activeSectionId);
-  useEffect(() => {
-    if (activeSectionId) setOpenId(activeSectionId);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loc.pathname]);
-
   const isVisible = (it: SidebarItem) => {
     if (!it.perm) return true;
     if (loading) return true;
@@ -201,23 +185,18 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
             {SECTIONS.map((section) => {
               const items = section.items.filter(isVisible);
               if (items.length === 0) return null;
-              const isOpen = collapsed ? true : openId === section.id;
               const showInstall = section.id === "more" && !pwa.installed;
               return (
-                <div key={section.id} className="mt-1 flex flex-col gap-0.5 border-t border-border/60 pt-1 first:mt-1 first:border-t-0 first:pt-0">
+                <div key={section.id} className="mt-2 flex flex-col gap-0.5 border-t border-border/60 pt-2 first:mt-1 first:border-t-0 first:pt-0">
                   {!collapsed && (
-                    <button
-                      type="button"
-                      onClick={() => setOpenId((cur) => (cur === section.id ? null : section.id))}
-                      className="flex w-full items-center justify-between rounded-md px-2 py-1.5 text-left text-[11px] font-semibold uppercase tracking-wider text-muted-foreground hover:bg-sidebar-accent"
-                      aria-expanded={isOpen}
-                    >
-                      <span>{lang === "bn" ? section.bn : section.en}</span>
-                      <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", isOpen ? "rotate-0" : "-rotate-90")} />
-                    </button>
+                    <div className="px-2 pb-0.5">
+                      <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                        {lang === "bn" ? section.bn : section.en}
+                      </span>
+                    </div>
                   )}
-                  {isOpen && items.map(renderItem)}
-                  {isOpen && showInstall && (
+                  {items.map(renderItem)}
+                  {showInstall && (
                     collapsed ? (
                       <Tooltip delayDuration={150}>
                         <TooltipTrigger asChild>
