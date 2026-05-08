@@ -65,6 +65,25 @@ function ExpenseLedgerPage() {
 
   const refresh = async () => { await qc.invalidateQueries({ queryKey: ["expenses"] }); await refetch(); };
 
+  // Auto-trigger recurring dues for this month, then count pending
+  const monthStart = useMemo(() => { const d = new Date(); d.setDate(1); d.setHours(0,0,0,0); return d.toISOString().slice(0,10); }, []);
+  const { data: pendingDues = [] } = useQuery({
+    queryKey: ["recurring_dues_pending", current?.id, monthStart],
+    enabled: !!current?.id,
+    queryFn: async () => {
+      if (!current?.id) return [];
+      await supabase.rpc("generate_recurring_dues_for_shop", { _shop_id: current.id });
+      const { data } = await supabase
+        .from("recurring_expense_dues")
+        .select("id,bill_amount")
+        .eq("shop_id", current.id)
+        .eq("due_month", monthStart)
+        .eq("status", "pending");
+      return data ?? [];
+    },
+  });
+  const pendingTotal = pendingDues.reduce((s, d) => s + Number(d.bill_amount), 0);
+
   const onDelete = async (e: Expense) => {
     if (!confirm(lang === "bn" ? "ডিলিট করবেন?" : "Delete?")) return;
     const { error } = await supabase.from("expenses").update({ deleted_at: new Date().toISOString() }).eq("id", e.id);
