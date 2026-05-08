@@ -12,6 +12,8 @@ import { Download, ChevronsLeft, ChevronsRight } from "lucide-react";
 import { toast } from "sonner";
 import { useEffect, useState } from "react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { resetTour, startTour } from "@/lib/tour";
+import { HelpCircle } from "lucide-react";
 
 export type SidebarItem = { to: string; bn: string; en: string; icon: LucideIcon; highlight?: boolean; perm?: string };
 export type SidebarSection = { id: string; bn: string; en: string; items: SidebarItem[] };
@@ -119,10 +121,16 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
 
   const renderItem = (it: SidebarItem) => {
     const active = loc.pathname === it.to || loc.pathname.startsWith(it.to + "/");
+    const tourKey =
+      it.to === "/app/profile" ? "profile" :
+      it.to === "/app/products" ? "products" :
+      it.to === "/app/purchase" ? "purchase" :
+      it.to === "/app/sell" ? "sell" : undefined;
     const node = (
       <Link
         to={it.to as never}
         onClick={onNavigate}
+        data-tour={tourKey}
         className={cn(
           "group flex items-center gap-2.5 rounded-md py-1.5 text-[13px] leading-tight transition-colors",
           collapsed ? "justify-center px-1" : "px-2",
@@ -259,6 +267,23 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
             })}
           </nav>
         </ScrollArea>
+        <div className={cn("flex-none border-t p-2", collapsed ? "flex justify-center" : "")}>
+          <button
+            type="button"
+            onClick={() => {
+              resetTour();
+              startTour(lang === "bn" ? "bn" : "en");
+            }}
+            className={cn(
+              "flex items-center gap-2 rounded-md text-[12px] text-muted-foreground hover:bg-sidebar-accent hover:text-foreground transition-colors",
+              collapsed ? "h-8 w-8 justify-center" : "w-full px-2 py-1.5",
+            )}
+            title={lang === "bn" ? "টুর আবার দেখুন" : "Restart tour"}
+          >
+            <HelpCircle className="h-4 w-4" />
+            {!collapsed && <span>{lang === "bn" ? "টুর আবার দেখুন" : "Restart tour"}</span>}
+          </button>
+        </div>
       </aside>
     </TooltipProvider>
   );
