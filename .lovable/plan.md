@@ -1,81 +1,32 @@
-## ১. বিক্রয়ের বই ও ক্রয়ের বই — Row click + Invoice Edit
+# Application Tour (প্রথমবার ব্যবহারকারীর জন্য গাইড)
 
-### Row clickable
-- `src/pages/app/SalesLedger.tsx` ও `src/pages/app/PurchaseLedger.tsx` — `<TableRow>`-এ `onClick={() => openInvoice(s)}` + `cursor-pointer hover:bg-muted/40` যোগ। Action column-এর dropdown trigger-এ `e.stopPropagation()` যাতে menu খোলার সময় invoice popup না খোলে।
-- ফলে যেকোনো row-এ click করলেই invoice popup চলে আসবে — কী কী product বিক্রি/ক্রয় হয়েছে সব দেখা যাবে।
+নতুন ব্যবহারকারী যখন প্রথমবার অ্যাকাউন্ট তৈরি করে app-এ ঢুকবে, তখন একটা step-by-step tour চালু হবে যা তাকে দেখাবে কোথায় কী করতে হয়। ভাষা (`bn`/`en`) অনুযায়ী automatic দেখাবে।
 
-### Invoice Edit (পুরো ইনভয়েস — পণ্য, দাম, বাকি)
-নতুন component: `src/components/app/InvoiceEditDialog.tsx` (sale ও purchase দুটোর জন্যই — `mode: "sell" | "purchase"`)।
+## Tour-এর ৫টি ধাপ
 
-ফর্মে যা edit করা যাবে:
-- Customer/Supplier পরিবর্তন
-- প্রতিটি item: পণ্য নাম, qty, price (যোগ/বাদ/পরিবর্তন)
-- Discount, paid amount, payment method, note, তারিখ
+1. **স্বাগতম** — অ্যাপের সংক্ষিপ্ত পরিচিতি ও "শুরু করুন" বাটন (ড্যাশবোর্ডে centered modal)।
+2. **প্রোফাইল আপডেট করুন** — Sidebar-এ "প্রোফাইল" highlight হবে; tooltip: "প্রথমে আপনার নাম, ঠিকানা ও দোকানের তথ্য দিন।"
+3. **স্টকে পণ্য যোগ করুন** — "পণ্য / Stock" menu highlight; tooltip: "আপনার দোকানের পণ্য যোগ করুন।"
+4. **ক্রয় লিপিবদ্ধ করুন** — "ক্রয়" menu highlight; tooltip: "সরবরাহকারীর কাছ থেকে কেনা পণ্য এখানে যোগ করুন।"
+5. **বিক্রয় শুরু করুন** — "বিক্রয়" menu highlight; tooltip: "কাস্টমারের কাছে বিক্রয় করে invoice তৈরি করুন।" শেষে "সম্পন্ন" বাটন।
 
-Save করলে server-side function (একটাই RPC, atomic) যা করবে:
-1. পুরনো `sale_items`/`purchase_items` থেকে stock revert (sale = +stock ফেরত, purchase = −stock)
-2. নতুন items insert + নতুন stock প্রয়োগ (sale = −stock, purchase = +stock)
-3. `sales`/`purchases` row update (subtotal, discount, total, paid, due, customer_id, note, created_at)
-4. সংশ্লিষ্ট `payments` row sync (paid amount পাল্টালে)
-5. customer/supplier-এর `due_balance` recompute
+প্রতিটি step-এ থাকবে: **পরবর্তী / আগে / এড়িয়ে যান (Skip)** বাটন এবং progress dots (1/5)।
 
-এটা PostgreSQL function হিসেবে করা হবে (`edit_sale_invoice`, `edit_purchase_invoice`) যাতে partial failure এ কোনো inconsistency না হয়।
+## কোথায় দেখা যাবে
+- শুধু **প্রথমবার** — শেষ হলে বা skip করলে আর আসবে না।
+- Sidebar-এ ছোট **"Tour আবার দেখুন"** বাটন থাকবে যাতে যেকোনো সময় আবার দেখা যায়।
 
-UI flow: Sales/Purchase Ledger row → click → InvoiceDialog (view) → "এডিট করুন" button → InvoiceEditDialog। Dropdown menu-তেও "ইনভয়েস এডিট" item যোগ।
+## Technical details
+- লাইব্রেরি: `driver.js` (lightweight, ~10kb, কোনো dependency নেই, Worker-safe — শুধু client side)। বিকল্প `react-joyride` ভারী।
+- State: `localStorage` key `tour_completed_v1` (per device) + optional `profiles.tour_completed` column যাতে multi-device sync হয়। শুরুতে শুধু localStorage যথেষ্ট, পরে DB-তে move করা যাবে।
+- ভাষা: existing `useI18n()` hook থেকে `lang` নিয়ে step text bilingual object থেকে select হবে।
+- Trigger: `AppLayout.tsx` mount-এ check — যদি user নতুন (account creation < 5 min অথবা flag false) → tour auto-start।
+- Highlight selector: sidebar item-এ `data-tour="profile" | "products" | "purchase" | "sell"` attribute যোগ করা হবে `AppSidebar.tsx`-এ।
+- নতুন ফাইল: `src/lib/tour.ts` (steps definition + start function), `src/components/app/AppTour.tsx` (mount component)।
+- "Tour আবার দেখুন" বাটন: AppSidebar-এর footer-এ ছোট link/icon।
 
-Stock নেই এমন পণ্য বাদ/পরিবর্তন হলে warning দেখাবে কিন্তু block করবে না (negative stock হলে toast warning)।
-
----
-
-## ২. "যোগাযোগ" পেজের নাম পরিবর্তন → **Customer & Staff**
-
-পরিবর্তন:
-- `src/components/app/AppSidebar.tsx` — sidebar label: BN `"কাস্টমার ও স্টাফ"`, EN `"Customer & Staff"`
-- `src/pages/app/Contacts.tsx` — page title একই
-- Route path `/app/contacts` অপরিবর্তিত থাকবে (existing bookmark/link না ভাঙতে)
-
----
-
-## ৩. কর্মচারী (Employee) উন্নয়ন
-
-### A. কর্মচারী Edit করা
-এখন `Contacts.tsx`-এ employee tab-এ Edit button hidden (`tab !== "employees"` condition)। সেটা সরিয়ে employee-র জন্যও Edit button দেখাব। নতুন `EmployeeEditDialog.tsx` খুলবে (existing `ContactDialog` employee fields support করে না)।
-
-### B. নতুন biodata fields (`customers` table-এ যোগ)
-Migration — শুধু employee row-এ ব্যবহৃত হবে (contact_kind = 'employee'):
-- `salary` numeric — মাসিক বেতন
-- `nid` text — NID নম্বর
-- `permanent_address` text — স্থায়ী ঠিকানা (existing `address` = বর্তমান ঠিকানা)
-- `father_name` text
-- `mother_name` text
-- `emergency_phone` text — জরুরি যোগাযোগ নম্বর
-
-সব nullable, default null। Customer/Supplier-এ প্রভাব নেই (UI থেকে hide)।
-
-### C. Employee detail panel
-Right panel-এ employee select করলে এখন শুধু "এক্সেস ম্যানেজমেন্ট" message দেখায়। সেটার পাশে biodata card দেখাব (নাম, ফোন, salary, NID, পিতা, মাতা, ঠিকানা, emergency contact)।
-
-### D. Delete behavior
-Employee delete করলে — existing trigger/RPC (যা auth user মুছে) — verify করে নিশ্চিত করব যে login credential (auth.users row) cascade delete হয়। যদি না হয়, edge function `delete-employee-user` যোগ করব যা service-role দিয়ে `auth.admin.deleteUser()` call করে।
-
-### E. Phone uniqueness
-আপনি বলেছেন এটা Supabase auto-handle করে — কোনো extra কাজ নেই।
-
----
-
-## Files touched (summary)
-
-**Code:**
-- `src/pages/app/SalesLedger.tsx`, `src/pages/app/PurchaseLedger.tsx` (row click, edit menu)
-- `src/components/app/InvoiceEditDialog.tsx` *(new)*
-- `src/components/app/EmployeeEditDialog.tsx` *(new)*
-- `src/pages/app/Contacts.tsx` (employee edit, biodata panel, title)
-- `src/components/app/AppSidebar.tsx` (label)
-
-**DB migrations:**
-- `customers` table: add `salary`, `nid`, `permanent_address`, `father_name`, `mother_name`, `emergency_phone`
-- RPC `edit_sale_invoice(sale_id, payload jsonb)` — stock-safe sale edit
-- RPC `edit_purchase_invoice(purchase_id, payload jsonb)` — stock-safe purchase edit
-
-**Edge function (if needed):**
-- `delete-employee-user` — auth user cleanup on employee delete (only if existing flow doesn't cover it)
+## Files to change
+- `src/components/app/AppSidebar.tsx` — `data-tour` attributes + restart button
+- `src/pages/app/AppLayout.tsx` — mount `<AppTour />`
+- নতুন: `src/lib/tour.ts`, `src/components/app/AppTour.tsx`
+- `package.json` — `bun add driver.js`
