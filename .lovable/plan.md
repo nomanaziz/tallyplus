@@ -1,73 +1,61 @@
-## মাসিক ফিক্সড খরচ — Auto Recurring Bills
+## লক্ষ্য
 
-দোকানদার একবার তার নিয়মিত মাসিক খরচগুলো (ভাড়া, কর্মচারীর বেতন, বিদ্যুৎ, পানি, ইন্টারনেট, লোনের কিস্তি) "চার্ট" হিসেবে বানিয়ে রাখবে। প্রতি মাসে সেগুলো **automatic একটা bill হিসেবে** তার খরচের বইতে "অপরিশোধিত / due" status-এ এসে যাবে। সে শুধু amount adjust করে (যেটা change হয়, যেমন বিদ্যুৎ bill) "পরিশোধ করুন" চাপলে cashbox থেকে টাকা কেটে নেওয়া হবে।
+1. **মাসিক খরচ চার্ট** আলাদা পেইজ হিসেবে না রেখে সরাসরি **খরচের বই** (Expense Book) এর ভেতরে সংযুক্ত করা।
+2. নতুন user account খুললে **by default ৫টি common recurring expense** আগেই বানানো থাকবে — user চাইলে edit/delete করতে পারবে।
 
-### 1. New database tables
+---
 
-**`recurring_expenses`** — দোকানের fixed খরচের template
-- `shop_id`
-- `name` — যেমন "দোকান ভাড়া", "মূল মিটার বিদ্যুৎ", "রহিম ভাইয়ের বেতন"
-- `category` — rent / utility / salary / loan / other
-- `kind` — `fixed` (একই amount প্রতি মাসে) | `variable` (default amount, প্রতি মাসে edit) | `loan` (principal + interest থেকে monthly auto calc)
-- `amount` — fixed/variable-এর জন্য
-- `day_of_month` — কত তারিখে bill উঠবে (1–28, অথবা "মাসের শেষ দিন")
-- `start_month`, `end_month` — কবে থেকে কবে পর্যন্ত
-- `is_active`
-- Loan-only fields: `loan_principal`, `loan_annual_interest_rate` (%), `loan_term_months`, `loan_start_date` — সিস্টেম EMI / শুধু interest প্রতি মাসে calculate করে দেবে
+## পরিবর্তনগুলো
 
-**`recurring_expense_dues`** — প্রতি মাসে auto-generate হওয়া bill
-- `shop_id`, `recurring_expense_id`
-- `due_month` (e.g. 2026-05) — duplicate prevent করার জন্য `(recurring_expense_id, due_month)` unique
-- `bill_amount` — প্রথমে template থেকে নেওয়া, user edit করতে পারবে
-- `status` — `pending` | `paid` | `skipped`
-- `paid_at`, `paid_via`, `expense_id` (পরিশোধের পরে তৈরি `expenses` row-এর reference)
+### ১. খরচের বই-এ মাসিক খরচ section যোগ
 
-### 2. Auto-generation logic
+`src/pages/app/ExpenseLedger.tsx` এর মধ্যে একটি নতুন **"মাসিক নির্দিষ্ট খরচ"** section যোগ হবে — preset category tiles আর total cards-এর মাঝে বসবে।
 
-প্রতি দিন একবার একটা scheduled job চলবে (pg_cron, প্রতি সকাল ৬টা):
+এই section-এ থাকবে:
+- **Templates table**: নাম · ধরন · মাসিক টাকা · তারিখ · অবস্থা · Action (edit/delete)
+- **"+ নতুন মাসিক খরচ"** বাটন
+- **এই মাসের bills** (pending/paid status সহ, "পরিশোধ" বাটন)
+- বর্তমান pending banner-টা এই section-এর header হিসেবে কাজ করবে
 
-1. সব `recurring_expenses` যেগুলো `is_active = true` এবং আজকের তারিখ `day_of_month`-এর সমান বা তার পরে → চলতি মাসের জন্য bill exist না করলে একটা `recurring_expense_dues` row তৈরি করবে।
-2. `loan` kind-এর জন্য monthly interest = `principal × (annual_rate/100/12)` formula দিয়ে auto calculate হবে।
-3. একইসাথে app খুললে frontend-ও missing month-গুলো backfill করার জন্য একটা lightweight server function call করবে — যাতে cron miss করলেও bill উঠে আসে।
+বর্তমান `src/pages/app/RecurringExpenses.tsx` এর dialog component (`RecExpDialog`, `PayDueDialog`, `calcMonthly` helper) reusable হিসেবে `src/components/app/RecurringExpensesPanel.tsx`-এ extract হবে, এবং Expense Book-এ embed হবে।
 
-### 3. UI — তিনটা জায়গা
+### ২. আলাদা পেইজ ও sidebar entry সরানো
 
-**(ক) নতুন পেজ "মাসিক খরচ চার্ট" — sidebar > হিসাবের বই-এর under**
-- Template-এর list (নাম, category, amount, day_of_month, kind)
-- "+ নতুন মাসিক খরচ" button → dialog যেখানে category, name, kind (fixed/variable/loan), amount/loan params, day_of_month select করা যাবে
-- Edit / pause / delete
+- `src/pages/app/RecurringExpenses.tsx` — মুছে ফেলা হবে (logic panel-এ migrated)
+- `src/lib/app-routes.tsx` — `/app/recurring-expenses` route বাদ
+- `src/components/app/AppSidebar.tsx` — "মাসিক খরচ চার্ট" entry বাদ
+- `ExpenseLedger.tsx`-এর pending banner-এর `<Link to="/app/recurring-expenses">` সরানো (এখন একই পেইজে scroll করবে)
 
-**(খ) Dashboard — নতুন widget "এই মাসের বাকি bill"**
-- চলতি মাসে যেসব auto-generated due এখনো `pending`, সেগুলোর list + total
-- প্রতিটা row-এ "পরিশোধ করুন" button — amount edit করার option সহ
+### ৩. Default recurring expenses seed
 
-**(গ) খরচের বই (`ExpenseLedger`)**
-- উপরে একটা banner: "এই মাসের ৩টা bill এখনো বাকি — দেখুন"
-- পরিশোধ করলে normal `expenses` row তৈরি হবে + cashbox থেকে টাকা কাটবে (এখনকার expense flow-এর মতো), শুধু due-এর সাথে link থাকবে
+নতুন shop খোলার সাথে সাথে নিচের ৫টি template auto-create হবে:
 
-### 4. Loan handling (সহজ rule)
+| নাম | category | kind | amount | day |
+|---|---|---|---|---|
+| কর্মচারী ১ | salary | fixed | 10000 | 1 |
+| সিকিউরিটি গার্ড | other | fixed | 300 | 1 |
+| কারেন্ট বিল | utility | variable | 800 | 1 |
+| ইন্টারনেট | internet | fixed | 500 | 1 |
+| দোকান ভাড়া | rent | fixed | 3000 | 1 |
 
-User একটাই simple form পাবে:
-- Loan amount (যেমন ১০,০০০), annual interest rate (%), শুরুর তারিখ, কত মাসে শোধ হবে
-- System দু'টা option দেখাবে:
-  - **শুধু interest প্রতি মাসে** = principal × (rate/100/12)
-  - **EMI (interest + principal)** = standard EMI formula
-- User যেটা select করবে সেটাই প্রতি মাসে auto bill হিসেবে উঠবে। Loan settle হলে `is_active` off।
+**Implementation**: `src/lib/default-categories.ts`-এর `ensureDefaultCategories` প্যাটার্ন অনুসরণ করে একটি নতুন `ensureDefaultRecurringExpenses(shopId)` helper বানানো হবে (`src/lib/default-recurring-expenses.ts`)। এটা Expense Book পেইজ load হওয়ার সময় idempotent ভাবে call হবে — যদি shop-এ আগে থেকে কোনো recurring template না থাকে শুধু তখনই seed করবে (per-session cache + DB count check)। User কোনো template delete করলে আবার re-seed হবে না।
 
-### 5. RLS
-সব নতুন table-এ shop-scoped policies — owner / admin শুধু নিজের shop-এর recurring expense ও due দেখতে/edit করতে পারবে। Existing shop permission helper-গুলোর সাথে align।
+---
 
-### Files to add / change
-- DB migration: `recurring_expenses`, `recurring_expense_dues` + RLS + indexes
-- pg_cron job → `/api/public/hooks/generate-recurring-dues` route
-- New page: `src/pages/app/RecurringExpenses.tsx`
-- New dialog: `src/components/app/RecurringExpenseDialog.tsx`, `src/components/app/PayRecurringDueDialog.tsx`
-- Dashboard widget: update `src/pages/app/Dashboard.tsx`
-- Banner + link in `src/pages/app/ExpenseLedger.tsx`
-- Sidebar entry in `src/components/app/AppSidebar.tsx` (হিসাবের বই section-এ)
-- Route + i18n strings
+## Technical Notes
 
-### Out of scope (এখন করছি না)
-- Reminder push/SMS notification
-- Multi-currency
-- Partial payment (একবারে full pay assumed; future enhancement)
+- নতুন migration লাগবে না — schema আগেই আছে।
+- Seed logic client-side থেকে normal `insert` করবে (RLS member policy দিয়ে allowed)। কোনো একটা insert fail হলে silent — user manually বানাতে পারবে।
+- "মাসিক খরচ চার্ট" এর সব state/query Expense Book পেইজে share হবে; pending count আর banner সরাসরি একই data source থেকে আসবে।
+- Auto-trigger `generate_recurring_dues_for_shop` RPC call আগের মতই Expense Book load-এ চলবে।
+
+---
+
+## ফাইল পরিবর্তন সারসংক্ষেপ
+
+- ✏️ `src/pages/app/ExpenseLedger.tsx` — recurring panel embed
+- 🆕 `src/components/app/RecurringExpensesPanel.tsx` — extracted reusable panel
+- 🆕 `src/lib/default-recurring-expenses.ts` — default seed helper
+- 🗑️ `src/pages/app/RecurringExpenses.tsx`
+- ✏️ `src/lib/app-routes.tsx` — route বাদ
+- ✏️ `src/components/app/AppSidebar.tsx` — entry বাদ

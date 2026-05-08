@@ -1,7 +1,6 @@
-import { useNavigate } from "@/lib/router";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Plus, Pencil, Pause, Play, Trash2, Wallet, AlertCircle } from "lucide-react";
+import { Plus, Pencil, Trash2, Wallet, AlertCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useShop } from "@/lib/shop";
 import { useAuth } from "@/lib/auth";
@@ -17,6 +16,7 @@ import { EmptyState } from "@/components/app/EmptyState";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { ensureDefaultRecurringExpenses } from "@/lib/default-recurring-expenses";
 
 type Kind = "fixed" | "variable" | "loan";
 type LoanMode = "interest_only" | "emi";
@@ -70,19 +70,25 @@ function calcMonthly(t: { kind: Kind; amount: number; loan_principal?: number | 
   return Math.round(p * (ar / 100 / 12) * 100) / 100;
 }
 
-function RecurringExpensesPage() {
+export function RecurringExpensesPanel() {
   const { lang } = useI18n();
   const { current } = useShop();
-  const nav = useNavigate();
+  const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<RecExp | null>(null);
   const [payTarget, setPayTarget] = useState<DueRow | null>(null);
 
-  // Auto-generate this month's dues on page open
+  // Seed defaults + auto-generate this month's dues on mount
   useEffect(() => {
     if (!current?.id) return;
-    void supabase.rpc("generate_recurring_dues_for_shop", { _shop_id: current.id });
-  }, [current?.id]);
+    (async () => {
+      await ensureDefaultRecurringExpenses(current.id, user?.id ?? null);
+      await supabase.rpc("generate_recurring_dues_for_shop", { _shop_id: current.id });
+      void tplQuery.refetch();
+      void duesQuery.refetch();
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [current?.id, user?.id]);
 
   const tplQuery = useQuery({
     queryKey: ["recurring_expenses", current?.id],
@@ -142,87 +148,40 @@ function RecurringExpensesPage() {
   const totalMonthly = tpls.filter((t) => t.is_active).reduce((s, t) => s + calcMonthly(t), 0);
 
   return (
-    <div className="container px-4 py-4">
-      <div className="mb-1 text-xs text-muted-foreground">Recurring Expenses</div>
-      <div className="flex flex-wrap items-center justify-between gap-3">
+    <section>
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => nav({ to: "/app/dashboard" })}>
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <Wallet className="h-6 w-6 text-primary" />
-          <h1 className="text-xl font-extrabold md:text-2xl">{lang === "bn" ? "মাসিক খরচ চার্ট" : "Monthly Expense Chart"}</h1>
+          <Wallet className="h-5 w-5 text-primary" />
+          <h2 className="text-base font-bold">{lang === "bn" ? "মাসিক নির্দিষ্ট খরচ" : "Monthly recurring expenses"}</h2>
         </div>
-        <Button onClick={() => { setEditing(null); setOpen(true); }} className="gap-1">
+        <Button size="sm" onClick={() => { setEditing(null); setOpen(true); }} className="gap-1">
           <Plus className="h-4 w-4" /> {lang === "bn" ? "নতুন মাসিক খরচ" : "New monthly expense"}
         </Button>
       </div>
 
       {/* KPI */}
-      <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <div className="rounded-xl border border-rose-200 bg-rose-50 p-4">
-          <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{lang === "bn" ? "এই মাসের বাকি bill" : "This month pending"}</div>
-          <div className="mt-1 text-3xl font-extrabold text-rose-700">{fmtMoney(totalPending, lang)}</div>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <div className="rounded-xl border border-rose-200 bg-rose-50 p-3">
+          <div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{lang === "bn" ? "এই মাসের বাকি bill" : "This month pending"}</div>
+          <div className="mt-1 text-2xl font-extrabold text-rose-700">{fmtMoney(totalPending, lang)}</div>
           <div className="mt-0.5 text-[11px] text-muted-foreground">{pendingDues.length} {lang === "bn" ? "টি বিল" : "bills"}</div>
         </div>
-        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
-          <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{lang === "bn" ? "মাসিক মোট নির্ধারিত" : "Estimated monthly"}</div>
-          <div className="mt-1 text-3xl font-extrabold text-amber-700">{fmtMoney(totalMonthly, lang)}</div>
+        <div className="rounded-xl border border-amber-200 bg-amber-50 p-3">
+          <div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{lang === "bn" ? "মাসিক মোট নির্ধারিত" : "Estimated monthly"}</div>
+          <div className="mt-1 text-2xl font-extrabold text-amber-700">{fmtMoney(totalMonthly, lang)}</div>
         </div>
-        <div className="rounded-xl border border-sky-200 bg-sky-50 p-4">
-          <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{lang === "bn" ? "চালু আছে" : "Active"}</div>
-          <div className="mt-1 text-3xl font-extrabold text-sky-700">{tpls.filter((t) => t.is_active).length}</div>
+        <div className="rounded-xl border border-sky-200 bg-sky-50 p-3">
+          <div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{lang === "bn" ? "চালু আছে" : "Active"}</div>
+          <div className="mt-1 text-2xl font-extrabold text-sky-700">{tpls.filter((t) => t.is_active).length}</div>
         </div>
-      </div>
-
-      {/* This month dues */}
-      <h2 className="mt-6 mb-2 text-sm font-bold">{lang === "bn" ? "এই মাসের বিল" : "This month's bills"}</h2>
-      <div className="rounded-xl border bg-card">
-        {dues.length === 0 ? (
-          <EmptyState icon={<AlertCircle className="h-6 w-6" />} title={lang === "bn" ? "এই মাসের কোনো বিল এখনো তৈরি হয়নি" : "No bills generated yet"} />
-        ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>{lang === "bn" ? "নাম" : "Name"}</TableHead>
-                <TableHead>{lang === "bn" ? "ক্যাটাগরি" : "Category"}</TableHead>
-                <TableHead className="text-right">{lang === "bn" ? "টাকা" : "Amount"}</TableHead>
-                <TableHead>{lang === "bn" ? "অবস্থা" : "Status"}</TableHead>
-                <TableHead className="text-right">{lang === "bn" ? "অ্যাকশন" : "Action"}</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {dues.map((d) => (
-                <TableRow key={d.id}>
-                  <TableCell className="font-medium">{d.recurring_expenses?.name ?? "—"}</TableCell>
-                  <TableCell className="text-xs">{d.recurring_expenses?.category}</TableCell>
-                  <TableCell className="text-right font-bold tabular-nums">{fmtMoney(Number(d.bill_amount), lang)}</TableCell>
-                  <TableCell>
-                    {d.status === "paid"
-                      ? <Badge className="bg-emerald-600">{lang === "bn" ? "পরিশোধিত" : "Paid"}</Badge>
-                      : d.status === "skipped"
-                      ? <Badge variant="secondary">{lang === "bn" ? "বাদ" : "Skipped"}</Badge>
-                      : <Badge variant="destructive">{lang === "bn" ? "বাকি" : "Pending"}</Badge>}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {d.status === "pending" ? (
-                      <Button size="sm" onClick={() => setPayTarget(d)}>{lang === "bn" ? "পরিশোধ করুন" : "Pay"}</Button>
-                    ) : (
-                      <span className="text-[11px] text-muted-foreground">{d.paid_at ? new Date(d.paid_at).toLocaleDateString() : "—"}</span>
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        )}
       </div>
 
       {/* Templates */}
-      <h2 className="mt-6 mb-2 text-sm font-bold">{lang === "bn" ? "মাসিক খরচের তালিকা (চার্ট)" : "Recurring expense chart"}</h2>
+      <h3 className="mt-4 mb-2 text-sm font-semibold text-muted-foreground">{lang === "bn" ? "খরচের তালিকা" : "Expense chart"}</h3>
       <div className="rounded-xl border bg-card">
         {tpls.length === 0 ? (
           <div className="p-6 text-center text-sm text-muted-foreground">
-            {lang === "bn" ? "এখনো কোনো মাসিক খরচ যোগ করা হয়নি। প্রথমে \"নতুন মাসিক খরচ\" দিয়ে ভাড়া, বেতন, বিদ্যুৎ ইত্যাদি যোগ করুন।" : "No recurring expenses yet."}
+            {lang === "bn" ? "এখনো কোনো মাসিক খরচ যোগ করা হয়নি।" : "No recurring expenses yet."}
           </div>
         ) : (
           <Table>
@@ -266,13 +225,56 @@ function RecurringExpensesPage() {
         )}
       </div>
 
-      <p className="mt-3 text-[11px] text-muted-foreground">
-        {lang === "bn" ? "টিপস: প্রত্যেক মাসে নির্ধারিত তারিখে এই বিলগুলো automatic আপনার খরচের বইতে \"বাকি\" হিসেবে উঠবে। আপনি শুধু \"পরিশোধ করুন\" চাপলেই ক্যাশবক্স থেকে টাকা কেটে নেওয়া হবে।" : "Bills are auto-generated each month on the configured day; pay them with one tap and cashbox is debited."}
+      {/* This month dues */}
+      <h3 className="mt-4 mb-2 text-sm font-semibold text-muted-foreground">{lang === "bn" ? "এই মাসের বিল" : "This month's bills"}</h3>
+      <div className="rounded-xl border bg-card">
+        {dues.length === 0 ? (
+          <EmptyState icon={<AlertCircle className="h-6 w-6" />} title={lang === "bn" ? "এই মাসের কোনো বিল এখনো তৈরি হয়নি" : "No bills generated yet"} />
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>{lang === "bn" ? "নাম" : "Name"}</TableHead>
+                <TableHead>{lang === "bn" ? "ক্যাটাগরি" : "Category"}</TableHead>
+                <TableHead className="text-right">{lang === "bn" ? "টাকা" : "Amount"}</TableHead>
+                <TableHead>{lang === "bn" ? "অবস্থা" : "Status"}</TableHead>
+                <TableHead className="text-right">{lang === "bn" ? "অ্যাকশন" : "Action"}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {dues.map((d) => (
+                <TableRow key={d.id}>
+                  <TableCell className="font-medium">{d.recurring_expenses?.name ?? "—"}</TableCell>
+                  <TableCell className="text-xs">{d.recurring_expenses?.category}</TableCell>
+                  <TableCell className="text-right font-bold tabular-nums">{fmtMoney(Number(d.bill_amount), lang)}</TableCell>
+                  <TableCell>
+                    {d.status === "paid"
+                      ? <Badge className="bg-emerald-600">{lang === "bn" ? "পরিশোধিত" : "Paid"}</Badge>
+                      : d.status === "skipped"
+                      ? <Badge variant="secondary">{lang === "bn" ? "বাদ" : "Skipped"}</Badge>
+                      : <Badge variant="destructive">{lang === "bn" ? "বাকি" : "Pending"}</Badge>}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    {d.status === "pending" ? (
+                      <Button size="sm" onClick={() => setPayTarget(d)}>{lang === "bn" ? "পরিশোধ" : "Pay"}</Button>
+                    ) : (
+                      <span className="text-[11px] text-muted-foreground">{d.paid_at ? new Date(d.paid_at).toLocaleDateString() : "—"}</span>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
+      </div>
+
+      <p className="mt-2 text-[11px] text-muted-foreground">
+        {lang === "bn" ? "টিপস: প্রতি মাসে নির্ধারিত তারিখে এই বিলগুলো automatic আপনার খরচের বইতে \"বাকি\" হিসেবে উঠবে। \"পরিশোধ\" চাপলেই ক্যাশবক্স থেকে টাকা কাটা হবে।" : "Bills auto-generate each month; tap Pay to debit cashbox."}
       </p>
 
       <RecExpDialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setEditing(null); }} editing={editing} onSaved={refresh} />
       <PayDueDialog target={payTarget} onOpenChange={(v) => { if (!v) setPayTarget(null); }} onSaved={refresh} />
-    </div>
+    </section>
   );
 }
 
@@ -287,7 +289,6 @@ function RecExpDialog({ open, onOpenChange, editing, onSaved }: { open: boolean;
   const [amount, setAmount] = useState("");
   const [day, setDay] = useState("1");
   const [note, setNote] = useState("");
-  // loan
   const [principal, setPrincipal] = useState("");
   const [rate, setRate] = useState("");
   const [term, setTerm] = useState("");
@@ -382,7 +383,6 @@ function RecExpDialog({ open, onOpenChange, editing, onSaved }: { open: boolean;
               </Select>
             </div>
           </div>
-
           {kind !== "loan" ? (
             <div className="grid gap-1.5">
               <Label>{lang === "bn" ? "মাসিক টাকা" : "Monthly amount"}</Label>
@@ -424,7 +424,6 @@ function RecExpDialog({ open, onOpenChange, editing, onSaved }: { open: boolean;
               </div>
             </div>
           )}
-
           <div className="grid grid-cols-2 gap-2">
             <div className="grid gap-1.5">
               <Label>{lang === "bn" ? "মাসের কত তারিখে" : "Day of month"}</Label>
@@ -462,7 +461,6 @@ function PayDueDialog({ target, onOpenChange, onSaved }: { target: DueRow | null
     const amt = Number(amount);
     if (!amt || amt <= 0) { toast.error(lang === "bn" ? "টাকার পরিমাণ দিন" : "Enter amount"); return; }
     setBusy(true);
-    // 1. Insert into expenses
     const { data: exp, error: expErr } = await supabase
       .from("expenses")
       .insert({
@@ -476,7 +474,6 @@ function PayDueDialog({ target, onOpenChange, onSaved }: { target: DueRow | null
       .select("id")
       .single();
     if (expErr || !exp) { setBusy(false); toast.error(expErr?.message ?? "Failed"); return; }
-    // 2. Mark due as paid
     const { error: dueErr } = await supabase
       .from("recurring_expense_dues")
       .update({ status: "paid", paid_at: new Date().toISOString(), paid_via: paidVia, bill_amount: amt, expense_id: exp.id })
@@ -538,5 +535,3 @@ function PayDueDialog({ target, onOpenChange, onSaved }: { target: DueRow | null
     </Dialog>
   );
 }
-
-export default RecurringExpensesPage;
