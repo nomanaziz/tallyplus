@@ -14,6 +14,7 @@ import { MobileBackBar } from "@/components/app/MobileBackBar";
 import { PromoPopupDialog } from "@/components/app/PromoPopupDialog";
 import { SampleProductImportSheet } from "@/components/app/SampleProductImportSheet";
 import { TrialBanner } from "@/components/app/TrialBanner";
+import { TrialEndingDialog } from "@/components/app/TrialEndingDialog";
 
 // SettingsSheet is heavy (329 lines + many imports) and only opens on demand.
 // Lazy-load to keep the app shell bundle small.
@@ -234,6 +235,7 @@ function AppLayout({ ownsShop }: { ownsShop: boolean }) {
       <div className="flex min-w-0 flex-1 flex-col">
         <AppTopbar />
         <TrialBanner />
+        <TrialEndingDialog />
         <MobileBackBar />
         <main className="flex-1 overflow-auto pb-20 md:pb-0">
           <Outlet />
