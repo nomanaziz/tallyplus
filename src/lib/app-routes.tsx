@@ -52,7 +52,6 @@ const L33 = lazy(() => import("@/pages/app/Dashboard"));
 const L34 = lazy(() => import("@/pages/app/DueHistory"));
 const L35 = lazy(() => import("@/pages/app/DueLedger"));
 const L36 = lazy(() => import("@/pages/app/ExpenseLedger"));
-const LRecurring = lazy(() => import("@/pages/app/RecurringExpenses"));
 const L37 = lazy(() => import("@/pages/app/Expiring"));
 const L38 = lazy(() => import("@/pages/app/FordoHistory"));
 const L39 = lazy(() => import("@/pages/app/Marketing"));
@@ -196,7 +195,6 @@ export const appRoutes: RouteObject[] = [
 { path: "due-history", element: <Suspense fallback={<RouteFallback/>}><L34/></Suspense> },
 { path: "due-ledger", element: <Suspense fallback={<RouteFallback/>}><L35/></Suspense> },
 { path: "expense-ledger", element: <Suspense fallback={<RouteFallback/>}><L36/></Suspense> },
-{ path: "recurring-expenses", element: <Suspense fallback={<RouteFallback/>}><LRecurring/></Suspense> },
 { path: "expiring", element: <Suspense fallback={<RouteFallback/>}><L37/></Suspense> },
 { path: "fordo-history", element: <Suspense fallback={<RouteFallback/>}><L38/></Suspense> },
 { path: "marketing", element: <Suspense fallback={<RouteFallback/>}><L39/></Suspense> },
