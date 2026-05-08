@@ -2,6 +2,7 @@ import { useNavigate } from "@/lib/router";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Coins, ArrowLeft, MoreVertical, Pencil, Trash2, Home, Truck, Zap, User, MoreHorizontal } from "lucide-react";
+import { Wallet } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useShop } from "@/lib/shop";
 import { useAuth } from "@/lib/auth";
@@ -21,6 +22,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { icons, AppIcon } from "@/lib/icons";
+import { Link } from "@/lib/router";
 
 type Expense = {
   id: string;
@@ -63,6 +65,25 @@ function ExpenseLedgerPage() {
 
   const refresh = async () => { await qc.invalidateQueries({ queryKey: ["expenses"] }); await refetch(); };
 
+  // Auto-trigger recurring dues for this month, then count pending
+  const monthStart = useMemo(() => { const d = new Date(); d.setDate(1); d.setHours(0,0,0,0); return d.toISOString().slice(0,10); }, []);
+  const { data: pendingDues = [] } = useQuery({
+    queryKey: ["recurring_dues_pending", current?.id, monthStart],
+    enabled: !!current?.id,
+    queryFn: async () => {
+      if (!current?.id) return [];
+      await supabase.rpc("generate_recurring_dues_for_shop", { _shop_id: current.id });
+      const { data } = await supabase
+        .from("recurring_expense_dues")
+        .select("id,bill_amount")
+        .eq("shop_id", current.id)
+        .eq("due_month", monthStart)
+        .eq("status", "pending");
+      return data ?? [];
+    },
+  });
+  const pendingTotal = pendingDues.reduce((s, d) => s + Number(d.bill_amount), 0);
+
   const onDelete = async (e: Expense) => {
     if (!confirm(lang === "bn" ? "ডিলিট করবেন?" : "Delete?")) return;
     const { error } = await supabase.from("expenses").update({ deleted_at: new Date().toISOString() }).eq("id", e.id);
@@ -86,6 +107,25 @@ function ExpenseLedgerPage() {
 
       {/* Preset category tiles */}
       <div className="mt-4">
+        {pendingDues.length > 0 && (
+          <Link to="/app/recurring-expenses" className="mb-3 flex items-center justify-between gap-3 rounded-xl border-2 border-rose-300 bg-gradient-to-r from-rose-50 to-amber-50 px-4 py-3 shadow-sm transition hover:shadow">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-rose-600 text-white">
+                <Wallet className="h-5 w-5" />
+              </div>
+              <div>
+                <div className="text-sm font-bold text-rose-800">
+                  {lang === "bn" ? `এই মাসের ${pendingDues.length}টি বিল বাকি` : `${pendingDues.length} recurring bills pending`}
+                </div>
+                <div className="text-xs text-muted-foreground">{lang === "bn" ? "ভাড়া · বেতন · বিদ্যুৎ ইত্যাদি" : "Rent, salary, utility, ..."}</div>
+              </div>
+            </div>
+            <div className="text-right">
+              <div className="text-lg font-extrabold text-rose-700">{fmtMoney(pendingTotal, lang)}</div>
+              <div className="text-[11px] text-primary underline">{lang === "bn" ? "পরিশোধ করুন →" : "Pay now →"}</div>
+            </div>
+          </Link>
+        )}
         <div className="mb-2 text-sm font-semibold text-muted-foreground">
           {lang === "bn" ? "নতুন খরচ যোগ করুন" : "Add new expense"}
         </div>
