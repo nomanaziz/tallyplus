@@ -1,7 +1,7 @@
 import { useNavigate } from "@/lib/router";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, FileText, ArrowLeft, MoreVertical, Printer, Eye, Trash2, Download, RefreshCw, Search, Calendar } from "lucide-react";
+import { Plus, FileText, ArrowLeft, MoreVertical, Printer, Eye, Trash2, Download, RefreshCw, Search, Calendar, Pencil } from "lucide-react";
 import { BadgePercent } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useShop } from "@/lib/shop";
@@ -14,6 +14,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { InvoiceDialog, type InvoiceData } from "@/components/app/InvoiceDialog";
+import { InvoiceEditDialog, type InvoiceEditTarget } from "@/components/app/InvoiceEditDialog";
 import { DueDiscountDialog, type DueDiscountSale } from "@/components/app/DueDiscountDialog";
 import { DataPagination } from "@/components/app/DataPagination";
 import { usePagination } from "@/hooks/use-pagination";
@@ -109,6 +110,7 @@ function SalesLedgerPage() {
 
   const [invoice, setInvoice] = useState<InvoiceData | null>(null);
   const [discountSale, setDiscountSale] = useState<DueDiscountSale | null>(null);
+  const [editTarget, setEditTarget] = useState<InvoiceEditTarget | null>(null);
 
   const openInvoice = async (s: Sale) => {
     const { data: items } = await supabase
@@ -270,7 +272,11 @@ function SalesLedgerPage() {
                   const c = custMap[s.customer_id ?? ""];
                   const isPaid = Number(s.due) === 0;
                   return (
-                    <TableRow key={s.id}>
+                    <TableRow
+                      key={s.id}
+                      className="cursor-pointer hover:bg-muted/40"
+                      onClick={() => void openInvoice(s)}
+                    >
                       <TableCell>
                         <div className="font-medium">{c?.name ?? "—"}</div>
                         <div className="text-xs text-muted-foreground">{c?.phone ?? "---"}</div>
@@ -289,7 +295,7 @@ function SalesLedgerPage() {
                           {isPaid ? (lang === "bn" ? "নগদ টাকা" : "Cash") : (lang === "bn" ? "বাকি" : "Due")}
                         </span>
                       </TableCell>
-                      <TableCell className="text-right print:hidden">
+                      <TableCell className="text-right print:hidden" onClick={(e) => e.stopPropagation()}>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -301,6 +307,12 @@ function SalesLedgerPage() {
                               <Eye className="mr-2 h-4 w-4" />
                               {lang === "bn" ? "ইনভয়েস দেখুন/প্রিন্ট" : "View / Print invoice"}
                             </DropdownMenuItem>
+                            {canDelete && (
+                              <DropdownMenuItem onClick={() => setEditTarget({ kind: "sale", id: s.id, shopId: current?.id ?? "" })}>
+                                <Pencil className="mr-2 h-4 w-4" />
+                                {lang === "bn" ? "ইনভয়েস এডিট" : "Edit invoice"}
+                              </DropdownMenuItem>
+                            )}
                             <DropdownMenuItem onClick={() => void openInvoice(s)}>
                               <Printer className="mr-2 h-4 w-4" />
                               {lang === "bn" ? "প্রিন্ট" : "Print"}
@@ -347,6 +359,11 @@ function SalesLedgerPage() {
       </div>
 
       <InvoiceDialog open={!!invoice} onClose={() => setInvoice(null)} data={invoice} />
+      <InvoiceEditDialog
+        target={editTarget}
+        onOpenChange={(o) => !o && setEditTarget(null)}
+        onSaved={() => { setEditTarget(null); void refresh(); }}
+      />
       <DueDiscountDialog
         open={!!discountSale}
         onOpenChange={(o) => !o && setDiscountSale(null)}
