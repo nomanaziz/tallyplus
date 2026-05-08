@@ -110,7 +110,7 @@ html, body {
   --secondary: oklch(0.96 0.02 275);
   --secondary-foreground: oklch(0.21 0.04 260);
   --muted: oklch(0.965 0.012 275);
-  --muted-foreground: oklch(0.50 0.03 260);
+  --muted-foreground: oklch(0.30 0.03 260);
   --accent: oklch(0.94 0.05 275);
   --accent-foreground: oklch(0.21 0.04 260);
   --destructive: oklch(0.6 0.22 27);

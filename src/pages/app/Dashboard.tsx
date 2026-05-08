@@ -282,37 +282,48 @@ function DesktopOverview({
   );
 }
 
-const TONES: Record<string, string> = {
-  indigo: "bg-indigo-100 text-indigo-700",
-  amber: "bg-amber-100 text-amber-700",
-  sky: "bg-sky-100 text-sky-700",
-  emerald: "bg-emerald-100 text-emerald-700",
-  violet: "bg-violet-100 text-violet-700",
-  rose: "bg-rose-100 text-rose-700",
-  blue: "bg-blue-100 text-blue-700",
-  orange: "bg-orange-100 text-orange-700",
-  teal: "bg-teal-100 text-teal-700",
+type ToneStyle = { card: string; border: string; badge: string; link: string };
+const TONES: Record<string, ToneStyle> = {
+  indigo:  { card: "bg-gradient-to-br from-indigo-50 to-indigo-100/60 dark:from-indigo-950/40 dark:to-indigo-900/20",  border: "border-l-4 border-l-indigo-500",  badge: "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/60 dark:text-indigo-200",   link: "text-indigo-700 dark:text-indigo-300" },
+  amber:   { card: "bg-gradient-to-br from-amber-50 to-amber-100/60 dark:from-amber-950/40 dark:to-amber-900/20",       border: "border-l-4 border-l-amber-500",   badge: "bg-amber-100 text-amber-700 dark:bg-amber-900/60 dark:text-amber-200",      link: "text-amber-700 dark:text-amber-300" },
+  sky:     { card: "bg-gradient-to-br from-sky-50 to-sky-100/60 dark:from-sky-950/40 dark:to-sky-900/20",                border: "border-l-4 border-l-sky-500",     badge: "bg-sky-100 text-sky-700 dark:bg-sky-900/60 dark:text-sky-200",              link: "text-sky-700 dark:text-sky-300" },
+  emerald: { card: "bg-gradient-to-br from-emerald-50 to-emerald-100/60 dark:from-emerald-950/40 dark:to-emerald-900/20", border: "border-l-4 border-l-emerald-500", badge: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/60 dark:text-emerald-200", link: "text-emerald-700 dark:text-emerald-300" },
+  violet:  { card: "bg-gradient-to-br from-violet-50 to-violet-100/60 dark:from-violet-950/40 dark:to-violet-900/20",     border: "border-l-4 border-l-violet-500",  badge: "bg-violet-100 text-violet-700 dark:bg-violet-900/60 dark:text-violet-200",   link: "text-violet-700 dark:text-violet-300" },
+  rose:    { card: "bg-gradient-to-br from-rose-50 to-rose-100/60 dark:from-rose-950/40 dark:to-rose-900/20",             border: "border-l-4 border-l-rose-500",    badge: "bg-rose-100 text-rose-700 dark:bg-rose-900/60 dark:text-rose-200",          link: "text-rose-700 dark:text-rose-300" },
+  blue:    { card: "bg-gradient-to-br from-blue-50 to-blue-100/60 dark:from-blue-950/40 dark:to-blue-900/20",             border: "border-l-4 border-l-blue-500",    badge: "bg-blue-100 text-blue-700 dark:bg-blue-900/60 dark:text-blue-200",          link: "text-blue-700 dark:text-blue-300" },
+  orange:  { card: "bg-gradient-to-br from-orange-50 to-orange-100/60 dark:from-orange-950/40 dark:to-orange-900/20",     border: "border-l-4 border-l-orange-500",  badge: "bg-orange-100 text-orange-700 dark:bg-orange-900/60 dark:text-orange-200",  link: "text-orange-700 dark:text-orange-300" },
+  teal:    { card: "bg-gradient-to-br from-teal-50 to-teal-100/60 dark:from-teal-950/40 dark:to-teal-900/20",             border: "border-l-4 border-l-teal-500",    badge: "bg-teal-100 text-teal-700 dark:bg-teal-900/60 dark:text-teal-200",          link: "text-teal-700 dark:text-teal-300" },
 };
 
 function KpiTile({
   to, label, value, sub, icon: Icon, img: Img, tone,
 }: { to: string; label: string; value: string | number; sub?: string; icon?: React.ComponentType<{ className?: string }>; img?: React.ComponentType<{ className?: string }>; tone: string }) {
+  const t = TONES[tone] ?? TONES.indigo;
+  const { lang } = useI18n();
   return (
-    <Link to={to as never} className="group rounded-xl border bg-card p-3 shadow-sm transition hover:border-primary/40 hover:shadow-md">
-      <div className="flex items-center justify-between gap-2">
-        <span className="truncate text-[11px] font-medium text-muted-foreground">{label}</span>
+    <Link
+      to={to as never}
+      className={`group flex flex-col justify-between rounded-xl border ${t.border} ${t.card} p-3 shadow-sm transition hover:shadow-md hover:-translate-y-0.5 min-h-[120px]`}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <span className="truncate text-xs font-semibold text-foreground/80">{label}</span>
         {Img ? (
-          <span className={`flex h-7 w-7 items-center justify-center rounded-lg ${TONES[tone] ?? TONES.indigo}`}>
-            <Img className="h-4 w-4" />
+          <span className={`flex h-9 w-9 flex-none items-center justify-center rounded-lg ${t.badge}`}>
+            <Img className="h-5 w-5 icon-inherit" />
           </span>
         ) : Icon ? (
-          <span className={`flex h-7 w-7 items-center justify-center rounded-lg ${TONES[tone] ?? TONES.indigo}`}>
-            <Icon className="h-4 w-4" />
+          <span className={`flex h-9 w-9 flex-none items-center justify-center rounded-lg ${t.badge}`}>
+            <Icon className="h-5 w-5 icon-inherit" />
           </span>
         ) : null}
       </div>
-      <div className="mt-1 text-lg font-bold tabular-nums">{value}</div>
-      {sub ? <div className="text-[10px] text-muted-foreground">{sub}</div> : null}
+      <div>
+        <div className="text-2xl font-extrabold tabular-nums text-foreground">{value}</div>
+        {sub ? <div className="text-[10px] text-foreground/70">{sub}</div> : null}
+        <div className={`mt-1.5 text-[11px] font-medium ${t.link} group-hover:underline`}>
+          {lang === "bn" ? "বিস্তারিত দেখুন →" : "View details →"}
+        </div>
+      </div>
     </Link>
   );
 }
