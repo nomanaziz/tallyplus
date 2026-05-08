@@ -129,16 +129,16 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
   }, [collapsed]);
 
   // Accordion: only one section open at a time. The section containing the
-  // active route is auto-opened on navigation.
+  // active route is auto-opened on navigation. Defaults to "transactions".
   const activeSectionId = (() => {
     for (const s of SECTIONS) {
       if (s.items.some((it) => loc.pathname === it.to || loc.pathname.startsWith(it.to + "/"))) {
         return s.id;
       }
     }
-    return SECTIONS[0]?.id ?? null;
+    return null;
   })();
-  const [openId, setOpenId] = useState<string | null>(activeSectionId);
+  const [openId, setOpenId] = useState<string | null>(activeSectionId ?? "transactions");
   useEffect(() => {
     if (activeSectionId) setOpenId(activeSectionId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -151,25 +151,29 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
     return canGroup(it.perm);
   };
 
-  const renderItem = (it: SidebarItem) => {
+  const renderItem = (it: SidebarItem, variant: "top" | "child" = "top") => {
     const active = loc.pathname === it.to || loc.pathname.startsWith(it.to + "/");
+    const isChild = variant === "child" && !collapsed;
     const node = (
       <Link
         to={it.to as never}
         onClick={onNavigate}
         className={cn(
-          "group flex items-center gap-2.5 rounded-md py-1.5 text-[13px] leading-tight transition-colors",
-          collapsed ? "justify-center px-1" : "px-2",
+          "group flex items-center rounded-md transition-colors",
+          isChild ? "gap-2 py-1 px-1.5 text-[12px]" : "gap-2.5 py-1.5 text-[13px]",
+          collapsed ? "justify-center px-1" : !isChild && "px-2",
+          "leading-tight",
           it.highlight && !active && "bg-primary/15 font-semibold hover:bg-primary/25",
           active && "bg-primary/25 font-semibold text-foreground",
           !active && !it.highlight && "hover:bg-sidebar-accent",
         )}
       >
         <span className={cn(
-          "flex h-7 w-7 flex-none items-center justify-center rounded-md bg-primary text-primary-foreground shadow-sm",
+          "flex flex-none items-center justify-center rounded-md bg-primary text-primary-foreground shadow-sm",
+          isChild ? "h-5 w-5" : "h-7 w-7",
           active && "ring-2 ring-primary/40",
         )}>
-          <it.icon className="h-4 w-4 icon-inherit" />
+          <it.icon className={cn("icon-inherit", isChild ? "h-3.5 w-3.5" : "h-4 w-4")} />
         </span>
         {!collapsed && <span className="truncate">{lang === "bn" ? it.bn : it.en}</span>}
       </Link>
