@@ -43,7 +43,6 @@ export const SECTIONS: SidebarSection[] = [
       { to: "/app/sales-ledger", bn: "বিক্রয়ের বই", en: "Sales Book", icon: icons.salesList, perm: "sell" },
       { to: "/app/due-ledger", bn: "বাকির বই", en: "Due Book", icon: icons.due, perm: "due" },
       { to: "/app/expense-ledger", bn: "খরচের বই", en: "Expense Book", icon: icons.expense, perm: "expense" },
-      { to: "/app/recurring-expenses", bn: "মাসিক খরচ চার্ট", en: "Monthly Expense Chart", icon: icons.expense, perm: "expense" },
       { to: "/app/owner-ledger", bn: "মালিকের বই", en: "Owner Book", icon: icons.cashbox, perm: "expense" },
       { to: "/app/assets", bn: "দোকানের সম্পদ", en: "Shop Assets", icon: icons.cashbox, perm: "expense" },
     ],
