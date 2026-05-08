@@ -221,7 +221,7 @@ export default function Subscribe() {
           </Button>
         </div>
 
-        {plans.map((p) => {
+        {plans.filter((p) => p.code !== "trial" || !hasUsedTrial).map((p) => {
           const fp = finalPrice(p);
           const isLifetime = p.is_lifetime;
           const isCurrent = currentCode === p.code;
