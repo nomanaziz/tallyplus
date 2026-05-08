@@ -54,16 +54,22 @@ export function InvoiceEditDialog({
     setLoading(true);
     (async () => {
       const isSale = target.kind === "sale";
-      const itemsTable = isSale ? "sale_items" : "purchase_items";
-      const headTable = isSale ? "sales" : "purchases";
-      const fkCol = isSale ? "sale_id" : "purchase_id";
       const partyCol = isSale ? "customer_id" : "supplier_id";
-      const partyTable = isSale ? "customers" : "suppliers";
+
+      const headPromise = isSale
+        ? supabase.from("sales").select("*").eq("id", target.id).maybeSingle()
+        : supabase.from("purchases").select("*").eq("id", target.id).maybeSingle();
+      const itemsPromise = isSale
+        ? supabase.from("sale_items").select("product_id,name,qty,price,cost").eq("sale_id", target.id)
+        : supabase.from("purchase_items").select("product_id,name,qty,price").eq("purchase_id", target.id);
+      const contactPromise = isSale
+        ? supabase.from("customers").select("id,name,phone").eq("shop_id", target.shopId).is("deleted_at", null).order("name")
+        : supabase.from("suppliers").select("id,name,phone").eq("shop_id", target.shopId).is("deleted_at", null).order("name");
 
       const [headRes, itemsRes, contactRes, productRes] = await Promise.all([
-        supabase.from(headTable).select("*").eq("id", target.id).maybeSingle(),
-        supabase.from(itemsTable).select("product_id,name,qty,price,cost").eq(fkCol, target.id),
-        supabase.from(partyTable).select("id,name,phone").eq("shop_id", target.shopId).is("deleted_at", null).order("name"),
+        headPromise,
+        itemsPromise,
+        contactPromise,
         supabase.from("products").select("id,name,sale_price,cost_price").eq("shop_id", target.shopId).is("deleted_at", null).order("name").limit(1000),
       ]);
 
