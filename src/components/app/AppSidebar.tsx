@@ -8,7 +8,7 @@ import { BrandWordmark } from "@/components/brand/BrandWordmark";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { usePermissions } from "@/lib/permissions-hook";
 import { usePwaInstall } from "@/hooks/use-pwa-install";
-import { Download, ChevronsLeft, ChevronsRight } from "lucide-react";
+import { Download, ChevronsLeft, ChevronsRight, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { useEffect, useState } from "react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -21,7 +21,7 @@ export const SECTIONS: SidebarSection[] = [
     id: "main",
     bn: "মূল",
     en: "Main",
-    items: [{ to: "/app/dashboard", bn: "হোম", en: "Home", icon: icons.home }],
+    items: [{ to: "/app/dashboard", bn: "ড্যাশবোর্ড", en: "Dashboard", icon: icons.home }],
   },
   {
     id: "transactions",
