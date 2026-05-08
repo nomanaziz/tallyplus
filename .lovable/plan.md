@@ -1,46 +1,73 @@
-## Sidebar redesign — match sample
+## মাসিক ফিক্সড খরচ — Auto Recurring Bills
 
-Restructure `src/components/app/AppSidebar.tsx` so the sidebar matches the uploaded sample.
+দোকানদার একবার তার নিয়মিত মাসিক খরচগুলো (ভাড়া, কর্মচারীর বেতন, বিদ্যুৎ, পানি, ইন্টারনেট, লোনের কিস্তি) "চার্ট" হিসেবে বানিয়ে রাখবে। প্রতি মাসে সেগুলো **automatic একটা bill হিসেবে** তার খরচের বইতে "অপরিশোধিত / due" status-এ এসে যাবে। সে শুধু amount adjust করে (যেটা change হয়, যেমন বিদ্যুৎ bill) "পরিশোধ করুন" চাপলে cashbox থেকে টাকা কেটে নেওয়া হবে।
 
-### 1. Dashboard — standalone, not a group
-- Remove the `main` section wrapper. Render `/app/dashboard` as a single top-level row at the very top of the nav (same row style as today's items: rounded square primary-colored icon + label).
-- It is always visible — no expand/collapse, no section header.
+### 1. New database tables
 
-### 2. Other categories — accordion with a "main" icon header
-For `transactions`, `ledgers`, `inventory`, `customers`, `reports`, `more`:
+**`recurring_expenses`** — দোকানের fixed খরচের template
+- `shop_id`
+- `name` — যেমন "দোকান ভাড়া", "মূল মিটার বিদ্যুৎ", "রহিম ভাইয়ের বেতন"
+- `category` — rent / utility / salary / loan / other
+- `kind` — `fixed` (একই amount প্রতি মাসে) | `variable` (default amount, প্রতি মাসে edit) | `loan` (principal + interest থেকে monthly auto calc)
+- `amount` — fixed/variable-এর জন্য
+- `day_of_month` — কত তারিখে bill উঠবে (1–28, অথবা "মাসের শেষ দিন")
+- `start_month`, `end_month` — কবে থেকে কবে পর্যন্ত
+- `is_active`
+- Loan-only fields: `loan_principal`, `loan_annual_interest_rate` (%), `loan_term_months`, `loan_start_date` — সিস্টেম EMI / শুধু interest প্রতি মাসে calculate করে দেবে
 
-- Each section header becomes a clickable row styled like a primary nav item:
-  - Large rounded-square **primary-colored icon badge** on the left (same size as today's item icons, `h-7 w-7`, `bg-primary text-primary-foreground`).
-  - Section label in regular text (not uppercase mini-caps anymore).
-  - Chevron on the right that rotates when open.
-- Add a representative icon per section (lucide-react):
-  - transactions → `ArrowLeftRight`
-  - ledgers → `BookOpen`
-  - inventory → `Package`
-  - customers → `Users`
-  - reports → `BarChart3`
-  - more → `MoreHorizontal`
+**`recurring_expense_dues`** — প্রতি মাসে auto-generate হওয়া bill
+- `shop_id`, `recurring_expense_id`
+- `due_month` (e.g. 2026-05) — duplicate prevent করার জন্য `(recurring_expense_id, due_month)` unique
+- `bill_amount` — প্রথমে template থেকে নেওয়া, user edit করতে পারবে
+- `status` — `pending` | `paid` | `skipped`
+- `paid_at`, `paid_via`, `expense_id` (পরিশোধের পরে তৈরি `expenses` row-এর reference)
 
-### 3. Sub-items — indented with a left guide line
-When a section is open, its items render as a child list:
+### 2. Auto-generation logic
 
-- Wrap the children in a container with `pl-3 ml-3 border-l border-border` to draw the vertical guide line shown in the sample.
-- Each child item gets a **smaller icon** (`h-5 w-5` badge with `h-3.5 w-3.5` glyph) and slightly smaller text (`text-[12px]`), so the visual hierarchy reads "big parent, small children" like the sample.
-- Active child keeps the current highlighted background.
+প্রতি দিন একবার একটা scheduled job চলবে (pg_cron, প্রতি সকাল ৬টা):
 
-### 4. Default open state
-- `transactions` is open by default on first load.
-- Only one section open at a time (current accordion behavior preserved).
-- When the user navigates into a route, the section containing that route auto-opens (preserved).
-- Manual toggles continue to work.
+1. সব `recurring_expenses` যেগুলো `is_active = true` এবং আজকের তারিখ `day_of_month`-এর সমান বা তার পরে → চলতি মাসের জন্য bill exist না করলে একটা `recurring_expense_dues` row তৈরি করবে।
+2. `loan` kind-এর জন্য monthly interest = `principal × (annual_rate/100/12)` formula দিয়ে auto calculate হবে।
+3. একইসাথে app খুললে frontend-ও missing month-গুলো backfill করার জন্য একটা lightweight server function call করবে — যাতে cron miss করলেও bill উঠে আসে।
 
-### 5. Collapsed (icon-only) sidebar
-- Dashboard row: icon only (current behavior).
-- Section headers in collapsed mode: render the section's main icon as a button; clicking it expands the sidebar and opens that section. Sub-items are not shown while collapsed.
+### 3. UI — তিনটা জায়গা
 
-### Files touched
-- `src/components/app/AppSidebar.tsx` — only file changed. No other components, no business logic.
+**(ক) নতুন পেজ "মাসিক খরচ চার্ট" — sidebar > হিসাবের বই-এর under**
+- Template-এর list (নাম, category, amount, day_of_month, kind)
+- "+ নতুন মাসিক খরচ" button → dialog যেখানে category, name, kind (fixed/variable/loan), amount/loan params, day_of_month select করা যাবে
+- Edit / pause / delete
 
-### Out of scope
-- No changes to routes, permissions, or page contents.
-- No theme/token changes.
+**(খ) Dashboard — নতুন widget "এই মাসের বাকি bill"**
+- চলতি মাসে যেসব auto-generated due এখনো `pending`, সেগুলোর list + total
+- প্রতিটা row-এ "পরিশোধ করুন" button — amount edit করার option সহ
+
+**(গ) খরচের বই (`ExpenseLedger`)**
+- উপরে একটা banner: "এই মাসের ৩টা bill এখনো বাকি — দেখুন"
+- পরিশোধ করলে normal `expenses` row তৈরি হবে + cashbox থেকে টাকা কাটবে (এখনকার expense flow-এর মতো), শুধু due-এর সাথে link থাকবে
+
+### 4. Loan handling (সহজ rule)
+
+User একটাই simple form পাবে:
+- Loan amount (যেমন ১০,০০০), annual interest rate (%), শুরুর তারিখ, কত মাসে শোধ হবে
+- System দু'টা option দেখাবে:
+  - **শুধু interest প্রতি মাসে** = principal × (rate/100/12)
+  - **EMI (interest + principal)** = standard EMI formula
+- User যেটা select করবে সেটাই প্রতি মাসে auto bill হিসেবে উঠবে। Loan settle হলে `is_active` off।
+
+### 5. RLS
+সব নতুন table-এ shop-scoped policies — owner / admin শুধু নিজের shop-এর recurring expense ও due দেখতে/edit করতে পারবে। Existing shop permission helper-গুলোর সাথে align।
+
+### Files to add / change
+- DB migration: `recurring_expenses`, `recurring_expense_dues` + RLS + indexes
+- pg_cron job → `/api/public/hooks/generate-recurring-dues` route
+- New page: `src/pages/app/RecurringExpenses.tsx`
+- New dialog: `src/components/app/RecurringExpenseDialog.tsx`, `src/components/app/PayRecurringDueDialog.tsx`
+- Dashboard widget: update `src/pages/app/Dashboard.tsx`
+- Banner + link in `src/pages/app/ExpenseLedger.tsx`
+- Sidebar entry in `src/components/app/AppSidebar.tsx` (হিসাবের বই section-এ)
+- Route + i18n strings
+
+### Out of scope (এখন করছি না)
+- Reminder push/SMS notification
+- Multi-currency
+- Partial payment (একবারে full pay assumed; future enhancement)
