@@ -15,6 +15,7 @@ import { PromoPopupDialog } from "@/components/app/PromoPopupDialog";
 import { SampleProductImportSheet } from "@/components/app/SampleProductImportSheet";
 import { TrialBanner } from "@/components/app/TrialBanner";
 import { TrialEndingDialog } from "@/components/app/TrialEndingDialog";
+import { AppTour } from "@/components/app/AppTour";
 
 // SettingsSheet is heavy (329 lines + many imports) and only opens on demand.
 // Lazy-load to keep the app shell bundle small.
@@ -254,6 +255,7 @@ function AppLayout({ ownsShop }: { ownsShop: boolean }) {
           onOpenChange={setSampleImportOpen}
           onImported={() => setSampleImportOpen(false)}
         />
+        <AppTour />
       </div>
     </div>
   );
