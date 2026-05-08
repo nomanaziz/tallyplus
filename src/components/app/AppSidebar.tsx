@@ -8,38 +8,25 @@ import { BrandWordmark } from "@/components/brand/BrandWordmark";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { usePermissions } from "@/lib/permissions-hook";
 import { usePwaInstall } from "@/hooks/use-pwa-install";
-import {
-  Download,
-  ChevronsLeft,
-  ChevronsRight,
-  ChevronDown,
-  ArrowLeftRight,
-  BookOpen,
-  Package,
-  Users,
-  BarChart3,
-  MoreHorizontal,
-} from "lucide-react";
+import { Download, ChevronsLeft, ChevronsRight, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { useEffect, useState } from "react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 export type SidebarItem = { to: string; bn: string; en: string; icon: LucideIcon; highlight?: boolean; perm?: string };
-export type SidebarSection = { id: string; bn: string; en: string; icon: LucideIcon; items: SidebarItem[] };
-
-export const DASHBOARD_ITEM: SidebarItem = {
-  to: "/app/dashboard",
-  bn: "ড্যাশবোর্ড",
-  en: "Dashboard",
-  icon: icons.home,
-};
+export type SidebarSection = { id: string; bn: string; en: string; items: SidebarItem[] };
 
 export const SECTIONS: SidebarSection[] = [
+  {
+    id: "main",
+    bn: "মূল",
+    en: "Main",
+    items: [{ to: "/app/dashboard", bn: "ড্যাশবোর্ড", en: "Dashboard", icon: icons.home }],
+  },
   {
     id: "transactions",
     bn: "লেনদেন",
     en: "Transactions",
-    icon: ArrowLeftRight,
     items: [
       { to: "/app/purchase", bn: "ক্রয়", en: "Purchase", icon: icons.purchase, perm: "purchase" },
       { to: "/app/sell", bn: "বিক্রয়", en: "Sell", icon: icons.sell, perm: "sell" },
@@ -51,7 +38,6 @@ export const SECTIONS: SidebarSection[] = [
     id: "ledgers",
     bn: "হিসাবের বই",
     en: "Books",
-    icon: BookOpen,
     items: [
       { to: "/app/purchase-ledger", bn: "ক্রয়ের বই", en: "Purchase Book", icon: icons.purchaseList, perm: "purchase" },
       { to: "/app/sales-ledger", bn: "বিক্রয়ের বই", en: "Sales Book", icon: icons.salesList, perm: "sell" },
@@ -65,7 +51,6 @@ export const SECTIONS: SidebarSection[] = [
     id: "inventory",
     bn: "পণ্য ও স্টক",
     en: "Inventory",
-    icon: Package,
     items: [
       { to: "/app/products", bn: "প্রোডাক্ট ও স্টক", en: "Products & Stock", icon: icons.productList, perm: "products" },
       { to: "/app/services", bn: "সার্ভিস", en: "Services", icon: icons.training, perm: "services" },
@@ -78,7 +63,6 @@ export const SECTIONS: SidebarSection[] = [
     id: "customers",
     bn: "গ্রাহক ও যোগাযোগ",
     en: "Customers",
-    icon: Users,
     items: [
       { to: "/app/contacts", bn: "যোগাযোগ", en: "Contacts", icon: icons.contact, perm: "contacts" },
       { to: "/app/customer-wishlist", bn: "গ্রাহক ফর্দ", en: "Customer Fordo", icon: icons.contact, perm: "contacts" },
@@ -91,7 +75,6 @@ export const SECTIONS: SidebarSection[] = [
     id: "reports",
     bn: "রিপোর্ট ও সেটিংস",
     en: "Reports & Settings",
-    icon: BarChart3,
     items: [
       { to: "/app/reports", bn: "ব্যবসার রিপোর্ট", en: "Business Report", icon: icons.businessReport, perm: "report" },
       { to: "/app/owner-report", bn: "মালিকের রিপোর্ট", en: "Owner Report", icon: icons.businessReport, perm: "report" },
@@ -105,7 +88,6 @@ export const SECTIONS: SidebarSection[] = [
     id: "more",
     bn: "অন্যান্য",
     en: "Others",
-    icon: MoreHorizontal,
     items: [
       { to: "/app/training", bn: "অ্যাপ ট্রেনিং", en: "App Training", icon: icons.training },
       { to: "/app/affiliate", bn: "গ্রোথ পার্টনার", en: "Growth Partner", icon: icons.contact },
