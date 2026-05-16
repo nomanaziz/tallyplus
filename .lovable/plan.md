@@ -1,78 +1,53 @@
-# Personal App — Mobile-First Navigation, Cash Fix & MyMoney-style Flow
+# Dashboard-এ Interactive Charts যোগ করা
 
-## লক্ষ্য
+Customer dashboard (`/customer/dashboard`) এবং shop owner dashboard (`/app/dashboard`)-এ eye-catching, interactive chart যোগ করা হবে যাতে দেখতে professional লাগে। Chart library হিসেবে `recharts` (already installed and used in Analytics page) ব্যবহার করা হবে।
 
-Personal (customer) সাইডের navigation এখন লম্বা ও এলোমেলো — mobile-এ ব্যবহার কঠিন। এটাকে MyMoney-style একটা পরিষ্কার, sequential, mobile-first অভিজ্ঞতায় আনব, "নগদ" duplication ঠিক করব, এবং shopping-সংক্রান্ত পেইজগুলো একটা hub-এ merge করব।
+## কী কী যোগ হবে
 
-## নতুন Information Architecture
+### ১. Customer Dashboard (`src/pages/customer/Dashboard.tsx`)
 
-Top-level menu মাত্র **৬টি** — যেকোনো জায়গা থেকে সবকিছু ২ ট্যাপের মধ্যে।
+বর্তমানে শুধু স্ট্যাট কার্ড আর shortcut আছে। নিচের ৩টি chart section যোগ হবে — summary card-এর নিচে, "মোট সারসংক্ষেপ"-এর উপরে।
 
-```text
-১. হোম (Dashboard)              — ড্যাশবোর্ড, দ্রুত অ্যাকশন
-২. ফর্দ (Fordo hub)             — আমার ফর্দ + নতুন ফর্দ (ট্যাব)
-৩. শপিং (Shopping hub - নতুন)   — অর্ডার / প্রিয় দোকান / সার্ভিস (ট্যাব)
-৪. টাকা (Money hub)             — Records / Analysis / Budgets / Accounts / Categories
-                                  (নিচে ৫-আইটেম sub-nav, ঠিক MyMoney style)
-৫. ইতিহাস                       — History
-৬. আমি (Me)                     — প্রোফাইল, সাবস্ক্রিপশন, নোট, ট্রেনিং, লগআউট
-```
+- **আয় বনাম ব্যয় Donut** (এই মাস)
+  - Income vs Expense ছোট donut chart, মাঝে net balance দেখাবে
+  - Hover-এ tooltip; ট্যাপ করলে `/customer/analytics`-এ যাবে
 
-### Mobile bottom-nav (always visible)
+- **গত ৬ মাসের Trend (Area chart)**
+  - Stacked/overlapping area: আয় (সবুজ) ও ব্যয় (লাল)
+  - মাসের label বাংলায়, smooth curve, gradient fill
+  - Tooltip-এ মাসভিত্তিক income/expense
 
-`হোম · ফর্দ · ➕ (FAB) · টাকা · আমি` — মাঝখানে বড় গোল `+` বোতাম, context-aware (টাকা ট্যাবে থাকলে নতুন আয়/ব্যয়, ফর্দ ট্যাবে থাকলে নতুন ফর্দ)।
+- **শীর্ষ ৫ ব্যয়ের ক্যাটাগরি (Horizontal bar)**
+  - এই মাসের top 5 expense category, progress-style bar
+  - প্রতিটার পাশে amount + %
 
-### Money hub-এর ভেতরের sub-nav (MyMoney-এর হুবহু sequence)
+তিনটাই click-able → `/customer/analytics`-এ navigate করবে যাতে user বিস্তারিত interactive analysis দেখতে পারে।
 
-`Records (আয়-ব্যয়) → Analysis → Budgets → Accounts → Categories` — page-এর নিচে sticky tab strip; কাজ করার সময় হাত নাড়াতে হবে না।
+### ২. Shop Owner Dashboard (`src/pages/app/Dashboard.tsx`)
 
-## "নগদ" duplication fix
+বর্তমান summary card-এর নিচে একটা compact "Insights" section যোগ হবে যেখানে নিচের ২টি chart থাকবে (selected range অনুযায়ী):
 
-বর্তমান `ACCOUNT_KIND_LABEL`:
-- `cash: "নগদ"`     ← এটাই duplicate-এর কারণ
-- `nagad: "নগদ অ্যাকাউন্ট"`
+- **Sales Trend (Line/Area chart)** — গত ৭/৩০ দিনের daily sales
+- **Income Composition (Donut)** — Sales / Purchases / Expenses ratio
 
-পরিবর্তন:
-- `cash` → **"ক্যাশ"** (পকেটের টাকা)
-- `nagad` → **"নগদ"** (mobile banking)
+Chart ছোট, mobile-responsive, এবং `/app/reports`-এর সাথে link থাকবে।
 
-Default seed account-এর নাম `"নগদ"` থেকে `"ক্যাশ"` করব (নতুন user-এর জন্য; পুরোনো data touch করব না)। অ্যাকাউন্ট তৈরির form-এ ছোট helper text — "ক্যাশ = পকেটের টাকা · নগদ = মোবাইল ব্যাংকিং"।
+## Data Source
 
-## MyMoney-style Records ও Add screen
+- Customer: existing `loadMonthTransactions` ও `loadLastNMonths` থেকে (`src/lib/consumer-analytics.ts`) — কোনো নতুন query লাগবে না
+- Shop owner: existing `dashboardSummaryQuery` extend করা হবে অথবা নতুন একটা lightweight `dashboardTrendQuery` `src/lib/queries.ts`-এ যোগ হবে (গত ৩০ দিনের daily aggregate)
 
-ছবি থেকে যা copy করব (design idea, হুবহু না):
-- উপরে month switcher + EXPENSE / INCOME / TOTAL summary row
-- প্রতি transaction-এ বড় round category icon, account chip, ডানে রঙিন amount
-- দিন অনুযায়ী group ("১৬ মে, শনিবার")
-- FAB `+` চাপলে full-screen Add sheet: `INCOME | EXPENSE | TRANSFER` toggle, Account + Category chip selectors, Notes, বড় calculator-style number pad, নিচে date/time, উপরে CANCEL / SAVE
-- Transfer-এ "From account → To account" — account-এ balance না থাকলে expense disable + হালকা warning ("ক্যাশ-এ যথেষ্ট ব্যালেন্স নেই, আগে টাকা যোগ করুন")
+## Technical Details
 
-## Analysis page
+- Library: `recharts` (already installed, used in `Analytics.tsx`)
+- Colors: `CHART_COLORS` from `src/lib/consumer-analytics.ts` + semantic tokens (`--primary`, `--success`, `--destructive`)
+- Responsive: `ResponsiveContainer` দিয়ে, mobile-এ height কম (160-180px), desktop-এ 220-260px
+- Loading: skeleton placeholder যাতে layout shift না হয়
+- কোনো DB schema change নেই, কোনো নতুন migration নেই
 
-- Donut chart: ব্যয় by category + পাশে legend (percent সহ)
-- প্রতি category-র জন্য progress bar row (amount + %)
-- Income vs Expense bar chart (৬ মাস)
-- উপরে EXPENSE / INCOME / TOTAL summary
+## ফাইল পরিবর্তন
 
-## যা যা change/create হবে
-
-**Edit:**
-- `src/pages/customer/CustomerLayout.tsx` — ৬-আইটেম sidebar + ৫-আইটেম bottom nav + center FAB
-- `src/lib/consumer-finance.ts` — `ACCOUNT_KIND_LABEL` ও default seed (`"নগদ"` → `"ক্যাশ"`)
-- `src/components/customer/AccountsCategoriesDialog.tsx` — kind helper text
-- `src/pages/customer/Money.tsx` — উপরে Records/Analysis/Budgets/Accounts/Categories sub-nav; MyMoney-style list ও FAB; existing functionality অক্ষুণ্ণ
-- `src/pages/customer/Analytics.tsx` — donut + per-category progress rows (MyMoney style)
-- `src/lib/app-routes.tsx` — নতুন hub route যোগ
-
-**Create:**
-- `src/pages/customer/Shopping.tsx` — অর্ডার / প্রিয় দোকান / সার্ভিস ট্যাব (existing ৩টি page-কে wrap করে; কোনো logic মুছবো না)
-- `src/pages/customer/Me.tsx` — প্রোফাইল / সাবস্ক্রিপশন / নোট / ট্রেনিং / লগআউট card-grid
-
-পুরোনো route (`/customer/my-orders`, `/customer/favorite-shops`, `/customer/my-services`, `/customer/notes`, `/customer/training`, `/customer/subscription`, `/customer/profile`) কাজ করবে — শুধু sidebar থেকে সরিয়ে hub-এর ভেতরে আনা হচ্ছে। কোনো business logic, কোনো backend, কোনো existing data touch হবে না — শুধু navigation + presentation + label।
-
-## Technical notes
-
-- শুধু frontend; নতুন migration নেই
-- `MyServices.tsx` বর্তমানে service booking list দেখায় — খালি হলে hub-এ "এখনো কোনো সার্ভিস নেই" empty state
-- `cash` enum value DB-তে অপরিবর্তিত — শুধু UI label বদলাচ্ছে, তাই migration লাগবে না
-- Mobile-first: সব নতুন UI আগে 360px-এ design, তারপর desktop
+- `src/pages/customer/Dashboard.tsx` — chart section + data fetching extend
+- `src/pages/app/Dashboard.tsx` — insights section যোগ
+- `src/lib/queries.ts` — shop owner trend query (যদি প্রয়োজন হয়)
+- (নতুন helper component) `src/components/customer/DashboardCharts.tsx` — chart UI গুলো এখানে রাখা হবে যাতে Dashboard.tsx ছোট থাকে
