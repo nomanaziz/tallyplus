@@ -197,6 +197,8 @@ export default function CustomerDashboard() {
         </Card>
       </div>
 
+      {user ? <CustomerDashboardCharts userId={user.id} /> : null}
+
       {/* মোট সারসংক্ষেপ — দেনা, পাওনা, total order, ফর্দ, প্রিয় দোকান, সার্ভিস */}
       <div>
         <h2 className="mb-2 text-sm font-semibold text-muted-foreground">মোট সারসংক্ষেপ</h2>
