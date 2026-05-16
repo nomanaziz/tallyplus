@@ -1,62 +1,78 @@
-# পার্সোনাল মানি ম্যানেজমেন্টে অ্যানালিটিক্স ও বাজেট যোগ
+# Personal App — Mobile-First Navigation, Cash Fix & MyMoney-style Flow
 
-ব্যক্তিগত ব্যবহারকারীদের (`/customer/*`) জন্য গ্রাফ-ভিত্তিক analytics এবং monthly budget feature যোগ করা হবে। MyMoney অ্যাপের idea — minimal, graphical, সহজবোধ্য — অনুসরণ করা হবে, কিন্তু design copy নয়। বর্তমান সব feature অপরিবর্তিত থাকবে।
+## লক্ষ্য
 
-## নতুন কী যোগ হবে
+Personal (customer) সাইডের navigation এখন লম্বা ও এলোমেলো — mobile-এ ব্যবহার কঠিন। এটাকে MyMoney-style একটা পরিষ্কার, sequential, mobile-first অভিজ্ঞতায় আনব, "নগদ" duplication ঠিক করব, এবং shopping-সংক্রান্ত পেইজগুলো একটা hub-এ merge করব।
 
-### ১. Analytics পেইজ — `/customer/analytics`
-এক জায়গায় খরচের সম্পূর্ণ ছবি:
-- উপরে month switcher (◀ মে, ২০২৬ ▶) + মোট আয়/ব্যয়/ব্যালেন্স summary cards
-- **Donut chart** — ক্যাটাগরি অনুযায়ী ব্যয় ভাগ (color-coded, percentage সহ)
-- নিচে category-wise list — progress bar + amount + % (MyMoney-এর মত)
-- **Bar chart** — গত ৬ মাসের আয় বনাম ব্যয় তুলনা
-- **Line chart** — চলতি মাসের দৈনিক ব্যয়ের trend
-- Top 5 ব্যয়ের ক্যাটাগরি কার্ড
+## নতুন Information Architecture
 
-### ২. Budgets পেইজ — `/customer/budgets`
-মাসিক বাজেট planning:
-- Month switcher + "মোট বাজেট" ও "মোট খরচ" summary
-- প্রতিটি expense category-র পাশে "বাজেট সেট করুন" বাটন (বা বর্তমান বাজেট + progress bar)
-- বাজেট সেট থাকলে: progress bar (সবুজ → হলুদ → লাল), "৳X বাকি / ৳Y শেষ", over-budget warning
-- "গত মাসের বাজেট কপি করুন" বাটন
+Top-level menu মাত্র **৬টি** — যেকোনো জায়গা থেকে সবকিছু ২ ট্যাপের মধ্যে।
 
-### ৩. Navigation আপডেট
-- Desktop sidebar-এ (`CustomerLayout.tsx` NAV array) দুটি নতুন লিংক যোগ:
-  - "অ্যানালিটিক্স" (PieChart icon)
-  - "বাজেট" (Calculator icon)
-- `/customer/money` পেইজের header-এ shortcut বাটন: "অ্যানালিটিক্স" ও "বাজেট"
-- Mobile bottom nav ৫টি item-ই আছে — অপরিবর্তিত থাকবে (Money পেইজ থেকেই access)
-
-## টেকনিক্যাল ডিটেইল
-
-**Database — নতুন migration:**
 ```text
-consumer_budgets (
-  id, user_id, category_name TEXT, month DATE,  -- month-এর ১ তারিখ
-  amount_limit NUMERIC, created_at, updated_at
-)
-UNIQUE (user_id, category_name, month)
-RLS: user নিজের row-ই read/write করতে পারবে
+১. হোম (Dashboard)              — ড্যাশবোর্ড, দ্রুত অ্যাকশন
+২. ফর্দ (Fordo hub)             — আমার ফর্দ + নতুন ফর্দ (ট্যাব)
+৩. শপিং (Shopping hub - নতুন)   — অর্ডার / প্রিয় দোকান / সার্ভিস (ট্যাব)
+৪. টাকা (Money hub)             — Records / Analysis / Budgets / Accounts / Categories
+                                  (নিচে ৫-আইটেম sub-nav, ঠিক MyMoney style)
+৫. ইতিহাস                       — History
+৬. আমি (Me)                     — প্রোফাইল, সাবস্ক্রিপশন, নোট, ট্রেনিং, লগআউট
 ```
 
-**ব্যবহৃত existing data:**
-- `consumer_transactions` — আয়/ব্যয় aggregate-এর জন্য (category, tx_date, amount, type)
-- `consumer_categories` — category list + color/icon
+### Mobile bottom-nav (always visible)
 
-**Charts:** ইতিমধ্যে installed `recharts` ব্যবহার করা হবে (`PieChart`, `BarChart`, `LineChart`, `ResponsiveContainer`)। `src/components/ui/chart.tsx` wrapper কাজে লাগানো হবে যাতে theme tokens মেনে চলে।
+`হোম · ফর্দ · ➕ (FAB) · টাকা · আমি` — মাঝখানে বড় গোল `+` বোতাম, context-aware (টাকা ট্যাবে থাকলে নতুন আয়/ব্যয়, ফর্দ ট্যাবে থাকলে নতুন ফর্দ)।
 
-**নতুন/বদল হওয়া ফাইল:**
-- `supabase/migrations/<ts>_consumer_budgets.sql` — নতুন table + RLS
-- `src/pages/customer/Analytics.tsx` — নতুন
-- `src/pages/customer/Budgets.tsx` — নতুন
-- `src/lib/consumer-analytics.ts` — aggregate query helpers
-- `src/lib/app-routes.tsx` — দুই নতুন route register
-- `src/pages/customer/CustomerLayout.tsx` — NAV array-এ যোগ
-- `src/pages/customer/Money.tsx` — header-এ ২টি shortcut বাটন
+### Money hub-এর ভেতরের sub-nav (MyMoney-এর হুবহু sequence)
 
-**যা ভাঙবে না:**
-- বিদ্যমান `Money.tsx`, `History.tsx`, `CashBook.tsx`, loans, recurring rules — সব আগের মতই।
-- শুধু additive পরিবর্তন; existing schema, RPC, RLS কিছুই বদলাবে না।
+`Records (আয়-ব্যয়) → Analysis → Budgets → Accounts → Categories` — page-এর নিচে sticky tab strip; কাজ করার সময় হাত নাড়াতে হবে না।
 
-## টোন
-Existing app-এর Bangla + minimal aesthetic ধরে রাখা হবে — current design tokens, Card/Button components ব্যবহার করে; কোনো custom hardcoded color নয়।
+## "নগদ" duplication fix
+
+বর্তমান `ACCOUNT_KIND_LABEL`:
+- `cash: "নগদ"`     ← এটাই duplicate-এর কারণ
+- `nagad: "নগদ অ্যাকাউন্ট"`
+
+পরিবর্তন:
+- `cash` → **"ক্যাশ"** (পকেটের টাকা)
+- `nagad` → **"নগদ"** (mobile banking)
+
+Default seed account-এর নাম `"নগদ"` থেকে `"ক্যাশ"` করব (নতুন user-এর জন্য; পুরোনো data touch করব না)। অ্যাকাউন্ট তৈরির form-এ ছোট helper text — "ক্যাশ = পকেটের টাকা · নগদ = মোবাইল ব্যাংকিং"।
+
+## MyMoney-style Records ও Add screen
+
+ছবি থেকে যা copy করব (design idea, হুবহু না):
+- উপরে month switcher + EXPENSE / INCOME / TOTAL summary row
+- প্রতি transaction-এ বড় round category icon, account chip, ডানে রঙিন amount
+- দিন অনুযায়ী group ("১৬ মে, শনিবার")
+- FAB `+` চাপলে full-screen Add sheet: `INCOME | EXPENSE | TRANSFER` toggle, Account + Category chip selectors, Notes, বড় calculator-style number pad, নিচে date/time, উপরে CANCEL / SAVE
+- Transfer-এ "From account → To account" — account-এ balance না থাকলে expense disable + হালকা warning ("ক্যাশ-এ যথেষ্ট ব্যালেন্স নেই, আগে টাকা যোগ করুন")
+
+## Analysis page
+
+- Donut chart: ব্যয় by category + পাশে legend (percent সহ)
+- প্রতি category-র জন্য progress bar row (amount + %)
+- Income vs Expense bar chart (৬ মাস)
+- উপরে EXPENSE / INCOME / TOTAL summary
+
+## যা যা change/create হবে
+
+**Edit:**
+- `src/pages/customer/CustomerLayout.tsx` — ৬-আইটেম sidebar + ৫-আইটেম bottom nav + center FAB
+- `src/lib/consumer-finance.ts` — `ACCOUNT_KIND_LABEL` ও default seed (`"নগদ"` → `"ক্যাশ"`)
+- `src/components/customer/AccountsCategoriesDialog.tsx` — kind helper text
+- `src/pages/customer/Money.tsx` — উপরে Records/Analysis/Budgets/Accounts/Categories sub-nav; MyMoney-style list ও FAB; existing functionality অক্ষুণ্ণ
+- `src/pages/customer/Analytics.tsx` — donut + per-category progress rows (MyMoney style)
+- `src/lib/app-routes.tsx` — নতুন hub route যোগ
+
+**Create:**
+- `src/pages/customer/Shopping.tsx` — অর্ডার / প্রিয় দোকান / সার্ভিস ট্যাব (existing ৩টি page-কে wrap করে; কোনো logic মুছবো না)
+- `src/pages/customer/Me.tsx` — প্রোফাইল / সাবস্ক্রিপশন / নোট / ট্রেনিং / লগআউট card-grid
+
+পুরোনো route (`/customer/my-orders`, `/customer/favorite-shops`, `/customer/my-services`, `/customer/notes`, `/customer/training`, `/customer/subscription`, `/customer/profile`) কাজ করবে — শুধু sidebar থেকে সরিয়ে hub-এর ভেতরে আনা হচ্ছে। কোনো business logic, কোনো backend, কোনো existing data touch হবে না — শুধু navigation + presentation + label।
+
+## Technical notes
+
+- শুধু frontend; নতুন migration নেই
+- `MyServices.tsx` বর্তমানে service booking list দেখায় — খালি হলে hub-এ "এখনো কোনো সার্ভিস নেই" empty state
+- `cash` enum value DB-তে অপরিবর্তিত — শুধু UI label বদলাচ্ছে, তাই migration লাগবে না
+- Mobile-first: সব নতুন UI আগে 360px-এ design, তারপর desktop
