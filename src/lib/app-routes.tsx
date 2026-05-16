@@ -134,6 +134,8 @@ const LProfile = lazy(() => import("@/pages/app/Profile"));
 const LShopSettings = lazy(() => import("@/pages/app/ShopSettings"));
 const LCashBook = lazy(() => import("@/pages/app/CashBook"));
 const LCustomerCashBook = lazy(() => import("@/pages/customer/CashBook"));
+const LCustomerAnalytics = lazy(() => import("@/pages/customer/Analytics"));
+const LCustomerBudgets = lazy(() => import("@/pages/customer/Budgets"));
 
 export const appRoutes: RouteObject[] = [
 { index: true, element: <Suspense fallback={<RouteFallback/>}><L0/></Suspense> },
