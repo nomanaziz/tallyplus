@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
   ChevronLeft, ChevronRight, TrendingUp, TrendingDown, Wallet,
-  PieChart as PieIcon, Calculator, Loader2, History as HistoryIcon,
+  PieChart as PieIcon, Calculator, Loader2,
 } from "lucide-react";
 import {
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip,

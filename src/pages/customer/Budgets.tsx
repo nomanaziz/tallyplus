@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import {
   ChevronLeft, ChevronRight, Calculator, Loader2, Plus, PieChart as PieIcon,
-  Wallet, History as HistoryIcon, Copy,
+  Wallet, Copy,
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";

@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   Loader2, Plus, Minus, Trash2, TrendingUp, TrendingDown, Wallet,
-  History as HistoryIcon, Crown, Settings, ArrowLeftRight, Repeat, BookOpen,
+  Settings, ArrowLeftRight, Repeat,
   PieChart as PieIcon, Calculator,
 } from "lucide-react";
 import { toast } from "sonner";
