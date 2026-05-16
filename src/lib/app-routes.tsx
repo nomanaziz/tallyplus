@@ -136,6 +136,8 @@ const LCashBook = lazy(() => import("@/pages/app/CashBook"));
 const LCustomerCashBook = lazy(() => import("@/pages/customer/CashBook"));
 const LCustomerAnalytics = lazy(() => import("@/pages/customer/Analytics"));
 const LCustomerBudgets = lazy(() => import("@/pages/customer/Budgets"));
+const LCustomerShopping = lazy(() => import("@/pages/customer/Shopping"));
+const LCustomerMe = lazy(() => import("@/pages/customer/Me"));
 
 export const appRoutes: RouteObject[] = [
 { index: true, element: <Suspense fallback={<RouteFallback/>}><L0/></Suspense> },
@@ -287,6 +289,10 @@ export const appRoutes: RouteObject[] = [
 { path: "subscription", element: <Suspense fallback={<RouteFallback/>}><LCustomerSubscription/></Suspense> }
 ,
 { path: "subscribe/callback", element: <Suspense fallback={<RouteFallback/>}><LCustomerSubscribeCallback/></Suspense> }
+,
+{ path: "shopping", element: <Suspense fallback={<RouteFallback/>}><LCustomerShopping/></Suspense> }
+,
+{ path: "me", element: <Suspense fallback={<RouteFallback/>}><LCustomerMe/></Suspense> }
 ] },
 { path: "f/:slug", element: <Suspense fallback={<RouteFallback/>}><L64/></Suspense>, children: [
 { path: "my", element: <Suspense fallback={<RouteFallback/>}><L65/></Suspense> }

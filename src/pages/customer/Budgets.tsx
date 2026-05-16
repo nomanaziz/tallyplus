@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import {
   ChevronLeft, ChevronRight, Calculator, Loader2, Plus, PieChart as PieIcon,
-  Wallet, History as HistoryIcon, Copy,
+  Wallet, Copy,
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -120,17 +120,18 @@ export default function CustomerBudgets() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-2xl font-bold">বাজেট</h1>
-        <div className="flex flex-wrap gap-2">
-          <Button asChild size="sm" variant="outline">
-            <Link to="/customer/money"><Wallet className="mr-1 h-4 w-4" /> আয়-ব্যয়</Link>
-          </Button>
-          <Button asChild size="sm" variant="outline">
-            <Link to="/customer/analytics"><PieIcon className="mr-1 h-4 w-4" /> অ্যানালিটিক্স</Link>
-          </Button>
-          <Button asChild size="sm" variant="outline">
-            <Link to="/customer/history"><HistoryIcon className="mr-1 h-4 w-4" /> ইতিহাস</Link>
-          </Button>
-        </div>
+      </div>
+
+      <div className="grid grid-cols-3 gap-1 rounded-xl border bg-card p-1 text-xs sm:text-sm">
+        <Link to="/customer/money" className="flex items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 font-semibold text-muted-foreground hover:bg-accent">
+          <Wallet className="h-4 w-4" /> Records
+        </Link>
+        <Link to="/customer/analytics" className="flex items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 font-semibold text-muted-foreground hover:bg-accent">
+          <PieIcon className="h-4 w-4" /> Analysis
+        </Link>
+        <Link to="/customer/budgets" className="flex items-center justify-center gap-1.5 rounded-lg bg-primary px-2 py-1.5 font-semibold text-primary-foreground">
+          <Calculator className="h-4 w-4" /> Budgets
+        </Link>
       </div>
 
       <Card className="flex items-center justify-between p-3">
