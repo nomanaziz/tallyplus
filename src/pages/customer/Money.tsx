@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "@/lib/router";
+import { Link, useLocation, useNavigate } from "@/lib/router";
 import { supabase } from "@/integrations/supabase/client";
 import { writeWithOffline } from "@/lib/useOfflineWrite";
 import { useAuth } from "@/lib/auth";
@@ -42,6 +42,8 @@ function bdt(n: number) {
 
 export default function CustomerMoney() {
   const { user } = useAuth();
+  const loc = useLocation();
+  const navigate = useNavigate();
   const [rows, setRows] = useState<Tx[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
@@ -91,6 +93,17 @@ export default function CustomerMoney() {
   };
 
   useEffect(() => { void load(); }, [user]);
+
+  // FAB from layout: /customer/money?add=1 opens the add sheet immediately.
+  useEffect(() => {
+    const sp = new URLSearchParams(loc.search ?? "");
+    if (sp.get("add") === "1") {
+      setType("expense");
+      setCategoryId("");
+      setOpen(true);
+      navigate("/customer/money", { replace: true });
+    }
+  }, [loc.search, navigate]);
 
   const monthRows = useMemo(() => {
     const k = monthKey(new Date());
