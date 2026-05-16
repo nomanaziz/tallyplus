@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { icons } from "@/lib/icons";
 import { InstallAppCard } from "@/components/app/InstallAppCard";
+import { CustomerDashboardCharts } from "@/components/customer/DashboardCharts";
 
 type Tx = { id: string; type: string; amount: number; tx_date: string; kind?: string | null; transfer_group_id?: string | null };
 type LoanSummary = { type: "lent" | "borrowed"; amount: number; paid_amount: number };
