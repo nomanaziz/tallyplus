@@ -107,6 +107,9 @@ export function AccountsCategoriesDialog({
               </div>
               <Button onClick={addAccount}><Plus className="h-4 w-4 mr-1" /> যোগ</Button>
             </div>
+            <p className="px-1 text-[11px] text-muted-foreground">
+              ক্যাশ = পকেটের নগদ টাকা · নগদ = মোবাইল ব্যাংকিং (Nagad)
+            </p>
             <ul className="divide-y rounded-lg border">
               {accounts.length === 0 && <li className="p-4 text-center text-sm text-muted-foreground">কোনো অ্যাকাউন্ট নেই</li>}
               {accounts.map((a) => (
