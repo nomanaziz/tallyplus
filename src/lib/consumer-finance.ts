@@ -41,15 +41,19 @@ export async function ensureConsumerFinanceSetup(userId: string) {
     supabase.from("consumer_categories").select("id", { count: "exact", head: true }).eq("user_id", userId),
   ]);
   if ((accCount ?? 0) === 0) {
-    await supabase.from("consumer_accounts").insert({
-      user_id: userId, name: "ক্যাশ", kind: "cash", opening_balance: 0,
-    });
+    await supabase.from("consumer_accounts").upsert(
+      { user_id: userId, name: "ক্যাশ", kind: "cash", opening_balance: 0 },
+      { onConflict: "user_id,name", ignoreDuplicates: true },
+    );
   }
   if ((catCount ?? 0) === 0) {
     const rows = [
       ...DEFAULT_INCOME_CATS.map((n, i) => ({ user_id: userId, name: n, kind: "income" as const, sort_order: i })),
       ...DEFAULT_EXPENSE_CATS.map((n, i) => ({ user_id: userId, name: n, kind: "expense" as const, sort_order: i })),
     ];
-    await supabase.from("consumer_categories").insert(rows);
+    await supabase.from("consumer_categories").upsert(rows, {
+      onConflict: "user_id,name,kind",
+      ignoreDuplicates: true,
+    });
   }
 }
