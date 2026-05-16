@@ -1,32 +1,62 @@
-# Application Tour (প্রথমবার ব্যবহারকারীর জন্য গাইড)
+# পার্সোনাল মানি ম্যানেজমেন্টে অ্যানালিটিক্স ও বাজেট যোগ
 
-নতুন ব্যবহারকারী যখন প্রথমবার অ্যাকাউন্ট তৈরি করে app-এ ঢুকবে, তখন একটা step-by-step tour চালু হবে যা তাকে দেখাবে কোথায় কী করতে হয়। ভাষা (`bn`/`en`) অনুযায়ী automatic দেখাবে।
+ব্যক্তিগত ব্যবহারকারীদের (`/customer/*`) জন্য গ্রাফ-ভিত্তিক analytics এবং monthly budget feature যোগ করা হবে। MyMoney অ্যাপের idea — minimal, graphical, সহজবোধ্য — অনুসরণ করা হবে, কিন্তু design copy নয়। বর্তমান সব feature অপরিবর্তিত থাকবে।
 
-## Tour-এর ৫টি ধাপ
+## নতুন কী যোগ হবে
 
-1. **স্বাগতম** — অ্যাপের সংক্ষিপ্ত পরিচিতি ও "শুরু করুন" বাটন (ড্যাশবোর্ডে centered modal)।
-2. **প্রোফাইল আপডেট করুন** — Sidebar-এ "প্রোফাইল" highlight হবে; tooltip: "প্রথমে আপনার নাম, ঠিকানা ও দোকানের তথ্য দিন।"
-3. **স্টকে পণ্য যোগ করুন** — "পণ্য / Stock" menu highlight; tooltip: "আপনার দোকানের পণ্য যোগ করুন।"
-4. **ক্রয় লিপিবদ্ধ করুন** — "ক্রয়" menu highlight; tooltip: "সরবরাহকারীর কাছ থেকে কেনা পণ্য এখানে যোগ করুন।"
-5. **বিক্রয় শুরু করুন** — "বিক্রয়" menu highlight; tooltip: "কাস্টমারের কাছে বিক্রয় করে invoice তৈরি করুন।" শেষে "সম্পন্ন" বাটন।
+### ১. Analytics পেইজ — `/customer/analytics`
+এক জায়গায় খরচের সম্পূর্ণ ছবি:
+- উপরে month switcher (◀ মে, ২০২৬ ▶) + মোট আয়/ব্যয়/ব্যালেন্স summary cards
+- **Donut chart** — ক্যাটাগরি অনুযায়ী ব্যয় ভাগ (color-coded, percentage সহ)
+- নিচে category-wise list — progress bar + amount + % (MyMoney-এর মত)
+- **Bar chart** — গত ৬ মাসের আয় বনাম ব্যয় তুলনা
+- **Line chart** — চলতি মাসের দৈনিক ব্যয়ের trend
+- Top 5 ব্যয়ের ক্যাটাগরি কার্ড
 
-প্রতিটি step-এ থাকবে: **পরবর্তী / আগে / এড়িয়ে যান (Skip)** বাটন এবং progress dots (1/5)।
+### ২. Budgets পেইজ — `/customer/budgets`
+মাসিক বাজেট planning:
+- Month switcher + "মোট বাজেট" ও "মোট খরচ" summary
+- প্রতিটি expense category-র পাশে "বাজেট সেট করুন" বাটন (বা বর্তমান বাজেট + progress bar)
+- বাজেট সেট থাকলে: progress bar (সবুজ → হলুদ → লাল), "৳X বাকি / ৳Y শেষ", over-budget warning
+- "গত মাসের বাজেট কপি করুন" বাটন
 
-## কোথায় দেখা যাবে
-- শুধু **প্রথমবার** — শেষ হলে বা skip করলে আর আসবে না।
-- Sidebar-এ ছোট **"Tour আবার দেখুন"** বাটন থাকবে যাতে যেকোনো সময় আবার দেখা যায়।
+### ৩. Navigation আপডেট
+- Desktop sidebar-এ (`CustomerLayout.tsx` NAV array) দুটি নতুন লিংক যোগ:
+  - "অ্যানালিটিক্স" (PieChart icon)
+  - "বাজেট" (Calculator icon)
+- `/customer/money` পেইজের header-এ shortcut বাটন: "অ্যানালিটিক্স" ও "বাজেট"
+- Mobile bottom nav ৫টি item-ই আছে — অপরিবর্তিত থাকবে (Money পেইজ থেকেই access)
 
-## Technical details
-- লাইব্রেরি: `driver.js` (lightweight, ~10kb, কোনো dependency নেই, Worker-safe — শুধু client side)। বিকল্প `react-joyride` ভারী।
-- State: `localStorage` key `tour_completed_v1` (per device) + optional `profiles.tour_completed` column যাতে multi-device sync হয়। শুরুতে শুধু localStorage যথেষ্ট, পরে DB-তে move করা যাবে।
-- ভাষা: existing `useI18n()` hook থেকে `lang` নিয়ে step text bilingual object থেকে select হবে।
-- Trigger: `AppLayout.tsx` mount-এ check — যদি user নতুন (account creation < 5 min অথবা flag false) → tour auto-start।
-- Highlight selector: sidebar item-এ `data-tour="profile" | "products" | "purchase" | "sell"` attribute যোগ করা হবে `AppSidebar.tsx`-এ।
-- নতুন ফাইল: `src/lib/tour.ts` (steps definition + start function), `src/components/app/AppTour.tsx` (mount component)।
-- "Tour আবার দেখুন" বাটন: AppSidebar-এর footer-এ ছোট link/icon।
+## টেকনিক্যাল ডিটেইল
 
-## Files to change
-- `src/components/app/AppSidebar.tsx` — `data-tour` attributes + restart button
-- `src/pages/app/AppLayout.tsx` — mount `<AppTour />`
-- নতুন: `src/lib/tour.ts`, `src/components/app/AppTour.tsx`
-- `package.json` — `bun add driver.js`
+**Database — নতুন migration:**
+```text
+consumer_budgets (
+  id, user_id, category_name TEXT, month DATE,  -- month-এর ১ তারিখ
+  amount_limit NUMERIC, created_at, updated_at
+)
+UNIQUE (user_id, category_name, month)
+RLS: user নিজের row-ই read/write করতে পারবে
+```
+
+**ব্যবহৃত existing data:**
+- `consumer_transactions` — আয়/ব্যয় aggregate-এর জন্য (category, tx_date, amount, type)
+- `consumer_categories` — category list + color/icon
+
+**Charts:** ইতিমধ্যে installed `recharts` ব্যবহার করা হবে (`PieChart`, `BarChart`, `LineChart`, `ResponsiveContainer`)। `src/components/ui/chart.tsx` wrapper কাজে লাগানো হবে যাতে theme tokens মেনে চলে।
+
+**নতুন/বদল হওয়া ফাইল:**
+- `supabase/migrations/<ts>_consumer_budgets.sql` — নতুন table + RLS
+- `src/pages/customer/Analytics.tsx` — নতুন
+- `src/pages/customer/Budgets.tsx` — নতুন
+- `src/lib/consumer-analytics.ts` — aggregate query helpers
+- `src/lib/app-routes.tsx` — দুই নতুন route register
+- `src/pages/customer/CustomerLayout.tsx` — NAV array-এ যোগ
+- `src/pages/customer/Money.tsx` — header-এ ২টি shortcut বাটন
+
+**যা ভাঙবে না:**
+- বিদ্যমান `Money.tsx`, `History.tsx`, `CashBook.tsx`, loans, recurring rules — সব আগের মতই।
+- শুধু additive পরিবর্তন; existing schema, RPC, RLS কিছুই বদলাবে না।
+
+## টোন
+Existing app-এর Bangla + minimal aesthetic ধরে রাখা হবে — current design tokens, Card/Button components ব্যবহার করে; কোনো custom hardcoded color নয়।
