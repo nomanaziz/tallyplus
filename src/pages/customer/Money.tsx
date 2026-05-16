@@ -193,22 +193,29 @@ export default function CustomerMoney() {
           <Button size="sm" variant="outline" onClick={() => setShowSettings(true)}>
             <Settings className="mr-1 h-4 w-4" /> অ্যাকাউন্ট/ক্যাটাগরি
           </Button>
-          <Button asChild size="sm" variant="outline">
-            <Link to="/customer/history"><HistoryIcon className="mr-1 h-4 w-4" /> ইতিহাস</Link>
-          </Button>
-          <Button asChild size="sm" variant="outline">
-            <Link to="/customer/cash-book"><BookOpen className="mr-1 h-4 w-4" /> ক্যাশবুক</Link>
-          </Button>
-          <Button asChild size="sm" variant="outline">
-            <Link to="/customer/analytics"><PieIcon className="mr-1 h-4 w-4" /> অ্যানালিটিক্স</Link>
-          </Button>
-          <Button asChild size="sm" variant="outline">
-            <Link to="/customer/budgets"><Calculator className="mr-1 h-4 w-4" /> বাজেট</Link>
-          </Button>
-          <Button asChild size="sm" variant="outline">
-            <Link to="/customer/subscription"><Crown className="mr-1 h-4 w-4" /> সাবস্ক্রিপশন</Link>
-          </Button>
         </div>
+      </div>
+
+      {/* Money hub sub-nav: Records / Analysis / Budgets */}
+      <div className="grid grid-cols-3 gap-1 rounded-xl border bg-card p-1 text-xs sm:text-sm">
+        <Link
+          to="/customer/money"
+          className="flex items-center justify-center gap-1.5 rounded-lg bg-primary px-2 py-1.5 font-semibold text-primary-foreground"
+        >
+          <Wallet className="h-4 w-4" /> Records
+        </Link>
+        <Link
+          to="/customer/analytics"
+          className="flex items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 font-semibold text-muted-foreground hover:bg-accent"
+        >
+          <PieIcon className="h-4 w-4" /> Analysis
+        </Link>
+        <Link
+          to="/customer/budgets"
+          className="flex items-center justify-center gap-1.5 rounded-lg px-2 py-1.5 font-semibold text-muted-foreground hover:bg-accent"
+        >
+          <Calculator className="h-4 w-4" /> Budgets
+        </Link>
       </div>
 
       <Tabs defaultValue="money">
