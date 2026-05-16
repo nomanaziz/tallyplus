@@ -11,8 +11,8 @@ export const DEFAULT_EXPENSE_CATS = [
 ];
 
 export const ACCOUNT_KIND_LABEL: Record<string, string> = {
-  cash: "নগদ", bank: "ব্যাংক", bkash: "বিকাশ",
-  nagad: "নগদ অ্যাকাউন্ট", card: "কার্ড", other: "অন্যান্য",
+  cash: "ক্যাশ", bank: "ব্যাংক", bkash: "বিকাশ",
+  nagad: "নগদ", card: "কার্ড", other: "অন্যান্য",
 };
 
 export type ConsumerAccount = {
@@ -42,7 +42,7 @@ export async function ensureConsumerFinanceSetup(userId: string) {
   ]);
   if ((accCount ?? 0) === 0) {
     await supabase.from("consumer_accounts").insert({
-      user_id: userId, name: "নগদ", kind: "cash", opening_balance: 0,
+      user_id: userId, name: "ক্যাশ", kind: "cash", opening_balance: 0,
     });
   }
   if ((catCount ?? 0) === 0) {
