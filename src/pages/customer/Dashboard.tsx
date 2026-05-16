@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { icons } from "@/lib/icons";
 import { InstallAppCard } from "@/components/app/InstallAppCard";
+import { CustomerDashboardCharts } from "@/components/customer/DashboardCharts";
 
 type Tx = { id: string; type: string; amount: number; tx_date: string; kind?: string | null; transfer_group_id?: string | null };
 type LoanSummary = { type: "lent" | "borrowed"; amount: number; paid_amount: number };
@@ -195,6 +196,8 @@ export default function CustomerDashboard() {
           </div>
         </Card>
       </div>
+
+      {user ? <CustomerDashboardCharts userId={user.id} /> : null}
 
       {/* মোট সারসংক্ষেপ — দেনা, পাওনা, total order, ফর্দ, প্রিয় দোকান, সার্ভিস */}
       <div>
