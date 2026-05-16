@@ -18,6 +18,8 @@ import {
   GraduationCap,
   History,
   Crown,
+  PieChart,
+  Calculator,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AdSlot } from "@/components/ads/AdSlot";
@@ -32,6 +34,8 @@ const NAV = [
   { to: "/customer/my-services", label: "আমার সার্ভিস", Icon: Wrench },
   { to: "/customer/favorite-shops", label: "প্রিয় দোকান", Icon: Heart },
   { to: "/customer/money", label: "আয়-ব্যয়", Icon: Wallet },
+  { to: "/customer/analytics", label: "অ্যানালিটিক্স", Icon: PieChart },
+  { to: "/customer/budgets", label: "বাজেট", Icon: Calculator },
   { to: "/customer/history", label: "ইতিহাস", Icon: History },
   { to: "/customer/subscription", label: "সাবস্ক্রিপশন", Icon: Crown },
   { to: "/customer/notes", label: "নোট", Icon: StickyNote },

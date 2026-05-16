@@ -996,6 +996,36 @@ export type Database = {
         }
         Relationships: []
       }
+      consumer_budgets: {
+        Row: {
+          amount_limit: number
+          category_name: string
+          created_at: string
+          id: string
+          month: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount_limit?: number
+          category_name: string
+          created_at?: string
+          id?: string
+          month: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount_limit?: number
+          category_name?: string
+          created_at?: string
+          id?: string
+          month?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       consumer_cash_movements: {
         Row: {
           amount: number

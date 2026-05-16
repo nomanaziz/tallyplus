@@ -134,6 +134,8 @@ const LProfile = lazy(() => import("@/pages/app/Profile"));
 const LShopSettings = lazy(() => import("@/pages/app/ShopSettings"));
 const LCashBook = lazy(() => import("@/pages/app/CashBook"));
 const LCustomerCashBook = lazy(() => import("@/pages/customer/CashBook"));
+const LCustomerAnalytics = lazy(() => import("@/pages/customer/Analytics"));
+const LCustomerBudgets = lazy(() => import("@/pages/customer/Budgets"));
 
 export const appRoutes: RouteObject[] = [
 { index: true, element: <Suspense fallback={<RouteFallback/>}><L0/></Suspense> },
@@ -267,6 +269,8 @@ export const appRoutes: RouteObject[] = [
 { path: "dashboard", element: <Suspense fallback={<RouteFallback/>}><L59/></Suspense> },
 { path: "money", element: <Suspense fallback={<RouteFallback/>}><L60/></Suspense> },
 { path: "cash-book", element: <Suspense fallback={<RouteFallback/>}><LCustomerCashBook/></Suspense> },
+{ path: "analytics", element: <Suspense fallback={<RouteFallback/>}><LCustomerAnalytics/></Suspense> },
+{ path: "budgets", element: <Suspense fallback={<RouteFallback/>}><LCustomerBudgets/></Suspense> },
 { path: "my-fordo", element: <Suspense fallback={<RouteFallback/>}><L61/></Suspense> },
 { path: "notes", element: <Suspense fallback={<RouteFallback/>}><L62/></Suspense> },
 { path: "profile", element: <Suspense fallback={<RouteFallback/>}><L63/></Suspense> },
