@@ -988,6 +988,7 @@ export type Database = {
           occurred_at: string
           qty: number
           shop_id: string
+          supplier_id: string | null
           type: string
         }
         Insert: {
@@ -1003,6 +1004,7 @@ export type Database = {
           occurred_at?: string
           qty: number
           shop_id: string
+          supplier_id?: string | null
           type: string
         }
         Update: {
@@ -1018,6 +1020,7 @@ export type Database = {
           occurred_at?: string
           qty?: number
           shop_id?: string
+          supplier_id?: string | null
           type?: string
         }
         Relationships: [
@@ -1042,48 +1045,124 @@ export type Database = {
             referencedRelation: "shops"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "bottle_movements_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "lpg_suppliers"
+            referencedColumns: ["id"]
+          },
         ]
       }
       bottle_types: {
         Row: {
           created_at: string
+          dealer_price: number
           deposit_amount: number
           id: string
           is_active: boolean
           name: string
           purchase_price: number
+          retail_price: number
           sale_price: number
           shop_id: string
           size_label: string | null
+          track_serial: boolean
           updated_at: string
+          wholesale_price: number
         }
         Insert: {
           created_at?: string
+          dealer_price?: number
           deposit_amount?: number
           id?: string
           is_active?: boolean
           name: string
           purchase_price?: number
+          retail_price?: number
           sale_price?: number
           shop_id: string
           size_label?: string | null
+          track_serial?: boolean
           updated_at?: string
+          wholesale_price?: number
         }
         Update: {
           created_at?: string
+          dealer_price?: number
           deposit_amount?: number
           id?: string
           is_active?: boolean
           name?: string
           purchase_price?: number
+          retail_price?: number
           sale_price?: number
           shop_id?: string
           size_label?: string | null
+          track_serial?: boolean
           updated_at?: string
+          wholesale_price?: number
         }
         Relationships: [
           {
             foreignKeyName: "bottle_types_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bottle_units: {
+        Row: {
+          bottle_type_id: string
+          created_at: string
+          current_holder_contact_id: string | null
+          expiry_date: string | null
+          id: string
+          last_qc_date: string | null
+          note: string | null
+          serial_no: string
+          shop_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          bottle_type_id: string
+          created_at?: string
+          current_holder_contact_id?: string | null
+          expiry_date?: string | null
+          id?: string
+          last_qc_date?: string | null
+          note?: string | null
+          serial_no: string
+          shop_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          bottle_type_id?: string
+          created_at?: string
+          current_holder_contact_id?: string | null
+          expiry_date?: string | null
+          id?: string
+          last_qc_date?: string | null
+          note?: string | null
+          serial_no?: string
+          shop_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bottle_units_bottle_type_id_fkey"
+            columns: ["bottle_type_id"]
+            isOneToOne: false
+            referencedRelation: "bottle_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bottle_units_shop_id_fkey"
             columns: ["shop_id"]
             isOneToOne: false
             referencedRelation: "shops"
@@ -2282,6 +2361,53 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "fraud_check_logs_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lpg_suppliers: {
+        Row: {
+          address: string | null
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          note: string | null
+          phone: string | null
+          shop_id: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          note?: string | null
+          phone?: string | null
+          shop_id: string
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          note?: string | null
+          phone?: string | null
+          shop_id?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lpg_suppliers_shop_id_fkey"
             columns: ["shop_id"]
             isOneToOne: false
             referencedRelation: "shops"
@@ -5399,7 +5525,9 @@ export type Database = {
           id: string
           is_hidden: boolean
           is_wholesale: boolean
+          list_in_lpg_marketplace: boolean
           logo_url: string | null
+          lpg_tier: string | null
           marketplace_enabled: boolean
           meta_description: string | null
           meta_keywords: string | null
@@ -5448,7 +5576,9 @@ export type Database = {
           id?: string
           is_hidden?: boolean
           is_wholesale?: boolean
+          list_in_lpg_marketplace?: boolean
           logo_url?: string | null
+          lpg_tier?: string | null
           marketplace_enabled?: boolean
           meta_description?: string | null
           meta_keywords?: string | null
@@ -5497,7 +5627,9 @@ export type Database = {
           id?: string
           is_hidden?: boolean
           is_wholesale?: boolean
+          list_in_lpg_marketplace?: boolean
           logo_url?: string | null
+          lpg_tier?: string | null
           marketplace_enabled?: boolean
           meta_description?: string | null
           meta_keywords?: string | null

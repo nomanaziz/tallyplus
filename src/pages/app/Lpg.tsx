@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Flame, Droplet, Truck, Wallet, Plus, RefreshCw, ArrowDownToLine, ArrowUpFromLine } from "lucide-react";
+import { Flame, Droplet, Truck, Wallet, Plus, RefreshCw, ArrowDownToLine, ArrowUpFromLine, Building2, Trash2 } from "lucide-react";
 
 type BottleType = {
   id: string; name: string; size_label: string | null;
@@ -26,6 +26,8 @@ type Holding = {
 };
 type Contact = { id: string; name: string; phone: string | null };
 type DeliveryMan = { id: string; name: string; phone: string | null; vehicle_no: string | null; is_active: boolean };
+type Supplier = { id: string; name: string; phone: string | null; type: string; is_active: boolean };
+type MoveType = "sale_new" | "refill" | "return_empty" | "purchase_full" | "refill_factory";
 
 const TYPE_LABELS_BN: Record<string, string> = {
   sale_new: "নতুন বিক্রি",
@@ -54,24 +56,34 @@ export default function LpgPage() {
   const [holdings, setHoldings] = useState<Holding[]>([]);
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [deliveryMen, setDeliveryMen] = useState<DeliveryMan[]>([]);
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [tick, setTick] = useState(0);
   const reload = () => setTick((t) => t + 1);
 
   // Dialogs
   const [moveOpen, setMoveOpen] = useState(false);
+  const [moveInitialType, setMoveInitialType] = useState<MoveType>("refill");
+  const [moveInitialBottle, setMoveInitialBottle] = useState<string | undefined>(undefined);
   const [typeOpen, setTypeOpen] = useState(false);
   const [dmOpen, setDmOpen] = useState(false);
+
+  const openMovement = (t: MoveType, bottle?: string) => {
+    setMoveInitialType(t);
+    setMoveInitialBottle(bottle);
+    setMoveOpen(true);
+  };
 
   useEffect(() => {
     if (!current?.id) return;
     let cancelled = false;
     (async () => {
-      const [t, m, h, c, d] = await Promise.all([
+      const [t, m, h, c, d, s] = await Promise.all([
         supabase.from("bottle_types").select("*").eq("shop_id", current.id).order("created_at"),
         supabase.from("bottle_movements").select("*").eq("shop_id", current.id).order("occurred_at", { ascending: false }).limit(200),
         supabase.from("bottle_holdings").select("*").eq("shop_id", current.id).gt("qty", 0),
         supabase.from("customers").select("id,name,phone").eq("shop_id", current.id).order("name"),
         supabase.from("delivery_men").select("*").eq("shop_id", current.id).order("name"),
+        supabase.from("lpg_suppliers").select("*").eq("shop_id", current.id).eq("is_active", true).order("name"),
       ]);
       if (cancelled) return;
       setTypes((t.data ?? []) as BottleType[]);
@@ -79,6 +91,7 @@ export default function LpgPage() {
       setHoldings((h.data ?? []) as Holding[]);
       setContacts((c.data ?? []) as Contact[]);
       setDeliveryMen((d.data ?? []) as DeliveryMan[]);
+      setSuppliers((s.data ?? []) as Supplier[]);
     })();
     return () => { cancelled = true; };
   }, [current?.id, tick]);
@@ -145,7 +158,7 @@ export default function LpgPage() {
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={reload}><RefreshCw className="mr-1.5 h-4 w-4" />{tr("রিফ্রেশ", "Refresh")}</Button>
-          <Button size="sm" onClick={() => setMoveOpen(true)} disabled={types.length === 0}>
+          <Button size="sm" onClick={() => openMovement("refill")} disabled={types.length === 0}>
             <Plus className="mr-1.5 h-4 w-4" />{tr("নতুন এন্ট্রি", "New entry")}
           </Button>
         </div>
@@ -165,6 +178,7 @@ export default function LpgPage() {
           <TabsTrigger value="moves">{tr("লেনদেন", "Movements")}</TabsTrigger>
           <TabsTrigger value="customers">{tr("গ্রাহকের বোতল", "Customer bottles")}</TabsTrigger>
           <TabsTrigger value="types">{tr("বোতলের ধরন", "Bottle types")}</TabsTrigger>
+          <TabsTrigger value="suppliers">{tr("সরবরাহকারী", "Suppliers")}</TabsTrigger>
           <TabsTrigger value="delivery">{tr("ডেলিভারি ম্যান", "Delivery men")}</TabsTrigger>
         </TabsList>
 
@@ -177,6 +191,29 @@ export default function LpgPage() {
               action={<Button size="sm" onClick={() => setTypeOpen(true)}><Plus className="mr-1.5 h-4 w-4" />{tr("ধরন যোগ", "Add type")}</Button>}
             />
           ) : (
+            <>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <Button
+                onClick={() => openMovement("purchase_full")}
+                className="h-auto justify-start gap-2 bg-emerald-600 py-3 text-left text-white hover:bg-emerald-700"
+              >
+                <ArrowUpFromLine className="h-5 w-5 flex-none" />
+                <div>
+                  <div className="font-bold">{tr("ভর্তি বোতল ক্রয় / স্টক যোগ", "Buy full bottles / Add stock")}</div>
+                  <div className="text-xs opacity-90">{tr("কোম্পানি/ডিলার থেকে ভর্তি কেনা হলে এখানে যোগ করুন", "Add stock bought from company/distributor")}</div>
+                </div>
+              </Button>
+              <Button
+                onClick={() => openMovement("refill_factory")}
+                className="h-auto justify-start gap-2 bg-sky-600 py-3 text-left text-white hover:bg-sky-700"
+              >
+                <RefreshCw className="h-5 w-5 flex-none" />
+                <div>
+                  <div className="font-bold">{tr("কারখানা থেকে রিফিল", "Refill from factory")}</div>
+                  <div className="text-xs opacity-90">{tr("খালি বোতল কারখানায় পাঠিয়ে ভর্তি এনেছেন", "Sent empties to factory, brought back full")}</div>
+                </div>
+              </Button>
+            </div>
             <div className="grid gap-2 md:grid-cols-2">
               {types.map((t) => {
                 const s = stockSummary.get(t.id) ?? { full: 0, empty: 0, out: 0 };
@@ -187,9 +224,14 @@ export default function LpgPage() {
                         <div className="font-semibold">{t.name}</div>
                         {t.size_label && <div className="text-xs text-muted-foreground">{t.size_label}</div>}
                       </div>
-                      <div className="text-right text-xs text-muted-foreground">
-                        <div>{tr("জামানত", "Deposit")}: {fmtMoney(t.deposit_amount, lang)}</div>
-                        <div>{tr("বিক্রয়", "Sale")}: {fmtMoney(t.sale_price, lang)}</div>
+                      <div className="flex items-start gap-2">
+                        <div className="text-right text-xs text-muted-foreground">
+                          <div>{tr("জামানত", "Deposit")}: {fmtMoney(t.deposit_amount, lang)}</div>
+                          <div>{tr("বিক্রয়", "Sale")}: {fmtMoney(t.sale_price, lang)}</div>
+                        </div>
+                        <Button size="icon" variant="outline" className="h-7 w-7" onClick={() => openMovement("purchase_full", t.id)} title={tr("এই বোতলের স্টক যোগ", "Add stock for this bottle")}>
+                          <Plus className="h-4 w-4" />
+                        </Button>
                       </div>
                     </div>
                     <div className="mt-2 grid grid-cols-3 gap-2 text-center text-sm">
@@ -201,6 +243,7 @@ export default function LpgPage() {
                 );
               })}
             </div>
+            </>
           )}
 
           {topDue.length > 0 && (
@@ -320,11 +363,17 @@ export default function LpgPage() {
             {deliveryMen.length === 0 && <div className="md:col-span-2 rounded-xl border border-dashed bg-card p-6 text-center text-sm text-muted-foreground">{tr("কোনো ডেলিভারি ম্যান নেই", "No delivery men yet")}</div>}
           </div>
         </TabsContent>
+
+        {/* SUPPLIERS */}
+        <TabsContent value="suppliers" className="mt-3 space-y-3">
+          <SuppliersTab shopId={current.id} suppliers={suppliers} onReload={reload} tr={tr} />
+        </TabsContent>
       </Tabs>
 
       <MovementDialog
         open={moveOpen} onOpenChange={setMoveOpen}
-        types={types} contacts={contacts} deliveryMen={deliveryMen}
+        types={types} contacts={contacts} deliveryMen={deliveryMen} suppliers={suppliers}
+        initialType={moveInitialType} initialBottleId={moveInitialBottle}
         shopId={current.id} onSaved={() => { setMoveOpen(false); reload(); }}
       />
       <BottleTypeDialog
@@ -378,17 +427,19 @@ function EmptyHint({ title, hint, action }: { title: string; hint: string; actio
 
 /* ---------- Movement entry dialog ---------- */
 function MovementDialog({
-  open, onOpenChange, types, contacts, deliveryMen, shopId, onSaved,
+  open, onOpenChange, types, contacts, deliveryMen, suppliers, shopId, onSaved, initialType, initialBottleId,
 }: {
   open: boolean; onOpenChange: (v: boolean) => void;
-  types: BottleType[]; contacts: Contact[]; deliveryMen: DeliveryMan[];
+  types: BottleType[]; contacts: Contact[]; deliveryMen: DeliveryMan[]; suppliers: Supplier[];
   shopId: string; onSaved: () => void;
+  initialType?: MoveType; initialBottleId?: string;
 }) {
   const { lang } = useI18n();
   const tr = (bn: string, en: string) => (lang === "bn" ? bn : en);
-  const [tab, setTab] = useState<"sale_new" | "refill" | "return_empty" | "purchase_full">("refill");
+  const [tab, setTab] = useState<MoveType>("refill");
   const [bottleId, setBottleId] = useState<string>("");
   const [contactId, setContactId] = useState<string>("");
+  const [supplierId, setSupplierId] = useState<string>("");
   const [qty, setQty] = useState<string>("1");
   const [cash, setCash] = useState<string>("");
   const [deposit, setDeposit] = useState<string>("0");
@@ -397,15 +448,16 @@ function MovementDialog({
 
   useEffect(() => {
     if (open) {
-      setBottleId(types[0]?.id ?? "");
+      setBottleId(initialBottleId ?? types[0]?.id ?? "");
       setContactId("");
+      setSupplierId("");
       setQty("1");
       setCash("");
       setDeposit("0");
       setNote("");
-      setTab("refill");
+      setTab(initialType ?? "refill");
     }
-  }, [open, types]);
+  }, [open, types, initialType, initialBottleId]);
 
   // Auto-fill cash + deposit when bottle/qty/type changes
   useEffect(() => {
@@ -421,13 +473,14 @@ function MovementDialog({
     } else if (tab === "return_empty") {
       setCash("0");
       setDeposit(String(-t.deposit_amount * q));
-    } else if (tab === "purchase_full") {
+    } else if (tab === "purchase_full" || tab === "refill_factory") {
       setCash(String(t.purchase_price * q));
       setDeposit("0");
     }
   }, [tab, bottleId, qty, types]);
 
-  const needsContact = tab !== "purchase_full";
+  const isPurchase = tab === "purchase_full" || tab === "refill_factory";
+  const needsContact = !isPurchase;
 
   const save = async () => {
     if (!bottleId) return toast.error(tr("বোতলের ধরন বাছাই করুন", "Pick a bottle type"));
@@ -440,6 +493,7 @@ function MovementDialog({
       shop_id: shopId,
       bottle_type_id: bottleId,
       contact_id: needsContact ? contactId : null,
+      supplier_id: isPurchase && supplierId ? supplierId : null,
       type: tab,
       qty: q,
       cash_collected: Number(cash || 0),
@@ -457,11 +511,12 @@ function MovementDialog({
       <DialogContent className="max-w-lg">
         <DialogHeader><DialogTitle>{tr("বোতল লেনদেন", "Bottle movement")}</DialogTitle></DialogHeader>
         <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="refill"><RefreshCw className="mr-1 h-3.5 w-3.5" />{tr("রিফিল", "Refill")}</TabsTrigger>
             <TabsTrigger value="sale_new">{tr("নতুন বিক্রি", "New Sale")}</TabsTrigger>
             <TabsTrigger value="return_empty"><ArrowDownToLine className="mr-1 h-3.5 w-3.5" />{tr("খালি ফেরত", "Empty")}</TabsTrigger>
             <TabsTrigger value="purchase_full"><ArrowUpFromLine className="mr-1 h-3.5 w-3.5" />{tr("কেনা", "Buy")}</TabsTrigger>
+            <TabsTrigger value="refill_factory">{tr("কারখানা", "Factory")}</TabsTrigger>
           </TabsList>
         </Tabs>
         <div className="space-y-3">
@@ -485,6 +540,23 @@ function MovementDialog({
                   {contacts.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}{c.phone ? ` · ${c.phone}` : ""}</SelectItem>)}
                 </SelectContent>
               </Select>
+            </div>
+          )}
+          {isPurchase && (
+            <div>
+              <Label>{tr("সরবরাহকারী / কোম্পানি", "Supplier / Company")}</Label>
+              {suppliers.length === 0 ? (
+                <p className="mt-1 rounded-md border border-dashed bg-muted/30 p-2 text-xs text-muted-foreground">
+                  {tr("কোনো সরবরাহকারী যোগ করা নেই। 'সরবরাহকারী' পেজ থেকে যোগ করুন (পানির জন্য ঐচ্ছিক)।", "No suppliers added yet. Add from the Suppliers page (optional for water).")}
+                </p>
+              ) : (
+                <Select value={supplierId} onValueChange={setSupplierId}>
+                  <SelectTrigger className="mt-1"><SelectValue placeholder={tr("বাছাই করুন (ঐচ্ছিক)", "Choose (optional)")} /></SelectTrigger>
+                  <SelectContent>
+                    {suppliers.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}{s.phone ? ` · ${s.phone}` : ""}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
           )}
           <div className="grid grid-cols-3 gap-2">
@@ -589,5 +661,98 @@ function DeliveryManDialog({ open, onOpenChange, shopId, onSaved }: { open: bool
         </div>
       </DialogContent>
     </Dialog>
+  );
+}
+/* ---------- Suppliers tab ---------- */
+function SuppliersTab({
+  shopId, suppliers, onReload, tr,
+}: {
+  shopId: string; suppliers: Supplier[]; onReload: () => void;
+  tr: (bn: string, en: string) => string;
+}) {
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [addr, setAddr] = useState("");
+  const [type, setType] = useState("company");
+  const [busy, setBusy] = useState(false);
+
+  const reset = () => { setName(""); setPhone(""); setAddr(""); setType("company"); };
+
+  const save = async () => {
+    if (!name.trim()) return toast.error(tr("নাম দিন", "Enter name"));
+    setBusy(true);
+    const { error } = await supabase.from("lpg_suppliers").insert({
+      shop_id: shopId, name: name.trim(), phone: phone.trim() || null,
+      address: addr.trim() || null, type,
+    });
+    setBusy(false);
+    if (error) return toast.error(error.message);
+    toast.success(tr("সংরক্ষিত হলো", "Saved"));
+    reset(); setOpen(false); onReload();
+  };
+
+  const remove = async (id: string) => {
+    if (!confirm(tr("মুছে ফেলবেন?", "Delete?"))) return;
+    const { error } = await supabase.from("lpg_suppliers").update({ is_active: false }).eq("id", id);
+    if (error) return toast.error(error.message);
+    onReload();
+  };
+
+  return (
+    <>
+      <div className="flex items-center justify-between">
+        <p className="text-xs text-muted-foreground">
+          {tr("কোম্পানি/ডিলার/ফ্যাক্টরি — যাদের কাছ থেকে আপনি ভর্তি বোতল কেনেন।", "Companies/distributors/factories you buy full bottles from.")}
+        </p>
+        <Button size="sm" onClick={() => setOpen(true)}>
+          <Plus className="mr-1.5 h-4 w-4" />{tr("সরবরাহকারী যোগ", "Add supplier")}
+        </Button>
+      </div>
+      <div className="grid gap-2 md:grid-cols-2">
+        {suppliers.length === 0 && (
+          <div className="md:col-span-2 rounded-xl border border-dashed bg-card p-6 text-center text-sm text-muted-foreground">
+            {tr("কোনো সরবরাহকারী নেই", "No suppliers yet")}
+          </div>
+        )}
+        {suppliers.map((s) => (
+          <div key={s.id} className="flex items-start justify-between rounded-xl border bg-card p-3">
+            <div>
+              <div className="flex items-center gap-2 font-semibold">
+                <Building2 className="h-4 w-4 text-muted-foreground" />{s.name}
+              </div>
+              <div className="text-xs text-muted-foreground">{s.phone ?? "—"} · <Badge variant="secondary">{s.type}</Badge></div>
+            </div>
+            <Button size="icon" variant="ghost" onClick={() => remove(s.id)} title={tr("মুছে ফেলো", "Remove")}>
+              <Trash2 className="h-4 w-4 text-rose-500" />
+            </Button>
+          </div>
+        ))}
+      </div>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>{tr("নতুন সরবরাহকারী", "New supplier")}</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div><Label>{tr("নাম (যেমন: Bashundhara LP Gas)", "Name (e.g. Bashundhara LP Gas)")}</Label><Input value={name} onChange={(e) => setName(e.target.value)} /></div>
+            <div><Label>{tr("ফোন", "Phone")}</Label><Input value={phone} onChange={(e) => setPhone(e.target.value)} /></div>
+            <div><Label>{tr("ঠিকানা", "Address")}</Label><Input value={addr} onChange={(e) => setAddr(e.target.value)} /></div>
+            <div>
+              <Label>{tr("ধরন", "Type")}</Label>
+              <Select value={type} onValueChange={setType}>
+                <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="company">{tr("কোম্পানি", "Company")}</SelectItem>
+                  <SelectItem value="distributor">{tr("ডিস্ট্রিবিউটর", "Distributor")}</SelectItem>
+                  <SelectItem value="factory">{tr("ফ্যাক্টরি", "Factory")}</SelectItem>
+                  <SelectItem value="local_filter">{tr("লোকাল ফিল্টার (পানি)", "Local filter (water)")}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <Button className="w-full" onClick={save} disabled={busy}>{busy ? tr("সেভ...", "Saving...") : tr("সংরক্ষণ", "Save")}</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

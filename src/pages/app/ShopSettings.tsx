@@ -17,6 +17,7 @@ import { downloadJson, BACKUP_VERSION } from "@/lib/backup";
 import { LocationPicker, type LocationValue } from "@/components/LocationPicker";
 import { Switch } from "@/components/ui/switch";
 import { MODULE_LABELS, loadShopModules, setShopModule } from "@/lib/modules";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function ShopSettingsPage() {
   const { lang } = useI18n();
@@ -35,6 +36,9 @@ export default function ShopSettingsPage() {
   const [exporting, setExporting] = useState(false);
   const [modules, setModules] = useState<Record<string, boolean>>({});
   const [moduleBusy, setModuleBusy] = useState<string | null>(null);
+  const [lpgTier, setLpgTier] = useState<string>("");
+  const [lpgListed, setLpgListed] = useState<boolean>(false);
+  const [lpgBusy, setLpgBusy] = useState(false);
 
   useEffect(() => {
     if (!current) return;
@@ -57,6 +61,15 @@ export default function ShopSettingsPage() {
     void (async () => {
       const m = await loadShopModules(current.id);
       setModules(m);
+    })();
+    void (async () => {
+      const { data } = await supabase
+        .from("shops")
+        .select("lpg_tier,list_in_lpg_marketplace")
+        .eq("id", current.id)
+        .maybeSingle();
+      setLpgTier((data?.lpg_tier as string | null) ?? "");
+      setLpgListed(!!data?.list_in_lpg_marketplace);
     })();
   }, [current?.id]);
 
@@ -269,6 +282,71 @@ export default function ShopSettingsPage() {
             </p>
           )}
         </div>
+
+        {modules["lpg"] && (
+          <div className="rounded-xl border bg-card p-4 space-y-3">
+            <div>
+              <h2 className="font-semibold">{lang === "bn" ? "LPG / বোতল সেটিংস" : "LPG / Bottle settings"}</h2>
+              <p className="text-xs text-muted-foreground">
+                {lang === "bn"
+                  ? "আপনার ব্যবসার ধরন এবং পাবলিক LPG মার্কেটপ্লেসে দেখাবেন কিনা।"
+                  : "Your tier and whether to appear in the public LPG marketplace."}
+              </p>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div>
+                <Label>{lang === "bn" ? "ব্যবসার ধরন" : "Business tier"}</Label>
+                <Select
+                  value={lpgTier || "none"}
+                  onValueChange={async (v) => {
+                    if (!current || !isOwner) return;
+                    const next = v === "none" ? "" : v;
+                    setLpgBusy(true);
+                    const { error } = await supabase.from("shops").update({ lpg_tier: next || null }).eq("id", current.id);
+                    setLpgBusy(false);
+                    if (error) return toast.error(error.message);
+                    setLpgTier(next);
+                    toast.success(lang === "bn" ? "আপডেট হলো" : "Updated");
+                  }}
+                  disabled={!isOwner || lpgBusy}
+                >
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder={lang === "bn" ? "বাছাই করুন" : "Choose"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">{lang === "bn" ? "— নির্বাচন নেই —" : "— None —"}</SelectItem>
+                    <SelectItem value="dealer">{lang === "bn" ? "ডিলার" : "Dealer"}</SelectItem>
+                    <SelectItem value="wholesale">{lang === "bn" ? "পাইকারি" : "Wholesale"}</SelectItem>
+                    <SelectItem value="retail">{lang === "bn" ? "খুচরা" : "Retail"}</SelectItem>
+                    <SelectItem value="producer">{lang === "bn" ? "প্রস্তুতকারক (পানি/ফিল্টার)" : "Producer (water/filter)"}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-start justify-between gap-3 rounded-md border bg-muted/30 p-3">
+                <div className="min-w-0">
+                  <div className="text-sm font-medium">{lang === "bn" ? "পাবলিক LPG মার্কেটপ্লেসে দেখাও" : "Show in public LPG marketplace"}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {lang === "bn"
+                      ? "চালু করলে আপনার দোকান /lpg পেজে এলাকা অনুযায়ী দেখা যাবে।"
+                      : "Enable to appear on the /lpg listing by area."}
+                  </div>
+                </div>
+                <Switch
+                  checked={lpgListed}
+                  disabled={!isOwner || lpgBusy}
+                  onCheckedChange={async (v) => {
+                    if (!current || !isOwner) return;
+                    setLpgBusy(true);
+                    const { error } = await supabase.from("shops").update({ list_in_lpg_marketplace: v }).eq("id", current.id);
+                    setLpgBusy(false);
+                    if (error) return toast.error(error.message);
+                    setLpgListed(v);
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+        )}
 
         {isOwner && (
           <div className="rounded-xl border-2 border-rose-200 bg-rose-50 p-4 space-y-3">

@@ -139,6 +139,7 @@ const LCustomerBudgets = lazy(() => import("@/pages/customer/Budgets"));
 const LCustomerShopping = lazy(() => import("@/pages/customer/Shopping"));
 const LCustomerMe = lazy(() => import("@/pages/customer/Me"));
 const LLpg = lazy(() => import("@/pages/app/Lpg"));
+const LLpgMarket = lazy(() => import("@/pages/LpgMarketplace"));
 
 export const appRoutes: RouteObject[] = [
 { index: true, element: <Suspense fallback={<RouteFallback/>}><L0/></Suspense> },
@@ -311,6 +312,7 @@ export const appRoutes: RouteObject[] = [
 { path: "privacy", element: <Suspense fallback={<RouteFallback/>}><L67/></Suspense> },
 { path: "about", element: <Suspense fallback={<RouteFallback/>}><L83/></Suspense> },
 { path: "shop", element: <Suspense fallback={<RouteFallback/>}><L68/></Suspense> },
+{ path: "lpg", element: <Suspense fallback={<RouteFallback/>}><LLpgMarket/></Suspense> },
 { path: "shop/p/:id", element: <Suspense fallback={<RouteFallback/>}><L69/></Suspense> },
 { path: "shop/s/:slug", element: <Suspense fallback={<RouteFallback/>}><L70/></Suspense> },
 { path: "shop/service/:id", element: <Suspense fallback={<RouteFallback/>}><L70b/></Suspense> },
