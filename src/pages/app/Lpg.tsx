@@ -663,3 +663,96 @@ function DeliveryManDialog({ open, onOpenChange, shopId, onSaved }: { open: bool
     </Dialog>
   );
 }
+/* ---------- Suppliers tab ---------- */
+function SuppliersTab({
+  shopId, suppliers, onReload, tr,
+}: {
+  shopId: string; suppliers: Supplier[]; onReload: () => void;
+  tr: (bn: string, en: string) => string;
+}) {
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [addr, setAddr] = useState("");
+  const [type, setType] = useState("company");
+  const [busy, setBusy] = useState(false);
+
+  const reset = () => { setName(""); setPhone(""); setAddr(""); setType("company"); };
+
+  const save = async () => {
+    if (!name.trim()) return toast.error(tr("নাম দিন", "Enter name"));
+    setBusy(true);
+    const { error } = await supabase.from("lpg_suppliers").insert({
+      shop_id: shopId, name: name.trim(), phone: phone.trim() || null,
+      address: addr.trim() || null, type,
+    });
+    setBusy(false);
+    if (error) return toast.error(error.message);
+    toast.success(tr("সংরক্ষিত হলো", "Saved"));
+    reset(); setOpen(false); onReload();
+  };
+
+  const remove = async (id: string) => {
+    if (!confirm(tr("মুছে ফেলবেন?", "Delete?"))) return;
+    const { error } = await supabase.from("lpg_suppliers").update({ is_active: false }).eq("id", id);
+    if (error) return toast.error(error.message);
+    onReload();
+  };
+
+  return (
+    <>
+      <div className="flex items-center justify-between">
+        <p className="text-xs text-muted-foreground">
+          {tr("কোম্পানি/ডিলার/ফ্যাক্টরি — যাদের কাছ থেকে আপনি ভর্তি বোতল কেনেন।", "Companies/distributors/factories you buy full bottles from.")}
+        </p>
+        <Button size="sm" onClick={() => setOpen(true)}>
+          <Plus className="mr-1.5 h-4 w-4" />{tr("সরবরাহকারী যোগ", "Add supplier")}
+        </Button>
+      </div>
+      <div className="grid gap-2 md:grid-cols-2">
+        {suppliers.length === 0 && (
+          <div className="md:col-span-2 rounded-xl border border-dashed bg-card p-6 text-center text-sm text-muted-foreground">
+            {tr("কোনো সরবরাহকারী নেই", "No suppliers yet")}
+          </div>
+        )}
+        {suppliers.map((s) => (
+          <div key={s.id} className="flex items-start justify-between rounded-xl border bg-card p-3">
+            <div>
+              <div className="flex items-center gap-2 font-semibold">
+                <Building2 className="h-4 w-4 text-muted-foreground" />{s.name}
+              </div>
+              <div className="text-xs text-muted-foreground">{s.phone ?? "—"} · <Badge variant="secondary">{s.type}</Badge></div>
+            </div>
+            <Button size="icon" variant="ghost" onClick={() => remove(s.id)} title={tr("মুছে ফেলো", "Remove")}>
+              <Trash2 className="h-4 w-4 text-rose-500" />
+            </Button>
+          </div>
+        ))}
+      </div>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>{tr("নতুন সরবরাহকারী", "New supplier")}</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div><Label>{tr("নাম (যেমন: Bashundhara LP Gas)", "Name (e.g. Bashundhara LP Gas)")}</Label><Input value={name} onChange={(e) => setName(e.target.value)} /></div>
+            <div><Label>{tr("ফোন", "Phone")}</Label><Input value={phone} onChange={(e) => setPhone(e.target.value)} /></div>
+            <div><Label>{tr("ঠিকানা", "Address")}</Label><Input value={addr} onChange={(e) => setAddr(e.target.value)} /></div>
+            <div>
+              <Label>{tr("ধরন", "Type")}</Label>
+              <Select value={type} onValueChange={setType}>
+                <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="company">{tr("কোম্পানি", "Company")}</SelectItem>
+                  <SelectItem value="distributor">{tr("ডিস্ট্রিবিউটর", "Distributor")}</SelectItem>
+                  <SelectItem value="factory">{tr("ফ্যাক্টরি", "Factory")}</SelectItem>
+                  <SelectItem value="local_filter">{tr("লোকাল ফিল্টার (পানি)", "Local filter (water)")}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <Button className="w-full" onClick={save} disabled={busy}>{busy ? tr("সেভ...", "Saving...") : tr("সংরক্ষণ", "Save")}</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
