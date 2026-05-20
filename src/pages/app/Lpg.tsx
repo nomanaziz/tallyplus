@@ -158,7 +158,7 @@ export default function LpgPage() {
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={reload}><RefreshCw className="mr-1.5 h-4 w-4" />{tr("রিফ্রেশ", "Refresh")}</Button>
-          <Button size="sm" onClick={() => setMoveOpen(true)} disabled={types.length === 0}>
+          <Button size="sm" onClick={() => openMovement("refill")} disabled={types.length === 0}>
             <Plus className="mr-1.5 h-4 w-4" />{tr("নতুন এন্ট্রি", "New entry")}
           </Button>
         </div>
