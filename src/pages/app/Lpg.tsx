@@ -26,6 +26,7 @@ type Holding = {
 };
 type Contact = { id: string; name: string; phone: string | null };
 type DeliveryMan = { id: string; name: string; phone: string | null; vehicle_no: string | null; is_active: boolean };
+type Supplier = { id: string; name: string; phone: string | null; type: string; is_active: boolean };
 
 const TYPE_LABELS_BN: Record<string, string> = {
   sale_new: "নতুন বিক্রি",
@@ -54,24 +55,34 @@ export default function LpgPage() {
   const [holdings, setHoldings] = useState<Holding[]>([]);
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [deliveryMen, setDeliveryMen] = useState<DeliveryMan[]>([]);
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [tick, setTick] = useState(0);
   const reload = () => setTick((t) => t + 1);
 
   // Dialogs
   const [moveOpen, setMoveOpen] = useState(false);
+  const [moveInitialType, setMoveInitialType] = useState<MoveType>("refill");
+  const [moveInitialBottle, setMoveInitialBottle] = useState<string | undefined>(undefined);
   const [typeOpen, setTypeOpen] = useState(false);
   const [dmOpen, setDmOpen] = useState(false);
+
+  const openMovement = (t: MoveType, bottle?: string) => {
+    setMoveInitialType(t);
+    setMoveInitialBottle(bottle);
+    setMoveOpen(true);
+  };
 
   useEffect(() => {
     if (!current?.id) return;
     let cancelled = false;
     (async () => {
-      const [t, m, h, c, d] = await Promise.all([
+      const [t, m, h, c, d, s] = await Promise.all([
         supabase.from("bottle_types").select("*").eq("shop_id", current.id).order("created_at"),
         supabase.from("bottle_movements").select("*").eq("shop_id", current.id).order("occurred_at", { ascending: false }).limit(200),
         supabase.from("bottle_holdings").select("*").eq("shop_id", current.id).gt("qty", 0),
         supabase.from("customers").select("id,name,phone").eq("shop_id", current.id).order("name"),
         supabase.from("delivery_men").select("*").eq("shop_id", current.id).order("name"),
+        supabase.from("lpg_suppliers").select("*").eq("shop_id", current.id).eq("is_active", true).order("name"),
       ]);
       if (cancelled) return;
       setTypes((t.data ?? []) as BottleType[]);
@@ -79,6 +90,7 @@ export default function LpgPage() {
       setHoldings((h.data ?? []) as Holding[]);
       setContacts((c.data ?? []) as Contact[]);
       setDeliveryMen((d.data ?? []) as DeliveryMan[]);
+      setSuppliers((s.data ?? []) as Supplier[]);
     })();
     return () => { cancelled = true; };
   }, [current?.id, tick]);
