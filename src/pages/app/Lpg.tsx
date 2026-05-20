@@ -70,7 +70,7 @@ export default function LpgPage() {
         supabase.from("bottle_types").select("*").eq("shop_id", current.id).order("created_at"),
         supabase.from("bottle_movements").select("*").eq("shop_id", current.id).order("occurred_at", { ascending: false }).limit(200),
         supabase.from("bottle_holdings").select("*").eq("shop_id", current.id).gt("qty", 0),
-        supabase.from("contacts").select("id,name,phone").eq("shop_id", current.id).order("name"),
+        supabase.from("customers").select("id,name,phone").eq("shop_id", current.id).order("name"),
         supabase.from("delivery_men").select("*").eq("shop_id", current.id).order("name"),
       ]);
       if (cancelled) return;
@@ -155,8 +155,8 @@ export default function LpgPage() {
       <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
         <KpiCard icon={<Flame className="h-4 w-4" />} color="from-emerald-500 to-emerald-700" label={tr("মোট ভর্তি স্টক", "Full in stock")} value={bnNum(String(sumFull(stockSummary)), lang)} />
         <KpiCard icon={<Droplet className="h-4 w-4" />} color="from-sky-500 to-sky-700" label={tr("মোট খালি স্টক", "Empty in stock")} value={bnNum(String(sumEmpty(stockSummary)), lang)} />
-        <KpiCard icon={<Truck className="h-4 w-4" />} color="from-amber-500 to-orange-600" label={tr("কাস্টমারের কাছে", "With customers")} value={bnNum(String(totalOut), lang)} />
-        <KpiCard icon={<Wallet className="h-4 w-4" />} color="from-violet-500 to-fuchsia-600" label={tr("আজকের ক্যাশ", "Today's cash")} value={fmtMoney(todayCash, lang)} sub={tr(`আজকের রিফিল ${bnNum(String(todayRefill), lang)}`, `${todayRefill} refills today`)} />
+        <KpiCard icon={<Truck className="h-4 w-4" />} color="from-amber-500 to-orange-600" label={tr("কাস্টমারের কাছে", "With customers")} value={bnNum(String(totalOut))} />
+        <KpiCard icon={<Wallet className="h-4 w-4" />} color="from-violet-500 to-fuchsia-600" label={tr("আজকের ক্যাশ", "Today's cash")} value={fmtMoney(todayCash, lang)} sub={tr(`আজকের রিফিল ${bnNum(String(todayRefill))}`, `${todayRefill} refills today`)} />
       </div>
 
       <Tabs defaultValue="stock" className="mt-4">
@@ -213,7 +213,7 @@ export default function LpgPage() {
                 {topDue.map(([cid, v]) => (
                   <div key={cid} className="flex items-center justify-between py-2 text-sm">
                     <span className="font-medium">{contactName(cid)}</span>
-                    <span className="text-muted-foreground">{bnNum(String(v.qty), lang)} {tr("টি", "pcs")} · {fmtMoney(v.deposit, lang)}</span>
+                    <span className="text-muted-foreground">{bnNum(String(v.qty))} {tr("টি", "pcs")} · {fmtMoney(v.deposit, lang)}</span>
                   </div>
                 ))}
               </div>
@@ -242,7 +242,7 @@ export default function LpgPage() {
                     <td className="px-3 py-2">{lang === "bn" ? TYPE_LABELS_BN[m.type] : TYPE_LABELS_EN[m.type]}</td>
                     <td className="px-3 py-2">{typeName(m.bottle_type_id)}</td>
                     <td className="px-3 py-2">{contactName(m.contact_id)}</td>
-                    <td className="px-3 py-2 text-right tabular-nums">{bnNum(String(m.qty), lang)}</td>
+                    <td className="px-3 py-2 text-right tabular-nums">{bnNum(String(m.qty))}</td>
                     <td className="px-3 py-2 text-right tabular-nums">{fmtMoney(m.cash_collected, lang)}</td>
                     <td className={`px-3 py-2 text-right tabular-nums ${Number(m.deposit_change) > 0 ? "text-emerald-600" : Number(m.deposit_change) < 0 ? "text-rose-600" : ""}`}>{fmtMoney(m.deposit_change, lang)}</td>
                   </tr>
@@ -269,7 +269,7 @@ export default function LpgPage() {
                   <tr key={i} className="border-t">
                     <td className="px-3 py-2 font-medium">{contactName(h.contact_id)}</td>
                     <td className="px-3 py-2">{typeName(h.bottle_type_id)}</td>
-                    <td className="px-3 py-2 text-right tabular-nums">{bnNum(String(h.qty), lang)}</td>
+                    <td className="px-3 py-2 text-right tabular-nums">{bnNum(String(h.qty))}</td>
                     <td className="px-3 py-2 text-right tabular-nums">{fmtMoney(h.deposit_held, lang)}</td>
                     <td className="px-3 py-2 text-right text-xs text-muted-foreground">{h.last_movement_at ? new Date(h.last_movement_at).toLocaleDateString("en-GB") : "—"}</td>
                   </tr>
