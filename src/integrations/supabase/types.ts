@@ -871,6 +871,226 @@ export type Database = {
         }
         Relationships: []
       }
+      bottle_deposits: {
+        Row: {
+          amount: number
+          bottle_type_id: string | null
+          contact_id: string
+          direction: string
+          id: string
+          movement_id: string | null
+          occurred_at: string
+          shop_id: string
+        }
+        Insert: {
+          amount: number
+          bottle_type_id?: string | null
+          contact_id: string
+          direction: string
+          id?: string
+          movement_id?: string | null
+          occurred_at?: string
+          shop_id: string
+        }
+        Update: {
+          amount?: number
+          bottle_type_id?: string | null
+          contact_id?: string
+          direction?: string
+          id?: string
+          movement_id?: string | null
+          occurred_at?: string
+          shop_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bottle_deposits_bottle_type_id_fkey"
+            columns: ["bottle_type_id"]
+            isOneToOne: false
+            referencedRelation: "bottle_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bottle_deposits_movement_id_fkey"
+            columns: ["movement_id"]
+            isOneToOne: false
+            referencedRelation: "bottle_movements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bottle_deposits_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bottle_holdings: {
+        Row: {
+          bottle_type_id: string
+          contact_id: string
+          deposit_held: number
+          id: string
+          last_movement_at: string | null
+          qty: number
+          shop_id: string
+          updated_at: string
+        }
+        Insert: {
+          bottle_type_id: string
+          contact_id: string
+          deposit_held?: number
+          id?: string
+          last_movement_at?: string | null
+          qty?: number
+          shop_id: string
+          updated_at?: string
+        }
+        Update: {
+          bottle_type_id?: string
+          contact_id?: string
+          deposit_held?: number
+          id?: string
+          last_movement_at?: string | null
+          qty?: number
+          shop_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bottle_holdings_bottle_type_id_fkey"
+            columns: ["bottle_type_id"]
+            isOneToOne: false
+            referencedRelation: "bottle_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bottle_holdings_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bottle_movements: {
+        Row: {
+          bottle_type_id: string
+          cash_collected: number
+          contact_id: string | null
+          created_at: string
+          created_by: string | null
+          delivery_id: string | null
+          deposit_change: number
+          id: string
+          note: string | null
+          occurred_at: string
+          qty: number
+          shop_id: string
+          type: string
+        }
+        Insert: {
+          bottle_type_id: string
+          cash_collected?: number
+          contact_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          delivery_id?: string | null
+          deposit_change?: number
+          id?: string
+          note?: string | null
+          occurred_at?: string
+          qty: number
+          shop_id: string
+          type: string
+        }
+        Update: {
+          bottle_type_id?: string
+          cash_collected?: number
+          contact_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          delivery_id?: string | null
+          deposit_change?: number
+          id?: string
+          note?: string | null
+          occurred_at?: string
+          qty?: number
+          shop_id?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bottle_movements_bottle_type_id_fkey"
+            columns: ["bottle_type_id"]
+            isOneToOne: false
+            referencedRelation: "bottle_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bottle_movements_delivery_id_fkey"
+            columns: ["delivery_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_trips"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bottle_movements_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bottle_types: {
+        Row: {
+          created_at: string
+          deposit_amount: number
+          id: string
+          is_active: boolean
+          name: string
+          purchase_price: number
+          sale_price: number
+          shop_id: string
+          size_label: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          deposit_amount?: number
+          id?: string
+          is_active?: boolean
+          name: string
+          purchase_price?: number
+          sale_price?: number
+          shop_id: string
+          size_label?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          deposit_amount?: number
+          id?: string
+          is_active?: boolean
+          name?: string
+          purchase_price?: number
+          sale_price?: number
+          shop_id?: string
+          size_label?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bottle_types_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cash_movements: {
         Row: {
           amount: number
@@ -1888,6 +2108,107 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      delivery_men: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          phone: string | null
+          shop_id: string
+          vehicle_no: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          phone?: string | null
+          shop_id: string
+          vehicle_no?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          phone?: string | null
+          shop_id?: string
+          vehicle_no?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "delivery_men_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      delivery_trips: {
+        Row: {
+          cash_collected: number
+          closed_at: string | null
+          closing_empty: number | null
+          closing_full: number | null
+          created_at: string
+          delivery_man_id: string | null
+          id: string
+          notes: string | null
+          opening_empty: number
+          opening_full: number
+          shop_id: string
+          status: string
+          trip_date: string
+        }
+        Insert: {
+          cash_collected?: number
+          closed_at?: string | null
+          closing_empty?: number | null
+          closing_full?: number | null
+          created_at?: string
+          delivery_man_id?: string | null
+          id?: string
+          notes?: string | null
+          opening_empty?: number
+          opening_full?: number
+          shop_id: string
+          status?: string
+          trip_date?: string
+        }
+        Update: {
+          cash_collected?: number
+          closed_at?: string | null
+          closing_empty?: number | null
+          closing_full?: number | null
+          created_at?: string
+          delivery_man_id?: string | null
+          id?: string
+          notes?: string | null
+          opening_empty?: number
+          opening_full?: number
+          shop_id?: string
+          status?: string
+          trip_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "delivery_trips_delivery_man_id_fkey"
+            columns: ["delivery_man_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_men"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "delivery_trips_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       expenses: {
         Row: {
@@ -4564,6 +4885,41 @@ export type Database = {
           },
         ]
       }
+      shop_modules: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          id: string
+          module_code: string
+          shop_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          module_code: string
+          shop_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          module_code?: string
+          shop_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shop_modules_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shop_printer_settings: {
         Row: {
           created_at: string
@@ -4952,6 +5308,7 @@ export type Database = {
           code: string
           created_at: string
           default_categories: string[]
+          default_modules: string[]
           icon: string | null
           id: string
           is_active: boolean
@@ -4964,6 +5321,7 @@ export type Database = {
           code: string
           created_at?: string
           default_categories?: string[]
+          default_modules?: string[]
           icon?: string | null
           id?: string
           is_active?: boolean
@@ -4976,6 +5334,7 @@ export type Database = {
           code?: string
           created_at?: string
           default_categories?: string[]
+          default_modules?: string[]
           icon?: string | null
           id?: string
           is_active?: boolean

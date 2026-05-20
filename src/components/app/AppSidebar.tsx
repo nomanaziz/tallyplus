@@ -8,14 +8,16 @@ import { BrandWordmark } from "@/components/brand/BrandWordmark";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { usePermissions } from "@/lib/permissions-hook";
 import { usePwaInstall } from "@/hooks/use-pwa-install";
-import { Download, ChevronsLeft, ChevronsRight } from "lucide-react";
+import { Download, ChevronsLeft, ChevronsRight, Flame } from "lucide-react";
 import { toast } from "sonner";
 import { useEffect, useState } from "react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { resetTour, startTour } from "@/lib/tour";
 import { HelpCircle } from "lucide-react";
+import { useShop } from "@/lib/shop";
+import { useEnabledModules } from "@/lib/modules";
 
-export type SidebarItem = { to: string; bn: string; en: string; icon: LucideIcon; highlight?: boolean; perm?: string };
+export type SidebarItem = { to: string; bn: string; en: string; icon: LucideIcon; highlight?: boolean; perm?: string; module?: string };
 export type SidebarSection = { id: string; bn: string; en: string; items: SidebarItem[] };
 
 export const SECTIONS: SidebarSection[] = [
@@ -30,10 +32,11 @@ export const SECTIONS: SidebarSection[] = [
     bn: "লেনদেন",
     en: "Transactions",
     items: [
-      { to: "/app/purchase", bn: "ক্রয়", en: "Purchase", icon: icons.purchase, perm: "purchase" },
-      { to: "/app/sell", bn: "বিক্রয়", en: "Sell", icon: icons.sell, perm: "sell" },
-      { to: "/app/quick-order", bn: "দ্রুত বিক্রি", en: "Quick Sell", icon: icons.quickSell, perm: "sell" },
-      { to: "/app/cashbox", bn: "ক্যাশবক্স", en: "Cashbox", icon: icons.cashbox },
+      { to: "/app/lpg", bn: "LPG / বোতল", en: "LPG / Bottle", icon: Flame, module: "lpg", highlight: true },
+      { to: "/app/purchase", bn: "ক্রয়", en: "Purchase", icon: icons.purchase, perm: "purchase", module: "purchase" },
+      { to: "/app/sell", bn: "বিক্রয়", en: "Sell", icon: icons.sell, perm: "sell", module: "sales" },
+      { to: "/app/quick-order", bn: "দ্রুত বিক্রি", en: "Quick Sell", icon: icons.quickSell, perm: "sell", module: "sales" },
+      { to: "/app/cashbox", bn: "ক্যাশবক্স", en: "Cashbox", icon: icons.cashbox, module: "cashbook" },
     ],
   },
   {
@@ -41,12 +44,12 @@ export const SECTIONS: SidebarSection[] = [
     bn: "হিসাবের বই",
     en: "Books",
     items: [
-      { to: "/app/purchase-ledger", bn: "ক্রয়ের বই", en: "Purchase Book", icon: icons.purchaseList, perm: "purchase" },
-      { to: "/app/sales-ledger", bn: "বিক্রয়ের বই", en: "Sales Book", icon: icons.salesList, perm: "sell" },
+      { to: "/app/purchase-ledger", bn: "ক্রয়ের বই", en: "Purchase Book", icon: icons.purchaseList, perm: "purchase", module: "purchase" },
+      { to: "/app/sales-ledger", bn: "বিক্রয়ের বই", en: "Sales Book", icon: icons.salesList, perm: "sell", module: "sales" },
       { to: "/app/due-ledger", bn: "বাকির বই", en: "Due Book", icon: icons.due, perm: "due" },
-      { to: "/app/expense-ledger", bn: "খরচের বই", en: "Expense Book", icon: icons.expense, perm: "expense" },
-      { to: "/app/owner-ledger", bn: "মালিকের বই", en: "Owner Book", icon: icons.cashbox, perm: "expense" },
-      { to: "/app/assets", bn: "দোকানের সম্পদ", en: "Shop Assets", icon: icons.cashbox, perm: "expense" },
+      { to: "/app/expense-ledger", bn: "খরচের বই", en: "Expense Book", icon: icons.expense, perm: "expense", module: "expense" },
+      { to: "/app/owner-ledger", bn: "মালিকের বই", en: "Owner Book", icon: icons.cashbox, perm: "expense", module: "cashbook" },
+      { to: "/app/assets", bn: "দোকানের সম্পদ", en: "Shop Assets", icon: icons.cashbox, perm: "expense", module: "cashbook" },
     ],
   },
   {
@@ -54,11 +57,11 @@ export const SECTIONS: SidebarSection[] = [
     bn: "পণ্য ও স্টক",
     en: "Inventory",
     items: [
-      { to: "/app/products", bn: "প্রোডাক্ট ও স্টক", en: "Products & Stock", icon: icons.productList, perm: "products" },
-      { to: "/app/services", bn: "সার্ভিস", en: "Services", icon: icons.training, perm: "services" },
-      { to: "/app/returns", bn: "প্রোডাক্ট রিটার্ন", en: "Product Return", icon: icons.salesList, perm: "returns" },
-      { to: "/app/expiring", bn: "মেয়াদোত্তীর্ণ পণ্য", en: "Expiring Products", icon: icons.expired, perm: "products" },
-      { to: "/app/warranty", bn: "ওয়ারেন্টি পণ্য", en: "Warranty", icon: icons.warranty, perm: "products" },
+      { to: "/app/products", bn: "প্রোডাক্ট ও স্টক", en: "Products & Stock", icon: icons.productList, perm: "products", module: "products" },
+      { to: "/app/services", bn: "সার্ভিস", en: "Services", icon: icons.training, perm: "services", module: "services" },
+      { to: "/app/returns", bn: "প্রোডাক্ট রিটার্ন", en: "Product Return", icon: icons.salesList, perm: "returns", module: "products" },
+      { to: "/app/expiring", bn: "মেয়াদোত্তীর্ণ পণ্য", en: "Expiring Products", icon: icons.expired, perm: "products", module: "products" },
+      { to: "/app/warranty", bn: "ওয়ারেন্টি পণ্য", en: "Warranty", icon: icons.warranty, perm: "products", module: "products" },
     ],
   },
   {
@@ -66,11 +69,11 @@ export const SECTIONS: SidebarSection[] = [
     bn: "গ্রাহক ও যোগাযোগ",
     en: "Customers",
     items: [
-      { to: "/app/contacts", bn: "কাস্টমার ও স্টাফ", en: "Customer & Staff", icon: icons.contact, perm: "contacts" },
-      { to: "/app/customer-wishlist", bn: "গ্রাহক ফর্দ", en: "Customer Fordo", icon: icons.contact, perm: "contacts" },
-      { to: "/app/fordo-history", bn: "ফর্দ ইতিহাস", en: "Fordo History", icon: icons.contact, perm: "contacts" },
-      { to: "/app/marketing", bn: "মার্কেটিং", en: "Marketing", icon: icons.marketing, perm: "sms" },
-      { to: "/app/online-shop", bn: "অনলাইন শপ", en: "Online Shop", icon: icons.onlineShop, perm: "online_shop" },
+      { to: "/app/contacts", bn: "কাস্টমার ও স্টাফ", en: "Customer & Staff", icon: icons.contact, perm: "contacts", module: "contacts" },
+      { to: "/app/customer-wishlist", bn: "গ্রাহক ফর্দ", en: "Customer Fordo", icon: icons.contact, perm: "contacts", module: "contacts" },
+      { to: "/app/fordo-history", bn: "ফর্দ ইতিহাস", en: "Fordo History", icon: icons.contact, perm: "contacts", module: "contacts" },
+      { to: "/app/marketing", bn: "মার্কেটিং", en: "Marketing", icon: icons.marketing, perm: "sms", module: "contacts" },
+      { to: "/app/online-shop", bn: "অনলাইন শপ", en: "Online Shop", icon: icons.onlineShop, perm: "online_shop", module: "online_shop" },
     ],
   },
   {
@@ -78,8 +81,8 @@ export const SECTIONS: SidebarSection[] = [
     bn: "রিপোর্ট ও সেটিংস",
     en: "Reports & Settings",
     items: [
-      { to: "/app/reports", bn: "ব্যবসার রিপোর্ট", en: "Business Report", icon: icons.businessReport, perm: "report" },
-      { to: "/app/owner-report", bn: "মালিকের রিপোর্ট", en: "Owner Report", icon: icons.businessReport, perm: "report" },
+      { to: "/app/reports", bn: "ব্যবসার রিপোর্ট", en: "Business Report", icon: icons.businessReport, perm: "report", module: "reports" },
+      { to: "/app/owner-report", bn: "মালিকের রিপোর্ট", en: "Owner Report", icon: icons.businessReport, perm: "report", module: "reports" },
       { to: "/app/usage-limits", bn: "ব্যবহারের সীমা", en: "Usage Limits", icon: icons.businessReport },
       { to: "/app/printer", bn: "প্রিন্টার", en: "Printer", icon: icons.printer, perm: "shop" },
       { to: "/app/access", bn: "অ্যাপ অ্যাক্সেস", en: "App Access", icon: icons.access, perm: "__owner__" },
@@ -102,6 +105,8 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
   const { lang } = useI18n();
   const loc = useLocation();
   const { isOwner, isAdmin, canGroup, loading } = usePermissions();
+  const { current } = useShop();
+  const { enabled: enabledModules, loading: modulesLoading } = useEnabledModules(current?.id ?? null);
   const pwa = usePwaInstall();
   const [collapsed, setCollapsed] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
@@ -113,6 +118,8 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
   }, [collapsed]);
 
   const isVisible = (it: SidebarItem) => {
+    // Module gate: if the item declares a module and it's not enabled, hide it.
+    if (it.module && !modulesLoading && !enabledModules.has(it.module)) return false;
     if (!it.perm) return true;
     if (loading) return true;
     if (it.perm === "__owner__") return isOwner || isAdmin;
