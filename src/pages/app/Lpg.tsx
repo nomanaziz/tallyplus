@@ -421,17 +421,19 @@ function EmptyHint({ title, hint, action }: { title: string; hint: string; actio
 
 /* ---------- Movement entry dialog ---------- */
 function MovementDialog({
-  open, onOpenChange, types, contacts, deliveryMen, shopId, onSaved,
+  open, onOpenChange, types, contacts, deliveryMen, suppliers, shopId, onSaved, initialType, initialBottleId,
 }: {
   open: boolean; onOpenChange: (v: boolean) => void;
-  types: BottleType[]; contacts: Contact[]; deliveryMen: DeliveryMan[];
+  types: BottleType[]; contacts: Contact[]; deliveryMen: DeliveryMan[]; suppliers: Supplier[];
   shopId: string; onSaved: () => void;
+  initialType?: MoveType; initialBottleId?: string;
 }) {
   const { lang } = useI18n();
   const tr = (bn: string, en: string) => (lang === "bn" ? bn : en);
-  const [tab, setTab] = useState<"sale_new" | "refill" | "return_empty" | "purchase_full">("refill");
+  const [tab, setTab] = useState<MoveType>("refill");
   const [bottleId, setBottleId] = useState<string>("");
   const [contactId, setContactId] = useState<string>("");
+  const [supplierId, setSupplierId] = useState<string>("");
   const [qty, setQty] = useState<string>("1");
   const [cash, setCash] = useState<string>("");
   const [deposit, setDeposit] = useState<string>("0");
@@ -440,15 +442,16 @@ function MovementDialog({
 
   useEffect(() => {
     if (open) {
-      setBottleId(types[0]?.id ?? "");
+      setBottleId(initialBottleId ?? types[0]?.id ?? "");
       setContactId("");
+      setSupplierId("");
       setQty("1");
       setCash("");
       setDeposit("0");
       setNote("");
-      setTab("refill");
+      setTab(initialType ?? "refill");
     }
-  }, [open, types]);
+  }, [open, types, initialType, initialBottleId]);
 
   // Auto-fill cash + deposit when bottle/qty/type changes
   useEffect(() => {
@@ -464,13 +467,14 @@ function MovementDialog({
     } else if (tab === "return_empty") {
       setCash("0");
       setDeposit(String(-t.deposit_amount * q));
-    } else if (tab === "purchase_full") {
+    } else if (tab === "purchase_full" || tab === "refill_factory") {
       setCash(String(t.purchase_price * q));
       setDeposit("0");
     }
   }, [tab, bottleId, qty, types]);
 
-  const needsContact = tab !== "purchase_full";
+  const isPurchase = tab === "purchase_full" || tab === "refill_factory";
+  const needsContact = !isPurchase;
 
   const save = async () => {
     if (!bottleId) return toast.error(tr("বোতলের ধরন বাছাই করুন", "Pick a bottle type"));
@@ -483,6 +487,7 @@ function MovementDialog({
       shop_id: shopId,
       bottle_type_id: bottleId,
       contact_id: needsContact ? contactId : null,
+      supplier_id: isPurchase && supplierId ? supplierId : null,
       type: tab,
       qty: q,
       cash_collected: Number(cash || 0),
@@ -500,11 +505,12 @@ function MovementDialog({
       <DialogContent className="max-w-lg">
         <DialogHeader><DialogTitle>{tr("বোতল লেনদেন", "Bottle movement")}</DialogTitle></DialogHeader>
         <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="refill"><RefreshCw className="mr-1 h-3.5 w-3.5" />{tr("রিফিল", "Refill")}</TabsTrigger>
             <TabsTrigger value="sale_new">{tr("নতুন বিক্রি", "New Sale")}</TabsTrigger>
             <TabsTrigger value="return_empty"><ArrowDownToLine className="mr-1 h-3.5 w-3.5" />{tr("খালি ফেরত", "Empty")}</TabsTrigger>
             <TabsTrigger value="purchase_full"><ArrowUpFromLine className="mr-1 h-3.5 w-3.5" />{tr("কেনা", "Buy")}</TabsTrigger>
+            <TabsTrigger value="refill_factory">{tr("কারখানা", "Factory")}</TabsTrigger>
           </TabsList>
         </Tabs>
         <div className="space-y-3">
@@ -528,6 +534,23 @@ function MovementDialog({
                   {contacts.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}{c.phone ? ` · ${c.phone}` : ""}</SelectItem>)}
                 </SelectContent>
               </Select>
+            </div>
+          )}
+          {isPurchase && (
+            <div>
+              <Label>{tr("সরবরাহকারী / কোম্পানি", "Supplier / Company")}</Label>
+              {suppliers.length === 0 ? (
+                <p className="mt-1 rounded-md border border-dashed bg-muted/30 p-2 text-xs text-muted-foreground">
+                  {tr("কোনো সরবরাহকারী যোগ করা নেই। 'সরবরাহকারী' পেজ থেকে যোগ করুন (পানির জন্য ঐচ্ছিক)।", "No suppliers added yet. Add from the Suppliers page (optional for water).")}
+                </p>
+              ) : (
+                <Select value={supplierId} onValueChange={setSupplierId}>
+                  <SelectTrigger className="mt-1"><SelectValue placeholder={tr("বাছাই করুন (ঐচ্ছিক)", "Choose (optional)")} /></SelectTrigger>
+                  <SelectContent>
+                    {suppliers.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}{s.phone ? ` · ${s.phone}` : ""}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
           )}
           <div className="grid grid-cols-3 gap-2">
