@@ -17,6 +17,7 @@ import { downloadJson, BACKUP_VERSION } from "@/lib/backup";
 import { LocationPicker, type LocationValue } from "@/components/LocationPicker";
 import { Switch } from "@/components/ui/switch";
 import { MODULE_LABELS, loadShopModules, setShopModule } from "@/lib/modules";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function ShopSettingsPage() {
   const { lang } = useI18n();
@@ -35,6 +36,9 @@ export default function ShopSettingsPage() {
   const [exporting, setExporting] = useState(false);
   const [modules, setModules] = useState<Record<string, boolean>>({});
   const [moduleBusy, setModuleBusy] = useState<string | null>(null);
+  const [lpgTier, setLpgTier] = useState<string>("");
+  const [lpgListed, setLpgListed] = useState<boolean>(false);
+  const [lpgBusy, setLpgBusy] = useState(false);
 
   useEffect(() => {
     if (!current) return;
@@ -57,6 +61,15 @@ export default function ShopSettingsPage() {
     void (async () => {
       const m = await loadShopModules(current.id);
       setModules(m);
+    })();
+    void (async () => {
+      const { data } = await supabase
+        .from("shops")
+        .select("lpg_tier,list_in_lpg_marketplace")
+        .eq("id", current.id)
+        .maybeSingle();
+      setLpgTier((data?.lpg_tier as string | null) ?? "");
+      setLpgListed(!!data?.list_in_lpg_marketplace);
     })();
   }, [current?.id]);
 
