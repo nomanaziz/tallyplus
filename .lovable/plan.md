@@ -1,3 +1,28 @@
+# Phase A — Finishing tasks
+
+The DB migration, `src/lib/modules.ts`, module-aware sidebar, and `src/pages/app/Lpg.tsx` are already in place. Three small items remain to finish Phase A.
+
+## 1. Register the LPG route
+
+Add a lazy import and a route entry under `/app/lpg` inside `src/lib/app-routes.tsx`, next to the other `app/*` routes (near `shop-settings`). No new layout — uses the existing `AppLayout`.
+
+## 2. Add the "Modules" section in Shop Settings
+
+Extend `src/pages/app/ShopSettings.tsx` with a new card titled "মডিউল / Modules" that:
+
+- Loads the current shop's enabled modules via `loadShopModules(shopId)`.
+- Renders one `Switch` row per entry in `MODULE_LABELS` (label + Bangla/English hint).
+- On toggle, calls `setShopModule(shopId, code, value)` and shows a toast.
+- Only the shop owner can change toggles; staff sees them as read-only.
+- Notes that turning a module off only hides its menu items — existing data is preserved.
+
+## 3. Fix `bnNum` calls in `src/pages/app/Lpg.tsx`
+
+`bnNum` takes one argument and always returns Bangla digits. A few call sites pass a second `lang` argument, which is a TS error and also forces Bangla digits in English mode. Replace those with `lang === "bn" ? bnNum(String(x)) : String(x)` (or drop the second arg when the surrounding string is already Bangla-only).
+
+## Out of scope (Phase B — separate plan)
+
+Trips reconciliation page, deposit-ledger report, customer-profile bottle section, sidebar "module disabled" guard pages, ShopTypePicker icon grid.
 # Business-type ভিত্তিক Module + LPG/পানির বোতল Module
 
 লক্ষ্য: এক-আকারের app থেকে সরে গিয়ে business type অনুযায়ী relevant module দেখানো এবং LPG গ্যাস / পানির বোতল ব্যবসার জন্য একটি পূর্ণাঙ্গ cylinder/bottle tracking module যোগ করা।
