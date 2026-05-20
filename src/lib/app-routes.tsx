@@ -138,6 +138,7 @@ const LCustomerAnalytics = lazy(() => import("@/pages/customer/Analytics"));
 const LCustomerBudgets = lazy(() => import("@/pages/customer/Budgets"));
 const LCustomerShopping = lazy(() => import("@/pages/customer/Shopping"));
 const LCustomerMe = lazy(() => import("@/pages/customer/Me"));
+const LLpg = lazy(() => import("@/pages/app/Lpg"));
 
 export const appRoutes: RouteObject[] = [
 { index: true, element: <Suspense fallback={<RouteFallback/>}><L0/></Suspense> },
@@ -244,6 +245,8 @@ export const appRoutes: RouteObject[] = [
 { path: "profile", element: <Suspense fallback={<RouteFallback/>}><LProfile/></Suspense> }
 ,
 { path: "shop-settings", element: <Suspense fallback={<RouteFallback/>}><LShopSettings/></Suspense> }
+,
+{ path: "lpg", element: <Suspense fallback={<RouteFallback/>}><LLpg/></Suspense> }
 ,
 { path: "restore-requests", element: <Suspense fallback={<RouteFallback/>}><LAppRestoreRequests/></Suspense> }
 ,
