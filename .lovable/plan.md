@@ -1,164 +1,72 @@
-# Phase A — Finishing tasks
+# Phase B — LPG/পানি বোতল module পরবর্তী আপগ্রেড
 
-The DB migration, `src/lib/modules.ts`, module-aware sidebar, and `src/pages/app/Lpg.tsx` are already in place. Three small items remain to finish Phase A.
+আপনার ৪টা প্রশ্নের উত্তর + কাজের পরিকল্পনা।
 
-## 1. Register the LPG route
+## ১. LPG স্টক কোথায় add করবেন?
 
-Add a lazy import and a route entry under `/app/lpg` inside `src/lib/app-routes.tsx`, next to the other `app/*` routes (near `shop-settings`). No new layout — uses the existing `AppLayout`.
+বর্তমানে `/app/lpg` → "নতুন এন্ট্রি" বোতাম থেকে ৬ ধরনের movement log করা যায়, যার মধ্যে **`purchase_full`** (ভর্তি কেনা) এবং **`refill_factory`** (কারখানা থেকে রিফিল) দিয়ে stock বাড়ে। কিন্তু UI-তে এটা পরিষ্কার না — তাই স্টক ট্যাব ফাঁকা মনে হচ্ছে।
 
-## 2. Add the "Modules" section in Shop Settings
+পরিবর্তন:
+- "স্টক" ট্যাবের উপরে দুটো বড় action button: **"ভর্তি বোতল ক্রয় / স্টক যোগ"** এবং **"কারখানা থেকে রিফিল"** — সরাসরি সঠিক movement type-এ dialog খুলবে।
+- প্রত্যেক bottle-type কার্ডে inline `+` icon → ওই bottle-এর জন্য direct stock যোগ।
+- Empty state-এ "প্রথম স্টক যোগ করুন" CTA।
+- Movement dialog-এ Supplier/Vendor field add হবে (নিচের ৩ নং দেখুন)।
 
-Extend `src/pages/app/ShopSettings.tsx` with a new card titled "মডিউল / Modules" that:
+## ২. Dealer / পাইকারি / খুচরা tier
 
-- Loads the current shop's enabled modules via `loadShopModules(shopId)`.
-- Renders one `Switch` row per entry in `MODULE_LABELS` (label + Bangla/English hint).
-- On toggle, calls `setShopModule(shopId, code, value)` and shows a toast.
-- Only the shop owner can change toggles; staff sees them as read-only.
-- Notes that turning a module off only hides its menu items — existing data is preserved.
+নতুন column `shops.lpg_tier text` — values: `dealer` / `wholesale` / `retail` (পানির বেলায় `producer` / `wholesale` / `retail`). ShopSettings-এ select।
 
-## 3. Fix `bnNum` calls in `src/pages/app/Lpg.tsx`
+প্রভাব:
+- Bottle types-এ ৩টা আলাদা price column: `dealer_price`, `wholesale_price`, `retail_price` — sale dialog-এ customer-এর tier অনুযায়ী auto-fill।
+- Marketplace-এ নিজের tier দেখাবে (নিচে ৪ নং)।
+- Reports-এ tier-wise breakdown।
 
-`bnNum` takes one argument and always returns Bangla digits. A few call sites pass a second `lang` argument, which is a TS error and also forces Bangla digits in English mode. Replace those with `lang === "bn" ? bnNum(String(x)) : String(x)` (or drop the second arg when the surrounding string is already Bangla-only).
+## ৩. ক্রয়ের হিসাব (Supplier / Company)
 
-## Out of scope (Phase B — separate plan)
+নতুন:
+- `lpg_suppliers(shop_id, name, phone, address, type)` — `type ∈ {company, distributor, factory, local_filter}`। LPG-এর জন্য company বাধ্যতামূলক, পানির বেলায় optional (locally filter)।
+- `bottle_movements`-এ নতুন column `supplier_id` (nullable, শুধু purchase_full / refill_factory-এর জন্য)।
+- প্রত্যেক supplier-এর ledger page: কত ভর্তি/empty নিয়েছেন, কত টাকা বাকি, payment history।
+- "কিনলেন কার কাছ থেকে" → supplier dropdown movement dialog-এ।
+- "কাকে বিক্রি করলেন" → ইতিমধ্যে `contact_id` দিয়ে customer track হচ্ছে; customer ledger-এ "বোতলের হিসাব" section যোগ হবে।
 
-Trips reconciliation page, deposit-ledger report, customer-profile bottle section, sidebar "module disabled" guard pages, ShopTypePicker icon grid.
-# Business-type ভিত্তিক Module + LPG/পানির বোতল Module
+## ৪. সিরিয়াল নম্বর + মেয়াদ (optional)
 
-লক্ষ্য: এক-আকারের app থেকে সরে গিয়ে business type অনুযায়ী relevant module দেখানো এবং LPG গ্যাস / পানির বোতল ব্যবসার জন্য একটি পূর্ণাঙ্গ cylinder/bottle tracking module যোগ করা।
+- নতুন table `bottle_units(shop_id, bottle_type_id, serial_no, status, current_holder_contact_id, expiry_date, last_qc_date)` — `status ∈ {full_shop, empty_shop, with_customer, retired}`।
+- Bottle type-এ toggle `track_serial boolean` — যাদের serial track দরকার তারাই enable করবে। Default off (অনেকেই track করতে চান না)।
+- Serial tracking on হলে movement dialog-এ qty-এর বদলে serial scanner/picker আসবে।
+- Expiry date থাকলে dashboard-এ "মেয়াদ শেষের পথে" alert (LPG silinder-এর জন্য সাধারণত ১০ বছর)।
 
-## ১. Business Type → Module Mapping (Smart default + toggle)
+## ৫. LPG Marketplace (আলাদা)
 
-- `shop_types` table-এ নতুন column: `default_modules text[]` (যেমন `['products','sales','purchase','expense','reports','contacts','cashbook']`)। প্রত্যেক type-এর জন্য default module set seed করা হবে।
-- নতুন table: `shop_modules(shop_id, module_code, enabled)` — কোন দোকানে কোন module চালু আছে।
-- নতুন shop create হলে shop_type-এর default modules থেকে rows auto-insert হবে (DB trigger)।
-- `ShopSettings` page-এ নতুন tab "মডিউল" — toggle দিয়ে যেকোনো module on/off করা যাবে।
-- `AppLayout`/sidebar/bottom nav `shop_modules`-এর enabled list দেখে menu item filter করবে। Common module (Dashboard, Contacts, Cashbook, Reports, Profile) সবসময় visible।
-- Route guard: কোনো user URL দিয়ে disabled module-এ গেলে "এই মডিউল আপনার দোকানে চালু নেই" message + enable shortcut।
+বর্তমান marketplace-এর পাশাপাশি নতুন route: `/lpg` (public)।
 
-নতুন module code যোগ হবে: `lpg` (LPG/Bottle business)। ভবিষ্যতে service, restaurant, pharmacy-specific module একই pattern-এ যোগ করা সহজ হবে।
+- নতুন column `shops.list_in_lpg_marketplace boolean` — LPG/water shop owner Settings থেকে on/off।
+- `/lpg` page-এ:
+  - Visitor logged in হলে তার address/area দেখে নিকটতম LPG/water dealer auto-show।
+  - Logged-out visitor হলে district/upazila filter + tier filter (dealer/wholesale/retail) + bottle brand filter।
+  - প্রত্যেক shop card-এ: logo, name, area, tier badge, available bottle types + price, "যোগাযোগ" + "অর্ডার দিন" বোতাম।
+- "অর্ডার দিন" → এক ক্লিকে existing ফর্দ/wishlist system reuse করবে, কিন্তু pre-filled "LPG রিফিল / নতুন বোতল" template-এ।
+- নতুন edge function `lpg-marketplace-public` (or existing `marketplace-public`-এ action যোগ): area-based shop listing।
+- Sitemap + SEO: এলাকা-ভিত্তিক landing page (যেমন `/lpg/dhaka/mirpur`)।
 
-## ২. নতুন Shop Type
+## ৬. পানির বোতল = LPG (memory note)
 
-`shop_types`-এ ২টা নতুন entry যোগ:
-- `lpg_gas` — "LPG গ্যাস" / "LPG Gas"
-- `water_bottle` — "পানির বোতল / ফিল্টার" / "Water Bottle"
+Memory-তে save করা হবে: "LPG এবং পানির বোতল business একই module (`lpg`) ব্যবহার করে। ৯৯% feature shared। পার্থক্য: LPG-তে supplier (company) বাধ্যতামূলক, পানিতে locally filter হয় তাই supplier optional। পরবর্তী যেকোনো LPG-related change automatically দুটোতেই apply হবে। আলাদা UI/route বানাবো না।"
 
-দুটোরই default_modules-এ `lpg` module included থাকবে।
+## কাজের ক্রম
 
-## ৩. LPG/Bottle Module — কী কী থাকবে
+1. Memory save (LPG = water bottle rule)
+2. Migration: `lpg_suppliers`, `bottle_units`, `shops.lpg_tier`, `shops.list_in_lpg_marketplace`, bottle_types-এ tier prices + `track_serial`, bottle_movements-এ `supplier_id`
+3. Lpg.tsx UI: visible "স্টক যোগ" CTA + supplier dropdown + tier price + serial picker (conditional)
+4. নতুন `/app/lpg/suppliers` page (vendor ledger)
+5. নতুন `/lpg` public marketplace page + area filter + edge function
+6. ShopSettings-এ tier + marketplace toggle
+7. Customer profile-এ "বোতলের হিসাব" section
+8. Dashboard widget — expiring bottles + supplier দেনা
 
-### ৩.১ Cylinder/Bottle Inventory
-- নতুন table `bottle_types(shop_id, name, size_label, purchase_price, sale_price, deposit_amount)` — যেমন "Bashundhara 12kg", "Jibon 19L"।
-- প্রত্যেক bottle_type-এর জন্য realtime stock: **Full / Empty / Out-with-customer** তিন bucket। View থেকে compute হবে।
-- "Refill করে এসেছি" entry → empty কমে full বাড়ে।
+## কী ছেড়ে দিচ্ছি (এখন না)
 
-### ৩.২ Customer-wise Bottle Ledger
-- নতুন table `bottle_holdings(shop_id, contact_id, bottle_type_id, qty, deposit_held, last_movement_at)` — কোন কাস্টমারের কাছে এই মুহূর্তে কয়টা bottle আছে।
-- Customer profile-এ নতুন section "বোতলের হিসাব" — কয়টা ভর্তি দেওয়া, কয়দিন ধরে, কত deposit।
-
-### ৩.৩ Transaction Types (Refill / Exchange)
-- নতুন table `bottle_movements(shop_id, contact_id, type, bottle_type_id, qty, deposit_change, cash_collected, delivery_id, note, occurred_at)` যেখানে `type ∈ {sale_new, refill, return_empty, return_full, deposit_in, deposit_out}`।
-- নতুন entry screen: একটাই dialog যেখানে "নতুন বিক্রি / রিফিল / খালি ফেরত" আলাদা tab। Refill = empty নিল + full দিল, এক click-এ দুটাই log হবে।
-- প্রত্যেক movement যথাযথভাবে stock, customer holding, deposit ledger update করবে (DB function-এর মধ্যে atomically)।
-
-### ৩.৪ Delivery / Van / Route
-- নতুন table `delivery_men(shop_id, name, phone, vehicle_no)`।
-- নতুন table `delivery_trips(shop_id, delivery_man_id, trip_date, status, opening_full, opening_empty, closing_full, closing_empty, cash_collected, notes)`।
-- প্রত্যেক `bottle_movement`-এ optional `delivery_id` link।
-- "ট্রিপ শিট" page: একদিনের নির্দিষ্ট delivery man-এর সব movement, hand cash collection, end-of-day reconciliation (কত bottle নিয়ে বেরোলো, কত ফেরত আনলো, কত টাকা জমা)।
-
-### ৩.৫ Deposit Ledger (আলাদা)
-- নতুন table `bottle_deposits(shop_id, contact_id, bottle_type_id, direction, amount, movement_id, occurred_at)` — direction `in`/`out`।
-- Customer ledger-এ "বাকি টাকা" এবং "জামানত" দুটি আলাদা balance দেখাবে। Deposit refund বোতল ফেরতের সাথে auto trigger হবে।
-
-## ৪. UI / Navigation
-
-- নতুন top-level route `/app/lpg` যাতে ৪টা tab: ড্যাশবোর্ড (stock summary + আজকের movement), লেনদেন, ট্রিপ, রিপোর্ট।
-- LPG ড্যাশবোর্ডে quick stat: মোট full, মোট empty, কাস্টমারের কাছে, আজকের refill সংখ্যা, আজকের cash collection, top 5 due customer।
-- Sidebar-এ "LPG / বোতল" icon — শুধু `lpg` module enabled হলে দেখাবে।
-
-## ৫. Reports
-
-- Daily/Monthly bottle movement report
-- Customer-wise outstanding bottle + deposit report
-- Delivery-man-wise trip summary
-- Bottle aging report (কতদিন ধরে কাস্টমারের কাছে আছে)
-
-## ৬. Onboarding Flow পরিবর্তন
-
-- Account create / নতুন shop add করার সময় shop type picker-এ icon grid (LPG, পানির বোতল, ফার্মেসি, মুদি, সার্ভিস ইত্যাদি) — এখন dropdown আছে, সেটা grid-এ convert হবে।
-- Type select-এর পরের step-এ "এগুলো আপনার জন্য চালু করা হলো — পরে Settings থেকে আরও যোগ করতে পারবেন" — module preview।
-
-## ৭. Technical Notes
-
-- সব schema change supabase migration হিসেবে যাবে; RLS shop_id-ভিত্তিক existing helper (`has_shop_access`) reuse।
-- Stock এবং customer holding maintain হবে DB trigger দিয়ে — frontend শুধু movement insert করবে, derived state DB-তেই update।
-- Module visibility hook: `useEnabledModules(shopId)` — `AppLayout`-এ একবার load, context-এ provide।
-- Files-এর draft list:
-  - migrations: shop_modules + bottle tables + triggers + seed
-  - `src/lib/modules.ts` — module registry, default mapping
-  - `src/lib/lpg-queries.ts` — bottle CRUD + movement function
-  - `src/pages/app/lpg/` — Dashboard, Transactions, Trips, Reports
-  - `src/components/app/lpg/*` — MovementDialog, BottleHoldingPanel, TripSheet
-  - `src/components/app/ShopTypePicker.tsx` → grid version
-  - `src/pages/app/ShopSettings.tsx` → Modules tab
-  - `src/pages/app/AppLayout.tsx` → module-aware nav
-
-## পরবর্তী ধাপ
-
-Plan approve হলে আমরা ২ phase-এ যাব:
-1. Phase A — shop_modules infra + ShopSettings module toggle + AppLayout filter + LPG/Water shop types seed।
-2. Phase B — পূর্ণাঙ্গ LPG module (tables, movement dialog, trip sheet, reports)।
-
-Customer dashboard (`/customer/dashboard`) এবং shop owner dashboard (`/app/dashboard`)-এ eye-catching, interactive chart যোগ করা হবে যাতে দেখতে professional লাগে। Chart library হিসেবে `recharts` (already installed and used in Analytics page) ব্যবহার করা হবে।
-
-## কী কী যোগ হবে
-
-### ১. Customer Dashboard (`src/pages/customer/Dashboard.tsx`)
-
-বর্তমানে শুধু স্ট্যাট কার্ড আর shortcut আছে। নিচের ৩টি chart section যোগ হবে — summary card-এর নিচে, "মোট সারসংক্ষেপ"-এর উপরে।
-
-- **আয় বনাম ব্যয় Donut** (এই মাস)
-  - Income vs Expense ছোট donut chart, মাঝে net balance দেখাবে
-  - Hover-এ tooltip; ট্যাপ করলে `/customer/analytics`-এ যাবে
-
-- **গত ৬ মাসের Trend (Area chart)**
-  - Stacked/overlapping area: আয় (সবুজ) ও ব্যয় (লাল)
-  - মাসের label বাংলায়, smooth curve, gradient fill
-  - Tooltip-এ মাসভিত্তিক income/expense
-
-- **শীর্ষ ৫ ব্যয়ের ক্যাটাগরি (Horizontal bar)**
-  - এই মাসের top 5 expense category, progress-style bar
-  - প্রতিটার পাশে amount + %
-
-তিনটাই click-able → `/customer/analytics`-এ navigate করবে যাতে user বিস্তারিত interactive analysis দেখতে পারে।
-
-### ২. Shop Owner Dashboard (`src/pages/app/Dashboard.tsx`)
-
-বর্তমান summary card-এর নিচে একটা compact "Insights" section যোগ হবে যেখানে নিচের ২টি chart থাকবে (selected range অনুযায়ী):
-
-- **Sales Trend (Line/Area chart)** — গত ৭/৩০ দিনের daily sales
-- **Income Composition (Donut)** — Sales / Purchases / Expenses ratio
-
-Chart ছোট, mobile-responsive, এবং `/app/reports`-এর সাথে link থাকবে।
-
-## Data Source
-
-- Customer: existing `loadMonthTransactions` ও `loadLastNMonths` থেকে (`src/lib/consumer-analytics.ts`) — কোনো নতুন query লাগবে না
-- Shop owner: existing `dashboardSummaryQuery` extend করা হবে অথবা নতুন একটা lightweight `dashboardTrendQuery` `src/lib/queries.ts`-এ যোগ হবে (গত ৩০ দিনের daily aggregate)
-
-## Technical Details
-
-- Library: `recharts` (already installed, used in `Analytics.tsx`)
-- Colors: `CHART_COLORS` from `src/lib/consumer-analytics.ts` + semantic tokens (`--primary`, `--success`, `--destructive`)
-- Responsive: `ResponsiveContainer` দিয়ে, mobile-এ height কম (160-180px), desktop-এ 220-260px
-- Loading: skeleton placeholder যাতে layout shift না হয়
-- কোনো DB schema change নেই, কোনো নতুন migration নেই
-
-## ফাইল পরিবর্তন
-
-- `src/pages/customer/Dashboard.tsx` — chart section + data fetching extend
-- `src/pages/app/Dashboard.tsx` — insights section যোগ
-- `src/lib/queries.ts` — shop owner trend query (যদি প্রয়োজন হয়)
-- (নতুন helper component) `src/components/customer/DashboardCharts.tsx` — chart UI গুলো এখানে রাখা হবে যাতে Dashboard.tsx ছোট থাকে
+- Trip reconciliation deep page (পরে)
+- Bottle aging multi-month report (পরে)
+- WhatsApp auto-notification on refill due (পরে)
