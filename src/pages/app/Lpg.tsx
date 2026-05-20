@@ -366,7 +366,8 @@ export default function LpgPage() {
 
       <MovementDialog
         open={moveOpen} onOpenChange={setMoveOpen}
-        types={types} contacts={contacts} deliveryMen={deliveryMen}
+        types={types} contacts={contacts} deliveryMen={deliveryMen} suppliers={suppliers}
+        initialType={moveInitialType} initialBottleId={moveInitialBottle}
         shopId={current.id} onSaved={() => { setMoveOpen(false); reload(); }}
       />
       <BottleTypeDialog
