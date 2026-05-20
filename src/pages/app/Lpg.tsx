@@ -153,8 +153,8 @@ export default function LpgPage() {
 
       {/* KPI cards */}
       <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
-        <KpiCard icon={<Flame className="h-4 w-4" />} color="from-emerald-500 to-emerald-700" label={tr("মোট ভর্তি স্টক", "Full in stock")} value={bnNum(String(sumFull(stockSummary)), lang)} />
-        <KpiCard icon={<Droplet className="h-4 w-4" />} color="from-sky-500 to-sky-700" label={tr("মোট খালি স্টক", "Empty in stock")} value={bnNum(String(sumEmpty(stockSummary)), lang)} />
+        <KpiCard icon={<Flame className="h-4 w-4" />} color="from-emerald-500 to-emerald-700" label={tr("মোট ভর্তি স্টক", "Full in stock")} value={lang === "bn" ? bnNum(sumFull(stockSummary)) : String(sumFull(stockSummary))} />
+        <KpiCard icon={<Droplet className="h-4 w-4" />} color="from-sky-500 to-sky-700" label={tr("মোট খালি স্টক", "Empty in stock")} value={lang === "bn" ? bnNum(sumEmpty(stockSummary)) : String(sumEmpty(stockSummary))} />
         <KpiCard icon={<Truck className="h-4 w-4" />} color="from-amber-500 to-orange-600" label={tr("কাস্টমারের কাছে", "With customers")} value={bnNum(String(totalOut))} />
         <KpiCard icon={<Wallet className="h-4 w-4" />} color="from-violet-500 to-fuchsia-600" label={tr("আজকের ক্যাশ", "Today's cash")} value={fmtMoney(todayCash, lang)} sub={tr(`আজকের রিফিল ${bnNum(String(todayRefill))}`, `${todayRefill} refills today`)} />
       </div>
