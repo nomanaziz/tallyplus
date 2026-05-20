@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Flame, Droplet, Truck, Wallet, Plus, RefreshCw, ArrowDownToLine, ArrowUpFromLine } from "lucide-react";
+import { Flame, Droplet, Truck, Wallet, Plus, RefreshCw, ArrowDownToLine, ArrowUpFromLine, Building2, Trash2 } from "lucide-react";
 
 type BottleType = {
   id: string; name: string; size_label: string | null;
@@ -178,6 +178,7 @@ export default function LpgPage() {
           <TabsTrigger value="moves">{tr("লেনদেন", "Movements")}</TabsTrigger>
           <TabsTrigger value="customers">{tr("গ্রাহকের বোতল", "Customer bottles")}</TabsTrigger>
           <TabsTrigger value="types">{tr("বোতলের ধরন", "Bottle types")}</TabsTrigger>
+          <TabsTrigger value="suppliers">{tr("সরবরাহকারী", "Suppliers")}</TabsTrigger>
           <TabsTrigger value="delivery">{tr("ডেলিভারি ম্যান", "Delivery men")}</TabsTrigger>
         </TabsList>
 
