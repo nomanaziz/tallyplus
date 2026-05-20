@@ -190,6 +190,29 @@ export default function LpgPage() {
               action={<Button size="sm" onClick={() => setTypeOpen(true)}><Plus className="mr-1.5 h-4 w-4" />{tr("ধরন যোগ", "Add type")}</Button>}
             />
           ) : (
+            <>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <Button
+                onClick={() => openMovement("purchase_full")}
+                className="h-auto justify-start gap-2 bg-emerald-600 py-3 text-left text-white hover:bg-emerald-700"
+              >
+                <ArrowUpFromLine className="h-5 w-5 flex-none" />
+                <div>
+                  <div className="font-bold">{tr("ভর্তি বোতল ক্রয় / স্টক যোগ", "Buy full bottles / Add stock")}</div>
+                  <div className="text-xs opacity-90">{tr("কোম্পানি/ডিলার থেকে ভর্তি কেনা হলে এখানে যোগ করুন", "Add stock bought from company/distributor")}</div>
+                </div>
+              </Button>
+              <Button
+                onClick={() => openMovement("refill_factory")}
+                className="h-auto justify-start gap-2 bg-sky-600 py-3 text-left text-white hover:bg-sky-700"
+              >
+                <RefreshCw className="h-5 w-5 flex-none" />
+                <div>
+                  <div className="font-bold">{tr("কারখানা থেকে রিফিল", "Refill from factory")}</div>
+                  <div className="text-xs opacity-90">{tr("খালি বোতল কারখানায় পাঠিয়ে ভর্তি এনেছেন", "Sent empties to factory, brought back full")}</div>
+                </div>
+              </Button>
+            </div>
             <div className="grid gap-2 md:grid-cols-2">
               {types.map((t) => {
                 const s = stockSummary.get(t.id) ?? { full: 0, empty: 0, out: 0 };
@@ -200,9 +223,14 @@ export default function LpgPage() {
                         <div className="font-semibold">{t.name}</div>
                         {t.size_label && <div className="text-xs text-muted-foreground">{t.size_label}</div>}
                       </div>
-                      <div className="text-right text-xs text-muted-foreground">
-                        <div>{tr("জামানত", "Deposit")}: {fmtMoney(t.deposit_amount, lang)}</div>
-                        <div>{tr("বিক্রয়", "Sale")}: {fmtMoney(t.sale_price, lang)}</div>
+                      <div className="flex items-start gap-2">
+                        <div className="text-right text-xs text-muted-foreground">
+                          <div>{tr("জামানত", "Deposit")}: {fmtMoney(t.deposit_amount, lang)}</div>
+                          <div>{tr("বিক্রয়", "Sale")}: {fmtMoney(t.sale_price, lang)}</div>
+                        </div>
+                        <Button size="icon" variant="outline" className="h-7 w-7" onClick={() => openMovement("purchase_full", t.id)} title={tr("এই বোতলের স্টক যোগ", "Add stock for this bottle")}>
+                          <Plus className="h-4 w-4" />
+                        </Button>
                       </div>
                     </div>
                     <div className="mt-2 grid grid-cols-3 gap-2 text-center text-sm">
@@ -214,6 +242,7 @@ export default function LpgPage() {
                 );
               })}
             </div>
+            </>
           )}
 
           {topDue.length > 0 && (
