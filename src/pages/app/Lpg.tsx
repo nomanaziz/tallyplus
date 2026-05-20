@@ -363,8 +363,12 @@ export default function LpgPage() {
             {deliveryMen.length === 0 && <div className="md:col-span-2 rounded-xl border border-dashed bg-card p-6 text-center text-sm text-muted-foreground">{tr("কোনো ডেলিভারি ম্যান নেই", "No delivery men yet")}</div>}
           </div>
         </TabsContent>
+
+        {/* SUPPLIERS */}
+        <TabsContent value="suppliers" className="mt-3 space-y-3">
+          <SuppliersTab shopId={current.id} suppliers={suppliers} onReload={reload} tr={tr} />
+        </TabsContent>
       </Tabs>
-      <SuppliersTabContent shopId={current.id} suppliers={suppliers} onReload={reload} tr={tr} />
 
       <MovementDialog
         open={moveOpen} onOpenChange={setMoveOpen}
