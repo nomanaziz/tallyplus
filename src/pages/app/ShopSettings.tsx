@@ -15,6 +15,8 @@ import { ResetShopDialog } from "@/components/app/ResetShopDialog";
 import { RestoreBackupDialog } from "@/components/app/RestoreBackupDialog";
 import { downloadJson, BACKUP_VERSION } from "@/lib/backup";
 import { LocationPicker, type LocationValue } from "@/components/LocationPicker";
+import { Switch } from "@/components/ui/switch";
+import { MODULE_LABELS, loadShopModules, setShopModule } from "@/lib/modules";
 
 export default function ShopSettingsPage() {
   const { lang } = useI18n();
@@ -31,6 +33,8 @@ export default function ShopSettingsPage() {
   const [resetOpen, setResetOpen] = useState(false);
   const [restoreOpen, setRestoreOpen] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [modules, setModules] = useState<Record<string, boolean>>({});
+  const [moduleBusy, setModuleBusy] = useState<string | null>(null);
 
   useEffect(() => {
     if (!current) return;
@@ -50,7 +54,27 @@ export default function ShopSettingsPage() {
         area: data?.area ?? null,
       });
     })();
+    void (async () => {
+      const m = await loadShopModules(current.id);
+      setModules(m);
+    })();
   }, [current?.id]);
+
+  const toggleModule = async (code: string, on: boolean) => {
+    if (!current || !isOwner) return;
+    setModuleBusy(code);
+    const prev = modules[code] ?? false;
+    setModules((s) => ({ ...s, [code]: on }));
+    try {
+      await setShopModule(current.id, code, on);
+      toast.success(lang === "bn" ? "মডিউল আপডেট হলো" : "Module updated");
+    } catch (e) {
+      setModules((s) => ({ ...s, [code]: prev }));
+      toast.error((e as Error).message);
+    } finally {
+      setModuleBusy(null);
+    }
+  };
 
   const schema = z.object({
     name: z.string().trim().min(2, lang === "bn" ? "দোকানের নাম দিন" : "Enter shop name").max(80),
@@ -208,6 +232,42 @@ export default function ShopSettingsPage() {
               {lang === "bn" ? "রিস্টোর করুন" : "Restore"}
             </Button>
           </div>
+        </div>
+
+        <div className="rounded-xl border bg-card p-4 space-y-3">
+          <div>
+            <h2 className="font-semibold">{lang === "bn" ? "মডিউল" : "Modules"}</h2>
+            <p className="text-xs text-muted-foreground">
+              {lang === "bn"
+                ? "যেগুলো বন্ধ করবেন সেগুলোর মেনু লুকিয়ে যাবে। পুরোনো ডাটা মুছবে না।"
+                : "Disabled modules are hidden from the menu. Existing data is preserved."}
+            </p>
+          </div>
+          <div className="divide-y">
+            {Object.entries(MODULE_LABELS).map(([code, lbl]) => {
+              const on = modules[code] ?? false;
+              return (
+                <div key={code} className="flex items-start justify-between gap-3 py-2.5">
+                  <div className="min-w-0">
+                    <div className="text-sm font-medium">{lang === "bn" ? lbl.bn : lbl.en}</div>
+                    {lbl.hint && (
+                      <div className="text-xs text-muted-foreground">{lang === "bn" ? lbl.hint.bn : lbl.hint.en}</div>
+                    )}
+                  </div>
+                  <Switch
+                    checked={on}
+                    onCheckedChange={(v) => toggleModule(code, v)}
+                    disabled={!isOwner || moduleBusy === code}
+                  />
+                </div>
+              );
+            })}
+          </div>
+          {!isOwner && (
+            <p className="text-xs text-muted-foreground">
+              {lang === "bn" ? "শুধু মালিক মডিউল পরিবর্তন করতে পারবেন।" : "Only the owner can change modules."}
+            </p>
+          )}
         </div>
 
         {isOwner && (
