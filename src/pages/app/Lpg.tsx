@@ -364,6 +364,7 @@ export default function LpgPage() {
           </div>
         </TabsContent>
       </Tabs>
+      <SuppliersTabContent shopId={current.id} suppliers={suppliers} onReload={reload} tr={tr} />
 
       <MovementDialog
         open={moveOpen} onOpenChange={setMoveOpen}
