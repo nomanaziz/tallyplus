@@ -118,10 +118,10 @@ function ContactsPage() {
     return null;
   };
 
-  const tabs: { key: Tab; label_bn: string; label_en: string; icon: React.ReactNode }[] = [
-    { key: "customers", label_bn: "কাস্টমার", label_en: "Customer", icon: <UserRound className="h-4 w-4" /> },
-    { key: "suppliers", label_bn: "সাপ্লায়ার", label_en: "Supplier", icon: <Truck className="h-4 w-4" /> },
-    { key: "employees", label_bn: "কর্মচারী", label_en: "Employee", icon: <Users className="h-4 w-4" /> },
+  const tabs: { key: Tab; labelKey: string; icon: React.ReactNode }[] = [
+    { key: "customers", labelKey: "p2b_customer", icon: <UserRound className="h-4 w-4" /> },
+    { key: "suppliers", labelKey: "p2b_supplier", icon: <Truck className="h-4 w-4" /> },
+    { key: "employees", labelKey: "p2b_employee", icon: <Users className="h-4 w-4" /> },
   ];
 
   const addBtnLabel =
