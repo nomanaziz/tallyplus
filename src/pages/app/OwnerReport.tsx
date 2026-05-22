@@ -17,7 +17,7 @@ function Guarded() {
 }
 
 function OwnerReportPage() {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const { current } = useShop();
   const [range, setRange] = useState<DateRange>({ start: monthStartIso(), end: todayIso() });
   const iso = rangeToIso(range.start, range.end);
@@ -30,14 +30,14 @@ function OwnerReportPage() {
 
   const onPrint = () => {
     const rows: PrintRow[] = [
-      { kind: "section", label: lang === "bn" ? "মূলধন (Capital)" : "Capital" },
+      { kind: "section", label: t("p5_Capital") },
       { kind: "row", label: "মোট বিনিয়োগ", value: fmtMoney(r.totalInvest, lang), tone: "success" },
       { kind: "row", label: "মোট উত্তোলন", value: fmtMoney(r.totalWithdraw, lang), tone: "danger" },
       { kind: "row", label: "নিট মূলধন", value: fmtMoney(r.netCapital, lang), tone: r.netCapital >= 0 ? "success" : "danger" },
-      { kind: "section", label: lang === "bn" ? "সম্পদ (Assets)" : "Assets" },
+      { kind: "section", label: t("p5_Assets") },
       { kind: "row", label: "সচল সম্পদ মূল্য", value: fmtMoney(r.activeAssetValue, lang), tone: "success" },
       { kind: "row", label: "নষ্ট/বিক্রিত ক্ষতি", value: fmtMoney(r.assetLoss, lang), tone: "danger" },
-      { kind: "section", label: lang === "bn" ? "ব্যবসার ফলাফল" : "Business result" },
+      { kind: "section", label: t("p5_Business_result") },
       { kind: "row", label: "পণ্য বিক্রি থেকে লাভ", value: fmtMoney(r.productProfit, lang), tone: r.productProfit >= 0 ? "success" : "danger" },
       { kind: "row", label: "অন্যান্য আয়", value: fmtMoney(r.otherIncome, lang), tone: "success" },
       { kind: "row", label: "অন্যান্য খরচ", value: fmtMoney(r.otherExpense, lang), tone: "danger" },
@@ -60,17 +60,17 @@ function OwnerReportPage() {
     <div className="min-h-full bg-muted/30">
       <PageHeader
         breadcrumb="মালিকের রিপোর্ট"
-        title={lang === "bn" ? "মালিকের রিপোর্ট" : "Owner Report"}
+        title={t("p5_Owner_Report")}
         actions={
           <>
             <DateRangePicker value={range} onChange={setRange} />
             <Button variant="outline" className="h-10 gap-2" onClick={() => refetch()} disabled={isFetching}>
               <RefreshCw className={"h-4 w-4 " + (isFetching ? "animate-spin" : "")} />
-              {lang === "bn" ? "রিফ্রেশ" : "Refresh"}
+              {t("p5_Refresh")}
             </Button>
             <Button className="h-10 gap-2" onClick={onPrint}>
               <Printer className="h-4 w-4" />
-              {lang === "bn" ? "ডাউনলোড/প্রিন্ট" : "Download/Print"}
+              {t("p5_Download_Print")}
             </Button>
           </>
         }
@@ -78,31 +78,31 @@ function OwnerReportPage() {
 
       <div className="container space-y-3 px-3 py-3 md:space-y-4 md:px-4 md:py-4">
         {/* Capital */}
-        <Section title={lang === "bn" ? "মূলধন (Capital)" : "Capital"}>
-          <Line label={lang === "bn" ? "মোট বিনিয়োগ" : "Total invest"} value={fmtMoney(r.totalInvest, lang)} tone="success" />
-          <Line label={lang === "bn" ? "মোট উত্তোলন" : "Total withdraw"} value={fmtMoney(r.totalWithdraw, lang)} tone="danger" />
-          <Line label={lang === "bn" ? "নিট মূলধন" : "Net capital"} value={fmtMoney(r.netCapital, lang)} tone={r.netCapital >= 0 ? "success" : "danger"} bold />
+        <Section title={t("p5_Capital")}>
+          <Line label={t("p5_Total_invest")} value={fmtMoney(r.totalInvest, lang)} tone="success" />
+          <Line label={t("p5_Total_withdraw")} value={fmtMoney(r.totalWithdraw, lang)} tone="danger" />
+          <Line label={t("p5_Net_capital")} value={fmtMoney(r.netCapital, lang)} tone={r.netCapital >= 0 ? "success" : "danger"} bold />
         </Section>
 
         {/* Assets */}
-        <Section title={lang === "bn" ? "সম্পদ (Assets)" : "Assets"}>
-          <Line label={lang === "bn" ? "সচল সম্পদ মূল্য" : "Active asset value"} value={fmtMoney(r.activeAssetValue, lang)} tone="success" />
-          <Line label={lang === "bn" ? "নষ্ট/বিক্রিত ক্ষতি" : "Loss / disposed"} value={fmtMoney(r.assetLoss, lang)} tone="danger" />
+        <Section title={t("p5_Assets")}>
+          <Line label={t("p5_Active_asset_value")} value={fmtMoney(r.activeAssetValue, lang)} tone="success" />
+          <Line label={t("p5_Loss_disposed")} value={fmtMoney(r.assetLoss, lang)} tone="danger" />
         </Section>
 
         {/* Business */}
-        <Section title={lang === "bn" ? "ব্যবসার ফলাফল" : "Business result"}>
-          <Line label={lang === "bn" ? "পণ্য বিক্রি থেকে লাভ" : "Product profit"} value={fmtMoney(r.productProfit, lang)} tone={r.productProfit >= 0 ? "success" : "danger"} />
-          <Line label={lang === "bn" ? "অন্যান্য আয়" : "Other income"} value={fmtMoney(r.otherIncome, lang)} tone="success" />
-          <Line label={lang === "bn" ? "অন্যান্য খরচ" : "Other expense"} value={fmtMoney(r.otherExpense, lang)} tone="danger" />
-          <Line label={lang === "bn" ? "নিট লাভ" : "Net profit"} value={fmtMoney(r.netProfit, lang)} tone={r.netProfit >= 0 ? "success" : "danger"} bold />
+        <Section title={t("p5_Business_result")}>
+          <Line label={t("p5_Product_profit_2")} value={fmtMoney(r.productProfit, lang)} tone={r.productProfit >= 0 ? "success" : "danger"} />
+          <Line label={t("p5_Other_income")} value={fmtMoney(r.otherIncome, lang)} tone="success" />
+          <Line label={t("p5_Other_expense")} value={fmtMoney(r.otherExpense, lang)} tone="danger" />
+          <Line label={t("p5_Net_profit")} value={fmtMoney(r.netProfit, lang)} tone={r.netProfit >= 0 ? "success" : "danger"} bold />
         </Section>
 
         {/* Owner equity */}
         <div className="rounded-xl border bg-card p-4 shadow-sm ring-1 ring-primary/20">
-          <div className="text-sm font-bold text-muted-foreground">{lang === "bn" ? "মালিকের অবস্থান (Equity)" : "Owner equity"}</div>
+          <div className="text-sm font-bold text-muted-foreground">{t("p5_Owner_equity")}</div>
           <div className="mt-1 text-[11px] text-muted-foreground">
-            {lang === "bn" ? "নিট মূলধন + নিট লাভ − সম্পদ ক্ষতি" : "Net capital + Net profit − Asset loss"}
+            {t("p5_Net_capital_Net_profit_Asset_l")}
           </div>
           <div className={"mt-2 text-3xl font-extrabold " + (r.ownerEquity >= 0 ? "text-emerald-700" : "text-rose-600")}>
             {fmtMoney(r.ownerEquity, lang)}

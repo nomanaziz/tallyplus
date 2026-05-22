@@ -9,7 +9,7 @@ import { printReport, type PrintRow } from "@/lib/print-report";
 import { RequirePerm } from "@/components/app/RequirePerm";
 
 function Page() {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const { current } = useShop();
   const [range, setRange] = useState<DateRange>({ start: monthStartIso(), end: todayIso() });
   const iso = rangeToIso(range.start, range.end);
@@ -24,11 +24,11 @@ function Page() {
 
   const onPrint = () => {
     const printRows: PrintRow[] = [
-      { kind: "section", label: lang === "bn" ? "সারাংশ" : "Summary" },
-      { kind: "row", label: lang === "bn" ? "মোট আগমন" : "Total in", value: `${totals.inQty} • ${fmtMoney(totals.inAmt, lang)}`, tone: "success" },
-      { kind: "row", label: lang === "bn" ? "মোট নির্গমন" : "Total out", value: `${totals.outQty} • ${fmtMoney(totals.outAmt, lang)}`, tone: "danger" },
+      { kind: "section", label: t("p5_Summary") },
+      { kind: "row", label: t("p5_Total_in"), value: `${totals.inQty} • ${fmtMoney(totals.inAmt, lang)}`, tone: "success" },
+      { kind: "row", label: t("p5_Total_out"), value: `${totals.outQty} • ${fmtMoney(totals.outAmt, lang)}`, tone: "danger" },
       { kind: "divider" },
-      { kind: "section", label: lang === "bn" ? "পণ্যভিত্তিক" : "Per product" },
+      { kind: "section", label: t("p5_Per_product") },
       ...rows.map((r) => ({ kind: "row" as const, label: r.name, sub: `+${r.in_qty} / ${r.out_qty}`, value: fmtMoney(r.in_amt - r.out_amt, lang) })),
     ];
     printReport({
@@ -54,24 +54,24 @@ function Page() {
       onPrint={onPrint}
     >
       <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
-        <StatTile label={lang === "bn" ? "মোট আগমন (qty)" : "In qty"} value={String(totals.inQty)} tone="success" />
-        <StatTile label={lang === "bn" ? "মোট আগমন মূল্য" : "In amount"} value={fmtMoney(totals.inAmt, lang)} tone="success" />
-        <StatTile label={lang === "bn" ? "মোট নির্গমন (qty)" : "Out qty"} value={String(totals.outQty)} tone="danger" />
-        <StatTile label={lang === "bn" ? "মোট নির্গমন মূল্য" : "Out amount"} value={fmtMoney(totals.outAmt, lang)} tone="danger" />
+        <StatTile label={t("p5_In_qty")} value={String(totals.inQty)} tone="success" />
+        <StatTile label={t("p5_In_amount")} value={fmtMoney(totals.inAmt, lang)} tone="success" />
+        <StatTile label={t("p5_Out_qty")} value={String(totals.outQty)} tone="danger" />
+        <StatTile label={t("p5_Out_amount")} value={fmtMoney(totals.outAmt, lang)} tone="danger" />
       </div>
 
       {rows.length === 0 ? (
-        <EmptyState text={lang === "bn" ? "এই সময়ে কোনো স্টক মুভমেন্ট নেই" : "No stock movements"} />
+        <EmptyState text={t("p5_No_stock_movements")} />
       ) : (
         <div className="overflow-hidden rounded-xl border bg-background">
           <table className="w-full text-sm">
             <thead className="bg-muted/50 text-left text-xs">
               <tr>
-                <th className="px-3 py-2">{lang === "bn" ? "পণ্য" : "Product"}</th>
-                <th className="px-3 py-2 text-right">{lang === "bn" ? "আগমন" : "In qty"}</th>
-                <th className="px-3 py-2 text-right">{lang === "bn" ? "আগমন মূল্য" : "In amt"}</th>
-                <th className="px-3 py-2 text-right">{lang === "bn" ? "নির্গমন" : "Out qty"}</th>
-                <th className="px-3 py-2 text-right">{lang === "bn" ? "নির্গমন মূল্য" : "Out amt"}</th>
+                <th className="px-3 py-2">{t("p5_Product")}</th>
+                <th className="px-3 py-2 text-right">{t("p5_In_qty_2")}</th>
+                <th className="px-3 py-2 text-right">{t("p5_In_amt")}</th>
+                <th className="px-3 py-2 text-right">{t("p5_Out_qty_2")}</th>
+                <th className="px-3 py-2 text-right">{t("p5_Out_amt")}</th>
               </tr>
             </thead>
             <tbody>

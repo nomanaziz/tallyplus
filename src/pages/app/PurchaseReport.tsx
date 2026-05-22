@@ -9,7 +9,7 @@ import { printReport, type PrintRow } from "@/lib/print-report";
 import { RequirePerm } from "@/components/app/RequirePerm";
 
 function Page() {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const { current } = useShop();
   const [range, setRange] = useState<DateRange>({ start: monthStartIso(), end: todayIso() });
   const iso = rangeToIso(range.start, range.end);
@@ -24,13 +24,13 @@ function Page() {
 
   const onPrint = () => {
     const printRows: PrintRow[] = [
-      { kind: "section", label: lang === "bn" ? "সারাংশ" : "Summary" },
-      { kind: "row", label: lang === "bn" ? "মোট ইনভয়েস" : "Total invoices", value: String(totals.count) },
-      { kind: "row", label: lang === "bn" ? "মোট ক্রয়" : "Total purchase", value: fmtMoney(totals.total, lang), tone: "danger" },
-      { kind: "row", label: lang === "bn" ? "প্রদান" : "Paid", value: fmtMoney(totals.paid, lang) },
-      { kind: "row", label: lang === "bn" ? "বাকি" : "Due", value: fmtMoney(totals.due, lang), tone: "danger" },
+      { kind: "section", label: t("p5_Summary") },
+      { kind: "row", label: t("p5_Total_invoices"), value: String(totals.count) },
+      { kind: "row", label: t("p5_Total_purchase"), value: fmtMoney(totals.total, lang), tone: "danger" },
+      { kind: "row", label: t("p5_Paid_3"), value: fmtMoney(totals.paid, lang) },
+      { kind: "row", label: t("p5_Due_2"), value: fmtMoney(totals.due, lang), tone: "danger" },
       { kind: "divider" },
-      { kind: "section", label: lang === "bn" ? "ক্রয় তালিকা" : "Purchases" },
+      { kind: "section", label: t("p5_Purchases") },
       ...rows.map((r) => ({
         kind: "row" as const,
         label: `${r.invoice_no ?? r.id} • ${r.suppliers?.name ?? "—"}`,
@@ -61,27 +61,27 @@ function Page() {
       onPrint={onPrint}
     >
       <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
-        <StatTile label={lang === "bn" ? "মোট ইনভয়েস" : "Invoices"} value={String(totals.count)} />
-        <StatTile label={lang === "bn" ? "মোট ক্রয়" : "Total purchase"} value={fmtMoney(totals.total, lang)} tone="danger" />
-        <StatTile label={lang === "bn" ? "প্রদান" : "Paid"} value={fmtMoney(totals.paid, lang)} tone="success" />
-        <StatTile label={lang === "bn" ? "বাকি" : "Due"} value={fmtMoney(totals.due, lang)} tone="danger" />
+        <StatTile label={t("p5_Invoices_2")} value={String(totals.count)} />
+        <StatTile label={t("p5_Total_purchase")} value={fmtMoney(totals.total, lang)} tone="danger" />
+        <StatTile label={t("p5_Paid_3")} value={fmtMoney(totals.paid, lang)} tone="success" />
+        <StatTile label={t("p5_Due_2")} value={fmtMoney(totals.due, lang)} tone="danger" />
       </div>
 
       {rows.length === 0 ? (
-        <EmptyState text={lang === "bn" ? "এই সময়ে কোনো ক্রয় নেই" : "No purchases in this period"} />
+        <EmptyState text={t("p5_No_purchases_in_this_period")} />
       ) : (
         <div className="overflow-hidden rounded-xl border bg-background">
           <div className="hidden md:block">
             <table className="w-full text-sm">
               <thead className="bg-muted/50 text-left text-xs">
                 <tr>
-                  <th className="px-3 py-2">{lang === "bn" ? "ইনভয়েস" : "Invoice"}</th>
-                  <th className="px-3 py-2">{lang === "bn" ? "সাপ্লায়ার" : "Supplier"}</th>
-                  <th className="px-3 py-2 text-right">{lang === "bn" ? "আইটেম" : "Items"}</th>
-                  <th className="px-3 py-2 text-right">{lang === "bn" ? "মোট" : "Total"}</th>
-                  <th className="px-3 py-2 text-right">{lang === "bn" ? "প্রদান" : "Paid"}</th>
-                  <th className="px-3 py-2 text-right">{lang === "bn" ? "বাকি" : "Due"}</th>
-                  <th className="px-3 py-2">{lang === "bn" ? "তারিখ" : "Date"}</th>
+                  <th className="px-3 py-2">{t("p5_Invoice")}</th>
+                  <th className="px-3 py-2">{t("p5_Supplier")}</th>
+                  <th className="px-3 py-2 text-right">{t("p5_Items")}</th>
+                  <th className="px-3 py-2 text-right">{t("p5_Total")}</th>
+                  <th className="px-3 py-2 text-right">{t("p5_Paid_3")}</th>
+                  <th className="px-3 py-2 text-right">{t("p5_Due_2")}</th>
+                  <th className="px-3 py-2">{t("p5_Date")}</th>
                 </tr>
               </thead>
               <tbody>

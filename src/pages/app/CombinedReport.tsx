@@ -21,7 +21,7 @@ type Tab = "general" | "details";
 type SectionKey = keyof BusinessReportSummary;
 
 function CombinedReportPage() {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const { shops } = useShop();
   const nav = useNavigate();
   const { hasActiveSubscription, loading: authLoading } = useAuth();
@@ -106,17 +106,17 @@ function CombinedReportPage() {
       }
       rows.push({
         kind: "row",
-        label: lang === "bn" ? "মোট" : "Total",
+        label: t("p5_Total"),
         value: fmtMoney(totalFor(sec.key), lang),
         tone: sec.tone === "neutral" ? undefined : sec.tone,
       });
       rows.push({ kind: "divider" });
     }
     printReport({
-      shopName: lang === "bn" ? "সমন্বিত রিপোর্ট" : "Combined Report",
+      shopName: t("p5_Combined_Report"),
       shopAddress: null,
       shopPhone: null,
-      title: lang === "bn" ? "সমন্বিত রিপোর্ট" : "Combined Report",
+      title: t("p5_Combined_Report"),
       startDate: range.start,
       endDate: range.end,
       rows,
@@ -126,7 +126,7 @@ function CombinedReportPage() {
   return (
     <div className="min-h-full bg-muted/30">
       <PageHeader
-        breadcrumb={lang === "bn" ? "সমন্বিত রিপোর্ট" : "Combined Report"}
+        breadcrumb={t("p5_Combined_Report")}
         title={
           <span className="flex items-center gap-2">
             <button
@@ -136,14 +136,14 @@ function CombinedReportPage() {
             >
               <ArrowLeft className="h-4 w-4" />
             </button>
-            {lang === "bn" ? "সমন্বিত রিপোর্ট" : "Combined Report"}
+            {t("p5_Combined_Report")}
           </span>
         }
         actions={
           <>
             <Button className="h-10 gap-2" onClick={onPrint}>
               <Printer className="h-4 w-4" />
-              <span className="hidden sm:inline">{lang === "bn" ? "ডাউনলোড/প্রিন্ট" : "Download/Print"}</span>
+              <span className="hidden sm:inline">{t("p5_Download_Print")}</span>
             </Button>
 
             <Popover>
@@ -162,13 +162,13 @@ function CombinedReportPage() {
               <PopoverContent align="end" className="w-64 p-2">
                 <div className="mb-1 flex items-center justify-between px-1 pb-1">
                   <span className="text-xs font-semibold text-muted-foreground">
-                    {lang === "bn" ? "দোকান নির্বাচন" : "Select shops"}
+                    {t("p5_Select_shops")}
                   </span>
                   <button
                     className="text-xs font-semibold text-primary hover:underline"
                     onClick={() => setSelected([])}
                   >
-                    {lang === "bn" ? "সব" : "All"}
+                    {t("p5_All")}
                   </button>
                 </div>
                 <div className="max-h-72 space-y-1 overflow-y-auto">
@@ -203,7 +203,7 @@ function CombinedReportPage() {
               (tab === "general" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent")
             }
           >
-            {lang === "bn" ? "সাধারণ রিপোর্ট" : "General Report"}
+            {t("p5_General_Report")}
           </button>
           <button
             onClick={() => setTab("details")}
@@ -212,13 +212,13 @@ function CombinedReportPage() {
               (tab === "details" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent")
             }
           >
-            {lang === "bn" ? "বিস্তারিত রিপোর্ট" : "Details Report"}
+            {t("p5_Details_Report")}
           </button>
         </div>
 
         {visibleShops.length === 0 ? (
           <div className="rounded-xl border bg-background p-8 text-center text-sm text-muted-foreground">
-            {lang === "bn" ? "কোনো দোকান পাওয়া যায়নি" : "No shops found"}
+            {t("p5_No_shops_found")}
           </div>
         ) : tab === "general" ? (
           <div className="grid gap-3 lg:grid-cols-2">
@@ -240,7 +240,7 @@ function CombinedReportPage() {
               <thead className="bg-muted/60 text-xs">
                 <tr>
                   <th className="px-3 py-2 text-left font-semibold">
-                    {lang === "bn" ? "মেট্রিক" : "Metric"}
+                    {t("p5_Metric")}
                   </th>
                   {visibleShops.map((s) => (
                     <th key={s.id} className="px-3 py-2 text-right font-semibold">
@@ -248,7 +248,7 @@ function CombinedReportPage() {
                     </th>
                   ))}
                   <th className="px-3 py-2 text-right font-extrabold">
-                    {lang === "bn" ? "সর্বমোট" : "Total"}
+                    {t("p5_Total_2")}
                   </th>
                 </tr>
               </thead>
@@ -301,6 +301,7 @@ function SectionCard({
   total: number;
   lang: Lang;
 }) {
+  const { t } = useI18n();
   const toneCls =
     tone === "success" ? "text-emerald-600" : tone === "danger" ? "text-rose-600" : "text-foreground";
   return (
@@ -315,7 +316,7 @@ function SectionCard({
         ))}
         <div className="my-2 border-t" />
         <div className="flex items-center justify-between">
-          <span className="text-sm font-bold">{lang === "bn" ? "মোট" : "Total"}</span>
+          <span className="text-sm font-bold">{t("p5_Total")}</span>
           <span className={"text-base font-extrabold tabular-nums " + toneCls}>{fmtMoney(total, lang)}</span>
         </div>
       </div>
