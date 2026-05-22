@@ -8,7 +8,7 @@ import { AlertTriangle, Sparkles, X } from "lucide-react";
 const DISMISS_KEY = "trial_banner_dismissed_on";
 
 export function TrialBanner() {
-  const { lang } = useI18n();
+  const { t } = useI18n();
   const { loading, isTrial, isExpired, daysLeft, isExpiringSoon } = useSubscriptionStatus();
   const [dismissedToday, setDismissedToday] = useState(false);
 
@@ -31,13 +31,11 @@ export function TrialBanner() {
           <div className="flex items-center gap-2 text-destructive">
             <AlertTriangle className="h-4 w-4 shrink-0" />
             <span className="font-medium">
-              {lang === "bn"
-                ? "ফ্রি ট্রায়াল শেষ — আপনি এখন Free প্ল্যানে আছেন (১০টি পণ্যের সীমা)।"
-                : "Free trial ended — you are now on the Free plan (10-item limits)."}
+              {t("trialEnded")}
             </span>
           </div>
           <Button asChild size="sm" variant="destructive">
-            <Link to="/app/subscribe">{lang === "bn" ? "এখনই কিনুন" : "Subscribe now"}</Link>
+            <Link to="/app/subscribe">{t("subscribeNow")}</Link>
           </Button>
         </div>
       </div>
@@ -52,13 +50,11 @@ export function TrialBanner() {
           <div className="flex items-center gap-2 text-amber-800 dark:text-amber-200">
             <AlertTriangle className="h-4 w-4 shrink-0" />
             <span className="font-medium">
-              {lang === "bn"
-                ? `আপনার ফ্রি ট্রায়াল আর মাত্র ${daysLeft} দিন বাকি — এখনই Full Version কিনুন।`
-                : `Your free trial ends in ${daysLeft} day${daysLeft === 1 ? "" : "s"} — buy the full version now.`}
+              {t("trialDaysLeft", { n: daysLeft })}
             </span>
           </div>
           <Button asChild size="sm" className="bg-amber-600 hover:bg-amber-700 text-white">
-            <Link to="/app/subscribe">{lang === "bn" ? "এখনই কিনুন" : "Subscribe now"}</Link>
+            <Link to="/app/subscribe">{t("subscribeNow")}</Link>
           </Button>
         </div>
       </div>
@@ -73,14 +69,12 @@ export function TrialBanner() {
         <div className="flex items-center gap-2 text-emerald-800 dark:text-emerald-200">
           <Sparkles className="h-4 w-4 shrink-0" />
           <span>
-            {lang === "bn"
-              ? `ফ্রি ট্রায়াল চলছে — আর ${daysLeft} দিন বাকি। সব ফিচার ফ্রি!`
-              : `Free trial active — ${daysLeft} day${daysLeft === 1 ? "" : "s"} left. All features unlocked!`}
+            {t("trialActive", { n: daysLeft })}
           </span>
         </div>
         <div className="flex items-center gap-1">
           <Button asChild size="sm" variant="outline" className="border-emerald-600 text-emerald-700 hover:bg-emerald-100 dark:text-emerald-200">
-            <Link to="/app/subscribe">{lang === "bn" ? "Plan দেখুন" : "View plans"}</Link>
+            <Link to="/app/subscribe">{t("viewPlans")}</Link>
           </Button>
           <button
             type="button"

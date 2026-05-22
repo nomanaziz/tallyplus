@@ -16,9 +16,9 @@ export function MobileBottomNav({ onProfile }: { onProfile: () => void }) {
   const { t } = useI18n();
   const loc = useLocation();
 
-  const isActive = (t: Tab) => {
-    if (t.matchPrefix) return loc.pathname.startsWith(t.matchPrefix);
-    return loc.pathname === t.to || loc.pathname.startsWith(t.to + "/");
+  const isActive = (tab: Tab) => {
+    if (tab.matchPrefix) return loc.pathname.startsWith(tab.matchPrefix);
+    return loc.pathname === tab.to || loc.pathname.startsWith(tab.to + "/");
   };
 
   return (
@@ -26,19 +26,19 @@ export function MobileBottomNav({ onProfile }: { onProfile: () => void }) {
       className="fixed inset-x-0 bottom-0 z-40 flex h-16 items-stretch justify-between border-t bg-background/95 backdrop-blur md:hidden"
       style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
     >
-      {TABS.map((t) => {
-        const active = isActive(t);
+      {TABS.map((tab) => {
+        const active = isActive(tab);
         return (
           <Link
-            key={t.to}
-            to={t.to as never}
+            key={tab.to}
+            to={tab.to as never}
             className={cn(
               "flex flex-1 flex-col items-center justify-center gap-0.5 text-[10px] font-semibold transition-colors",
               active ? "text-primary" : "text-muted-foreground hover:text-foreground",
             )}
           >
-            <t.Icon className={cn("h-5 w-5", active && "scale-110")} />
-            <span className="truncate">{t.tKey ? "" : ""}{useI18nLabel(t.tKey)}</span>
+            <tab.Icon className={cn("h-5 w-5", active && "scale-110")} />
+            <span className="truncate">{t(tab.tKey)}</span>
           </Link>
         );
       })}
