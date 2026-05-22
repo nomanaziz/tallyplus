@@ -1934,6 +1934,14 @@ const bn: Dict = {
   today: "আজকের", week: "সপ্তাহের", month: "মাসের", year: "বছরের", allTime: "অল টাইম",
   balance: "ব্যালেন্স", monthly: "মাসিক", halfYearly: "ষান্মাসিক", yearly: "বার্ষিক", days: "দিন",
   welcome: "স্বাগতম",
+  learnAboutTallyPlus: "টালি প্লাস সম্পর্কে জানুন",
+  backToLogin: "← লগইন / সাইন-আপে ফিরে যান",
+  personalUse: "ব্যক্তিগত হিসাব",
+  shopUse: "ব্যবসায়িক হিসাব",
+  personalUseHint: "আয়-ব্যয়, দেনা-পাওনা, ফর্দ ও মাসিক রিপোর্ট",
+  shopUseHint: "POS, স্টক, বাকি, কর্মচারী, SMS ও পূর্ণাঙ্গ রিপোর্ট",
+  personalSignupCta: "ব্যক্তিগত হিসেবে শুরু",
+  shopSignupCta: "ব্যবসা হিসেবে শুরু",
 };
 
 const hi: Dict = {
