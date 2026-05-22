@@ -26,7 +26,7 @@ type ThemeRow = {
 };
 
 function CustomizePage() {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const { current } = useShop();
   const shopId = current?.id ?? null;
   const [primary, setPrimary] = useState("#1ca301");
@@ -71,7 +71,7 @@ function CustomizePage() {
     } as never).eq("id", shopId);
     setSaving(false);
     if (error) { toast.error(error.message); return; }
-    toast.success(lang === "bn" ? "সেভ হয়েছে" : "Saved");
+    toast.success(t("p6_Saved_2"));
   };
 
   const accent = variant === "primary" ? primary : secondary;
@@ -83,34 +83,34 @@ function CustomizePage() {
       <div className="flex items-center gap-2 pt-3">
         <Button asChild variant="ghost" size="sm" className="gap-1">
           <Link to="/app/online-shop">
-            <ArrowLeft className="h-4 w-4" /> {lang === "bn" ? "অনলাইন শপে ফিরে যান" : "Back to Online Shop"}
+            <ArrowLeft className="h-4 w-4" /> {t("p6_Back_to_Online_Shop")}
           </Link>
         </Button>
       </div>
       <div className="mt-3 space-y-4">
-        <h1 className="text-xl font-bold">{lang === "bn" ? "কাস্টমাইজেশন" : "Customization"}</h1>
+        <h1 className="text-xl font-bold">{t("p6_Customization")}</h1>
 
         {/* Colors */}
-        <Section title={lang === "bn" ? "রং" : "Colors"}>
+        <Section title={t("p6_Colors")}>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <ColorField label={lang === "bn" ? "প্রাথমিক রং" : "Primary color"} value={primary} onChange={setPrimary} />
-            <ColorField label={lang === "bn" ? "দ্বিতীয় রং" : "Secondary color"} value={secondary} onChange={setSecondary} />
+            <ColorField label={t("p6_Primary_color")} value={primary} onChange={setPrimary} />
+            <ColorField label={t("p6_Secondary_color")} value={secondary} onChange={setSecondary} />
           </div>
         </Section>
 
         {/* Border radius */}
-        <Section title={lang === "bn" ? "বর্ডার রেডিয়াস" : "Border radius"}>
-          <Label className="text-xs text-muted-foreground">{lang === "bn" ? "মান" : "Value"}</Label>
+        <Section title={t("p6_Border_radius")}>
+          <Label className="text-xs text-muted-foreground">{t("p6_Value")}</Label>
           <div className="mt-2 flex items-center gap-3">
             <Slider value={[radius]} min={0} max={32} step={1} onValueChange={(v) => setRadius(v[0])} className="flex-1" />
             <div className="w-16 text-right text-sm font-semibold">{radius}px</div>
-            <Button variant="default" size="sm">{lang === "bn" ? "প্রিভিউ" : "Preview"}</Button>
+            <Button variant="default" size="sm">{t("p6_Preview")}</Button>
           </div>
         </Section>
 
         {/* Font */}
-        <Section title={lang === "bn" ? "ফন্ট" : "Font"}>
-          <Label className="text-xs text-muted-foreground">{lang === "bn" ? "ফন্ট ফ্যামিলি" : "Font family"}</Label>
+        <Section title={t("p6_Font")}>
+          <Label className="text-xs text-muted-foreground">{t("p6_Font_family")}</Label>
           <Select value={font} onValueChange={setFont}>
             <SelectTrigger className="mt-1"><SelectValue placeholder="Select a font" /></SelectTrigger>
             <SelectContent>{FONTS.map((f) => <SelectItem key={f} value={f}>{f}</SelectItem>)}</SelectContent>
@@ -118,7 +118,7 @@ function CustomizePage() {
         </Section>
 
         {/* Product card variants */}
-        <Section title={lang === "bn" ? "প্রোডাক্ট কার্ড ভ্যারিয়েন্ট" : "Product Cards Variants"} right={
+        <Section title={t("p6_Product_Cards_Variants")} right={
           <div className="inline-flex rounded-md border p-0.5 text-xs">
             <button onClick={() => setVariant("primary")} className={`rounded px-3 py-1 ${variant === "primary" ? "bg-primary text-primary-foreground" : ""}`}>Primary</button>
             <button onClick={() => setVariant("secondary")} className={`rounded px-3 py-1 ${variant === "secondary" ? "bg-primary text-primary-foreground" : ""}`}>Secondary</button>
@@ -132,7 +132,7 @@ function CustomizePage() {
                 <div className="text-sm font-bold">Sample Product {i}</div>
                 <div className="mt-1 text-base font-extrabold" style={{ color: accent }}>৳ {99 + i * 10}</div>
                 <button className="mt-2 w-full py-1.5 text-xs font-bold text-white" style={{ background: accent, borderRadius: effectiveRadius }}>
-                  {lang === "bn" ? "কার্টে যোগ" : "Add to cart"}
+                  {t("p6_Add_to_cart")}
                 </button>
               </div>
             ))}
@@ -140,7 +140,7 @@ function CustomizePage() {
         </Section>
 
         {/* Card shape */}
-        <Section title={lang === "bn" ? "কার্ড আকৃতি" : "Card Shape"}>
+        <Section title={t("p6_Card_Shape")}>
           <div className="grid grid-cols-3 gap-3">
             {(["round", "square", "pill"] as const).map((s) => (
               <button
@@ -161,7 +161,7 @@ function CustomizePage() {
 
       <div className="fixed inset-x-0 bottom-0 border-t bg-background p-3">
         <div className="mx-auto max-w-4xl">
-          <Button className="w-full" onClick={save} disabled={saving}>{lang === "bn" ? "সেভ" : "Save"}</Button>
+          <Button className="w-full" onClick={save} disabled={saving}>{t("p6_Save_2")}</Button>
         </div>
       </div>
     </div>

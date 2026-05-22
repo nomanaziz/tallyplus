@@ -22,7 +22,7 @@ const APP = [
 ];
 
 function ThemesPage() {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const { current } = useShop();
   const qc = useQueryClient();
   const shopId = current?.id ?? null;
@@ -44,16 +44,16 @@ function ThemesPage() {
     await supabase.from("shops").update(payload).eq("id", shopId);
     await qc.invalidateQueries({ queryKey: ["shop-themes", shopId] });
     setSaving(false);
-    toast.success(lang === "bn" ? "থিম সেট হয়েছে" : "Theme applied");
+    toast.success(t("p6_Theme_applied"));
   };
 
   return (
     <div className="container mx-auto max-w-5xl px-4 pb-10">
-      <PageHeader breadcrumb={`Online-shop / ${lang === "bn" ? "থিম" : "Themes"}`} title="" />
+      <PageHeader breadcrumb={`Online-shop / ${t("p6_Themes")}`} title="" />
       <Tabs defaultValue="web" className="mt-3">
         <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="web">{lang === "bn" ? "ওয়েব থিম" : "Web Themes"}</TabsTrigger>
-          <TabsTrigger value="app">{lang === "bn" ? "অ্যাপ থিম" : "App Themes"}</TabsTrigger>
+          <TabsTrigger value="web">{t("p6_Web_Themes")}</TabsTrigger>
+          <TabsTrigger value="app">{t("p6_App_Themes")}</TabsTrigger>
         </TabsList>
         <TabsContent value="web" className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
           {WEB.map((t) => (

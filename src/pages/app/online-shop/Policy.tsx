@@ -29,7 +29,7 @@ const TEMPLATES = {
 };
 
 function PolicyPage() {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const { current } = useShop();
   const shopId = current?.id ?? null;
 
@@ -69,7 +69,7 @@ function PolicyPage() {
     }).eq("id", shopId);
     setSaving(false);
     if (error) { toast.error(error.message); return; }
-    toast.success(lang === "bn" ? "সংরক্ষিত হয়েছে" : "Saved");
+    toast.success(t("p6_Saved"));
     void refetch();
   };
 
@@ -81,40 +81,40 @@ function PolicyPage() {
         <Label>{label}</Label>
         {!value && (
           <Button size="sm" variant="outline" onClick={() => setValue(template)}>
-            {lang === "bn" ? "ডিফল্ট টেমপ্লেট" : "Use template"}
+            {t("p6_Use_template")}
           </Button>
         )}
       </div>
       <Textarea value={value} onChange={(e) => setValue(e.target.value)} rows={12}
-        placeholder={lang === "bn" ? "এখানে লিখুন..." : "Write here..."} />
+        placeholder={t("p6_Write_here")} />
       <p className="text-xs text-muted-foreground">
-        {lang === "bn" ? "এই পলিসি আপনার ওয়েবসাইটে দেখানো হবে।" : "This policy will appear on your website."}
+        {t("p6_This_policy_will_appear_on_you")}
       </p>
     </div>
   );
 
   return (
     <div className="container mx-auto max-w-3xl px-4 pb-24">
-      <PageHeader breadcrumb={`Online-shop / ${lang === "bn" ? "শপ পলিসি" : "Shop Policy"}`} title="" />
+      <PageHeader breadcrumb={`Online-shop / ${t("p6_Shop_Policy")}`} title="" />
 
       <Tabs defaultValue="terms" className="mt-3">
         <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="terms">{lang === "bn" ? "শর্তাবলী" : "Terms"}</TabsTrigger>
-          <TabsTrigger value="return">{lang === "bn" ? "রিটার্ন" : "Return"}</TabsTrigger>
-          <TabsTrigger value="shipping">{lang === "bn" ? "ডেলিভারি" : "Shipping"}</TabsTrigger>
-          <TabsTrigger value="privacy">{lang === "bn" ? "প্রাইভেসি" : "Privacy"}</TabsTrigger>
+          <TabsTrigger value="terms">{t("p6_Terms")}</TabsTrigger>
+          <TabsTrigger value="return">{t("p6_Return")}</TabsTrigger>
+          <TabsTrigger value="shipping">{t("p6_Shipping")}</TabsTrigger>
+          <TabsTrigger value="privacy">{t("p6_Privacy")}</TabsTrigger>
         </TabsList>
         <TabsContent value="terms" className="rounded-xl border bg-card p-4">
-          {editor(lang === "bn" ? "শর্তাবলী (Terms & Conditions)" : "Terms & Conditions", terms, setTerms, TEMPLATES.terms)}
+          {editor(t("p6_Terms_Conditions_2"), terms, setTerms, TEMPLATES.terms)}
         </TabsContent>
         <TabsContent value="return" className="rounded-xl border bg-card p-4">
-          {editor(lang === "bn" ? "রিটার্ন পলিসি" : "Return Policy", ret, setRet, TEMPLATES.return)}
+          {editor(t("p6_Return_Policy"), ret, setRet, TEMPLATES.return)}
         </TabsContent>
         <TabsContent value="shipping" className="rounded-xl border bg-card p-4">
-          {editor(lang === "bn" ? "ডেলিভারি পলিসি" : "Shipping Policy", ship, setShip, TEMPLATES.shipping)}
+          {editor(t("p6_Shipping_Policy"), ship, setShip, TEMPLATES.shipping)}
         </TabsContent>
         <TabsContent value="privacy" className="rounded-xl border bg-card p-4">
-          {editor(lang === "bn" ? "প্রাইভেসি পলিসি" : "Privacy Policy", priv, setPriv, TEMPLATES.privacy)}
+          {editor(t("p6_Privacy_Policy"), priv, setPriv, TEMPLATES.privacy)}
         </TabsContent>
       </Tabs>
 
@@ -122,7 +122,7 @@ function PolicyPage() {
         <div className="mx-auto max-w-3xl">
           <Button onClick={save} disabled={saving} className="w-full" size="lg">
             {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {lang === "bn" ? "সংরক্ষণ" : "Save All Policies"}
+            {t("p6_Save_All_Policies")}
           </Button>
         </div>
       </div>

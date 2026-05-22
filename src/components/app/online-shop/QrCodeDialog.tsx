@@ -14,7 +14,7 @@ export function QrCodeDialog({
   url: string;
   shopName: string;
 }) {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const ref = useRef<HTMLDivElement>(null);
 
   const download = () => {
@@ -24,14 +24,14 @@ export function QrCodeDialog({
     link.download = `${shopName}-qr.png`;
     link.href = canvas.toDataURL("image/png");
     link.click();
-    toast.success(lang === "bn" ? "ডাউনলোড হয়েছে" : "Downloaded");
+    toast.success(t("p6_Downloaded"));
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
-          <DialogTitle>{lang === "bn" ? "QR কোড" : "QR Code"}</DialogTitle>
+          <DialogTitle>{t("p6_QR_Code")}</DialogTitle>
         </DialogHeader>
         <div className="flex flex-col items-center gap-3">
           <div ref={ref} className="rounded-lg bg-white p-4">
@@ -40,7 +40,7 @@ export function QrCodeDialog({
           <p className="break-all text-center text-xs text-muted-foreground">{url}</p>
           <Button onClick={download} className="w-full">
             <Download className="mr-2 h-4 w-4" />
-            {lang === "bn" ? "ডাউনলোড" : "Download"}
+            {t("p6_Download")}
           </Button>
         </div>
       </DialogContent>

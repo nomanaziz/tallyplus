@@ -22,7 +22,7 @@ export function ShopPolicyDialog({
   };
   onSaved: () => void;
 }) {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const [terms, setTerms] = useState("");
   const [returnP, setReturnP] = useState("");
   const [shipping, setShipping] = useState("");
@@ -47,7 +47,7 @@ export function ShopPolicyDialog({
       .eq("id", shop.id);
     setSaving(false);
     if (error) { toast.error(error.message); return; }
-    toast.success(lang === "bn" ? "পলিসি সংরক্ষিত" : "Policies saved");
+    toast.success(t("p6_Policies_saved"));
     onSaved();
     onOpenChange(false);
   };
@@ -56,36 +56,36 @@ export function ShopPolicyDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>{lang === "bn" ? "শপ পলিসি" : "Shop Policy"}</DialogTitle>
+          <DialogTitle>{t("p6_Shop_Policy")}</DialogTitle>
         </DialogHeader>
 
         <Tabs defaultValue="terms">
           <TabsList className="w-full">
-            <TabsTrigger value="terms" className="flex-1">{lang === "bn" ? "শর্তাবলী" : "Terms"}</TabsTrigger>
-            <TabsTrigger value="return" className="flex-1">{lang === "bn" ? "রিটার্ন" : "Return"}</TabsTrigger>
-            <TabsTrigger value="shipping" className="flex-1">{lang === "bn" ? "ডেলিভারি" : "Shipping"}</TabsTrigger>
+            <TabsTrigger value="terms" className="flex-1">{t("p6_Terms")}</TabsTrigger>
+            <TabsTrigger value="return" className="flex-1">{t("p6_Return")}</TabsTrigger>
+            <TabsTrigger value="shipping" className="flex-1">{t("p6_Shipping")}</TabsTrigger>
           </TabsList>
           <TabsContent value="terms">
-            <Label>{lang === "bn" ? "শর্ত ও নিয়মাবলী" : "Terms & Conditions"}</Label>
-            <Textarea value={terms} onChange={(e) => setTerms(e.target.value)} rows={10} placeholder={lang === "bn" ? "আপনার দোকানের শর্ত লিখুন…" : "Write your shop terms…"} />
+            <Label>{t("p6_Terms_Conditions")}</Label>
+            <Textarea value={terms} onChange={(e) => setTerms(e.target.value)} rows={10} placeholder={t("p6_Write_your_shop_terms")} />
           </TabsContent>
           <TabsContent value="return">
-            <Label>{lang === "bn" ? "রিটার্ন/রিফান্ড পলিসি" : "Return / Refund Policy"}</Label>
-            <Textarea value={returnP} onChange={(e) => setReturnP(e.target.value)} rows={10} placeholder={lang === "bn" ? "কিভাবে পণ্য ফেরত নেবেন…" : "How returns/refunds work…"} />
+            <Label>{t("p6_Return_Refund_Policy")}</Label>
+            <Textarea value={returnP} onChange={(e) => setReturnP(e.target.value)} rows={10} placeholder={t("p6_How_returns_refunds_work")} />
           </TabsContent>
           <TabsContent value="shipping">
-            <Label>{lang === "bn" ? "ডেলিভারি পলিসি" : "Shipping Policy"}</Label>
-            <Textarea value={shipping} onChange={(e) => setShipping(e.target.value)} rows={10} placeholder={lang === "bn" ? "ডেলিভারি চার্জ ও সময়…" : "Delivery fees & timeline…"} />
+            <Label>{t("p6_Shipping_Policy")}</Label>
+            <Textarea value={shipping} onChange={(e) => setShipping(e.target.value)} rows={10} placeholder={t("p6_Delivery_fees_timeline")} />
           </TabsContent>
         </Tabs>
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            {lang === "bn" ? "বাতিল" : "Cancel"}
+            {t("p6_Cancel")}
           </Button>
           <Button onClick={save} disabled={saving}>
             {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {lang === "bn" ? "সংরক্ষণ" : "Save"}
+            {t("p6_Save")}
           </Button>
         </DialogFooter>
       </DialogContent>

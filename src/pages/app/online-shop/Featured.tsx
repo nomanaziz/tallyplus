@@ -18,7 +18,7 @@ type Product = {
 };
 
 function FeaturedPage() {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const { current } = useShop();
   const qc = useQueryClient();
   const shopId = current?.id ?? null;
@@ -40,32 +40,30 @@ function FeaturedPage() {
   const toggleFeatured = async (p: Product, v: boolean) => {
     await supabase.from("products").update({ is_featured: v }).eq("id", p.id);
     toast.success(v
-      ? (lang === "bn" ? "ফিচার্ড করা হয়েছে" : "Marked featured")
-      : (lang === "bn" ? "ফিচার্ড থেকে সরানো হয়েছে" : "Removed from featured"));
+      ? (t("p6_Marked_featured"))
+      : (t("p6_Removed_from_featured")));
     qc.invalidateQueries({ queryKey: ["featured-products", shopId] });
   };
 
   return (
     <div className="container mx-auto max-w-3xl px-4 pb-10">
-      <PageHeader breadcrumb={`Online-shop / ${lang === "bn" ? "ফিচার্ড পণ্য" : "Featured Products"}`} title="" />
+      <PageHeader breadcrumb={`Online-shop / ${t("p6_Featured_Products")}`} title="" />
       <div className="mt-3 rounded-xl border bg-muted/40 p-3 text-xs text-muted-foreground">
-        {lang === "bn"
-          ? "ফিচার্ড পণ্যগুলো আপনার অনলাইন শপের হোমপেজে আগে দেখানো হবে। অনলাইন প্রোডাক্ট পেজে যেকোনো পণ্যের ⭐ চিহ্ন চাপ দিয়ে ফিচার্ড করুন।"
-          : "Featured products show first on your online shop homepage. Tap the ⭐ on any product in Online Products to feature it."}
+        {t("p6_Featured_products_show_first_o")}
       </div>
 
       {isLoading ? (
-        <div className="py-16 text-center text-sm text-muted-foreground">{lang === "bn" ? "লোড হচ্ছে..." : "Loading..."}</div>
+        <div className="py-16 text-center text-sm text-muted-foreground">{t("p6_Loading")}</div>
       ) : products.length === 0 ? (
         <div className="mt-6 flex flex-col items-center rounded-xl border bg-card p-10 text-center shadow-sm">
           <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
             <Star className="h-7 w-7 text-primary" />
           </div>
-          <h2 className="mt-4 text-lg font-bold">{lang === "bn" ? "এখনও কোনো ফিচার্ড পণ্য নেই" : "No featured products yet"}</h2>
+          <h2 className="mt-4 text-lg font-bold">{t("p6_No_featured_products_yet")}</h2>
           <p className="mt-2 max-w-sm text-sm text-muted-foreground">
-            {lang === "bn" ? "অনলাইন প্রোডাক্ট পেজে গিয়ে পণ্যে ⭐ চাপ দিন।" : "Go to Online Products and tap the ⭐ icon."}
+            {t("p6_Go_to_Online_Products_and_tap_")}
           </p>
-          <Button asChild className="mt-5"><Link to="/app/online-shop/products">{lang === "bn" ? "অনলাইন প্রোডাক্ট" : "Online Products"}</Link></Button>
+          <Button asChild className="mt-5"><Link to="/app/online-shop/products">{t("p6_Online_Products")}</Link></Button>
         </div>
       ) : (
         <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -83,7 +81,7 @@ function FeaturedPage() {
                   <div className="min-w-0">
                     <div className="truncate font-semibold">{p.name}</div>
                     <div className="mt-0.5 text-xs text-muted-foreground">
-                      {lang === "bn" ? "স্টক:" : "Stock:"} {lang === "bn" ? bnNum(p.stock) : p.stock} {p.unit ?? ""}
+                      {t("p6_Stock")} {lang === "bn" ? bnNum(p.stock) : p.stock} {p.unit ?? ""}
                     </div>
                     <div className="mt-1 text-sm font-bold text-primary">৳ {p.sale_price}</div>
                   </div>
@@ -91,7 +89,7 @@ function FeaturedPage() {
                 </div>
                 {!p.is_marketplace_published && (
                   <div className="mt-1 text-[11px] text-amber-600">
-                    {lang === "bn" ? "⚠ এখনো অনলাইনে প্রকাশিত নয়" : "⚠ Not published online yet"}
+                    {t("p6_Not_published_online_yet")}
                   </div>
                 )}
               </div>

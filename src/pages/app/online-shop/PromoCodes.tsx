@@ -22,7 +22,7 @@ type Promo = {
 };
 
 function PromoCodesPage() {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const { current } = useShop();
   const qc = useQueryClient();
   const shopId = current?.id ?? null;
@@ -43,12 +43,12 @@ function PromoCodesPage() {
     qc.invalidateQueries({ queryKey: ["promo-codes", shopId] });
   };
   const remove = async (id: string) => {
-    if (!confirm(lang === "bn" ? "মুছে ফেলবেন?" : "Delete?")) return;
+    if (!confirm(t("p6_Delete"))) return;
     await supabase.from("promo_codes").delete().eq("id", id);
     qc.invalidateQueries({ queryKey: ["promo-codes", shopId] });
   };
   const copy = async (code: string) => {
-    try { await navigator.clipboard.writeText(code); toast.success(lang === "bn" ? "কপি হয়েছে" : "Copied"); } catch { /* noop */ }
+    try { await navigator.clipboard.writeText(code); toast.success(t("p6_Copied")); } catch { /* noop */ }
   };
 
   return (
@@ -57,17 +57,17 @@ function PromoCodesPage() {
       <div className="mt-3 rounded-xl border bg-muted/40 p-3">
         <div className="flex items-center justify-between">
           <div className="text-sm font-semibold">
-            {lang === "bn" ? "প্রোমো কোড" : "Promo Code"} ({lang === "bn" ? bnNum(codes.length) : codes.length})
+            {t("p6_Promo_Code")} ({lang === "bn" ? bnNum(codes.length) : codes.length})
           </div>
           <Button size="sm" variant="outline" onClick={() => refetch()} disabled={isFetching}>
             <RefreshCw className={`mr-1.5 h-3.5 w-3.5 ${isFetching ? "animate-spin" : ""}`} />
-            {lang === "bn" ? "রিফ্রেশ" : "Refresh"}
+            {t("p6_Refresh")}
           </Button>
         </div>
         <div className="mt-3 space-y-2">
           {codes.length === 0 && (
             <div className="py-10 text-center text-sm text-muted-foreground">
-              {lang === "bn" ? "এখনও কোনো প্রোমো কোড নেই" : "No promo codes yet"}
+              {t("p6_No_promo_codes_yet")}
             </div>
           )}
           {codes.map((p) => (
@@ -84,21 +84,21 @@ function PromoCodesPage() {
                   </div>
                   <div className="mt-2 grid grid-cols-3 gap-2 text-xs">
                     <div>
-                      <div className="text-muted-foreground">{lang === "bn" ? "ছাড়" : "Discount"}</div>
+                      <div className="text-muted-foreground">{t("p6_Discount")}</div>
                       <div className="font-bold text-primary">
                         {p.discount_type === "percent"
                           ? `${p.discount_value}%`
                           : p.discount_type === "free_shipping"
-                          ? (lang === "bn" ? "ফ্রি শিপিং" : "Free Shipping")
+                          ? (t("p6_Free_Shipping"))
                           : `৳ ${p.discount_value}`}
                       </div>
                     </div>
                     <div>
-                      <div className="text-muted-foreground">{lang === "bn" ? "ন্যূনতম ক্রয়" : "Min Purchase"}</div>
+                      <div className="text-muted-foreground">{t("p6_Min_Purchase")}</div>
                       <div className="font-bold">৳ {p.min_order_amount}</div>
                     </div>
                     <div className="text-right">
-                      <div className="text-muted-foreground">{lang === "bn" ? "মেয়াদ" : "Expires"}</div>
+                      <div className="text-muted-foreground">{t("p6_Expires")}</div>
                       <div className="font-bold">{p.expires_at ? new Date(p.expires_at).toLocaleDateString() : "—"}</div>
                     </div>
                   </div>
@@ -107,13 +107,13 @@ function PromoCodesPage() {
                   <DropdownMenuTrigger asChild><button className="p-1"><MoreVertical className="h-4 w-4" /></button></DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem onClick={() => remove(p.id)} className="text-destructive">
-                      <Trash2 className="mr-2 h-4 w-4" />{lang === "bn" ? "মুছুন" : "Delete"}
+                      <Trash2 className="mr-2 h-4 w-4" />{t("p6_Delete_2")}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
               <div className="flex items-center justify-between border-t bg-muted/30 px-3 py-2">
-                <span className="text-xs">{lang === "bn" ? "প্রোমো কোড সক্রিয় করুন" : "Activate Promo Code"}</span>
+                <span className="text-xs">{t("p6_Activate_Promo_Code")}</span>
                 <Switch checked={p.is_active} onCheckedChange={(v) => toggle(p.id, v)} />
               </div>
             </div>
@@ -124,7 +124,7 @@ function PromoCodesPage() {
       <div className="fixed inset-x-0 bottom-0 border-t bg-background p-3">
         <div className="mx-auto max-w-3xl">
           <Button className="w-full" onClick={() => setOpen(true)}>
-            <Plus className="mr-1.5 h-4 w-4" />{lang === "bn" ? "প্রোমো কোড যোগ" : "Add Promo Code"}
+            <Plus className="mr-1.5 h-4 w-4" />{t("p6_Add_Promo_Code")}
           </Button>
         </div>
       </div>
@@ -136,6 +136,7 @@ function PromoCodesPage() {
 }
 
 function AddPromoDialog({ open, onOpenChange, shopId, lang, onCreated }: { open: boolean; onOpenChange: (v: boolean) => void; shopId: string; lang: string; onCreated: () => void }) {
+  const { t } = useI18n();
   const [code, setCode] = useState("");
   const [type, setType] = useState("percent");
   const [value, setValue] = useState("");
@@ -148,12 +149,12 @@ function AddPromoDialog({ open, onOpenChange, shopId, lang, onCreated }: { open:
 
   const submit = async () => {
     const c = code.trim().toUpperCase();
-    if (!c) { toast.error(lang === "bn" ? "কোড দিন" : "Enter code"); return; }
+    if (!c) { toast.error(t("p6_Enter_code")); return; }
     const isFreeShip = type === "free_shipping";
     const v = isFreeShip ? 0 : Number(value);
-    if (!isFreeShip && (!v || v <= 0)) { toast.error(lang === "bn" ? "ছাড় দিন" : "Enter discount"); return; }
+    if (!isFreeShip && (!v || v <= 0)) { toast.error(t("p6_Enter_discount")); return; }
     if (isFreeShip && (!minAmt || Number(minAmt) <= 0)) {
-      toast.error(lang === "bn" ? "ন্যূনতম ক্রয় দিন" : "Enter minimum order amount"); return;
+      toast.error(t("p6_Enter_minimum_order_amount")); return;
     }
     setSaving(true);
     const { error } = await supabase.from("promo_codes").insert({
@@ -164,48 +165,48 @@ function AddPromoDialog({ open, onOpenChange, shopId, lang, onCreated }: { open:
     });
     setSaving(false);
     if (error) { toast.error(error.message); return; }
-    toast.success(lang === "bn" ? "যোগ হয়েছে" : "Added");
+    toast.success(t("p6_Added"));
     reset(); onOpenChange(false); onCreated();
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
-        <DialogHeader><DialogTitle>{lang === "bn" ? "প্রোমো কোড যোগ" : "Add Promo Code"}</DialogTitle></DialogHeader>
+        <DialogHeader><DialogTitle>{t("p6_Add_Promo_Code")}</DialogTitle></DialogHeader>
         <div className="space-y-3">
-          <div><Label>{lang === "bn" ? "কোড নাম" : "Promo Code Name"}</Label>
+          <div><Label>{t("p6_Promo_Code_Name")}</Label>
             <Input value={code} onChange={(e) => setCode(e.target.value)} placeholder="EG. SUMMER10, NEWYEAR25" maxLength={32} /></div>
-          <div><Label>{lang === "bn" ? "ছাড়ের ধরন" : "Discount Type"}</Label>
+          <div><Label>{t("p6_Discount_Type")}</Label>
             <Select value={type} onValueChange={setType}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="percent">{lang === "bn" ? "শতাংশ" : "Percentage"}</SelectItem>
-                <SelectItem value="amount">{lang === "bn" ? "নির্দিষ্ট অঙ্ক" : "Fixed Amount"}</SelectItem>
-                <SelectItem value="free_shipping">{lang === "bn" ? "ফ্রি শিপিং" : "Free Shipping"}</SelectItem>
+                <SelectItem value="percent">{t("p6_Percentage")}</SelectItem>
+                <SelectItem value="amount">{t("p6_Fixed_Amount")}</SelectItem>
+                <SelectItem value="free_shipping">{t("p6_Free_Shipping")}</SelectItem>
               </SelectContent>
             </Select>
             <p className="mt-1 text-xs text-muted-foreground">
-              {type === "percent" && (lang === "bn" ? "মোট অর্ডারের শতাংশ ছাড়।" : "Percentage off total order.")}
-              {type === "amount" && (lang === "bn" ? "মোট অর্ডার থেকে নির্দিষ্ট টাকা কমে যাবে।" : "Fixed amount off order total.")}
-              {type === "free_shipping" && (lang === "bn" ? "নির্দিষ্ট অঙ্কের বেশি অর্ডারে ডেলিভারি ফ্রি।" : "Free delivery on orders above the minimum.")}
+              {type === "percent" && (t("p6_Percentage_off_total_order"))}
+              {type === "amount" && (t("p6_Fixed_amount_off_order_total"))}
+              {type === "free_shipping" && (t("p6_Free_delivery_on_orders_above_"))}
             </p>
           </div>
           {type !== "free_shipping" && (
-            <div><Label>{lang === "bn" ? "ছাড়ের পরিমাণ" : "Discount Amount"}</Label>
+            <div><Label>{t("p6_Discount_Amount")}</Label>
               <Input type="number" value={value} onChange={(e) => setValue(e.target.value)} placeholder="eg. 10, 25, 50" /></div>
           )}
-          <div><Label>{lang === "bn" ? "ন্যূনতম ক্রয়" : "Minimum Purchase Amount"} {type === "free_shipping" && <span className="text-destructive">*</span>}</Label>
+          <div><Label>{t("p6_Minimum_Purchase_Amount")} {type === "free_shipping" && <span className="text-destructive">*</span>}</Label>
             <Input type="number" value={minAmt} onChange={(e) => setMinAmt(e.target.value)} placeholder="eg. 500, 1000, 2000" /></div>
-          <div><Label>{lang === "bn" ? "মেয়াদ শেষ" : "Expiry Date"}</Label>
+          <div><Label>{t("p6_Expiry_Date")}</Label>
             <Input type="date" value={exp} onChange={(e) => setExp(e.target.value)} /></div>
           <div className="flex items-center justify-between rounded-md border px-3 py-2">
-            <span className="text-sm">{lang === "bn" ? "প্রোমো কোড সক্রিয়" : "Activate Promo Code"}</span>
+            <span className="text-sm">{t("p6_Activate_Promo_Code_2")}</span>
             <Switch checked={active} onCheckedChange={setActive} />
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>{lang === "bn" ? "বাতিল" : "Cancel"}</Button>
-          <Button onClick={submit} disabled={saving}>{lang === "bn" ? "যোগ" : "Add"}</Button>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>{t("p6_Cancel")}</Button>
+          <Button onClick={submit} disabled={saving}>{t("p6_Add")}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -32,7 +32,7 @@ type ShopRow = {
 };
 
 function StoreSettingsPage() {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const { current } = useShop();
   const nav = useNavigate();
   const shopId = current?.id ?? null;
@@ -88,7 +88,7 @@ function StoreSettingsPage() {
     const uid = ud?.user?.id;
     if (!uid) {
       setLoading(false);
-      toast.error(lang === "bn" ? "লগইন প্রয়োজন" : "Login required");
+      toast.error(t("p6_Login_required"));
       return null;
     }
     const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
@@ -122,17 +122,17 @@ function StoreSettingsPage() {
     setEnabled(v);
     await supabase.from("shops").update({ marketplace_enabled: v }).eq("id", shopId);
     toast.success(v
-      ? (lang === "bn" ? "স্টোর প্রকাশিত হয়েছে" : "Store published")
-      : (lang === "bn" ? "স্টোর লুকানো হয়েছে" : "Store unpublished"));
+      ? (t("p6_Store_published"))
+      : (t("p6_Store_unpublished")));
     void refetch();
   };
 
   const save = async () => {
     if (!shopId) return;
-    if (!name.trim()) { toast.error(lang === "bn" ? "দোকানের নাম দিতে হবে" : "Shop name required"); return; }
+    if (!name.trim()) { toast.error(t("p6_Shop_name_required")); return; }
     const u = username.trim().toLowerCase();
     if (!u || !/^[a-z0-9][a-z0-9_-]{2,31}$/.test(u) || RESERVED.has(u)) {
-      toast.error(lang === "bn" ? "Username সঠিক নয়" : "Invalid username");
+      toast.error(t("p6_Invalid_username"));
       return;
     }
     setSaving(true);
@@ -148,11 +148,11 @@ function StoreSettingsPage() {
     }).eq("id", shopId);
     setSaving(false);
     if (error) {
-      if (error.code === "23505") toast.error(lang === "bn" ? "এই username নেওয়া আছে" : "Username taken");
+      if (error.code === "23505") toast.error(t("p6_Username_taken"));
       else toast.error(error.message);
       return;
     }
-    toast.success(lang === "bn" ? "সংরক্ষিত হয়েছে" : "Saved");
+    toast.success(t("p6_Saved"));
     setEditingUsername(false);
     void refetch();
   };
@@ -162,7 +162,7 @@ function StoreSettingsPage() {
   const copyLink = async () => {
     if (!publicUrl) return;
     await navigator.clipboard.writeText(publicUrl);
-    toast.success(lang === "bn" ? "কপি হয়েছে" : "Copied");
+    toast.success(t("p6_Copied"));
   };
 
   if (isLoading || !shop) {
@@ -172,18 +172,18 @@ function StoreSettingsPage() {
   return (
     <div className="pb-24">
       <PageHeader
-        breadcrumb={`Online-shop / ${lang === "bn" ? "স্টোর সেটিংস" : "Store Settings"}`}
+        breadcrumb={`Online-shop / ${t("p6_Store_Settings")}`}
         title=""
-        actions={<Button variant="ghost" size="sm" onClick={() => nav({ to: "/app/online-shop" })}>← {lang === "bn" ? "ফিরে" : "Back"}</Button>}
+        actions={<Button variant="ghost" size="sm" onClick={() => nav({ to: "/app/online-shop" })}>← {t("p6_Back")}</Button>}
       />
 
       <div className="container mx-auto max-w-3xl space-y-5 px-4 py-5">
         {/* Publish toggle */}
         <div className="flex items-center justify-between rounded-xl border bg-card p-4">
           <div>
-            <div className="text-sm font-bold">{lang === "bn" ? "অনলাইন শপ প্রকাশনা" : "Online Shop Publish"}</div>
+            <div className="text-sm font-bold">{t("p6_Online_Shop_Publish")}</div>
             <Badge variant={enabled ? "default" : "secondary"} className="mt-1">
-              {enabled ? (lang === "bn" ? "প্রকাশিত" : "PUBLISHED") : (lang === "bn" ? "অপ্রকাশিত" : "UNPUBLISHED")}
+              {enabled ? (t("p6_PUBLISHED")) : (t("p6_UNPUBLISHED"))}
             </Badge>
           </div>
           <Switch checked={enabled} onCheckedChange={togglePublished} />
@@ -193,16 +193,14 @@ function StoreSettingsPage() {
         <div className="flex items-start justify-between gap-3 rounded-xl border bg-card p-4">
           <div className="min-w-0">
             <div className="text-sm font-bold">
-              {lang === "bn" ? "আপনি কি পাইকারি বিক্রেতা?" : "Are you a wholesale seller?"}
+              {t("p6_Are_you_a_wholesale_seller")}
             </div>
             <p className="mt-1 text-xs text-muted-foreground">
-              {lang === "bn"
-                ? "চালু করলে আপনার দোকান পাইকারি (B2B) হিসেবে চিহ্নিত হবে — অন্য খুচরা দোকান আপনার কাছে B2B ফর্দ পাঠাতে পারবে।"
-                : "When enabled, your shop will be marked as wholesale (B2B). Retail shops can send you B2B order lists."}
+              {t("p6_When_enabled_your_shop_will_be")}
             </p>
             {isWholesale && (
               <Badge className="mt-2" variant="default">
-                {lang === "bn" ? "পাইকারি বিক্রেতা" : "Wholesale Seller"}
+                {t("p6_Wholesale_Seller")}
               </Badge>
             )}
           </div>
@@ -227,10 +225,10 @@ function StoreSettingsPage() {
             <input ref={logoInput} type="file" accept="image/*" className="hidden" onChange={onLogoChange} />
             <div className="min-w-0 flex-1 space-y-2">
               <button type="button" onClick={() => logoInput.current?.click()} className="text-sm font-semibold text-primary hover:underline">
-                {lang === "bn" ? "লোগো আপডেট" : "Logo Update"}
+                {t("p6_Logo_Update")}
               </button>
               <div>
-                <Label className="text-xs">{lang === "bn" ? "দোকানের নাম" : "Shop Name"}</Label>
+                <Label className="text-xs">{t("p6_Shop_Name")}</Label>
                 <Input value={name} onChange={(e) => setName(e.target.value)} className="bg-muted/40" />
               </div>
             </div>
@@ -241,11 +239,11 @@ function StoreSettingsPage() {
         <div className="rounded-xl border bg-card p-4">
           <div className="flex items-center justify-between">
             <div>
-              <div className="text-sm font-bold">{lang === "bn" ? "শপ ব্যানার" : "Shop Banner"}</div>
+              <div className="text-sm font-bold">{t("p6_Shop_Banner")}</div>
               <div className="text-xs text-muted-foreground">Size (1920 × 560)</div>
             </div>
             <Button size="sm" onClick={() => bannerInput.current?.click()} disabled={uploadingBanner}>
-              {uploadingBanner ? <Loader2 className="h-4 w-4 animate-spin" /> : (lang === "bn" ? "ব্যানার আপডেট" : "Banner Update")}
+              {uploadingBanner ? <Loader2 className="h-4 w-4 animate-spin" /> : (t("p6_Banner_Update"))}
             </Button>
             <input ref={bannerInput} type="file" accept="image/*" className="hidden" onChange={onBannerChange} />
           </div>
@@ -254,7 +252,7 @@ function StoreSettingsPage() {
               <img src={bannerUrl} alt="" className="h-full w-full object-cover" />
             ) : (
               <div className="grid h-full place-items-center text-sm text-muted-foreground">
-                {lang === "bn" ? "কোনো ব্যানার নেই" : "No banner uploaded"}
+                {t("p6_No_banner_uploaded")}
               </div>
             )}
           </div>
@@ -262,7 +260,7 @@ function StoreSettingsPage() {
 
         {/* Shop Link */}
         <div className="rounded-xl border bg-card p-4">
-          <div className="text-sm font-bold">{lang === "bn" ? "আপনার শপ লিংক" : "Your Shop Link"}</div>
+          <div className="text-sm font-bold">{t("p6_Your_Shop_Link")}</div>
           {editingUsername ? (
             <div className="mt-2 flex items-center gap-1">
               <span className="rounded-l-md border border-r-0 bg-muted px-2 py-2 text-xs text-muted-foreground">
@@ -273,7 +271,7 @@ function StoreSettingsPage() {
             </div>
           ) : (
             <div className="mt-2 flex items-center gap-2 rounded-md border bg-muted/40 px-3 py-2">
-              <span className="min-w-0 flex-1 truncate text-sm">{publicUrl || (lang === "bn" ? "Username সেট করুন" : "Set username")}</span>
+              <span className="min-w-0 flex-1 truncate text-sm">{publicUrl || (t("p6_Set_username"))}</span>
               <Button size="icon" variant="ghost" className="h-7 w-7" onClick={copyLink}><Copy className="h-3.5 w-3.5" /></Button>
               <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setEditingUsername(true)}><Pencil className="h-3.5 w-3.5 text-primary" /></Button>
             </div>
@@ -282,7 +280,7 @@ function StoreSettingsPage() {
 
         {/* Social Media */}
         <div className="rounded-xl border bg-card p-4">
-          <div className="text-sm font-bold">{lang === "bn" ? "সোশ্যাল মিডিয়া লিংক" : "Social Media Link"}</div>
+          <div className="text-sm font-bold">{t("p6_Social_Media_Link")}</div>
           <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
             <SocialField icon={<Facebook className="h-4 w-4 text-blue-600" />} value={social.facebook} onChange={(v) => setSocial({ ...social, facebook: v })} placeholder="Add Facebook Link" />
             <SocialField icon={<Music2 className="h-4 w-4" />} value={social.tiktok} onChange={(v) => setSocial({ ...social, tiktok: v })} placeholder="Add TikTok Link" />
@@ -293,18 +291,18 @@ function StoreSettingsPage() {
 
         {/* Other Info */}
         <div className="rounded-xl border bg-card p-4">
-          <div className="text-sm font-bold">{lang === "bn" ? "শপের অন্যান্য তথ্য" : "Shop Other Info"}</div>
+          <div className="text-sm font-bold">{t("p6_Shop_Other_Info")}</div>
           <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
-              <Label className="text-xs">{lang === "bn" ? "শপের নাম" : "Shop Name"}</Label>
+              <Label className="text-xs">{t("p6_Shop_Name_2")}</Label>
               <Input value={name} onChange={(e) => setName(e.target.value)} className="bg-muted/40" />
             </div>
             <div>
-              <Label className="text-xs">{lang === "bn" ? "শপের মোবাইল" : "Shop Mobile"}</Label>
+              <Label className="text-xs">{t("p6_Shop_Mobile")}</Label>
               <Input value={phone} onChange={(e) => setPhone(e.target.value)} className="bg-muted/40" placeholder="+88 01..." />
             </div>
             <div className="sm:col-span-2">
-              <Label className="text-xs">{lang === "bn" ? "শপের ঠিকানা" : "Shop Address"}</Label>
+              <Label className="text-xs">{t("p6_Shop_Address")}</Label>
               <Input value={address} onChange={(e) => setAddress(e.target.value)} className="bg-muted/40" />
             </div>
           </div>
@@ -316,7 +314,7 @@ function StoreSettingsPage() {
         <div className="container mx-auto max-w-3xl">
           <Button onClick={save} disabled={saving} className="w-full" size="lg">
             {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {lang === "bn" ? "শপ ইনফরমেশন আপডেট" : "Shop Information Update"}
+            {t("p6_Shop_Information_Update")}
           </Button>
         </div>
       </div>

@@ -48,7 +48,7 @@ type ShopRow = {
 };
 
 function OnlineShopDashboard() {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const { current } = useShop();
   const [qrOpen, setQrOpen] = useState(false);
 
@@ -88,20 +88,20 @@ function OnlineShopDashboard() {
 
   const copyLink = async () => {
     if (!publicUrl) {
-      toast.error(lang === "bn" ? "প্রথমে username সেট করুন" : "Set a username first");
+      toast.error(t("p6_Set_a_username_first"));
       return;
     }
     try {
       await navigator.clipboard.writeText(publicUrl);
-      toast.success(lang === "bn" ? "লিংক কপি হয়েছে" : "Link copied");
+      toast.success(t("p6_Link_copied"));
     } catch {
-      toast.error(lang === "bn" ? "কপি করতে পারিনি" : "Failed to copy");
+      toast.error(t("p6_Failed_to_copy"));
     }
   };
 
   const openWebsite = () => {
     if (!publicUrl) {
-      toast.error(lang === "bn" ? "প্রথমে username সেট করুন" : "Set a username first");
+      toast.error(t("p6_Set_a_username_first"));
       return;
     }
     window.open(publicUrl, "_blank", "noopener");
@@ -109,14 +109,14 @@ function OnlineShopDashboard() {
 
   const openQr = () => {
     if (!publicUrl) {
-      toast.error(lang === "bn" ? "প্রথমে username সেট করুন" : "Set a username first");
+      toast.error(t("p6_Set_a_username_first"));
       return;
     }
     setQrOpen(true);
   };
 
   const comingSoon = () =>
-    toast.info(lang === "bn" ? "শীঘ্রই আসছে" : "Coming soon");
+    toast.info(t("p6_Coming_soon"));
 
   const tiles: Array<{
     icon?: typeof Settings;
@@ -147,7 +147,7 @@ function OnlineShopDashboard() {
     <div className="container px-4 py-4">
       <PageHeader
         breadcrumb="Online-shop"
-        title={lang === "bn" ? "অনলাইন শপ" : "Online Shop"}
+        title={t("p6_Online_Shop")}
       />
 
       <div className="mt-4 overflow-hidden rounded-xl">
@@ -156,34 +156,34 @@ function OnlineShopDashboard() {
 
       {/* Stats */}
       <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4">
-        <StatCard to="/app/online-shop/orders" icon={ClipboardList} label={lang === "bn" ? "অ্যাক্টিভ অর্ডার" : "Active Order"} value={bnNumIf(lang, stats?.activeOrders ?? 0)} accent="amber" />
-        <StatCard to="/app/online-shop/products" img={productListIcon} label={lang === "bn" ? "অনলাইন প্রোডাক্ট" : "Online Product"} value={bnNumIf(lang, stats?.products ?? 0)} accent="emerald" />
-        <StatCard img={businessReportIcon} label={lang === "bn" ? "মোট আয়" : "Total Earning"} value={`৳ ${bnNumIf(lang, stats?.earning ?? 0)}`} accent="blue" />
-        <StatCard icon={Eye} label={lang === "bn" ? "ওয়েবসাইট ভিজিট" : "Website Visit"} value={bnNumIf(lang, stats?.visits ?? 0)} accent="violet" />
+        <StatCard to="/app/online-shop/orders" icon={ClipboardList} label={t("p6_Active_Order")} value={bnNumIf(lang, stats?.activeOrders ?? 0)} accent="amber" />
+        <StatCard to="/app/online-shop/products" img={productListIcon} label={t("p6_Online_Product")} value={bnNumIf(lang, stats?.products ?? 0)} accent="emerald" />
+        <StatCard img={businessReportIcon} label={t("p6_Total_Earning")} value={`৳ ${bnNumIf(lang, stats?.earning ?? 0)}`} accent="blue" />
+        <StatCard icon={Eye} label={t("p6_Website_Visit")} value={bnNumIf(lang, stats?.visits ?? 0)} accent="violet" />
       </div>
 
       {/* Quick actions */}
       <div className="mt-3 grid grid-cols-3 gap-3">
-        <ActionCard img={onlineShopIcon} label={lang === "bn" ? "ওয়েবসাইট" : "Website"} onClick={openWebsite} />
-        <ActionCard icon={Copy} label={lang === "bn" ? "লিংক কপি" : "Copy Link"} onClick={copyLink} />
-        <ActionCard icon={QrCode} label={lang === "bn" ? "QR কোড" : "QR Code"} onClick={openQr} />
+        <ActionCard img={onlineShopIcon} label={t("p6_Website")} onClick={openWebsite} />
+        <ActionCard icon={Copy} label={t("p6_Copy_Link")} onClick={copyLink} />
+        <ActionCard icon={QrCode} label={t("p6_QR_Code")} onClick={openQr} />
       </div>
 
       {/* Username banner */}
       {shop && (
         <div className="mt-3 flex flex-col items-start justify-between gap-2 rounded-xl border bg-muted/40 px-4 py-3 sm:flex-row sm:items-center">
           <div className="min-w-0 text-sm">
-            <span className="text-muted-foreground">{lang === "bn" ? "আপনার দোকানের লিংক:" : "Your store URL:"}</span>{" "}
+            <span className="text-muted-foreground">{t("p6_Your_store_URL")}</span>{" "}
             {username ? (
               <a href={publicUrl} target="_blank" rel="noopener" className="break-all font-semibold text-primary hover:underline">
                 {publicUrl} <ExternalLink className="inline h-3 w-3" />
               </a>
             ) : (
-              <span className="font-semibold text-destructive">{lang === "bn" ? "এখনো সেট করা হয়নি" : "Not set yet"}</span>
+              <span className="font-semibold text-destructive">{t("p6_Not_set_yet")}</span>
             )}
           </div>
           <Button asChild size="sm" variant="outline">
-            <Link to="/app/online-shop/settings">{lang === "bn" ? "এডিট" : "Edit"}</Link>
+            <Link to="/app/online-shop/settings">{t("p6_Edit")}</Link>
           </Button>
         </div>
       )}
