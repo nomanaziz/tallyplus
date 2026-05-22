@@ -233,20 +233,20 @@ function ContactsPage() {
         {/* LEFT */}
         <div className="flex flex-col rounded-xl border bg-card">
           <div className="flex border-b">
-            {tabs.map((t) => {
-              const active = tab === t.key;
-              const n = tabBadge(t.key);
+            {tabs.map((tb) => {
+              const active = tab === tb.key;
+              const n = tabBadge(tb.key);
               return (
                 <button
-                  key={t.key}
-                  onClick={() => setTab(t.key)}
+                  key={tb.key}
+                  onClick={() => setTab(tb.key)}
                   className={
                     "relative flex flex-1 items-center justify-center gap-1.5 px-2 py-3 text-xs font-semibold transition " +
                     (active ? "text-foreground" : "text-muted-foreground hover:text-foreground")
                   }
                 >
-                  {t.icon}
-                  <span>{lang === "bn" ? t.label_bn : t.label_en}</span>
+                  {tb.icon}
+                  <span>{t(tb.labelKey as never)}</span>
                   {n != null && n > 0 && (
                     <span className="text-[10px] text-muted-foreground">({lang === "bn" ? bnNum(n) : n})</span>
                   )}
@@ -405,13 +405,13 @@ function ContactsPage() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {transactions.map((t) => {
-                          const isDue = Number(t.due) > 0;
+                        {transactions.map((tx) => {
+                          const isDue = Number(tx.due) > 0;
                           return (
-                            <TableRow key={t.id}>
-                              <TableCell className="font-mono text-xs">{t.invoice_no ?? t.id.slice(0, 8)}</TableCell>
+                            <TableRow key={tx.id}>
+                              <TableCell className="font-mono text-xs">{tx.invoice_no ?? tx.id.slice(0, 8)}</TableCell>
                               <TableCell className="text-xs">
-                                {new Date(t.created_at).toLocaleString(t("p2b_localeFull"), {
+                                {new Date(tx.created_at).toLocaleString(t("p2b_localeFull"), {
                                   dateStyle: "medium",
                                   timeStyle: "short",
                                 })}
@@ -426,7 +426,7 @@ function ContactsPage() {
                                 </span>
                               </TableCell>
                               <TableCell className={"text-right font-semibold " + (isDue ? "text-rose-600" : "")}>
-                                {fmtMoney(Number(t.total), lang)}
+                                {fmtMoney(Number(tx.total), lang)}
                               </TableCell>
                             </TableRow>
                           );
