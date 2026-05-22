@@ -212,6 +212,11 @@ const T: Record<string, Tr> = {
   p2a_particular: { bn: "খাত", en: "Particular", hi: "विवरण", ta: "விவரம்", te: "వివరం", ur: "تفصیل", ar: "البيان" },
   p2a_amountMoney: { bn: "টাকা", en: "Amount", hi: "रुपये", ta: "பணம்", te: "డబ్బు", ur: "رقم", ar: "المبلغ" },
   p2a_total: { bn: "মোট", en: "Total", hi: "कुल", ta: "மொத்தம்", te: "మొత్తం", ur: "کل", ar: "المجموع" },
+  p2a_src_sale:     { bn: "বিক্রি",      en: "Sale",     hi: "बिक्री",    ta: "விற்பனை",     te: "అమ్మకం",    ur: "فروخت",     ar: "بيع" },
+  p2a_src_purchase: { bn: "ক্রয়",         en: "Purchase", hi: "खरीद",      ta: "கொள்முதல்",    te: "కొనుగోలు",   ur: "خریداری",   ar: "شراء" },
+  p2a_src_expense:  { bn: "খরচ",          en: "Expense",  hi: "व्यय",      ta: "செலவு",       te: "ఖర్చు",      ur: "اخراجات",   ar: "مصروف" },
+  p2a_src_payment:  { bn: "পেমেন্ট",       en: "Payment",  hi: "भुगतान",    ta: "கட்டணம்",     te: "చెల్లింపు",   ur: "ادائیگی",   ar: "دفعة" },
+  p2a_src_income:   { bn: "অন্যান্য আয়",  en: "Income",   hi: "आय",        ta: "வருமானம்",   te: "ఆదాయం",     ur: "آمدن",      ar: "دخل" },
 };
 
 // Legacy keys still referenced by older pages (kept for backward compatibility).
