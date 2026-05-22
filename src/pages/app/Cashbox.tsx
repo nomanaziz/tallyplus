@@ -36,7 +36,7 @@ type Movement = {
 
 
 function CashboxPage() {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const { current } = useShop();
   const qc = useQueryClient();
   const { data: rawData = [], refetch } = useQuery(cashMovementsQuery(current?.id ?? null));
@@ -246,7 +246,7 @@ function NoteLedgerView({
   outC: Record<string, number>;
   bySource: Record<string, { in: number; out: number }>;
 }) {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   let totalBal = 0;
   return (
     <div className="grid gap-4 lg:grid-cols-3">
@@ -330,7 +330,7 @@ function CashEntryDialog({
   onSaved: () => void;
   available?: DenomCounts;
 }) {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const { current } = useShop();
   const { user } = useAuth();
   const [amount, setAmount] = useState("");

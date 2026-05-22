@@ -10,7 +10,7 @@ import { printReport, type PrintRow } from "@/lib/print-report";
 export type MonthCursor = { year: number; month0: number };
 
 export function MonthSwitcher({ value, onChange }: { value: MonthCursor; onChange: (v: MonthCursor) => void }) {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const now = new Date();
   const isCurrent = value.year === now.getFullYear() && value.month0 === now.getMonth();
 
@@ -65,7 +65,7 @@ export function CashBookView({
   ownerName: string;
   subtitle?: string;
 }) {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
 
   const onPrint = () => {
     if (!data) return;
@@ -143,7 +143,7 @@ export function CashBookView({
 }
 
 function StatCard({ label, value, icon, tone, isCount }: { label: string; value: number; icon: React.ReactNode; tone: "success" | "danger" | "primary" | "muted"; isCount?: boolean }) {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const toneCls =
     tone === "success"
       ? "text-emerald-600 dark:text-emerald-400"
@@ -180,7 +180,7 @@ function LedgerColumn({
   loading: boolean;
   empty: string;
 }) {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const headBg = tone === "success" ? "bg-emerald-600 text-white" : "bg-rose-600 text-white";
   const amountCls = tone === "success" ? "text-emerald-700 dark:text-emerald-400" : "text-rose-700 dark:text-rose-400";
   return (
