@@ -9,7 +9,7 @@ import { printReport, type PrintRow } from "@/lib/print-report";
 import { RequirePerm } from "@/components/app/RequirePerm";
 
 function Page() {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const { current } = useShop();
   const [range, setRange] = useState<DateRange>({ start: monthStartIso(), end: todayIso() });
   const iso = rangeToIso(range.start, range.end);
@@ -24,11 +24,11 @@ function Page() {
 
   const onPrint = () => {
     const printRows: PrintRow[] = [
-      { kind: "section", label: lang === "bn" ? "সারাংশ" : "Summary" },
-      { kind: "row", label: lang === "bn" ? "মোট এন্ট্রি" : "Entries", value: String(totals.count) },
-      { kind: "row", label: lang === "bn" ? "মোট আয়" : "Total income", value: fmtMoney(totals.amount, lang), tone: "success" },
+      { kind: "section", label: t("p5_Summary") },
+      { kind: "row", label: t("p5_Entries"), value: String(totals.count) },
+      { kind: "row", label: t("p5_Total_income"), value: fmtMoney(totals.amount, lang), tone: "success" },
       { kind: "divider" },
-      { kind: "section", label: lang === "bn" ? "আয়ের তালিকা" : "Income entries" },
+      { kind: "section", label: t("p5_Income_entries") },
       ...rows.map((r) => ({
         kind: "row" as const,
         label: r.source ?? "—",
@@ -60,22 +60,22 @@ function Page() {
       onPrint={onPrint}
     >
       <div className="grid grid-cols-2 gap-2 md:grid-cols-2">
-        <StatTile label={lang === "bn" ? "মোট এন্ট্রি" : "Entries"} value={String(totals.count)} />
-        <StatTile label={lang === "bn" ? "মোট আয়" : "Total income"} value={fmtMoney(totals.amount, lang)} tone="success" />
+        <StatTile label={t("p5_Entries")} value={String(totals.count)} />
+        <StatTile label={t("p5_Total_income")} value={fmtMoney(totals.amount, lang)} tone="success" />
       </div>
 
       {rows.length === 0 ? (
-        <EmptyState text={lang === "bn" ? "এই সময়ে কোনো আয় নেই" : "No income entries"} />
+        <EmptyState text={t("p5_No_income_entries")} />
       ) : (
         <div className="overflow-hidden rounded-xl border bg-background">
           <table className="w-full text-sm">
             <thead className="bg-muted/50 text-left text-xs">
               <tr>
-                <th className="px-3 py-2">{lang === "bn" ? "তারিখ" : "Date"}</th>
-                <th className="px-3 py-2">{lang === "bn" ? "উৎস" : "Source"}</th>
-                <th className="px-3 py-2">{lang === "bn" ? "মাধ্যম" : "Via"}</th>
-                <th className="px-3 py-2">{lang === "bn" ? "নোট" : "Note"}</th>
-                <th className="px-3 py-2 text-right">{lang === "bn" ? "পরিমাণ" : "Amount"}</th>
+                <th className="px-3 py-2">{t("p5_Date")}</th>
+                <th className="px-3 py-2">{t("p5_Source")}</th>
+                <th className="px-3 py-2">{t("p5_Via")}</th>
+                <th className="px-3 py-2">{t("p5_Note")}</th>
+                <th className="px-3 py-2 text-right">{t("p5_Amount")}</th>
               </tr>
             </thead>
             <tbody>

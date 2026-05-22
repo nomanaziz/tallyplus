@@ -16,7 +16,7 @@ type PartyTab = "customer" | "supplier" | "employee";
 type Contact = { id: string; name: string; phone: string | null; due_balance: number; contact_kind?: string | null };
 
 function DueLedgerPage() {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const { current } = useShop();
   const nav = useNavigate();
   const [tab, setTab] = useState<PartyTab>("customer");
@@ -86,22 +86,22 @@ function DueLedgerPage() {
       <div className="flex flex-wrap items-center justify-between gap-3 border-b bg-background px-4 py-3">
         <div className="flex items-center gap-2">
           <AppIcon name="due" className="h-6 w-6" />
-          <h1 className="text-lg font-bold">{lang === "bn" ? "বাকির বই" : "Due Book"}</h1>
+          <h1 className="text-lg font-bold">{t("p5_Due_Book")}</h1>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <span className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-300">
-            {lang === "bn" ? "মোট পাবো:" : "Receivable:"} {fmtMoney(totals.receivable, lang)}
+            {t("p5_Receivable")} {fmtMoney(totals.receivable, lang)}
           </span>
           <span className="rounded-md border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-700 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-300">
-            {lang === "bn" ? "মোট দিবো:" : "Payable:"} {fmtMoney(totals.payable, lang)}
+            {t("p5_Payable")} {fmtMoney(totals.payable, lang)}
           </span>
           <Button variant="outline" className="h-10 gap-2" onClick={() => nav({ to: "/app/due-history" })}>
             <History className="h-4 w-4" />
-            {lang === "bn" ? "বাকির ইতিহাস" : "History"}
+            {t("p5_History")}
           </Button>
           <Button className="h-10 gap-2" onClick={() => setPickerOpen(true)}>
             <Plus className="h-4 w-4" />
-            {lang === "bn" ? "নতুন বাকি" : "New Due"}
+            {t("p5_New_Due")}
           </Button>
         </div>
       </div>
@@ -113,15 +113,15 @@ function DueLedgerPage() {
           <div className="border-b p-3 space-y-3">
             <Tabs value={tab} onValueChange={(v) => { setTab(v as PartyTab); setSelected(null); }}>
               <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="customer">{lang === "bn" ? "কাস্টমার" : "Customer"}</TabsTrigger>
-                <TabsTrigger value="supplier">{lang === "bn" ? "সাপ্লায়ার" : "Supplier"}</TabsTrigger>
-                <TabsTrigger value="employee">{lang === "bn" ? "কর্মচারী" : "Employee"}</TabsTrigger>
+                <TabsTrigger value="customer">{t("p5_Customer")}</TabsTrigger>
+                <TabsTrigger value="supplier">{t("p5_Supplier")}</TabsTrigger>
+                <TabsTrigger value="employee">{t("p5_Employee")}</TabsTrigger>
               </TabsList>
             </Tabs>
             <div className="flex items-center gap-2">
               <div className="relative flex-1">
                 <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={lang === "bn" ? "কন্টাক্ট খোঁজ করুন" : "Search contact"} className="pl-8" />
+                <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t("p5_Search_contact")} className="pl-8" />
               </div>
               <Button variant="outline" size="icon" onClick={() => setRefreshTick((t) => t + 1)}><RefreshCw className="h-4 w-4" /></Button>
               <Button variant="outline" size="icon"><FileText className="h-4 w-4" /></Button>
@@ -130,7 +130,7 @@ function DueLedgerPage() {
           <div className="flex-1 overflow-y-auto">
             {filtered.length === 0 ? (
               <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-                {lang === "bn" ? "আপনার কোন লেনদেন নেই" : "No transactions found"}
+                {t("p5_No_transactions_found")}
               </div>
             ) : (
               <ul className="divide-y">
@@ -162,17 +162,17 @@ function DueLedgerPage() {
                         </div>
                         {showRed && (
                           <span className="rounded bg-rose-100 px-1.5 py-0.5 text-[10px] font-semibold text-rose-700 dark:bg-rose-950/50 dark:text-rose-300">
-                            {tab === "supplier" ? (lang === "bn" ? "দিতে হবে" : "OWED") : (lang === "bn" ? "বাকি" : "DUE")}
+                            {tab === "supplier" ? (t("p5_OWED")) : (t("p5_DUE"))}
                           </span>
                         )}
                         {showAdvance && (
                           <span className="rounded bg-blue-100 px-1.5 py-0.5 text-[10px] font-semibold text-blue-700 dark:bg-blue-950/50 dark:text-blue-300">
-                            {lang === "bn" ? "অগ্রিম" : "ADVANCE"}
+                            {t("p5_ADVANCE")}
                           </span>
                         )}
                         {!showRed && !showAdvance && (
                           <span className="rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">
-                            {lang === "bn" ? "পরিশোধিত" : "PAID"}
+                            {t("p5_PAID")}
                           </span>
                         )}
                       </div>

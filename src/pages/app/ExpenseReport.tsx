@@ -9,7 +9,7 @@ import { printReport, type PrintRow } from "@/lib/print-report";
 import { RequirePerm } from "@/components/app/RequirePerm";
 
 function Page() {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const { current } = useShop();
   const [range, setRange] = useState<DateRange>({ start: monthStartIso(), end: todayIso() });
   const iso = rangeToIso(range.start, range.end);
@@ -24,12 +24,12 @@ function Page() {
 
   const onPrint = () => {
     const printRows: PrintRow[] = [
-      { kind: "section", label: lang === "bn" ? "সারাংশ" : "Summary" },
-      { kind: "row", label: lang === "bn" ? "মোট ক্যাটাগরি" : "Categories", value: String(totals.categories) },
-      { kind: "row", label: lang === "bn" ? "মোট এন্ট্রি" : "Entries", value: String(totals.count) },
-      { kind: "row", label: lang === "bn" ? "মোট খরচ" : "Total expense", value: fmtMoney(totals.amount, lang), tone: "danger" },
+      { kind: "section", label: t("p5_Summary") },
+      { kind: "row", label: t("p5_Categories"), value: String(totals.categories) },
+      { kind: "row", label: t("p5_Entries"), value: String(totals.count) },
+      { kind: "row", label: t("p5_Total_expense"), value: fmtMoney(totals.amount, lang), tone: "danger" },
       { kind: "divider" },
-      { kind: "section", label: lang === "bn" ? "ক্যাটাগরিভিত্তিক" : "By category" },
+      { kind: "section", label: t("p5_By_category") },
       ...rows.map((r) => ({ kind: "row" as const, label: r.category, sub: `${r.count} entries`, value: fmtMoney(r.amount, lang), tone: "danger" as const })),
     ];
     printReport({
@@ -55,21 +55,21 @@ function Page() {
       onPrint={onPrint}
     >
       <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
-        <StatTile label={lang === "bn" ? "ক্যাটাগরি" : "Categories"} value={String(totals.categories)} />
-        <StatTile label={lang === "bn" ? "মোট এন্ট্রি" : "Entries"} value={String(totals.count)} />
-        <StatTile label={lang === "bn" ? "মোট খরচ" : "Total"} value={fmtMoney(totals.amount, lang)} tone="danger" />
+        <StatTile label={t("p5_Categories_2")} value={String(totals.categories)} />
+        <StatTile label={t("p5_Entries")} value={String(totals.count)} />
+        <StatTile label={t("p5_Total_4")} value={fmtMoney(totals.amount, lang)} tone="danger" />
       </div>
 
       {rows.length === 0 ? (
-        <EmptyState text={lang === "bn" ? "এই সময়ে কোনো খরচ নেই" : "No expenses"} />
+        <EmptyState text={t("p5_No_expenses")} />
       ) : (
         <div className="overflow-hidden rounded-xl border bg-background">
           <table className="w-full text-sm">
             <thead className="bg-muted/50 text-left text-xs">
               <tr>
-                <th className="px-3 py-2">{lang === "bn" ? "ক্যাটাগরি" : "Category"}</th>
-                <th className="px-3 py-2 text-right">{lang === "bn" ? "এন্ট্রি" : "Entries"}</th>
-                <th className="px-3 py-2 text-right">{lang === "bn" ? "মোট" : "Amount"}</th>
+                <th className="px-3 py-2">{t("p5_Category")}</th>
+                <th className="px-3 py-2 text-right">{t("p5_Entries_2")}</th>
+                <th className="px-3 py-2 text-right">{t("p5_Amount_2")}</th>
                 <th className="px-3 py-2 text-right">%</th>
               </tr>
             </thead>

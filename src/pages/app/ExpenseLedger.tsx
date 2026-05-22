@@ -44,7 +44,7 @@ const PRESET_CATS: { key: CatKey; bn: string; en: string; icon: React.ReactNode;
 ];
 
 function ExpenseLedgerPage() {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const { current } = useShop();
   const nav = useNavigate();
   const qc = useQueryClient();
@@ -65,10 +65,10 @@ function ExpenseLedgerPage() {
   const refresh = async () => { await qc.invalidateQueries({ queryKey: ["expenses"] }); await refetch(); };
 
   const onDelete = async (e: Expense) => {
-    if (!confirm(lang === "bn" ? "ডিলিট করবেন?" : "Delete?")) return;
+    if (!confirm(t("p5_Delete_2"))) return;
     const { error } = await supabase.from("expenses").update({ deleted_at: new Date().toISOString() }).eq("id", e.id);
     if (error) { toast.error(error.message); return; }
-    toast.success(lang === "bn" ? "ডিলিট হয়েছে" : "Deleted");
+    toast.success(t("p5_Deleted_2"));
     void refresh();
   };
 
@@ -81,14 +81,14 @@ function ExpenseLedgerPage() {
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <AppIcon name="expense" className="h-6 w-6" />
-          <h1 className="text-xl font-extrabold md:text-2xl">{lang === "bn" ? "খরচের বই" : "Expense Book"}</h1>
+          <h1 className="text-xl font-extrabold md:text-2xl">{t("p5_Expense_Book")}</h1>
         </div>
       </div>
 
       {/* Preset category tiles */}
       <div className="mt-4">
         <div className="mb-2 text-sm font-semibold text-muted-foreground">
-          {lang === "bn" ? "নতুন খরচ যোগ করুন" : "Add new expense"}
+          {t("p5_Add_new_expense")}
         </div>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
           {PRESET_CATS.map((c) => (
@@ -115,28 +115,28 @@ function ExpenseLedgerPage() {
 
       <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
         <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 sm:col-span-3">
-          <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{lang === "bn" ? "মোট খরচ" : "Total expenses"}</div>
+          <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t("p5_Total_expenses")}</div>
           <div className="mt-1 text-3xl font-extrabold text-rose-700">{fmtMoney(total, lang)}</div>
         </div>
       </div>
 
       <div className="mt-4">
-        <DataToolbar search={search} onSearch={setSearch} onRefresh={refresh} placeholder={lang === "bn" ? "ক্যাটাগরি/নোট" : "Category / note"} />
+        <DataToolbar search={search} onSearch={setSearch} onRefresh={refresh} placeholder={t("p5_Category_note")} />
       </div>
 
       <div className="mt-4 rounded-xl border bg-card">
         {filtered.length === 0 ? (
-          <EmptyState icon={<Coins className="h-6 w-6" />} title={lang === "bn" ? "কোনো খরচ নেই" : "No expenses"} />
+          <EmptyState icon={<Coins className="h-6 w-6" />} title={t("p5_No_expenses_2")} />
         ) : (
           <>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>{lang === "bn" ? "তারিখ" : "Date"}</TableHead>
-                <TableHead>{lang === "bn" ? "ক্যাটাগরি" : "Category"}</TableHead>
-                <TableHead>{lang === "bn" ? "নোট" : "Note"}</TableHead>
-                <TableHead className="text-right">{lang === "bn" ? "পরিমাণ" : "Amount"}</TableHead>
-                <TableHead>{lang === "bn" ? "ধরন" : "Method"}</TableHead>
+                <TableHead>{t("p5_Date")}</TableHead>
+                <TableHead>{t("p5_Category")}</TableHead>
+                <TableHead>{t("p5_Note")}</TableHead>
+                <TableHead className="text-right">{t("p5_Amount")}</TableHead>
+                <TableHead>{t("p5_Method")}</TableHead>
                 <TableHead className="text-right">Action</TableHead>
               </TableRow>
             </TableHeader>
@@ -155,10 +155,10 @@ function ExpenseLedgerPage() {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem onClick={() => { setEditing(e); setOpen(true); }}>
-                          <Pencil className="mr-2 h-4 w-4" /> {lang === "bn" ? "এডিট" : "Edit"}
+                          <Pencil className="mr-2 h-4 w-4" /> {t("p5_Edit")}
                         </DropdownMenuItem>
                         <DropdownMenuItem className="text-destructive" onClick={() => onDelete(e)}>
-                          <Trash2 className="mr-2 h-4 w-4" /> {lang === "bn" ? "ডিলিট" : "Delete"}
+                          <Trash2 className="mr-2 h-4 w-4" /> {t("p5_Delete_3")}
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -193,7 +193,7 @@ function ExpenseLedgerPage() {
 }
 
 function ExpenseDialog({ open, onOpenChange, editing, defaultCategory, onSaved }: { open: boolean; onOpenChange: (v: boolean) => void; editing: Expense | null; defaultCategory?: string | null; onSaved: () => void }) {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const { current } = useShop();
   const { user } = useAuth();
   const [category, setCategory] = useState("");
@@ -214,7 +214,7 @@ function ExpenseDialog({ open, onOpenChange, editing, defaultCategory, onSaved }
   const save = async () => {
     if (!current || !user) return;
     const amt = Number(amount);
-    if (!amt || amt <= 0) { toast.error(lang === "bn" ? "পরিমাণ দিন" : "Enter amount"); return; }
+    if (!amt || amt <= 0) { toast.error(t("p5_Enter_amount")); return; }
     setBusy(true);
     const payload = { category: category.trim() || null, amount: amt, note: note.trim() || null, paid_via: paidVia, shop_id: current.id, created_by: user.id };
     const { error } = editing
@@ -222,7 +222,7 @@ function ExpenseDialog({ open, onOpenChange, editing, defaultCategory, onSaved }
       : await supabase.from("expenses").insert(payload);
     setBusy(false);
     if (error) { toast.error(error.message); return; }
-    toast.success(lang === "bn" ? "সেভ হয়েছে" : "Saved");
+    toast.success(t("p5_Saved"));
     onOpenChange(false);
     onSaved();
   };
@@ -233,23 +233,23 @@ function ExpenseDialog({ open, onOpenChange, editing, defaultCategory, onSaved }
         <DialogHeader>
           <DialogTitle>
             {editing
-              ? (lang === "bn" ? "খরচ এডিট" : "Edit expense")
+              ? (t("p5_Edit_expense"))
               : category
                 ? (lang === "bn" ? `নতুন খরচ — ${category}` : `New expense — ${category}`)
-                : (lang === "bn" ? "নতুন খরচ" : "New expense")}
+                : (t("p5_New_expense"))}
           </DialogTitle>
         </DialogHeader>
         <div className="grid gap-3">
           <div className="grid gap-1.5">
-            <Label>{lang === "bn" ? "ক্যাটাগরি" : "Category"}</Label>
-            <Input value={category} onChange={(e) => setCategory(e.target.value)} placeholder={lang === "bn" ? "যেমন: ভাড়া, পরিবহন" : "Rent, transport..."} />
+            <Label>{t("p5_Category")}</Label>
+            <Input value={category} onChange={(e) => setCategory(e.target.value)} placeholder={t("p5_Rent_transport")} />
           </div>
           <div className="grid gap-1.5">
-            <Label>{lang === "bn" ? "পরিমাণ" : "Amount"}</Label>
+            <Label>{t("p5_Amount")}</Label>
             <Input type="number" autoFocus value={amount} onChange={(e) => setAmount(e.target.value)} />
           </div>
           <div className="grid gap-1.5">
-            <Label>{lang === "bn" ? "পেমেন্ট মাধ্যম" : "Paid via"}</Label>
+            <Label>{t("p5_Paid_via")}</Label>
             <Select value={paidVia} onValueChange={(v) => setPaidVia(v as typeof paidVia)}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
@@ -262,13 +262,13 @@ function ExpenseDialog({ open, onOpenChange, editing, defaultCategory, onSaved }
             </Select>
           </div>
           <div className="grid gap-1.5">
-            <Label>{lang === "bn" ? "নোট" : "Note"}</Label>
+            <Label>{t("p5_Note")}</Label>
             <Textarea value={note} onChange={(e) => setNote(e.target.value)} rows={3} />
           </div>
         </div>
         <DialogFooter>
-          <Button variant="ghost" onClick={() => onOpenChange(false)}>{lang === "bn" ? "বাতিল" : "Cancel"}</Button>
-          <Button onClick={save} disabled={busy}>{busy ? "..." : lang === "bn" ? "সেভ" : "Save"}</Button>
+          <Button variant="ghost" onClick={() => onOpenChange(false)}>{t("p5_Cancel")}</Button>
+          <Button onClick={save} disabled={busy}>{busy ? "..." : t("p5_Save")}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

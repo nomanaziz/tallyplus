@@ -36,7 +36,7 @@ type Purchase = {
 
 
 function PurchaseLedgerPage() {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const { current } = useShop();
   const nav = useNavigate();
   const qc = useQueryClient();
@@ -139,13 +139,13 @@ function PurchaseLedgerPage() {
   };
 
   const softDelete = async (p: Purchase) => {
-    if (!confirm(lang === "bn" ? "এই ক্রয়টি মুছে ফেলবেন?" : "Delete this purchase?")) return;
+    if (!confirm(t("p5_Delete_this_purchase"))) return;
     const { error } = await supabase
       .from("purchases")
       .update({ deleted_at: new Date().toISOString() })
       .eq("id", p.id);
     if (error) { toast.error(error.message); return; }
-    toast.success(lang === "bn" ? "মুছে ফেলা হয়েছে" : "Deleted");
+    toast.success(t("p5_Deleted"));
     void refresh();
   };
 
@@ -154,18 +154,18 @@ function PurchaseLedgerPage() {
       shopName: current?.name ?? "",
       shopAddress: (current as { address?: string | null } | null)?.address ?? null,
       shopPhone: (current as { phone?: string | null } | null)?.phone ?? null,
-      title: lang === "bn" ? "ক্রয়ের ইতিহাস" : "Purchase History",
+      title: t("p5_Purchase_History"),
       startDate: from,
       endDate: to,
       lang,
       columns: [
         { key: "idx", label: "#" },
-        { key: "name", label: lang === "bn" ? "সাপ্লায়ার" : "Supplier" },
-        { key: "contact", label: lang === "bn" ? "ফোন" : "Contact" },
-        { key: "items", label: lang === "bn" ? "আইটেম" : "Items", align: "right" },
-        { key: "amount", label: lang === "bn" ? "পরিমাণ" : "Amount", align: "right" },
-        { key: "date", label: lang === "bn" ? "তারিখ" : "Date" },
-        { key: "status", label: lang === "bn" ? "পেমেন্ট" : "Payment Status" },
+        { key: "name", label: t("p5_Supplier") },
+        { key: "contact", label: t("p5_Contact") },
+        { key: "items", label: t("p5_Items"), align: "right" },
+        { key: "amount", label: t("p5_Amount"), align: "right" },
+        { key: "date", label: t("p5_Date") },
+        { key: "status", label: t("p5_Payment_Status") },
       ],
       rows: filtered.map((p, i) => {
         const sup = supMap[p.supplier_id ?? ""];
@@ -177,7 +177,7 @@ function PurchaseLedgerPage() {
           items: itemCounts[p.id] ?? 0,
           amount: fmtMoney(Number(p.total), lang),
           date: fmtDate(p.created_at),
-          status: due > 0 ? (lang === "bn" ? "বাকি" : "Due") : (lang === "bn" ? "পরিশোধিত" : "Paid"),
+          status: due > 0 ? (t("p5_Due_2")) : (t("p5_Paid_4")),
         };
       }),
     });
@@ -197,19 +197,19 @@ function PurchaseLedgerPage() {
           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => nav({ to: "/app/dashboard" })}>
             <ArrowLeft className="h-4 w-4" />
           </Button>
-          <h1 className="text-xl font-extrabold md:text-2xl">{lang === "bn" ? "ক্রয়ের বই" : "Purchase Book"}</h1>
+          <h1 className="text-xl font-extrabold md:text-2xl">{t("p5_Purchase_Book")}</h1>
         </div>
         <div className="flex items-center gap-2">
           <Button onClick={printAll} className="h-10 gap-2 bg-primary text-primary-foreground hover:bg-primary/90">
             <Download className="h-4 w-4" />
-            {lang === "bn" ? "ডাউনলোড/প্রিন্ট" : "Download/Print"}
+            {t("p5_Download_Print")}
           </Button>
           <div className="rounded-md border bg-card px-3 py-2 text-sm font-semibold">
-            {lang === "bn" ? "মোট ক্রয়: " : "Total: "}{fmtMoney(totalAmount, lang)}
+            {t("p5_Total_7")}{fmtMoney(totalAmount, lang)}
           </div>
           <Button variant="outline" className="h-10 gap-2" onClick={() => nav({ to: "/app/purchase" })}>
             <Plus className="h-4 w-4" />
-            {lang === "bn" ? "নতুন ক্রয়" : "New"}
+            {t("p5_New_2")}
           </Button>
         </div>
       </div>
@@ -221,7 +221,7 @@ function PurchaseLedgerPage() {
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder={lang === "bn" ? "নাম অথবা মোবাইল দিয়ে খোঁজ করুন" : "Search by name or mobile"}
+            placeholder={t("p5_Search_by_name_or_mobile")}
             className="pl-9"
           />
         </div>
@@ -234,33 +234,33 @@ function PurchaseLedgerPage() {
         <Select value={paymentFilter} onValueChange={(v) => setPaymentFilter(v as "all" | "cash" | "due")}>
           <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">{lang === "bn" ? "সব" : "All"}</SelectItem>
-            <SelectItem value="cash">{lang === "bn" ? "নগদ" : "Cash"}</SelectItem>
-            <SelectItem value="due">{lang === "bn" ? "বাকি" : "Due"}</SelectItem>
+            <SelectItem value="all">{t("p5_All")}</SelectItem>
+            <SelectItem value="cash">{t("p5_Cash")}</SelectItem>
+            <SelectItem value="due">{t("p5_Due_2")}</SelectItem>
           </SelectContent>
         </Select>
         <Button variant="outline" className="gap-2" onClick={() => void refresh()}>
           <RefreshCw className="h-4 w-4" />
-          {lang === "bn" ? "রিফ্রেশ" : "Refresh"}
+          {t("p5_Refresh")}
         </Button>
       </div>
 
       {/* Table */}
       <div className="mt-4 rounded-xl border bg-card" id="invoice-print-area">
         {filtered.length === 0 ? (
-          <EmptyState icon={<FileText className="h-6 w-6" />} title={lang === "bn" ? "কোনো ক্রয় নেই" : "No purchases"} />
+          <EmptyState icon={<FileText className="h-6 w-6" />} title={t("p5_No_purchases")} />
         ) : (
           <>
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>{lang === "bn" ? "যোগাযোগ" : "Contact"}</TableHead>
-                  <TableHead>{lang === "bn" ? "ইনভয়েস নং" : "Invoice no"}</TableHead>
-                  <TableHead>{lang === "bn" ? "ব্যাচ নং" : "Batch no"}</TableHead>
-                  <TableHead>{lang === "bn" ? "আইটেম" : "Items"}</TableHead>
-                  <TableHead>{lang === "bn" ? "টাকার পরিমান" : "Amount"}</TableHead>
-                  <TableHead>{lang === "bn" ? "তারিখ" : "Date"}</TableHead>
-                  <TableHead>{lang === "bn" ? "পেমেন্ট অবস্থা" : "Payment"}</TableHead>
+                  <TableHead>{t("p5_Contact_2")}</TableHead>
+                  <TableHead>{t("p5_Invoice_no")}</TableHead>
+                  <TableHead>{t("p5_Batch_no")}</TableHead>
+                  <TableHead>{t("p5_Items")}</TableHead>
+                  <TableHead>{t("p5_Amount_3")}</TableHead>
+                  <TableHead>{t("p5_Date")}</TableHead>
+                  <TableHead>{t("p5_Payment")}</TableHead>
                   <TableHead className="text-right print:hidden">ACTION</TableHead>
                 </TableRow>
               </TableHeader>
@@ -285,7 +285,7 @@ function PurchaseLedgerPage() {
                       <TableCell className="text-xs">{fmtDate(p.created_at)}</TableCell>
                       <TableCell>
                         <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium ${isPaid ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
-                          {isPaid ? (lang === "bn" ? "নগদ টাকা" : "Cash") : (lang === "bn" ? "বাকি" : "Due")}
+                          {isPaid ? (t("p5_Cash_2")) : (t("p5_Due_2"))}
                         </span>
                       </TableCell>
                       <TableCell className="text-right print:hidden" onClick={(e) => e.stopPropagation()}>
@@ -298,22 +298,22 @@ function PurchaseLedgerPage() {
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem onClick={() => void openInvoice(p)}>
                               <Eye className="mr-2 h-4 w-4" />
-                              {lang === "bn" ? "ইনভয়েস দেখুন/প্রিন্ট" : "View / Print invoice"}
+                              {t("p5_View_Print_invoice")}
                             </DropdownMenuItem>
                             {canDelete && (
                               <DropdownMenuItem onClick={() => setEditTarget({ kind: "purchase", id: p.id, shopId: current?.id ?? "" })}>
                                 <Pencil className="mr-2 h-4 w-4" />
-                                {lang === "bn" ? "ইনভয়েস এডিট" : "Edit invoice"}
+                                {t("p5_Edit_invoice")}
                               </DropdownMenuItem>
                             )}
                             <DropdownMenuItem onClick={() => void openInvoice(p)}>
                               <Printer className="mr-2 h-4 w-4" />
-                              {lang === "bn" ? "প্রিন্ট" : "Print"}
+                              {t("p5_Print")}
                             </DropdownMenuItem>
                             {canDelete && (
                               <DropdownMenuItem className="text-rose-600" onClick={() => void softDelete(p)}>
                                 <Trash2 className="mr-2 h-4 w-4" />
-                                {lang === "bn" ? "মুছুন" : "Delete"}
+                                {t("p5_Delete")}
                               </DropdownMenuItem>
                             )}
                           </DropdownMenuContent>

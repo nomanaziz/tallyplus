@@ -9,7 +9,7 @@ import { printReport, type PrintRow } from "@/lib/print-report";
 import { RequirePerm } from "@/components/app/RequirePerm";
 
 function Page() {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const { current } = useShop();
   const [range, setRange] = useState<DateRange>({ start: monthStartIso(), end: todayIso() });
   const iso = rangeToIso(range.start, range.end);
@@ -24,11 +24,11 @@ function Page() {
 
   const onPrint = () => {
     const printRows: PrintRow[] = [
-      { kind: "section", label: lang === "bn" ? "সারাংশ" : "Summary" },
-      { kind: "row", label: lang === "bn" ? "মোট কর্মচারী" : "Employees", value: String(totals.employees) },
-      { kind: "row", label: lang === "bn" ? "মোট বিক্রি" : "Total sales", value: fmtMoney(totals.total, lang), tone: "success" },
+      { kind: "section", label: t("p5_Summary") },
+      { kind: "row", label: t("p5_Employees"), value: String(totals.employees) },
+      { kind: "row", label: t("p5_Total_sales"), value: fmtMoney(totals.total, lang), tone: "success" },
       { kind: "divider" },
-      { kind: "section", label: lang === "bn" ? "সেরা কর্মচারী" : "Top employees" },
+      { kind: "section", label: t("p5_Top_employees") },
       ...rows.map((r, i) => ({ kind: "row" as const, label: `${i + 1}. ${r.name}`, sub: `${r.count} sales`, value: fmtMoney(r.total, lang) })),
     ];
     printReport({
@@ -54,22 +54,22 @@ function Page() {
       onPrint={onPrint}
     >
       <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
-        <StatTile label={lang === "bn" ? "কর্মচারী সংখ্যা" : "Employees"} value={String(totals.employees)} />
-        <StatTile label={lang === "bn" ? "মোট বিক্রি (count)" : "Sales count"} value={String(totals.count)} />
-        <StatTile label={lang === "bn" ? "মোট বিক্রি" : "Total"} value={fmtMoney(totals.total, lang)} tone="success" />
+        <StatTile label={t("p5_Employees_2")} value={String(totals.employees)} />
+        <StatTile label={t("p5_Sales_count")} value={String(totals.count)} />
+        <StatTile label={t("p5_Total_5")} value={fmtMoney(totals.total, lang)} tone="success" />
       </div>
 
       {rows.length === 0 ? (
-        <EmptyState text={lang === "bn" ? "এই সময়ে কোনো কর্মচারী বিক্রি করেননি" : "No employee sales"} />
+        <EmptyState text={t("p5_No_employee_sales")} />
       ) : (
         <div className="overflow-hidden rounded-xl border bg-background">
           <table className="w-full text-sm">
             <thead className="bg-muted/50 text-left text-xs">
               <tr>
                 <th className="px-3 py-2 w-10">#</th>
-                <th className="px-3 py-2">{lang === "bn" ? "নাম" : "Name"}</th>
-                <th className="px-3 py-2 text-right">{lang === "bn" ? "বিক্রি (count)" : "Sales"}</th>
-                <th className="px-3 py-2 text-right">{lang === "bn" ? "মোট" : "Total"}</th>
+                <th className="px-3 py-2">{t("p5_Name")}</th>
+                <th className="px-3 py-2 text-right">{t("p5_Sales")}</th>
+                <th className="px-3 py-2 text-right">{t("p5_Total")}</th>
               </tr>
             </thead>
             <tbody>

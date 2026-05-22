@@ -27,7 +27,7 @@ type PaymentRow = {
 type Contact = { id: string; name: string; phone: string | null };
 
 function DueHistoryPage() {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const { current } = useShop();
   const nav = useNavigate();
 
@@ -135,8 +135,8 @@ function DueHistoryPage() {
 
   const statusLabel = (direction: string) => {
     // payments.direction is "in" (received) or "out" (paid)
-    if (direction === "in") return lang === "bn" ? "গৃহীত" : "Received";
-    if (direction === "out") return lang === "bn" ? "প্রদত্ত" : "Paid";
+    if (direction === "in") return t("p5_Received");
+    if (direction === "out") return t("p5_Paid_5");
     return direction;
   };
 
@@ -145,24 +145,24 @@ function DueHistoryPage() {
       shopName: current?.name ?? "",
       shopAddress: (current as { address?: string | null } | null)?.address ?? null,
       shopPhone: (current as { phone?: string | null } | null)?.phone ?? null,
-      title: lang === "bn" ? "বাকির ইতিহাস" : "Due History",
+      title: t("p5_Due_History"),
       startDate: from,
       endDate: to,
       lang,
       columns: [
         { key: "idx", label: "#" },
-        { key: "name", label: lang === "bn" ? "নাম" : "Contact Name" },
-        { key: "phone", label: lang === "bn" ? "ফোন" : "Phone" },
-        { key: "type", label: lang === "bn" ? "ধরন" : "Contact Type" },
-        { key: "amount", label: lang === "bn" ? "পরিমাণ" : "Amount", align: "right" },
-        { key: "status", label: lang === "bn" ? "স্ট্যাটাস" : "Status" },
-        { key: "date", label: lang === "bn" ? "তারিখ ও সময়" : "Date & Time" },
+        { key: "name", label: t("p5_Contact_Name") },
+        { key: "phone", label: t("p5_Phone") },
+        { key: "type", label: t("p5_Contact_Type") },
+        { key: "amount", label: t("p5_Amount"), align: "right" },
+        { key: "status", label: t("p5_Status") },
+        { key: "date", label: t("p5_Date_Time") },
       ],
       rows: view.map((v, i) => ({
         idx: String(i + 1),
         name: v.name,
         phone: v.phone ?? "—",
-        type: v.type === "customer" ? (lang === "bn" ? "কাস্টমার" : "Customer") : lang === "bn" ? "সাপ্লায়ার" : "Supplier",
+        type: v.type === "customer" ? (t("p5_Customer")) : t("p5_Supplier"),
         amount: fmtMoney(v.amount, lang),
         status: statusLabel(v.direction),
         date: fmtDateTime(v.created_at),
@@ -174,22 +174,22 @@ function DueHistoryPage() {
     <div className="container px-4 py-4">
       <div className="mb-1 text-xs text-muted-foreground">
         <button className="hover:underline" onClick={() => nav({ to: "/app/due-ledger" })}>
-          {lang === "bn" ? "বাকি" : "Due"}
+          {t("p5_Due_2")}
         </button>
         {" / "}
-        <span className="text-foreground">{lang === "bn" ? "বাকির ইতিহাস" : "Due History"}</span>
+        <span className="text-foreground">{t("p5_Due_History")}</span>
       </div>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => nav({ to: "/app/due-ledger" })}>
             <ArrowLeft className="h-4 w-4" />
           </Button>
-          <h1 className="text-xl font-extrabold md:text-2xl">{lang === "bn" ? "বাকির ইতিহাস" : "Due History"}</h1>
+          <h1 className="text-xl font-extrabold md:text-2xl">{t("p5_Due_History")}</h1>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Button onClick={handlePrint} className="h-10 gap-2 bg-primary text-primary-foreground hover:bg-primary/90">
             <Download className="h-4 w-4" />
-            {lang === "bn" ? "ডাউনলোড/প্রিন্ট" : "Download/Print"}
+            {t("p5_Download_Print")}
           </Button>
           <div className="flex items-center gap-1.5 rounded-md border bg-background px-2">
             <Calendar className="h-4 w-4 text-muted-foreground" />
@@ -210,7 +210,7 @@ function DueHistoryPage() {
           </Select>
           <Button variant="outline" className="h-10 gap-2" onClick={() => setRefreshTick((t) => t + 1)}>
             <RefreshCw className="h-4 w-4" />
-            {lang === "bn" ? "রিফ্রেশ" : "Refresh"}
+            {t("p5_Refresh")}
           </Button>
         </div>
       </div>
@@ -219,12 +219,12 @@ function DueHistoryPage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>{lang === "bn" ? "নাম" : "Contact Name"}</TableHead>
-              <TableHead>{lang === "bn" ? "ফোন" : "Phone"}</TableHead>
-              <TableHead>{lang === "bn" ? "ধরন" : "Contact Type"}</TableHead>
-              <TableHead className="text-right">{lang === "bn" ? "পরিমাণ" : "Amount"}</TableHead>
-              <TableHead>{lang === "bn" ? "স্ট্যাটাস" : "Status"}</TableHead>
-              <TableHead>{lang === "bn" ? "তারিখ ও সময়" : "Date & Time"}</TableHead>
+              <TableHead>{t("p5_Contact_Name")}</TableHead>
+              <TableHead>{t("p5_Phone")}</TableHead>
+              <TableHead>{t("p5_Contact_Type")}</TableHead>
+              <TableHead className="text-right">{t("p5_Amount")}</TableHead>
+              <TableHead>{t("p5_Status")}</TableHead>
+              <TableHead>{t("p5_Date_Time")}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -246,8 +246,8 @@ function DueHistoryPage() {
                   <TableCell>
                     <Badge variant="outline">
                       {v.type === "customer"
-                        ? lang === "bn" ? "কাস্টমার" : "Customer"
-                        : lang === "bn" ? "সাপ্লায়ার" : "Supplier"}
+                        ? t("p5_Customer")
+                        : t("p5_Supplier")}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right font-semibold tabular-nums">{fmtMoney(v.amount, lang)}</TableCell>

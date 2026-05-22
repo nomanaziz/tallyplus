@@ -18,7 +18,7 @@ function GuardedReportsPage() {
 }
 
 function ReportsPage() {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const { current } = useShop();
   const nav = useNavigate();
   const [range, setRange] = useState<DateRange>({ start: monthStartIso(), end: todayIso() });
@@ -29,7 +29,7 @@ function ReportsPage() {
 
   const onPrint = () => {
     const rows: PrintRow[] = [
-      { kind: "section", label: lang === "bn" ? "আইটেম" : "Item" },
+      { kind: "section", label: t("p5_Item") },
       { kind: "row", label: "নগদ বিক্রয়", sub: "(কাস্টমার বাকি বাদে)", value: fmtMoney(s.cashSales, lang), tone: "success" },
       { kind: "row", label: "কাস্টমার থেকে বাকির টাকা পেয়েছেন", value: fmtMoney(s.dueReceived, lang), tone: "success" },
       { kind: "row", label: "অন্যান্য আয়", value: fmtMoney(s.otherIncome, lang), tone: "success" },
@@ -72,17 +72,17 @@ function ReportsPage() {
     <div className="min-h-full bg-muted/30">
       <PageHeader
         breadcrumb="ব্যবসার রিপোর্ট"
-        title={lang === "bn" ? "ব্যবসার রিপোর্ট" : "Business Report"}
+        title={t("p5_Business_Report")}
         actions={
           <>
             <DateRangePicker value={range} onChange={setRange} />
             <Button variant="outline" className="h-10 gap-2" onClick={() => refetch()} disabled={isFetching}>
               <RefreshCw className={"h-4 w-4 " + (isFetching ? "animate-spin" : "")} />
-              {lang === "bn" ? "রিফ্রেশ" : "Refresh"}
+              {t("p5_Refresh")}
             </Button>
             <Button className="h-10 gap-2" onClick={onPrint}>
               <Printer className="h-4 w-4" />
-              {lang === "bn" ? "ডাউনলোড/প্রিন্ট" : "Download/Print"}
+              {t("p5_Download_Print")}
             </Button>
           </>
         }
@@ -91,7 +91,7 @@ function ReportsPage() {
       <div className="container space-y-3 px-3 py-3 md:space-y-4 md:px-4 md:py-4">
         {/* Section 1 — সাধারণ বিক্রি রিপোর্ট */}
         <div className="rounded-xl border bg-background p-3 md:p-4">
-          <h2 className="mb-2 text-sm font-bold md:mb-3">{lang === "bn" ? "সাধারণ বিক্রি রিপোর্ট" : "General sales report"}</h2>
+          <h2 className="mb-2 text-sm font-bold md:mb-3">{t("p5_General_sales_report")}</h2>
           {/* Mobile: 2-column compact tiles. Desktop: stacked rows like before. */}
           <div className="grid grid-cols-2 gap-2 md:hidden">
             <Tile label="মোট বিক্রি" value={fmtMoney(s.totalSales, lang)} tone="primary" />
@@ -119,10 +119,10 @@ function ReportsPage() {
           <div className="rounded-xl border bg-background p-3 md:p-4">
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
-                <div className="text-[11px] font-bold text-muted-foreground md:text-xs">{lang === "bn" ? "অন্যান্য আয়" : "Other income"}</div>
+                <div className="text-[11px] font-bold text-muted-foreground md:text-xs">{t("p5_Other_income")}</div>
                 <div className="mt-0.5 text-base font-extrabold text-emerald-600 md:text-2xl">{fmtMoney(s.otherIncome, lang)}</div>
               </div>
-              <Button size="icon" className="h-8 w-8 shrink-0 bg-emerald-500 hover:bg-emerald-600 text-white md:h-9 md:w-9" aria-label={lang === "bn" ? "নতুন আয় যুক্ত করুন" : "Add income"}>
+              <Button size="icon" className="h-8 w-8 shrink-0 bg-emerald-500 hover:bg-emerald-600 text-white md:h-9 md:w-9" aria-label={t("p5_Add_income")}>
                 <Plus className="h-4 w-4" />
               </Button>
             </div>
@@ -130,10 +130,10 @@ function ReportsPage() {
           <div className="rounded-xl border bg-background p-3 md:p-4">
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
-                <div className="text-[11px] font-bold text-muted-foreground md:text-xs">{lang === "bn" ? "অন্যান্য খরচ" : "Other expense"}</div>
+                <div className="text-[11px] font-bold text-muted-foreground md:text-xs">{t("p5_Other_expense")}</div>
                 <div className="mt-0.5 text-base font-extrabold text-rose-600 md:text-2xl">{fmtMoney(s.otherExpense, lang)}</div>
               </div>
-              <Button size="icon" className="h-8 w-8 shrink-0 bg-rose-500 hover:bg-rose-600 text-white md:h-9 md:w-9" aria-label={lang === "bn" ? "নতুন খরচ যুক্ত করুন" : "Add expense"}>
+              <Button size="icon" className="h-8 w-8 shrink-0 bg-rose-500 hover:bg-rose-600 text-white md:h-9 md:w-9" aria-label={t("p5_Add_expense")}>
                 <Plus className="h-4 w-4" />
               </Button>
             </div>
@@ -143,16 +143,16 @@ function ReportsPage() {
         {/* Section 3 — Total dues (always 2-col side-by-side) */}
         <div className="rounded-xl border bg-background p-3 md:p-4">
           <div className="mb-2 flex items-center justify-between">
-            <div className="text-sm font-bold">{lang === "bn" ? "মোট বাকি" : "Total due"}</div>
+            <div className="text-sm font-bold">{t("p5_Total_due")}</div>
             <div className="text-sm font-bold">{fmtMoney(s.receivable + s.payable, lang)}</div>
           </div>
           <div className="grid grid-cols-2 gap-2 md:gap-3">
             <div className="rounded-lg bg-emerald-100 p-3 text-center text-emerald-900 md:p-4">
-              <div className="text-[11px] font-bold md:text-sm">{lang === "bn" ? "সাপ্লায়ারকে দিবো" : "Owe suppliers"}</div>
+              <div className="text-[11px] font-bold md:text-sm">{t("p5_Owe_suppliers")}</div>
               <div className="mt-0.5 text-base font-extrabold md:text-xl">{fmtMoney(s.payable, lang)}</div>
             </div>
             <div className="rounded-lg bg-rose-100 p-3 text-center text-rose-900 md:p-4">
-              <div className="text-[11px] font-bold md:text-sm">{lang === "bn" ? "কাস্টমার থেকে পাবো" : "Customers owe"}</div>
+              <div className="text-[11px] font-bold md:text-sm">{t("p5_Customers_owe")}</div>
               <div className="mt-0.5 text-base font-extrabold md:text-xl">{fmtMoney(s.receivable, lang)}</div>
             </div>
           </div>
@@ -160,7 +160,7 @@ function ReportsPage() {
 
         {/* Section 4 — All reports grid */}
         <div className="rounded-xl border bg-background p-4">
-          <h3 className="mb-3 text-sm font-bold">{lang === "bn" ? "ব্যবসার সকল রিপোর্ট" : "All business reports"}</h3>
+          <h3 className="mb-3 text-sm font-bold">{t("p5_All_business_reports")}</h3>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5">
             {subReports.map((r) => (
               <button

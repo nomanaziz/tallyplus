@@ -28,7 +28,7 @@ function GuardedOwnerLedger() {
 }
 
 function OwnerLedgerPage() {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const { current } = useShop();
   const nav = useNavigate();
   const qc = useQueryClient();
@@ -50,10 +50,10 @@ function OwnerLedgerPage() {
   const refresh = async () => { await qc.invalidateQueries({ queryKey: ["owner-txns"] }); await refetch(); };
 
   const onDelete = async (e: OwnerTxn) => {
-    if (!confirm(lang === "bn" ? "ডিলিট করবেন?" : "Delete?")) return;
+    if (!confirm(t("p5_Delete_2"))) return;
     const { error } = await supabase.from("owner_transactions").update({ deleted_at: new Date().toISOString() }).eq("id", e.id);
     if (error) { toast.error(error.message); return; }
-    toast.success(lang === "bn" ? "ডিলিট হয়েছে" : "Deleted");
+    toast.success(t("p5_Deleted_2"));
     void refresh();
   };
 
@@ -66,36 +66,36 @@ function OwnerLedgerPage() {
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <Wallet className="h-6 w-6 text-primary" />
-          <h1 className="text-xl font-extrabold md:text-2xl">{lang === "bn" ? "মালিকের বই" : "Owner Book"}</h1>
+          <h1 className="text-xl font-extrabold md:text-2xl">{t("p5_Owner_Book")}</h1>
         </div>
       </div>
 
       <ActionTilePair
         className="mt-4"
         tiles={[
-          { label: lang === "bn" ? "মালিক টাকা দিল (বিনিয়োগ)" : "Owner invested", icon: <ArrowDownCircle className="h-5 w-5" />, tone: "success", onClick: () => { setEditing(null); setPresetDir("invest"); setOpen(true); } },
-          { label: lang === "bn" ? "মালিক টাকা নিল (উত্তোলন)" : "Owner withdrew", icon: <ArrowUpCircle className="h-5 w-5" />, tone: "danger", onClick: () => { setEditing(null); setPresetDir("withdraw"); setOpen(true); } },
+          { label: t("p5_Owner_invested"), icon: <ArrowDownCircle className="h-5 w-5" />, tone: "success", onClick: () => { setEditing(null); setPresetDir("invest"); setOpen(true); } },
+          { label: t("p5_Owner_withdrew"), icon: <ArrowUpCircle className="h-5 w-5" />, tone: "danger", onClick: () => { setEditing(null); setPresetDir("withdraw"); setOpen(true); } },
         ]}
       />
 
       <StatGrid className="mt-4">
-        <StatCard icon={<ArrowDownCircle className="h-4 w-4" />} label={lang === "bn" ? "মোট বিনিয়োগ" : "Total invest"} value={fmtMoney(totals.invest, lang)} tone="success" />
-        <StatCard icon={<ArrowUpCircle className="h-4 w-4" />} label={lang === "bn" ? "মোট উত্তোলন" : "Total withdraw"} value={fmtMoney(totals.withdraw, lang)} tone="danger" />
-        <StatCard icon={<Wallet className="h-4 w-4" />} label={lang === "bn" ? "নিট মূলধন" : "Net capital"} value={fmtMoney(totals.net, lang)} tone={totals.net >= 0 ? "primary" : "danger"} />
+        <StatCard icon={<ArrowDownCircle className="h-4 w-4" />} label={t("p5_Total_invest")} value={fmtMoney(totals.invest, lang)} tone="success" />
+        <StatCard icon={<ArrowUpCircle className="h-4 w-4" />} label={t("p5_Total_withdraw")} value={fmtMoney(totals.withdraw, lang)} tone="danger" />
+        <StatCard icon={<Wallet className="h-4 w-4" />} label={t("p5_Net_capital")} value={fmtMoney(totals.net, lang)} tone={totals.net >= 0 ? "primary" : "danger"} />
       </StatGrid>
 
       <div className="mt-4 rounded-xl border bg-card">
         {list.length === 0 ? (
-          <EmptyState icon={<Wallet className="h-6 w-6" />} title={lang === "bn" ? "কোনো লেনদেন নেই" : "No transactions"} />
+          <EmptyState icon={<Wallet className="h-6 w-6" />} title={t("p5_No_transactions")} />
         ) : (
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>{lang === "bn" ? "তারিখ" : "Date"}</TableHead>
-                <TableHead>{lang === "bn" ? "ধরন" : "Type"}</TableHead>
-                <TableHead>{lang === "bn" ? "নোট" : "Note"}</TableHead>
-                <TableHead className="text-right">{lang === "bn" ? "পরিমাণ" : "Amount"}</TableHead>
-                <TableHead>{lang === "bn" ? "মাধ্যম" : "Method"}</TableHead>
+                <TableHead>{t("p5_Date")}</TableHead>
+                <TableHead>{t("p5_Type")}</TableHead>
+                <TableHead>{t("p5_Note")}</TableHead>
+                <TableHead className="text-right">{t("p5_Amount")}</TableHead>
+                <TableHead>{t("p5_Method_2")}</TableHead>
                 <TableHead className="text-right">Action</TableHead>
               </TableRow>
             </TableHeader>
@@ -106,11 +106,11 @@ function OwnerLedgerPage() {
                   <TableCell>
                     {e.direction === "invest" ? (
                       <span className="inline-flex items-center gap-1 rounded-md bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700">
-                        <ArrowDownCircle className="h-3 w-3" /> {lang === "bn" ? "বিনিয়োগ" : "Invest"}
+                        <ArrowDownCircle className="h-3 w-3" /> {t("p5_Invest")}
                       </span>
                     ) : (
                       <span className="inline-flex items-center gap-1 rounded-md bg-rose-100 px-2 py-0.5 text-xs font-semibold text-rose-700">
-                        <ArrowUpCircle className="h-3 w-3" /> {lang === "bn" ? "উত্তোলন" : "Withdraw"}
+                        <ArrowUpCircle className="h-3 w-3" /> {t("p5_Withdraw")}
                       </span>
                     )}
                   </TableCell>
@@ -126,10 +126,10 @@ function OwnerLedgerPage() {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem onClick={() => { setEditing(e); setPresetDir(e.direction); setOpen(true); }}>
-                          <Pencil className="mr-2 h-4 w-4" /> {lang === "bn" ? "এডিট" : "Edit"}
+                          <Pencil className="mr-2 h-4 w-4" /> {t("p5_Edit")}
                         </DropdownMenuItem>
                         <DropdownMenuItem className="text-destructive" onClick={() => onDelete(e)}>
-                          <Trash2 className="mr-2 h-4 w-4" /> {lang === "bn" ? "ডিলিট" : "Delete"}
+                          <Trash2 className="mr-2 h-4 w-4" /> {t("p5_Delete_3")}
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -162,7 +162,7 @@ function OwnerLedgerPage() {
 }
 
 function OwnerTxnDialog({ open, onOpenChange, editing, defaultDirection, onSaved }: { open: boolean; onOpenChange: (v: boolean) => void; editing: OwnerTxn | null; defaultDirection: "invest" | "withdraw"; onSaved: () => void }) {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const { current } = useShop();
   const { user } = useAuth();
   const [direction, setDirection] = useState<"invest" | "withdraw">("invest");
@@ -185,7 +185,7 @@ function OwnerTxnDialog({ open, onOpenChange, editing, defaultDirection, onSaved
   const save = async () => {
     if (!current || !user) return;
     const amt = Number(amount);
-    if (!amt || amt <= 0) { toast.error(lang === "bn" ? "পরিমাণ দিন" : "Enter amount"); return; }
+    if (!amt || amt <= 0) { toast.error(t("p5_Enter_amount")); return; }
     setBusy(true);
     const payload = {
       shop_id: current.id,
@@ -218,7 +218,7 @@ function OwnerTxnDialog({ open, onOpenChange, editing, defaultDirection, onSaved
       });
     }
     setBusy(false);
-    toast.success(lang === "bn" ? "সেভ হয়েছে" : "Saved");
+    toast.success(t("p5_Saved"));
     onOpenChange(false);
     onSaved();
   };
@@ -228,30 +228,30 @@ function OwnerTxnDialog({ open, onOpenChange, editing, defaultDirection, onSaved
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>
-            {editing ? (lang === "bn" ? "এডিট" : "Edit") : (lang === "bn" ? "নতুন এন্ট্রি" : "New entry")}
+            {editing ? (t("p5_Edit")) : (t("p5_New_entry"))}
           </DialogTitle>
         </DialogHeader>
         <div className="grid gap-3">
           <div className="grid gap-1.5">
-            <Label>{lang === "bn" ? "ধরন" : "Type"}</Label>
+            <Label>{t("p5_Type")}</Label>
             <Select value={direction} onValueChange={(v) => setDirection(v as any)}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="invest">{lang === "bn" ? "মালিক টাকা দিল (বিনিয়োগ)" : "Owner invested"}</SelectItem>
-                <SelectItem value="withdraw">{lang === "bn" ? "মালিক টাকা নিল (উত্তোলন)" : "Owner withdrew"}</SelectItem>
+                <SelectItem value="invest">{t("p5_Owner_invested")}</SelectItem>
+                <SelectItem value="withdraw">{t("p5_Owner_withdrew")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
           <div className="grid gap-1.5">
-            <Label>{lang === "bn" ? "পরিমাণ" : "Amount"}</Label>
+            <Label>{t("p5_Amount")}</Label>
             <Input type="number" autoFocus value={amount} onChange={(e) => setAmount(e.target.value)} />
           </div>
           <div className="grid gap-1.5">
-            <Label>{lang === "bn" ? "তারিখ" : "Date"}</Label>
+            <Label>{t("p5_Date")}</Label>
             <Input type="date" value={txDate} onChange={(e) => setTxDate(e.target.value)} />
           </div>
           <div className="grid gap-1.5">
-            <Label>{lang === "bn" ? "মাধ্যম" : "Paid via"}</Label>
+            <Label>{t("p5_Paid_via_2")}</Label>
             <Select value={paidVia} onValueChange={(v) => setPaidVia(v as typeof paidVia)}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
@@ -264,13 +264,13 @@ function OwnerTxnDialog({ open, onOpenChange, editing, defaultDirection, onSaved
             </Select>
           </div>
           <div className="grid gap-1.5">
-            <Label>{lang === "bn" ? "নোট" : "Note"}</Label>
+            <Label>{t("p5_Note")}</Label>
             <Textarea value={note} onChange={(e) => setNote(e.target.value)} rows={2} />
           </div>
         </div>
         <DialogFooter>
-          <Button variant="ghost" onClick={() => onOpenChange(false)}>{lang === "bn" ? "বাতিল" : "Cancel"}</Button>
-          <Button onClick={save} disabled={busy}>{busy ? "..." : lang === "bn" ? "সেভ" : "Save"}</Button>
+          <Button variant="ghost" onClick={() => onOpenChange(false)}>{t("p5_Cancel")}</Button>
+          <Button onClick={save} disabled={busy}>{busy ? "..." : t("p5_Save")}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

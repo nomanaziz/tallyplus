@@ -9,7 +9,7 @@ import { printReport, type PrintRow } from "@/lib/print-report";
 import { RequirePerm } from "@/components/app/RequirePerm";
 
 function Page() {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const { current } = useShop();
   const [range, setRange] = useState<DateRange>({ start: monthStartIso(), end: todayIso() });
   const iso = rangeToIso(range.start, range.end);
@@ -21,14 +21,14 @@ function Page() {
 
   const onPrint = () => {
     const rows: PrintRow[] = [
-      { kind: "section", label: lang === "bn" ? "আয়" : "Income" },
-      { kind: "row", label: lang === "bn" ? "মোট বিক্রি" : "Total sales", value: fmtMoney(s.totalSales, lang), tone: "success" },
-      { kind: "row", label: lang === "bn" ? "অন্যান্য আয়" : "Other income", value: fmtMoney(s.otherIncome, lang), tone: "success" },
-      { kind: "section", label: lang === "bn" ? "ব্যয়" : "Cost" },
-      { kind: "row", label: lang === "bn" ? "অন্যান্য খরচ" : "Other expense", value: fmtMoney(s.otherExpense, lang), tone: "danger" },
+      { kind: "section", label: t("p5_Income") },
+      { kind: "row", label: t("p5_Total_sales"), value: fmtMoney(s.totalSales, lang), tone: "success" },
+      { kind: "row", label: t("p5_Other_income"), value: fmtMoney(s.otherIncome, lang), tone: "success" },
+      { kind: "section", label: t("p5_Cost") },
+      { kind: "row", label: t("p5_Other_expense"), value: fmtMoney(s.otherExpense, lang), tone: "danger" },
       { kind: "divider" },
-      { kind: "row", label: lang === "bn" ? "মোট লাভ (পণ্য থেকে)" : "Gross profit", value: fmtMoney(grossProfit, lang), tone: grossProfit >= 0 ? "success" : "danger" },
-      { kind: "row", label: lang === "bn" ? "নিট লাভ" : "Net profit", value: fmtMoney(netProfit, lang), tone: netProfit >= 0 ? "success" : "danger" },
+      { kind: "row", label: t("p5_Gross_profit"), value: fmtMoney(grossProfit, lang), tone: grossProfit >= 0 ? "success" : "danger" },
+      { kind: "row", label: t("p5_Net_profit"), value: fmtMoney(netProfit, lang), tone: netProfit >= 0 ? "success" : "danger" },
     ];
     printReport({
       shopName: current?.name ?? "",
@@ -53,16 +53,16 @@ function Page() {
       onPrint={onPrint}
     >
       <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
-        <StatTile label={lang === "bn" ? "মোট বিক্রি" : "Total sales"} value={fmtMoney(s.totalSales, lang)} tone="success" />
-        <StatTile label={lang === "bn" ? "অন্যান্য আয়" : "Other income"} value={fmtMoney(s.otherIncome, lang)} tone="success" />
-        <StatTile label={lang === "bn" ? "অন্যান্য খরচ" : "Other expense"} value={fmtMoney(s.otherExpense, lang)} tone="danger" />
-        <StatTile label={lang === "bn" ? "পণ্য থেকে লাভ" : "Product profit"} value={fmtMoney(grossProfit, lang)} tone={grossProfit >= 0 ? "success" : "danger"} />
+        <StatTile label={t("p5_Total_sales")} value={fmtMoney(s.totalSales, lang)} tone="success" />
+        <StatTile label={t("p5_Other_income")} value={fmtMoney(s.otherIncome, lang)} tone="success" />
+        <StatTile label={t("p5_Other_expense")} value={fmtMoney(s.otherExpense, lang)} tone="danger" />
+        <StatTile label={t("p5_Product_profit")} value={fmtMoney(grossProfit, lang)} tone={grossProfit >= 0 ? "success" : "danger"} />
       </div>
 
       <div className={"rounded-xl border-2 p-6 " + (netProfit >= 0 ? "border-emerald-300 bg-emerald-50" : "border-rose-300 bg-rose-50")}>
-        <div className="text-sm font-semibold text-muted-foreground">{lang === "bn" ? "নিট লাভ / ক্ষতি" : "Net Profit / Loss"}</div>
+        <div className="text-sm font-semibold text-muted-foreground">{t("p5_Net_Profit_Loss")}</div>
         <div className="mt-1 text-[11px] text-muted-foreground">
-          {lang === "bn" ? "পণ্য বিক্রয় লাভ + অন্যান্য আয় − অন্যান্য খরচ" : "Product profit + Other income − Other expense"}
+          {t("p5_Product_profit_Other_income_Ot")}
         </div>
         <div className={"mt-3 text-4xl font-extrabold " + (netProfit >= 0 ? "text-emerald-700" : "text-rose-600")}>
           {fmtMoney(netProfit, lang)}
@@ -70,15 +70,15 @@ function Page() {
       </div>
 
       <div className="rounded-xl border bg-background p-4">
-        <h3 className="mb-3 text-sm font-bold">{lang === "bn" ? "বিস্তারিত হিসাব" : "Breakdown"}</h3>
+        <h3 className="mb-3 text-sm font-bold">{t("p5_Breakdown")}</h3>
         <div className="space-y-2 text-sm">
-          <Row label={lang === "bn" ? "মোট বিক্রি" : "Total sales"} value={fmtMoney(s.totalSales, lang)} tone="success" />
-          <Row label={lang === "bn" ? "নগদ বিক্রি" : "Cash sales"} value={fmtMoney(s.cashSales, lang)} tone="success" />
-          <Row label={lang === "bn" ? "বাকি আদায়" : "Due received"} value={fmtMoney(s.dueReceived, lang)} tone="success" />
-          <Row label={lang === "bn" ? "নগদ ক্রয়" : "Cash purchase"} value={fmtMoney(s.cashPurchase, lang)} tone="danger" />
-          <Row label={lang === "bn" ? "সাপ্লায়ার বাকি প্রদান" : "Supplier due paid"} value={fmtMoney(s.duePaid, lang)} tone="danger" />
-          <Row label={lang === "bn" ? "অন্যান্য আয়" : "Other income"} value={fmtMoney(s.otherIncome, lang)} tone="success" />
-          <Row label={lang === "bn" ? "অন্যান্য খরচ" : "Other expense"} value={fmtMoney(s.otherExpense, lang)} tone="danger" />
+          <Row label={t("p5_Total_sales")} value={fmtMoney(s.totalSales, lang)} tone="success" />
+          <Row label={t("p5_Cash_sales")} value={fmtMoney(s.cashSales, lang)} tone="success" />
+          <Row label={t("p5_Due_received")} value={fmtMoney(s.dueReceived, lang)} tone="success" />
+          <Row label={t("p5_Cash_purchase")} value={fmtMoney(s.cashPurchase, lang)} tone="danger" />
+          <Row label={t("p5_Supplier_due_paid")} value={fmtMoney(s.duePaid, lang)} tone="danger" />
+          <Row label={t("p5_Other_income")} value={fmtMoney(s.otherIncome, lang)} tone="success" />
+          <Row label={t("p5_Other_expense")} value={fmtMoney(s.otherExpense, lang)} tone="danger" />
         </div>
       </div>
     </ReportShell>
