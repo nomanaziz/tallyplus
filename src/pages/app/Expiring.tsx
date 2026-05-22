@@ -29,7 +29,7 @@ function daysBetween(a: Date, b: Date) {
 }
 
 function ExpiringPage() {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const { current } = useShop();
   const [tab, setTab] = useState<Tab>("soon");
   const [q, setQ] = useState("");
@@ -76,8 +76,8 @@ function ExpiringPage() {
   return (
     <div className="min-h-full bg-muted/30">
       <PageHeader
-        breadcrumb={lang === "bn" ? "মেয়াদোত্তীর্ণ পণ্য" : "Expired Product"}
-        title={lang === "bn" ? "মেয়াদোত্তীর্ণ পণ্য" : "Expired Product"}
+        breadcrumb={t("p7_Expired_Product")}
+        title={t("p7_Expired_Product")}
       />
 
       <div className="container px-3 py-4 sm:px-4">
@@ -89,7 +89,7 @@ function ExpiringPage() {
               (tab === "soon" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent")
             }
           >
-            {lang === "bn" ? "শীঘ্রই মেয়াদোত্তীর্ণ" : "Expired soon"}
+            {t("p7_Expired_soon")}
           </button>
           <button
             onClick={() => setTab("expired")}
@@ -98,7 +98,7 @@ function ExpiringPage() {
               (tab === "expired" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent")
             }
           >
-            {lang === "bn" ? "মেয়াদোত্তীর্ণ" : "Expired"}
+            {t("p7_Expired")}
           </button>
         </div>
 
@@ -108,13 +108,13 @@ function ExpiringPage() {
             <Input
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              placeholder={lang === "bn" ? "বারকোড বা নাম দিয়ে খুঁজুন" : "Search by barcode or Product Name"}
+              placeholder={t("p7_Search_by_barcode_or_Product_N")}
               className="h-10 pl-9"
             />
           </div>
           <Button variant="outline" size="sm" className="h-10" onClick={() => refetch()} disabled={isFetching}>
             <RefreshCw className={"h-4 w-4 " + (isFetching ? "animate-spin" : "")} />
-            <span className="ml-1 text-xs">{lang === "bn" ? "রিফ্রেশ" : "Refresh"}</span>
+            <span className="ml-1 text-xs">{t("p7_Refresh")}</span>
           </Button>
         </div>
 
@@ -124,12 +124,8 @@ function ExpiringPage() {
               icon={<CalendarClock className="h-6 w-6" />}
               title={
                 tab === "expired"
-                  ? lang === "bn"
-                    ? "মেয়াদোত্তীর্ণ কোনো পণ্য নেই"
-                    : "No expired products"
-                  : lang === "bn"
-                    ? "শীঘ্রই মেয়াদোত্তীর্ণ হবে এমন কোনো পণ্য নেই"
-                    : "No products expiring soon"
+                  ? t("p7_No_expired_products")
+                  : t("p7_No_products_expiring_soon")
               }
             />
           ) : (
@@ -138,10 +134,10 @@ function ExpiringPage() {
                 <thead className="bg-muted/60 text-xs">
                   <tr>
                     <th className="px-3 py-2 text-left font-semibold">#</th>
-                    <th className="px-3 py-2 text-left font-semibold">{lang === "bn" ? "নাম" : "Name"}</th>
-                    <th className="px-3 py-2 text-right font-semibold">{lang === "bn" ? "মজুদ" : "Items"}</th>
-                    <th className="px-3 py-2 text-left font-semibold">{lang === "bn" ? "মেয়াদ শেষ" : "Expiry Date"}</th>
-                    <th className="px-3 py-2 text-right font-semibold">{lang === "bn" ? "মূল্য" : "Price"}</th>
+                    <th className="px-3 py-2 text-left font-semibold">{t("p7_Name")}</th>
+                    <th className="px-3 py-2 text-right font-semibold">{t("p7_Items_2")}</th>
+                    <th className="px-3 py-2 text-left font-semibold">{t("p7_Expiry_Date")}</th>
+                    <th className="px-3 py-2 text-right font-semibold">{t("p7_Price")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -178,7 +174,7 @@ function ExpiringPage() {
                             }
                           >
                             {isExpired && <AlertTriangle className="h-3 w-3" />}
-                            {d.toLocaleDateString(lang === "bn" ? "bn-BD" : "en-GB")}
+                            {d.toLocaleDateString(t("p7_en_GB"))}
                             <span className="opacity-70">
                               ({isExpired ? `${Math.abs(diff)}d ago` : `${diff}d`})
                             </span>

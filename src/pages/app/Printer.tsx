@@ -25,7 +25,7 @@ const TABS: { v: PrinterType; bn: string; en: string; Icon: typeof Printer }[] =
 ];
 
 function PrinterPage() {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const { current } = useShop();
   const { data, refetch } = useQuery(printerSettingsQuery(current?.id ?? null));
 
@@ -79,21 +79,21 @@ function PrinterPage() {
     const { error } = await supabase.from("shop_printer_settings").upsert(payload, { onConflict: "shop_id" });
     setBusy(false);
     if (error) return toast.error(error.message);
-    toast.success(lang === "bn" ? "সেটিংস সেভ হয়েছে" : "Settings saved");
+    toast.success(t("p7_Settings_saved"));
     refetch();
   };
 
   return (
     <div className="min-h-full bg-muted/30">
-      <PageHeader breadcrumb="প্রিন্টার" title={lang === "bn" ? "প্রিন্টার সেটিংস" : "Printer Settings"} />
+      <PageHeader breadcrumb="প্রিন্টার" title={t("p7_Printer_Settings")} />
       <div className="container px-4 py-4">
         <div className="grid gap-4 lg:grid-cols-[360px_1fr]">
           {/* Left — settings form */}
           <div className="rounded-xl border bg-background p-4">
-            <h2 className="mb-3 text-sm font-bold">{lang === "bn" ? "প্রিন্টার সেটিংস" : "Printer Settings"}</h2>
+            <h2 className="mb-3 text-sm font-bold">{t("p7_Printer_Settings")}</h2>
             <div className="grid gap-3">
               <div className="grid gap-1.5">
-                <Label className="text-xs">{lang === "bn" ? "ডিফল্ট প্রিন্টারের ধরণ" : "Default printer type"}</Label>
+                <Label className="text-xs">{t("p7_Default_printer_type")}</Label>
                 <Select value={printerType} onValueChange={(v) => setPrinterType(v as PrinterType)}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
@@ -104,7 +104,7 @@ function PrinterPage() {
                 </Select>
               </div>
               <div className="grid gap-1.5">
-                <Label className="text-xs">{lang === "bn" ? "প্রিন্টার ভাষা" : "Printer language"}</Label>
+                <Label className="text-xs">{t("p7_Printer_language")}</Label>
                 <Select value={language} onValueChange={setLanguage}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
@@ -114,7 +114,7 @@ function PrinterPage() {
                 </Select>
               </div>
               <div className="grid gap-1.5">
-                <Label className="text-xs">{lang === "bn" ? "প্রিন্টার সাইজ" : "Printer size"}</Label>
+                <Label className="text-xs">{t("p7_Printer_size")}</Label>
                 <Select value={paperSize || "_"} onValueChange={(v) => setPaperSize(v === "_" ? "" : v)}>
                   <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
                   <SelectContent>
@@ -126,7 +126,7 @@ function PrinterPage() {
                 </Select>
               </div>
               <div className="grid gap-1.5">
-                <Label className="text-xs">{lang === "bn" ? "প্রিন্টার ফন্ট সাইজ" : "Font size"}</Label>
+                <Label className="text-xs">{t("p7_Font_size")}</Label>
                 <Select value={String(fontSize)} onValueChange={(v) => setFontSize(Number(v))}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
@@ -137,7 +137,7 @@ function PrinterPage() {
                 </Select>
               </div>
               <div className="grid gap-1.5">
-                <Label className="text-xs">{lang === "bn" ? "প্রিন্ট সর্বশেষ লেখা" : "Print footer text"}</Label>
+                <Label className="text-xs">{t("p7_Print_footer_text")}</Label>
                 <Textarea value={footerText} onChange={(e) => setFooterText(e.target.value)} rows={3} placeholder="Enter last text..." />
               </div>
 
@@ -159,10 +159,10 @@ function PrinterPage() {
 
               <div className="mt-2 flex gap-2">
                 <Button variant="outline" className="h-10 flex-1" onClick={() => refetch()}>
-                  <X className="h-4 w-4" /> {lang === "bn" ? "বাতিল করুন" : "Cancel"}
+                  <X className="h-4 w-4" /> {t("p7_Cancel_2")}
                 </Button>
                 <Button disabled={busy} className="h-10 flex-1 bg-primary text-primary-foreground hover:bg-primary/90" onClick={save}>
-                  <Save className="h-4 w-4" /> {busy ? "..." : lang === "bn" ? "সেভ করুন" : "Save"}
+                  <Save className="h-4 w-4" /> {busy ? "..." : t("p7_Save_4")}
                 </Button>
               </div>
             </div>

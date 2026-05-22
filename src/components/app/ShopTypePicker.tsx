@@ -57,12 +57,8 @@ export function ShopTypePicker({
           <SelectValue
             placeholder={
               loading
-                ? lang === "bn"
-                  ? "লোড হচ্ছে..."
-                  : "Loading..."
-                : lang === "bn"
-                  ? "দোকানের ধরন বাছাই করুন"
-                  : "Choose shop type"
+                ? t("p7_Loading_2")
+                : t("p7_Choose_shop_type")
             }
           />
         </SelectTrigger>

@@ -13,7 +13,7 @@ export function UsageLimitBanner({ data, label_bn, label_en }: {
   label_bn: string;
   label_en: string;
 }) {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   if (!data) return null;
   if (data.limit === -1) return null;
   const ratio = data.limit > 0 ? data.used / data.limit : 1;
@@ -33,7 +33,7 @@ export function UsageLimitBanner({ data, label_bn, label_en }: {
         </span>
       </div>
       <Link to="/app/subscribe" className="rounded-full bg-primary px-3 py-1 text-[11px] font-bold text-primary-foreground hover:opacity-90">
-        {lang === "bn" ? "আপগ্রেড" : "Upgrade"}
+        {t("p7_Upgrade")}
       </Link>
     </div>
   );

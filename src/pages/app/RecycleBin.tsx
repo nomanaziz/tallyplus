@@ -29,7 +29,7 @@ const tabLabels: Record<Tab, { bn: string; en: string }> = {
 
 
 function RecycleBinPage() {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const { current } = useShop();
   const qc = useQueryClient();
   const { isOwner, isAdmin } = usePermissions();
@@ -44,30 +44,30 @@ function RecycleBinPage() {
   const restore = async (id: string) => {
     const { error } = await supabase.from(tab).update({ deleted_at: null } as never).eq("id", id);
     if (error) { toast.error(error.message); return; }
-    toast.success(lang === "bn" ? "পুনরুদ্ধার হয়েছে" : "Restored");
+    toast.success(t("p7_Restored"));
     void refresh();
   };
 
   const purge = async (id: string) => {
-    if (!confirm(lang === "bn" ? "স্থায়ীভাবে ডিলিট করবেন?" : "Permanently delete?")) return;
+    if (!confirm(t("p7_Permanently_delete_2"))) return;
     const { error } = await supabase.from(tab).delete().eq("id", id);
     if (error) { toast.error(error.message); return; }
-    toast.success(lang === "bn" ? "মুছে ফেলা হয়েছে" : "Permanently deleted");
+    toast.success(t("p7_Permanently_deleted"));
     void refresh();
   };
 
   const columns = useMemo(() => {
-    if (tab === "products") return [{ key: "name", label: lang === "bn" ? "নাম" : "Name" }, { key: "stock", label: lang === "bn" ? "মজুদ" : "Stock" }];
-    if (tab === "customers" || tab === "suppliers") return [{ key: "name", label: lang === "bn" ? "নাম" : "Name" }, { key: "phone", label: lang === "bn" ? "ফোন" : "Phone" }];
-    if (tab === "expenses") return [{ key: "category", label: lang === "bn" ? "ক্যাটাগরি" : "Category" }, { key: "amount", label: lang === "bn" ? "পরিমাণ" : "Amount", money: true }];
-    if (tab === "customer_wishlists") return [{ key: "customer_name", label: lang === "bn" ? "গ্রাহক" : "Customer" }, { key: "customer_phone", label: lang === "bn" ? "ফোন" : "Phone" }];
-    return [{ key: "invoice_no", label: lang === "bn" ? "ইনভয়েস" : "Invoice" }, { key: "total", label: lang === "bn" ? "মোট" : "Total", money: true }];
+    if (tab === "products") return [{ key: "name", label: t("p7_Name") }, { key: "stock", label: t("p7_Stock") }];
+    if (tab === "customers" || tab === "suppliers") return [{ key: "name", label: t("p7_Name") }, { key: "phone", label: t("p7_Phone") }];
+    if (tab === "expenses") return [{ key: "category", label: t("p7_Category") }, { key: "amount", label: t("p7_Amount"), money: true }];
+    if (tab === "customer_wishlists") return [{ key: "customer_name", label: t("p7_Customer_2") }, { key: "customer_phone", label: t("p7_Phone") }];
+    return [{ key: "invoice_no", label: t("p7_Invoice") }, { key: "total", label: t("p7_Total_2"), money: true }];
   }, [tab, lang]);
 
   return (
     <div className="container px-4 py-4">
       <div className="mb-1 text-xs text-muted-foreground">Recycle Bin</div>
-      <h1 className="text-xl font-extrabold md:text-2xl">{lang === "bn" ? "রিসাইকেল বিন" : "Recycle Bin"}</h1>
+      <h1 className="text-xl font-extrabold md:text-2xl">{t("p7_Recycle_Bin")}</h1>
 
       <div className="mt-4 overflow-x-auto">
         <Tabs value={tab} onValueChange={(v) => setTab(v as Tab)}>
@@ -81,14 +81,14 @@ function RecycleBinPage() {
 
       <div className="mt-4 rounded-xl border bg-card">
         {rows.length === 0 ? (
-          <EmptyState icon={<Inbox className="h-6 w-6" />} title={lang === "bn" ? "এই বিন খালি" : "Bin is empty"} />
+          <EmptyState icon={<Inbox className="h-6 w-6" />} title={t("p7_Bin_is_empty")} />
         ) : (
           <>
           <Table>
             <TableHeader>
               <TableRow>
                 {columns.map((c) => <TableHead key={c.key}>{c.label}</TableHead>)}
-                <TableHead>{lang === "bn" ? "মুছেছেন" : "Deleted at"}</TableHead>
+                <TableHead>{t("p7_Deleted_at")}</TableHead>
                 <TableHead className="text-right">Action</TableHead>
               </TableRow>
             </TableHeader>
@@ -107,12 +107,12 @@ function RecycleBinPage() {
                     <div className="inline-flex gap-1">
                       <Button size="sm" variant="outline" onClick={() => restore(String(r.id))} className="gap-1">
                         <RotateCcw className="h-3.5 w-3.5" />
-                        {lang === "bn" ? "ফেরত" : "Restore"}
+                        {t("p7_Restore")}
                       </Button>
                       {canPurge && (
                         <Button size="sm" variant="outline" onClick={() => purge(String(r.id))} className="gap-1 border-rose-200 text-rose-600 hover:bg-rose-50">
                           <Trash2 className="h-3.5 w-3.5" />
-                          {lang === "bn" ? "স্থায়ী" : "Purge"}
+                          {t("p7_Purge")}
                         </Button>
                       )}
                     </div>

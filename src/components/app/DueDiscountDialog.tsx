@@ -30,7 +30,7 @@ export function DueDiscountDialog({
   sale: DueDiscountSale | null;
   onApplied?: () => void;
 }) {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const { user } = useAuth();
   const [amount, setAmount] = useState("");
   const [note, setNote] = useState("");
@@ -50,7 +50,7 @@ export function DueDiscountDialog({
 
   const apply = async () => {
     if (!sale || !valid) {
-      toast.error(lang === "bn" ? "সঠিক পরিমান দিন" : "Enter a valid amount");
+      toast.error(t("p7_Enter_a_valid_amount"));
       return;
     }
     setSaving(true);
@@ -91,7 +91,7 @@ export function DueDiscountDialog({
           .eq("id", sale.customer_id);
       }
 
-      toast.success(lang === "bn" ? "ডিসকাউন্ট দেওয়া হয়েছে" : "Discount applied");
+      toast.success(t("p7_Discount_applied"));
       onApplied?.();
       onOpenChange(false);
     } catch (e) {
@@ -108,44 +108,44 @@ export function DueDiscountDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <BadgePercent className="h-5 w-5 text-primary" />
-            {lang === "bn" ? "বাকিতে ডিসকাউন্ট" : "Discount on due"}
+            {t("p7_Discount_on_due")}
           </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-3">
           <div className="rounded-lg border bg-muted/40 p-3 text-sm">
             <div className="flex items-center justify-between">
-              <span className="text-muted-foreground">{lang === "bn" ? "বর্তমান বাকি" : "Current due"}</span>
+              <span className="text-muted-foreground">{t("p7_Current_due_2")}</span>
               <span className="font-bold">{fmtMoney(due, lang)}</span>
             </div>
             <div className="mt-1 flex items-center justify-between">
-              <span className="text-muted-foreground">{lang === "bn" ? "ডিসকাউন্টের পর বাকি" : "Due after discount"}</span>
+              <span className="text-muted-foreground">{t("p7_Due_after_discount")}</span>
               <span className="font-bold text-primary">{fmtMoney(remaining, lang)}</span>
             </div>
           </div>
 
           <div className="space-y-1.5">
-            <Label>{lang === "bn" ? "ডিসকাউন্টের পরিমান" : "Discount amount"}</Label>
+            <Label>{t("p7_Discount_amount")}</Label>
             <Input
               type="number"
               inputMode="decimal"
               value={amount}
               onChange={(e) => setAmount(e.target.value.replace(/[^0-9.]/g, ""))}
-              placeholder={lang === "bn" ? "যেমন: ৭০" : "e.g. 70"}
+              placeholder={t("p7_e_g_70")}
             />
             {amt > due && (
               <div className="text-xs text-destructive">
-                {lang === "bn" ? "বাকির চেয়ে বেশি দেওয়া যাবে না" : "Cannot exceed current due"}
+                {t("p7_Cannot_exceed_current_due")}
               </div>
             )}
           </div>
 
           <div className="space-y-1.5">
-            <Label>{lang === "bn" ? "মন্তব্য (ঐচ্ছিক)" : "Note (optional)"}</Label>
+            <Label>{t("p7_Note_optional")}</Label>
             <Textarea
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              placeholder={lang === "bn" ? "কেন ডিসকাউন্ট দিচ্ছেন" : "Reason for discount"}
+              placeholder={t("p7_Reason_for_discount")}
               rows={2}
             />
           </div>
@@ -153,11 +153,11 @@ export function DueDiscountDialog({
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
-            {lang === "bn" ? "বাতিল" : "Cancel"}
+            {t("p7_Cancel")}
           </Button>
           <Button onClick={apply} disabled={!valid || saving}>
             {saving && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
-            {lang === "bn" ? "ডিসকাউন্ট দিন" : "Apply discount"}
+            {t("p7_Apply_discount")}
           </Button>
         </DialogFooter>
       </DialogContent>

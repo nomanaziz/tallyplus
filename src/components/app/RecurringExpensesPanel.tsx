@@ -71,7 +71,7 @@ function calcMonthly(t: { kind: Kind; amount: number; loan_principal?: number | 
 }
 
 export function RecurringExpensesPanel() {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const { current } = useShop();
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
@@ -129,15 +129,15 @@ export function RecurringExpensesPanel() {
   const onPause = async (r: RecExp) => {
     const { error } = await supabase.from("recurring_expenses").update({ is_active: !r.is_active }).eq("id", r.id);
     if (error) { toast.error(error.message); return; }
-    toast.success(lang === "bn" ? "আপডেট হয়েছে" : "Updated");
+    toast.success(t("p7_Updated"));
     refresh();
   };
 
   const onDelete = async (r: RecExp) => {
-    if (!confirm(lang === "bn" ? "ডিলিট করবেন?" : "Delete?")) return;
+    if (!confirm(t("p7_Delete"))) return;
     const { error } = await supabase.from("recurring_expenses").update({ deleted_at: new Date().toISOString() }).eq("id", r.id);
     if (error) { toast.error(error.message); return; }
-    toast.success(lang === "bn" ? "ডিলিট হয়েছে" : "Deleted");
+    toast.success(t("p7_Deleted"));
     refresh();
   };
 
@@ -152,47 +152,47 @@ export function RecurringExpensesPanel() {
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <Wallet className="h-5 w-5 text-primary" />
-          <h2 className="text-base font-bold">{lang === "bn" ? "মাসিক নির্দিষ্ট খরচ" : "Monthly recurring expenses"}</h2>
+          <h2 className="text-base font-bold">{t("p7_Monthly_recurring_expenses")}</h2>
         </div>
         <Button size="sm" onClick={() => { setEditing(null); setOpen(true); }} className="gap-1">
-          <Plus className="h-4 w-4" /> {lang === "bn" ? "নতুন মাসিক খরচ" : "New monthly expense"}
+          <Plus className="h-4 w-4" /> {t("p7_New_monthly_expense")}
         </Button>
       </div>
 
       {/* KPI */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <div className="rounded-xl border border-rose-200 bg-rose-50 p-3">
-          <div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{lang === "bn" ? "এই মাসের বাকি bill" : "This month pending"}</div>
+          <div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{t("p7_This_month_pending")}</div>
           <div className="mt-1 text-2xl font-extrabold text-rose-700">{fmtMoney(totalPending, lang)}</div>
-          <div className="mt-0.5 text-[11px] text-muted-foreground">{pendingDues.length} {lang === "bn" ? "টি বিল" : "bills"}</div>
+          <div className="mt-0.5 text-[11px] text-muted-foreground">{pendingDues.length} {t("p7_bills")}</div>
         </div>
         <div className="rounded-xl border border-amber-200 bg-amber-50 p-3">
-          <div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{lang === "bn" ? "মাসিক মোট নির্ধারিত" : "Estimated monthly"}</div>
+          <div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{t("p7_Estimated_monthly")}</div>
           <div className="mt-1 text-2xl font-extrabold text-amber-700">{fmtMoney(totalMonthly, lang)}</div>
         </div>
         <div className="rounded-xl border border-sky-200 bg-sky-50 p-3">
-          <div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{lang === "bn" ? "চালু আছে" : "Active"}</div>
+          <div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{t("p7_Active_2")}</div>
           <div className="mt-1 text-2xl font-extrabold text-sky-700">{tpls.filter((t) => t.is_active).length}</div>
         </div>
       </div>
 
       {/* Templates */}
-      <h3 className="mt-4 mb-2 text-sm font-semibold text-muted-foreground">{lang === "bn" ? "খরচের তালিকা" : "Expense chart"}</h3>
+      <h3 className="mt-4 mb-2 text-sm font-semibold text-muted-foreground">{t("p7_Expense_chart")}</h3>
       <div className="rounded-xl border bg-card">
         {tpls.length === 0 ? (
           <div className="p-6 text-center text-sm text-muted-foreground">
-            {lang === "bn" ? "এখনো কোনো মাসিক খরচ যোগ করা হয়নি।" : "No recurring expenses yet."}
+            {t("p7_No_recurring_expenses_yet")}
           </div>
         ) : (
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>{lang === "bn" ? "নাম" : "Name"}</TableHead>
-                <TableHead>{lang === "bn" ? "ধরন" : "Type"}</TableHead>
-                <TableHead className="text-right">{lang === "bn" ? "মাসিক টাকা" : "Monthly amount"}</TableHead>
-                <TableHead>{lang === "bn" ? "তারিখ" : "Day"}</TableHead>
-                <TableHead>{lang === "bn" ? "অবস্থা" : "Active"}</TableHead>
-                <TableHead className="text-right">{lang === "bn" ? "অ্যাকশন" : "Action"}</TableHead>
+                <TableHead>{t("p7_Name")}</TableHead>
+                <TableHead>{t("p7_Type")}</TableHead>
+                <TableHead className="text-right">{t("p7_Monthly_amount")}</TableHead>
+                <TableHead>{t("p7_Day")}</TableHead>
+                <TableHead>{t("p7_Active_3")}</TableHead>
+                <TableHead className="text-right">{t("p7_Action")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -203,7 +203,7 @@ export function RecurringExpensesPanel() {
                     <div className="text-[11px] text-muted-foreground">{t.category}</div>
                   </TableCell>
                   <TableCell className="text-xs capitalize">
-                    {t.kind === "loan" ? (lang === "bn" ? "লোন" : "Loan") : t.kind === "variable" ? (lang === "bn" ? "পরিবর্তনশীল" : "Variable") : (lang === "bn" ? "ফিক্সড" : "Fixed")}
+                    {t.kind === "loan" ? (t("p7_Loan")) : t.kind === "variable" ? (t("p7_Variable")) : (t("p7_Fixed"))}
                   </TableCell>
                   <TableCell className="text-right font-semibold tabular-nums">{fmtMoney(calcMonthly(t), lang)}</TableCell>
                   <TableCell className="text-xs">{t.day_of_month}</TableCell>
@@ -226,19 +226,19 @@ export function RecurringExpensesPanel() {
       </div>
 
       {/* This month dues */}
-      <h3 className="mt-4 mb-2 text-sm font-semibold text-muted-foreground">{lang === "bn" ? "এই মাসের বিল" : "This month's bills"}</h3>
+      <h3 className="mt-4 mb-2 text-sm font-semibold text-muted-foreground">{t("p7_This_month_s_bills")}</h3>
       <div className="rounded-xl border bg-card">
         {dues.length === 0 ? (
-          <EmptyState icon={<AlertCircle className="h-6 w-6" />} title={lang === "bn" ? "এই মাসের কোনো বিল এখনো তৈরি হয়নি" : "No bills generated yet"} />
+          <EmptyState icon={<AlertCircle className="h-6 w-6" />} title={t("p7_No_bills_generated_yet")} />
         ) : (
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>{lang === "bn" ? "নাম" : "Name"}</TableHead>
-                <TableHead>{lang === "bn" ? "ক্যাটাগরি" : "Category"}</TableHead>
-                <TableHead className="text-right">{lang === "bn" ? "টাকা" : "Amount"}</TableHead>
-                <TableHead>{lang === "bn" ? "অবস্থা" : "Status"}</TableHead>
-                <TableHead className="text-right">{lang === "bn" ? "অ্যাকশন" : "Action"}</TableHead>
+                <TableHead>{t("p7_Name")}</TableHead>
+                <TableHead>{t("p7_Category")}</TableHead>
+                <TableHead className="text-right">{t("p7_Amount_4")}</TableHead>
+                <TableHead>{t("p7_Status")}</TableHead>
+                <TableHead className="text-right">{t("p7_Action")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -249,14 +249,14 @@ export function RecurringExpensesPanel() {
                   <TableCell className="text-right font-bold tabular-nums">{fmtMoney(Number(d.bill_amount), lang)}</TableCell>
                   <TableCell>
                     {d.status === "paid"
-                      ? <Badge className="bg-emerald-600">{lang === "bn" ? "পরিশোধিত" : "Paid"}</Badge>
+                      ? <Badge className="bg-emerald-600">{t("p7_Paid")}</Badge>
                       : d.status === "skipped"
-                      ? <Badge variant="secondary">{lang === "bn" ? "বাদ" : "Skipped"}</Badge>
-                      : <Badge variant="destructive">{lang === "bn" ? "বাকি" : "Pending"}</Badge>}
+                      ? <Badge variant="secondary">{t("p7_Skipped")}</Badge>
+                      : <Badge variant="destructive">{t("p7_Pending_2")}</Badge>}
                   </TableCell>
                   <TableCell className="text-right">
                     {d.status === "pending" ? (
-                      <Button size="sm" onClick={() => setPayTarget(d)}>{lang === "bn" ? "পরিশোধ" : "Pay"}</Button>
+                      <Button size="sm" onClick={() => setPayTarget(d)}>{t("p7_Pay")}</Button>
                     ) : (
                       <span className="text-[11px] text-muted-foreground">{d.paid_at ? new Date(d.paid_at).toLocaleDateString() : "—"}</span>
                     )}
@@ -269,7 +269,7 @@ export function RecurringExpensesPanel() {
       </div>
 
       <p className="mt-2 text-[11px] text-muted-foreground">
-        {lang === "bn" ? "টিপস: প্রতি মাসে নির্ধারিত তারিখে এই বিলগুলো automatic আপনার খরচের বইতে \"বাকি\" হিসেবে উঠবে। \"পরিশোধ\" চাপলেই ক্যাশবক্স থেকে টাকা কাটা হবে।" : "Bills auto-generate each month; tap Pay to debit cashbox."}
+        {t("p7_Bills_auto_generate_each_month")}
       </p>
 
       <RecExpDialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setEditing(null); }} editing={editing} onSaved={refresh} />
@@ -280,7 +280,7 @@ export function RecurringExpensesPanel() {
 
 /* ---------- Template dialog ---------- */
 function RecExpDialog({ open, onOpenChange, editing, onSaved }: { open: boolean; onOpenChange: (v: boolean) => void; editing: RecExp | null; onSaved: () => void }) {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const { current } = useShop();
   const { user } = useAuth();
   const [name, setName] = useState("");
@@ -319,7 +319,7 @@ function RecExpDialog({ open, onOpenChange, editing, onSaved }: { open: boolean;
 
   const save = async () => {
     if (!current || !user) return;
-    if (!name.trim()) { toast.error(lang === "bn" ? "নাম দিন" : "Enter a name"); return; }
+    if (!name.trim()) { toast.error(t("p7_Enter_a_name")); return; }
     const d = Math.max(1, Math.min(28, Number(day || 1)));
     const payload = {
       shop_id: current.id, created_by: user.id,
@@ -345,7 +345,7 @@ function RecExpDialog({ open, onOpenChange, editing, onSaved }: { open: boolean;
       : await supabase.from("recurring_expenses").insert(payload);
     setBusy(false);
     if (error) { toast.error(error.message); return; }
-    toast.success(lang === "bn" ? "সেভ হয়েছে" : "Saved");
+    toast.success(t("p7_Saved"));
     onOpenChange(false);
     onSaved();
   };
@@ -354,16 +354,16 @@ function RecExpDialog({ open, onOpenChange, editing, onSaved }: { open: boolean;
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{editing ? (lang === "bn" ? "মাসিক খরচ এডিট" : "Edit recurring expense") : (lang === "bn" ? "নতুন মাসিক খরচ" : "New recurring expense")}</DialogTitle>
+          <DialogTitle>{editing ? (t("p7_Edit_recurring_expense")) : (t("p7_New_recurring_expense"))}</DialogTitle>
         </DialogHeader>
         <div className="grid gap-3">
           <div className="grid gap-1.5">
-            <Label>{lang === "bn" ? "নাম" : "Name"}</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder={lang === "bn" ? "যেমন: দোকান ভাড়া" : "e.g. Shop rent"} />
+            <Label>{t("p7_Name")}</Label>
+            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder={t("p7_e_g_Shop_rent")} />
           </div>
           <div className="grid grid-cols-2 gap-2">
             <div className="grid gap-1.5">
-              <Label>{lang === "bn" ? "ক্যাটাগরি" : "Category"}</Label>
+              <Label>{t("p7_Category")}</Label>
               <Select value={category} onValueChange={(v) => { setCategory(v); if (v === "loan") setKind("loan"); }}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -372,73 +372,73 @@ function RecExpDialog({ open, onOpenChange, editing, onSaved }: { open: boolean;
               </Select>
             </div>
             <div className="grid gap-1.5">
-              <Label>{lang === "bn" ? "ধরন" : "Type"}</Label>
+              <Label>{t("p7_Type")}</Label>
               <Select value={kind} onValueChange={(v) => setKind(v as Kind)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="fixed">{lang === "bn" ? "ফিক্সড (একই টাকা)" : "Fixed"}</SelectItem>
-                  <SelectItem value="variable">{lang === "bn" ? "পরিবর্তনশীল (যেমন বিদ্যুৎ)" : "Variable"}</SelectItem>
-                  <SelectItem value="loan">{lang === "bn" ? "লোন / কিস্তি" : "Loan / EMI"}</SelectItem>
+                  <SelectItem value="fixed">{t("p7_Fixed_2")}</SelectItem>
+                  <SelectItem value="variable">{t("p7_Variable_2")}</SelectItem>
+                  <SelectItem value="loan">{t("p7_Loan_EMI")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
           {kind !== "loan" ? (
             <div className="grid gap-1.5">
-              <Label>{lang === "bn" ? "মাসিক টাকা" : "Monthly amount"}</Label>
+              <Label>{t("p7_Monthly_amount")}</Label>
               <Input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} />
               {kind === "variable" && (
-                <p className="text-[11px] text-muted-foreground">{lang === "bn" ? "প্রতি মাসে পরিশোধের সময় টাকা পরিবর্তন করতে পারবেন।" : "You can change the amount each month before paying."}</p>
+                <p className="text-[11px] text-muted-foreground">{t("p7_You_can_change_the_amount_each")}</p>
               )}
             </div>
           ) : (
             <div className="space-y-3 rounded-md border bg-muted/30 p-3">
               <div className="grid grid-cols-2 gap-2">
                 <div className="grid gap-1.5">
-                  <Label>{lang === "bn" ? "মূল লোন" : "Principal"}</Label>
+                  <Label>{t("p7_Principal")}</Label>
                   <Input type="number" value={principal} onChange={(e) => setPrincipal(e.target.value)} />
                 </div>
                 <div className="grid gap-1.5">
-                  <Label>{lang === "bn" ? "বার্ষিক সুদ %" : "Annual rate %"}</Label>
+                  <Label>{t("p7_Annual_rate")}</Label>
                   <Input type="number" value={rate} onChange={(e) => setRate(e.target.value)} />
                 </div>
               </div>
               <div className="grid gap-1.5">
-                <Label>{lang === "bn" ? "পরিশোধের ধরন" : "Payment mode"}</Label>
+                <Label>{t("p7_Payment_mode")}</Label>
                 <Select value={loanMode} onValueChange={(v) => setLoanMode(v as LoanMode)}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="interest_only">{lang === "bn" ? "শুধু সুদ প্রতি মাসে" : "Interest only"}</SelectItem>
-                    <SelectItem value="emi">{lang === "bn" ? "EMI (সুদ + আসল)" : "EMI (interest + principal)"}</SelectItem>
+                    <SelectItem value="interest_only">{t("p7_Interest_only")}</SelectItem>
+                    <SelectItem value="emi">{t("p7_EMI_interest_principal")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               {loanMode === "emi" && (
                 <div className="grid gap-1.5">
-                  <Label>{lang === "bn" ? "মেয়াদ (মাস)" : "Term (months)"}</Label>
+                  <Label>{t("p7_Term_months")}</Label>
                   <Input type="number" value={term} onChange={(e) => setTerm(e.target.value)} />
                 </div>
               )}
               <div className="rounded bg-background px-3 py-2 text-xs">
-                {lang === "bn" ? "প্রতি মাসে কাটবে:" : "Monthly amount:"} <strong className="text-base">{fmtMoney(previewMonthly, lang)}</strong>
+                {t("p7_Monthly_amount_2")} <strong className="text-base">{fmtMoney(previewMonthly, lang)}</strong>
               </div>
             </div>
           )}
           <div className="grid grid-cols-2 gap-2">
             <div className="grid gap-1.5">
-              <Label>{lang === "bn" ? "মাসের কত তারিখে" : "Day of month"}</Label>
+              <Label>{t("p7_Day_of_month")}</Label>
               <Input type="number" min={1} max={28} value={day} onChange={(e) => setDay(e.target.value)} />
-              <p className="text-[10px] text-muted-foreground">{lang === "bn" ? "১–২৮" : "1–28"}</p>
+              <p className="text-[10px] text-muted-foreground">{t("p7_1_28")}</p>
             </div>
           </div>
           <div className="grid gap-1.5">
-            <Label>{lang === "bn" ? "নোট" : "Note"}</Label>
+            <Label>{t("p7_Note")}</Label>
             <Textarea value={note} onChange={(e) => setNote(e.target.value)} rows={2} />
           </div>
         </div>
         <DialogFooter>
-          <Button variant="ghost" onClick={() => onOpenChange(false)}>{lang === "bn" ? "বাতিল" : "Cancel"}</Button>
-          <Button onClick={save} disabled={busy}>{busy ? "..." : lang === "bn" ? "সেভ করুন" : "Save"}</Button>
+          <Button variant="ghost" onClick={() => onOpenChange(false)}>{t("p7_Cancel")}</Button>
+          <Button onClick={save} disabled={busy}>{busy ? "..." : t("p7_Save_4")}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -447,7 +447,7 @@ function RecExpDialog({ open, onOpenChange, editing, onSaved }: { open: boolean;
 
 /* ---------- Pay due dialog ---------- */
 function PayDueDialog({ target, onOpenChange, onSaved }: { target: DueRow | null; onOpenChange: (v: boolean) => void; onSaved: () => void }) {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const { current } = useShop();
   const { user } = useAuth();
   const [amount, setAmount] = useState("");
@@ -459,7 +459,7 @@ function PayDueDialog({ target, onOpenChange, onSaved }: { target: DueRow | null
   const pay = async () => {
     if (!target || !current || !user) return;
     const amt = Number(amount);
-    if (!amt || amt <= 0) { toast.error(lang === "bn" ? "টাকার পরিমাণ দিন" : "Enter amount"); return; }
+    if (!amt || amt <= 0) { toast.error(t("p7_Enter_amount_2")); return; }
     setBusy(true);
     const { data: exp, error: expErr } = await supabase
       .from("expenses")
@@ -480,7 +480,7 @@ function PayDueDialog({ target, onOpenChange, onSaved }: { target: DueRow | null
       .eq("id", target.id);
     setBusy(false);
     if (dueErr) { toast.error(dueErr.message); return; }
-    toast.success(lang === "bn" ? "পরিশোধিত হয়েছে" : "Paid");
+    toast.success(t("p7_Paid_2"));
     onOpenChange(false);
     onSaved();
   };
@@ -502,7 +502,7 @@ function PayDueDialog({ target, onOpenChange, onSaved }: { target: DueRow | null
     <Dialog open={!!target} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-sm">
         <DialogHeader>
-          <DialogTitle>{lang === "bn" ? "বিল পরিশোধ" : "Pay bill"}</DialogTitle>
+          <DialogTitle>{t("p7_Pay_bill")}</DialogTitle>
         </DialogHeader>
         <div className="grid gap-3">
           <div className="rounded-md bg-muted px-3 py-2 text-sm">
@@ -510,11 +510,11 @@ function PayDueDialog({ target, onOpenChange, onSaved }: { target: DueRow | null
             <div className="text-xs text-muted-foreground">{target?.due_month?.slice(0, 7)}</div>
           </div>
           <div className="grid gap-1.5">
-            <Label>{lang === "bn" ? "টাকার পরিমাণ" : "Amount"}</Label>
+            <Label>{t("p7_Amount_2")}</Label>
             <Input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} autoFocus />
           </div>
           <div className="grid gap-1.5">
-            <Label>{lang === "bn" ? "পেমেন্ট মাধ্যম" : "Paid via"}</Label>
+            <Label>{t("p7_Paid_via")}</Label>
             <Select value={paidVia} onValueChange={(v) => setPaidVia(v as typeof paidVia)}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
@@ -528,8 +528,8 @@ function PayDueDialog({ target, onOpenChange, onSaved }: { target: DueRow | null
           </div>
         </div>
         <DialogFooter className="flex-col-reverse gap-2 sm:flex-row sm:justify-between">
-          <Button variant="ghost" onClick={skip} disabled={busy}>{lang === "bn" ? "এই মাসে বাদ দিন" : "Skip this month"}</Button>
-          <Button onClick={pay} disabled={busy}>{busy ? "..." : lang === "bn" ? "পরিশোধ করুন" : "Pay"}</Button>
+          <Button variant="ghost" onClick={skip} disabled={busy}>{t("p7_Skip_this_month")}</Button>
+          <Button onClick={pay} disabled={busy}>{busy ? "..." : t("p7_Pay_2")}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

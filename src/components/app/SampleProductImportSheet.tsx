@@ -35,7 +35,7 @@ export function SampleProductImportSheet({
   onOpenChange: (v: boolean) => void;
   onImported: () => void;
 }) {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const { current } = useShop();
   const [loading, setLoading] = useState(false);
   const [items, setItems] = useState<CatalogProduct[]>([]);
@@ -83,7 +83,7 @@ export function SampleProductImportSheet({
   const categories = useMemo(() => {
     const map = new Map<string, number>();
     filtered.forEach((p) => {
-      const c = p.category ?? (lang === "bn" ? "অন্যান্য" : "Other");
+      const c = p.category ?? (t("p7_Other"));
       map.set(c, (map.get(c) ?? 0) + 1);
     });
     return Array.from(map.entries()).sort((a, b) => b[1] - a[1]);
@@ -103,7 +103,7 @@ export function SampleProductImportSheet({
   const visible = useMemo(() => {
     if (!activeCategory) return [];
     return filtered.filter(
-      (p) => (p.category ?? (lang === "bn" ? "অন্যান্য" : "Other")) === activeCategory,
+      (p) => (p.category ?? (t("p7_Other"))) === activeCategory,
     );
   }, [filtered, activeCategory, lang]);
 
@@ -128,7 +128,7 @@ export function SampleProductImportSheet({
 
   const doImport = async () => {
     if (!current?.id) {
-      toast.error(lang === "bn" ? "প্রথমে একটি দোকান নির্বাচন করুন" : "Select a shop first");
+      toast.error(t("p7_Select_a_shop_first"));
       return;
     }
     if (selected.size === 0) return;
@@ -215,12 +215,10 @@ export function SampleProductImportSheet({
         <SheetHeader className="border-b px-4 py-3">
           <SheetTitle className="flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-primary" />
-            {lang === "bn" ? "স্যাম্পল প্রোডাক্ট ইম্পোর্ট" : "Import Sample Products"}
+            {t("p7_Import_Sample_Products")}
           </SheetTitle>
           <p className="text-xs text-muted-foreground">
-            {lang === "bn"
-              ? "ক্যাটাগরি বা একক পণ্য বেছে নিয়ে আপনার দোকানে যোগ করুন।"
-              : "Pick categories or individual items to add to your shop."}
+            {t("p7_Pick_categories_or_individual_")}
           </p>
         </SheetHeader>
 
@@ -230,7 +228,7 @@ export function SampleProductImportSheet({
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder={lang === "bn" ? "নাম, ব্র্যান্ড বা ক্যাটাগরি খুঁজুন…" : "Search name, brand or category…"}
+              placeholder={t("p7_Search_name_brand_or_category")}
               className="pl-9"
             />
           </div>
@@ -244,7 +242,7 @@ export function SampleProductImportSheet({
                 <Loader2 className="h-4 w-4 animate-spin" /> ...
               </div>
             ) : categories.length === 0 ? (
-              <div className="p-4 text-sm text-muted-foreground">{lang === "bn" ? "কিছু পাওয়া যায়নি" : "Nothing found"}</div>
+              <div className="p-4 text-sm text-muted-foreground">{t("p7_Nothing_found")}</div>
             ) : (
               <ul className="py-1">
                 {categories.map(([c, n]) => (
@@ -270,10 +268,10 @@ export function SampleProductImportSheet({
           <div className="flex flex-col overflow-hidden">
             <div className="flex items-center justify-between gap-2 border-b px-3 py-2">
               <div className="text-sm font-medium truncate">
-                {activeCategory ?? (lang === "bn" ? "ক্যাটাগরি" : "Category")}
+                {activeCategory ?? (t("p7_Category"))}
               </div>
               <Button size="sm" variant="outline" disabled={visible.length === 0} onClick={selectWholeCategory}>
-                {lang === "bn" ? "সম্পূর্ণ ক্যাটাগরি যোগ" : "Add whole category"}
+                {t("p7_Add_whole_category")}
               </Button>
             </div>
             <ScrollArea className="flex-1">
@@ -283,7 +281,7 @@ export function SampleProductImportSheet({
                 </div>
               ) : visible.length === 0 ? (
                 <div className="p-6 text-center text-sm text-muted-foreground">
-                  {lang === "bn" ? "এই ক্যাটাগরিতে কোনো পণ্য নেই" : "No products in this category"}
+                  {t("p7_No_products_in_this_category")}
                 </div>
               ) : (
                 <ul className="divide-y">
@@ -328,12 +326,12 @@ export function SampleProductImportSheet({
 
         <div className="flex items-center justify-between gap-2 border-t bg-card px-4 py-3">
           <div className="text-sm">
-            {lang === "bn" ? "নির্বাচিত: " : "Selected: "}
+            {t("p7_Selected")}
             <span className="font-semibold">{lang === "bn" ? bnNum(selected.size) : selected.size}</span>
           </div>
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="sm" disabled={selected.size === 0 || importing} onClick={clearAll}>
-              {lang === "bn" ? "ক্লিয়ার" : "Clear"}
+              {t("p7_Clear_3")}
             </Button>
             <Button onClick={doImport} disabled={selected.size === 0 || importing} className="gap-2">
               {importing && <Loader2 className="h-4 w-4 animate-spin" />}

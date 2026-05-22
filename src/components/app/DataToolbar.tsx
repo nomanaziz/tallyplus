@@ -20,7 +20,7 @@ export function DataToolbar({
   middleExtra?: ReactNode;
   placeholder?: string;
 }) {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   return (
     <div className="flex flex-wrap items-center gap-2">
       <div className="relative min-w-0 flex-1">
@@ -28,7 +28,7 @@ export function DataToolbar({
         <Input
           value={search}
           onChange={(e) => onSearch(e.target.value)}
-          placeholder={placeholder ?? (lang === "bn" ? "পণ্য খোঁজ করুন" : "Search...")}
+          placeholder={placeholder ?? (t("p7_Search"))}
           className="h-10 pl-9"
         />
       </div>
@@ -39,7 +39,7 @@ export function DataToolbar({
       {onRefresh && (
         <Button variant="outline" onClick={onRefresh} className="h-10 gap-2">
           <AppIcon name="refresh" className="h-4 w-4" />
-          {lang === "bn" ? "রিফ্রেশ" : "Refresh"}
+          {t("p7_Refresh")}
         </Button>
       )}
       {rightExtra}

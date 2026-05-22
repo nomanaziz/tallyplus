@@ -30,7 +30,7 @@ export function PaymentEntryDialog({
   defaultDirection: PaymentDir;
   onSaved?: () => void;
 }) {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const { current } = useShop();
   const { user } = useAuth();
   const [dir, setDir] = useState<PaymentDir>(defaultDirection);
@@ -45,9 +45,9 @@ export function PaymentEntryDialog({
   const titleEn = dir === "in" ? "Money Received" : "Money Given";
 
   const save = async () => {
-    if (!current?.id) { toast.error(lang === "bn" ? "শপ নির্বাচন করুন" : "Select a shop"); return; }
+    if (!current?.id) { toast.error(t("p7_Select_a_shop")); return; }
     const amt = Number(amount);
-    if (!amt || amt <= 0) { toast.error(lang === "bn" ? "পরিমাণ দিন" : "Enter amount"); return; }
+    if (!amt || amt <= 0) { toast.error(t("p7_Enter_amount")); return; }
     setSaving(true);
     try {
       const { error: payErr } = await supabase.from("payments").insert({
@@ -73,7 +73,7 @@ export function PaymentEntryDialog({
         ref_id: null,
       });
 
-      toast.success(lang === "bn" ? "সংরক্ষিত হয়েছে" : "Saved");
+      toast.success(t("p7_Saved_2"));
       onOpenChange(false);
       onSaved?.();
     } catch (e: unknown) {
@@ -88,7 +88,7 @@ export function PaymentEntryDialog({
         <DialogHeader>
           <DialogTitle>{lang === "bn" ? titleBn : titleEn} — {contactName}</DialogTitle>
           <DialogDescription>
-            {lang === "bn" ? "লেনদেনের তথ্য দিন" : "Enter payment details"}
+            {t("p7_Enter_payment_details")}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
@@ -99,7 +99,7 @@ export function PaymentEntryDialog({
               className={dir === "in" ? "bg-emerald-600 hover:bg-emerald-700 text-white" : ""}
               onClick={() => setDir("in")}
             >
-              {lang === "bn" ? "পেলাম" : "Received"}
+              {t("p7_Received")}
             </Button>
             <Button
               type="button"
@@ -107,38 +107,38 @@ export function PaymentEntryDialog({
               className={dir === "out" ? "bg-rose-600 hover:bg-rose-700 text-white" : ""}
               onClick={() => setDir("out")}
             >
-              {lang === "bn" ? "দিলাম" : "Given"}
+              {t("p7_Given")}
             </Button>
           </div>
 
           <div className="space-y-1.5">
-            <Label>{lang === "bn" ? "টাকার পরিমাণ" : "Amount"} <span className="text-destructive">*</span></Label>
+            <Label>{t("p7_Amount_2")} <span className="text-destructive">*</span></Label>
             <Input type="number" inputMode="decimal" autoFocus value={amount} onChange={(e) => setAmount(e.target.value)} />
           </div>
 
           <div className="space-y-1.5">
-            <Label>{lang === "bn" ? "মাধ্যম" : "Method"}</Label>
+            <Label>{t("p7_Method")}</Label>
             <Select value={method} onValueChange={setMethod}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="cash">{lang === "bn" ? "নগদ" : "Cash"}</SelectItem>
+                <SelectItem value="cash">{t("p7_Cash")}</SelectItem>
                 <SelectItem value="bkash">bKash</SelectItem>
                 <SelectItem value="nagad">Nagad</SelectItem>
                 <SelectItem value="rocket">Rocket</SelectItem>
-                <SelectItem value="bank">{lang === "bn" ? "ব্যাংক" : "Bank"}</SelectItem>
-                <SelectItem value="card">{lang === "bn" ? "কার্ড" : "Card"}</SelectItem>
-                <SelectItem value="other">{lang === "bn" ? "অন্যান্য" : "Other"}</SelectItem>
+                <SelectItem value="bank">{t("p7_Bank")}</SelectItem>
+                <SelectItem value="card">{t("p7_Card")}</SelectItem>
+                <SelectItem value="other">{t("p7_Other")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           <div className="space-y-1.5">
-            <Label>{lang === "bn" ? "মন্তব্য" : "Note"}</Label>
-            <Textarea rows={2} value={note} onChange={(e) => setNote(e.target.value)} placeholder={lang === "bn" ? "যেমন: bkash 01711…" : "e.g. bkash 01711…"} />
+            <Label>{t("p7_Note_2")}</Label>
+            <Textarea rows={2} value={note} onChange={(e) => setNote(e.target.value)} placeholder={t("p7_e_g_bkash_01711")} />
           </div>
 
           <Button onClick={save} disabled={saving} className="w-full h-11">
-            {saving ? (lang === "bn" ? "সংরক্ষণ হচ্ছে..." : "Saving...") : (lang === "bn" ? "সেভ করুন" : "Save")}
+            {saving ? (t("p7_Saving")) : (t("p7_Save_4"))}
           </Button>
         </div>
       </DialogContent>

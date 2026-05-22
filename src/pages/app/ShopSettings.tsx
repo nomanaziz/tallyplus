@@ -20,7 +20,7 @@ import { MODULE_LABELS, loadShopModules, setShopModule } from "@/lib/modules";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function ShopSettingsPage() {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const { current, refresh: refreshShops } = useShop();
   const { user } = useAuth();
   const nav = useNavigate();
@@ -80,7 +80,7 @@ export default function ShopSettingsPage() {
     setModules((s) => ({ ...s, [code]: on }));
     try {
       await setShopModule(current.id, code, on);
-      toast.success(lang === "bn" ? "মডিউল আপডেট হলো" : "Module updated");
+      toast.success(t("p7_Module_updated"));
     } catch (e) {
       setModules((s) => ({ ...s, [code]: prev }));
       toast.error((e as Error).message);
@@ -90,7 +90,7 @@ export default function ShopSettingsPage() {
   };
 
   const schema = z.object({
-    name: z.string().trim().min(2, lang === "bn" ? "দোকানের নাম দিন" : "Enter shop name").max(80),
+    name: z.string().trim().min(2, t("p7_Enter_shop_name")).max(80),
     address: z.string().trim().max(200).optional(),
     phone: z.string().trim().max(30).optional(),
   });
@@ -122,7 +122,7 @@ export default function ShopSettingsPage() {
           { onConflict: "shop_id" },
         );
       if (locErr) throw locErr;
-      toast.success(lang === "bn" ? "দোকানের তথ্য আপডেট হয়েছে" : "Shop info updated");
+      toast.success(t("p7_Shop_info_updated"));
       await refreshShops();
     } catch (e) {
       toast.error((e as Error).message);
@@ -173,7 +173,7 @@ export default function ShopSettingsPage() {
       };
       const fname = `${(current.name || "shop").replace(/[^a-z0-9]+/gi, "-")}-backup-${new Date().toISOString().slice(0, 10)}.json`;
       downloadJson(fname, backup);
-      toast.success(lang === "bn" ? "ব্যাকআপ ডাউনলোড হলো" : "Backup downloaded");
+      toast.success(t("p7_Backup_downloaded"));
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
@@ -184,7 +184,7 @@ export default function ShopSettingsPage() {
   if (!current) {
     return (
       <div className="p-6 text-center text-sm text-muted-foreground">
-        {lang === "bn" ? "কোনো দোকান নির্বাচন করা নেই।" : "No shop selected."}
+        {t("p7_No_shop_selected")}
       </div>
     );
   }
@@ -195,65 +195,61 @@ export default function ShopSettingsPage() {
         <Button variant="ghost" size="icon" onClick={() => nav(-1 as never)}>
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <h1 className="text-lg font-bold">{lang === "bn" ? "দোকানের সেটিংস" : "Shop Settings"}</h1>
+        <h1 className="text-lg font-bold">{t("p7_Shop_Settings")}</h1>
       </header>
 
       <div className="mx-auto max-w-xl space-y-4 p-4">
         <div className="rounded-xl border bg-card p-4 space-y-3">
-          <h2 className="font-semibold">{lang === "bn" ? "দোকানের তথ্য" : "Shop info"}</h2>
+          <h2 className="font-semibold">{t("p7_Shop_info")}</h2>
           <div>
-            <Label>{lang === "bn" ? "দোকানের নাম" : "Shop name"}</Label>
+            <Label>{t("p7_Shop_name")}</Label>
             <Input value={name} onChange={(e) => setName(e.target.value)} maxLength={80} disabled={!isOwner} className="mt-1" />
           </div>
           <div>
-            <Label>{lang === "bn" ? "ঠিকানা" : "Address"}</Label>
+            <Label>{t("p7_Address_2")}</Label>
             <Textarea value={address} onChange={(e) => setAddress(e.target.value)} maxLength={200} disabled={!isOwner} className="mt-1" rows={2} />
           </div>
           <div className="space-y-2">
-            <Label>{lang === "bn" ? "এলাকা / অবস্থান (ঐচ্ছিক)" : "Location (optional)"}</Label>
+            <Label>{t("p7_Location_optional")}</Label>
             <LocationPicker value={location} onChange={setLocation} disabled={!isOwner} />
           </div>
           <div>
-            <Label>{lang === "bn" ? "ফোন" : "Phone"}</Label>
+            <Label>{t("p7_Phone")}</Label>
             <Input value={phone} onChange={(e) => setPhone(e.target.value)} maxLength={30} disabled={!isOwner} className="mt-1" />
           </div>
           <Button onClick={save} disabled={busy || !isOwner} className="w-full">
             {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-            {lang === "bn" ? "সংরক্ষণ করুন" : "Save"}
+            {t("p7_Save_5")}
           </Button>
           {!isOwner && (
             <p className="text-xs text-muted-foreground">
-              {lang === "bn" ? "শুধু মালিক এই তথ্য পরিবর্তন করতে পারবেন।" : "Only the owner can edit shop info."}
+              {t("p7_Only_the_owner_can_edit_shop_i")}
             </p>
           )}
         </div>
 
         <div className="rounded-xl border bg-card p-4 space-y-3">
-          <h2 className="font-semibold">{lang === "bn" ? "ব্যাকআপ ও রিস্টোর" : "Backup & Restore"}</h2>
+          <h2 className="font-semibold">{t("p7_Backup_Restore")}</h2>
           <p className="text-xs text-muted-foreground">
-            {lang === "bn"
-              ? "প্রোডাক্ট, ক্যাটাগরি, গ্রাহক, সরবরাহকারী, সার্ভিস — এই master data ব্যাকআপ ও পরবর্তীতে restore করা যাবে।"
-              : "Master data (products, categories, customers, suppliers, services) can be backed up and restored later."}
+            {t("p7_Master_data_products_categorie")}
           </p>
           <div className="grid grid-cols-2 gap-2">
             <Button variant="outline" onClick={exportBackup} disabled={exporting}>
               {exporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
-              {lang === "bn" ? "ব্যাকআপ নিন" : "Download"}
+              {t("p7_Download")}
             </Button>
             <Button variant="outline" onClick={() => setRestoreOpen(true)} disabled={!isOwner}>
               <Upload className="mr-2 h-4 w-4" />
-              {lang === "bn" ? "রিস্টোর করুন" : "Restore"}
+              {t("p7_Restore_2")}
             </Button>
           </div>
         </div>
 
         <div className="rounded-xl border bg-card p-4 space-y-3">
           <div>
-            <h2 className="font-semibold">{lang === "bn" ? "মডিউল" : "Modules"}</h2>
+            <h2 className="font-semibold">{t("p7_Modules")}</h2>
             <p className="text-xs text-muted-foreground">
-              {lang === "bn"
-                ? "যেগুলো বন্ধ করবেন সেগুলোর মেনু লুকিয়ে যাবে। পুরোনো ডাটা মুছবে না।"
-                : "Disabled modules are hidden from the menu. Existing data is preserved."}
+              {t("p7_Disabled_modules_are_hidden_fr")}
             </p>
           </div>
           <div className="divide-y">
@@ -278,7 +274,7 @@ export default function ShopSettingsPage() {
           </div>
           {!isOwner && (
             <p className="text-xs text-muted-foreground">
-              {lang === "bn" ? "শুধু মালিক মডিউল পরিবর্তন করতে পারবেন।" : "Only the owner can change modules."}
+              {t("p7_Only_the_owner_can_change_modu")}
             </p>
           )}
         </div>
@@ -286,16 +282,14 @@ export default function ShopSettingsPage() {
         {modules["lpg"] && (
           <div className="rounded-xl border bg-card p-4 space-y-3">
             <div>
-              <h2 className="font-semibold">{lang === "bn" ? "LPG / বোতল সেটিংস" : "LPG / Bottle settings"}</h2>
+              <h2 className="font-semibold">{t("p7_LPG_Bottle_settings")}</h2>
               <p className="text-xs text-muted-foreground">
-                {lang === "bn"
-                  ? "আপনার ব্যবসার ধরন এবং পাবলিক LPG মার্কেটপ্লেসে দেখাবেন কিনা।"
-                  : "Your tier and whether to appear in the public LPG marketplace."}
+                {t("p7_Your_tier_and_whether_to_appea")}
               </p>
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
               <div>
-                <Label>{lang === "bn" ? "ব্যবসার ধরন" : "Business tier"}</Label>
+                <Label>{t("p7_Business_tier")}</Label>
                 <Select
                   value={lpgTier || "none"}
                   onValueChange={async (v) => {
@@ -306,29 +300,27 @@ export default function ShopSettingsPage() {
                     setLpgBusy(false);
                     if (error) return toast.error(error.message);
                     setLpgTier(next);
-                    toast.success(lang === "bn" ? "আপডেট হলো" : "Updated");
+                    toast.success(t("p7_Updated_2"));
                   }}
                   disabled={!isOwner || lpgBusy}
                 >
                   <SelectTrigger className="mt-1">
-                    <SelectValue placeholder={lang === "bn" ? "বাছাই করুন" : "Choose"} />
+                    <SelectValue placeholder={t("p7_Choose")} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none">{lang === "bn" ? "— নির্বাচন নেই —" : "— None —"}</SelectItem>
-                    <SelectItem value="dealer">{lang === "bn" ? "ডিলার" : "Dealer"}</SelectItem>
-                    <SelectItem value="wholesale">{lang === "bn" ? "পাইকারি" : "Wholesale"}</SelectItem>
-                    <SelectItem value="retail">{lang === "bn" ? "খুচরা" : "Retail"}</SelectItem>
-                    <SelectItem value="producer">{lang === "bn" ? "প্রস্তুতকারক (পানি/ফিল্টার)" : "Producer (water/filter)"}</SelectItem>
+                    <SelectItem value="none">{t("p7_None")}</SelectItem>
+                    <SelectItem value="dealer">{t("p7_Dealer")}</SelectItem>
+                    <SelectItem value="wholesale">{t("p7_Wholesale")}</SelectItem>
+                    <SelectItem value="retail">{t("p7_Retail")}</SelectItem>
+                    <SelectItem value="producer">{t("p7_Producer_water_filter")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="flex items-start justify-between gap-3 rounded-md border bg-muted/30 p-3">
                 <div className="min-w-0">
-                  <div className="text-sm font-medium">{lang === "bn" ? "পাবলিক LPG মার্কেটপ্লেসে দেখাও" : "Show in public LPG marketplace"}</div>
+                  <div className="text-sm font-medium">{t("p7_Show_in_public_LPG_marketplace")}</div>
                   <div className="text-xs text-muted-foreground">
-                    {lang === "bn"
-                      ? "চালু করলে আপনার দোকান /lpg পেজে এলাকা অনুযায়ী দেখা যাবে।"
-                      : "Enable to appear on the /lpg listing by area."}
+                    {t("p7_Enable_to_appear_on_the_lpg_li")}
                   </div>
                 </div>
                 <Switch
@@ -353,19 +345,17 @@ export default function ShopSettingsPage() {
             <div className="flex items-start gap-2">
               <AlertTriangle className="mt-0.5 h-5 w-5 flex-none text-rose-600" />
               <div>
-                <h2 className="font-semibold text-rose-900">{lang === "bn" ? "বিপদসীমা" : "Danger Zone"}</h2>
+                <h2 className="font-semibold text-rose-900">{t("p7_Danger_Zone")}</h2>
                 <p className="text-xs text-rose-700">
-                  {lang === "bn"
-                    ? "দোকান Reset করলে সমস্ত ডাটাবেস (প্রোডাক্ট, বিক্রয়, ক্রয়, লেনদেন ইত্যাদি) মুছে যাবে। দোকান নিজে থাকবে। চাইলে আগে ব্যাকআপ নিন।"
-                    : "Reset will delete all shop data (products, sales, purchases, transactions, etc). The shop itself stays. Take a backup first if needed."}
+                  {t("p7_Reset_will_delete_all_shop_dat")}
                 </p>
               </div>
             </div>
             <Button variant="destructive" className="w-full" onClick={() => setResetOpen(true)}>
-              {lang === "bn" ? "দোকান Reset করুন" : "Reset Shop"}
+              {t("p7_Reset_Shop")}
             </Button>
             <a href="/app/restore-requests" className="block text-center text-xs font-semibold text-rose-700 underline">
-              {lang === "bn" ? "Reset / Delete History ও Restore Request" : "Reset / Delete History & Restore Requests"}
+              {t("p7_Reset_Delete_History_Restore_R")}
             </a>
           </div>
         )}

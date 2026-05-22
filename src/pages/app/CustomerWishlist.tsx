@@ -64,7 +64,7 @@ function fmtTime(iso: string) {
 
 function CustomerWishlistPage() {
   const { current } = useShop();
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const qc = useQueryClient();
   const [slug, setSlug] = useState<string | null>(null);
   const [username, setUsername] = useState<string | null>(null);
@@ -126,7 +126,7 @@ function CustomerWishlistPage() {
     if (!shareUrl) return;
     try {
       await navigator.clipboard.writeText(shareUrl);
-      toast.success(lang === "bn" ? "লিঙ্ক কপি হয়েছে" : "Link copied");
+      toast.success(t("p7_Link_copied"));
     } catch {
       toast.error("Copy failed");
     }
@@ -153,16 +153,16 @@ function CustomerWishlistPage() {
       <div className="mb-2 text-xs text-muted-foreground">Home / গ্রাহক ফর্দ</div>
       <div className="mb-4 flex items-center justify-between gap-2">
         <h1 className="text-xl font-extrabold">
-          {lang === "bn" ? "গ্রাহক ফর্দ" : "Customer Fordo"}
+          {t("p7_Customer_Fordo")}
         </h1>
         <div className="flex items-center gap-2">
           <Button size="sm" onClick={() => setQuickOpen(true)} className="gap-1">
             <Plus className="h-3.5 w-3.5" />
-            {lang === "bn" ? "নিজে ফর্দ তৈরি" : "Create Fordo"}
+            {t("p7_Create_Fordo_2")}
           </Button>
           <Button variant="outline" size="sm" onClick={() => listQ.refetch()} disabled={listQ.isFetching}>
             <RefreshCw className={`mr-1 h-3.5 w-3.5 ${listQ.isFetching ? "animate-spin" : ""}`} />
-            {lang === "bn" ? "রিফ্রেশ" : "Refresh"}
+            {t("p7_Refresh")}
           </Button>
         </div>
       </div>
@@ -175,18 +175,16 @@ function CustomerWishlistPage() {
           </div>
           <div className="min-w-0 flex-1">
             <div className="text-sm font-bold">
-              {lang === "bn" ? "এই লিঙ্কটি গ্রাহকদের সাথে শেয়ার করুন" : "Share this link with your customers"}
+              {t("p7_Share_this_link_with_your_cust")}
             </div>
             <p className="mt-0.5 text-xs text-muted-foreground">
-              {lang === "bn"
-                ? "গ্রাহক লিঙ্কে গিয়ে নাম, মোবাইল নাম্বার ও পণ্যের তালিকা পাঠাবে — আপনি এখানে পেয়ে যাবেন।"
-                : "Customers open the link, fill name + phone + list — you receive it here."}
+              {t("p7_Customers_open_the_link_fill_n")}
             </p>
             <div className="mt-3 flex items-center gap-2">
-              <Input readOnly value={shareUrl || (lang === "bn" ? "তৈরি হচ্ছে..." : "Generating...")} className="h-9 bg-background font-mono text-xs" />
+              <Input readOnly value={shareUrl || (t("p7_Generating"))} className="h-9 bg-background font-mono text-xs" />
               <Button size="sm" variant="outline" onClick={copyLink} disabled={!shareUrl}>
                 <Copy className="mr-1 h-3.5 w-3.5" />
-                {lang === "bn" ? "কপি" : "Copy"}
+                {t("p7_Copy")}
               </Button>
             </div>
             <div className="mt-2 flex flex-wrap gap-2">
@@ -198,7 +196,7 @@ function CustomerWishlistPage() {
               </Button>
               {shareUrl && (
                 <a href={shareUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded-md border px-3 py-1.5 text-xs font-medium hover:bg-accent">
-                  <ExternalLink className="h-3.5 w-3.5" /> {lang === "bn" ? "প্রিভিউ" : "Preview"}
+                  <ExternalLink className="h-3.5 w-3.5" /> {t("p7_Preview")}
                 </a>
               )}
             </div>
@@ -209,7 +207,7 @@ function CustomerWishlistPage() {
       {/* List */}
       <div className="mt-5">
         <h2 className="mb-2 text-sm font-bold text-muted-foreground">
-          {lang === "bn" ? "সদ্য পাওয়া ফর্দ" : "Recent fordo"}
+          {t("p7_Recent_fordo")}
         </h2>
         {listQ.isLoading ? (
           <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
@@ -221,10 +219,10 @@ function CustomerWishlistPage() {
           <div className="rounded-2xl border border-dashed bg-muted/30 p-8 text-center">
             <ListChecks className="mx-auto h-10 w-10 text-muted-foreground" />
             <p className="mt-2 text-sm font-semibold">
-              {lang === "bn" ? "এখনো কোনো ফর্দ আসেনি" : "No fordo yet"}
+              {t("p7_No_fordo_yet")}
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
-              {lang === "bn" ? "উপরের লিঙ্কটি গ্রাহকদের সাথে শেয়ার করুন।" : "Share the link above with your customers."}
+              {t("p7_Share_the_link_above_with_your")}
             </p>
           </div>
         ) : (
@@ -281,7 +279,7 @@ function WishlistDetailDialog({
   onOpenChange: (v: boolean) => void;
   onChange: () => void;
 }) {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const open = !!wishlistId;
   const [convertOpen, setConvertOpen] = useState(false);
   const [lumpMap, setLumpMap] = useState<Record<string, boolean>>({});
@@ -352,7 +350,7 @@ function WishlistDetailDialog({
           .select("id");
         if (retry.error || !retry.data || retry.data.length === 0) {
           qcLocal.setQueryData(key, prev);
-          toast.error(lang === "bn" ? "আপডেট করা গেলো না — আবার চেষ্টা করুন" : "Update failed — please try again");
+          toast.error(t("p7_Update_failed_please_try_again"));
         } else {
           void detailQ.refetch();
         }
@@ -376,7 +374,7 @@ function WishlistDetailDialog({
 
   const remove = async () => {
     if (!wishlistId) return;
-    if (!confirm(lang === "bn" ? "এই ফর্দটি রিসাইকেল বিনে পাঠাবেন?" : "Move this fordo to recycle bin?")) return;
+    if (!confirm(t("p7_Move_this_fordo_to_recycle_bin"))) return;
     await supabase
       .from("customer_wishlists")
       .update({ deleted_at: new Date().toISOString() } as never)
@@ -396,7 +394,7 @@ function WishlistDetailDialog({
       return;
     }
     if (!data || data.length === 0) {
-      toast.error(lang === "bn" ? "আপডেট করা গেলো না" : "Update failed");
+      toast.error(t("p7_Update_failed"));
       return;
     }
     void detailQ.refetch();
@@ -422,7 +420,7 @@ function WishlistDetailDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>{wl?.customer_name || (lang === "bn" ? "ফর্দ" : "Fordo")}</DialogTitle>
+          <DialogTitle>{wl?.customer_name || (t("p7_Fordo"))}</DialogTitle>
         </DialogHeader>
         {detailQ.isLoading || !wl ? (
           <div className="flex h-40 items-center justify-center">
@@ -457,8 +455,8 @@ function WishlistDetailDialog({
 
             <div className="rounded-lg border bg-background">
               <div className="flex items-center justify-between border-b px-3 py-2 text-xs font-bold text-muted-foreground">
-                <span>{lang === "bn" ? "পণ্যের তালিকা" : "Items"} ({items.length})</span>
-                <span>{lang === "bn" ? "একক দাম" : "Unit price"}</span>
+                <span>{t("p7_Items_3")} ({items.length})</span>
+                <span>{t("p7_Unit_price_3")}</span>
               </div>
               <ul className="divide-y">
                 {items.map((it) => {
@@ -555,7 +553,7 @@ function WishlistDetailDialog({
                 })}
               </ul>
               <div className="flex items-center justify-between border-t bg-muted/40 px-3 py-2 text-sm">
-                <span className="font-semibold">{lang === "bn" ? "মোট" : "Total"}</span>
+                <span className="font-semibold">{t("p7_Total_2")}</span>
                 <span className="text-base font-extrabold tabular-nums text-primary">
                   ৳ {items.reduce((sum, it) => {
                     const q = Number(it.qty) || 0;
@@ -569,7 +567,7 @@ function WishlistDetailDialog({
         )}
         <DialogFooter className="flex-row gap-2 sm:justify-between">
           <Button variant="outline" size="sm" onClick={remove} className="text-destructive hover:bg-destructive/10">
-            <Trash2 className="mr-1 h-4 w-4" /> {lang === "bn" ? "মুছুন" : "Delete"}
+            <Trash2 className="mr-1 h-4 w-4" /> {t("p7_Delete_4")}
           </Button>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={markDone}>

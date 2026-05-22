@@ -890,7 +890,7 @@ function PaymentDialog(props: {
             const row = stockMap.get(pid);
             const stock = Number(row?.stock ?? 0);
             if (qty > stock) {
-              toast.error(t("p2c_itemOnlyN", { name: row?.name ?? (lang === "bn" ? "" : "Item"), stock }));
+              toast.error(t("p2c_itemOnlyN", { name: row?.name ?? (t("p7_Item_3")), stock }));
               setSaving(false);
               return;
             }

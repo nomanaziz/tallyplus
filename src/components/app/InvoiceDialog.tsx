@@ -39,7 +39,7 @@ export function InvoiceDialog({
   onClose: () => void;
   data: InvoiceData | null;
 }) {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   if (!data) return null;
   const isSell = data.mode === "sell";
 
@@ -92,7 +92,7 @@ export function InvoiceDialog({
           </div>
 
           <div className="my-3 text-center text-lg font-bold">
-            {lang === "bn" ? "ইনভয়েস" : "Invoice"}
+            {t("p7_Invoice")}
           </div>
 
           {/* Meta */}
@@ -106,19 +106,19 @@ export function InvoiceDialog({
               <span>{data.shop.name}</span>
             </div>
             <div>
-              <span className="font-semibold">{lang === "bn" ? "মোবাইল: " : "Mobile: "}</span>
+              <span className="font-semibold">{t("p7_Mobile")}</span>
               <span>{data.party.phone || ""}</span>
             </div>
             <div className="text-right">
-              <span className="font-semibold">{lang === "bn" ? "ইনভয়েস নম্বর: " : "Invoice no: "}</span>
+              <span className="font-semibold">{t("p7_Invoice_no")}</span>
               <span className="font-mono">{data.invoiceNo}</span>
             </div>
             <div>
-              <span className="font-semibold">{lang === "bn" ? "ঠিকানা: " : "Address: "}</span>
+              <span className="font-semibold">{t("p7_Address")}</span>
               <span>{data.party.address || ""}</span>
             </div>
             <div className="text-right">
-              <span className="font-semibold">{lang === "bn" ? "তারিখ: " : "Date: "}</span>
+              <span className="font-semibold">{t("p7_Date_2")}</span>
               <span>{dtStr}</span>
             </div>
           </div>
@@ -128,11 +128,11 @@ export function InvoiceDialog({
             <thead>
               <tr className="bg-muted/50 [&>th]:border [&>th]:border-border [&>th]:px-2 [&>th]:py-1.5 [&>th]:text-left">
                 <th className="w-8 text-center">#</th>
-                <th>{lang === "bn" ? "পণ্যের নাম" : "Item"}</th>
-                <th className="w-16 text-center">{lang === "bn" ? "পরিমান" : "Qty"}</th>
-                <th className="w-16 text-center">{lang === "bn" ? "ইউনিট" : "Unit"}</th>
-                <th className="w-24 text-right">{lang === "bn" ? "ইউনিট মূল্য" : "Unit price"}</th>
-                <th className="w-24 text-right">{lang === "bn" ? "মোট" : "Total"}</th>
+                <th>{t("p7_Item_2")}</th>
+                <th className="w-16 text-center">{t("p7_Qty_2")}</th>
+                <th className="w-16 text-center">{t("p7_Unit")}</th>
+                <th className="w-24 text-right">{t("p7_Unit_price_2")}</th>
+                <th className="w-24 text-right">{t("p7_Total_2")}</th>
               </tr>
             </thead>
             <tbody>
@@ -141,13 +141,13 @@ export function InvoiceDialog({
                   <td className="text-center">{lang === "bn" ? bnNum(i + 1) + "।" : i + 1}</td>
                   <td>{it.name}</td>
                   <td className="text-center">{lang === "bn" ? bnNum(it.qty) : it.qty}</td>
-                  <td className="text-center">{it.unit || (lang === "bn" ? "পিস" : "piece")}</td>
+                  <td className="text-center">{it.unit || (t("p7_piece"))}</td>
                   <td className="text-right">{fmtMoney(it.price, lang)}</td>
                   <td className="text-right">{fmtMoney(it.total, lang)}</td>
                 </tr>
               ))}
               <tr className="font-bold [&>td]:border [&>td]:border-border [&>td]:px-2 [&>td]:py-1.5">
-                <td colSpan={2} className="text-center">{lang === "bn" ? "মোট" : "Total"}</td>
+                <td colSpan={2} className="text-center">{t("p7_Total_2")}</td>
                 <td className="text-center">{lang === "bn" ? bnNum(data.items.reduce((a, b) => a + Number(b.qty), 0)) : data.items.reduce((a, b) => a + Number(b.qty), 0)}</td>
                 <td></td>
                 <td></td>
@@ -159,42 +159,42 @@ export function InvoiceDialog({
           {/* Totals */}
           <div className="mt-4 grid grid-cols-2 gap-6 text-xs print-keep">
             <div className="space-y-1.5">
-              <Row label={lang === "bn" ? "পূর্বের বাকি:" : "Previous due:"} value={fmtMoney(prev, lang)} />
-              <Row label={lang === "bn" ? "বর্তমান বাকি:" : "Current due:"} value={fmtMoney(cur, lang)} />
+              <Row label={t("p7_Previous_due")} value={fmtMoney(prev, lang)} />
+              <Row label={t("p7_Current_due")} value={fmtMoney(cur, lang)} />
               <div className="border-t pt-1.5">
-                <Row label={lang === "bn" ? "টোটাল বাকি:" : "Total due:"} value={fmtMoney(tot, lang)} bold />
+                <Row label={t("p7_Total_due")} value={fmtMoney(tot, lang)} bold />
               </div>
             </div>
             <div className="space-y-1.5">
-              <Row label={lang === "bn" ? "সাব টোটাল" : "Subtotal"} value={fmtMoney(data.subtotal, lang)} />
-              <Row label={lang === "bn" ? "(-) ছাড়" : "(-) Discount"} value={fmtMoney(data.discount, lang)} />
-              <Row label={lang === "bn" ? "ডেলিভারি" : "Delivery"} value={fmtMoney(data.delivery, lang)} />
+              <Row label={t("p7_Subtotal_2")} value={fmtMoney(data.subtotal, lang)} />
+              <Row label={t("p7_Discount_2")} value={fmtMoney(data.discount, lang)} />
+              <Row label={t("p7_Delivery")} value={fmtMoney(data.delivery, lang)} />
               <div className="border-t pt-1.5">
-                <Row label={lang === "bn" ? "মোট" : "Total"} value={fmtMoney(data.grandTotal, lang)} bold />
+                <Row label={t("p7_Total_2")} value={fmtMoney(data.grandTotal, lang)} bold />
               </div>
-              <Row label={lang === "bn" ? "পরিশোধিত" : "Paid"} value={fmtMoney(data.paid, lang)} />
-              <Row label={lang === "bn" ? "বাকি আছে" : "Due remaining"} value={fmtMoney(dueRemain, lang)} />
+              <Row label={t("p7_Paid")} value={fmtMoney(data.paid, lang)} />
+              <Row label={t("p7_Due_remaining")} value={fmtMoney(dueRemain, lang)} />
             </div>
           </div>
 
           {/* Amount in words */}
           <div className="mt-4 text-xs print-keep">
-            <div className="font-semibold">{lang === "bn" ? "এমাউন্ট (কথায়):" : "Amount (in words):"}</div>
+            <div className="font-semibold">{t("p7_Amount_in_words")}</div>
             <div className="mt-0.5">{lang === "bn" ? toBnWords(Math.round(data.grandTotal)) + " টাকা" : toEnWords(Math.round(data.grandTotal)) + " taka"}</div>
           </div>
 
           {/* Signatures */}
           <div className="mt-8 grid grid-cols-2 gap-6 text-xs print-keep">
             <div className="text-center">
-              <div className="border-t pt-1">{lang === "bn" ? "ক্রেতার স্বাক্ষর" : "Buyer signature"}</div>
+              <div className="border-t pt-1">{t("p7_Buyer_signature")}</div>
             </div>
             <div className="text-center">
-              <div className="border-t pt-1">{lang === "bn" ? "বিক্রেতার স্বাক্ষর" : "Seller signature"}</div>
+              <div className="border-t pt-1">{t("p7_Seller_signature")}</div>
             </div>
           </div>
 
           <div className="mt-4 text-[10px] text-muted-foreground">
-            {lang === "bn" ? "প্রিন্ট করার সময়: " : "Printed at: "}{dtStr}
+            {t("p7_Printed_at")}{dtStr}
           </div>
         </div>
 
@@ -203,15 +203,15 @@ export function InvoiceDialog({
           <div className="flex gap-2">
             <Button onClick={print} className="flex-1 gap-2 h-11">
               <Printer className="h-4 w-4" />
-              {lang === "bn" ? "প্রিন্ট (A4)" : "Print (A4)"}
+              {t("p7_Print_A4")}
             </Button>
             <Button
               onClick={printPOS}
               variant="outline"
               size="icon"
               className="h-11 w-11 shrink-0"
-              title={lang === "bn" ? "POS / থার্মাল রিসিট প্রিন্ট" : "POS / thermal receipt print"}
-              aria-label={lang === "bn" ? "POS প্রিন্ট" : "POS print"}
+              title={t("p7_POS_thermal_receipt_print")}
+              aria-label={t("p7_POS_print")}
             >
               <Receipt className="h-4 w-4" />
             </Button>
@@ -219,7 +219,7 @@ export function InvoiceDialog({
               size="default"
               variant="outline"
               className="h-11"
-              label={lang === "bn" ? "শেয়ার" : "Share"}
+              label={t("p7_Share")}
               phone={data.party.phone}
               filename={`invoice-${data.invoiceNo}.pdf`}
               text={
@@ -242,10 +242,10 @@ export function InvoiceDialog({
             <div style={{ textAlign: "center", fontSize: 10 }}>{data.shop.phone}</div>
           )}
           <div style={{ textAlign: "center", fontWeight: 700, margin: "4px 0", borderTop: "1px dashed #000", borderBottom: "1px dashed #000", padding: "2px 0" }}>
-            {lang === "bn" ? "ইনভয়েস" : "INVOICE"}
+            {t("p7_INVOICE")}
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10 }}>
-            <span>{lang === "bn" ? "নং:" : "No:"} {data.invoiceNo}</span>
+            <span>{t("p7_No")} {data.invoiceNo}</span>
             <span>{dtStr}</span>
           </div>
           {data.party.name && (
@@ -260,27 +260,27 @@ export function InvoiceDialog({
               <div style={{ fontWeight: 600 }}>{lang === "bn" ? bnNum(i + 1) + ". " : `${i + 1}. `}{it.name}</div>
               <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10 }}>
                 <span>
-                  {lang === "bn" ? bnNum(it.qty) : it.qty} {it.unit || (lang === "bn" ? "পিস" : "piece")} × {fmtMoney(it.price, lang)}
+                  {lang === "bn" ? bnNum(it.qty) : it.qty} {it.unit || (t("p7_piece"))} × {fmtMoney(it.price, lang)}
                 </span>
                 <span>{fmtMoney(it.total, lang)}</span>
               </div>
             </div>
           ))}
           <div style={{ borderTop: "1px dashed #000", margin: "4px 0" }} />
-          <PosRow label={lang === "bn" ? "সাব টোটাল" : "Subtotal"} value={fmtMoney(data.subtotal, lang)} />
-          {data.discount > 0 && <PosRow label={lang === "bn" ? "ছাড়" : "Discount"} value={`- ${fmtMoney(data.discount, lang)}`} />}
-          {data.delivery > 0 && <PosRow label={lang === "bn" ? "ডেলিভারি" : "Delivery"} value={fmtMoney(data.delivery, lang)} />}
+          <PosRow label={t("p7_Subtotal_2")} value={fmtMoney(data.subtotal, lang)} />
+          {data.discount > 0 && <PosRow label={t("p7_Discount_3")} value={`- ${fmtMoney(data.discount, lang)}`} />}
+          {data.delivery > 0 && <PosRow label={t("p7_Delivery")} value={fmtMoney(data.delivery, lang)} />}
           <div style={{ borderTop: "1px solid #000", margin: "3px 0" }} />
-          <PosRow label={lang === "bn" ? "মোট" : "TOTAL"} value={fmtMoney(data.grandTotal, lang)} bold />
-          <PosRow label={lang === "bn" ? "পরিশোধিত" : "Paid"} value={fmtMoney(data.paid, lang)} />
-          {dueRemain > 0 && <PosRow label={lang === "bn" ? "বাকি" : "Due"} value={fmtMoney(dueRemain, lang)} bold />}
+          <PosRow label={t("p7_TOTAL")} value={fmtMoney(data.grandTotal, lang)} bold />
+          <PosRow label={t("p7_Paid")} value={fmtMoney(data.paid, lang)} />
+          {dueRemain > 0 && <PosRow label={t("p7_Due")} value={fmtMoney(dueRemain, lang)} bold />}
           <div style={{ borderTop: "1px dashed #000", margin: "4px 0" }} />
           <div style={{ textAlign: "center", fontSize: 10, marginTop: 4 }}>
-            {lang === "bn" ? "ধন্যবাদ!" : "Thank you!"}
+            {t("p7_Thank_you")}
           </div>
           {/* Perforation / cut line */}
           <div style={{ marginTop: 10, borderTop: "2px dashed #000", paddingTop: 4, textAlign: "center", fontSize: 9, letterSpacing: 1 }}>
-            ✂ - - - - - - {lang === "bn" ? "এখানে কাটুন" : "CUT HERE"} - - - - - - ✂
+            ✂ - - - - - - {t("p7_CUT_HERE")} - - - - - - ✂
           </div>
           <div style={{ height: 12 }} />
         </div>

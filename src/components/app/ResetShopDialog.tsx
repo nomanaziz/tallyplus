@@ -21,7 +21,7 @@ export function ResetShopDialog({
   shopId: string;
   shopName: string;
 }) {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const { refresh } = useShop();
   const [confirm, setConfirm] = useState("");
   const [busy, setBusy] = useState(false);
@@ -64,17 +64,15 @@ export function ResetShopDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-rose-600">
             <AlertTriangle className="h-5 w-5" />
-            {lang === "bn" ? "দোকান Reset করুন" : "Reset Shop"}
+            {t("p7_Reset_Shop")}
           </DialogTitle>
           <DialogDescription>
-            {lang === "bn"
-              ? "এই কাজটি ফেরানো যাবে না। সমস্ত প্রোডাক্ট, বিক্রয়, ক্রয়, লেনদেন স্থায়ীভাবে মুছে যাবে।"
-              : "This action cannot be undone. All products, sales, purchases, and transactions will be permanently deleted."}
+            {t("p7_This_action_cannot_be_undone_A")}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
           <div className="rounded-lg bg-rose-50 p-3 text-sm text-rose-900">
-            {lang === "bn" ? "নিশ্চিতকরণের জন্য নিচে দোকানের নাম হুবহু লিখুন:" : "Type the shop name exactly to confirm:"}
+            {t("p7_Type_the_shop_name_exactly_to_")}
             <div className="mt-1 font-mono font-semibold">{shopName}</div>
           </div>
           <div className="rounded-lg bg-amber-50 p-3 text-xs text-amber-900">
@@ -83,17 +81,17 @@ export function ResetShopDialog({
               : <>This reset's data is kept by Admin for 30 days. You may send a <Link to="/app/restore-requests" className="underline font-semibold">Restore Request</Link> later (৳500 charge).</>}
           </div>
           <div>
-            <Label>{lang === "bn" ? "দোকানের নাম" : "Shop name"}</Label>
+            <Label>{t("p7_Shop_name")}</Label>
             <Input value={confirm} onChange={(e) => setConfirm(e.target.value)} placeholder={shopName} className="mt-1" />
           </div>
         </div>
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={busy}>
-            {lang === "bn" ? "বাতিল" : "Cancel"}
+            {t("p7_Cancel")}
           </Button>
           <Button variant="destructive" onClick={onReset} disabled={!canReset || busy}>
             {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {lang === "bn" ? "Reset করুন" : "Reset"}
+            {t("p7_Reset")}
           </Button>
         </DialogFooter>
       </DialogContent>

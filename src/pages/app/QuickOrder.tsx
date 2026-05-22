@@ -71,7 +71,7 @@ function QuickOrderPage() {
 
 function QuickOrderInner() {
   const { current } = useShop();
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const { user } = useAuth();
   const navigate = useNavigate();
   const qc = useQueryClient();
@@ -157,7 +157,7 @@ function QuickOrderInner() {
 
   const addExternal = (name: string) => {
     if (!allowExternal) {
-      toast.error(lang === "bn" ? "এই পণ্য দোকানে নেই" : "Product not in your store");
+      toast.error(t("p7_Product_not_in_your_store"));
       return;
     }
     setRows((rs) => [
@@ -216,11 +216,11 @@ function QuickOrderInner() {
   const convertToSale = async () => {
     if (!current?.id || !user) return;
     if (rows.length === 0) {
-      toast.error(lang === "bn" ? "কোনো পণ্য যোগ করুন" : "Add at least one item");
+      toast.error(t("p7_Add_at_least_one_item_3"));
       return;
     }
     if (rows.some((r) => !r.name.trim() || r.qty <= 0)) {
-      toast.error(lang === "bn" ? "প্রতিটি পণ্যের নাম ও পরিমাণ দিন" : "Each item needs a name and qty");
+      toast.error(t("p7_Each_item_needs_a_name_and_qty"));
       return;
     }
     setConverting(true);
@@ -301,7 +301,7 @@ function QuickOrderInner() {
           profit: profitAmt,
           payment_method: "cash",
           status: "completed",
-          note: note.trim() || (lang === "bn" ? "কুইক বিক্রয়" : "Quick Sell"),
+          note: note.trim() || (t("p7_Quick_Sell")),
           created_by: user.id,
         })
         .select("id")
@@ -364,7 +364,7 @@ function QuickOrderInner() {
         qc.invalidateQueries({ queryKey: ["cash"] }),
         qc.invalidateQueries({ queryKey: ["dashboard"] }),
       ]);
-      toast.success(lang === "bn" ? "বিক্রি তৈরি হয়েছে" : "Sale created");
+      toast.success(t("p7_Sale_created"));
       navigate({ to: "/app/sales-ledger" });
     } catch (e) {
       toast.error((e as Error).message);
@@ -376,18 +376,18 @@ function QuickOrderInner() {
   return (
     <div className="container max-w-[1600px] space-y-4 px-3 py-4 pb-28 sm:px-4">
       <div className="text-xs text-muted-foreground">
-        Home / {lang === "bn" ? "দ্রুত বিক্রি" : "Quick Sell"}
+        Home / {t("p7_Quick_Sell_2")}
       </div>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="flex items-center gap-2 text-xl font-extrabold">
           <ReceiptText className="h-5 w-5 text-primary" />
-          {lang === "bn" ? "দ্রুত বিক্রি" : "Quick Sell"}
+          {t("p7_Quick_Sell_2")}
         </h1>
         <div className="flex flex-wrap items-center gap-2">
           <label className="inline-flex items-center gap-2 rounded-full border bg-card px-3 py-1.5 text-xs shadow-sm">
             <Switch checked={allowExternal} onCheckedChange={setAllowExternal} />
             <span className="font-medium">
-              {lang === "bn" ? "বাইরের পণ্য" : "External"}
+              {t("p7_External")}
             </span>
           </label>
         </div>
@@ -400,7 +400,7 @@ function QuickOrderInner() {
           onClick={() => setActiveTab("products")}
           className={`flex-1 rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${activeTab === "products" ? "bg-primary text-primary-foreground shadow" : "text-muted-foreground hover:bg-accent"}`}
         >
-          {lang === "bn" ? "পণ্য" : "Products"}
+          {t("p7_Products")}
         </button>
         <button
           type="button"
@@ -409,7 +409,7 @@ function QuickOrderInner() {
         >
           <span className="inline-flex items-center gap-1.5">
             <ShoppingCart className="h-3.5 w-3.5" />
-            {lang === "bn" ? "কার্ট" : "Cart"}
+            {t("p7_Cart")}
             {rows.length > 0 && (
               <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold ${activeTab === "cart" ? "bg-primary-foreground text-primary" : "bg-primary text-primary-foreground"}`}>{rows.length}</span>
             )}
@@ -434,14 +434,14 @@ function QuickOrderInner() {
             onFocus={() => setShowDrop(true)}
             onBlur={() => setTimeout(() => setShowDrop(false), 150)}
             onKeyDown={onKeyDown}
-            placeholder={lang === "bn" ? "পণ্য টাইপ করুন... (Enter চাপুন)" : "Type product... (press Enter)"}
+            placeholder={t("p7_Type_product_press_Enter")}
             className="h-11 pl-9 text-base"
           />
           {showDrop && query.trim() && (
             <div className="absolute left-0 right-0 top-full z-30 mt-1 max-h-72 overflow-auto rounded-xl border bg-popover shadow-lg">
               {searching ? (
                 <div className="flex items-center gap-2 px-3 py-2 text-xs text-muted-foreground">
-                  <Loader2 className="h-3 w-3 animate-spin" /> {lang === "bn" ? "খুঁজছে..." : "Searching..."}
+                  <Loader2 className="h-3 w-3 animate-spin" /> {t("p7_Searching")}
                 </div>
               ) : suggestions.length > 0 ? (
                 <ul>
@@ -457,7 +457,7 @@ function QuickOrderInner() {
                       <div className="min-w-0">
                         <div className="truncate font-medium">{p.name}</div>
                         <div className="text-[11px] text-muted-foreground">
-                          {lang === "bn" ? "মজুদ" : "Stock"}: {p.stock} {p.unit || "pcs"}
+                          {t("p7_Stock")}: {p.stock} {p.unit || "pcs"}
                         </div>
                       </div>
                       <div className="flex-none text-right">
@@ -480,11 +480,11 @@ function QuickOrderInner() {
                     >
                       <Plus className="h-4 w-4 text-muted-foreground" />
                       <span>
-                        <b>"{query.trim()}"</b> {lang === "bn" ? "দোকানের বাইরে যোগ করুন" : "add as external item"}
+                        <b>"{query.trim()}"</b> {t("p7_add_as_external_item")}
                       </span>
                     </button>
                   ) : (
-                    <span>{lang === "bn" ? "এই পণ্য দোকানে নেই" : "Not in your store"}</span>
+                    <span>{t("p7_Not_in_your_store")}</span>
                   )}
                 </div>
               )}
@@ -492,7 +492,7 @@ function QuickOrderInner() {
           )}
         </div>
         <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
-          {lang === "bn" ? "দোকানের পণ্য বাছাই করলে দাম ও একক স্বয়ংক্রিয় আসবে।" : "Pick a store product and price + unit auto-fill."}
+          {t("p7_Pick_a_store_product_and_price")}
         </p>
       </div>
 
@@ -508,12 +508,10 @@ function QuickOrderInner() {
               <ShoppingCart className="h-7 w-7 opacity-60" />
             </div>
             <div className="font-medium">
-              {lang === "bn" ? "এখনো কোনো পণ্য যোগ হয়নি" : "No items yet"}
+              {t("p7_No_items_yet")}
             </div>
             <div className="mt-1 text-xs">
-              {lang === "bn"
-                ? "উপরের সার্চ বক্সে পণ্য খুঁজুন বা নতুন নাম লিখুন।"
-                : "Search above or type a new product name."}
+              {t("p7_Search_above_or_type_a_new_pro")}
             </div>
           </div>
         ) : (
@@ -534,7 +532,7 @@ function QuickOrderInner() {
                           value={r.name}
                           onChange={(e) => updateRow(r.tempId, { name: e.target.value })}
                           className="h-9 text-sm font-semibold"
-                          placeholder={lang === "bn" ? "পণ্যের নাম" : "Product name"}
+                          placeholder={t("p7_Product_name")}
                         />
                       ) : (
                         <div className="line-clamp-2 break-words text-base font-semibold leading-snug">
@@ -547,7 +545,7 @@ function QuickOrderInner() {
                             variant="secondary"
                             className="h-5 rounded-full px-2 text-[10px] font-medium"
                           >
-                            {lang === "bn" ? "বাইরের পণ্য" : "External"}
+                            {t("p7_External")}
                           </Badge>
                         ) : (
                           <Badge
@@ -555,7 +553,7 @@ function QuickOrderInner() {
                             className="h-5 gap-1 rounded-full bg-success/10 px-2 text-[10px] font-medium text-success hover:bg-success/15"
                           >
                             <Check className="h-3 w-3" />
-                            {lang === "bn" ? "দোকানের পণ্য" : "In store"}
+                            {t("p7_In_store")}
                           </Badge>
                         )}
                         {r.isExternal ? (
@@ -564,7 +562,7 @@ function QuickOrderInner() {
                             onChange={(e) => updateRow(r.tempId, { unit: e.target.value })}
                             className="h-5 w-16 rounded-full px-2 text-[11px]"
                             maxLength={10}
-                            placeholder={lang === "bn" ? "একক" : "Unit"}
+                            placeholder={t("p7_Unit_2")}
                           />
                         ) : (
                           <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
@@ -585,7 +583,7 @@ function QuickOrderInner() {
 
                   {/* Inputs row: ক্রয় / বিক্রয় / পরিমাণ */}
                   <div className="grid grid-cols-3 gap-2">
-                    <FieldBox label={lang === "bn" ? "ক্রয়" : "Cost"}>
+                    <FieldBox label={t("p7_Cost")}>
                       <Input
                         type="number"
                         inputMode="decimal"
@@ -595,7 +593,7 @@ function QuickOrderInner() {
                         placeholder="0"
                       />
                     </FieldBox>
-                    <FieldBox label={lang === "bn" ? "বিক্রয়" : "Sell"}>
+                    <FieldBox label={t("p7_Sell")}>
                       <Input
                         type="number"
                         inputMode="decimal"
@@ -605,7 +603,7 @@ function QuickOrderInner() {
                         placeholder="0"
                       />
                     </FieldBox>
-                    <FieldBox label={lang === "bn" ? "পরিমাণ" : "Qty"}>
+                    <FieldBox label={t("p7_Qty")}>
                       <Input
                         type="number"
                         inputMode="decimal"
@@ -620,7 +618,7 @@ function QuickOrderInner() {
                   {/* Line summary */}
                   <div className="flex items-center justify-between rounded-lg bg-muted/40 px-3 py-1.5 text-[11px]">
                     <span className="text-muted-foreground">
-                      {lang === "bn" ? "লাভ" : "Profit"}:{" "}
+                      {t("p7_Profit")}:{" "}
                       <span
                         className={`font-semibold ${lineProfit >= 0 ? "text-success" : "text-destructive"}`}
                       >
@@ -628,7 +626,7 @@ function QuickOrderInner() {
                       </span>
                     </span>
                     <span className="text-muted-foreground">
-                      {lang === "bn" ? "মোট" : "Total"}:{" "}
+                      {t("p7_Total_2")}:{" "}
                       <span className="text-sm font-bold text-foreground">
                         ৳{lineTotal.toFixed(0)}
                       </span>
@@ -643,11 +641,11 @@ function QuickOrderInner() {
         {rows.length > 0 && (
           <div className="space-y-2 border-t bg-muted/30 px-4 py-3">
             <div className="flex items-center justify-between text-xs text-muted-foreground">
-              <span>{lang === "bn" ? "মোট ক্রয়" : "Total cost"}</span>
+              <span>{t("p7_Total_cost")}</span>
               <span className="tabular-nums">৳ {totalCost.toFixed(2)}</span>
             </div>
             <div className="flex items-center justify-between text-sm">
-              <span className="font-semibold">{lang === "bn" ? "মোট লাভ" : "Total profit"}</span>
+              <span className="font-semibold">{t("p7_Total_profit")}</span>
               <span
                 className={`font-bold tabular-nums ${totalProfit >= 0 ? "text-success" : "text-destructive"}`}
               >
@@ -655,7 +653,7 @@ function QuickOrderInner() {
               </span>
             </div>
             <div className="flex items-center justify-between border-t pt-2">
-              <span className="text-base font-bold">{lang === "bn" ? "মোট বিক্রয়" : "Total sell"}</span>
+              <span className="text-base font-bold">{t("p7_Total_sell")}</span>
               <span className="text-xl font-extrabold tabular-nums text-primary">
                 ৳ {total.toFixed(2)}
               </span>
@@ -674,12 +672,12 @@ function QuickOrderInner() {
           {showOpt ? (
             <>
               <X className="h-3.5 w-3.5" />
-              {lang === "bn" ? "গ্রাহকের তথ্য লুকান" : "Hide customer info"}
+              {t("p7_Hide_customer_info")}
             </>
           ) : (
             <>
               <Plus className="h-3.5 w-3.5" />
-              {lang === "bn" ? "গ্রাহকের তথ্য (ইচ্ছাধীন)" : "Customer info (optional)"}
+              {t("p7_Customer_info_optional")}
             </>
           )}
         </button>
@@ -687,25 +685,25 @@ function QuickOrderInner() {
           <div className="grid gap-3 rounded-2xl border bg-card p-4 shadow-sm sm:grid-cols-2">
             <div className="space-y-1">
               <Label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                {lang === "bn" ? "গ্রাহকের নাম" : "Customer name"}
+                {t("p7_Customer_name")}
               </Label>
               <Input value={custName} onChange={(e) => setCustName(e.target.value)} className="h-10" />
             </div>
             <div className="space-y-1">
               <Label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                {lang === "bn" ? "মোবাইল" : "Phone"}
+                {t("p7_Phone_2")}
               </Label>
               <Input value={custPhone} onChange={(e) => setCustPhone(e.target.value)} className="h-10" />
             </div>
             <div className="space-y-1 sm:col-span-2">
               <Label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                {lang === "bn" ? "ঠিকানা" : "Address"}
+                {t("p7_Address_2")}
               </Label>
               <Input value={custAddress} onChange={(e) => setCustAddress(e.target.value)} className="h-10" />
             </div>
             <div className="space-y-1 sm:col-span-2">
               <Label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                {lang === "bn" ? "নোট" : "Note"}
+                {t("p7_Note")}
               </Label>
               <Input value={note} onChange={(e) => setNote(e.target.value)} className="h-10" />
             </div>
@@ -722,7 +720,7 @@ function QuickOrderInner() {
           disabled={rows.length === 0}
         >
           <Printer className="mr-2 h-5 w-5" />
-          {lang === "bn" ? "প্রিন্ট ফর্দ" : "Print Order"}
+          {t("p7_Print_Order")}
         </Button>
         <Button
           className="flex-1 h-12 text-base font-semibold"
@@ -730,7 +728,7 @@ function QuickOrderInner() {
           disabled={converting || rows.length === 0}
         >
           {converting ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <ReceiptText className="mr-2 h-5 w-5" />}
-          {lang === "bn" ? "বিক্রিতে রূপান্তর" : "Convert to Sale"}
+          {t("p7_Convert_to_Sale")}
         </Button>
       </div>
 
@@ -787,19 +785,19 @@ function PrintDialog({
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-lg print:max-w-none print:border-0 print:shadow-none">
         <DialogHeader className="print:hidden">
-          <DialogTitle>{lang === "bn" ? "প্রিন্ট প্রিভিউ" : "Print Preview"}</DialogTitle>
+          <DialogTitle>{t("p7_Print_Preview")}</DialogTitle>
         </DialogHeader>
 
         <div className="quick-print-area">
           <div className="text-center">
             <div className="text-base font-extrabold">{shopName}</div>
-            <div className="text-xs">{lang === "bn" ? "গ্রাহক ফর্দ" : "Customer Order"}</div>
+            <div className="text-xs">{t("p7_Customer_Order")}</div>
           </div>
           <div className="my-2 border-t border-dashed" />
           {(custName || custPhone) && (
             <div className="mb-1 text-xs">
-              {custName && <div>{lang === "bn" ? "গ্রাহক" : "Customer"}: {custName}</div>}
-              {custPhone && <div>{lang === "bn" ? "মোবাইল" : "Phone"}: {custPhone}</div>}
+              {custName && <div>{t("p7_Customer_2")}: {custName}</div>}
+              {custPhone && <div>{t("p7_Phone_2")}: {custPhone}</div>}
             </div>
           )}
           <div className="text-[11px] text-muted-foreground print:text-black">{now}</div>
@@ -809,10 +807,10 @@ function PrintDialog({
             <thead>
               <tr className="text-xs text-muted-foreground print:text-black">
                 <th className="w-6 text-left">✓</th>
-                <th className="text-left">{lang === "bn" ? "পণ্য" : "Item"}</th>
-                <th className="w-14 text-right">{lang === "bn" ? "পরিমাণ" : "Qty"}</th>
-                <th className="w-20 text-right">{lang === "bn" ? "দাম" : "Price"}</th>
-                <th className="w-20 text-right">{lang === "bn" ? "মোট" : "Total"}</th>
+                <th className="text-left">{t("p7_Item")}</th>
+                <th className="w-14 text-right">{t("p7_Qty")}</th>
+                <th className="w-20 text-right">{t("p7_Price_2")}</th>
+                <th className="w-20 text-right">{t("p7_Total_2")}</th>
               </tr>
             </thead>
             <tbody>
@@ -851,18 +849,18 @@ function PrintDialog({
 
           <div className="my-2 border-t border-dashed" />
           <div className="flex items-center justify-between text-base font-extrabold">
-            <span>{lang === "bn" ? "মোট" : "Total"}</span>
+            <span>{t("p7_Total_2")}</span>
             <span>৳ {total.toFixed(2)}</span>
           </div>
         </div>
 
         <div className="mt-3 flex justify-end gap-2 print:hidden">
           <Button variant="ghost" onClick={onClose}>
-            {lang === "bn" ? "বন্ধ" : "Close"}
+            {t("p7_Close")}
           </Button>
           <Button onClick={handlePrint}>
             <Printer className="mr-2 h-4 w-4" />
-            {lang === "bn" ? "প্রিন্ট" : "Print"}
+            {t("p7_Print")}
           </Button>
         </div>
       </DialogContent>

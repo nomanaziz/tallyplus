@@ -26,7 +26,7 @@ export function ReportShell({
   onPrint: () => void;
   children: ReactNode;
 }) {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   return (
     <div className="min-h-full bg-muted/30">
       <PageHeader
@@ -37,11 +37,11 @@ export function ReportShell({
             <DateRangePicker value={range} onChange={onRangeChange} />
             <Button variant="outline" className="h-10 gap-2" onClick={onRefresh} disabled={isFetching}>
               <RefreshCw className={"h-4 w-4 " + (isFetching ? "animate-spin" : "")} />
-              {lang === "bn" ? "রিফ্রেশ" : "Refresh"}
+              {t("p7_Refresh")}
             </Button>
             <Button className="h-10 gap-2" onClick={onPrint}>
               <Printer className="h-4 w-4" />
-              {lang === "bn" ? "ডাউনলোড/প্রিন্ট" : "Download/Print"}
+              {t("p7_Download_Print")}
             </Button>
           </>
         }

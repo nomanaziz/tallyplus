@@ -10,7 +10,7 @@ import { loadConsumerCashBook } from "@/lib/cash-book-queries";
 
 export default function CustomerCashBookPage() {
   const { user } = useAuth();
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const def = useDefaultMonth();
   const [cursor, setCursor] = useState<MonthCursor>(def);
 
@@ -24,7 +24,7 @@ export default function CustomerCashBookPage() {
   const userName =
     (user?.user_metadata as { full_name?: string } | undefined)?.full_name ||
     user?.email ||
-    (lang === "bn" ? "আমার হিসাব" : "My Cash Book");
+    (t("p7_My_Cash_Book"));
 
   return (
     <div className="space-y-3">
@@ -34,9 +34,9 @@ export default function CustomerCashBookPage() {
             <Link to="/customer/money"><ArrowLeft className="h-4 w-4" /></Link>
           </Button>
           <div>
-            <h1 className="text-xl font-bold sm:text-2xl">{lang === "bn" ? "ক্যাশবুক" : "Cash Book"}</h1>
+            <h1 className="text-xl font-bold sm:text-2xl">{t("p7_Cash_Book")}</h1>
             <div className="text-xs text-muted-foreground">
-              {lang === "bn" ? "মাসিক আয়-ব্যয়ের সম্পূর্ণ খাত-ভিত্তিক হিসাব" : "Monthly categorized income & expense report"}
+              {t("p7_Monthly_categorized_income_exp")}
             </div>
           </div>
         </div>

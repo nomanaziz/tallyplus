@@ -25,14 +25,14 @@ function normalizePhone(raw: string): string {
 }
 
 export function DueReminderDialog({ open, onOpenChange, customer }: Props) {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const { current } = useShop();
   const [message, setMessage] = useState("");
   const [lastSent, setLastSent] = useState<{ channel: string; at: string } | null>(null);
 
   useEffect(() => {
     if (!open || !customer || !current) return;
-    const shopName = current.name || (lang === "bn" ? "আমাদের দোকান" : "Our Shop");
+    const shopName = current.name || (t("p7_Our_Shop"));
     const amount = fmtMoney(Number(customer.due_balance || 0), lang);
     const body = lang === "bn"
       ? `আসসালামু আলাইকুম ${customer.name},\n\nআপনার কাছে ${shopName}-এ ${amount} বাকি রয়েছে। দয়া করে সুবিধামতো পরিশোধ করুন।\n\nধন্যবাদ।`
@@ -72,19 +72,19 @@ export function DueReminderDialog({ open, onOpenChange, customer }: Props) {
 
   function sendWhatsapp() {
     if (!hasPhone) {
-      toast.error(lang === "bn" ? "কাস্টমারের ফোন নম্বর নেই" : "Customer has no phone number");
+      toast.error(t("p7_Customer_has_no_phone_number"));
       return;
     }
     const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
     window.open(url, "_blank", "noopener,noreferrer");
     void logReminder("whatsapp");
-    toast.success(lang === "bn" ? "WhatsApp খোলা হয়েছে" : "WhatsApp opened");
+    toast.success(t("p7_WhatsApp_opened"));
     onOpenChange(false);
   }
 
   function sendSms() {
     if (!hasPhone) {
-      toast.error(lang === "bn" ? "কাস্টমারের ফোন নম্বর নেই" : "Customer has no phone number");
+      toast.error(t("p7_Customer_has_no_phone_number"));
       return;
     }
     const url = `sms:+${phone}?body=${encodeURIComponent(message)}`;
@@ -97,10 +97,10 @@ export function DueReminderDialog({ open, onOpenChange, customer }: Props) {
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>
-            {lang === "bn" ? "বাকির রিমাইন্ডার পাঠান" : "Send due reminder"}
+            {t("p7_Send_due_reminder")}
           </DialogTitle>
           <DialogDescription>
-            {customer.name} • {customer.phone ?? (lang === "bn" ? "ফোন নেই" : "no phone")} •{" "}
+            {customer.name} • {customer.phone ?? (t("p7_no_phone"))} •{" "}
             <span className="font-semibold text-emerald-700">
               {fmtMoney(Number(customer.due_balance || 0), lang)}
             </span>
@@ -117,8 +117,8 @@ export function DueReminderDialog({ open, onOpenChange, customer }: Props) {
         {lastSent && (
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <History className="h-3.5 w-3.5" />
-            {lang === "bn" ? "শেষ রিমাইন্ডার:" : "Last sent:"} {lastSent.channel} •{" "}
-            {new Date(lastSent.at).toLocaleString(lang === "bn" ? "bn-BD" : "en-GB")}
+            {t("p7_Last_sent")} {lastSent.channel} •{" "}
+            {new Date(lastSent.at).toLocaleString(t("p7_en_GB"))}
           </div>
         )}
 
@@ -134,7 +134,7 @@ export function DueReminderDialog({ open, onOpenChange, customer }: Props) {
         </div>
         {!hasPhone && (
           <p className="text-xs text-destructive">
-            {lang === "bn" ? "এই কাস্টমারের ফোন নম্বর যোগ করুন।" : "Add a phone number for this customer."}
+            {t("p7_Add_a_phone_number_for_this_cu")}
           </p>
         )}
       </DialogContent>

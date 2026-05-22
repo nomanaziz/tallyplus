@@ -14,7 +14,7 @@ export function RequirePerm({
   ownerOnly?: boolean;
   children: ReactNode;
 }) {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const { loading, isOwner, isAdmin, can, canGroup } = usePermissions();
 
   if (loading) {
@@ -32,12 +32,10 @@ export function RequirePerm({
             <ShieldAlert className="h-6 w-6" />
           </div>
           <h2 className="text-lg font-bold">
-            {lang === "bn" ? "এই পেজে এক্সেস নেই" : "Access denied"}
+            {t("p7_Access_denied")}
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            {lang === "bn"
-              ? "এই পেজ দেখার অনুমতি আপনার নেই। দোকানের মালিকের সাথে যোগাযোগ করুন।"
-              : "You don't have permission to view this page. Please contact the shop owner."}
+            {t("p7_You_don_t_have_permission_to_v")}
           </p>
         </div>
       </div>

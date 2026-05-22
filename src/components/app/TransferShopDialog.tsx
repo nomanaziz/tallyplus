@@ -16,7 +16,7 @@ export function TransferShopDialog({
   onOpenChange: (v: boolean) => void;
   shop: { id: string; name: string } | null;
 }) {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const [phone, setPhone] = useState("");
   const [reason, setReason] = useState("");
   const [proofUrl, setProofUrl] = useState<string | null>(null);
@@ -60,7 +60,7 @@ export function TransferShopDialog({
     try {
       const { data: ud } = await supabase.auth.getUser();
       const uid = ud?.user?.id;
-      if (!uid) { toast.error(lang === "bn" ? "লগইন প্রয়োজন" : "Login required"); return; }
+      if (!uid) { toast.error(t("p7_Login_required")); return; }
       const path = `${uid}/transfer-${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
       const { error } = await supabase.storage.from("payment-proofs").upload(path, file, { upsert: true, contentType: file.type });
       if (error) { toast.error(error.message); return; }
@@ -73,10 +73,10 @@ export function TransferShopDialog({
 
   const submit = async () => {
     if (!shop) return;
-    if (!phone.trim()) { toast.error(lang === "bn" ? "নতুন owner-এর ফোন দিন" : "Enter recipient phone"); return; }
+    if (!phone.trim()) { toast.error(t("p7_Enter_recipient_phone")); return; }
     if (method === "manual") {
-      if (!proofUrl) { toast.error(lang === "bn" ? "পেমেন্ট screenshot আপলোড করুন" : "Upload payment screenshot"); return; }
-      if (!txnId.trim()) { toast.error(lang === "bn" ? "Transaction ID দিন" : "Enter Transaction ID"); return; }
+      if (!proofUrl) { toast.error(t("p7_Upload_payment_screenshot")); return; }
+      if (!txnId.trim()) { toast.error(t("p7_Enter_Transaction_ID")); return; }
     }
     setSubmitting(true);
     try {
@@ -92,11 +92,11 @@ export function TransferShopDialog({
       const res = data as { ok: boolean; error?: string; id?: string } | null;
       if (!res?.ok) {
         const map: Record<string, string> = {
-          not_owner: lang === "bn" ? "আপনি এই দোকানের owner নন" : "You are not the owner",
-          recipient_not_registered: lang === "bn" ? "এই ফোনে registered user নেই" : "No registered user with this phone",
-          cannot_transfer_to_self: lang === "bn" ? "নিজের কাছে transfer করা যাবে না" : "Cannot transfer to yourself",
-          transfer_already_pending: lang === "bn" ? "এই দোকানের জন্য একটি request চলমান" : "A transfer is already pending for this shop",
-          invalid_phone: lang === "bn" ? "সঠিক ফোন দিন" : "Invalid phone",
+          not_owner: t("p7_You_are_not_the_owner"),
+          recipient_not_registered: t("p7_No_registered_user_with_this_p"),
+          cannot_transfer_to_self: t("p7_Cannot_transfer_to_yourself"),
+          transfer_already_pending: t("p7_A_transfer_is_already_pending_"),
+          invalid_phone: t("p7_Invalid_phone"),
         };
         toast.error(map[res?.error ?? ""] ?? res?.error ?? "Failed");
         return;
@@ -114,7 +114,7 @@ export function TransferShopDialog({
         window.location.href = pd.payment_url as string;
         return;
       }
-      toast.success(lang === "bn" ? "Request পাঠানো হয়েছে — admin verify করবে" : "Request sent — admin will verify");
+      toast.success(t("p7_Request_sent_admin_will_verify_2"));
       onOpenChange(false);
     } finally { setSubmitting(false); }
   };
@@ -123,12 +123,12 @@ export function TransferShopDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>{lang === "bn" ? "দোকান হস্তান্তর" : "Transfer Shop"}</DialogTitle>
+          <DialogTitle>{t("p7_Transfer_Shop")}</DialogTitle>
         </DialogHeader>
         <div className="space-y-3 py-2">
           {shop && (
             <div className="rounded-md bg-muted/40 px-3 py-2 text-sm">
-              <span className="text-muted-foreground">{lang === "bn" ? "দোকান: " : "Shop: "}</span>
+              <span className="text-muted-foreground">{t("p7_Shop")}</span>
               <span className="font-semibold">{shop.name}</span>
             </div>
           )}
@@ -139,11 +139,11 @@ export function TransferShopDialog({
           </div>
 
           <div>
-            <Label className="text-xs">{lang === "bn" ? "নতুন owner-এর ফোন" : "New owner phone"}</Label>
+            <Label className="text-xs">{t("p7_New_owner_phone")}</Label>
             <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="01XXXXXXXXX" />
           </div>
           <div>
-            <Label className="text-xs">{lang === "bn" ? "কারণ (ঐচ্ছিক)" : "Reason (optional)"}</Label>
+            <Label className="text-xs">{t("p7_Reason_optional")}</Label>
             <Textarea value={reason} onChange={(e) => setReason(e.target.value)} rows={2} />
           </div>
 
@@ -155,8 +155,8 @@ export function TransferShopDialog({
               className={`flex flex-col items-center gap-1 rounded-md border-2 p-3 text-xs transition ${method === "online" ? "border-primary bg-primary/5" : "border-border bg-card hover:border-primary/50"}`}
             >
               <CreditCard className="h-5 w-5" />
-              <span className="font-semibold">{lang === "bn" ? "অনলাইন পেমেন্ট" : "Online Payment"}</span>
-              <span className="text-[10px] text-muted-foreground">{lang === "bn" ? "তাত্ক্ষণিক" : "Instant"}</span>
+              <span className="font-semibold">{t("p7_Online_Payment")}</span>
+              <span className="text-[10px] text-muted-foreground">{t("p7_Instant")}</span>
             </button>
             <button
               type="button"
@@ -164,7 +164,7 @@ export function TransferShopDialog({
               className={`flex flex-col items-center gap-1 rounded-md border-2 p-3 text-xs transition ${method === "manual" ? "border-primary bg-primary/5" : "border-border bg-card hover:border-primary/50"}`}
             >
               <Wallet className="h-5 w-5" />
-              <span className="font-semibold">{lang === "bn" ? "ম্যানুয়াল পেমেন্ট" : "Manual Payment"}</span>
+              <span className="font-semibold">{t("p7_Manual_Payment")}</span>
               <span className="text-[10px] text-muted-foreground">bKash/Nagad</span>
             </button>
           </div>
@@ -173,12 +173,12 @@ export function TransferShopDialog({
             <div className="space-y-3 rounded-md border border-blue-200 bg-blue-50/50 p-3">
               <div className="text-xs text-blue-900">
                 <div className="font-bold text-sm">
-                  {lang === "bn" ? "নিচের নম্বরে পাঠান:" : "Send to this number:"}
+                  {t("p7_Send_to_this_number")}
                 </div>
                 {payNumber ? (
                   <div className="mt-1 text-base font-extrabold tracking-wider">{payNumber}</div>
                 ) : (
-                  <div className="mt-1 italic text-muted-foreground">{lang === "bn" ? "Admin এখনো নম্বর সেট করেননি" : "Admin has not set a number yet"}</div>
+                  <div className="mt-1 italic text-muted-foreground">{t("p7_Admin_has_not_set_a_number_yet")}</div>
                 )}
                 <div className="mt-1 flex flex-wrap gap-2 text-[11px]">
                   {payProvider && <span className="rounded bg-blue-100 px-1.5 py-0.5 font-semibold">{payProvider}</span>}
@@ -189,18 +189,18 @@ export function TransferShopDialog({
               </div>
 
               <div>
-                <Label className="text-xs">{lang === "bn" ? "Transaction ID" : "Transaction ID"}</Label>
+                <Label className="text-xs">{t("p7_Transaction_ID_3")}</Label>
                 <Input value={txnId} onChange={(e) => setTxnId(e.target.value)} placeholder="TXN123456" />
               </div>
               <div>
-                <Label className="text-xs">{lang === "bn" ? "পেমেন্ট screenshot" : "Payment screenshot"}</Label>
+                <Label className="text-xs">{t("p7_Payment_screenshot")}</Label>
                 <button
                   type="button"
                   onClick={() => fileRef.current?.click()}
                   className="mt-1 flex h-24 w-full items-center justify-center gap-2 rounded-md border-2 border-dashed bg-muted/30 hover:border-primary hover:bg-primary/5"
                 >
                   {uploading ? <Loader2 className="h-5 w-5 animate-spin" /> : <ImagePlus className="h-5 w-5 text-muted-foreground" />}
-                  <span className="text-xs">{proofUrl ? (lang === "bn" ? "আপলোড হয়েছে — পরিবর্তন করতে ক্লিক করুন" : "Uploaded — click to change") : (lang === "bn" ? "ছবি আপলোড করুন" : "Upload image")}</span>
+                  <span className="text-xs">{proofUrl ? (t("p7_Uploaded_click_to_change")) : (t("p7_Upload_image"))}</span>
                 </button>
                 <input
                   ref={fileRef}
@@ -223,13 +223,13 @@ export function TransferShopDialog({
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            {lang === "bn" ? "বাতিল" : "Cancel"}
+            {t("p7_Cancel")}
           </Button>
           <Button onClick={submit} disabled={submitting || uploading}>
             {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {method === "online"
               ? (lang === "bn" ? `৳${charge} পেমেন্ট করুন` : `Pay ৳${charge}`)
-              : (lang === "bn" ? "Request পাঠান" : "Submit Request")}
+              : (t("p7_Submit_Request_2"))}
           </Button>
         </DialogFooter>
       </DialogContent>

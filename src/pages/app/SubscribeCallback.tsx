@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 type State = "loading" | "success" | "pending" | "failed";
 
 export default function SubscribeCallback() {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const params = useSearch() as Record<string, string>;
   const navigate = useNavigate();
   const [state, setState] = useState<State>("loading");
@@ -37,19 +37,19 @@ export default function SubscribeCallback() {
         }
         if (data?.paid) {
           setState("success");
-          setMsg(lang === "bn" ? "সাবস্ক্রিপশন সক্রিয় হয়েছে!" : "Subscription activated!");
+          setMsg(t("p7_Subscription_activated"));
           return;
         }
         if (data?.status === "pending") {
           setState("pending");
-          setMsg(lang === "bn" ? "পেমেন্ট প্রক্রিয়াধীন" : "Payment is being processed");
+          setMsg(t("p7_Payment_is_being_processed"));
           return;
         }
         setState("failed");
         setMsg(
           status === "cancel"
-            ? (lang === "bn" ? "পেমেন্ট বাতিল করা হয়েছে" : "Payment was cancelled")
-            : (lang === "bn" ? "পেমেন্ট সফল হয়নি" : "Payment was not successful")
+            ? (t("p7_Payment_was_cancelled"))
+            : (t("p7_Payment_was_not_successful"))
         );
         return;
       }
@@ -68,10 +68,10 @@ export default function SubscribeCallback() {
       setState("failed");
       setMsg(
         status === "cancel"
-          ? (lang === "bn" ? "পেমেন্ট বাতিল হয়েছে" : "Payment was cancelled")
+          ? (t("p7_Payment_was_cancelled_2"))
           : status === "failed"
-            ? (lang === "bn" ? "পেমেন্ট সফল হয়নি" : "Payment was not successful")
-            : (lang === "bn" ? "Transaction ID পাওয়া যায়নি" : "Transaction ID missing")
+            ? (t("p7_Payment_was_not_successful"))
+            : (t("p7_Transaction_ID_missing"))
       );
     })();
   }, [transactionId, status, localId, lang, paidAmount, paymentMethod]);
@@ -102,7 +102,7 @@ export default function SubscribeCallback() {
           <>
             <Loader2 className="mx-auto h-12 w-12 animate-spin text-primary" />
             <h1 className="mt-4 text-xl font-bold">
-              {lang === "bn" ? "পেমেন্ট যাচাই হচ্ছে..." : "Verifying payment..."}
+              {t("p7_Verifying_payment")}
             </h1>
           </>
         )}
@@ -112,7 +112,7 @@ export default function SubscribeCallback() {
             <h1 className="mt-3 text-xl font-extrabold">{msg}</h1>
             {paidAmount && (
               <p className="mt-1 text-sm text-muted-foreground">
-                ৳{paidAmount} {lang === "bn" ? "পরিশোধিত" : "paid"}
+                ৳{paidAmount} {t("p7_paid_2")}
                 {paymentMethod && paymentMethod !== "undetected" ? ` • ${paymentMethod}` : ""}
               </p>
             )}
@@ -120,10 +120,10 @@ export default function SubscribeCallback() {
               <p className="mt-1 text-xs text-muted-foreground">TxnID: <span className="font-mono">{transactionId}</span></p>
             )}
             <p className="mt-3 text-xs text-muted-foreground">
-              {lang === "bn" ? "৩ সেকেন্ডে ড্যাশবোর্ডে যাচ্ছি..." : "Redirecting to dashboard in 3s..."}
+              {t("p7_Redirecting_to_dashboard_in_3s")}
             </p>
             <Button asChild className="mt-6 w-full">
-              <Link to="/app/dashboard">{lang === "bn" ? "এখনই যান" : "Go now"}</Link>
+              <Link to="/app/dashboard">{t("p7_Go_now")}</Link>
             </Button>
           </>
         )}
@@ -132,10 +132,10 @@ export default function SubscribeCallback() {
             <Clock className="mx-auto h-14 w-14 text-amber-500" />
             <h1 className="mt-3 text-xl font-bold">{msg}</h1>
             <p className="mt-2 text-sm text-muted-foreground">
-              {lang === "bn" ? "কিছুক্ষণ পর আবার দেখুন।" : "Please check back shortly."}
+              {t("p7_Please_check_back_shortly")}
             </p>
             <Button asChild variant="outline" className="mt-6 w-full">
-              <Link to="/app/subscribe">{lang === "bn" ? "ফিরে যান" : "Go back"}</Link>
+              <Link to="/app/subscribe">{t("p7_Go_back")}</Link>
             </Button>
           </>
         )}
@@ -151,9 +151,7 @@ export default function SubscribeCallback() {
               </p>
             )}
             <p className="mt-3 text-sm text-muted-foreground">
-              {lang === "bn"
-                ? "এই attempt টি admin-এর কাছে log হয়েছে — প্রয়োজনে admin আপনার সাথে যোগাযোগ করবেন। আপনি চাইলে আবার চেষ্টা করুন বা manual payment বেছে নিন।"
-                : "This attempt has been logged for admin — they may contact you. You can try again or choose manual payment."}
+              {t("p7_This_attempt_has_been_logged_f")}
             </p>
             {autoRedirect && (
               <p className="mt-3 text-xs font-medium text-primary">
@@ -167,7 +165,7 @@ export default function SubscribeCallback() {
                 className="w-full"
                 onClick={() => navigate("/app/subscribe", { replace: true })}
               >
-                {lang === "bn" ? "এখনই আবার চেষ্টা করুন" : "Try again now"}
+                {t("p7_Try_again_now")}
               </Button>
               <Button
                 variant="outline"
@@ -177,7 +175,7 @@ export default function SubscribeCallback() {
                   navigate("/app/dashboard", { replace: true });
                 }}
               >
-                {lang === "bn" ? "ড্যাশবোর্ডে যান" : "Go to Dashboard"}
+                {t("p7_Go_to_Dashboard")}
               </Button>
             </div>
           </>

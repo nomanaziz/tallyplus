@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 type State = "loading" | "success" | "pending" | "failed";
 
 export default function TransferCallback() {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const params = useSearch() as Record<string, string>;
   const navigate = useNavigate();
   const [state, setState] = useState<State>("loading");
@@ -27,18 +27,18 @@ export default function TransferCallback() {
         if (error) { setState("failed"); setMsg(error.message); return; }
         if (data?.paid) {
           setState("success");
-          setMsg(lang === "bn" ? "পেমেন্ট সফল! Recipient-এর কাছে পাঠানো হয়েছে।" : "Payment successful! Sent to recipient.");
+          setMsg(t("p7_Payment_successful_Sent_to_rec"));
           return;
         }
         if (data?.status === "pending") {
           setState("pending");
-          setMsg(lang === "bn" ? "পেমেন্ট প্রক্রিয়াধীন" : "Payment is being processed");
+          setMsg(t("p7_Payment_is_being_processed"));
           return;
         }
         setState("failed");
         setMsg(status === "cancel"
-          ? (lang === "bn" ? "পেমেন্ট বাতিল হয়েছে" : "Payment was cancelled")
-          : (lang === "bn" ? "পেমেন্ট সফল হয়নি" : "Payment was not successful"));
+          ? (t("p7_Payment_was_cancelled_2"))
+          : (t("p7_Payment_was_not_successful")));
         return;
       }
       if (localId) {
@@ -48,8 +48,8 @@ export default function TransferCallback() {
       }
       setState("failed");
       setMsg(status === "cancel"
-        ? (lang === "bn" ? "পেমেন্ট বাতিল হয়েছে" : "Payment was cancelled")
-        : (lang === "bn" ? "Transaction ID পাওয়া যায়নি" : "Transaction ID missing"));
+        ? (t("p7_Payment_was_cancelled_2"))
+        : (t("p7_Transaction_ID_missing")));
     })();
   }, [transactionId, status, localId, lang]);
 
@@ -64,27 +64,27 @@ export default function TransferCallback() {
       <div className="rounded-2xl border bg-card p-8 text-center shadow-sm">
         {state === "loading" && (<>
           <Loader2 className="mx-auto h-12 w-12 animate-spin text-primary" />
-          <h1 className="mt-4 text-xl font-bold">{lang === "bn" ? "পেমেন্ট যাচাই হচ্ছে..." : "Verifying payment..."}</h1>
+          <h1 className="mt-4 text-xl font-bold">{t("p7_Verifying_payment")}</h1>
         </>)}
         {state === "success" && (<>
           <CheckCircle2 className="mx-auto h-14 w-14 text-emerald-500" />
           <h1 className="mt-3 text-xl font-extrabold">{msg}</h1>
           <Button asChild className="mt-6 w-full">
-            <Link to="/app/shops">{lang === "bn" ? "এখনই যান" : "Go now"}</Link>
+            <Link to="/app/shops">{t("p7_Go_now")}</Link>
           </Button>
         </>)}
         {state === "pending" && (<>
           <Clock className="mx-auto h-14 w-14 text-amber-500" />
           <h1 className="mt-3 text-xl font-bold">{msg}</h1>
           <Button asChild variant="outline" className="mt-6 w-full">
-            <Link to="/app/shops">{lang === "bn" ? "ফিরে যান" : "Go back"}</Link>
+            <Link to="/app/shops">{t("p7_Go_back")}</Link>
           </Button>
         </>)}
         {state === "failed" && (<>
           <XCircle className="mx-auto h-14 w-14 text-destructive" />
           <h1 className="mt-3 text-xl font-bold">{msg}</h1>
           <Button className="mt-6 w-full" onClick={() => navigate("/app/shops", { replace: true })}>
-            {lang === "bn" ? "আবার চেষ্টা করুন" : "Try again"}
+            {t("p7_Try_again")}
           </Button>
         </>)}
       </div>

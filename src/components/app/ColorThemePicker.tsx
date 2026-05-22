@@ -4,7 +4,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Palette, Check } from "lucide-react";
 
 function Swatches({ color, onPick }: { color: AppColor; onPick: (c: AppColor) => void }) {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   return (
     <div className="flex flex-wrap items-center gap-1.5">
       {COLOR_OPTIONS.map((opt) => {
@@ -33,13 +33,13 @@ function Swatches({ color, onPick }: { color: AppColor; onPick: (c: AppColor) =>
 /** Inline grid (for SettingsSheet rows). */
 export function ColorThemeInline() {
   const { color, setColor } = useTheme();
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const current = COLOR_OPTIONS.find((o) => o.value === color);
   return (
     <div className="space-y-2">
       <Swatches color={color} onPick={setColor} />
       <div className="text-xs text-muted-foreground">
-        {lang === "bn" ? "বর্তমান:" : "Current:"} {current ? (lang === "bn" ? current.bn : current.en) : ""}
+        {t("p7_Current")} {current ? (lang === "bn" ? current.bn : current.en) : ""}
       </div>
     </div>
   );
@@ -48,13 +48,13 @@ export function ColorThemeInline() {
 /** Compact popover trigger (for Topbar / SiteHeader). */
 export function ColorThemeButton({ className }: { className?: string }) {
   const { color, setColor } = useTheme();
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const current = COLOR_OPTIONS.find((o) => o.value === color);
   return (
     <Popover>
       <PopoverTrigger asChild>
         <button
-          aria-label={lang === "bn" ? "থিম রং" : "Theme color"}
+          aria-label={t("p7_Theme_color")}
           className={
             className ??
             "flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground hover:bg-accent"
@@ -65,7 +65,7 @@ export function ColorThemeButton({ className }: { className?: string }) {
       </PopoverTrigger>
       <PopoverContent align="end" className="w-auto p-3">
         <div className="mb-2 text-xs font-semibold">
-          {lang === "bn" ? "অ্যাপের রং" : "App color"}
+          {t("p7_App_color")}
         </div>
         <Swatches color={color} onPick={setColor} />
       </PopoverContent>

@@ -30,7 +30,7 @@ const FEATURES: { key: string; bn: string; en: string }[] = [
 ];
 
 export default function UsageLimitsPage() {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const { user } = useAuth();
   const { current } = useShop();
   const [planCode, setPlanCode] = useState<string>("free");
@@ -114,22 +114,22 @@ export default function UsageLimitsPage() {
 
   return (
     <div className="min-h-full bg-muted/30">
-      <PageHeader breadcrumb={lang === "bn" ? "সেটিংস" : "Settings"} title={lang === "bn" ? "ব্যবহারের সীমা" : "Usage Limits"} />
+      <PageHeader breadcrumb={t("p7_Settings")} title={t("p7_Usage_Limits")} />
       <div className="container space-y-4 px-3 py-3 md:px-4 md:py-4">
         <div className="rounded-xl border bg-background p-4">
-          <h2 className="text-base font-extrabold">{lang === "bn" ? "ব্যবহারের সীমা" : "Usage Limits"}</h2>
+          <h2 className="text-base font-extrabold">{t("p7_Usage_Limits")}</h2>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            {lang === "bn" ? "সাবস্ক্রিপশন সীমার বিপরীতে আপনার বর্তমান ব্যবহার ট্র্যাক করুন" : "Track your current usage against subscription limits"}
+            {t("p7_Track_your_current_usage_again")}
           </p>
 
           <div className="mt-4 overflow-x-auto">
             <table className="w-full min-w-[640px] text-sm">
               <thead>
                 <tr className="border-b text-xs text-muted-foreground">
-                  <th className="px-2 py-2 text-left font-semibold">{lang === "bn" ? "ফিচার" : "Feature"}</th>
-                  <th className="px-2 py-2 text-right font-semibold">{lang === "bn" ? "সীমা" : "Limit"}</th>
-                  <th className="px-2 py-2 text-left font-semibold">{lang === "bn" ? "বর্তমান ব্যবহার" : "Current Usage"}</th>
-                  <th className="px-2 py-2 text-right font-semibold">{lang === "bn" ? "অবশিষ্ট" : "Remaining"}</th>
+                  <th className="px-2 py-2 text-left font-semibold">{t("p7_Feature")}</th>
+                  <th className="px-2 py-2 text-right font-semibold">{t("p7_Limit")}</th>
+                  <th className="px-2 py-2 text-left font-semibold">{t("p7_Current_Usage")}</th>
+                  <th className="px-2 py-2 text-right font-semibold">{t("p7_Remaining")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -165,15 +165,15 @@ export default function UsageLimitsPage() {
           </div>
 
           <div className="mt-3 flex flex-wrap gap-3 text-[11px] text-muted-foreground">
-            <span className="flex items-center gap-1.5"><span className="inline-block h-2 w-2 rounded-full bg-emerald-500" />{lang === "bn" ? "কম ব্যবহার (০-৭৪%)" : "Low (0-74%)"}</span>
-            <span className="flex items-center gap-1.5"><span className="inline-block h-2 w-2 rounded-full bg-amber-400" />{lang === "bn" ? "মাঝারি ব্যবহার (৭৫-৮৯%)" : "Medium (75-89%)"}</span>
-            <span className="flex items-center gap-1.5"><span className="inline-block h-2 w-2 rounded-full bg-rose-500" />{lang === "bn" ? "উচ্চ ব্যবহার (৯০%+)" : "High (90%+)"}</span>
+            <span className="flex items-center gap-1.5"><span className="inline-block h-2 w-2 rounded-full bg-emerald-500" />{t("p7_Low_0_74")}</span>
+            <span className="flex items-center gap-1.5"><span className="inline-block h-2 w-2 rounded-full bg-amber-400" />{t("p7_Medium_75_89")}</span>
+            <span className="flex items-center gap-1.5"><span className="inline-block h-2 w-2 rounded-full bg-rose-500" />{t("p7_High_90")}</span>
           </div>
         </div>
 
         {/* Regular packages */}
         <div className="rounded-xl border bg-background p-4">
-          <h3 className="mb-3 text-sm font-bold">{lang === "bn" ? "রেগুলার প্যাকেজ" : "Regular Packages"}</h3>
+          <h3 className="mb-3 text-sm font-bold">{t("p7_Regular_Packages")}</h3>
           <div className="grid gap-3 md:grid-cols-2">
             {plans.filter(p => p.code !== "monthly").map((p) => (
               <div key={p.id} className="rounded-xl border bg-card p-5">
@@ -188,14 +188,14 @@ export default function UsageLimitsPage() {
                   ))}
                 </ul>
                 <Button asChild variant="outline" className="mt-4 h-11 w-full">
-                  <Link to="/app/subscribe">{lang === "bn" ? "এখনই কিনুন" : "Buy now"}</Link>
+                  <Link to="/app/subscribe">{t("p7_Buy_now")}</Link>
                 </Button>
               </div>
             ))}
           </div>
           <div className="mt-4 flex justify-center">
             <Button asChild className="bg-primary text-primary-foreground hover:bg-primary/90">
-              <Link to="/app/subscribe">{lang === "bn" ? "সকল সাবস্ক্রিপশন প্যাকেজ দেখুন" : "View all subscription packages"} <ArrowRight className="ml-1 h-4 w-4" /></Link>
+              <Link to="/app/subscribe">{t("p7_View_all_subscription_packages")} <ArrowRight className="ml-1 h-4 w-4" /></Link>
             </Button>
           </div>
         </div>

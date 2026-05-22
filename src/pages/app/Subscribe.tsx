@@ -38,7 +38,7 @@ const FREE_LIMITS_BN = "পণ্য ১০ • বিক্রয় ১০ •
 const FREE_LIMITS_EN = "10 products • 10 sales • 10 purchases • 10 expenses • 5 customers • 5 suppliers";
 
 export default function Subscribe() {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const { user } = useAuth();
   const [plans, setPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(true);
@@ -95,7 +95,7 @@ export default function Subscribe() {
   }, [user?.id]);
 
   const handlePickPaid = (p: Plan) => {
-    if (!user) return toast.error(lang === "bn" ? "আগে লগইন করুন" : "Please log in");
+    if (!user) return toast.error(t("p7_Please_log_in"));
     setSelected(p);
     setPayMode("choose");
     setTimeout(() => {
@@ -111,7 +111,7 @@ export default function Subscribe() {
     });
     setBusyId(null);
     if (error || !data?.payment_url) {
-      toast.error(error?.message ?? data?.error ?? (lang === "bn" ? "পেমেন্ট তৈরি করা যায়নি" : "Could not create payment"));
+      toast.error(error?.message ?? data?.error ?? (t("p7_Could_not_create_payment")));
       return;
     }
     window.location.href = data.payment_url as string;
@@ -120,12 +120,12 @@ export default function Subscribe() {
   const submitManual = async () => {
     if (!user || !selected) return;
     if (!txnId.trim()) {
-      toast.error(lang === "bn" ? "TxnID দিন" : "Please enter Transaction ID");
+      toast.error(t("p7_Please_enter_Transaction_ID"));
       return;
     }
     const picked = methods.find((m) => m.id === pickedMethodId);
     if (!picked) {
-      toast.error(lang === "bn" ? "একটি পেমেন্ট মাধ্যম নির্বাচন করুন" : "Pick a payment method");
+      toast.error(t("p7_Pick_a_payment_method"));
       return;
     }
     // map to enum value
@@ -151,18 +151,18 @@ export default function Subscribe() {
       toast.error(error.message);
       return;
     }
-    toast.success(lang === "bn" ? "অনুরোধ পাঠানো হয়েছে — admin verify করবে" : "Request sent — admin will verify");
+    toast.success(t("p7_Request_sent_admin_will_verify"));
     setTxnId(""); setNote(""); setSelected(null);
   };
 
   const copy = (text?: string) => {
     if (!text) return;
     void navigator.clipboard.writeText(text);
-    toast.success(lang === "bn" ? "কপি হয়েছে" : "Copied");
+    toast.success(t("p7_Copied_2"));
   };
 
   const currentPlanName = useMemo(() => {
-    if (currentCode === "free") return lang === "bn" ? "ফ্রি" : "Free";
+    if (currentCode === "free") return t("p7_Free");
     const p = plans.find((x) => x.code === currentCode);
     return p ? (lang === "bn" ? p.name_bn : p.name_en) : currentCode;
   }, [currentCode, plans, lang]);
@@ -179,12 +179,12 @@ export default function Subscribe() {
 
   return (
     <div className="container px-3 py-4 md:px-4 md:py-6">
-      <div className="mb-2 text-xs text-muted-foreground">{lang === "bn" ? "সেটিংস" : "Settings"}</div>
+      <div className="mb-2 text-xs text-muted-foreground">{t("p7_Settings")}</div>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-extrabold">{lang === "bn" ? "সাবস্ক্রিপশন" : "Subscription"}</h1>
+        <h1 className="text-2xl font-extrabold">{t("p7_Subscription")}</h1>
         <div className="flex items-center gap-2 rounded-full border bg-card px-3 py-1.5 text-sm">
           <Sparkles className="h-4 w-4 text-primary" />
-          <span className="text-muted-foreground">{lang === "bn" ? "বর্তমান প্ল্যান:" : "Current plan:"}</span>
+          <span className="text-muted-foreground">{t("p7_Current_plan")}</span>
           <span className="font-bold">{currentPlanName}</span>
           {currentExpires && currentCode !== "free" && (
             <span className="text-xs text-muted-foreground">· {new Date(currentExpires).toLocaleDateString()}</span>
@@ -192,7 +192,7 @@ export default function Subscribe() {
         </div>
       </div>
       <p className="mt-1 text-sm text-muted-foreground">
-        {lang === "bn" ? "ফ্রি প্ল্যানে সীমিত ব্যবহার। বেশি দোকান ও আনলিমিটেড ব্যবহারের জন্য আপগ্রেড করুন।" : "Free plan has limits. Upgrade for more shops & unlimited usage."}
+        {t("p7_Free_plan_has_limits_Upgrade_f")}
       </p>
 
       {/* Plan grid */}
@@ -201,22 +201,22 @@ export default function Subscribe() {
         <div className={"relative rounded-2xl border bg-card p-5 shadow-sm " + (currentCode === "free" ? "ring-2 ring-emerald-500" : "")}>
           {currentCode === "free" && (
             <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-emerald-500 text-white">
-              {lang === "bn" ? "বর্তমান" : "Current"}
+              {t("p7_Current_2")}
             </Badge>
           )}
           <div className="flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-emerald-500" />
-            <div className="text-lg font-extrabold">{lang === "bn" ? "ফ্রি" : "Free"}</div>
+            <div className="text-lg font-extrabold">{t("p7_Free")}</div>
           </div>
           <div className="mt-3 flex items-baseline gap-2">
             <div className="text-3xl font-extrabold">৳ 0</div>
-            <div className="text-sm text-muted-foreground">{lang === "bn" ? "/ চিরকাল" : "/ forever"}</div>
+            <div className="text-sm text-muted-foreground">{t("p7_forever")}</div>
           </div>
-          <div className="mt-1 text-xs text-muted-foreground">{lang === "bn" ? "১টি দোকান" : "1 shop"}</div>
+          <div className="mt-1 text-xs text-muted-foreground">{t("p7_1_shop")}</div>
           <p className="mt-3 text-xs leading-relaxed text-muted-foreground">{lang === "bn" ? FREE_LIMITS_BN : FREE_LIMITS_EN}</p>
           <Button asChild variant="outline" className="mt-5 h-11 w-full font-bold">
             <Link to="/app/usage-limits">
-              {lang === "bn" ? "ব্যবহার সীমা দেখুন" : "View Usage Limits"} <ArrowRight className="ml-1 h-4 w-4" />
+              {t("p7_View_Usage_Limits")} <ArrowRight className="ml-1 h-4 w-4" />
             </Link>
           </Button>
         </div>
@@ -229,11 +229,11 @@ export default function Subscribe() {
             <div key={p.id} className={"relative rounded-2xl border bg-card p-5 shadow-sm " + (isCurrent ? "ring-2 ring-emerald-500" : isLifetime ? "ring-2 ring-primary" : "")}>
               {isCurrent ? (
                 <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-emerald-500 text-white">
-                  {lang === "bn" ? "বর্তমান" : "Current"}
+                  {t("p7_Current_2")}
                 </Badge>
               ) : isLifetime ? (
                 <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-primary px-3 py-1 text-xs font-bold text-primary-foreground">
-                  {lang === "bn" ? "🔥 সেরা ডিল" : "🔥 Best Deal"}
+                  {t("p7_Best_Deal")}
                 </span>
               ) : null}
               <div className="flex items-center gap-2">
@@ -248,7 +248,7 @@ export default function Subscribe() {
               </div>
               {p.old_price_bdt && p.old_price_bdt > fp && (
                 <div className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-xs font-bold text-emerald-700 dark:text-emerald-400">
-                  {lang === "bn" ? "সাশ্রয়" : "Save"} {fmtMoney(p.old_price_bdt - fp, lang)}
+                  {t("p7_Save_3")} {fmtMoney(p.old_price_bdt - fp, lang)}
                   {p.old_price_bdt > 0 && (
                     <span className="opacity-80">
                       {" "}({Math.round(((p.old_price_bdt - fp) / p.old_price_bdt) * 100)}%)
@@ -258,8 +258,8 @@ export default function Subscribe() {
               )}
               <div className="mt-1 text-xs text-muted-foreground">
                 {isLifetime
-                  ? (lang === "bn" ? "এককালীন" : "One-time")
-                  : `${p.duration_days} ${lang === "bn" ? "দিন" : "days"}`} · {p.max_shops} {lang === "bn" ? "দোকান" : "shops"}
+                  ? (t("p7_One_time"))
+                  : `${p.duration_days} ${t("p7_days")}`} · {p.max_shops} {t("p7_shops")}
               </div>
               {(p.description_bn || p.description_en) && (
                 <p className="mt-2 text-xs">{lang === "bn" ? p.description_bn : p.description_en}</p>
@@ -281,9 +281,9 @@ export default function Subscribe() {
                 {busyId === p.id ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : isCurrent ? (
-                  lang === "bn" ? "চলমান" : "Active"
+                  t("p7_Active")
                 ) : (
-                  lang === "bn" ? "নির্বাচন করুন" : "Select"
+                  t("p7_Select")
                 )}
               </Button>
             </div>
@@ -296,10 +296,10 @@ export default function Subscribe() {
         <div id="pay-step" className="mt-8 rounded-2xl border bg-card p-5 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h2 className="text-lg font-extrabold">
-              {lang === "bn" ? "পেমেন্ট পদ্ধতি বেছে নিন" : "Choose how to pay"}
+              {t("p7_Choose_how_to_pay")}
             </h2>
             <div className="rounded-lg border bg-muted/40 px-3 py-1.5 text-sm">
-              {lang === "bn" ? "প্ল্যান:" : "Plan:"}{" "}
+              {t("p7_Plan")}{" "}
               <strong>{lang === "bn" ? selected.name_bn : selected.name_en}</strong>{" "}
               — <strong>{fmtMoney(finalPrice(selected), lang)}</strong>
             </div>
@@ -311,7 +311,7 @@ export default function Subscribe() {
                 type="button"
                 onClick={() => {
                   if (!gatewayEnabled) {
-                    toast.error(lang === "bn" ? "অনলাইন পেমেন্ট এখন বন্ধ আছে — manual payment বেছে নিন" : "Online payment is currently disabled — pick manual payment");
+                    toast.error(t("p7_Online_payment_is_currently_di"));
                     return;
                   }
                   setPayMode("online");
@@ -324,17 +324,17 @@ export default function Subscribe() {
                   </div>
                   <div className="flex-1">
                     <div className="font-extrabold">
-                      {lang === "bn" ? "অনলাইন পেমেন্ট" : "Pay Online"}
+                      {t("p7_Pay_Online")}
                     </div>
                     <div className="text-xs text-muted-foreground">
-                      {lang === "bn" ? "Card / bKash / Nagad / Rocket — তাত্ক্ষণিক active" : "Card / bKash / Nagad / Rocket — instant"}
+                      {t("p7_Card_bKash_Nagad_Rocket_instan")}
                     </div>
                   </div>
                   <ArrowRight className="h-5 w-5 text-muted-foreground" />
                 </div>
                 {!gatewayEnabled && (
                   <p className="mt-3 text-xs text-amber-600">
-                    {lang === "bn" ? "এখন বন্ধ আছে" : "Currently disabled"}
+                    {t("p7_Currently_disabled")}
                   </p>
                 )}
               </button>
@@ -350,10 +350,10 @@ export default function Subscribe() {
                   </div>
                   <div className="flex-1">
                     <div className="font-extrabold">
-                      {lang === "bn" ? "ম্যানুয়াল পেমেন্ট" : "Manual Payment"}
+                      {t("p7_Manual_Payment")}
                     </div>
                     <div className="text-xs text-muted-foreground">
-                      {lang === "bn" ? "bKash/Nagad-এ টাকা পাঠিয়ে TxnID দিন — admin verify করবে" : "Send to bKash/Nagad, submit TxnID — admin verifies"}
+                      {t("p7_Send_to_bKash_Nagad_submit_Txn")}
                     </div>
                   </div>
                   <ArrowRight className="h-5 w-5 text-muted-foreground" />
@@ -365,18 +365,16 @@ export default function Subscribe() {
           {payMode === "online" && (
             <div className="mt-5 rounded-xl border bg-muted/30 p-5">
               <p className="text-sm text-muted-foreground">
-                {lang === "bn"
-                  ? "নিচের button-এ click করলে আপনাকে secure payment page-এ নিয়ে যাবে। সফল payment-এর পর automatic আপনার subscription active হবে।"
-                  : "Clicking below redirects you to a secure payment page. Your subscription activates automatically once paid."}
+                {t("p7_Clicking_below_redirects_you_t")}
               </p>
               <div className="mt-4 flex flex-wrap gap-2">
                 <Button onClick={startOnlinePayment} disabled={busyId === selected.id} className="h-11 font-bold">
                   {busyId === selected.id
                     ? <Loader2 className="h-4 w-4 animate-spin" />
-                    : (lang === "bn" ? "অনলাইন পেমেন্ট শুরু করুন" : "Start Online Payment")}
+                    : (t("p7_Start_Online_Payment"))}
                 </Button>
                 <Button variant="outline" onClick={() => setPayMode("choose")} className="h-11">
-                  {lang === "bn" ? "ফিরে যান" : "Back"}
+                  {t("p7_Back")}
                 </Button>
               </div>
             </div>
@@ -387,24 +385,20 @@ export default function Subscribe() {
           <div className="flex items-center gap-2">
             <Wallet className="h-5 w-5 text-primary" />
             <h3 className="text-base font-extrabold">
-              {lang === "bn" ? "ম্যানুয়াল পেমেন্ট" : "Manual Payment"}
+              {t("p7_Manual_Payment")}
             </h3>
             <Button variant="ghost" size="sm" onClick={() => setPayMode("choose")} className="ml-auto">
-              {lang === "bn" ? "← ফিরে যান" : "← Back"}
+              {t("p7_Back_2")}
             </Button>
           </div>
           <p className="mt-1 text-sm text-muted-foreground">
-            {lang === "bn"
-              ? "নিচের যেকোনো নম্বরে টাকা পাঠান, তারপর Transaction ID দিন। admin verify করে subscription active করবে।"
-              : "Send money to any number below, then submit the Transaction ID. Admin will verify and activate."}
+            {t("p7_Send_money_to_any_number_below")}
           </p>
 
           {/* Method cards */}
           {methods.length === 0 ? (
             <div className="mt-4 rounded-xl border border-dashed bg-muted/30 p-6 text-center text-sm text-muted-foreground">
-              {lang === "bn"
-                ? "এখনো কোনো পেমেন্ট মাধ্যম সেট করা হয়নি — admin-এর সাথে যোগাযোগ করুন।"
-                : "No payment methods configured yet — contact admin."}
+              {t("p7_No_payment_methods_configured_")}
             </div>
           ) : (
             <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -439,7 +433,7 @@ export default function Subscribe() {
                           onKeyDown={(e) => { if (e.key === "Enter") { e.stopPropagation(); copy(m.account_number); } }}
                           className="inline-flex h-8 items-center gap-1 rounded-md border bg-muted/50 px-2 text-xs font-semibold hover:bg-muted"
                         >
-                          <Copy className="h-3 w-3" /> {lang === "bn" ? "কপি" : "Copy"}
+                          <Copy className="h-3 w-3" /> {t("p7_Copy")}
                         </span>
                       </div>
                       {m.extra_info && (
@@ -463,16 +457,16 @@ export default function Subscribe() {
             {pickedMethod && (
               <div className="rounded-lg border-l-4 bg-muted/30 px-3 py-2 text-xs"
                    style={{ borderLeftColor: pickedMethod.color }}>
-                {lang === "bn" ? "নির্বাচিত মাধ্যম: " : "Selected method: "}
+                {t("p7_Selected_method")}
                 <strong>{pickedMethod.name}</strong> · <code className="font-mono">{pickedMethod.account_number}</code>
               </div>
             )}
             <div>
-              <Label htmlFor="txn">{lang === "bn" ? "Transaction ID *" : "Transaction ID *"}</Label>
+              <Label htmlFor="txn">{t("p7_Transaction_ID_2")}</Label>
               <Input id="txn" value={txnId} onChange={(e) => setTxnId(e.target.value)} placeholder="e.g. 7A1B2C3D" className="mt-1" />
             </div>
             <div>
-              <Label htmlFor="note">{lang === "bn" ? "মন্তব্য (ঐচ্ছিক)" : "Note (optional)"}</Label>
+              <Label htmlFor="note">{t("p7_Note_optional")}</Label>
               <Textarea id="note" value={note} onChange={(e) => setNote(e.target.value)} rows={2} className="mt-1" />
             </div>
             <Button
@@ -480,7 +474,7 @@ export default function Subscribe() {
               disabled={submitting || !selected || !txnId.trim() || !pickedMethodId}
               className="h-11 w-full font-bold"
             >
-              {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : (lang === "bn" ? "অনুরোধ জমা দিন" : "Submit Request")}
+              {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : (t("p7_Submit_Request"))}
             </Button>
           </div>
           )}

@@ -22,7 +22,7 @@ export function AddShopDialog({
   onOpenChange: (v: boolean) => void;
   onCreated?: (shopId: string) => void;
 }) {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const { user } = useAuth();
   const { refresh } = useShop();
   const fileRef = useRef<HTMLInputElement>(null);
@@ -45,7 +45,7 @@ export function AddShopDialog({
   const onLogoPick = (f: File | null) => {
     if (!f) return;
     if (f.size > 2 * 1024 * 1024) {
-      toast.error(lang === "bn" ? "লোগো 2MB-এর কম হতে হবে" : "Logo must be under 2MB");
+      toast.error(t("p7_Logo_must_be_under_2MB"));
       return;
     }
     setLogoFile(f);
@@ -55,10 +55,10 @@ export function AddShopDialog({
   };
 
   const schema = z.object({
-    name: z.string().trim().min(2, lang === "bn" ? "দোকানের নাম দিন" : "Enter shop name").max(80),
-    typeCode: z.string().min(1, lang === "bn" ? "দোকানের ধরন বাছাই করুন" : "Choose shop type"),
-    address: z.string().trim().min(3, lang === "bn" ? "ঠিকানা দিন" : "Enter address").max(200),
-    phone: z.string().regex(/^01[3-9]\d{8}$/, lang === "bn" ? "সঠিক মোবাইল নম্বর দিন (11 digit)" : "Enter valid 11-digit BD mobile"),
+    name: z.string().trim().min(2, t("p7_Enter_shop_name")).max(80),
+    typeCode: z.string().min(1, t("p7_Choose_shop_type")),
+    address: z.string().trim().min(3, t("p7_Enter_address")).max(200),
+    phone: z.string().regex(/^01[3-9]\d{8}$/, t("p7_Enter_valid_11_digit_BD_mobile")),
   });
 
   const submit = async () => {
@@ -101,9 +101,7 @@ export function AddShopDialog({
       // Friendly message for shop limit trigger
       if (error.message.includes("shop_limit_exceeded")) {
         toast.error(
-          lang === "bn"
-            ? "আপনার plan-এ অনুমোদিত দোকান সীমা শেষ। Upgrade করুন।"
-            : "You have reached your plan's shop limit. Please upgrade."
+          t("p7_You_have_reached_your_plan_s_s")
         );
       } else {
         toast.error(error.message);
@@ -133,7 +131,7 @@ export function AddShopDialog({
     setBusy(false);
     reset();
     await refresh();
-    toast.success(lang === "bn" ? "দোকান তৈরি হয়েছে" : "Shop created");
+    toast.success(t("p7_Shop_created"));
     onOpenChange(false);
     if (shopRow?.id) onCreated?.(shopRow.id);
   };
@@ -142,7 +140,7 @@ export function AddShopDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{lang === "bn" ? "নতুন দোকান যুক্ত করুন" : "Add New Shop"}</DialogTitle>
+          <DialogTitle>{t("p7_Add_New_Shop")}</DialogTitle>
         </DialogHeader>
 
         {/* Logo */}
@@ -173,7 +171,7 @@ export function AddShopDialog({
             onClick={() => fileRef.current?.click()}
             className="mt-2 text-xs font-semibold text-primary hover:underline"
           >
-            {lang === "bn" ? "দোকানের লোগো যোগ করুন" : "Add a logo of your Shop"}
+            {t("p7_Add_a_logo_of_your_Shop")}
           </button>
         </div>
 
@@ -181,13 +179,13 @@ export function AddShopDialog({
           {/* Shop name */}
           <div className="space-y-1.5">
             <Label htmlFor="shop-name">
-              {lang === "bn" ? "দোকানের নাম" : "Shop Name"} <span className="text-rose-500">*</span>
+              {t("p7_Shop_Name")} <span className="text-rose-500">*</span>
             </Label>
             <Input
               id="shop-name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder={lang === "bn" ? "Shop Name" : "Shop Name"}
+              placeholder={t("p7_Shop_Name_2")}
               className="h-11"
               maxLength={80}
             />
@@ -196,7 +194,7 @@ export function AddShopDialog({
           {/* Shop type */}
           <div className="space-y-1.5">
             <Label>
-              {lang === "bn" ? "দোকানের ধরন" : "Shop Type"} <span className="text-rose-500">*</span>
+              {t("p7_Shop_Type")} <span className="text-rose-500">*</span>
             </Label>
             <ShopTypePicker
               value={typeCode}
@@ -212,7 +210,7 @@ export function AddShopDialog({
           {/* Address */}
           <div className="space-y-1.5">
             <Label>
-              {lang === "bn" ? "ঠিকানা" : "Address"} <span className="text-rose-500">*</span>
+              {t("p7_Address_2")} <span className="text-rose-500">*</span>
             </Label>
             <Input
               value={address}
@@ -226,7 +224,7 @@ export function AddShopDialog({
           {/* Phone */}
           <div className="space-y-1.5">
             <Label>
-              {lang === "bn" ? "মোবাইল নম্বর" : "Input Mobile number"} <span className="text-rose-500">*</span>
+              {t("p7_Input_Mobile_number")} <span className="text-rose-500">*</span>
             </Label>
             <div className="flex h-11 items-center overflow-hidden rounded-md border bg-background">
               <span className="flex h-full items-center gap-1.5 border-r bg-muted/40 px-3 text-sm font-medium">
@@ -246,7 +244,7 @@ export function AddShopDialog({
 
           {/* Sell online */}
           <div className="space-y-1.5">
-            <Label>{lang === "bn" ? "অনলাইনে বিক্রি করতে চান?" : "Do you want to sell Online?"}</Label>
+            <Label>{t("p7_Do_you_want_to_sell_Online")}</Label>
             <div className="grid grid-cols-2 gap-2">
               {(["yes", "no"] as const).map((v) => (
                 <button
@@ -266,7 +264,7 @@ export function AddShopDialog({
                   >
                     {sellOnline === v && <span className="h-2 w-2 rounded-full bg-primary" />}
                   </span>
-                  <span className="font-medium">{v === "yes" ? (lang === "bn" ? "হ্যাঁ" : "Yes") : (lang === "bn" ? "না" : "No")}</span>
+                  <span className="font-medium">{v === "yes" ? (t("p7_Yes")) : (t("p7_No_2"))}</span>
                 </button>
               ))}
             </div>
@@ -275,10 +273,10 @@ export function AddShopDialog({
 
         <DialogFooter className="gap-2 sm:gap-2">
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={busy}>
-            {lang === "bn" ? "বাতিল" : "Cancel"}
+            {t("p7_Cancel")}
           </Button>
           <Button onClick={submit} disabled={busy} className="bg-primary text-primary-foreground hover:bg-primary/90">
-            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : (lang === "bn" ? "নতুন দোকান যুক্ত করুন" : "Add New Shop")}
+            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : (t("p7_Add_New_Shop"))}
           </Button>
         </DialogFooter>
       </DialogContent>

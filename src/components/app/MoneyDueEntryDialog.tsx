@@ -31,7 +31,7 @@ export function MoneyDueEntryDialog({
   defaultDirection: DueDirection;
   onSaved?: () => void;
 }) {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const { current } = useShop();
   const { user } = useAuth();
   const today = new Date().toISOString().slice(0, 10);
@@ -106,17 +106,17 @@ export function MoneyDueEntryDialog({
   };
 
   const partyLabel = () => {
-    if (party === "customer") return lang === "bn" ? "কাস্টমারের নাম" : "Customer name";
-    if (party === "supplier") return lang === "bn" ? "সাপ্লায়ারের নাম" : "Supplier name";
-    return lang === "bn" ? "কর্মচারীর নাম" : "Employee name";
+    if (party === "customer") return t("p7_Customer_name_2");
+    if (party === "supplier") return t("p7_Supplier_name");
+    return t("p7_Employee_name");
   };
 
   const save = async () => {
-    if (!current?.id) { toast.error(lang === "bn" ? "শপ নির্বাচন করুন" : "Select a shop"); return; }
+    if (!current?.id) { toast.error(t("p7_Select_a_shop")); return; }
     const amt = Number(amount);
-    if (!amt || amt <= 0) { toast.error(lang === "bn" ? "টাকার পরিমাণ দিন" : "Enter amount"); return; }
-    if (!name.trim()) { toast.error(lang === "bn" ? "নাম দিন" : "Enter name"); return; }
-    if (!phone.trim()) { toast.error(lang === "bn" ? "ফোন নাম্বার দিন" : "Enter phone"); return; }
+    if (!amt || amt <= 0) { toast.error(t("p7_Enter_amount_2")); return; }
+    if (!name.trim()) { toast.error(t("p7_Enter_name")); return; }
+    if (!phone.trim()) { toast.error(t("p7_Enter_phone")); return; }
     setSaving(true);
     try {
       let contactId: string | null = null;
@@ -174,7 +174,7 @@ export function MoneyDueEntryDialog({
       });
       if (cmErr) throw cmErr;
 
-      toast.success(lang === "bn" ? "সংরক্ষিত হয়েছে" : "Saved");
+      toast.success(t("p7_Saved_2"));
       reset();
       onOpenChange(false);
       onSaved?.();
@@ -197,14 +197,14 @@ export function MoneyDueEntryDialog({
         <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
           <Tabs value={party} onValueChange={(v) => setParty(v as PartyType)}>
             <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="customer">{lang === "bn" ? "কাস্টমার" : "Customer"}</TabsTrigger>
-              <TabsTrigger value="supplier">{lang === "bn" ? "সাপ্লায়ার" : "Supplier"}</TabsTrigger>
-              <TabsTrigger value="employee">{lang === "bn" ? "কর্মচারী" : "Employee"}</TabsTrigger>
+              <TabsTrigger value="customer">{t("p7_Customer")}</TabsTrigger>
+              <TabsTrigger value="supplier">{t("p7_Supplier")}</TabsTrigger>
+              <TabsTrigger value="employee">{t("p7_Employee")}</TabsTrigger>
             </TabsList>
           </Tabs>
 
           <div className="space-y-1.5">
-            <Label>{lang === "bn" ? "তারিখ" : "Date"}</Label>
+            <Label>{t("p7_Date")}</Label>
             <div className="relative">
               <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="pr-10" />
               <Calendar className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -212,7 +212,7 @@ export function MoneyDueEntryDialog({
           </div>
 
           <div className="space-y-1.5">
-            <Label>{lang === "bn" ? "নগদ টাকা" : "Cash"}</Label>
+            <Label>{t("p7_Cash_2")}</Label>
             <div className="grid grid-cols-2 gap-3">
               {(["giving", "taking"] as DueDirection[]).map((d) => (
                 <button
@@ -225,9 +225,9 @@ export function MoneyDueEntryDialog({
                     {dir === d && <span className="h-2 w-2 rounded-full bg-foreground" />}
                   </span>
                   <span>
-                    <span className="block text-sm font-medium">{d === "giving" ? (lang === "bn" ? "দিচ্ছি" : "Giving") : (lang === "bn" ? "নিচ্ছি" : "Taking")}</span>
+                    <span className="block text-sm font-medium">{d === "giving" ? (t("p7_Giving")) : (t("p7_Taking"))}</span>
                     <span className="block text-xs text-muted-foreground">
-                      {d === "giving" ? (lang === "bn" ? "আপনি বাকি দিচ্ছেন" : "You are giving") : (lang === "bn" ? "আপনি টাকা নিচ্ছেন" : "You are taking")}
+                      {d === "giving" ? (t("p7_You_are_giving")) : (t("p7_You_are_taking"))}
                     </span>
                   </span>
                 </button>
@@ -236,8 +236,8 @@ export function MoneyDueEntryDialog({
           </div>
 
           <div className="space-y-1.5">
-            <Label>{lang === "bn" ? "টাকার পরিমান" : "Amount"} <span className="text-destructive">*</span></Label>
-            <Input type="number" inputMode="decimal" placeholder={lang === "bn" ? "টাকার পরিমান" : "Amount"} value={amount} onChange={(e) => setAmount(e.target.value)} />
+            <Label>{t("p7_Amount_3")} <span className="text-destructive">*</span></Label>
+            <Input type="number" inputMode="decimal" placeholder={t("p7_Amount_3")} value={amount} onChange={(e) => setAmount(e.target.value)} />
           </div>
 
           <div className="space-y-1.5">
@@ -254,7 +254,7 @@ export function MoneyDueEntryDialog({
                   <button
                     type="button"
                     className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-muted-foreground hover:bg-muted"
-                    aria-label={lang === "bn" ? "সংরক্ষিত থেকে বাছাই" : "Pick saved"}
+                    aria-label={t("p7_Pick_saved")}
                   >
                     <UserRound className="h-4 w-4" />
                   </button>
@@ -267,7 +267,7 @@ export function MoneyDueEntryDialog({
                         autoFocus
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
-                        placeholder={lang === "bn" ? "নাম বা ফোন খুঁজুন" : "Search name or phone"}
+                        placeholder={t("p7_Search_name_or_phone")}
                         className="h-9 pl-8"
                       />
                     </div>
@@ -275,7 +275,7 @@ export function MoneyDueEntryDialog({
                   <div className="max-h-60 overflow-y-auto">
                     {filteredContacts.length === 0 ? (
                       <div className="px-3 py-6 text-center text-sm text-muted-foreground">
-                        {lang === "bn" ? "কোন সংরক্ষিত কন্টাক্ট নেই" : "No saved contacts"}
+                        {t("p7_No_saved_contacts")}
                       </div>
                     ) : (
                       <ul className="divide-y">
@@ -302,30 +302,30 @@ export function MoneyDueEntryDialog({
           </div>
 
           <div className="space-y-1.5">
-            <Label>{lang === "bn" ? "ফোন নাম্বার" : "Phone"} <span className="text-destructive">*</span></Label>
+            <Label>{t("p7_Phone_4")} <span className="text-destructive">*</span></Label>
             <div className="flex gap-2">
               <div className="flex w-20 items-center justify-center rounded-md border bg-muted/30 text-sm">+88</div>
               <Input type="tel" placeholder="xxxxxxxxxx" value={phone} onChange={(e) => setPhone(e.target.value)} className="flex-1" />
             </div>
           </div>
 
-          <Input placeholder={lang === "bn" ? "ঠিকানা" : "Address"} value={address} onChange={(e) => setAddress(e.target.value)} />
+          <Input placeholder={t("p7_Address_2")} value={address} onChange={(e) => setAddress(e.target.value)} />
 
           <div className="flex gap-2">
-            <Textarea placeholder={lang === "bn" ? "মন্তব্য লিখুন" : "Note"} value={note} onChange={(e) => setNote(e.target.value)} className="flex-1" />
+            <Textarea placeholder={t("p7_Note_3")} value={note} onChange={(e) => setNote(e.target.value)} className="flex-1" />
             <Button variant="outline" size="icon" className="h-10 w-10 flex-none" type="button"><Link2 className="h-4 w-4" /></Button>
           </div>
         </div>
         <div className="border-t bg-background p-4 space-y-3">
           <div className="flex items-center justify-center gap-3">
             <Switch checked={sms} onCheckedChange={setSms} />
-            <span className="text-sm">{lang === "bn" ? "ম্যাসেজ পাঠান" : "Send SMS"}</span>
+            <span className="text-sm">{t("p7_Send_SMS")}</span>
             <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100">
-              {lang === "bn" ? "এসএমএস অবশিষ্ট: 30" : "SMS left: 30"}
+              {t("p7_SMS_left_30")}
             </Badge>
           </div>
           <Button onClick={save} disabled={saving} className="w-full h-12 bg-primary text-primary-foreground hover:bg-primary/90">
-            {saving ? (lang === "bn" ? "সংরক্ষণ হচ্ছে..." : "Saving...") : (lang === "bn" ? "সেভ করুন" : "Save")}
+            {saving ? (t("p7_Saving")) : (t("p7_Save_4"))}
           </Button>
         </div>
       </DialogContent>

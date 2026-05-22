@@ -64,7 +64,7 @@ export function QuickFordoDialog({
   onSaved: () => void;
 }) {
   const { current } = useShop();
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
 
   const [custName, setCustName] = useState("");
   const [custPhone, setCustPhone] = useState("");
@@ -184,15 +184,15 @@ export function QuickFordoDialog({
   const save = async () => {
     if (!current?.id) return;
     if (!custName.trim()) {
-      toast.error(lang === "bn" ? "গ্রাহকের নাম দিন" : "Enter customer name");
+      toast.error(t("p7_Enter_customer_name"));
       return;
     }
     if (rows.length === 0) {
-      toast.error(lang === "bn" ? "কোনো পণ্য যোগ করুন" : "Add at least one item");
+      toast.error(t("p7_Add_at_least_one_item_3"));
       return;
     }
     if (rows.some((r) => !r.name.trim())) {
-      toast.error(lang === "bn" ? "প্রতিটি পণ্যের নাম দিন" : "Each item needs a name");
+      toast.error(t("p7_Each_item_needs_a_name"));
       return;
     }
     setSaving(true);
@@ -223,7 +223,7 @@ export function QuickFordoDialog({
       }));
       const { error: e2 } = await supabase.from("customer_wishlist_items").insert(items);
       if (e2) throw e2;
-      toast.success(lang === "bn" ? "ফর্দ সংরক্ষিত" : "Fordo saved");
+      toast.success(t("p7_Fordo_saved"));
       onSaved();
       onOpenChange(false);
     } catch (e) {
@@ -239,7 +239,7 @@ export function QuickFordoDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <ListChecks className="h-5 w-5 text-primary" />
-            {lang === "bn" ? "নিজে ফর্দ তৈরি করুন" : "Create Fordo"}
+            {t("p7_Create_Fordo")}
           </DialogTitle>
         </DialogHeader>
 
@@ -247,21 +247,21 @@ export function QuickFordoDialog({
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="space-y-1">
             <Label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-              {lang === "bn" ? "গ্রাহকের নাম *" : "Customer name *"}
+              {t("p7_Customer_name_3")}
             </Label>
             <Input value={custName} onChange={(e) => setCustName(e.target.value)} className="h-10" />
           </div>
           <div className="space-y-1">
             <Label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-              {lang === "bn" ? "মোবাইল" : "Phone"}
+              {t("p7_Phone_2")}
             </Label>
             <Input value={custPhone} onChange={(e) => setCustPhone(e.target.value)} className="h-10" />
           </div>
           <div className="space-y-1 sm:col-span-2">
             <Label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-              {lang === "bn" ? "ঠিকানা / নোট" : "Address / Note"}
+              {t("p7_Address_Note")}
             </Label>
-            <Input value={custAddress} onChange={(e) => setCustAddress(e.target.value)} className="h-10" placeholder={lang === "bn" ? "ঐচ্ছিক" : "Optional"} />
+            <Input value={custAddress} onChange={(e) => setCustAddress(e.target.value)} className="h-10" placeholder={t("p7_Optional")} />
           </div>
         </div>
 
@@ -276,14 +276,14 @@ export function QuickFordoDialog({
               onFocus={() => setShowDrop(true)}
               onBlur={() => setTimeout(() => setShowDrop(false), 150)}
               onKeyDown={onKeyDown}
-              placeholder={lang === "bn" ? "পণ্য টাইপ করুন... (Enter চাপুন)" : "Type product... (press Enter)"}
+              placeholder={t("p7_Type_product_press_Enter")}
               className="h-10 pl-9"
             />
             {showDrop && query.trim() && (
               <div className="absolute left-0 right-0 top-full z-30 mt-1 max-h-64 overflow-auto rounded-xl border bg-popover shadow-lg">
                 {searching ? (
                   <div className="flex items-center gap-2 px-3 py-2 text-xs text-muted-foreground">
-                    <Loader2 className="h-3 w-3 animate-spin" /> {lang === "bn" ? "খুঁজছে..." : "Searching..."}
+                    <Loader2 className="h-3 w-3 animate-spin" /> {t("p7_Searching")}
                   </div>
                 ) : suggestions.length > 0 ? (
                   <ul>
@@ -296,7 +296,7 @@ export function QuickFordoDialog({
                         <div className="min-w-0">
                           <div className="truncate font-medium">{p.name}</div>
                           <div className="text-[11px] text-muted-foreground">
-                            {lang === "bn" ? "ক্রয়" : "Cost"}: ৳{Number(p.cost_price).toFixed(0)} · {lang === "bn" ? "বিক্রয়" : "Sell"}: ৳{Number(p.sale_price).toFixed(0)}
+                            {t("p7_Cost")}: ৳{Number(p.cost_price).toFixed(0)} · {t("p7_Sell")}: ৳{Number(p.sale_price).toFixed(0)}
                           </div>
                         </div>
                       </li>
@@ -309,21 +309,21 @@ export function QuickFordoDialog({
                     className="flex w-full items-center gap-2 px-3 py-2 text-left text-xs hover:bg-accent"
                   >
                     <Plus className="h-4 w-4 text-muted-foreground" />
-                    <span><b>"{query.trim()}"</b> {lang === "bn" ? "নাম দিয়ে যোগ করুন" : "add by name"}</span>
+                    <span><b>"{query.trim()}"</b> {t("p7_add_by_name")}</span>
                   </button>
                 )}
               </div>
             )}
           </div>
           <p className="mt-2 text-[11px] text-muted-foreground">
-            {lang === "bn" ? "দোকানের পণ্য না হলেও নাম লিখে Enter চেপে যোগ করতে পারবেন।" : "Type any name and press Enter — does not need to be in your store."}
+            {t("p7_Type_any_name_and_press_Enter_")}
           </p>
         </div>
 
         {/* Rows */}
         {rows.length === 0 ? (
           <div className="rounded-xl border border-dashed bg-muted/30 px-4 py-8 text-center text-sm text-muted-foreground">
-            {lang === "bn" ? "এখনো কোনো পণ্য যোগ হয়নি" : "No items yet"}
+            {t("p7_No_items_yet")}
           </div>
         ) : (
           <ul className="space-y-2">
@@ -338,7 +338,7 @@ export function QuickFordoDialog({
                       value={r.name}
                       onChange={(e) => updateRow(r.tempId, { name: e.target.value })}
                       className="h-9 text-sm font-semibold"
-                      placeholder={lang === "bn" ? "পণ্যের নাম" : "Item name"}
+                      placeholder={t("p7_Item_name")}
                     />
                     <button
                       type="button"
@@ -351,33 +351,33 @@ export function QuickFordoDialog({
                   </div>
                   <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
                     <div className="space-y-1">
-                      <Label className="text-[10px] uppercase text-muted-foreground">{lang === "bn" ? "পরিমাণ" : "Qty"}</Label>
+                      <Label className="text-[10px] uppercase text-muted-foreground">{t("p7_Qty")}</Label>
                       <Input type="number" inputMode="decimal" value={r.qty || ""} onChange={(e) => updateRow(r.tempId, { qty: Number(e.target.value) || 0 })} className="h-9 text-sm" min={0} />
                     </div>
                     <div className="space-y-1">
-                      <Label className="text-[10px] uppercase text-muted-foreground">{lang === "bn" ? "একক" : "Unit"}</Label>
+                      <Label className="text-[10px] uppercase text-muted-foreground">{t("p7_Unit_2")}</Label>
                       <Input value={r.unit} onChange={(e) => updateRow(r.tempId, { unit: e.target.value })} className="h-9 text-sm" maxLength={10} />
                     </div>
                     <div className="space-y-1">
-                      <Label className="text-[10px] uppercase text-muted-foreground">{lang === "bn" ? "ক্রয়" : "Cost"}</Label>
+                      <Label className="text-[10px] uppercase text-muted-foreground">{t("p7_Cost")}</Label>
                       <Input type="number" inputMode="decimal" value={r.cost || ""} onChange={(e) => updateRow(r.tempId, { cost: Number(e.target.value) || 0, lastEdited: "cost" })} className="h-9 text-sm" placeholder="0" />
                     </div>
                     <div className="space-y-1">
-                      <Label className="text-[10px] uppercase text-muted-foreground">{lang === "bn" ? "বিক্রয়" : "Sell"}</Label>
+                      <Label className="text-[10px] uppercase text-muted-foreground">{t("p7_Sell")}</Label>
                       <Input type="number" inputMode="decimal" value={r.price || ""} onChange={(e) => updateRow(r.tempId, { price: Number(e.target.value) || 0, lastEdited: "price" })} className="h-9 text-sm" placeholder="0" />
                     </div>
                     <div className="space-y-1">
-                      <Label className="text-[10px] uppercase text-muted-foreground">{lang === "bn" ? "লাভ" : "Profit"}</Label>
+                      <Label className="text-[10px] uppercase text-muted-foreground">{t("p7_Profit")}</Label>
                       <Input type="number" inputMode="decimal" value={r.profit || ""} onChange={(e) => updateRow(r.tempId, { profit: Number(e.target.value) || 0, lastEdited: "profit" })} className="h-9 text-sm" placeholder="0" />
                     </div>
                   </div>
                   <div className="mt-2 flex items-center justify-between rounded-lg bg-muted/40 px-3 py-1.5 text-[11px]">
                     <span className="text-muted-foreground">
-                      {lang === "bn" ? "লাইন লাভ" : "Line profit"}:{" "}
+                      {t("p7_Line_profit")}:{" "}
                       <span className={`font-semibold ${lineProfit >= 0 ? "text-success" : "text-destructive"}`}>৳{lineProfit.toFixed(0)}</span>
                     </span>
                     <span className="text-muted-foreground">
-                      {lang === "bn" ? "মোট" : "Total"}:{" "}
+                      {t("p7_Total_2")}:{" "}
                       <span className="text-sm font-bold text-foreground">৳{lineTotal.toFixed(0)}</span>
                     </span>
                   </div>
@@ -391,25 +391,25 @@ export function QuickFordoDialog({
         {rows.length > 0 && (
           <div className="space-y-1 rounded-xl border bg-muted/30 p-3 text-sm">
             <div className="flex items-center justify-between text-xs text-muted-foreground">
-              <span>{lang === "bn" ? "মোট ক্রয়" : "Total cost"}</span>
+              <span>{t("p7_Total_cost")}</span>
               <span className="tabular-nums">৳ {totals.cost.toFixed(2)}</span>
             </div>
             <div className="flex items-center justify-between text-xs">
-              <span className="text-muted-foreground">{lang === "bn" ? "মোট লাভ" : "Total profit"}</span>
+              <span className="text-muted-foreground">{t("p7_Total_profit")}</span>
               <span className={`font-bold tabular-nums ${totals.profit >= 0 ? "text-success" : "text-destructive"}`}>৳ {totals.profit.toFixed(2)}</span>
             </div>
             <div className="flex items-center justify-between border-t pt-1.5">
-              <span className="font-bold">{lang === "bn" ? "মোট বিক্রয়" : "Total sell"}</span>
+              <span className="font-bold">{t("p7_Total_sell")}</span>
               <span className="text-lg font-extrabold tabular-nums text-primary">৳ {totals.sell.toFixed(2)}</span>
             </div>
           </div>
         )}
 
         <DialogFooter>
-          <Button variant="ghost" onClick={() => onOpenChange(false)}>{lang === "bn" ? "বাতিল" : "Cancel"}</Button>
+          <Button variant="ghost" onClick={() => onOpenChange(false)}>{t("p7_Cancel")}</Button>
           <Button onClick={save} disabled={saving || rows.length === 0}>
             {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-            {lang === "bn" ? "ফর্দ সংরক্ষণ" : "Save Fordo"}
+            {t("p7_Save_Fordo")}
           </Button>
         </DialogFooter>
       </DialogContent>

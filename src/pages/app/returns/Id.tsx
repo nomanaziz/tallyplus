@@ -12,7 +12,7 @@ import { printTableReport } from "@/lib/print-report";
 
 
 function ReturnDetailsPage() {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const { id } = useParams();
   const nav = useNavigate();
   const { current } = useShop();
@@ -38,9 +38,9 @@ function ReturnDetailsPage() {
 
   const r = data.ret;
   const statusLabel =
-    r.refund_status === "refunded" ? (lang === "bn" ? "ফেরত দেওয়া" : "Refunded")
-    : r.refund_status === "adjusted_to_due" ? (lang === "bn" ? "বাকিতে সমন্বয়" : "Adjusted to due")
-    : (lang === "bn" ? "অপেক্ষমান" : "Pending");
+    r.refund_status === "refunded" ? (t("p7_Refunded"))
+    : r.refund_status === "adjusted_to_due" ? (t("p7_Adjusted_to_due"))
+    : (t("p7_Pending"));
 
   function onPrint() {
     const created = new Date(r.created_at).toISOString().slice(0, 10);
@@ -48,15 +48,15 @@ function ReturnDetailsPage() {
       shopName: current?.name ?? "",
       shopAddress: (current as { address?: string | null } | null)?.address ?? null,
       shopPhone: (current as { phone?: string | null } | null)?.phone ?? null,
-      title: `${lang === "bn" ? "রিটার্ন" : "Return"} ${r.return_no ?? id.slice(0, 6)}`,
+      title: `${t("p7_Return")} ${r.return_no ?? id.slice(0, 6)}`,
       startDate: created,
       endDate: created,
       lang,
       columns: [
-        { key: "name", label: lang === "bn" ? "পণ্য" : "Item" },
-        { key: "qty", label: lang === "bn" ? "পরিমাণ" : "Qty", align: "right" },
-        { key: "price", label: lang === "bn" ? "মূল্য" : "Price", align: "right" },
-        { key: "total", label: lang === "bn" ? "মোট" : "Total", align: "right" },
+        { key: "name", label: t("p7_Item") },
+        { key: "qty", label: t("p7_Qty"), align: "right" },
+        { key: "price", label: t("p7_Price"), align: "right" },
+        { key: "total", label: t("p7_Total_2"), align: "right" },
       ],
       rows: (data?.items ?? []).map((it) => ({
         name: it.name,
@@ -64,24 +64,24 @@ function ReturnDetailsPage() {
         price: fmtMoney(Number(it.price), lang),
         total: fmtMoney(Number(it.total), lang),
       })),
-      footer: `${lang === "bn" ? "মোট" : "Total"}: ${fmtMoney(Number(r.total), lang)}  •  ${lang === "bn" ? "ফেরত" : "Refunded"} (${r.refund_method}): ${fmtMoney(Number(r.refund_amount), lang)}  •  ${lang === "bn" ? "অবস্থা" : "Status"}: ${statusLabel}`,
+      footer: `${t("p7_Total_2")}: ${fmtMoney(Number(r.total), lang)}  •  ${t("p7_Refunded_2")} (${r.refund_method}): ${fmtMoney(Number(r.refund_amount), lang)}  •  ${t("p7_Status")}: ${statusLabel}`,
     });
   }
 
   return (
     <div className="min-h-full bg-muted/30">
       <PageHeader
-        breadcrumb={lang === "bn" ? "প্রোডাক্ট রিটার্ন" : "Product Return"}
+        breadcrumb={t("p7_Product_Return")}
         title={r.return_no ?? id.slice(0, 6)}
         actions={
           <>
             <Button variant="outline" className="h-10 gap-2" onClick={() => nav({ to: "/app/returns" })}>
               <ArrowLeft className="h-4 w-4" />
-              {lang === "bn" ? "ফিরে যান" : "Back"}
+              {t("p7_Back")}
             </Button>
             <Button variant="outline" className="h-10 gap-2" onClick={onPrint}>
               <Printer className="h-4 w-4" />
-              {lang === "bn" ? "প্রিন্ট" : "Print"}
+              {t("p7_Print")}
             </Button>
           </>
         }
@@ -89,10 +89,10 @@ function ReturnDetailsPage() {
       <div className="container space-y-3 px-3 py-3 md:space-y-4 md:px-4 md:py-4">
         <div className="rounded-xl border bg-background p-4">
           <div className="grid grid-cols-2 gap-3 text-sm md:grid-cols-4">
-            <Field label={lang === "bn" ? "তারিখ" : "Date"} value={new Date(r.created_at).toLocaleString("en-GB")} />
-            <Field label={lang === "bn" ? "কাস্টমার" : "Customer"} value={data.customer?.name ?? (lang === "bn" ? "ওয়াক-ইন" : "Walk-in")} />
-            <Field label={lang === "bn" ? "কারণ" : "Reason"} value={r.reason ?? "—"} />
-            <Field label={lang === "bn" ? "অবস্থা" : "Status"} value={statusLabel} />
+            <Field label={t("p7_Date")} value={new Date(r.created_at).toLocaleString("en-GB")} />
+            <Field label={t("p7_Customer")} value={data.customer?.name ?? (t("p7_Walk_in"))} />
+            <Field label={t("p7_Reason_2")} value={r.reason ?? "—"} />
+            <Field label={t("p7_Status")} value={statusLabel} />
           </div>
           {r.reason_note && <p className="mt-2 rounded bg-muted/40 p-2 text-xs">{r.reason_note}</p>}
         </div>
@@ -101,10 +101,10 @@ function ReturnDetailsPage() {
           <table className="w-full text-sm">
             <thead className="bg-muted/40 text-xs">
               <tr>
-                <th className="p-2 text-left">{lang === "bn" ? "পণ্য" : "Item"}</th>
-                <th className="p-2 text-right">{lang === "bn" ? "পরিমাণ" : "Qty"}</th>
-                <th className="p-2 text-right">{lang === "bn" ? "মূল্য" : "Price"}</th>
-                <th className="p-2 text-right">{lang === "bn" ? "মোট" : "Total"}</th>
+                <th className="p-2 text-left">{t("p7_Item")}</th>
+                <th className="p-2 text-right">{t("p7_Qty")}</th>
+                <th className="p-2 text-right">{t("p7_Price")}</th>
+                <th className="p-2 text-right">{t("p7_Total_2")}</th>
               </tr>
             </thead>
             <tbody>
@@ -119,11 +119,11 @@ function ReturnDetailsPage() {
             </tbody>
             <tfoot>
               <tr className="border-t bg-muted/20">
-                <td className="p-2 font-bold" colSpan={3}>{lang === "bn" ? "মোট রিটার্ন মূল্য" : "Total"}</td>
+                <td className="p-2 font-bold" colSpan={3}>{t("p7_Total")}</td>
                 <td className="p-2 text-right font-extrabold">{fmtMoney(Number(r.total), lang)}</td>
               </tr>
               <tr>
-                <td className="p-2 font-bold text-rose-600" colSpan={3}>{lang === "bn" ? "ফেরত দেওয়া" : "Refunded"} ({r.refund_method})</td>
+                <td className="p-2 font-bold text-rose-600" colSpan={3}>{t("p7_Refunded")} ({r.refund_method})</td>
                 <td className="p-2 text-right font-extrabold text-rose-600">{fmtMoney(Number(r.refund_amount), lang)}</td>
               </tr>
             </tfoot>
@@ -132,7 +132,7 @@ function ReturnDetailsPage() {
 
         {r.note && (
           <div className="rounded-xl border bg-background p-3 text-sm">
-            <div className="text-[11px] font-bold text-muted-foreground">{lang === "bn" ? "নোট" : "Note"}</div>
+            <div className="text-[11px] font-bold text-muted-foreground">{t("p7_Note")}</div>
             <p className="mt-1">{r.note}</p>
           </div>
         )}

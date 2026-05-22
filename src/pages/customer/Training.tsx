@@ -33,7 +33,7 @@ const CATEGORY_LABELS: Record<string, { bn: string; en: string }> = {
 
 
 function TrainingPage() {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const [videos, setVideos] = useState<Video[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -77,13 +77,11 @@ function TrainingPage() {
       <div className="flex items-center gap-2">
         <AppIcon name="training" className="h-7 w-7" />
         <h1 className="text-xl font-extrabold md:text-2xl">
-          {lang === "bn" ? "অ্যাপ ট্রেনিং" : "App Training"}
+          {t("p7_App_Training")}
         </h1>
       </div>
       <p className="mt-1 text-sm text-muted-foreground">
-        {lang === "bn"
-          ? "প্রত্যেকটা ফিচার শিখতে নিচের ভিডিওগুলো দেখুন"
-          : "Watch these videos to learn every feature."}
+        {t("p7_Watch_these_videos_to_learn_ev")}
       </p>
 
       {/* Search + filter */}
@@ -93,7 +91,7 @@ function TrainingPage() {
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder={lang === "bn" ? "ভিডিও খুঁজুন" : "Search videos"}
+            placeholder={t("p7_Search_videos")}
             className="h-10 pl-8"
           />
         </div>
@@ -108,7 +106,7 @@ function TrainingPage() {
               (activeCat === "all" ? "border-primary bg-primary text-primary-foreground" : "hover:bg-accent")
             }
           >
-            {lang === "bn" ? "সবগুলো" : "All"}
+            {t("p7_All")}
           </button>
           {cats.map((c) => {
             const l = CATEGORY_LABELS[c] ?? { bn: c, en: c };
@@ -134,7 +132,7 @@ function TrainingPage() {
         <div className="mt-6 rounded-xl border bg-card">
           <EmptyState
             icon={<GraduationCap className="h-6 w-6" />}
-            title={lang === "bn" ? "এখনো কোনো ট্রেনিং ভিডিও নেই — শীঘ্রই আসছে" : "No training videos yet — coming soon"}
+            title={t("p7_No_training_videos_yet_coming_")}
           />
         </div>
       ) : (

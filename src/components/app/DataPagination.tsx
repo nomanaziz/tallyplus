@@ -24,7 +24,7 @@ export function DataPagination({
   onPageSizeChange: (s: number) => void;
   pageSizeOptions?: number[];
 }) {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const fmt = (n: number) => (lang === "bn" ? bnNum(n) : String(n));
 
   // Build compact page list: 1 ... p-1 p p+1 ... last
@@ -57,7 +57,7 @@ export function DataPagination({
       {/* Right: per-page + nav, all in one line */}
       <div className="flex flex-none items-center gap-1 sm:gap-2">
         <span className="hidden text-xs text-muted-foreground sm:inline">
-          {lang === "bn" ? "প্রতি পেজ" : "Per page"}
+          {t("p7_Per_page")}
         </span>
         <Select value={String(pageSize)} onValueChange={(v) => onPageSizeChange(Number(v))}>
           <SelectTrigger className="h-7 w-[60px] px-2 text-xs sm:h-8 sm:w-[72px] sm:text-sm">

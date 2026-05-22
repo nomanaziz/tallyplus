@@ -37,7 +37,7 @@ export function NewUserAccessDialog({
   onCustomRoleCreated: (r: CustomRole) => void;
   onSaved: () => void;
 }) {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const { current } = useShop();
   const { user } = useAuth();
 
@@ -84,16 +84,16 @@ export function NewUserAccessDialog({
 
   const validateStep1 = () => {
     if (!fullName.trim()) {
-      toast.error(lang === "bn" ? "নাম দিন" : "Name required");
+      toast.error(t("p7_Name_required"));
       return false;
     }
     const digits = phone.replace(/\D/g, "");
     if (digits.length < 10) {
-      toast.error(lang === "bn" ? "সঠিক ফোন নম্বর দিন" : "Valid phone required");
+      toast.error(t("p7_Valid_phone_required"));
       return false;
     }
     if (!/^\d{4}$/.test(pin)) {
-      toast.error(lang === "bn" ? "৪ সংখ্যার PIN দিন" : "Enter 4-digit PIN");
+      toast.error(t("p7_Enter_4_digit_PIN"));
       return false;
     }
     return true;
@@ -156,7 +156,7 @@ export function NewUserAccessDialog({
       const loginUrl = `${window.location.origin}/?phone=${encodeURIComponent(localPhone)}`;
       setShare({ phone: localPhone, pin, loginUrl });
       onSaved();
-      toast.success(lang === "bn" ? "ইউজার তৈরি হয়েছে" : "User created");
+      toast.success(t("p7_User_created"));
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
@@ -174,7 +174,7 @@ export function NewUserAccessDialog({
       await navigator.clipboard.writeText(shareMessage(s));
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
-      toast.success(lang === "bn" ? "কপি হয়েছে" : "Copied");
+      toast.success(t("p7_Copied_2"));
     } catch {
       toast.error("Copy failed");
     }
@@ -205,18 +205,16 @@ export function NewUserAccessDialog({
               <div className="grid gap-4">
                 <div className="rounded-lg border bg-emerald-50 p-4 text-sm text-emerald-900">
                   <div className="mb-2 font-bold">
-                    {lang === "bn" ? "✅ ইউজার তৈরি হয়েছে" : "✅ User created"}
+                    {t("p7_User_created_2")}
                   </div>
                   <div>
-                    {lang === "bn"
-                      ? "নিচের তথ্যগুলো কপি করে ইউজারকে পাঠান। এই PIN দিয়ে সে লগইন করতে পারবে।"
-                      : "Share the credentials below. The user can log in with this PIN."}
+                    {t("p7_Share_the_credentials_below_Th")}
                   </div>
                 </div>
 
                 <div className="grid gap-2 rounded-lg border p-3 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">{lang === "bn" ? "ফোন" : "Phone"}</span>
+                    <span className="text-muted-foreground">{t("p7_Phone")}</span>
                     <span className="font-mono font-bold">{share.phone}</span>
                   </div>
                   <div className="flex justify-between">
@@ -229,7 +227,7 @@ export function NewUserAccessDialog({
                 <div className="grid grid-cols-3 gap-2">
                   <Button variant="outline" onClick={() => onCopy(share)} className="h-11">
                     {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                    <span className="ml-1 text-xs">{lang === "bn" ? "কপি" : "Copy"}</span>
+                    <span className="ml-1 text-xs">{t("p7_Copy")}</span>
                   </Button>
                   <Button
                     onClick={() => onWhatsApp(share)}
@@ -253,22 +251,22 @@ export function NewUserAccessDialog({
                   <button
                     type="button"
                     className="mt-2 text-sm font-semibold text-sky-600 hover:underline"
-                    onClick={() => toast.info(lang === "bn" ? "শীঘ্রই আসছে" : "Coming soon")}
+                    onClick={() => toast.info(t("p7_Coming_soon"))}
                   >
-                    [{lang === "bn" ? "ইউজার এর ছবি যুক্ত করুন" : "Add user photo"}]
+                    [{t("p7_Add_user_photo")}]
                   </button>
                 </div>
 
                 <div className="grid gap-1.5">
                   <Label className="text-sm">
-                    {lang === "bn" ? "নাম" : "Name"} <span className="text-rose-500">*</span>
+                    {t("p7_Name")} <span className="text-rose-500">*</span>
                   </Label>
-                  <Input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder={lang === "bn" ? "নাম" : "Name"} />
+                  <Input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder={t("p7_Name")} />
                 </div>
 
                 <div className="grid gap-1.5">
                   <Label className="text-sm">
-                    {lang === "bn" ? "ফোন নম্বর" : "Phone"} <span className="text-rose-500">*</span>
+                    {t("p7_Phone_3")} <span className="text-rose-500">*</span>
                   </Label>
                   <div className="flex">
                     <span className="inline-flex items-center rounded-l-md border border-r-0 bg-muted px-2 text-sm">🇧🇩 +88</span>
@@ -284,7 +282,7 @@ export function NewUserAccessDialog({
 
                 <div className="grid gap-1.5">
                   <Label className="text-sm">
-                    {lang === "bn" ? "৪ সংখ্যার লগইন PIN" : "4-digit login PIN"}{" "}
+                    {t("p7_4_digit_login_PIN")}{" "}
                     <span className="text-rose-500">*</span>
                   </Label>
                   <Input
@@ -296,27 +294,25 @@ export function NewUserAccessDialog({
                     className="text-center text-xl tracking-[0.5em]"
                   />
                   <p className="text-xs text-muted-foreground">
-                    {lang === "bn"
-                      ? "এই PIN দিয়ে কর্মচারী লগইন করবে — পরে শেয়ার করবেন"
-                      : "Employee will log in with this PIN — share it after creating"}
+                    {t("p7_Employee_will_log_in_with_this")}
                   </p>
                 </div>
 
                 <div className="grid gap-1.5">
-                  <Label className="text-sm">{lang === "bn" ? "ঠিকানা" : "Address"}</Label>
-                  <Input value={address} onChange={(e) => setAddress(e.target.value)} placeholder={lang === "bn" ? "ঠিকানা" : "Address"} />
+                  <Label className="text-sm">{t("p7_Address_2")}</Label>
+                  <Input value={address} onChange={(e) => setAddress(e.target.value)} placeholder={t("p7_Address_2")} />
                 </div>
 
                 <div className="grid gap-1.5">
-                  <Label className="text-sm">{lang === "bn" ? "ইমেইল" : "Email"}</Label>
-                  <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder={lang === "bn" ? "ইমেইল" : "Email"} />
+                  <Label className="text-sm">{t("p7_Email")}</Label>
+                  <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder={t("p7_Email")} />
                 </div>
               </div>
             ) : (
               <div className="grid gap-4">
                 <div>
                   <div className="mb-2 text-sm font-semibold">
-                    {lang === "bn" ? "অ্যাক্সেস স্কোপ" : "Access scope"}
+                    {t("p7_Access_scope")}
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     {(["single", "all"] as const).map((k) => {
@@ -341,9 +337,7 @@ export function NewUserAccessDialog({
                     })}
                   </div>
                   <p className="mt-1 text-[11px] text-muted-foreground">
-                    {lang === "bn"
-                      ? "“আমার সব দোকান” বাছলে ভবিষ্যতে নতুন দোকান যোগ হলে স্বয়ংক্রিয়ভাবে এই ইউজারও যুক্ত হবে।"
-                      : "If you pick \"All my shops\", this user will be auto-added to any new shop you create later."}
+                    {t("p7_If_you_pick_All_my_shops_this_")}
                   </p>
                 </div>
                 <div>
@@ -395,14 +389,14 @@ export function NewUserAccessDialog({
                       className="inline-flex items-center gap-1 rounded-md border border-dashed border-emerald-500 bg-background px-3 py-1.5 text-xs font-bold text-emerald-700 hover:bg-emerald-50"
                     >
                       <Plus className="h-3.5 w-3.5" />
-                      {lang === "bn" ? "নতুন পদবী যোগ" : "Add new role"}
+                      {t("p7_Add_new_role")}
                     </button>
                   </div>
                 </div>
 
                 <div>
                   <div className="mb-2 text-sm font-semibold">
-                    {lang === "bn" ? "যেসব ফিচারে এক্সেস পাবে" : "Feature access"}
+                    {t("p7_Feature_access")}
                   </div>
                   <div className="space-y-3">
                     {FEATURE_GROUPS.filter((g) => (perms[g.key] ?? []).length > 0).map((g) => (
@@ -446,7 +440,7 @@ export function NewUserAccessDialog({
                 className="h-11 w-full bg-primary text-primary-foreground hover:bg-primary/90"
                 onClick={() => onOpenChange(false)}
               >
-                {lang === "bn" ? "শেষ" : "Done"}
+                {t("p7_Done")}
               </Button>
             ) : step === 1 ? (
               <Button
@@ -455,19 +449,19 @@ export function NewUserAccessDialog({
                   if (validateStep1()) setStep(2);
                 }}
               >
-                {lang === "bn" ? "পরবর্তী ধাপ" : "Next step"}
+                {t("p7_Next_step")}
               </Button>
             ) : (
               <div className="flex gap-2">
                 <Button variant="outline" className="h-11 flex-1" onClick={() => setStep(1)}>
-                  {lang === "bn" ? "আগের ধাপ" : "Back"}
+                  {t("p7_Back_3")}
                 </Button>
                 <Button
                   disabled={busy}
                   onClick={save}
                   className="h-11 flex-[2] bg-primary text-primary-foreground hover:bg-primary/90"
                 >
-                  {busy ? "..." : lang === "bn" ? "সেভ করুন" : "Save"}
+                  {busy ? "..." : t("p7_Save_4")}
                 </Button>
               </div>
             )}

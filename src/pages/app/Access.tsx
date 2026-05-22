@@ -30,7 +30,7 @@ function GuardedAccessPage() {
 }
 
 function AccessPage() {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const { current } = useShop();
   const qc = useQueryClient();
   const { data: raw } = useQuery(shopMembersQuery(current?.id ?? null));
@@ -106,7 +106,7 @@ function AccessPage() {
 
   return (
     <div className="container px-4 py-4">
-      <h1 className="text-xl font-extrabold md:text-2xl">{lang === "bn" ? "এক্সেস ম্যানেজমেন্ট" : "Access Management"}</h1>
+      <h1 className="text-xl font-extrabold md:text-2xl">{t("p7_Access_Management")}</h1>
 
       <div className="mt-4 grid gap-4 md:grid-cols-[320px_1fr]">
         {/* Left: members list */}
@@ -116,7 +116,7 @@ function AccessPage() {
             <ChevronRight className="h-4 w-4 text-muted-foreground" />
           </div>
           {members.length === 0 ? (
-            <EmptyState icon={<Users className="h-6 w-6" />} title={lang === "bn" ? "এখনো কেউ নেই" : "No members yet"} />
+            <EmptyState icon={<Users className="h-6 w-6" />} title={t("p7_No_members_yet")} />
           ) : (
             <div className="flex flex-col gap-1 p-2">
               {members.map((m) => (
@@ -133,7 +133,7 @@ function AccessPage() {
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
-                      <span className="truncate text-sm font-semibold">{m.full_name ?? (lang === "bn" ? "অজানা" : "Unknown")}</span>
+                      <span className="truncate text-sm font-semibold">{m.full_name ?? (t("p7_Unknown"))}</span>
                       <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold uppercase text-amber-800">
                         {roleLabel(m)}
                       </span>
@@ -147,7 +147,7 @@ function AccessPage() {
           <div className="border-t p-3">
             <Button className="h-11 w-full gap-2 bg-primary text-primary-foreground hover:bg-primary/90" onClick={() => setOpenAdd(true)}>
               <Plus className="h-4 w-4" />
-              {lang === "bn" ? "নতুন ইউজারকে এক্সেস দিন" : "Grant new access"}
+              {t("p7_Grant_new_access")}
             </Button>
           </div>
         </div>
@@ -179,13 +179,13 @@ function AccessPage() {
               <div className="mt-4 rounded-lg border p-3">
                 <div className="flex items-center justify-between">
                   <div>
-                    <div className="text-sm font-semibold">{lang === "bn" ? "অ্যাপ এর লিংক পাঠান" : "Send app link"}</div>
-                    <div className="text-xs text-muted-foreground">{lang === "bn" ? "ইউজারের মোবাইল নাম্বার দিয়ে লগ ইন করলে অ্যাপ এর পাবে" : "User can log in with their phone"}</div>
+                    <div className="text-sm font-semibold">{t("p7_Send_app_link")}</div>
+                    <div className="text-xs text-muted-foreground">{t("p7_User_can_log_in_with_their_pho")}</div>
                   </div>
                   <Button
                     size="icon"
                     variant="outline"
-                    onClick={() => { void navigator.clipboard.writeText(inviteLink); toast.success(lang === "bn" ? "কপি হয়েছে" : "Copied"); }}
+                    onClick={() => { void navigator.clipboard.writeText(inviteLink); toast.success(t("p7_Copied_2")); }}
                   >
                     <Copy className="h-4 w-4" />
                   </Button>
@@ -193,7 +193,7 @@ function AccessPage() {
               </div>
 
               <div className="mt-4">
-                <div className="mb-2 text-sm font-semibold">{lang === "bn" ? "যেসব ফিচারে এক্সেস পাবে" : "Feature access"}</div>
+                <div className="mb-2 text-sm font-semibold">{t("p7_Feature_access")}</div>
                 <div className="space-y-4">
                   {FEATURE_GROUPS.filter((g) => (effectivePerms[g.key] ?? []).length > 0).map((g) => (
                     <div key={g.key}>
@@ -220,7 +220,7 @@ function AccessPage() {
               </div>
             </>
           ) : (
-            <EmptyState title={lang === "bn" ? "একজন সদস্য নির্বাচন করুন" : "Select a member"} />
+            <EmptyState title={t("p7_Select_a_member")} />
           )}
         </div>
       </div>

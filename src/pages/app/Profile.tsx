@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 
 export default function ProfilePage() {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const { user, profile, refresh } = useAuth();
   const nav = useNavigate();
   const [fullName, setFullName] = useState("");
@@ -30,8 +30,8 @@ export default function ProfilePage() {
   }, [user, profile?.full_name]);
 
   const schema = z.object({
-    fullName: z.string().trim().min(2, lang === "bn" ? "নাম কমপক্ষে ২ অক্ষর হতে হবে" : "Name min 2 chars").max(100, lang === "bn" ? "১০০ অক্ষরের কম" : "Max 100 chars"),
-    address: z.string().trim().max(200, lang === "bn" ? "২০০ অক্ষরের কম" : "Max 200 chars").optional(),
+    fullName: z.string().trim().min(2, t("p7_Name_min_2_chars")).max(100, t("p7_Max_100_chars")),
+    address: z.string().trim().max(200, t("p7_Max_200_chars")).optional(),
   });
 
   const save = async () => {
@@ -48,7 +48,7 @@ export default function ProfilePage() {
         .update({ full_name: parsed.data.fullName })
         .eq("id", user.id);
       if (error) throw error;
-      toast.success(lang === "bn" ? "প্রোফাইল আপডেট হয়েছে" : "Profile updated");
+      toast.success(t("p7_Profile_updated"));
       if (typeof refresh === "function") await refresh();
     } catch (e) {
       toast.error((e as Error).message);
@@ -63,28 +63,28 @@ export default function ProfilePage() {
         <Button variant="ghost" size="icon" onClick={() => nav({ to: "/app/dashboard" })}>
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <h1 className="text-lg font-bold">{lang === "bn" ? "আমার প্রোফাইল" : "My Profile"}</h1>
+        <h1 className="text-lg font-bold">{t("p7_My_Profile")}</h1>
       </header>
       <div className="mx-auto max-w-xl space-y-4 p-4">
         <div className="rounded-xl border bg-card p-4 space-y-3">
           <div>
-            <Label>{lang === "bn" ? "ফোন নম্বর" : "Phone"}</Label>
+            <Label>{t("p7_Phone_3")}</Label>
             <Input value={profile?.phone || user?.phone || ""} disabled className="mt-1" />
             <p className="mt-1 text-xs text-muted-foreground">
-              {lang === "bn" ? "ফোন নম্বর পরিবর্তন করা যাবে না।" : "Phone cannot be changed."}
+              {t("p7_Phone_cannot_be_changed")}
             </p>
           </div>
           <div>
-            <Label>{lang === "bn" ? "পূর্ণ নাম" : "Full name"}</Label>
+            <Label>{t("p7_Full_name_2")}</Label>
             <Input value={fullName} onChange={(e) => setFullName(e.target.value)} maxLength={100} className="mt-1" />
           </div>
           <div>
-            <Label>{lang === "bn" ? "ঠিকানা (ঐচ্ছিক)" : "Address (optional)"}</Label>
+            <Label>{t("p7_Address_optional")}</Label>
             <Input value={address} onChange={(e) => setAddress(e.target.value)} maxLength={200} className="mt-1" />
           </div>
           <Button onClick={save} disabled={busy} className="w-full">
             {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {lang === "bn" ? "সংরক্ষণ করুন" : "Save"}
+            {t("p7_Save_5")}
           </Button>
         </div>
       </div>

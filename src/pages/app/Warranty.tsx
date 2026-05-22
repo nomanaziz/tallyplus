@@ -27,7 +27,7 @@ function daysBetween(a: Date, b: Date) {
 }
 
 function WarrantyPage() {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const { current } = useShop();
   const [q, setQ] = useState("");
   const [perPage, setPerPage] = useState("10");
@@ -87,8 +87,8 @@ function WarrantyPage() {
   return (
     <div className="min-h-full bg-muted/30">
       <PageHeader
-        breadcrumb={lang === "bn" ? "ওয়ারেন্টি পণ্য" : "Warranty Product"}
-        title={lang === "bn" ? "ওয়ারেন্টি পণ্য" : "Warranty Product"}
+        breadcrumb={t("p7_Warranty_Product")}
+        title={t("p7_Warranty_Product")}
       />
 
       <div className="container px-3 py-4 sm:px-4">
@@ -96,9 +96,7 @@ function WarrantyPage() {
           <div className="mb-3 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
             <Info className="mt-0.5 h-4 w-4 flex-none" />
             <div>
-              {lang === "bn"
-                ? "ওয়ারেন্টি ফিচারের জন্য database column যোগ করা দরকার। নিচে product list খালি দেখাবে যতক্ষণ না migration apply করা হয়।"
-                : "A database column is needed to enable warranty tracking. The list will stay empty until the migration is applied."}
+              {t("p7_A_database_column_is_needed_to")}
             </div>
           </div>
         )}
@@ -109,7 +107,7 @@ function WarrantyPage() {
             <Input
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              placeholder={lang === "bn" ? "বারকোড বা নাম দিয়ে খুঁজুন" : "Search by barcode or Product Name"}
+              placeholder={t("p7_Search_by_barcode_or_Product_N")}
               className="h-10 pl-9"
             />
           </div>
@@ -120,14 +118,14 @@ function WarrantyPage() {
             <SelectContent>
               {["10", "25", "50", "100"].map((v) => (
                 <SelectItem key={v} value={v}>
-                  {v} {lang === "bn" ? "প্রতি পেজ" : "per page"}
+                  {v} {t("p7_per_page")}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
           <Button variant="outline" size="sm" className="h-10" onClick={() => refetch()} disabled={isFetching}>
             <RefreshCw className={"h-4 w-4 " + (isFetching ? "animate-spin" : "")} />
-            <span className="ml-1 text-xs">{lang === "bn" ? "রিফ্রেশ" : "Refresh"}</span>
+            <span className="ml-1 text-xs">{t("p7_Refresh")}</span>
           </Button>
         </div>
 
@@ -135,7 +133,7 @@ function WarrantyPage() {
           {filtered.length === 0 ? (
             <EmptyState
               icon={<ShieldCheck className="h-6 w-6" />}
-              title={lang === "bn" ? "ওয়ারেন্টি সহ কোনো পণ্য নেই" : "No products with warranty"}
+              title={t("p7_No_products_with_warranty")}
             />
           ) : (
             <div className="overflow-x-auto">
@@ -143,10 +141,10 @@ function WarrantyPage() {
                 <thead className="bg-muted/60 text-xs">
                   <tr>
                     <th className="px-3 py-2 text-left font-semibold">#</th>
-                    <th className="px-3 py-2 text-left font-semibold">{lang === "bn" ? "নাম" : "Name"}</th>
-                    <th className="px-3 py-2 text-right font-semibold">{lang === "bn" ? "মজুদ" : "Items"}</th>
-                    <th className="px-3 py-2 text-left font-semibold">{lang === "bn" ? "ওয়ারেন্টি শেষ" : "Warranty End Date"}</th>
-                    <th className="px-3 py-2 text-right font-semibold">{lang === "bn" ? "মূল্য" : "Price"}</th>
+                    <th className="px-3 py-2 text-left font-semibold">{t("p7_Name")}</th>
+                    <th className="px-3 py-2 text-right font-semibold">{t("p7_Items_2")}</th>
+                    <th className="px-3 py-2 text-left font-semibold">{t("p7_Warranty_End_Date")}</th>
+                    <th className="px-3 py-2 text-right font-semibold">{t("p7_Price")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -182,7 +180,7 @@ function WarrantyPage() {
                                   : "bg-emerald-100 text-emerald-700")
                             }
                           >
-                            {d.toLocaleDateString(lang === "bn" ? "bn-BD" : "en-GB")}
+                            {d.toLocaleDateString(t("p7_en_GB"))}
                             <span className="opacity-70">
                               ({expired ? `${Math.abs(diff)}d ago` : `${diff}d left`})
                             </span>

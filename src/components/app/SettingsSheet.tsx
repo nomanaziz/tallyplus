@@ -130,7 +130,7 @@ function QuickTile({
 }
 
 export function SettingsSheet({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
-  const { lang, setLang } = useI18n();
+  const { lang, setLang, t } = useI18n();
   const pwa = usePwaInstall();
   const { current, shops } = useShop();
   const { signOut, profile, user } = useAuth();
@@ -202,7 +202,7 @@ export function SettingsSheet({ open, onOpenChange }: { open: boolean; onOpenCha
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="flex w-full flex-col gap-0 bg-muted/30 p-0 sm:max-w-md">
         <SheetHeader className="flex-none border-b bg-background px-4 py-3">
-          <SheetTitle className="text-left text-lg">{lang === "bn" ? "সেটিংস" : "Settings"}</SheetTitle>
+          <SheetTitle className="text-left text-lg">{t("p7_Settings")}</SheetTitle>
         </SheetHeader>
 
         <div className="flex-1 overflow-y-auto px-4 py-4">
@@ -222,10 +222,10 @@ export function SettingsSheet({ open, onOpenChange }: { open: boolean; onOpenCha
               </div>
               <div className="min-w-0 flex-1">
                 <div className="truncate text-base font-semibold">
-                  {profile?.full_name || (lang === "bn" ? "ব্যবহারকারী" : "User")}
+                  {profile?.full_name || (t("p7_User"))}
                 </div>
                 <div className="truncate text-xs text-muted-foreground">
-                  {profile?.phone || (lang === "bn" ? "প্রোফাইল দেখুন" : "View profile")}
+                  {profile?.phone || (t("p7_View_profile"))}
                 </div>
               </div>
               <ChevronRight className="h-5 w-5 text-muted-foreground" />
@@ -238,7 +238,7 @@ export function SettingsSheet({ open, onOpenChange }: { open: boolean; onOpenCha
                   className="flex items-center justify-center gap-1.5 rounded-xl bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground shadow-sm transition active:scale-[0.98]"
                 >
                   <ArrowLeftRight className="h-3.5 w-3.5" />
-                  {lang === "bn" ? "শপ সুইচ" : "Switch Shop"}
+                  {t("p7_Switch_Shop")}
                 </button>
               )}
               <button
@@ -247,7 +247,7 @@ export function SettingsSheet({ open, onOpenChange }: { open: boolean; onOpenCha
                 title={current?.name}
               >
                 <Store className="h-3.5 w-3.5" />
-                <span className="max-w-[8rem] truncate">{current?.name || (lang === "bn" ? "দোকান" : "Shop")}</span>
+                <span className="max-w-[8rem] truncate">{current?.name || (t("p7_Shop_2"))}</span>
               </button>
             </div>
           </div>
@@ -257,35 +257,35 @@ export function SettingsSheet({ open, onOpenChange }: { open: boolean; onOpenCha
             <QuickTile
               tint="border-primary/30 bg-card"
               icon={<LayoutDashboard className="h-4 w-4 text-primary" />}
-              label={lang === "bn" ? "রিপোর্ট" : "Report"}
+              label={t("p7_Report")}
               onClick={() => go("/app/combined-report")}
             />
             <QuickTile
               tint="border-amber-500/40 bg-card"
               icon={<Crown className="h-4 w-4 text-amber-600" />}
-              label={lang === "bn" ? "সাবস্ক্রাইব" : "Subscribe"}
+              label={t("p7_Subscribe")}
               onClick={() => go("/app/subscribe")}
             />
             <QuickTile
               tint="border-emerald-500/40 bg-card"
               icon={<GraduationCap className="h-4 w-4 text-emerald-600" />}
-              label={lang === "bn" ? "ট্রেনিং" : "Training"}
+              label={t("p7_Training")}
               onClick={() => go("/app/training")}
             />
             <QuickTile
               tint="border-sky-500/40 bg-card"
               icon={<BarChart3 className="h-4 w-4 text-sky-600" />}
-              label={lang === "bn" ? "ব্যবহার" : "Usage"}
+              label={t("p7_Usage")}
               onClick={() => go("/app/reports")}
             />
           </div>
 
           {/* Preferences */}
-          <SettingsGroup title={lang === "bn" ? "পছন্দসমূহ" : "Preferences"}>
+          <SettingsGroup title={t("p7_Preferences")}>
             <SettingsRow
               iconTint="bg-blue-500/10 text-blue-600"
               icon={<Languages className="h-4 w-4" />}
-              label={lang === "bn" ? "ভাষা" : "Language"}
+              label={t("p7_Language")}
               right={
                 <select
                   className={selectCls}
@@ -302,7 +302,7 @@ export function SettingsSheet({ open, onOpenChange }: { open: boolean; onOpenCha
             <SettingsRow
               iconTint="bg-violet-500/10 text-violet-600"
               icon={<Globe className="h-4 w-4" />}
-              label={lang === "bn" ? "দেশ" : "Country"}
+              label={t("p7_Country")}
               right={
                 <select
                   className={selectCls}
@@ -319,7 +319,7 @@ export function SettingsSheet({ open, onOpenChange }: { open: boolean; onOpenCha
             <SettingsRow
               iconTint="bg-emerald-500/10 text-emerald-600"
               icon={<Coins className="h-4 w-4" />}
-              label={lang === "bn" ? "কারেন্সি" : "Currency"}
+              label={t("p7_Currency")}
               right={
                 <select
                   className={selectCls}
@@ -336,7 +336,7 @@ export function SettingsSheet({ open, onOpenChange }: { open: boolean; onOpenCha
             <SettingsRow
               iconTint="bg-slate-500/10 text-slate-600"
               icon={<Hash className="h-4 w-4" />}
-              label={lang === "bn" ? "দশমিক" : "Decimals"}
+              label={t("p7_Decimals")}
               right={
                 <select
                   className={selectCls}
@@ -358,63 +358,59 @@ export function SettingsSheet({ open, onOpenChange }: { open: boolean; onOpenCha
                 <span className="flex h-9 w-9 flex-none items-center justify-center rounded-xl bg-amber-500/10 text-amber-600">
                   <Sun className="h-4 w-4" />
                 </span>
-                {lang === "bn" ? "অ্যাপের রং" : "App Color"}
+                {t("p7_App_Color")}
               </div>
               <ColorThemeInline />
             </div>
           </SettingsGroup>
 
           {/* Shop & Data */}
-          <SettingsGroup title={lang === "bn" ? "দোকান ও ডেটা" : "Shop & Data"}>
+          <SettingsGroup title={t("p7_Shop_Data")}>
             <SettingsRow
               iconTint="bg-rose-500/10 text-rose-600"
               icon={<Store className="h-4 w-4" />}
-              label={lang === "bn" ? "দোকানের সেটিংস ও ব্যাকআপ" : "Shop Settings & Backup"}
+              label={t("p7_Shop_Settings_Backup")}
               onClick={() => go("/app/shop-settings")}
             />
             <SettingsRow
               iconTint="bg-indigo-500/10 text-indigo-600"
               icon={<UserIcon className="h-4 w-4" />}
-              label={lang === "bn" ? "আমার প্রোফাইল" : "My Profile"}
+              label={t("p7_My_Profile")}
               onClick={() => go("/app/profile")}
             />
           </SettingsGroup>
 
           {/* Device */}
-          <SettingsGroup title={lang === "bn" ? "ডিভাইস" : "Device"}>
+          <SettingsGroup title={t("p7_Device")}>
             <SettingsRow
               iconTint="bg-teal-500/10 text-teal-600"
               icon={<Smartphone className="h-4 w-4" />}
               label={
                 pwa.installed
-                  ? (lang === "bn" ? "অ্যাপ ইনস্টল করা আছে" : "App Installed")
-                  : (lang === "bn" ? "মোবাইলে অ্যাপ ইনস্টল করুন" : "Install Mobile App")
+                  ? (t("p7_App_Installed"))
+                  : (t("p7_Install_Mobile_App"))
               }
               onClick={async () => {
                 if (pwa.installed) {
-                  toast.info(lang === "bn" ? "অ্যাপ ইতিমধ্যে ইনস্টল করা আছে" : "App is already installed");
+                  toast.info(t("p7_App_is_already_installed"));
                   return;
                 }
                 if (pwa.canInstall) {
                   const outcome = await pwa.promptInstall();
                   if (outcome === "accepted") {
-                    toast.success(lang === "bn" ? "অ্যাপ ইনস্টল হচ্ছে…" : "Installing app…");
+                    toast.success(t("p7_Installing_app"));
                   }
                   return;
                 }
                 if (pwa.isIos) {
                   toast.info(
-                    lang === "bn"
-                      ? "Safari-তে Share বাটনে ট্যাপ করুন → 'Add to Home Screen'"
-                      : "In Safari, tap Share → 'Add to Home Screen'",
+                    t("p7_In_Safari_tap_Share_Add_to_Hom"),
                     { duration: 6000 }
                   );
                   return;
                 }
                 toast.info(
-                  lang === "bn"
-                    ? "ব্রাউজার মেনু থেকে 'Install app' / 'Add to Home screen' সিলেক্ট করুন"
-                    : "Use your browser menu → 'Install app' / 'Add to Home screen'",
+                  t("p7_Use_your_browser_menu_Install_"),
                   { duration: 6000 }
                 );
               }}
@@ -422,14 +418,14 @@ export function SettingsSheet({ open, onOpenChange }: { open: boolean; onOpenCha
             <SettingsRow
               iconTint="bg-fuchsia-500/10 text-fuchsia-600"
               icon={<Smartphone className="h-4 w-4" />}
-              label={lang === "bn" ? "লগইন ডিভাইস ও লগআউট" : "Logged-in devices"}
+              label={t("p7_Logged_in_devices")}
               onClick={() => setDevicesOpen(true)}
             />
           </SettingsGroup>
 
           {/* Help & Links */}
           {(appLinks ?? []).length > 0 && (
-            <SettingsGroup title={lang === "bn" ? "সহায়তা ও লিঙ্ক" : "Help & Links"}>
+            <SettingsGroup title={t("p7_Help_Links")}>
               {(appLinks ?? []).slice(0, 3).map((link) => {
                 const Icon = ICON_MAP[link.icon] ?? LinkIcon;
                 return (
@@ -452,7 +448,7 @@ export function SettingsSheet({ open, onOpenChange }: { open: boolean; onOpenCha
               {(appLinks ?? []).length > 3 && (
                 <details className="group">
                   <summary className="flex cursor-pointer items-center justify-between px-3 py-2.5 text-xs font-semibold text-muted-foreground hover:bg-accent/40">
-                    <span>{lang === "bn" ? "আরও দেখুন" : "Show more"}</span>
+                    <span>{t("p7_Show_more")}</span>
                     <ChevronRight className="h-4 w-4 transition group-open:rotate-90" />
                   </summary>
                   <div className="divide-y divide-border/60 border-t">
@@ -482,7 +478,7 @@ export function SettingsSheet({ open, onOpenChange }: { open: boolean; onOpenCha
           )}
 
           <p className="mt-2 text-center text-[10px] text-muted-foreground/70">
-            {lang === "bn" ? "Tally+ • আপনার ব্যবসার সঙ্গী" : "Tally+ • Your business companion"}
+            {t("p7_Tally_Your_business_companion")}
           </p>
         </div>
 
@@ -493,7 +489,7 @@ export function SettingsSheet({ open, onOpenChange }: { open: boolean; onOpenCha
             className="h-11 w-full border-rose-200 font-semibold text-rose-600 hover:bg-rose-50 hover:text-rose-700"
           >
             <LogOut className="mr-2 h-4 w-4" />
-            {lang === "bn" ? "লগআউট করুন" : "Log out"}
+            {t("p7_Log_out_2")}
           </Button>
         </div>
       </SheetContent>
