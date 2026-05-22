@@ -161,7 +161,7 @@ function CashboxPage() {
                         <TableCell className="text-xs">{new Date(m.created_at).toLocaleString()}</TableCell>
                         <TableCell className="text-xs">
                           <span className="rounded bg-muted px-1.5 py-0.5 font-medium">
-                            {sourceLabel(m.ref_table, lang)}
+                            {sourceLabel(m.ref_table, t)}
                           </span>
                           {m.note && <div className="mt-0.5 text-muted-foreground">{m.note}</div>}
                         </TableCell>
@@ -294,7 +294,7 @@ function NoteLedgerView({
           )}
           {Object.entries(bySource).map(([src, v]) => (
             <div key={src} className="rounded-lg border p-2">
-              <div className="text-xs font-semibold">{sourceLabel(src === "manual" ? null : src, lang)}</div>
+              <div className="text-xs font-semibold">{sourceLabel(src === "manual" ? null : src, t)}</div>
               <div className="mt-1 grid grid-cols-2 gap-2 text-xs">
                 <div className="text-emerald-700">↓ {fmtMoney(v.in, lang)}</div>
                 <div className="text-rose-700 text-right">↑ {fmtMoney(v.out, lang)}</div>
