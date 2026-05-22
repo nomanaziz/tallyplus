@@ -224,17 +224,17 @@ function CashboxPage() {
   );
 }
 
-function sourceLabel(ref: string | null, lang: string) {
-  const map: Record<string, { bn: string; en: string }> = {
-    sales: { bn: "বিক্রি", en: "Sale" },
-    purchases: { bn: "ক্রয়", en: "Purchase" },
-    expenses: { bn: "খরচ", en: "Expense" },
-    payments: { bn: "পেমেন্ট", en: "Payment" },
-    other_income: { bn: "অন্যান্য আয়", en: "Income" },
-  };
+function sourceLabel(ref: string | null, t: (k: string) => string) {
   const k = ref ?? "manual";
-  if (k === "manual") return t("p2a_manual");
-  return map[k]?.[t("p2a_localeShort")] ?? k;
+  const map: Record<string, string> = {
+    sales: t("p2a_src_sale"),
+    purchases: t("p2a_src_purchase"),
+    expenses: t("p2a_src_expense"),
+    payments: t("p2a_src_payment"),
+    other_income: t("p2a_src_income"),
+    manual: t("p2a_manual"),
+  };
+  return map[k] ?? k;
 }
 
 function NoteLedgerView({
