@@ -88,7 +88,7 @@ function GuardedProductsPage() {
 }
 
 function ProductsPage() {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const { current } = useShop();
   const { user } = useAuth();
   const qc = useQueryClient();
@@ -1222,7 +1222,7 @@ function ProductFormDialog({
   shopTypeCode?: string | null;
   onSaved: (saved?: { id: string; name: string; stock: number; cost_price: number; is_serialized: boolean } | null) => void;
 }) {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const [name, setName] = useState("");
   const [sku, setSku] = useState("");
   const [barcode, setBarcode] = useState("");
