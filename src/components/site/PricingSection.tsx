@@ -45,7 +45,8 @@ export function PricingSection() {
           .order("price_bdt"),
         supabase.rpc("payment_gateway_public").maybeSingle(),
       ]);
-      setPlans((pl as Plan[]) ?? []);
+      const shopCodes = new Set(["monthly", "yearly", "lifetime"]);
+      setPlans(((pl as Plan[]) ?? []).filter((p) => shopCodes.has(p.code)));
       setGatewayEnabled(!!gw?.is_enabled);
       setLoading(false);
     })();
@@ -88,11 +89,7 @@ export function PricingSection() {
     <section id="pricing" className="scroll-mt-20 bg-secondary/30 py-16 md:py-24">
       <div className="container mx-auto px-4">
         <div className="text-center">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/15 px-3 py-1 text-xs font-semibold ring-1 ring-primary/30">
-            <Sparkles className="h-3.5 w-3.5" />
-            {lang === "bn" ? "৭ দিনের ফ্রি ট্রায়াল" : "7-day free trial"}
-          </span>
-          <h2 className="mt-4 text-3xl font-extrabold md:text-5xl">
+          <h2 className="text-3xl font-extrabold md:text-5xl">
             {lang === "bn" ? <>সহজ, <span className="text-primary">স্বচ্ছ প্রাইসিং</span></> : <>Simple, <span className="text-primary">transparent pricing</span></>}
           </h2>
           <p className="mx-auto mt-3 max-w-2xl text-muted-foreground">
@@ -220,8 +217,8 @@ export function PricingSection() {
 
         <p className="mt-10 text-center text-sm text-muted-foreground">
           {lang === "bn"
-            ? "সব প্ল্যানে ফ্রি আপডেট, বাংলা সাপোর্ট ও ৭ দিন মানি-ব্যাক গ্যারান্টি।"
-            : "All plans include free updates, Bangla support and a 7-day money-back guarantee."}
+            ? "সব প্ল্যানে ফ্রি আপডেট ও বাংলা সাপোর্ট।"
+            : "All plans include free updates and Bangla support."}
         </p>
       </div>
     </section>
