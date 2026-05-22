@@ -204,6 +204,7 @@ function OnlineProductsPage() {
 
 function EmptyState({ lang }: { lang: string }) {
   const { t } = useI18n();
+  const { t } = useI18n();
   return (
     <div className="flex flex-col items-center py-10 text-center">
       <Package className="h-10 w-10 text-muted-foreground" />
@@ -218,6 +219,7 @@ function ProductCard({ p, listing, saving, lang, onTogglePublish, onToggleFeatur
   p: Product; listing: Listing | undefined; saving: boolean; lang: string;
   onTogglePublish: (v: boolean) => void; onToggleFeature: (v: boolean) => void; onEditDesc: () => void;
 }) {
+  const { t } = useI18n();
   const isPub = !!listing?.is_published;
   return (
     <div className="rounded-xl border bg-card p-3">

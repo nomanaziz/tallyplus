@@ -132,6 +132,7 @@ function ZoneDialog({ open, onOpenChange, shopId, lang, zone, onSaved }: {
   open: boolean; onOpenChange: (v: boolean) => void; shopId: string; lang: string;
   zone: Zone | null; onSaved: () => void;
 }) {
+  const { t } = useI18n();
   const [name, setName] = useState(zone?.name ?? "");
   const [charge, setCharge] = useState(String(zone?.charge ?? ""));
   const [freeMin, setFreeMin] = useState(zone?.free_shipping_min ? String(zone.free_shipping_min) : "");

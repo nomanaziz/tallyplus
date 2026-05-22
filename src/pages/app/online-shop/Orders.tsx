@@ -85,6 +85,7 @@ function OrdersPage() {
 
 function EmptyOrders({ lang }: { lang: string }) {
   const { t } = useI18n();
+  const { t } = useI18n();
   return (
     <div className="flex flex-col items-center py-16 text-center">
       <ClipboardList className="h-12 w-12 text-muted-foreground" />
@@ -105,6 +106,7 @@ function statusColor(s: string) {
 }
 
 function OrderRow({ o, lang, onView }: { o: Order; lang: string; onView: () => void }) {
+  const { t } = useI18n();
   const date = new Date(o.created_at).toLocaleDateString();
   return (
     <button onClick={onView} className="w-full rounded-xl border bg-card p-3 text-left shadow-sm transition-shadow hover:shadow-md">
@@ -124,6 +126,7 @@ function OrderRow({ o, lang, onView }: { o: Order; lang: string; onView: () => v
 }
 
 function OrderDetailDialog({ order, onClose, onStatusChange, lang }: { order: Order | null; onClose: () => void; onStatusChange: (id: string, s: string) => void; lang: string }) {
+  const { t } = useI18n();
   const { data: items = [] } = useQuery<OrderItem[]>({
     queryKey: ["mp-order-items", order?.id],
     enabled: !!order,
