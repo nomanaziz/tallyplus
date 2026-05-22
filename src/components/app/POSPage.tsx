@@ -190,10 +190,10 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
       products.find((p) => (p.sku ?? "").toLowerCase() === cl);
     if (match) {
       addToCart(match);
-      toast.success(lang === "bn" ? `যোগ হয়েছে: ${match.name}` : `Added: ${match.name}`);
+      toast.success(t("p2c_addedX", { name: match.name }));
     } else {
       setSearch(c);
-      toast.error(lang === "bn" ? "এই বারকোডের পণ্য পাওয়া যায়নি" : "No product found for this barcode");
+      toast.error(t("p2c_noBarcode"));
     }
   };
 
@@ -211,15 +211,11 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
       const inCartQty = cart.find((c) => c.product_id === p.id)?.qty ?? 0;
       const stock = Number(p.stock) || 0;
       if (stock <= 0) {
-        toast.error(lang === "bn"
-          ? "স্টক শেষ — আগে স্টক যোগ করুন"
-          : "Out of stock — please update stock first");
+        toast.error(t("p2c_outAddFirst"));
         return;
       }
       if (inCartQty + 1 > stock) {
-        toast.error(lang === "bn"
-          ? `মাত্র ${bnNum(stock)}টি স্টকে আছে`
-          : `Only ${stock} in stock`);
+        toast.error(t("p2c_onlyNStock", { n: lang === "bn" ? bnNum(stock) : stock }));
         return;
       }
     }
@@ -249,9 +245,7 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
     // Stay on the products tab so the user can keep adding more items.
     // A toast confirms the add and a badge on the Cart tab shows the count.
     toast.success(
-      lang === "bn"
-        ? `${p.name} ${alreadyInCart ? "এর পরিমাণ বাড়ানো হয়েছে" : "কার্টে যোগ হয়েছে"}`
-        : `${p.name} ${alreadyInCart ? "qty increased" : "added to cart"}`,
+      (alreadyInCart ? t("p2c_qtyIncreasedX", { name: p.name }) : t("p2c_addedToCartX", { name: p.name })),
       { duration: 1200 },
     );
   };
@@ -272,14 +266,10 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
             const prod = products.find((pp) => pp.id === merged.product_id);
             const stock = Number(prod?.stock ?? 0);
             if (stock > 0 && merged.qty > stock) {
-              toast.error(lang === "bn"
-                ? `মাত্র ${bnNum(stock)}টি স্টকে আছে`
-                : `Only ${stock} in stock`);
+              toast.error(t("p2c_onlyNStock", { n: lang === "bn" ? bnNum(stock) : stock }));
               merged.qty = stock;
             } else if (stock <= 0) {
-              toast.error(lang === "bn"
-                ? "স্টক শেষ"
-                : "Out of stock");
+              toast.error(t("p2c_outOfStock"));
               merged.qty = 0;
             }
           }
@@ -311,7 +301,7 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
             onClick={() => setViewMode("grid")}
             className={`flex h-7 w-9 items-center justify-center rounded-full transition-colors ${viewMode === "grid" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"}`}
             aria-label="Grid view"
-            title={lang === "bn" ? "গ্রিড ভিউ" : "Grid view"}
+            title={t("p2c_gridView")}
           >
             <LayoutGrid className="h-3.5 w-3.5" />
           </button>
@@ -320,7 +310,7 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
             onClick={() => setViewMode("list")}
             className={`flex h-7 w-9 items-center justify-center rounded-full transition-colors ${viewMode === "list" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"}`}
             aria-label="List view"
-            title={lang === "bn" ? "লিস্ট ভিউ" : "List view"}
+            title={t("p2c_listView")}
           >
             <ListIcon className="h-3.5 w-3.5" />
           </button>
@@ -332,10 +322,10 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
         <Tabs value={mobileTab} onValueChange={(v) => setMobileTab(v as "products" | "cart")}>
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="products">
-              {lang === "bn" ? "পণ্য" : "Products"}
+              {t("p2c_products")}
             </TabsTrigger>
             <TabsTrigger value="cart">
-              {lang === "bn" ? "কার্ট" : "Cart"} ({lang === "bn" ? bnNum(cart.length) : cart.length})
+              {t("p2c_cart")} ({lang === "bn" ? bnNum(cart.length) : cart.length})
             </TabsTrigger>
           </TabsList>
         </Tabs>
@@ -346,13 +336,13 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
         <div className={`rounded-xl border bg-card ${mobileTab === "cart" ? "hidden lg:block" : ""}`}>
           <div className="flex items-center justify-between border-b p-3">
             <div className="text-sm font-semibold">
-              {lang === "bn" ? "নির্বাচন করুন" : "Select"}
+              {t("p2c_select")}
             </div>
             {isSell && services.length > 0 && (
               <Tabs value={pickerTab} onValueChange={(v) => setPickerTab(v as "products" | "services")}>
                 <TabsList className="h-8">
-                  <TabsTrigger value="products" className="text-xs px-3">{lang === "bn" ? "পণ্য" : "Products"}</TabsTrigger>
-                  <TabsTrigger value="services" className="text-xs px-3">{lang === "bn" ? "সার্ভিস" : "Services"}</TabsTrigger>
+                  <TabsTrigger value="products" className="text-xs px-3">{t("p2c_products")}</TabsTrigger>
+                  <TabsTrigger value="services" className="text-xs px-3">{t("p2c_services")}</TabsTrigger>
                 </TabsList>
               </Tabs>
             )}
@@ -361,7 +351,7 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
             <div className="p-3">
               <div className="relative mb-3">
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={lang === "bn" ? "সার্ভিস খুঁজুন" : "Search service"} className="h-10 pl-9" />
+                <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t("p2c_searchService")} className="h-10 pl-9" />
               </div>
               <div className="max-h-[55vh] overflow-y-auto">
                 <ul className="divide-y">
@@ -397,14 +387,14 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
                               duration_label: s.duration_label,
                             }];
                           });
-                          toast.success(`${s.name} ${lang === "bn" ? "যোগ হয়েছে" : "added"}`, { duration: 1000 });
+                          toast.success(`${s.name} ${t("p2c_addedLower")}`, { duration: 1000 });
                         }}>
                           <Plus className="h-4 w-4" />
                         </Button>
                       </li>
                     );
                   })}
-                  {services.length === 0 && <li className="py-8 text-center text-sm text-muted-foreground">{lang === "bn" ? "কোনো সার্ভিস নেই" : "No services"}</li>}
+                  {services.length === 0 && <li className="py-8 text-center text-sm text-muted-foreground">{t("p2c_noServices")}</li>}
                 </ul>
               </div>
             </div>
@@ -416,7 +406,7 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
               <Input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder={lang === "bn" ? "পণ্য খোঁজ করুন" : "Search product"}
+                placeholder={t("p2c_searchProduct")}
                 className="h-10 pl-9"
               />
             </div>
@@ -433,7 +423,7 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
           </div>
           <div className="max-h-[60vh] overflow-y-auto px-3 pb-3">
             {filtered.length === 0 ? (
-              <EmptyState icon={<Package className="h-6 w-6" />} title={lang === "bn" ? "কোনো পণ্য নেই" : "No products"} />
+              <EmptyState icon={<Package className="h-6 w-6" />} title={t("p2c_noProducts")} />
             ) : viewMode === "grid" ? (
               <>
               <div className="mb-2 flex items-center gap-2 rounded-md border bg-muted/30 px-2 py-1.5">
@@ -449,7 +439,7 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
                   className="flex-1"
                 />
                 <span className="w-6 text-center text-xs font-bold tabular-nums">{lang === "bn" ? bnNum(cols) : cols}</span>
-                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={resetCols} title={lang === "bn" ? "রিসেট" : "Reset"}>
+                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={resetCols} title={t("p2c_reset")}>
                   <RotateCcw className="h-3 w-3" />
                 </Button>
               </div>
@@ -494,7 +484,7 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
                           {p.name}
                         </div>
                         <div className="mt-0.5 text-[9px] text-muted-foreground">
-                          {lang === "bn" ? "স্টক" : "Stock"}:{" "}
+                          {t("p2c_stock")}:{" "}
                           <span className={p.stock <= 0 ? "font-semibold text-destructive" : ""}>
                             {lang === "bn" ? bnNum(p.stock) : p.stock}
                           </span>
@@ -533,13 +523,13 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
                         )}
                       </div>
                       <div className="text-xs text-muted-foreground">
-                        {lang === "bn" ? "মূল্য:" : "Price:"} {fmtMoney(isSell ? Number(p.sale_price) : Number(p.cost_price), lang)}
+                        {t("p2c_priceColon")} {fmtMoney(isSell ? Number(p.sale_price) : Number(p.cost_price), lang)}
                         <span className="mx-1">·</span>
-                        {lang === "bn" ? "স্টক:" : "Stock:"} {lang === "bn" ? bnNum(p.stock) : p.stock}
+                        {t("p2c_stockColon")} {lang === "bn" ? bnNum(p.stock) : p.stock}
                       </div>
                     </div>
                     <div className="flex">
-                      <Button size="sm" className="rounded-r-none px-3" onClick={() => addToCart(p)} disabled={isSell && Number(p.stock) <= 0} aria-label={lang === "bn" ? "যোগ" : "Add"}>
+                      <Button size="sm" className="rounded-r-none px-3" onClick={() => addToCart(p)} disabled={isSell && Number(p.stock) <= 0} aria-label={t("p2c_add")}>
                         <Plus className="h-4 w-4" />
                       </Button>
                       <DropdownMenu>
@@ -550,10 +540,10 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem onClick={() => addToCart(p)}>
-                            {lang === "bn" ? "১টি যোগ করুন" : "Add 1"}
+                            {t("p2c_add1")}
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => { addToCart(p); addToCart(p); }}>
-                            {lang === "bn" ? "২টি যোগ করুন" : "Add 2"}
+                            {t("p2c_add2")}
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -572,26 +562,26 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
         <div className={`rounded-xl border bg-card ${mobileTab === "products" ? "hidden lg:block" : ""}`}>
           <div className="flex items-center justify-between border-b p-3">
             <div className="text-sm font-semibold">
-              {lang === "bn" ? `পণ্য নির্বাচন করেছেন (${bnNum(cart.length)})` : `Selected items (${cart.length})`}
+              {t("p2c_selectedItemsN", { n: lang === "bn" ? bnNum(cart.length) : cart.length })}
             </div>
             {cart.length > 0 && (
               <Button variant="ghost" size="sm" onClick={clearCart}>
-                {lang === "bn" ? "কার্ট খালি" : "Clear cart"}
+                {t("p2c_clearCart")}
               </Button>
             )}
           </div>
           <div className="max-h-[50vh] overflow-y-auto p-3">
             {cart.length === 0 ? (
-              <EmptyState icon={<ShoppingCart className="h-6 w-6" />} title={lang === "bn" ? "কার্ট খালি" : "Cart is empty"} />
+              <EmptyState icon={<ShoppingCart className="h-6 w-6" />} title={t("p2c_cartEmpty")} />
             ) : (
               <table className="w-full text-xs">
                 <thead className="text-[10px] uppercase text-muted-foreground">
                   <tr className="border-b">
                     <th className="w-6 py-1 text-left font-medium">#</th>
-                    <th className="py-1 text-left font-medium">{lang === "bn" ? "পণ্য" : "Item"}</th>
-                    <th className="w-16 py-1 text-right font-medium">{lang === "bn" ? "মূল্য" : "Price"}</th>
-                    <th className="w-14 py-1 text-center font-medium">{lang === "bn" ? "পরিমাণ" : "Qty"}</th>
-                    <th className="w-16 py-1 text-right font-medium">{lang === "bn" ? "মোট" : "Total"}</th>
+                    <th className="py-1 text-left font-medium">{t("p2c_item")}</th>
+                    <th className="w-16 py-1 text-right font-medium">{t("p2c_price")}</th>
+                    <th className="w-14 py-1 text-center font-medium">{t("p2c_qty")}</th>
+                    <th className="w-16 py-1 text-right font-medium">{t("p2c_total")}</th>
                     <th className="w-7" />
                   </tr>
                 </thead>
@@ -602,7 +592,7 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
                       <td className="py-1 pr-1">
                         <div className="line-clamp-2 break-words font-medium leading-tight">{it.name}</div>
                         {it.is_bulk && (
-                          <span className="text-[9px] font-semibold text-primary">[{lang === "bn" ? "বাল্ক" : "Bulk"}]</span>
+                          <span className="text-[9px] font-semibold text-primary">[{t("p2c_bulk")}]</span>
                         )}
                       </td>
                       <td className="py-1">
@@ -631,19 +621,19 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
           {/* Totals */}
           <div className="space-y-2 border-t p-3 text-sm">
             <div className="flex items-center justify-between">
-              <span className="text-muted-foreground">{lang === "bn" ? "মোট" : "Subtotal"}</span>
+              <span className="text-muted-foreground">{t("p2c_subtotal")}</span>
               <span className="font-semibold">{fmtMoney(subtotal, lang)}</span>
             </div>
             <div className="flex items-center justify-between gap-2">
-              <span className="text-muted-foreground">{lang === "bn" ? "ডিসকাউন্ট" : "Discount"}</span>
+              <span className="text-muted-foreground">{t("p2c_discount")}</span>
               <Input type="number" value={discount} onChange={(e) => setDiscount(e.target.value)} className="h-8 w-28 text-right" />
             </div>
             <div className="flex items-center justify-between gap-2">
-              <span className="text-muted-foreground">{lang === "bn" ? "ডেলিভারি" : "Delivery"}</span>
+              <span className="text-muted-foreground">{t("p2c_delivery")}</span>
               <Input type="number" value={delivery} onChange={(e) => setDelivery(e.target.value)} className="h-8 w-28 text-right" />
             </div>
             <div className="flex items-center justify-between border-t pt-2">
-              <span className="text-base font-semibold">{lang === "bn" ? "সর্বমোট" : "Grand total"}</span>
+              <span className="text-base font-semibold">{t("p2c_grandTotal")}</span>
               <span className="text-lg font-extrabold text-primary">{fmtMoney(grandTotal, lang)}</span>
             </div>
           </div>
@@ -655,14 +645,14 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
               disabled={cart.length === 0}
               onClick={() => setCashOpen(true)}
             >
-              {lang === "bn" ? "নগদ টাকা →" : "Cash →"}
+              {t("p2c_cashArrow")}
             </Button>
             <Button
               className="h-12 bg-amber-500 text-white hover:bg-amber-600"
               disabled={cart.length === 0}
               onClick={() => setDueOpen(true)}
             >
-              {lang === "bn" ? "বাকি →" : "Due →"}
+              {t("p2c_dueArrow")}
             </Button>
           </div>
         </div>
@@ -752,7 +742,7 @@ function QuickAddProductDialog({
   useEffect(() => { if (!open) { setName(""); setSalePrice("0"); setCostPrice("0"); setStock("0"); } }, [open]);
 
   const save = async () => {
-    if (!current || !name.trim()) { toast.error(lang === "bn" ? "নাম দিন" : "Enter a name"); return; }
+    if (!current || !name.trim()) { toast.error(t("p2c_enterName")); return; }
     setSaving(true);
     const { data, error } = await supabase
       .from("products")
@@ -767,7 +757,7 @@ function QuickAddProductDialog({
       .single();
     setSaving(false);
     if (error) { toast.error(error.message); return; }
-    toast.success(lang === "bn" ? "যোগ হয়েছে" : "Added");
+    toast.success(t("p2c_addedCap"));
     onAdded(data as Product);
     onClose();
   };
@@ -776,31 +766,31 @@ function QuickAddProductDialog({
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>{lang === "bn" ? "দ্রুত পণ্য যোগ" : "Quick add product"}</DialogTitle>
+          <DialogTitle>{t("p2c_quickAddProduct")}</DialogTitle>
         </DialogHeader>
         <div className="grid gap-3">
           <div className="grid gap-1.5">
-            <Label>{lang === "bn" ? "পণ্যের নাম" : "Product name"}</Label>
+            <Label>{t("p2c_productName")}</Label>
             <Input value={name} onChange={(e) => setName(e.target.value)} />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="grid gap-1.5">
-              <Label>{lang === "bn" ? "বিক্রয় মূল্য" : "Sale price"}</Label>
+              <Label>{t("p2c_salePrice")}</Label>
               <Input type="number" value={salePrice} onChange={(e) => setSalePrice(e.target.value)} />
             </div>
             <div className="grid gap-1.5">
-              <Label>{lang === "bn" ? "ক্রয় মূল্য" : "Cost price"}</Label>
+              <Label>{t("p2c_costPrice")}</Label>
               <Input type="number" value={costPrice} onChange={(e) => setCostPrice(e.target.value)} />
             </div>
           </div>
           <div className="grid gap-1.5">
-            <Label>{lang === "bn" ? "মজুদ" : "Stock"}</Label>
+            <Label>{t("p2c_stockA")}</Label>
             <Input type="number" value={stock} onChange={(e) => setStock(e.target.value)} />
           </div>
         </div>
         <DialogFooter>
-          <Button variant="ghost" onClick={onClose}>{lang === "bn" ? "বাতিল" : "Cancel"}</Button>
-          <Button onClick={save} disabled={saving}>{lang === "bn" ? "সেভ" : "Save"}</Button>
+          <Button variant="ghost" onClick={onClose}>{t("p2c_cancel")}</Button>
+          <Button onClick={save} disabled={saving}>{t("p2c_save")}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -869,9 +859,9 @@ function PaymentDialog(props: {
 
   const save = async () => {
     if (!current || !user) return;
-    if (props.cart.length === 0) { toast.error(lang === "bn" ? "কার্ট খালি" : "Cart is empty"); return; }
-    if (!partyName.trim()) { toast.error(lang === "bn" ? "নাম দিতে হবে" : "Name is required"); return; }
-    if (!partyPhone.trim()) { toast.error(lang === "bn" ? "মোবাইল নাম্বার দিতে হবে" : "Mobile number is required"); return; }
+    if (props.cart.length === 0) { toast.error(t("p2c_cartEmpty")); return; }
+    if (!partyName.trim()) { toast.error(t("p2c_nameRequired")); return; }
+    if (!partyPhone.trim()) { toast.error(t("p2c_mobileRequired")); return; }
     setSaving(true);
 
     try {
@@ -900,9 +890,7 @@ function PaymentDialog(props: {
             const row = stockMap.get(pid);
             const stock = Number(row?.stock ?? 0);
             if (qty > stock) {
-              toast.error(lang === "bn"
-                ? `${row?.name ?? ""}: মাত্র ${stock}টি স্টকে আছে`
-                : `${row?.name ?? "Item"}: only ${stock} in stock`);
+              toast.error(t("p2c_itemOnlyN", { name: row?.name ?? (lang === "bn" ? "" : "Item"), stock }));
               setSaving(false);
               return;
             }
@@ -1102,8 +1090,8 @@ function PaymentDialog(props: {
         }
       }
 
-      toast.success(lang === "bn" ? "সংরক্ষিত হয়েছে" : "Saved successfully");
-      if (sendMessage) toast.message(lang === "bn" ? "মেসেজ পাঠানোর সুবিধা শীঘ্রই আসছে" : "SMS feature coming soon");
+      toast.success(t("p2c_savedOk"));
+      if (sendMessage) toast.message(t("p2c_smsSoon"));
       // Build invoice for printable popup
       const finalInvoiceNo = (customInvoice && invoiceNo.trim())
         ? invoiceNo.trim()
@@ -1154,31 +1142,31 @@ function PaymentDialog(props: {
         {!isCash && (
           <Tabs value={partyTab} onValueChange={(v) => setPartyTab(v as "customer" | "supplier")}>
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="customer">{lang === "bn" ? "কাস্টমার" : "CUSTOMER"}</TabsTrigger>
-              <TabsTrigger value="supplier">{lang === "bn" ? "সাপ্লায়ার" : "SUPPLIER"}</TabsTrigger>
+              <TabsTrigger value="customer">{t("p2c_customerCap")}</TabsTrigger>
+              <TabsTrigger value="supplier">{t("p2c_supplierCap")}</TabsTrigger>
             </TabsList>
           </Tabs>
         )}
 
         {!isCash && (
           <div className="rounded-md bg-muted/60 py-2.5 text-center text-base font-bold">
-            {lang === "bn" ? "মোট প্রদেয় : " : "Total payable: "}{fmtMoney(props.grandTotal, lang)}
+            {t("p2c_totalPayableColon")}{fmtMoney(props.grandTotal, lang)}
           </div>
         )}
 
         <div className="grid gap-3">
           <div className="grid grid-cols-2 gap-3">
             <div className="grid gap-1.5">
-              <Label>{isSell ? (lang === "bn" ? "বিক্রির তারিখঃ" : "Sale date") : (lang === "bn" ? "ক্রয়ের তারিখঃ" : "Purchase date")}</Label>
+              <Label>{isSell ? (t("p2c_saleDate")) : (t("p2c_purchaseDate"))}</Label>
               <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
             </div>
             <div className="grid gap-1.5">
               <Label>
                 {isCash
-                  ? (lang === "bn" ? "টাকার পরিমাণ" : "Amount")
+                  ? (t("p2c_amount"))
                   : (isSell
-                      ? (lang === "bn" ? "ক্যাশ পেয়েছি " : "Cash received ")
-                      : (lang === "bn" ? "ক্যাশ দিয়েছি " : "Cash given "))}
+                      ? (t("p2c_cashReceived"))
+                      : (t("p2c_cashGiven")))}
                 <span className="text-rose-500">*</span>
               </Label>
               <Input type="number" value={paid} onChange={(e) => setPaid(e.target.value)} disabled={isCash} />
@@ -1187,21 +1175,21 @@ function PaymentDialog(props: {
 
           <div className="rounded-md bg-muted/40 p-2 text-sm">
             <div className="flex justify-between">
-              <span>{lang === "bn" ? "মোট প্রদেয়" : "Total payable"}</span>
+              <span>{t("p2c_totalPayable")}</span>
               <span className="font-semibold">{fmtMoney(props.grandTotal, lang)}</span>
             </div>
             {!isCash && (
               <div className="flex justify-between text-amber-600">
-                <span>{lang === "bn" ? "বাকি থাকবে" : "Will remain due"}</span>
+                <span>{t("p2c_willRemainDue")}</span>
                 <span className="font-semibold">{fmtMoney(Math.max(0, props.grandTotal - (Number(paid) || 0)), lang)}</span>
               </div>
             )}
           </div>
 
           <div className="grid gap-1.5">
-            <Label>{partyLabel} {lang === "bn" ? "নাম" : "name"}</Label>
+            <Label>{partyLabel} {t("p2c_nameLower")}</Label>
             <div className="flex gap-2">
-              <Input value={partyName} onChange={(e) => setPartyName(e.target.value)} placeholder={lang === "bn" ? "নাম লিখুন" : "Enter name"} />
+              <Input value={partyName} onChange={(e) => setPartyName(e.target.value)} placeholder={t("p2c_enterName2")} />
               <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
                 <PopoverTrigger asChild>
                   <Button variant="outline" size="icon" className="flex-none" aria-label="Pick contact">
@@ -1210,9 +1198,9 @@ function PaymentDialog(props: {
                 </PopoverTrigger>
                 <PopoverContent className="w-72 p-0" align="end">
                   <Command>
-                    <CommandInput placeholder={lang === "bn" ? "খুঁজুন..." : "Search..."} />
+                    <CommandInput placeholder={t("p2c_searchDots")} />
                     <CommandList>
-                      <CommandEmpty>{lang === "bn" ? "কেউ নেই" : "Nobody found"}</CommandEmpty>
+                      <CommandEmpty>{t("p2c_nobody")}</CommandEmpty>
                       <CommandGroup>
                         {contacts.map((c) => (
                           <CommandItem key={c.id} value={c.name} onSelect={() => pickContact(c)}>
@@ -1231,40 +1219,40 @@ function PaymentDialog(props: {
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="grid gap-1.5">
-              <Label>{lang === "bn" ? "মোবাইল" : "Mobile"}</Label>
+              <Label>{t("p2c_mobile")}</Label>
               <Input value={partyPhone} onChange={(e) => setPartyPhone(e.target.value)} />
             </div>
             <div className="grid gap-1.5">
-              <Label>{lang === "bn" ? "ঠিকানা" : "Address"}</Label>
+              <Label>{t("p2c_address")}</Label>
               <Input value={partyAddress} onChange={(e) => setPartyAddress(e.target.value)} />
             </div>
           </div>
 
           <div className="grid gap-1.5">
-            <Label>{lang === "bn" ? "মন্তব্য" : "Comment"}</Label>
+            <Label>{t("p2c_comment")}</Label>
             <Textarea rows={2} value={comment} onChange={(e) => setComment(e.target.value)} />
           </div>
 
           <div className="space-y-2 rounded-md border p-3">
             <div className="flex items-center justify-between">
-              <Label className="text-sm">{lang === "bn" ? "কাস্টম ইনভয়েস নাম্বার" : "Custom invoice number"}</Label>
+              <Label className="text-sm">{t("p2c_customInvoice")}</Label>
               <Switch checked={customInvoice} onCheckedChange={setCustomInvoice} />
             </div>
             {customInvoice && (
               <Input value={invoiceNo} onChange={(e) => setInvoiceNo(e.target.value)} placeholder="INV-001" />
             )}
             <div className="flex items-center justify-between">
-              <Label className="text-sm">{lang === "bn" ? "কর্মচারীর তথ্য" : "Staff info"}</Label>
+              <Label className="text-sm">{t("p2c_staffInfo")}</Label>
               <Switch checked={staffInfo} onCheckedChange={setStaffInfo} />
             </div>
             {staffInfo && (
-              <Input value={staffNote} onChange={(e) => setStaffNote(e.target.value)} placeholder={lang === "bn" ? "কর্মচারীর নাম" : "Staff name"} />
+              <Input value={staffNote} onChange={(e) => setStaffNote(e.target.value)} placeholder={t("p2c_staffName")} />
             )}
             <div className="flex items-center justify-between">
               <Label className="flex items-center gap-2 text-sm">
                 <MessageSquare className="h-4 w-4" />
-                {lang === "bn" ? "মেসেজ পাঠান" : "Send message"}
-                <span className="text-xs text-muted-foreground">({lang === "bn" ? "SMS অবশিষ্ট: ৩০" : "SMS left: 30"})</span>
+                {t("p2c_sendMessage")}
+                <span className="text-xs text-muted-foreground">({t("p2c_smsLeft30")})</span>
               </Label>
               <Switch checked={sendMessage} onCheckedChange={setSendMessage} />
             </div>
@@ -1273,9 +1261,9 @@ function PaymentDialog(props: {
         </div>
 
         <DialogFooter className="border-t px-6 py-3">
-          <Button variant="ghost" onClick={props.onClose}>{lang === "bn" ? "বাতিল" : "Cancel"}</Button>
+          <Button variant="ghost" onClick={props.onClose}>{t("p2c_cancel")}</Button>
           <Button onClick={save} disabled={saving}>
-            {saving ? (lang === "bn" ? "সংরক্ষণ হচ্ছে..." : "Saving...") : (isCash ? (lang === "bn" ? "টাকা পেয়েছেন" : "Confirm payment") : (isSell ? (lang === "bn" ? "বিক্রি করুন" : "Sell now") : (lang === "bn" ? "সেভ করুন" : "Save")))}
+            {saving ? (t("p2c_saving")) : (isCash ? (t("p2c_confirmPayment")) : (isSell ? (t("p2c_sellNow")) : (t("p2c_saveAction"))))}
           </Button>
         </DialogFooter>
       </DialogContent>
