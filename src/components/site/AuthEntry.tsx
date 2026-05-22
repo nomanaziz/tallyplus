@@ -11,7 +11,7 @@ import { ArrowRight, MessageCircle, Store, Wallet } from "lucide-react";
  * Uses the common SiteHeader / SiteFooter so the chrome matches the rest of the site.
  */
 export function AuthEntry() {
-  const { t, lang } = useI18n();
+  const { t } = useI18n();
   return (
     <div className="flex min-h-screen flex-col bg-gradient-to-br from-primary/15 via-background to-background">
       <SiteHeader />
