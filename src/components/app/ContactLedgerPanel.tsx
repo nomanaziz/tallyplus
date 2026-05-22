@@ -143,9 +143,14 @@ export function ContactLedgerPanel({ contact, onChanged }: { contact: LedgerCont
           filename={`statement-${contact.name.replace(/\s+/g, "_")}.pdf`}
           label={t("p2b_share")}
           text={
-            lang === "bn"
-              ? `প্রিয় ${contact.name},\n${current?.name ? current.name + " — " : ""}আপনার ${balance >= 0 ? "মোট বাকি" : "অগ্রিম"}: ${fmtMoney(Math.abs(balance), lang)}\nসময়কাল: ${from} থেকে ${to}\nবিস্তারিত PDF সংযুক্ত।\n\nধন্যবাদ।`
-              : `Dear ${contact.name},\n${current?.name ? current.name + " — " : ""}Your ${balance >= 0 ? "outstanding balance" : "advance"}: ${fmtMoney(Math.abs(balance), lang)}\nPeriod: ${from} to ${to}\nPDF attached.\n\nThank you.`
+            t("p2b_shareMsg", {
+              name: contact.name,
+              shop: current?.name ? current.name + " — " : "",
+              kind: balance >= 0 ? t("p2b_outstanding") : t("p2b_advanceWord"),
+              amt: fmtMoney(Math.abs(balance), lang),
+              from,
+              to,
+            })
           }
           buildPdf={() =>
             generatePdfFromHtml(
