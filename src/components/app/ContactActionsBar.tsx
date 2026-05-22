@@ -16,7 +16,7 @@ export function ContactActionsBar({ name, phone, due = 0 }: Props) {
 
   const guard = () => {
     if (!normalized) {
-      toast.error(lang === "bn" ? "ফোন নাম্বার নেই" : "No phone number");
+      toast.error(t("p2b_noPhone"));
       return false;
     }
     return true;
@@ -56,7 +56,7 @@ export function ContactActionsBar({ name, phone, due = 0 }: Props) {
     <div className="flex flex-wrap items-center gap-2">
       <Button variant="outline" size="sm" className="gap-1.5" onClick={onCall}>
         <Phone className="h-4 w-4 text-emerald-600" />
-        {lang === "bn" ? "কল" : "Call"}
+        {t("p2b_call")}
       </Button>
       <Button variant="outline" size="sm" className="gap-1.5" onClick={onWhatsApp}>
         <MessageCircle className="h-4 w-4 text-green-600" />
