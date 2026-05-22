@@ -45,10 +45,10 @@ export function MonthSwitcher({ value, onChange }: { value: MonthCursor; onChang
         </Button>
       </div>
       <Button variant={isCurrent ? "default" : "outline"} size="sm" onClick={setThisMonth} className="h-9">
-        {lang === "bn" ? "এই মাস" : "This month"}
+        {t("p2a_thisMonth")}
       </Button>
       <Button variant="outline" size="sm" onClick={setLastMonth} className="h-9">
-        {lang === "bn" ? "গত মাস" : "Last month"}
+        {t("p2a_lastMonth")}
       </Button>
     </div>
   );
@@ -70,19 +70,19 @@ export function CashBookView({
   const onPrint = () => {
     if (!data) return;
     const rows: PrintRow[] = [
-      { kind: "section", label: lang === "bn" ? "আয় (ডেবিট)" : "Debit (Income)" },
+      { kind: "section", label: t("p2a_debitIncome") },
       ...data.debits.map((l) => ({ kind: "row" as const, label: l.label, sub: l.sub, value: fmtMoney(l.amount, lang), tone: "success" as const })),
-      { kind: "row", label: lang === "bn" ? "মোট আয়" : "Total Debit", value: fmtMoney(data.totalDebit, lang), tone: "success" },
+      { kind: "row", label: t("p2a_totalDebit"), value: fmtMoney(data.totalDebit, lang), tone: "success" },
       { kind: "divider" },
-      { kind: "section", label: lang === "bn" ? "ব্যয় (ক্রেডিট)" : "Credit (Expense)" },
+      { kind: "section", label: t("p2a_creditExpense") },
       ...data.credits.map((l) => ({ kind: "row" as const, label: l.label, sub: l.sub, value: fmtMoney(l.amount, lang), tone: "danger" as const })),
-      { kind: "row", label: lang === "bn" ? "মোট ব্যয়" : "Total Credit", value: fmtMoney(data.totalCredit, lang), tone: "danger" },
+      { kind: "row", label: t("p2a_totalCredit"), value: fmtMoney(data.totalCredit, lang), tone: "danger" },
       { kind: "divider" },
-      { kind: "row", label: lang === "bn" ? "নেট (Cash on Hand)" : "Net (Cash on Hand)", value: fmtMoney(data.cashOnHand, lang), tone: data.cashOnHand >= 0 ? "success" : "danger" },
+      { kind: "row", label: t("p2a_netCashOnHand"), value: fmtMoney(data.cashOnHand, lang), tone: data.cashOnHand >= 0 ? "success" : "danger" },
     ];
     printReport({
       shopName: ownerName,
-      title: (lang === "bn" ? "ক্যাশবুক — " : "Cash Book — ") + data.monthLabel,
+      title: (t("p2a_cashBookDash")) + data.monthLabel,
       startDate: data.rangeStart,
       endDate: data.rangeStart, // single month
       rows,
@@ -93,10 +93,10 @@ export function CashBookView({
     <div className="container space-y-4 px-4 py-4">
       {/* Stat cards */}
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
-        <StatCard label={lang === "bn" ? "মোট আয়" : "Total Income"} value={data?.totalDebit ?? 0} icon={<TrendingUp className="h-4 w-4" />} tone="success" />
-        <StatCard label={lang === "bn" ? "মোট ব্যয়" : "Total Expense"} value={data?.totalCredit ?? 0} icon={<TrendingDown className="h-4 w-4" />} tone="danger" />
-        <StatCard label={lang === "bn" ? "Cash on Hand" : "Cash on Hand"} value={data?.cashOnHand ?? 0} icon={<Wallet className="h-4 w-4" />} tone={(data?.cashOnHand ?? 0) >= 0 ? "primary" : "danger"} />
-        <StatCard label={lang === "bn" ? "মোট লেনদেন" : "Transactions"} value={data?.txCount ?? 0} icon={<Receipt className="h-4 w-4" />} tone="muted" isCount />
+        <StatCard label={t("p2a_totalIncome")} value={data?.totalDebit ?? 0} icon={<TrendingUp className="h-4 w-4" />} tone="success" />
+        <StatCard label={t("p2a_totalExpense")} value={data?.totalCredit ?? 0} icon={<TrendingDown className="h-4 w-4" />} tone="danger" />
+        <StatCard label={t("p2a_cashOnHand")} value={data?.cashOnHand ?? 0} icon={<Wallet className="h-4 w-4" />} tone={(data?.cashOnHand ?? 0) >= 0 ? "primary" : "danger"} />
+        <StatCard label={t("p2a_transactionsTotal")} value={data?.txCount ?? 0} icon={<Receipt className="h-4 w-4" />} tone="muted" isCount />
       </div>
 
       {subtitle && <div className="text-xs text-muted-foreground">{subtitle}</div>}
@@ -105,27 +105,27 @@ export function CashBookView({
       <div className="overflow-hidden rounded-2xl border bg-card shadow-sm">
         <div className="grid grid-cols-1 md:grid-cols-2">
           <LedgerColumn
-            title={lang === "bn" ? "ডেবিট (আয়)" : "Debit (Income)"}
+            title={t("p2a_debitIncome2")}
             tone="success"
             lines={data?.debits ?? []}
             total={data?.totalDebit ?? 0}
             loading={loading}
-            empty={lang === "bn" ? "এই মাসে কোনো আয় নেই" : "No income this month"}
+            empty={t("p2a_noIncomeMonth")}
           />
           <div className="border-t md:border-l md:border-t-0">
             <LedgerColumn
-              title={lang === "bn" ? "ক্রেডিট (ব্যয়)" : "Credit (Expense)"}
+              title={t("p2a_creditExpense2")}
               tone="danger"
               lines={data?.credits ?? []}
               total={data?.totalCredit ?? 0}
               loading={loading}
-              empty={lang === "bn" ? "এই মাসে কোনো ব্যয় নেই" : "No expense this month"}
+              empty={t("p2a_noExpenseMonth")}
             />
           </div>
         </div>
         <div className={`flex items-center justify-between gap-3 border-t px-4 py-3 sm:px-6 ${data && data.cashOnHand >= 0 ? "bg-emerald-500/10" : "bg-rose-500/10"}`}>
           <div className="text-sm font-bold uppercase tracking-wide">
-            {lang === "bn" ? "Cash on Hand (নেট)" : "Cash on Hand (Net)"}
+            {t("p2a_cashOnHandNet")}
           </div>
           <div className={`text-xl font-extrabold tabular-nums ${data && data.cashOnHand >= 0 ? "text-emerald-700 dark:text-emerald-400" : "text-rose-700 dark:text-rose-400"}`}>
             {fmtMoney(data?.cashOnHand ?? 0, lang)}
@@ -135,7 +135,7 @@ export function CashBookView({
 
       <div className="flex justify-end">
         <Button variant="outline" size="sm" onClick={onPrint} disabled={!data}>
-          <Printer className="mr-2 h-4 w-4" /> {lang === "bn" ? "প্রিন্ট" : "Print"}
+          <Printer className="mr-2 h-4 w-4" /> {t("p2a_print")}
         </Button>
       </div>
     </div>
@@ -159,7 +159,7 @@ function StatCard({ label, value, icon, tone, isCount }: { label: string; value:
         <span className={toneCls}>{icon}</span>
       </div>
       <div className={`mt-1 text-base font-bold sm:text-xl ${toneCls}`}>
-        {isCount ? new Intl.NumberFormat(lang === "bn" ? "bn-BD" : "en-US").format(value) : fmtMoney(value, lang)}
+        {isCount ? new Intl.NumberFormat(t("p2a_localeFull")).format(value) : fmtMoney(value, lang)}
       </div>
     </Card>
   );
@@ -187,8 +187,8 @@ function LedgerColumn({
     <div>
       <div className={`px-4 py-2.5 text-center text-sm font-bold ${headBg}`}>{title}</div>
       <div className="grid grid-cols-[1fr_auto] border-b bg-muted/40 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground sm:px-6">
-        <span>{lang === "bn" ? "খাত" : "Particular"}</span>
-        <span className="text-right">{lang === "bn" ? "টাকা" : "Amount"}</span>
+        <span>{t("p2a_particular")}</span>
+        <span className="text-right">{t("p2a_amountMoney")}</span>
       </div>
       {loading ? (
         <div className="space-y-2 px-4 py-3 sm:px-6">
@@ -212,7 +212,7 @@ function LedgerColumn({
         </ul>
       )}
       <div className="flex items-center justify-between border-t bg-muted/30 px-4 py-2.5 sm:px-6">
-        <span className="text-sm font-bold">{lang === "bn" ? "মোট" : "Total"}</span>
+        <span className="text-sm font-bold">{t("p2a_total")}</span>
         <span className={`text-base font-extrabold tabular-nums ${amountCls}`}>{fmtMoney(total, lang)}</span>
       </div>
     </div>
