@@ -136,6 +136,7 @@ function PromoCodesPage() {
 }
 
 function AddPromoDialog({ open, onOpenChange, shopId, lang, onCreated }: { open: boolean; onOpenChange: (v: boolean) => void; shopId: string; lang: string; onCreated: () => void }) {
+  const { t } = useI18n();
   const [code, setCode] = useState("");
   const [type, setType] = useState("percent");
   const [value, setValue] = useState("");
