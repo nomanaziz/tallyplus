@@ -1,19 +1,19 @@
 import { Link, useLocation } from "@/lib/router";
-import { useI18n } from "@/lib/i18n";
+import { useI18n, type TKey } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { Home, ShoppingCart, BarChart3, User as UserIcon, Undo2 } from "lucide-react";
 
-type Tab = { to: string; bn: string; en: string; Icon: typeof Home; matchPrefix?: string };
+type Tab = { to: string; tKey: TKey; Icon: typeof Home; matchPrefix?: string };
 
 const TABS: Tab[] = [
-  { to: "/app/dashboard", bn: "হোম", en: "Home", Icon: Home },
-  { to: "/app/sell", bn: "বিক্রয়", en: "Sell", Icon: ShoppingCart, matchPrefix: "/app/sell" },
-  { to: "/app/returns", bn: "রিটার্ন", en: "Return", Icon: Undo2, matchPrefix: "/app/returns" },
-  { to: "/app/reports", bn: "রিপোর্ট", en: "Report", Icon: BarChart3, matchPrefix: "/app/reports" },
+  { to: "/app/dashboard", tKey: "navHome", Icon: Home },
+  { to: "/app/sell", tKey: "navSell", Icon: ShoppingCart, matchPrefix: "/app/sell" },
+  { to: "/app/returns", tKey: "navReturn", Icon: Undo2, matchPrefix: "/app/returns" },
+  { to: "/app/reports", tKey: "navReport", Icon: BarChart3, matchPrefix: "/app/reports" },
 ];
 
 export function MobileBottomNav({ onProfile }: { onProfile: () => void }) {
-  const { lang } = useI18n();
+  const { t } = useI18n();
   const loc = useLocation();
 
   const isActive = (t: Tab) => {
@@ -38,17 +38,17 @@ export function MobileBottomNav({ onProfile }: { onProfile: () => void }) {
             )}
           >
             <t.Icon className={cn("h-5 w-5", active && "scale-110")} />
-            <span className="truncate">{lang === "bn" ? t.bn : t.en}</span>
+            <span className="truncate">{t.tKey ? "" : ""}{useI18nLabel(t.tKey)}</span>
           </Link>
         );
       })}
       <button
         onClick={onProfile}
         className="flex flex-1 flex-col items-center justify-center gap-0.5 text-[10px] font-semibold text-muted-foreground transition-colors hover:text-foreground"
-        aria-label={lang === "bn" ? "প্রোফাইল" : "Profile"}
+        aria-label={t("navProfile")}
       >
         <UserIcon className="h-5 w-5" />
-        <span>{lang === "bn" ? "প্রোফাইল" : "Profile"}</span>
+        <span>{t("navProfile")}</span>
       </button>
     </nav>
   );
