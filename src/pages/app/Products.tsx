@@ -284,10 +284,10 @@ function ProductsPage() {
       setRefBlock({ mode: "single", productName: p.name, counts });
       return;
     }
-    if (!confirm(lang === "bn" ? "ডিলিট করবেন?" : "Delete this product?")) return;
+    if (!confirm(t("p3_DeleteConfirm"))) return;
     const { error } = await supabase.from("products").update({ deleted_at: new Date().toISOString() }).eq("id", p.id);
     if (error) { toast.error(error.message); return; }
-    toast.success(lang === "bn" ? "ডিলিট হয়েছে" : "Deleted");
+    toast.success(t("p3_Deleted"));
     setDetails(null);
     void load();
   };
@@ -338,9 +338,7 @@ function ProductsPage() {
       return;
     }
     toast.success(
-      lang === "bn"
-        ? `${ids.length}টি প্রোডাক্ট ডিলিট হয়েছে`
-        : `${ids.length} products deleted`,
+      t("p3_NDeleted", { n: lang === "bn" ? bnNum(ids.length) : ids.length }),
     );
     setConfirmOpen(false);
     setConfirmText("");
@@ -356,9 +354,7 @@ function ProductsPage() {
     setRefBlock(null);
     if (cleanIds.length === 0) {
       toast.error(
-        lang === "bn"
-          ? "কোনো প্রোডাক্ট ডিলিট করা যায়নি — সব গুলোতে reference আছে।"
-          : "No products could be deleted — all have references.",
+        t("p3_NoneDeleted"),
       );
       return;
     }
@@ -368,9 +364,7 @@ function ProductsPage() {
       .in("id", cleanIds);
     if (error) { toast.error(error.message); return; }
     toast.success(
-      lang === "bn"
-        ? `${cleanIds.length}টি ডিলিট হয়েছে, ${blockedCount}টি skip হয়েছে (reference আছে)।`
-        : `${cleanIds.length} deleted, ${blockedCount} skipped (have references).`,
+      t("p3_PartialDeleted", { c: lang === "bn" ? bnNum(cleanIds.length) : cleanIds.length, b: lang === "bn" ? bnNum(blockedCount) : blockedCount }),
     );
     cancelSelect();
     void load();
@@ -381,18 +375,18 @@ function ProductsPage() {
       shopName: current?.name ?? "",
       shopAddress: (current as { address?: string | null } | null)?.address ?? null,
       shopPhone: (current as { phone?: string | null } | null)?.phone ?? null,
-      title: lang === "bn" ? "প্রোডাক্ট তালিকা" : "Products List",
+      title: t("p3_ProductsList"),
       startDate: new Date().toISOString().slice(0, 10),
       endDate: new Date().toISOString().slice(0, 10),
       lang,
       columns: [
         { key: "idx", label: "#" },
-        { key: "name", label: lang === "bn" ? "পণ্যের নাম" : "Name" },
+        { key: "name", label: t("p3_ProductNameLabel") },
         { key: "sku", label: "SKU" },
-        { key: "stock", label: lang === "bn" ? "স্টক" : "Stock", align: "right" },
-        { key: "cost", label: lang === "bn" ? "দর" : "Cost", align: "right" },
-        { key: "sale", label: lang === "bn" ? "বিক্রয় মূল্য" : "Sale Price", align: "right" },
-        { key: "value", label: lang === "bn" ? "মজুদ মূল্য" : "Stock Value", align: "right" },
+        { key: "stock", label: t("p3_StockShort"), align: "right" },
+        { key: "cost", label: t("p3_Cost"), align: "right" },
+        { key: "sale", label: t("p3_SalePrice"), align: "right" },
+        { key: "value", label: t("p3_StockValue"), align: "right" },
       ],
       rows: filtered.map((p, i) => {
         const s = Number(p.stock);
@@ -402,7 +396,7 @@ function ProductsPage() {
           idx: String(i + 1),
           name: p.name,
           sku: p.sku ?? "—",
-          stock: isUnlimited ? (lang === "bn" ? "অসীম" : "Unlimited") : (lang === "bn" ? bnNum(s) : s),
+          stock: isUnlimited ? (t("p3_Unlimited")) : (lang === "bn" ? bnNum(s) : s),
           cost: fmtMoney(Number(p.cost_price), lang),
           sale: fmtMoney(Number(p.sale_price), lang),
           value,
@@ -426,7 +420,7 @@ function ProductsPage() {
       note: "manual adjust",
       created_by: user.id,
     });
-    toast.success(lang === "bn" ? "আপডেট হয়েছে" : "Updated");
+    toast.success(t("p3_Updated"));
     void load();
     void qc.invalidateQueries({ queryKey: ["stock", "history"] });
     // Trigger serial capture when new units are added to a serialized product
@@ -441,7 +435,7 @@ function ProductsPage() {
     if (!current || !user) return;
     const changes = items.filter((p) => updates[p.id] != null && updates[p.id] !== Number(p.stock));
     if (changes.length === 0) {
-      toast.info(lang === "bn" ? "কোনো পরিবর্তন নেই" : "No changes");
+      toast.info(t("p3_NoChanges"));
       return;
     }
     setSavingStock(true);
@@ -460,7 +454,7 @@ function ProductsPage() {
       });
     }
     setSavingStock(false);
-    toast.success(lang === "bn" ? "সংরক্ষণ হয়েছে" : "Saved");
+    toast.success(t("p3_Saved"));
     setUpdates({});
     setEditStockMode(false);
     await qc.invalidateQueries({ queryKey: ["products"] });
@@ -476,18 +470,18 @@ function ProductsPage() {
   return (
     <div className="container px-3 py-2 sm:px-4 sm:py-4">
       <div className="mb-1 hidden text-xs text-muted-foreground sm:block">
-        {lang === "bn" ? "প্রোডাক্ট ও স্টক ব্যবস্থাপনা" : "Products & Stock Management"}
+        {t("p3_ProductsStockMgmt")}
       </div>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-sm font-bold sm:text-lg md:text-2xl">
-          {lang === "bn" ? "প্রোডাক্ট ও স্টক" : "Products & Stock"}
+          {t("p3_ProductsStock")}
         </h1>
         <div className="flex flex-wrap items-center gap-2">
           {editStockMode ? (
             <>
               <Button variant="outline" className="h-10 gap-2" onClick={cancelBulk}>
                 <X className="h-4 w-4" />
-                {lang === "bn" ? "ক্যানসেল" : "Cancel"}
+                {t("p3_Cancel")}
               </Button>
               <Button
                 className="h-10 gap-2"
@@ -495,7 +489,7 @@ function ProductsPage() {
                 disabled={savingStock || Object.keys(updates).length === 0}
               >
                 <Save className="h-4 w-4" />
-                {savingStock ? "..." : lang === "bn" ? "সংরক্ষণ করুন" : "Save"}
+                {savingStock ? "..." : t("p3_Save")}
               </Button>
             </>
           ) : (
@@ -504,18 +498,18 @@ function ProductsPage() {
                 variant="outline"
                 className="h-9 gap-1.5 px-2 sm:h-10 sm:gap-2 sm:px-3"
                 onClick={load}
-                aria-label={lang === "bn" ? "রিফ্রেশ" : "Refresh"}
+                aria-label={t("p3_Refresh")}
               >
                 <RefreshCw className="h-4 w-4" />
-                <span className="hidden sm:inline">{lang === "bn" ? "রিফ্রেশ" : "Refresh"}</span>
+                <span className="hidden sm:inline">{t("p3_Refresh")}</span>
               </Button>
               <Button variant="outline" className="hidden sm:inline-flex h-10 gap-2 border-primary text-primary hover:bg-primary/10" onClick={openHistory}>
                 <History className="h-4 w-4" />
-                {lang === "bn" ? "স্টকের ইতিহাস" : "Stock history"}
+                {t("p3_StockHistory")}
               </Button>
               <Button variant="outline" className="hidden sm:inline-flex h-10 gap-2" onClick={() => setEditStockMode(true)}>
                 <ListOrdered className="h-4 w-4" />
-                {lang === "bn" ? "স্টক এডিট" : "Stock edit"}
+                {t("p3_StockEdit")}
               </Button>
               <Button
                 variant={selectMode ? "default" : "outline"}
@@ -524,8 +518,8 @@ function ProductsPage() {
               >
                 <CheckSquare className="h-4 w-4" />
                 {selectMode
-                  ? lang === "bn" ? "ক্যানসেল" : "Cancel"
-                  : lang === "bn" ? "নির্বাচন" : "Select"}
+                  ? t("p3_Cancel")
+                  : t("p3_Select")}
               </Button>
               {selectMode && selected.size > 0 && (
                 <Button
@@ -534,42 +528,40 @@ function ProductsPage() {
                   onClick={() => { setConfirmText(""); setConfirmOpen(true); }}
                 >
                   <Trash2 className="h-4 w-4" />
-                  {lang === "bn"
-                    ? `${selected.size}টি ডিলিট`
-                    : `Delete (${selected.size})`}
+                  {t("p3_DeleteN", { n: lang === "bn" ? bnNum(selected.size) : selected.size })}
                 </Button>
               )}
               <Button variant="outline" className="hidden sm:inline-flex h-10 gap-2" onClick={handlePrintProducts}>
                 <Download className="h-4 w-4" />
-                {lang === "bn" ? "ডাউনলোড/প্রিন্ট" : "Download/Print"}
+                {t("p3_DownloadPrint")}
               </Button>
               <Button variant="outline" className="hidden sm:inline-flex h-10 gap-2" onClick={() => setOpenImport(true)}>
                 <Sparkles className="h-4 w-4 text-primary" />
-                {lang === "bn" ? "স্যাম্পল ইম্পোর্ট" : "Import Sample"}
+                {t("p3_ImportSample")}
               </Button>
               <Button variant="outline" className="hidden sm:inline-flex h-10 gap-2" onClick={() => setOpenBulkImport(true)}>
                 <Upload className="h-4 w-4 text-primary" />
-                {lang === "bn" ? "Excel Import" : "Excel Import"}
+                {t("p3_ExcelImport")}
               </Button>
               <Button variant="outline" className="hidden sm:inline-flex h-10 gap-2" onClick={() => exportProductsToXlsx(filtered, `products-${new Date().toISOString().slice(0,10)}.xlsx`)}>
                 <Download className="h-4 w-4" />
-                {lang === "bn" ? "Excel Export" : "Excel Export"}
+                {t("p3_ExcelExport")}
               </Button>
               <Button className="h-9 gap-1.5 px-3 sm:h-10 sm:gap-2 sm:px-4" disabled={limitReached} onClick={() => {
                 if (!current?.id) {
-                  toast.error(lang === "bn" ? "আগে দোকান নির্বাচন করুন" : "Select a shop first");
+                  toast.error(t("p3_SelectShopFirst"));
                   return;
                 }
                 if (limitReached) {
-                  toast.error(lang === "bn" ? "ফ্রি প্ল্যানের সীমা শেষ — আপগ্রেড করুন" : "Free plan limit reached — upgrade");
+                  toast.error(t("p3_FreeLimit"));
                   return;
                 }
                 setEditing(null);
                 setOpenForm(true);
               }}>
                 <Plus className="h-4 w-4" />
-                <span className="sm:hidden">{lang === "bn" ? "যোগ" : "Add"}</span>
-                <span className="hidden sm:inline">{lang === "bn" ? "প্রোডাক্ট যুক্ত করুন" : "Add Product"}</span>
+                <span className="sm:hidden">{t("p3_Add")}</span>
+                <span className="hidden sm:inline">{t("p3_AddProduct")}</span>
               </Button>
               {/* Mobile-only More menu */}
               <DropdownMenu>
@@ -581,23 +573,23 @@ function ProductsPage() {
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem onClick={() => (selectMode ? cancelSelect() : setSelectMode(true))}>
                     <CheckSquare className="mr-2 h-4 w-4" />
-                    {selectMode ? (lang === "bn" ? "ক্যানসেল" : "Cancel select") : (lang === "bn" ? "নির্বাচন" : "Select")}
+                    {selectMode ? (t("p3_CancelSelect")) : (t("p3_Select"))}
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={handlePrintProducts}>
                     <Download className="mr-2 h-4 w-4" />
-                    {lang === "bn" ? "ডাউনলোড/প্রিন্ট" : "Download/Print"}
+                    {t("p3_DownloadPrint")}
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setOpenImport(true)}>
                     <Sparkles className="mr-2 h-4 w-4 text-primary" />
-                    {lang === "bn" ? "স্যাম্পল ইম্পোর্ট" : "Import Sample"}
+                    {t("p3_ImportSample")}
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setOpenBulkImport(true)}>
                     <Upload className="mr-2 h-4 w-4 text-primary" />
-                    {lang === "bn" ? "Excel Import" : "Excel Import"}
+                    {t("p3_ExcelImport")}
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => exportProductsToXlsx(filtered, `products-${new Date().toISOString().slice(0,10)}.xlsx`)}>
                     <Download className="mr-2 h-4 w-4" />
-                    {lang === "bn" ? "Excel Export" : "Excel Export"}
+                    {t("p3_ExcelExport")}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -616,7 +608,7 @@ function ProductsPage() {
               {lang === "bn" ? bnNum(totalStockCount) : totalStockCount.toLocaleString()}
             </div>
             <div className="mt-0 text-[10px] font-semibold sm:text-xs">
-              {lang === "bn" ? "মোট স্টক" : "Total Stock"}
+              {t("p3_TotalStock")}
             </div>
           </div>
           <div className="rounded-lg bg-primary-foreground/15 px-2 py-1 text-center sm:px-3 sm:py-2">
@@ -624,7 +616,7 @@ function ProductsPage() {
               {fmtMoney(totalStockValue, lang)}
             </div>
             <div className="mt-0 text-[10px] font-semibold sm:text-xs">
-              {lang === "bn" ? "মজুদ মূল্য" : "Stock Value"}
+              {t("p3_StockValue")}
             </div>
           </div>
         </div>
@@ -639,7 +631,7 @@ function ProductsPage() {
             onClick={openHistory}
           >
             <History className="h-3.5 w-3.5" />
-            {lang === "bn" ? "স্টকের ইতিহাস" : "Stock History"}
+            {t("p3_StockHistoryCap")}
           </Button>
           <Button
             variant="outline"
@@ -647,7 +639,7 @@ function ProductsPage() {
             onClick={() => setEditStockMode(true)}
           >
             <ListOrdered className="h-3.5 w-3.5" />
-            {lang === "bn" ? "স্টক এডিট" : "Stock Edit"}
+            {t("p3_StockEditCap")}
           </Button>
         </div>
       )}
@@ -662,39 +654,39 @@ function ProductsPage() {
               {/* Mobile: collapse Sort + Filter into a single popover */}
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant="outline" size="icon" className="h-9 w-9 flex-none sm:hidden" aria-label={lang === "bn" ? "সাজান ও ফিল্টার" : "Sort & filter"}>
+                  <Button variant="outline" size="icon" className="h-9 w-9 flex-none sm:hidden" aria-label={t("p3_SortFilter")}>
                     <SlidersHorizontal className="h-4 w-4" />
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent align="end" className="w-64 space-y-3 p-3">
                   <div className="space-y-1">
-                    <div className="text-xs font-semibold text-muted-foreground">{lang === "bn" ? "সাজান" : "Sort"}</div>
+                    <div className="text-xs font-semibold text-muted-foreground">{t("p3_Sort")}</div>
                     <Select value={sortBy} onValueChange={setSortBy}>
                       <SelectTrigger className="h-9 w-full text-xs">
-                        <SelectValue placeholder={lang === "bn" ? "সাজান" : "Sort"} />
+                        <SelectValue placeholder={t("p3_Sort")} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="name_asc">{lang === "bn" ? "নাম (ক → হ)" : "Name (A → Z)"}</SelectItem>
-                        <SelectItem value="name_desc">{lang === "bn" ? "নাম (হ → ক)" : "Name (Z → A)"}</SelectItem>
-                        <SelectItem value="stock_asc">{lang === "bn" ? "স্টক কম → বেশি" : "Stock low → high"}</SelectItem>
-                        <SelectItem value="stock_desc">{lang === "bn" ? "স্টক বেশি → কম" : "Stock high → low"}</SelectItem>
-                        <SelectItem value="price_asc">{lang === "bn" ? "দাম কম → বেশি" : "Price low → high"}</SelectItem>
-                        <SelectItem value="price_desc">{lang === "bn" ? "দাম বেশি → কম" : "Price high → low"}</SelectItem>
+                        <SelectItem value="name_asc">{t("p3_NameAZ")}</SelectItem>
+                        <SelectItem value="name_desc">{t("p3_NameZA")}</SelectItem>
+                        <SelectItem value="stock_asc">{t("p3_StockLowHigh")}</SelectItem>
+                        <SelectItem value="stock_desc">{t("p3_StockHighLow")}</SelectItem>
+                        <SelectItem value="price_asc">{t("p3_PriceLowHigh")}</SelectItem>
+                        <SelectItem value="price_desc">{t("p3_PriceHighLow")}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="space-y-1">
-                    <div className="text-xs font-semibold text-muted-foreground">{lang === "bn" ? "ফিল্টার" : "Filter"}</div>
+                    <div className="text-xs font-semibold text-muted-foreground">{t("p3_Filter")}</div>
                     <Select value={filterBy} onValueChange={setFilterBy}>
                       <SelectTrigger className="h-9 w-full text-xs">
-                        <SelectValue placeholder={lang === "bn" ? "ফিল্টার" : "Filter"} />
+                        <SelectValue placeholder={t("p3_Filter")} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="all">{lang === "bn" ? "সব প্রোডাক্ট" : "All products"}</SelectItem>
-                        <SelectItem value="in_stock">{lang === "bn" ? "স্টক আছে" : "In stock"}</SelectItem>
-                        <SelectItem value="out_of_stock">{lang === "bn" ? "স্টক শেষ" : "Out of stock"}</SelectItem>
-                        <SelectItem value="low_stock">{lang === "bn" ? "কম স্টক" : "Low stock"}</SelectItem>
-                        <SelectItem value="unlimited">{lang === "bn" ? "অসীম স্টক" : "Unlimited"}</SelectItem>
+                        <SelectItem value="all">{t("p3_AllProducts")}</SelectItem>
+                        <SelectItem value="in_stock">{t("p3_InStock")}</SelectItem>
+                        <SelectItem value="out_of_stock">{t("p3_OutOfStock")}</SelectItem>
+                        <SelectItem value="low_stock">{t("p3_LowStock")}</SelectItem>
+                        <SelectItem value="unlimited">{t("p3_UnlimitedStock")}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -704,27 +696,27 @@ function ProductsPage() {
               {/* Desktop: inline selects */}
               <Select value={sortBy} onValueChange={setSortBy}>
                 <SelectTrigger className="hidden sm:flex h-10 w-[170px] text-sm">
-                  <SelectValue placeholder={lang === "bn" ? "সাজান" : "Sort"} />
+                  <SelectValue placeholder={t("p3_Sort")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="name_asc">{lang === "bn" ? "নাম (ক → হ)" : "Name (A → Z)"}</SelectItem>
-                  <SelectItem value="name_desc">{lang === "bn" ? "নাম (হ → ক)" : "Name (Z → A)"}</SelectItem>
-                  <SelectItem value="stock_asc">{lang === "bn" ? "স্টক কম → বেশি" : "Stock low → high"}</SelectItem>
-                  <SelectItem value="stock_desc">{lang === "bn" ? "স্টক বেশি → কম" : "Stock high → low"}</SelectItem>
-                  <SelectItem value="price_asc">{lang === "bn" ? "দাম কম → বেশি" : "Price low → high"}</SelectItem>
-                  <SelectItem value="price_desc">{lang === "bn" ? "দাম বেশি → কম" : "Price high → low"}</SelectItem>
+                  <SelectItem value="name_asc">{t("p3_NameAZ")}</SelectItem>
+                  <SelectItem value="name_desc">{t("p3_NameZA")}</SelectItem>
+                  <SelectItem value="stock_asc">{t("p3_StockLowHigh")}</SelectItem>
+                  <SelectItem value="stock_desc">{t("p3_StockHighLow")}</SelectItem>
+                  <SelectItem value="price_asc">{t("p3_PriceLowHigh")}</SelectItem>
+                  <SelectItem value="price_desc">{t("p3_PriceHighLow")}</SelectItem>
                 </SelectContent>
               </Select>
               <Select value={filterBy} onValueChange={setFilterBy}>
                 <SelectTrigger className="hidden sm:flex h-10 w-[160px] text-sm">
-                  <SelectValue placeholder={lang === "bn" ? "ফিল্টার" : "Filter"} />
+                  <SelectValue placeholder={t("p3_Filter")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">{lang === "bn" ? "সব প্রোডাক্ট" : "All products"}</SelectItem>
-                  <SelectItem value="in_stock">{lang === "bn" ? "স্টক আছে" : "In stock"}</SelectItem>
-                  <SelectItem value="out_of_stock">{lang === "bn" ? "স্টক শেষ" : "Out of stock"}</SelectItem>
-                  <SelectItem value="low_stock">{lang === "bn" ? "কম স্টক" : "Low stock"}</SelectItem>
-                  <SelectItem value="unlimited">{lang === "bn" ? "অসীম স্টক" : "Unlimited"}</SelectItem>
+                  <SelectItem value="all">{t("p3_AllProducts")}</SelectItem>
+                  <SelectItem value="in_stock">{t("p3_InStock")}</SelectItem>
+                  <SelectItem value="out_of_stock">{t("p3_OutOfStock")}</SelectItem>
+                  <SelectItem value="low_stock">{t("p3_LowStock")}</SelectItem>
+                  <SelectItem value="unlimited">{t("p3_UnlimitedStock")}</SelectItem>
                 </SelectContent>
               </Select>
             </>
@@ -734,25 +726,23 @@ function ProductsPage() {
 
       {editStockMode && (
         <div className="mt-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
-          {lang === "bn"
-            ? "স্টক এডিট মোড — পরিমাণ পরিবর্তন করে উপরে \"সংরক্ষণ করুন\" চাপুন।"
-            : "Stock edit mode — change quantities then press \"Save\" above."}
+          {t("p3_StockEditMode")}
         </div>
       )}
 
       <div className="mt-2 rounded-xl border bg-card sm:mt-4">
         <div className="border-b px-3 py-2 text-xs font-semibold sm:px-4 sm:py-3 sm:text-sm">
-          {lang === "bn" ? "মোট প্রোডাক্ট:" : "Total Products:"} {lang === "bn" ? bnNum(filtered.length) : filtered.length}
+          {t("p3_TotalProducts")} {lang === "bn" ? bnNum(filtered.length) : filtered.length}
         </div>
         {loading ? (
           <div className="p-8 text-center text-sm text-muted-foreground">...</div>
         ) : filtered.length === 0 ? (
           <EmptyState
             icon={<Package className="h-6 w-6" />}
-            title={lang === "bn" ? "কোনো প্রোডাক্ট নেই" : "No products yet"}
+            title={t("p3_NoProductsYet")}
             action={
               <Button size="sm" onClick={() => { setEditing(null); setOpenForm(true); }} className="gap-2">
-                <Plus className="h-4 w-4" /> {lang === "bn" ? "প্রোডাক্ট যোগ করুন" : "Add product"}
+                <Plus className="h-4 w-4" /> {t("p3_AddProductLower")}
               </Button>
             }
           />
@@ -770,13 +760,13 @@ function ProductsPage() {
                       />
                     </TableHead>
                   )}
-                  <TableHead>{lang === "bn" ? "পণ্যের নাম" : "Product"}</TableHead>
-                  <TableHead className="text-right whitespace-nowrap w-px">{lang === "bn" ? "বর্তমান মজুদ" : "In stock"}</TableHead>
-                  <TableHead className="text-right hidden sm:table-cell whitespace-nowrap w-px">{lang === "bn" ? "দর" : "Cost"}</TableHead>
-                  <TableHead className={"text-right whitespace-nowrap w-px " + (editStockMode ? "hidden sm:table-cell" : "")}>{lang === "bn" ? "বিক্রয় মূল্য" : "Sale price"}</TableHead>
-                  <TableHead className="text-right hidden md:table-cell whitespace-nowrap w-px">{lang === "bn" ? "মোট মজুদ মূল্য" : "Stock value"}</TableHead>
+                  <TableHead>{t("p3_ProductHeader")}</TableHead>
+                  <TableHead className="text-right whitespace-nowrap w-px">{t("p3_CurrentStock")}</TableHead>
+                  <TableHead className="text-right hidden sm:table-cell whitespace-nowrap w-px">{t("p3_Cost")}</TableHead>
+                  <TableHead className={"text-right whitespace-nowrap w-px " + (editStockMode ? "hidden sm:table-cell" : "")}>{t("p3_SalePriceLower")}</TableHead>
+                  <TableHead className="text-right hidden md:table-cell whitespace-nowrap w-px">{t("p3_StockValueLower")}</TableHead>
                   {editStockMode ? (
-                    <TableHead className="text-center w-auto sm:w-[260px]">{lang === "bn" ? "আপডেটেড স্টক" : "Updated stock"}</TableHead>
+                    <TableHead className="text-center w-auto sm:w-[260px]">{t("p3_UpdatedStock")}</TableHead>
                   ) : (
                     <TableHead className="text-right w-px whitespace-nowrap">Action</TableHead>
                   )}
@@ -822,14 +812,14 @@ function ProductsPage() {
                           {p.is_marketplace_published && (
                             <Globe
                               className="h-3.5 w-3.5 flex-none text-emerald-600"
-                              aria-label={lang === "bn" ? "অনলাইনে বিক্রয়যোগ্য" : "Available online"}
+                              aria-label={t("p3_AvailOnline")}
                             />
                           )}
                         </div>
                       </TableCell>
                       <TableCell className="text-right tabular-nums">
                         {isUnlimited
-                          ? <span className="text-primary">{lang === "bn" ? "অসীম" : "Unlimited"}</span>
+                          ? <span className="text-primary">{t("p3_Unlimited")}</span>
                           : (() => {
                               const alert = p.low_stock_alert == null ? 0 : Number(p.low_stock_alert);
                               const tone =
@@ -856,7 +846,7 @@ function ProductsPage() {
                         <TableCell className="px-1 sm:px-2" onClick={(e) => e.stopPropagation()}>
                           {isUnlimited ? (
                             <div className="text-center text-xs text-muted-foreground">
-                              {lang === "bn" ? "অসীম" : "Unlimited"}
+                              {t("p3_Unlimited")}
                             </div>
                           ) : (
                             <div className="mx-auto flex w-full max-w-[240px] items-center gap-1 sm:gap-2">
@@ -893,7 +883,7 @@ function ProductsPage() {
                               variant="outline"
                               className="hidden sm:inline-flex h-8 w-8 p-0"
                               onClick={() => setDetails(p)}
-                              title={lang === "bn" ? "বিস্তারিত" : "View"}
+                              title={t("p3_View")}
                             >
                               <Eye className="h-3.5 w-3.5" />
                             </Button>
@@ -905,18 +895,18 @@ function ProductsPage() {
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
                                 <DropdownMenuItem onClick={() => { setEditing(p); setOpenForm(true); }}>
-                                  <Pencil className="mr-2 h-4 w-4" /> {lang === "bn" ? "এডিট" : "Edit"}
+                                  <Pencil className="mr-2 h-4 w-4" /> {t("p3_Edit")}
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => { setDetails(p); setUpdateOpen(true); }}>
-                                  <Plus className="mr-2 h-4 w-4" /> {lang === "bn" ? "স্টক আপডেট" : "Update stock"}
+                                  <Plus className="mr-2 h-4 w-4" /> {t("p3_UpdateStock")}
                                 </DropdownMenuItem>
                                 {p.is_serialized && (
                                   <DropdownMenuItem onClick={() => setSerialsTarget(p)}>
-                                    <Hash className="mr-2 h-4 w-4" /> {lang === "bn" ? "সিরিয়াল ম্যানেজ" : "Manage Serials"}
+                                    <Hash className="mr-2 h-4 w-4" /> {t("p3_ManageSerials")}
                                   </DropdownMenuItem>
                                 )}
                                 <DropdownMenuItem className="text-destructive" onClick={() => onDelete(p)}>
-                                  <Trash2 className="mr-2 h-4 w-4" /> {lang === "bn" ? "ডিলিট" : "Delete"}
+                                  <Trash2 className="mr-2 h-4 w-4" /> {t("p3_Delete")}
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
@@ -1007,8 +997,8 @@ function ProductsPage() {
           <DialogHeader>
             <DialogTitle>
               {historyStep === "pick"
-                ? (lang === "bn" ? "প্রোডাক্ট নির্বাচন করুন" : "Select products")
-                : (lang === "bn" ? "স্টকের ইতিহাস" : "Stock history")}
+                ? (t("p3_SelectProducts"))
+                : (t("p3_StockHistory"))}
             </DialogTitle>
           </DialogHeader>
           {historyStep === "pick" ? (
@@ -1016,21 +1006,19 @@ function ProductsPage() {
               <Input
                 value={historyPickerSearch}
                 onChange={(e) => setHistoryPickerSearch(e.target.value)}
-                placeholder={lang === "bn" ? "প্রোডাক্ট খুঁজুন" : "Search products"}
+                placeholder={t("p3_SearchProducts")}
                 className="h-10"
               />
               <label className="flex items-center gap-2 border-b pb-2 text-sm font-semibold">
                 <Checkbox checked={allPickerSelected} onCheckedChange={togglePickAll} />
-                {lang === "bn" ? "সব নির্বাচন করুন" : "Select all"}
+                {t("p3_SelectAll")}
                 <span className="ml-auto text-xs font-normal text-muted-foreground">
-                  {lang === "bn"
-                    ? `${bnNum(historyPicked.size)} নির্বাচিত`
-                    : `${historyPicked.size} selected`}
+                  {t("p3_NSelected", { n: lang === "bn" ? bnNum(historyPicked.size) : historyPicked.size })}
                 </span>
               </label>
               <div className="max-h-[50vh] space-y-1 overflow-auto">
                 {pickerProducts.length === 0 ? (
-                  <EmptyState title={lang === "bn" ? "কোনো প্রোডাক্ট নেই" : "No products"} />
+                  <EmptyState title={t("p3_NoProducts")} />
                 ) : (
                   pickerProducts.map((p) => (
                     <label
@@ -1044,7 +1032,7 @@ function ProductsPage() {
                       <span className="flex-1 truncate text-sm font-medium">{p.name}</span>
                       <span className="text-xs text-muted-foreground tabular-nums">
                         {Number(p.stock) < 0
-                          ? (lang === "bn" ? "অসীম" : "Unlimited")
+                          ? (t("p3_Unlimited"))
                           : (lang === "bn" ? bnNum(Number(p.stock)) : Number(p.stock))}
                       </span>
                     </label>
@@ -1053,15 +1041,13 @@ function ProductsPage() {
               </div>
               <div className="flex justify-end gap-2 border-t pt-3">
                 <Button variant="outline" onClick={() => setHistoryOpen(false)}>
-                  {lang === "bn" ? "ক্যানসেল" : "Cancel"}
+                  {t("p3_Cancel")}
                 </Button>
                 <Button
                   disabled={historyPicked.size === 0}
                   onClick={() => setHistoryStep("view")}
                 >
-                  {lang === "bn"
-                    ? `ইতিহাস দেখুন (${bnNum(historyPicked.size)})`
-                    : `Show history (${historyPicked.size})`}
+                  {t("p3_ShowHistoryN", { n: lang === "bn" ? bnNum(historyPicked.size) : historyPicked.size })}
                 </Button>
               </div>
             </div>
@@ -1081,20 +1067,20 @@ function ProductsPage() {
                   className="ml-auto text-xs font-semibold text-primary underline-offset-2 hover:underline"
                   onClick={() => setHistoryStep("pick")}
                 >
-                  {lang === "bn" ? "পরিবর্তন" : "Change"}
+                  {t("p3_Change")}
                 </button>
               </div>
               {filteredHistory.length === 0 ? (
-                <EmptyState title={lang === "bn" ? "কোনো রেকর্ড নেই" : "No records"} />
+                <EmptyState title={t("p3_NoRecords")} />
               ) : (
                 <div className="max-h-[55vh] overflow-auto">
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>{lang === "bn" ? "তারিখ" : "Date"}</TableHead>
-                        <TableHead>{lang === "bn" ? "পণ্য" : "Product"}</TableHead>
-                        <TableHead>{lang === "bn" ? "ধরন" : "Type"}</TableHead>
-                        <TableHead className="text-right">{lang === "bn" ? "পরিমাণ" : "Qty"}</TableHead>
+                        <TableHead>{t("p3_Date")}</TableHead>
+                        <TableHead>{t("p3_ProductWord")}</TableHead>
+                        <TableHead>{t("p3_Type")}</TableHead>
+                        <TableHead className="text-right">{t("p3_Qty")}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -1112,10 +1098,10 @@ function ProductsPage() {
               )}
               <div className="flex justify-end gap-2 border-t pt-3">
                 <Button variant="outline" onClick={() => setHistoryStep("pick")}>
-                  {lang === "bn" ? "পিছনে" : "Back"}
+                  {t("p3_Back")}
                 </Button>
                 <Button onClick={() => setHistoryOpen(false)}>
-                  {lang === "bn" ? "বন্ধ করুন" : "Close"}
+                  {t("p3_Close")}
                 </Button>
               </div>
             </div>
@@ -1127,16 +1113,14 @@ function ProductsPage() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="text-destructive">
-              {lang === "bn" ? "প্রোডাক্ট ডিলিট নিশ্চিত করুন" : "Confirm bulk delete"}
+              {t("p3_ConfirmBulkDelete")}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-3 text-sm">
             <p>
-              {lang === "bn"
-                ? `আপনি ${selected.size}টি প্রোডাক্ট ডিলিট করতে যাচ্ছেন। এই কাজটি করতে নিচের ঘরে`
-                : `You are about to delete ${selected.size} products. To confirm, type`}{" "}
+              {t("p3_BulkDeleteWarn", { n: lang === "bn" ? bnNum(selected.size) : selected.size })}{" "}
               <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">delete</code>{" "}
-              {lang === "bn" ? "লিখুন।" : "below."}
+              {t("p3_TypeBelow")}
             </p>
             <Input
               autoFocus
@@ -1146,7 +1130,7 @@ function ProductsPage() {
             />
             <div className="flex justify-end gap-2 pt-2">
               <Button variant="outline" onClick={() => setConfirmOpen(false)}>
-                {lang === "bn" ? "ক্যানসেল" : "Cancel"}
+                {t("p3_Cancel")}
               </Button>
               <Button
                 variant="destructive"
@@ -1155,7 +1139,7 @@ function ProductsPage() {
               >
                 {bulkDeleting
                   ? "..."
-                  : lang === "bn" ? "ডিলিট করুন" : "Delete"}
+                  : t("p3_DeleteAction")}
               </Button>
             </div>
           </div>
@@ -1166,7 +1150,7 @@ function ProductsPage() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              {lang === "bn" ? "ডিলিট করা যাবে না" : "Cannot delete"}
+              {t("p3_CannotDelete")}
             </AlertDialogTitle>
             <AlertDialogDescription asChild>
               <div className="space-y-3">
@@ -1181,22 +1165,22 @@ function ProductsPage() {
                 </div>
                 <ul className="space-y-1 text-sm">
                   {refBlock && refBlock.counts.sales > 0 && (
-                    <li>• <a className="underline text-primary" href="/app/sales-ledger">{lang === "bn" ? "বিক্রয়" : "Sales"}: {lang === "bn" ? bnNum(refBlock.counts.sales) : refBlock.counts.sales}</a></li>
+                    <li>• <a className="underline text-primary" href="/app/sales-ledger">{t("p3_Sales")}: {lang === "bn" ? bnNum(refBlock.counts.sales) : refBlock.counts.sales}</a></li>
                   )}
                   {refBlock && refBlock.counts.purchases > 0 && (
-                    <li>• <a className="underline text-primary" href="/app/purchase-ledger">{lang === "bn" ? "ক্রয়" : "Purchases"}: {lang === "bn" ? bnNum(refBlock.counts.purchases) : refBlock.counts.purchases}</a></li>
+                    <li>• <a className="underline text-primary" href="/app/purchase-ledger">{t("p3_Purchases")}: {lang === "bn" ? bnNum(refBlock.counts.purchases) : refBlock.counts.purchases}</a></li>
                   )}
                   {refBlock && refBlock.counts.quotations > 0 && (
-                    <li>• <a className="underline text-primary" href="/app/sell">{lang === "bn" ? "Quotation" : "Quotations"}: {lang === "bn" ? bnNum(refBlock.counts.quotations) : refBlock.counts.quotations}</a></li>
+                    <li>• <a className="underline text-primary" href="/app/sell">{t("p3_Quotations")}: {lang === "bn" ? bnNum(refBlock.counts.quotations) : refBlock.counts.quotations}</a></li>
                   )}
                   {refBlock && refBlock.counts.returns > 0 && (
-                    <li>• <a className="underline text-primary" href="/app/returns">{lang === "bn" ? "বিক্রয় ফেরত" : "Sales returns"}: {lang === "bn" ? bnNum(refBlock.counts.returns) : refBlock.counts.returns}</a></li>
+                    <li>• <a className="underline text-primary" href="/app/returns">{t("p3_SalesReturns")}: {lang === "bn" ? bnNum(refBlock.counts.returns) : refBlock.counts.returns}</a></li>
                   )}
                   {refBlock && refBlock.counts.onlineOrders > 0 && (
-                    <li>• <a className="underline text-primary" href="/app/online-shop">{lang === "bn" ? "অনলাইন অর্ডার" : "Online orders"}: {lang === "bn" ? bnNum(refBlock.counts.onlineOrders) : refBlock.counts.onlineOrders}</a></li>
+                    <li>• <a className="underline text-primary" href="/app/online-shop">{t("p3_OnlineOrders")}: {lang === "bn" ? bnNum(refBlock.counts.onlineOrders) : refBlock.counts.onlineOrders}</a></li>
                   )}
                   {refBlock && refBlock.counts.listings > 0 && (
-                    <li>• <a className="underline text-primary" href="/app/online-shop">{lang === "bn" ? "অনলাইন listing" : "Online listing"}: {lang === "bn" ? bnNum(refBlock.counts.listings) : refBlock.counts.listings}</a></li>
+                    <li>• <a className="underline text-primary" href="/app/online-shop">{t("p3_OnlineListing")}: {lang === "bn" ? bnNum(refBlock.counts.listings) : refBlock.counts.listings}</a></li>
                   )}
                 </ul>
                 {refBlock?.mode === "bulk" && (refBlock.cleanIds?.length ?? 0) > 0 && (
@@ -1210,10 +1194,10 @@ function ProductsPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>{lang === "bn" ? "বাতিল" : "Cancel"}</AlertDialogCancel>
+            <AlertDialogCancel>{t("p3_CancelBatil")}</AlertDialogCancel>
             {refBlock?.mode === "bulk" && (refBlock.cleanIds?.length ?? 0) > 0 && (
               <AlertDialogAction onClick={proceedDeleteCleanOnly}>
-                {lang === "bn" ? "শুধু clean গুলো ডিলিট করুন" : "Delete clean ones only"}
+                {t("p3_DeleteCleanOnly")}
               </AlertDialogAction>
             )}
           </AlertDialogFooter>
@@ -1365,9 +1349,7 @@ function ProductFormDialog({
     if (error) {
       const code = (error as { code?: string }).code;
       if (code === "42501") {
-        toast.error(lang === "bn"
-          ? "এই দোকানে ক্যাটাগরি যোগ করার অনুমতি নেই"
-          : "You don't have permission to add categories in this shop");
+        toast.error(t("p3_NoCatPerm"));
       } else {
         toast.error(error.message);
       }
@@ -1385,7 +1367,7 @@ function ProductFormDialog({
 
   const save = async () => {
     if (!shopId) return;
-    if (!name.trim()) { toast.error(lang === "bn" ? "নাম দিন" : "Name required"); return; }
+    if (!name.trim()) { toast.error(t("p3_NameRequired")); return; }
     setBusy(true);
     const payload = {
       name: name.trim(),
@@ -1425,11 +1407,9 @@ function ProductFormDialog({
       const code = (error as { code?: string }).code;
       const li = parseLimitError(error.message);
       if (li) {
-        toast.error(lang === "bn" ? "ফ্রি প্ল্যানের সীমা শেষ — আপগ্রেড করুন" : "Free plan limit reached — upgrade");
+        toast.error(t("p3_FreeLimit"));
       } else if (code === "42501") {
-        toast.error(lang === "bn"
-          ? "এই দোকানে প্রোডাক্ট যোগ করার অনুমতি নেই"
-          : "You don't have permission to add products in this shop");
+        toast.error(t("p3_NoProductPerm"));
       } else {
         toast.error(error.message);
       }
@@ -1457,7 +1437,7 @@ function ProductFormDialog({
         /* non-blocking */
       }
     }
-    toast.success(lang === "bn" ? "সেভ হয়েছে" : "Saved");
+    toast.success(t("p3_SavedShort"));
     onOpenChange(false);
     const savedId = (savedRow as { id?: string } | null)?.id ?? product?.id ?? null;
     if (!product && savedId && serializedOn && payload.stock > 0) {
@@ -1478,14 +1458,14 @@ function ProductFormDialog({
       <SheetContent side="right" className="w-full sm:max-w-lg overflow-y-auto">
         <SheetHeader>
           <SheetTitle className="text-center">
-            {product ? (lang === "bn" ? "প্রোডাক্ট এডিট" : "Edit Product") : (lang === "bn" ? "প্রোডাক্ট যোগ করুন" : "Add Product")}
+            {product ? (t("p3_EditProduct")) : (t("p3_AddProductCap"))}
           </SheetTitle>
         </SheetHeader>
 
         <div className="mt-4 grid gap-4 pb-24">
           {/* Always-visible required fields */}
           <div className="grid gap-1.5">
-            <Label>{lang === "bn" ? "পণ্যের নাম" : "Product Name"} *</Label>
+            <Label>{t("p3_ProductNameCap")} *</Label>
             <CatalogProductPicker
               value={name}
               onChange={setName}
@@ -1510,7 +1490,7 @@ function ProductFormDialog({
                 if (p.default_cost) setCost(String(p.default_cost));
               }}
               shopTypeCode={shopTypeCode}
-              placeholder={lang === "bn" ? "২ অক্ষর লিখলে suggestion পাবেন" : "Type 2+ chars for suggestions"}
+              placeholder={t("p3_TwoCharsHint")}
             />
           </div>
 
@@ -1519,12 +1499,12 @@ function ProductFormDialog({
             <div className="flex items-center justify-between gap-3">
               <div className="min-w-0">
                 <div className="text-sm font-medium">
-                  {lang === "bn" ? "স্টক হিসাব রাখতে চান?" : "Track stock for this product?"}
+                  {t("p3_TrackStockQ")}
                 </div>
                 <div className="mt-0.5 text-xs text-muted-foreground">
                   {trackStock
-                    ? (lang === "bn" ? "মজুদ ও লো-স্টক অ্যালার্ট সক্রিয় থাকবে।" : "Stock & low-stock alert will be active.")
-                    : (lang === "bn" ? "স্টক unlimited হিসেবে গণ্য হবে। অর্ডারে স্টক কমবে না, কোনো অ্যালার্ট আসবে না।" : "Stock will be treated as unlimited. Orders won't reduce stock; no alerts.")}
+                    ? (t("p3_StockAlertActive"))
+                    : (t("p3_UnlimitedStockInfo"))}
                 </div>
               </div>
               <Switch checked={trackStock} onCheckedChange={setTrackStock} />
@@ -1534,12 +1514,12 @@ function ProductFormDialog({
           <div className="grid grid-cols-2 gap-3">
             {trackStock && (
               <div className="grid gap-1.5">
-                <Label>{lang === "bn" ? "বর্তমান মজুদ" : "Current Stock"}</Label>
+                <Label>{t("p3_CurrentStockCap")}</Label>
                 <Input type="number" value={stock} onChange={(e) => setStock(e.target.value)} />
               </div>
             )}
             <div className="grid gap-1.5">
-              <Label>{lang === "bn" ? "ইউনিট" : "Unit"}</Label>
+              <Label>{t("p3_Unit")}</Label>
               <Select value={unit} onValueChange={setUnit}>
                 <SelectTrigger><SelectValue placeholder="Units" /></SelectTrigger>
                 <SelectContent>
@@ -1550,11 +1530,11 @@ function ProductFormDialog({
               </Select>
             </div>
             <div className="grid gap-1.5">
-              <Label>{lang === "bn" ? "ক্রয় মূল্য" : "Purchase Price"}</Label>
+              <Label>{t("p3_PurchasePrice")}</Label>
               <Input type="number" value={cost} onChange={(e) => setCost(e.target.value)} />
             </div>
             <div className="grid gap-1.5">
-              <Label>{lang === "bn" ? "বিক্রয় মূল্য" : "Sell Price"}</Label>
+              <Label>{t("p3_SellPrice")}</Label>
               <Input type="number" value={sale} onChange={(e) => setSale(e.target.value)} />
             </div>
           </div>
@@ -1565,19 +1545,19 @@ function ProductFormDialog({
           </div>
 
           <div className="grid gap-1.5">
-            <Label>{lang === "bn" ? "ব্র্যান্ড / কোম্পানি" : "Brand / Company"}</Label>
+            <Label>{t("p3_Brand")}</Label>
             <BrandCombobox
               value={brand}
               shopId={shopId}
               onChange={setBrand}
-              placeholder={lang === "bn" ? "ব্র্যান্ড / কোম্পানি (optional)" : "Brand / Company (optional)"}
+              placeholder={t("p3_BrandOpt")}
             />
           </div>
 
           {/* Category & Sub-Category */}
           <div className="grid grid-cols-2 gap-3">
             <div className="grid gap-1.5">
-              <Label>{lang === "bn" ? "ক্যাটাগরি" : "Category Name"}</Label>
+              <Label>{t("p3_CategoryName")}</Label>
               <Select
                 value={categoryId ?? ""}
                 onValueChange={(v) => {
@@ -1587,20 +1567,20 @@ function ProductFormDialog({
                 }}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder={lang === "bn" ? "ক্যাটাগরি বাছাই" : "Select category"} />
+                  <SelectValue placeholder={t("p3_SelectCategory")} />
                 </SelectTrigger>
                 <SelectContent>
                   {topCats.map((c) => (
                     <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
                   ))}
                   <SelectItem value="__add__" className="font-semibold text-primary">
-                    + {lang === "bn" ? "নতুন ক্যাটাগরি" : "Add New Category"}
+                    + {t("p3_AddNewCategory")}
                   </SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="grid gap-1.5">
-              <Label>{lang === "bn" ? "সাব-ক্যাটাগরি" : "Sub-Category Name"}</Label>
+              <Label>{t("p3_SubCatName")}</Label>
               <Select
                 value={subCategoryId ?? ""}
                 onValueChange={(v) => {
@@ -1610,14 +1590,14 @@ function ProductFormDialog({
                 disabled={!categoryId}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder={lang === "bn" ? "সাব-ক্যাটাগরি" : "Select sub-category"} />
+                  <SelectValue placeholder={t("p3_SelectSubCat")} />
                 </SelectTrigger>
                 <SelectContent>
                   {subCats.map((c) => (
                     <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
                   ))}
                   <SelectItem value="__add__" className="font-semibold text-primary">
-                    + {lang === "bn" ? "নতুন সাব-ক্যাটাগরি" : "Add New Sub-Category"}
+                    + {t("p3_AddNewSubCat")}
                   </SelectItem>
                 </SelectContent>
               </Select>
@@ -1625,27 +1605,27 @@ function ProductFormDialog({
           </div>
 
           <div className="grid gap-1.5">
-            <Label>{lang === "bn" ? "প্রোডাক্ট বিবরণ" : "Product Details"}</Label>
+            <Label>{t("p3_ProductDetails")}</Label>
             <Textarea rows={3} value={description} onChange={(e) => setDescription(e.target.value)} />
           </div>
 
           {/* Toggle sections */}
           <ToggleSection
-            title={lang === "bn" ? "অনলাইনে বিক্রি করতে চান?" : "Want to sell this product online?"}
+            title={t("p3_SellOnlineQ")}
             checked={onlineOn} onChange={setOnlineOn}
           />
 
           <ToggleSection
-            title={lang === "bn" ? "বাল্ক/পাইকারি বিক্রি?" : "Want to sell this in bulk?"}
+            title={t("p3_BulkSellQ")}
             checked={bulkOn} onChange={setBulkOn}
           >
             <div className="grid grid-cols-2 gap-3">
               <div className="grid gap-1.5">
-                <Label>{lang === "bn" ? "বাল্ক দাম" : "Bulk Price"}</Label>
+                <Label>{t("p3_BulkPrice")}</Label>
                 <Input type="number" value={bulkPrice} onChange={(e) => setBulkPrice(e.target.value)} />
               </div>
               <div className="grid gap-1.5">
-                <Label>{lang === "bn" ? "মিনিমাম পরিমাণ" : "Minimum Order Qty"}</Label>
+                <Label>{t("p3_MinOrderQty")}</Label>
                 <Input type="number" value={bulkMinQty} onChange={(e) => setBulkMinQty(e.target.value)} />
               </div>
             </div>
@@ -1653,33 +1633,33 @@ function ProductFormDialog({
 
           {trackStock && (
             <ToggleSection
-              title={lang === "bn" ? "লো-স্টক অ্যালার্ট" : "Low stock alert"}
+              title={t("p3_LowStockAlert")}
               checked={lowOn} onChange={setLowOn}
             >
               <div className="grid gap-1.5">
-                <Label>{lang === "bn" ? "অ্যালার্ট স্টক পরিমাণ" : "Alert when stock reaches"}</Label>
+                <Label>{t("p3_AlertStockQty")}</Label>
                 <Input type="number" value={low} onChange={(e) => setLow(e.target.value)} />
               </div>
             </ToggleSection>
           )}
 
           <ToggleSection
-            title={lang === "bn" ? "VAT applicable?" : "VAT applicable?"}
+            title={t("p3_VatApp")}
             checked={vatOn} onChange={setVatOn}
           >
             <div className="grid gap-1.5">
-              <Label>{lang === "bn" ? "VAT (%)" : "VAT percentage (%)"}</Label>
+              <Label>{t("p3_VatPct")}</Label>
               <Input type="number" value={vatPct} onChange={(e) => setVatPct(e.target.value)} />
             </div>
           </ToggleSection>
 
           <ToggleSection
-            title={lang === "bn" ? "ওয়ারেন্টি" : "Warranty"}
+            title={t("p3_Warranty")}
             checked={warrantyOn} onChange={setWarrantyOn}
           >
             <div className="grid grid-cols-[1fr_140px] gap-3">
               <div className="grid gap-1.5">
-                <Label>{lang === "bn" ? "বিক্রির পর সময়" : "Days after sale date"}</Label>
+                <Label>{t("p3_DaysAfterSale")}</Label>
                 <Input type="number" value={warrantyValue} onChange={(e) => setWarrantyValue(e.target.value)} />
               </div>
               <div className="grid gap-1.5">
@@ -1699,11 +1679,11 @@ function ProductFormDialog({
 
           <div className="rounded-lg border bg-background p-3">
             <div className="mb-2 text-sm font-semibold">
-              {lang === "bn" ? "উৎপাদন ও মেয়াদ" : "Manufacturing & Expiry"}
+              {t("p3_MfgExpiry")}
             </div>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="grid gap-1.5">
-                <Label>{lang === "bn" ? "উৎপাদনের তারিখ" : "Manufacturing date"}</Label>
+                <Label>{t("p3_MfgDate")}</Label>
                 <Input
                   type="date"
                   value={mfgDate}
@@ -1711,7 +1691,7 @@ function ProductFormDialog({
                 />
               </div>
               <div className="grid gap-1.5">
-                <Label>{lang === "bn" ? "মেয়াদ শেষের তারিখ" : "Expiry date"}</Label>
+                <Label>{t("p3_ExpiryDate")}</Label>
                 <Input
                   type="date"
                   value={expDate}
@@ -1719,22 +1699,20 @@ function ProductFormDialog({
                   min={mfgDate || undefined}
                 />
                 <p className="text-[11px] text-muted-foreground">
-                  {lang === "bn"
-                    ? "মেয়াদ এক মাসের কম থাকলে পণ্যটি \"শীঘ্রই মেয়াদোত্তীর্ণ\" পেজে দেখাবে।"
-                    : "If expiry is within one month, the product will appear on the \"Expire Soon\" page."}
+                  {t("p3_ExpiryHint")}
                 </p>
               </div>
             </div>
           </div>
 
           <ToggleSection
-            title={lang === "bn" ? "ডিসকাউন্ট" : "Discount"}
+            title={t("p3_Discount")}
             checked={discountOn} onChange={setDiscountOn}
           >
             <div className="grid grid-cols-[1fr_120px] gap-3">
 
               <div className="grid gap-1.5">
-                <Label>{lang === "bn" ? "ডিসকাউন্ট" : "Discount"}</Label>
+                <Label>{t("p3_Discount")}</Label>
                 <Input type="number" value={discountValue} onChange={(e) => setDiscountValue(e.target.value)} />
               </div>
               <div className="grid gap-1.5">
@@ -1751,23 +1729,21 @@ function ProductFormDialog({
           </ToggleSection>
 
           <ToggleSection
-            title={lang === "bn" ? "IMEI / সিরিয়াল ট্র্যাকিং" : "IMEI / Serial tracking"}
+            title={t("p3_IMEISerial")}
             checked={serializedOn}
             onChange={setSerializedOn}
           >
             <p className="text-xs text-muted-foreground">
-              {lang === "bn"
-                ? "প্রতিটি ইউনিটের আলাদা IMEI বা সিরিয়াল নম্বর সেভ করুন। সেভ করার সাথে সাথে সিরিয়াল যোগ করার window আসবে — ক্রমিক (sequential) অথবা র‍্যান্ডম যেভাবে চান দিতে পারবেন।"
-                : "Track each unit by a unique IMEI or Serial. After saving, you'll be prompted to enter serials — sequential range or random one-by-one."}
+              {t("p3_IMEIHint")}
             </p>
           </ToggleSection>
 
           <ToggleSection
-            title={lang === "bn" ? "বারকোড" : "Barcode"}
+            title={t("p3_Barcode")}
             checked={barcodeOn} onChange={setBarcodeOn}
           >
             <div className="grid gap-1.5">
-              <Label>{lang === "bn" ? "বারকোড" : "Barcode"}</Label>
+              <Label>{t("p3_Barcode")}</Label>
               <div className="flex gap-2">
                 <Input value={barcode} onChange={(e) => setBarcode(e.target.value)} />
                 <BarcodeScannerButton onDetected={(code: string) => setBarcode(code)} />
@@ -1778,10 +1754,10 @@ function ProductFormDialog({
 
         <SheetFooter className="sticky bottom-0 -mx-6 border-t bg-background px-6 py-3 sm:flex-row sm:justify-between sm:gap-2">
           <Button variant="outline" className="flex-1" onClick={() => onOpenChange(false)}>
-            {lang === "bn" ? "বাতিল" : "Cancel"}
+            {t("p3_CancelBatil")}
           </Button>
           <Button className="flex-1" onClick={save} disabled={busy}>
-            {busy ? "..." : product ? (lang === "bn" ? "আপডেট" : "Update Product") : (lang === "bn" ? "যোগ করুন" : "Add New Product")}
+            {busy ? "..." : product ? (t("p3_UpdateProduct")) : (t("p3_AddNewProduct"))}
           </Button>
         </SheetFooter>
 
@@ -1790,12 +1766,12 @@ function ProductFormDialog({
             <DialogHeader>
               <DialogTitle>
                 {addSubOpen
-                  ? (lang === "bn" ? "নতুন সাব-ক্যাটাগরি" : "New Sub-Category")
-                  : (lang === "bn" ? "নতুন ক্যাটাগরি" : "New Category")}
+                  ? (t("p3_NewSubCategory"))
+                  : (t("p3_NewCategory"))}
               </DialogTitle>
             </DialogHeader>
             <div className="grid gap-2">
-              <Label>{lang === "bn" ? "নাম" : "Name"}</Label>
+              <Label>{t("p3_Name")}</Label>
               <Input
                 value={newCatName}
                 onChange={(e) => setNewCatName(e.target.value)}
@@ -1804,10 +1780,10 @@ function ProductFormDialog({
               />
               <div className="mt-2 flex justify-end gap-2">
                 <Button variant="outline" onClick={() => { setAddCatOpen(false); setAddSubOpen(false); }}>
-                  {lang === "bn" ? "বাতিল" : "Cancel"}
+                  {t("p3_CancelBatil")}
                 </Button>
                 <Button onClick={() => addCategory(addSubOpen ? categoryId : null)} disabled={!newCatName.trim()}>
-                  {lang === "bn" ? "সংরক্ষণ" : "Save"}
+                  {t("p3_SaveSimple")}
                 </Button>
               </div>
             </div>
