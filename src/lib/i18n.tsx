@@ -7,6 +7,155 @@ const RTL_LANGS = new Set<Lang>(["ur", "ar"]);
 
 type Dict = Record<string, string>;
 
+// Per-key translations for the app shell + dashboard (Phase 1).
+// Each entry MUST provide all 7 languages. Falls back to English if missing.
+type Tr = Record<Lang, string>;
+const T: Record<string, Tr> = {
+  // ── Sidebar sections ──
+  sec_main:            { bn: "মূল",            en: "Main",            hi: "मुख्य",          ta: "முதன்மை",       te: "ముఖ్యం",         ur: "اہم",            ar: "الرئيسية" },
+  sec_transactions:    { bn: "লেনদেন",          en: "Transactions",    hi: "लेन-देन",        ta: "பரிவர்த்தனைகள்", te: "లావాదేవీలు",      ur: "لین دین",        ar: "المعاملات" },
+  sec_books:           { bn: "হিসাবের বই",      en: "Books",           hi: "बही-खाते",       ta: "புத்தகங்கள்",    te: "ఖాతా పుస్తకాలు",   ur: "کھاتے",          ar: "الدفاتر" },
+  sec_inventory:       { bn: "পণ্য ও স্টক",     en: "Inventory",       hi: "उत्पाद और स्टॉक", ta: "சரக்கு",        te: "నిల్వ",          ur: "اسٹاک",          ar: "المخزون" },
+  sec_customers:       { bn: "গ্রাহক ও যোগাযোগ", en: "Customers",       hi: "ग्राहक",         ta: "வாடிக்கையாளர்கள்", te: "కస్టమర్లు",    ur: "گاہک",           ar: "العملاء" },
+  sec_reportsSettings: { bn: "রিপোর্ট ও সেটিংস", en: "Reports & Settings", hi: "रिपोर्ट और सेटिंग्स", ta: "அறிக்கைகள் & அமைப்புகள்", te: "నివేదికలు & సెట్టింగ్‌లు", ur: "رپورٹس اور ترتیبات", ar: "التقارير والإعدادات" },
+  sec_others:          { bn: "অন্যান্য",        en: "Others",          hi: "अन्य",           ta: "மற்றவை",        te: "ఇతరములు",        ur: "دیگر",           ar: "أخرى" },
+
+  // ── Sidebar / nav items ──
+  nav_dashboard:        { bn: "ড্যাশবোর্ড",       en: "Dashboard",        hi: "डैशबोर्ड",        ta: "டாஷ்போர்டு",      te: "డ్యాష్‌బోర్డ్",       ur: "ڈیش بورڈ",        ar: "لوحة التحكم" },
+  nav_lpg:              { bn: "LPG / বোতল",      en: "LPG / Bottle",     hi: "LPG / बोतल",      ta: "LPG / பாட்டில்", te: "LPG / బాటిల్",   ur: "LPG / بوتل",      ar: "غاز / قارورة" },
+  nav_purchase:         { bn: "ক্রয়",            en: "Purchase",         hi: "खरीद",            ta: "கொள்முதல்",       te: "కొనుగోలు",         ur: "خریداری",         ar: "الشراء" },
+  nav_sell:             { bn: "বিক্রয়",          en: "Sell",             hi: "बिक्री",          ta: "விற்பனை",         te: "అమ్మకం",          ur: "فروخت",           ar: "البيع" },
+  nav_quickSell:        { bn: "দ্রুত বিক্রি",     en: "Quick Sell",       hi: "त्वरित बिक्री",   ta: "விரைவு விற்பனை",   te: "త్వరిత అమ్మకం",    ur: "تیز فروخت",       ar: "بيع سريع" },
+  nav_cashbox:          { bn: "ক্যাশবক্স",        en: "Cashbox",          hi: "कैशबॉक्स",        ta: "பணப்பெட்டி",       te: "క్యాష్‌బాక్స్",      ur: "کیش باکس",        ar: "صندوق النقد" },
+  nav_purchaseBook:     { bn: "ক্রয়ের বই",       en: "Purchase Book",    hi: "खरीद बही",        ta: "கொள்முதல் புத்தகம்", te: "కొనుగోలు పుస్తకం", ur: "خریداری کھاتہ",   ar: "دفتر المشتريات" },
+  nav_salesBook:        { bn: "বিক্রয়ের বই",      en: "Sales Book",       hi: "बिक्री बही",      ta: "விற்பனை புத்தகம்", te: "అమ్మకాల పుస్తకం",  ur: "فروخت کھاتہ",     ar: "دفتر المبيعات" },
+  nav_dueBook:          { bn: "বাকির বই",         en: "Due Book",         hi: "बकाया बही",       ta: "பாக்கி புத்தகம்",  te: "బకాయి పుస్తకం",    ur: "بقایا کھاتہ",     ar: "دفتر الديون" },
+  nav_expenseBook:      { bn: "খরচের বই",         en: "Expense Book",     hi: "खर्च बही",        ta: "செலவு புத்தகம்",   te: "ఖర్చు పుస్తకం",     ur: "اخراجات کھاتہ",   ar: "دفتر المصروفات" },
+  nav_ownerBook:        { bn: "মালিকের বই",       en: "Owner Book",       hi: "मालिक बही",       ta: "உரிமையாளர் புத்தகம்", te: "యజమాని పుస్తకం",  ur: "مالک کھاتہ",       ar: "دفتر المالك" },
+  nav_shopAssets:       { bn: "দোকানের সম্পদ",     en: "Shop Assets",      hi: "दुकान संपत्ति",   ta: "கடை சொத்துக்கள்",   te: "షాప్ ఆస్తులు",     ur: "دکان اثاثے",      ar: "أصول المتجر" },
+  nav_productsStock:    { bn: "প্রোডাক্ট ও স্টক",  en: "Products & Stock", hi: "उत्पाद और स्टॉक", ta: "தயாரிப்புகள் & சரக்கு", te: "ఉత్పత్తులు & స్టాక్", ur: "پروڈکٹس و اسٹاک", ar: "المنتجات والمخزون" },
+  nav_services:         { bn: "সার্ভিস",          en: "Services",         hi: "सेवाएँ",          ta: "சேவைகள்",         te: "సేవలు",            ur: "خدمات",           ar: "الخدمات" },
+  nav_productReturn:    { bn: "প্রোডাক্ট রিটার্ন", en: "Product Return",   hi: "उत्पाद वापसी",   ta: "தயாரிப்பு திரும்பல்", te: "ఉత్పత్తి తిరిగి", ur: "پروڈکٹ واپسی",    ar: "إرجاع المنتج" },
+  nav_expiringProducts: { bn: "মেয়াদোত্তীর্ণ পণ্য", en: "Expiring Products", hi: "समाप्ति वाले उत्पाद", ta: "காலாவதியாகும்",   te: "గడువు ముగుస్తున్నవి", ur: "میعاد ختم پروڈکٹس", ar: "منتجات منتهية الصلاحية" },
+  nav_warranty:         { bn: "ওয়ারেন্টি পণ্য",    en: "Warranty",         hi: "वारंटी",          ta: "உத்தரவாதம்",      te: "వారంటీ",          ur: "وارنٹی",          ar: "الضمان" },
+  nav_customerStaff:    { bn: "কাস্টমার ও স্টাফ",   en: "Customer & Staff", hi: "ग्राहक और स्टाफ", ta: "வாடிக்கையாளர் & பணியாளர்கள்", te: "కస్టమర్ & సిబ్బంది", ur: "گاہک و عملہ",    ar: "العملاء والموظفون" },
+  nav_customerFordo:    { bn: "গ্রাহক ফর্দ",       en: "Customer Fordo",   hi: "ग्राहक फरदो",     ta: "வாடிக்கையாளர் ஃபர்தோ", te: "కస్టమర్ ఫర్దో",  ur: "گاہک فردو",       ar: "قائمة العميل" },
+  nav_fordoHistory:     { bn: "ফর্দ ইতিহাস",       en: "Fordo History",    hi: "फरदो इतिहास",     ta: "ஃபர்தோ வரலாறு",   te: "ఫర్దో చరిత్ర",     ur: "فردو تاریخ",       ar: "سجل القوائم" },
+  nav_marketing:        { bn: "মার্কেটিং",          en: "Marketing",        hi: "मार्केटिंग",       ta: "சந்தைப்படுத்தல்",  te: "మార్కెటింగ్",      ur: "مارکیٹنگ",        ar: "التسويق" },
+  nav_onlineShop:       { bn: "অনলাইন শপ",          en: "Online Shop",      hi: "ऑनलाइन शॉप",      ta: "ஆன்லைன் கடை",     te: "ఆన్‌లైన్ షాప్",     ur: "آن لائن شاپ",     ar: "المتجر الإلكتروني" },
+  nav_businessReport:   { bn: "ব্যবসার রিপোর্ট",     en: "Business Report",  hi: "व्यापार रिपोर्ट", ta: "வணிக அறிக்கை",     te: "వ్యాపార నివేదిక",  ur: "کاروباری رپورٹ",  ar: "تقرير الأعمال" },
+  nav_ownerReport:      { bn: "মালিকের রিপোর্ট",     en: "Owner Report",     hi: "मालिक रिपोर्ट",   ta: "உரிமையாளர் அறிக்கை", te: "యజమాని నివేదిక",  ur: "مالک رپورٹ",      ar: "تقرير المالك" },
+  nav_usageLimits:      { bn: "ব্যবহারের সীমা",     en: "Usage Limits",     hi: "उपयोग सीमाएँ",    ta: "பயன்பாட்டு வரம்புகள்", te: "వినియోగ పరిమితులు", ur: "استعمال کی حدود", ar: "حدود الاستخدام" },
+  nav_printer:          { bn: "প্রিন্টার",          en: "Printer",          hi: "प्रिंटर",         ta: "அச்சுப்பொறி",     te: "ప్రింటర్",         ur: "پرنٹر",           ar: "الطابعة" },
+  nav_appAccess:        { bn: "অ্যাপ অ্যাক্সেস",     en: "App Access",       hi: "ऐप एक्सेस",       ta: "ஆப் அணுகல்",      te: "యాప్ యాక్సెస్",    ur: "ایپ رسائی",       ar: "وصول التطبيق" },
+  nav_recycleBin:       { bn: "রিসাইকেল বিন",       en: "Recycle Bin",      hi: "रीसायकल बिन",     ta: "மீள்சுழற்சி தொட்டி", te: "రీసైకిల్ బిన్",   ur: "ری سائیکل بن",    ar: "سلة المحذوفات" },
+  nav_appTraining:      { bn: "অ্যাপ ট্রেনিং",      en: "App Training",     hi: "ऐप प्रशिक्षण",    ta: "ஆப் பயிற்சி",     te: "యాప్ శిక్షణ",     ur: "ایپ ٹریننگ",      ar: "تدريب التطبيق" },
+  nav_growthPartner:    { bn: "গ্রোথ পার্টনার",     en: "Growth Partner",   hi: "ग्रोथ पार्टनर",   ta: "வளர்ச்சி பங்காளி", te: "గ్రోత్ పార్ట్‌నర్", ur: "گروتھ پارٹنر",   ar: "شريك النمو" },
+  nav_buySubscription:  { bn: "সাবস্ক্রিপশন কিনুন",  en: "Buy Subscription", hi: "सब्सक्रिप्शन खरीदें", ta: "சந்தா வாங்கு",  te: "సబ్‌స్క్రిప్షన్ కొనండి", ur: "سبسکرپشن خریدیں", ar: "اشترِ الاشتراك" },
+
+  // ── Sidebar misc / actions ──
+  collapseMenu:     { bn: "মেনু সংকুচিত করুন",  en: "Collapse menu",      hi: "मेनू छोटा करें",   ta: "மெனுவை சுருக்கு",  te: "మెను ముడిచండి",     ur: "مینو سکیڑیں",      ar: "طي القائمة" },
+  expandMenu:       { bn: "মেনু খুলুন",          en: "Expand menu",        hi: "मेनू खोलें",       ta: "மெனுவை விரிவாக்கு", te: "మెను విస్తరించండి", ur: "مینو کھولیں",      ar: "توسيع القائمة" },
+  installApp:       { bn: "অ্যাপ ইনস্টল করুন",   en: "Install App",        hi: "ऐप इंस्टॉल करें",  ta: "ஆப்ஸை நிறுவவும்",   te: "యాప్ ఇన్‌స్టాల్ చేయండి", ur: "ایپ انسٹال کریں",  ar: "ثبّت التطبيق" },
+  installingApp:    { bn: "অ্যাপ ইনস্টল হচ্ছে…",  en: "Installing app…",    hi: "ऐप इंस्टॉल हो रहा है…", ta: "நிறுவப்படுகிறது…", te: "ఇన్‌స్టాల్ అవుతోంది…", ur: "انسٹال ہو رہا ہے…", ar: "جاري التثبيت…" },
+  useSafariShare:   { bn: "Safari Share → 'Add to Home Screen' সিলেক্ট করুন", en: "Tap Safari Share → 'Add to Home Screen'", hi: "Safari Share → 'Add to Home Screen' चुनें", ta: "Safari Share → 'Add to Home Screen'", te: "Safari Share → 'Add to Home Screen'", ur: "Safari Share → 'Add to Home Screen'", ar: "Safari Share → 'Add to Home Screen'" },
+  useBrowserInstall:{ bn: "ব্রাউজার মেনু থেকে 'Install app' সিলেক্ট করুন", en: "Use browser menu → 'Install app'", hi: "ब्राउज़र मेनू → 'Install app' चुनें", ta: "Browser menu → 'Install app'", te: "Browser menu → 'Install app'", ur: "براؤزر مینو → 'Install app'", ar: "قائمة المتصفح → 'Install app'" },
+  restartTour:      { bn: "টুর আবার দেখুন",      en: "Restart tour",        hi: "टूर पुनः देखें",   ta: "சுற்றுப்பயணம் மீண்டும்", te: "టూర్ మళ్ళీ చూడండి", ur: "ٹور دوبارہ دیکھیں", ar: "إعادة الجولة" },
+
+  // ── Topbar ──
+  settings:        { bn: "সেটিংস",           en: "Settings",        hi: "सेटिंग्स",       ta: "அமைப்புகள்",      te: "సెట్టింగ్‌లు",      ur: "ترتیبات",         ar: "الإعدادات" },
+  switchShop:      { bn: "দোকান পরিবর্তন",    en: "Switch Shop",     hi: "दुकान बदलें",    ta: "கடையை மாற்று",    te: "షాప్ మార్చండి",     ur: "دکان تبدیل کریں", ar: "تبديل المتجر" },
+  combinedReport:  { bn: "কম্বাইন্ড রিপোর্ট",  en: "Combined Report", hi: "संयुक्त रिपोर्ट", ta: "ஒருங்கிணைந்த அறிக்கை", te: "మిళిత నివేదిక",   ur: "مشترکہ رپورٹ",    ar: "تقرير مجمّع" },
+  logout:          { bn: "লগআউট",            en: "Log out",         hi: "लॉग आउट",        ta: "வெளியேறு",        te: "లాగ్ అవుట్",        ur: "لاگ آؤٹ",          ar: "تسجيل الخروج" },
+
+  // ── Mobile bottom nav ──
+  navHome:    { bn: "হোম",     en: "Home",    hi: "होम",     ta: "முகப்பு",   te: "హోమ్",      ur: "ہوم",     ar: "الرئيسية" },
+  navSell:    { bn: "বিক্রয়",   en: "Sell",    hi: "बिक्री",  ta: "விற்பனை",   te: "అమ్మకం",    ur: "فروخت",   ar: "بيع" },
+  navReturn:  { bn: "রিটার্ন",  en: "Return",  hi: "वापसी",   ta: "திரும்பல்", te: "తిరిగి",    ur: "واپسی",   ar: "إرجاع" },
+  navReport:  { bn: "রিপোর্ট",  en: "Report",  hi: "रिपोर्ट",  ta: "அறிக்கை",   te: "నివేదిక",   ur: "رپورٹ",   ar: "تقرير" },
+  navProfile: { bn: "প্রোফাইল", en: "Profile", hi: "प्रोफ़ाइल", ta: "சுயவிவரம்", te: "ప్రొఫైల్",  ur: "پروفائل", ar: "الملف الشخصي" },
+
+  // ── Mobile back bar ──
+  back: { bn: "পিছনে", en: "Back", hi: "वापस", ta: "பின்", te: "వెనుకకు", ur: "پیچھے", ar: "رجوع" },
+
+  // ── Trial banner ──
+  trialEnded:      { bn: "ফ্রি ট্রায়াল শেষ — আপনি এখন Free প্ল্যানে আছেন (১০টি পণ্যের সীমা)।", en: "Free trial ended — you are now on the Free plan (10-item limits).", hi: "फ्री ट्रायल समाप्त — आप अब Free प्लान पर हैं (10 आइटम सीमा)।", ta: "இலவச சோதனை முடிந்தது — நீங்கள் இப்போது Free திட்டத்தில் (10 பொருட்கள் வரம்பு).", te: "ఉచిత ట్రయల్ ముగిసింది — మీరు ఇప్పుడు Free ప్లాన్‌లో ఉన్నారు (10 ఐటెమ్‌ల పరిమితి).", ur: "فری ٹرائل ختم — اب آپ Free پلان پر ہیں (10 آئٹمز کی حد)۔", ar: "انتهت التجربة المجانية — أنت الآن على خطة Free (حد 10 عناصر)." },
+  subscribeNow:    { bn: "এখনই কিনুন", en: "Subscribe now", hi: "अभी सब्सक्राइब करें", ta: "இப்போதே சந்தா", te: "ఇప్పుడే సబ్‌స్క్రయిబ్", ur: "ابھی سبسکرائب کریں", ar: "اشترك الآن" },
+  trialDaysLeft:   { bn: "আপনার ফ্রি ট্রায়াল আর মাত্র {n} দিন বাকি — এখনই Full Version কিনুন।", en: "Your free trial ends in {n} day(s) — buy the full version now.", hi: "आपका फ्री ट्रायल {n} दिन में समाप्त होगा — पूरा संस्करण अभी खरीदें।", ta: "உங்கள் இலவச சோதனை {n} நாட்களில் முடிகிறது — இப்போதே வாங்கவும்.", te: "మీ ఉచిత ట్రయల్ {n} రోజుల్లో ముగుస్తుంది — ఇప్పుడే కొనండి.", ur: "آپ کا فری ٹرائل {n} دن میں ختم — ابھی پورا ورژن خریدیں۔", ar: "تنتهي تجربتك المجانية خلال {n} يوم — اشترِ النسخة الكاملة الآن." },
+  trialActive:     { bn: "ফ্রি ট্রায়াল চলছে — আর {n} দিন বাকি। সব ফিচার ফ্রি!", en: "Free trial active — {n} day(s) left. All features unlocked!", hi: "फ्री ट्रायल चालू — {n} दिन शेष। सभी फ़ीचर्स अनलॉक!", ta: "இலவச சோதனை செயலில் — {n} நாட்கள் மீதம். அனைத்து அம்சங்களும்!", te: "ఉచిత ట్రయల్ ఆన్‌లో — {n} రోజులు మిగిలాయి. అన్ని ఫీచర్లు!", ur: "فری ٹرائل جاری — {n} دن باقی۔ تمام فیچرز کھلے!", ar: "تجربتك المجانية فعّالة — متبقٍ {n} يوم. جميع الميزات مفتوحة!" },
+  viewPlans:       { bn: "Plan দেখুন", en: "View plans", hi: "प्लान देखें", ta: "திட்டங்களைக் காண்க", te: "ప్లాన్‌లు చూడండి", ur: "پلانز دیکھیں", ar: "عرض الخطط" },
+
+  // ── AppLayout splash ──
+  loading:       { bn: "লোড হচ্ছে...", en: "Loading...", hi: "लोड हो रहा है...", ta: "ஏற்றப்படுகிறது...", te: "లోడవుతోంది...", ur: "لوڈ ہو رہا ہے...", ar: "جاري التحميل..." },
+  redirecting:   { bn: "লগইন পেজে যাচ্ছি...", en: "Redirecting to login...", hi: "लॉगिन पर भेजा जा रहा है...", ta: "உள்நுழைவுக்கு…", te: "లాగిన్‌కి దారి…", ur: "لاگ ان کی طرف…", ar: "إعادة التوجيه لتسجيل الدخول..." },
+  loadingShop:   { bn: "আপনার দোকান লোড হচ্ছে...", en: "Loading your shop...", hi: "आपकी दुकान लोड हो रही है...", ta: "உங்கள் கடை ஏற்றப்படுகிறது...", te: "మీ షాప్ లోడవుతోంది...", ur: "آپ کی دکان لوڈ ہو رہی ہے...", ar: "جاري تحميل متجرك..." },
+
+  // ── Dashboard ──
+  balance:           { bn: "ব্যালেন্স", en: "Balance", hi: "बैलेंस", ta: "இருப்பு", te: "బ్యాలెన్స్", ur: "بیلنس", ar: "الرصيد" },
+  tab_day:           { bn: "দিন", en: "Day", hi: "दिन", ta: "நாள்", te: "రోజు", ur: "دن", ar: "يوم" },
+  tab_week:          { bn: "সপ্তাহ", en: "Week", hi: "सप्ताह", ta: "வாரம்", te: "వారం", ur: "ہفتہ", ar: "أسبوع" },
+  tab_month:         { bn: "মাস", en: "Month", hi: "महीना", ta: "மாதம்", te: "నెల", ur: "مہینہ", ar: "شهر" },
+  tab_year:          { bn: "বছর", en: "Year", hi: "वर्ष", ta: "ஆண்டு", te: "సంవత్సరం", ur: "سال", ar: "سنة" },
+  tab_all:           { bn: "সব", en: "All", hi: "सभी", ta: "அனைத்தும்", te: "అన్నీ", ur: "تمام", ar: "الكل" },
+  dash_sales:        { bn: "আজকের বিক্রি", en: "Sales", hi: "बिक्री", ta: "விற்பனை", te: "అమ్మకాలు", ur: "فروخت", ar: "المبيعات" },
+  dash_purchase:     { bn: "আজকের ক্রয়", en: "Purchase", hi: "खरीद", ta: "கொள்முதல்", te: "కొనుగోలు", ur: "خریداری", ar: "المشتريات" },
+  dash_expense:      { bn: "আজকের খরচ", en: "Expense", hi: "खर्च", ta: "செலவு", te: "ఖర్చు", ur: "اخراجات", ar: "المصروفات" },
+  dash_stockCount:   { bn: "স্টক সংখ্যা", en: "Stock", hi: "स्टॉक", ta: "சரக்கு", te: "నిల్వ", ur: "اسٹاک", ar: "المخزون" },
+  dash_receivable:   { bn: "বাকি দিয়েছি", en: "Receivable", hi: "लेना है", ta: "வரவேண்டியது", te: "రాబడి", ur: "وصول طلب", ar: "مستحقات" },
+  dash_payable:      { bn: "বাকি নিয়েছি", en: "Payable", hi: "देना है", ta: "செலுத்த வேண்டியது", te: "చెల్లించాల్సినవి", ur: "ادا کرنا", ar: "مستحقات الدفع" },
+  dash_newOrders:    { bn: "নতুন অর্ডার", en: "New orders", hi: "नए ऑर्डर", ta: "புதிய ஆர்டர்கள்", te: "కొత్త ఆర్డర్లు", ur: "نئے آرڈرز", ar: "طلبات جديدة" },
+  dash_newFordo:     { bn: "নতুন ফর্দ", en: "New fordo", hi: "नया फरदो", ta: "புதிய ஃபர்தோ", te: "కొత్త ఫర్దో", ur: "نیا فردو", ar: "قائمة جديدة" },
+  dash_lowStock:     { bn: "কম স্টক", en: "Low stock", hi: "कम स्टॉक", ta: "குறைந்த சரக்கு", te: "తక్కువ నిల్వ", ur: "کم اسٹاک", ar: "مخزون منخفض" },
+  dash_products:     { bn: "মোট পণ্য", en: "Products", hi: "उत्पाद", ta: "தயாரிப்புகள்", te: "ఉత్పత్తులు", ur: "پروڈکٹس", ar: "المنتجات" },
+  dash_onlineProducts:{bn: "অনলাইন পণ্য", en: "Online products", hi: "ऑनलाइन उत्पाद", ta: "ஆன்லைன் தயாரிப்புகள்", te: "ఆన్‌లైన్ ఉత్పత్తులు", ur: "آن لائن پروڈکٹس", ar: "منتجات إلكترونية" },
+  dash_warranty:     { bn: "ওয়ারেন্টি", en: "Warranty", hi: "वारंटी", ta: "உத்தரவாதம்", te: "వారంటీ", ur: "وارنٹی", ar: "الضمان" },
+  dash_customers:    { bn: "গ্রাহক", en: "Customers", hi: "ग्राहक", ta: "வாடிக்கையாளர்கள்", te: "కస్టమర్లు", ur: "گاہک", ar: "العملاء" },
+  dash_suppliers:    { bn: "সরবরাহকারী", en: "Suppliers", hi: "आपूर्तिकर्ता", ta: "சப்ளையர்கள்", te: "సరఫరాదారులు", ur: "سپلائرز", ar: "الموردون" },
+  dash_employees:    { bn: "কর্মচারী", en: "Employees", hi: "कर्मचारी", ta: "ஊழியர்கள்", te: "ఉద్యోగులు", ur: "ملازمین", ar: "الموظفون" },
+  viewDetails:       { bn: "বিস্তারিত দেখুন →", en: "View details →", hi: "विवरण देखें →", ta: "விவரம் →", te: "వివరాలు →", ur: "تفصیل دیکھیں →", ar: "عرض التفاصيل →" },
+  viewAll:           { bn: "সব দেখুন →", en: "View all →", hi: "सब देखें →", ta: "அனைத்தும் →", te: "అన్నీ చూడండి →", ur: "سب دیکھیں →", ar: "عرض الكل →" },
+  recentSales:       { bn: "সাম্প্রতিক বিক্রি", en: "Recent sales", hi: "हाल की बिक्री", ta: "சமீபத்திய விற்பனை", te: "ఇటీవలి అమ్మకాలు", ur: "حالیہ فروخت", ar: "أحدث المبيعات" },
+  newOnlineOrders:   { bn: "নতুন অনলাইন অর্ডার", en: "New online orders", hi: "नए ऑनलाइन ऑर्डर", ta: "புதிய ஆன்லைன் ஆர்டர்கள்", te: "కొత్త ఆన్‌లైన్ ఆర్డర్లు", ur: "نئے آن لائن آرڈرز", ar: "طلبات إلكترونية جديدة" },
+  recentFordo:       { bn: "সাম্প্রতিক ফর্দ", en: "Recent fordo", hi: "हाल का फरदो", ta: "சமீபத்திய ஃபர்தோ", te: "ఇటీవలి ఫర్దో", ur: "حالیہ فردو", ar: "أحدث القوائم" },
+  lowStockProducts:  { bn: "কম স্টক পণ্য", en: "Low-stock products", hi: "कम स्टॉक उत्पाद", ta: "குறைந்த சரக்கு பொருட்கள்", te: "తక్కువ నిల్వ ఉత్పత్తులు", ur: "کم اسٹاک پروڈکٹس", ar: "منتجات قليلة المخزون" },
+  warrantyExpiring:  { bn: "মেয়াদোত্তীর্ণ হবে শীঘ্রই", en: "Warranty expiring soon", hi: "वारंटी जल्द समाप्त", ta: "உத்தரவாதம் விரைவில் முடிகிறது", te: "వారంటీ త్వరలో ముగుస్తుంది", ur: "وارنٹی جلد ختم", ar: "ينتهي الضمان قريبًا" },
+  walkInCustomer:    { bn: "নগদ গ্রাহক", en: "Walk-in", hi: "वॉक-इन", ta: "வந்த வாடிக்கையாளர்", te: "వాక్-ఇన్", ur: "واک-اِن", ar: "زبون عابر" },
+  noData:            { bn: "কোনো তথ্য নেই", en: "No data yet", hi: "अभी कोई डेटा नहीं", ta: "தரவு இல்லை", te: "డేటా లేదు", ur: "ابھی کوئی ڈیٹا نہیں", ar: "لا توجد بيانات بعد" },
+  justNow:           { bn: "এখনই", en: "just now", hi: "अभी", ta: "இப்போது", te: "ఇప్పుడే", ur: "ابھی", ar: "الآن" },
+
+  // ── Settings sheet ──
+  user:                  { bn: "ব্যবহারকারী", en: "User", hi: "उपयोगकर्ता", ta: "பயனர்", te: "వినియోగదారు", ur: "صارف", ar: "المستخدم" },
+  viewProfile:           { bn: "প্রোফাইল দেখুন", en: "View profile", hi: "प्रोफ़ाइल देखें", ta: "சுயவிவரம்", te: "ప్రొఫైల్", ur: "پروفائل دیکھیں", ar: "عرض الملف" },
+  shopWord:              { bn: "দোকান", en: "Shop", hi: "दुकान", ta: "கடை", te: "షాప్", ur: "دکان", ar: "متجر" },
+  st_report:             { bn: "রিপোর্ট", en: "Report", hi: "रिपोर्ट", ta: "அறிக்கை", te: "నివేదిక", ur: "رپورٹ", ar: "تقرير" },
+  st_subscribe:          { bn: "সাবস্ক্রাইব", en: "Subscribe", hi: "सब्सक्राइब", ta: "சந்தா", te: "సబ్‌స్క్రయిబ్", ur: "سبسکرائب", ar: "اشترك" },
+  st_training:           { bn: "ট্রেনিং", en: "Training", hi: "प्रशिक्षण", ta: "பயிற்சி", te: "శిక్షణ", ur: "ٹریننگ", ar: "تدريب" },
+  st_usage:              { bn: "ব্যবহার", en: "Usage", hi: "उपयोग", ta: "பயன்பாடு", te: "వినియోగం", ur: "استعمال", ar: "الاستخدام" },
+  preferences:           { bn: "পছন্দসমূহ", en: "Preferences", hi: "वरीयताएँ", ta: "விருப்பங்கள்", te: "ప్రాధాన్యతలు", ur: "ترجیحات", ar: "التفضيلات" },
+  language:              { bn: "ভাষা", en: "Language", hi: "भाषा", ta: "மொழி", te: "భాష", ur: "زبان", ar: "اللغة" },
+  country:               { bn: "দেশ", en: "Country", hi: "देश", ta: "நாடு", te: "దేశం", ur: "ملک", ar: "البلد" },
+  currency:              { bn: "কারেন্সি", en: "Currency", hi: "मुद्रा", ta: "நாணயம்", te: "కరెన్సీ", ur: "کرنسی", ar: "العملة" },
+  decimals:              { bn: "দশমিক", en: "Decimals", hi: "दशमलव", ta: "தசம", te: "దశాంశాలు", ur: "اعشاریہ", ar: "الكسور العشرية" },
+  appColor:              { bn: "অ্যাপের রং", en: "App Color", hi: "ऐप रंग", ta: "ஆப் நிறம்", te: "యాప్ రంగు", ur: "ایپ کا رنگ", ar: "لون التطبيق" },
+  shopAndData:           { bn: "দোকান ও ডেটা", en: "Shop & Data", hi: "दुकान और डेटा", ta: "கடை & தரவு", te: "షాప్ & డేటా", ur: "دکان و ڈیٹا", ar: "المتجر والبيانات" },
+  shopSettingsBackup:    { bn: "দোকানের সেটিংস ও ব্যাকআপ", en: "Shop Settings & Backup", hi: "दुकान सेटिंग्स और बैकअप", ta: "கடை அமைப்பு & பேக்அப்", te: "షాప్ సెట్టింగ్‌లు & బ్యాకప్", ur: "دکان ترتیبات و بیک اپ", ar: "إعدادات المتجر والنسخ الاحتياطي" },
+  myProfile:             { bn: "আমার প্রোফাইল", en: "My Profile", hi: "मेरी प्रोफ़ाइल", ta: "என் சுயவிவரம்", te: "నా ప్రొఫైల్", ur: "میری پروفائل", ar: "ملفي الشخصي" },
+  device:                { bn: "ডিভাইস", en: "Device", hi: "डिवाइस", ta: "சாதனம்", te: "పరికరం", ur: "ڈیوائس", ar: "الجهاز" },
+  appInstalled:          { bn: "অ্যাপ ইনস্টল করা আছে", en: "App Installed", hi: "ऐप इंस्टॉल है", ta: "ஆப் நிறுவப்பட்டது", te: "యాప్ ఇన్‌స్టాల్ చేయబడింది", ur: "ایپ انسٹال شدہ", ar: "التطبيق مثبت" },
+  installMobileApp:      { bn: "মোবাইলে অ্যাপ ইনস্টল করুন", en: "Install Mobile App", hi: "मोबाइल ऐप इंस्टॉल करें", ta: "மொபைல் ஆப்ஸை நிறுவவும்", te: "మొబైల్ యాప్ ఇన్‌స్టాల్", ur: "موبائل ایپ انسٹال کریں", ar: "ثبّت تطبيق الجوال" },
+  appAlreadyInstalled:   { bn: "অ্যাপ ইতিমধ্যে ইনস্টল করা আছে", en: "App is already installed", hi: "ऐप पहले से इंस्टॉल है", ta: "ஆப் ஏற்கனவே நிறுவப்பட்டது", te: "యాప్ ఇప్పటికే ఉంది", ur: "ایپ پہلے سے انسٹال", ar: "التطبيق مثبت بالفعل" },
+  loggedInDevices:       { bn: "লগইন ডিভাইস ও লগআউট", en: "Logged-in devices", hi: "लॉग-इन डिवाइस", ta: "உள்நுழைந்த சாதனங்கள்", te: "లాగిన్ పరికరాలు", ur: "لاگ ان ڈیوائسز", ar: "الأجهزة المسجلة" },
+  helpLinks:             { bn: "সহায়তা ও লিঙ্ক", en: "Help & Links", hi: "सहायता और लिंक", ta: "உதவி & இணைப்புகள்", te: "సహాయం & లింక్‌లు", ur: "مدد و لنکس", ar: "المساعدة والروابط" },
+  showMore:              { bn: "আরও দেখুন", en: "Show more", hi: "और देखें", ta: "மேலும் காட்டு", te: "మరిన్ని చూపండి", ur: "مزید دکھائیں", ar: "عرض المزيد" },
+  brandTagline:          { bn: "Tally+ • আপনার ব্যবসার সঙ্গী", en: "Tally+ • Your business companion", hi: "Tally+ • आपका व्यापार साथी", ta: "Tally+ • உங்கள் வணிக துணை", te: "Tally+ • మీ వ్యాపార సహచరి", ur: "Tally+ • آپ کا کاروباری ساتھی", ar: "Tally+ • رفيق عملك" },
+
+  // Time-ago short suffixes
+  ago_min: { bn: "মি", en: "m", hi: "मि", ta: "நி", te: "ని", ur: "م", ar: "د" },
+  ago_hr:  { bn: "ঘ", en: "h", hi: "घं", ta: "ம", te: "గ", ur: "گھ", ar: "س" },
+  ago_day: { bn: "দি", en: "d", hi: "दि", ta: "நா", te: "రో", ur: "د", ar: "ي" },
+};
+
+// Legacy keys still referenced by older pages (kept for backward compatibility).
 const en: Dict = {
   appName: "Tally Plus",
   tagline: "Clear your accounts in one click — save time, grow your business",
@@ -144,12 +293,17 @@ export const LANG_NAMES: { code: Lang; native: string }[] = [
   { code: "ar", native: "العربية" },
 ];
 
-type Key = keyof typeof en;
+type LegacyKey = keyof typeof en;
+export type TKey = keyof typeof T | LegacyKey;
 
-const I18nCtx = createContext<{ lang: Lang; setLang: (l: Lang) => void; t: (k: Key) => string }>({
+const I18nCtx = createContext<{
+  lang: Lang;
+  setLang: (l: Lang) => void;
+  t: (k: TKey, vars?: Record<string, string | number>) => string;
+}>({
   lang: "bn",
   setLang: () => {},
-  t: (k) => k,
+  t: (k) => String(k),
 });
 
 export function I18nProvider({ children }: { children: ReactNode }) {
@@ -167,7 +321,18 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     setLangState(l);
     if (typeof window !== "undefined") localStorage.setItem("tp_lang", l);
   };
-  const t = (k: Key) => dict[lang][k] ?? en[k] ?? k;
+  const t = (k: TKey, vars?: Record<string, string | number>) => {
+    const tr = T[k as keyof typeof T];
+    let s: string;
+    if (tr) s = tr[lang] ?? tr.en ?? String(k);
+    else s = dict[lang][k as LegacyKey] ?? en[k as LegacyKey] ?? String(k);
+    if (vars) {
+      for (const [name, val] of Object.entries(vars)) {
+        s = s.replace(new RegExp(`\\{${name}\\}`, "g"), String(val));
+      }
+    }
+    return s;
+  };
   return <I18nCtx.Provider value={{ lang, setLang, t }}>{children}</I18nCtx.Provider>;
 }
 
