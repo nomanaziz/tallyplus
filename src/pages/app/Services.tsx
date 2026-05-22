@@ -61,8 +61,8 @@ function ServicesPage() {
     if (!current) return;
     const { error } = await supabase.from("services").insert({
       shop_id: current.id,
-      name: lang === "bn" ? "ফ্রি ডেলিভারি সার্ভিস" : "Free delivery service",
-      description: lang === "bn" ? "ডেমো — পরে এডিট করতে পারবেন" : "Demo — edit anytime",
+      name: t("p4_FreeDelivery"),
+      description: t("p4_DemoEditLater"),
       price: 100,
       unit: "service",
       duration_minutes: 30,
@@ -73,20 +73,20 @@ function ServicesPage() {
     } as never);
     if (error) {
       const li = parseLimitError(error.message);
-      if (li) toast.error(lang === "bn" ? "সীমা শেষ — আপগ্রেড করুন" : "Limit reached — upgrade");
+      if (li) toast.error(t("p4_LimitUpgrade"));
       else toast.error(error.message);
       return;
     }
-    toast.success(lang === "bn" ? "ডেমো সার্ভিস যোগ হয়েছে" : "Demo service added");
+    toast.success(t("p4_DemoAdded"));
     refresh();
     void refreshUsage();
   };
 
   const onDelete = async (s: Service) => {
-    if (!confirm(lang === "bn" ? `"${s.name}" মুছে ফেলবেন?` : `Delete "${s.name}"?`)) return;
+    if (!confirm(t("p4_DeleteServiceX", { name: s.name }))) return;
     const { error } = await supabase.from("services").update({ deleted_at: new Date().toISOString() }).eq("id", s.id);
     if (error) return toast.error(error.message);
-    toast.success(lang === "bn" ? "মুছে ফেলা হয়েছে" : "Deleted");
+    toast.success(t("p4_Deleted"));
     refresh();
   };
 
@@ -106,7 +106,7 @@ function ServicesPage() {
     } else {
       await supabase.from("marketplace_service_listings").update({ is_published: false }).eq("service_id", s.id);
     }
-    toast.success(lang === "bn" ? "আপডেট হয়েছে" : "Updated");
+    toast.success(t("p4_Updated"));
     refresh();
   };
 
@@ -116,9 +116,9 @@ function ServicesPage() {
     <div className="container px-4 py-4">
       <div className="mb-3 flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-extrabold md:text-2xl">{lang === "bn" ? "সার্ভিস" : "Services"}</h1>
+          <h1 className="text-xl font-extrabold md:text-2xl">{t("p4_Services")}</h1>
           <div className="text-xs text-muted-foreground">
-            {lang === "bn" ? "আপনার সার্ভিসের তালিকা ও মূল্য পরিচালনা করুন" : "Manage your services and pricing"}
+            {t("p4_ManageServices")}
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -126,7 +126,7 @@ function ServicesPage() {
             variant="outline"
             onClick={() => {
               if (limitReached) {
-                toast.error(lang === "bn" ? "সীমা শেষ — আপগ্রেড করুন" : "Limit reached — upgrade");
+                toast.error(t("p4_LimitUpgrade"));
                 return;
               }
               setQuickOpen(true);
@@ -134,12 +134,12 @@ function ServicesPage() {
             className="gap-2"
             disabled={limitReached}
           >
-            <Zap className="h-4 w-4" /> {lang === "bn" ? "দ্রুত যোগ" : "Quick add"}
+            <Zap className="h-4 w-4" /> {t("p4_QuickAdd")}
           </Button>
           <Button
             onClick={() => {
               if (limitReached) {
-                toast.error(lang === "bn" ? "সীমা শেষ — আপগ্রেড করুন" : "Limit reached — upgrade");
+                toast.error(t("p4_LimitUpgrade"));
                 return;
               }
               setEditing(null);
@@ -148,7 +148,7 @@ function ServicesPage() {
             className="gap-2"
             disabled={limitReached}
           >
-            <Plus className="h-4 w-4" /> {lang === "bn" ? "নতুন সার্ভিস" : "New Service"}
+            <Plus className="h-4 w-4" /> {t("p4_NewServiceCap")}
           </Button>
         </div>
       </div>
@@ -157,12 +157,12 @@ function ServicesPage() {
 
       <Tabs value={tab} onValueChange={setTab} className="mb-3">
         <TabsList>
-          <TabsTrigger value="list">{lang === "bn" ? "সার্ভিস তালিকা" : "Services"}</TabsTrigger>
+          <TabsTrigger value="list">{t("p4_ServicesList")}</TabsTrigger>
           <TabsTrigger value="bookings" className="gap-1.5">
-            <CalendarClock className="h-3.5 w-3.5" /> {lang === "bn" ? "বুকিং" : "Bookings"}
+            <CalendarClock className="h-3.5 w-3.5" /> {t("p4_Bookings")}
           </TabsTrigger>
           <TabsTrigger value="history" className="gap-1.5">
-            <History className="h-3.5 w-3.5" /> {lang === "bn" ? "ইতিহাস" : "History"}
+            <History className="h-3.5 w-3.5" /> {t("p4_History")}
           </TabsTrigger>
         </TabsList>
         <TabsContent value="bookings" className="mt-3">
@@ -174,22 +174,22 @@ function ServicesPage() {
         <TabsContent value="list" className="mt-3">
       <div className="mb-3 relative max-w-md">
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" placeholder={lang === "bn" ? "সার্ভিস খুঁজুন" : "Search service"} />
+        <Input value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" placeholder={t("p4_SearchService")} />
       </div>
 
       {isLoading ? (
-        <div className="text-sm text-muted-foreground">{lang === "bn" ? "লোড হচ্ছে…" : "Loading…"}</div>
+        <div className="text-sm text-muted-foreground">{t("p4_Loading")}</div>
       ) : filtered.length === 0 ? (
         <EmptyState
           icon={<Wrench className="h-6 w-6" />}
-          title={lang === "bn" ? "কোনো সার্ভিস নেই" : "No services yet"}
+          title={t("p4_NoServicesYet")}
           action={
             <div className="flex flex-wrap justify-center gap-2">
               <Button onClick={() => { if (!limitReached) { setEditing(null); setOpenForm(true); } }} disabled={limitReached} className="gap-1">
-                <Plus className="h-4 w-4" /> {lang === "bn" ? "নতুন সার্ভিস" : "New service"}
+                <Plus className="h-4 w-4" /> {t("p4_NewServiceLower")}
               </Button>
               <Button onClick={seedDemoService} variant="outline" disabled={limitReached} className="gap-1">
-                <Wrench className="h-4 w-4" /> {lang === "bn" ? "ডেমো সার্ভিস যোগ করুন" : "Add demo service"}
+                <Wrench className="h-4 w-4" /> {t("p4_AddDemoService")}
               </Button>
             </div>
           }
@@ -218,22 +218,22 @@ function ServicesPage() {
                 <div className="mt-3 flex flex-wrap gap-2 text-xs">
                   {dur && <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5"><Clock className="h-3 w-3" /> {dur}</span>}
                   {war && <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 px-2 py-0.5"><Shield className="h-3 w-3" /> {war}</span>}
-                  {s.home_service && <span className="inline-flex items-center gap-1 rounded-full bg-blue-500/10 text-blue-700 dark:text-blue-300 px-2 py-0.5"><Home className="h-3 w-3" /> {lang === "bn" ? "হোম সার্ভিস" : "Home"}</span>}
-                  {s.is_marketplace_published && <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary px-2 py-0.5"><Globe className="h-3 w-3" /> {lang === "bn" ? "অনলাইনে" : "Online"}</span>}
+                  {s.home_service && <span className="inline-flex items-center gap-1 rounded-full bg-blue-500/10 text-blue-700 dark:text-blue-300 px-2 py-0.5"><Home className="h-3 w-3" /> {t("p4_Home")}</span>}
+                  {s.is_marketplace_published && <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 text-primary px-2 py-0.5"><Globe className="h-3 w-3" /> {t("p4_Online")}</span>}
                 </div>
                 <div className="mt-2 flex items-center gap-1 text-xs text-muted-foreground">
                   <MapPin className="h-3 w-3 shrink-0" />
                   <span className="truncate">
                     {(() => {
                       const areas = s.service_areas ?? [];
-                      if (areas.length === 0) return lang === "bn" ? "সর্বত্র উপলব্ধ" : "Available everywhere";
-                      return (lang === "bn" ? "উপলব্ধ: " : "Available in: ") + areas.join(", ");
+                      if (areas.length === 0) return t("p4_AvailEverywhere");
+                      return (t("p4_AvailIn")) + areas.join(", ");
                     })()}
                   </span>
                 </div>
                 <div className="mt-3 flex gap-2">
                   <Button variant="outline" size="sm" className="flex-1 gap-1" onClick={() => { setEditing(s); setOpenForm(true); }}>
-                    <Pencil className="h-3.5 w-3.5" /> {lang === "bn" ? "এডিট" : "Edit"}
+                    <Pencil className="h-3.5 w-3.5" /> {t("p4_Edit")}
                   </Button>
                   <Button variant="outline" size="sm" className="gap-1" onClick={() => togglePublish(s)}>
                     <Globe className="h-3.5 w-3.5" />
@@ -301,7 +301,7 @@ function ServiceFormSheet({ open, onClose, editing, shopId, categories, onSaved 
   const update = (patch: Partial<Service>) => setForm((p) => ({ ...p, ...patch }));
 
   const onSave = async () => {
-    if (!form.name?.trim()) return toast.error(lang === "bn" ? "নাম দিন" : "Name required");
+    if (!form.name?.trim()) return toast.error(t("p4_NameRequired"));
     setSaving(true);
     try {
       const payload = {
@@ -347,13 +347,13 @@ function ServiceFormSheet({ open, onClose, editing, shopId, categories, onSaved 
       } else if (serviceId) {
         await supabase.from("marketplace_service_listings").update({ is_published: false }).eq("service_id", serviceId);
       }
-      toast.success(lang === "bn" ? "সংরক্ষণ হয়েছে" : "Saved");
+      toast.success(t("p4_Saved"));
       onSaved();
       onClose();
     } catch (e) {
       const msg = (e as Error).message;
       const li = parseLimitError(msg);
-      if (li) toast.error(lang === "bn" ? "ফ্রি প্ল্যানের সীমা শেষ — আপগ্রেড করুন" : "Free plan limit reached — upgrade");
+      if (li) toast.error(t("p4_FreeLimit"));
       else toast.error(msg);
     } finally {
       setSaving(false);
@@ -364,12 +364,12 @@ function ServiceFormSheet({ open, onClose, editing, shopId, categories, onSaved 
     <Sheet open={open} onOpenChange={(v) => !v && onClose()}>
       <SheetContent side="right" className="w-full sm:max-w-lg overflow-y-auto">
         <SheetHeader>
-          <SheetTitle>{editing ? (lang === "bn" ? "সার্ভিস এডিট করুন" : "Edit Service") : (lang === "bn" ? "নতুন সার্ভিস" : "New Service")}</SheetTitle>
+          <SheetTitle>{editing ? (t("p4_EditService")) : (t("p4_NewServiceCap"))}</SheetTitle>
         </SheetHeader>
         <div className="space-y-3 py-4">
           {!editing && (
             <div>
-              <Label>{lang === "bn" ? "ক্যাটালগ" : "Catalog"}</Label>
+              <Label>{t("p4_Catalog")}</Label>
               <ServiceCatalogPicker
                 onPick={(item: CatalogItem) => {
                   update({
@@ -386,101 +386,99 @@ function ServiceFormSheet({ open, onClose, editing, shopId, categories, onSaved 
                 }}
               />
               <div className="mt-1 text-xs text-muted-foreground">
-                {lang === "bn" ? "অথবা নিচে নিজে লিখুন" : "Or fill in manually below"}
+                {t("p4_OrFillManual")}
               </div>
             </div>
           )}
           <div>
-            <Label>{lang === "bn" ? "নাম" : "Name"} *</Label>
+            <Label>{t("p4_Name")} *</Label>
             <Input value={form.name ?? ""} onChange={(e) => update({ name: e.target.value })} />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label>{lang === "bn" ? "মূল্য" : "Price"} *</Label>
+              <Label>{t("p4_Price")} *</Label>
               <Input type="number" value={form.price ?? 0} onChange={(e) => update({ price: Number(e.target.value) })} />
             </div>
             <div>
-              <Label>{lang === "bn" ? "একক" : "Unit"}</Label>
+              <Label>{t("p4_Unit")}</Label>
               <Select value={form.unit ?? "service"} onValueChange={(v) => update({ unit: v })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="service">{lang === "bn" ? "প্রতি সার্ভিস" : "Per service"}</SelectItem>
-                  <SelectItem value="hour">{lang === "bn" ? "প্রতি ঘন্টা" : "Per hour"}</SelectItem>
-                  <SelectItem value="visit">{lang === "bn" ? "প্রতি ভিজিট" : "Per visit"}</SelectItem>
-                  <SelectItem value="job">{lang === "bn" ? "প্রতি কাজ" : "Per job"}</SelectItem>
+                  <SelectItem value="service">{t("p4_PerService")}</SelectItem>
+                  <SelectItem value="hour">{t("p4_PerHour")}</SelectItem>
+                  <SelectItem value="visit">{t("p4_PerVisit")}</SelectItem>
+                  <SelectItem value="job">{t("p4_PerJob")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label>{lang === "bn" ? "সময় (মিনিট)" : "Duration (min)"}</Label>
+              <Label>{t("p4_DurationMin")}</Label>
               <Input type="number" value={form.duration_minutes ?? ""} onChange={(e) => update({ duration_minutes: e.target.value ? Number(e.target.value) : null })} />
             </div>
             <div>
-              <Label>{lang === "bn" ? "সময় (টেক্সট)" : "Duration (text)"}</Label>
-              <Input value={form.duration_label ?? ""} placeholder={lang === "bn" ? "যেমন: ১-২ দিন" : "e.g. 1-2 days"} onChange={(e) => update({ duration_label: e.target.value })} />
+              <Label>{t("p4_DurationText")}</Label>
+              <Input value={form.duration_label ?? ""} placeholder={t("p4_Eg12Days")} onChange={(e) => update({ duration_label: e.target.value })} />
             </div>
           </div>
           {categories.length > 0 && (
             <div>
-              <Label>{lang === "bn" ? "ক্যাটেগরি" : "Category"}</Label>
+              <Label>{t("p4_Category")}</Label>
               <Select value={form.category_id ?? "none"} onValueChange={(v) => update({ category_id: v === "none" ? null : v })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">{lang === "bn" ? "নাই" : "None"}</SelectItem>
+                  <SelectItem value="none">{t("p4_None")}</SelectItem>
                   {categories.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
           )}
           <div>
-            <Label>{lang === "bn" ? "বিবরণ" : "Description"}</Label>
+            <Label>{t("p4_Description")}</Label>
             <Textarea rows={3} value={form.description ?? ""} onChange={(e) => update({ description: e.target.value })} />
           </div>
           <div className="rounded-md border p-3 space-y-2">
             <div className="flex items-center justify-between">
-              <Label className="flex items-center gap-2"><Shield className="h-4 w-4" /> {lang === "bn" ? "ফ্রি সার্ভিস ওয়ারেন্টি" : "Free Re-service Warranty"}</Label>
+              <Label className="flex items-center gap-2"><Shield className="h-4 w-4" /> {t("p4_FreeReWarranty")}</Label>
               <Switch checked={!!form.warranty_enabled} onCheckedChange={(v) => update({ warranty_enabled: v })} />
             </div>
             {form.warranty_enabled && (
               <div className="grid grid-cols-2 gap-2">
-                <Input type="number" placeholder={lang === "bn" ? "মেয়াদ" : "Value"} value={form.warranty_value ?? ""} onChange={(e) => update({ warranty_value: e.target.value ? Number(e.target.value) : null })} />
+                <Input type="number" placeholder={t("p4_Value")} value={form.warranty_value ?? ""} onChange={(e) => update({ warranty_value: e.target.value ? Number(e.target.value) : null })} />
                 <Select value={form.warranty_unit ?? "days"} onValueChange={(v) => update({ warranty_unit: v })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="days">{lang === "bn" ? "দিন" : "Days"}</SelectItem>
-                    <SelectItem value="months">{lang === "bn" ? "মাস" : "Months"}</SelectItem>
-                    <SelectItem value="years">{lang === "bn" ? "বছর" : "Years"}</SelectItem>
+                    <SelectItem value="days">{t("p4_Days")}</SelectItem>
+                    <SelectItem value="months">{t("p4_Months")}</SelectItem>
+                    <SelectItem value="years">{t("p4_Years")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             )}
           </div>
           <div className="flex items-center justify-between">
-            <Label className="flex items-center gap-2"><Home className="h-4 w-4" /> {lang === "bn" ? "হোম সার্ভিস (বাসায় গিয়ে)" : "Home service available"}</Label>
+            <Label className="flex items-center gap-2"><Home className="h-4 w-4" /> {t("p4_HomeServiceAvail")}</Label>
             <Switch checked={!!form.home_service} onCheckedChange={(v) => update({ home_service: v })} />
           </div>
           {form.home_service && (
             <div>
-              <Label>{lang === "bn" ? "ভিজিট চার্জ (অতিরিক্ত)" : "Visit charge (extra)"}</Label>
+              <Label>{t("p4_VisitCharge")}</Label>
               <Input type="number" value={form.service_charge_extra ?? ""} onChange={(e) => update({ service_charge_extra: e.target.value ? Number(e.target.value) : null })} />
             </div>
           )}
           {/* Booking & advance */}
           <div className="rounded-md border p-3 space-y-2">
             <div className="flex items-center justify-between">
-              <Label className="flex items-center gap-2"><CalendarClock className="h-4 w-4" /> {lang === "bn" ? "অনলাইন বুকিং চালু" : "Online booking enabled"}</Label>
+              <Label className="flex items-center gap-2"><CalendarClock className="h-4 w-4" /> {t("p4_OnlineBookingOn")}</Label>
               <Switch checked={form.booking_enabled !== false} onCheckedChange={(v) => update({ booking_enabled: v })} />
             </div>
             <div className="text-xs text-muted-foreground">
-              {lang === "bn"
-                ? "বন্ধ থাকলে গ্রাহক শুধু ফোন করতে পারবে, অনলাইন বুকিং নিতে পারবে না।"
-                : "When off, customers can only call you — no online booking."}
+              {t("p4_BookingOffHint")}
             </div>
             <div className="grid grid-cols-2 gap-3 pt-1">
               <div>
-                <Label className="flex items-center gap-1"><BadgeDollarSign className="h-3.5 w-3.5" /> {lang === "bn" ? "অগ্রিম / যাতায়াত (৳)" : "Advance / travel (৳)"}</Label>
+                <Label className="flex items-center gap-1"><BadgeDollarSign className="h-3.5 w-3.5" /> {t("p4_AdvanceTravel")}</Label>
                 <Input
                   type="number"
                   placeholder="0"
@@ -489,23 +487,21 @@ function ServiceFormSheet({ open, onClose, editing, shopId, categories, onSaved 
                 />
               </div>
               <div className="flex items-end justify-between rounded-md border px-3 py-2">
-                <Label className="text-xs">{lang === "bn" ? "অগ্রিম বাধ্যতামূলক" : "Advance required"}</Label>
+                <Label className="text-xs">{t("p4_AdvanceRequired")}</Label>
                 <Switch checked={!!form.advance_required} onCheckedChange={(v) => update({ advance_required: v })} />
               </div>
             </div>
           </div>
           <div className="flex items-center justify-between">
-            <Label className="flex items-center gap-2"><Globe className="h-4 w-4" /> {lang === "bn" ? "অনলাইন মার্কেটে দেখান" : "Show on online marketplace"}</Label>
+            <Label className="flex items-center gap-2"><Globe className="h-4 w-4" /> {t("p4_ShowOnMarket")}</Label>
             <Switch checked={!!form.is_marketplace_published} onCheckedChange={(v) => update({ is_marketplace_published: v })} />
           </div>
           <div className="rounded-md border p-3 space-y-2">
             <Label className="flex items-center gap-2">
-              <MapPin className="h-4 w-4" /> {lang === "bn" ? "সার্ভিস এলাকা" : "Service Area"}
+              <MapPin className="h-4 w-4" /> {t("p4_ServiceArea")}
             </Label>
             <div className="text-xs text-muted-foreground">
-              {lang === "bn"
-                ? "বিভাগ → জেলা → উপজেলা/থানা সিলেক্ট করে \"যোগ করুন\"। একাধিক এলাকা যোগ করা যাবে। কিছু না দিলে \"সর্বত্র উপলব্ধ\" দেখাবে।"
-                : "Pick Division → District → Upazila/Thana, then \"Add\". You can add multiple areas. Empty means \"available everywhere\"."}
+              {t("p4_AreaHint")}
             </div>
             <ServiceAreaPicker
               value={form.service_areas ?? []}
@@ -513,14 +509,14 @@ function ServiceFormSheet({ open, onClose, editing, shopId, categories, onSaved 
             />
             {(form.service_areas ?? []).length > 0 && (
               <Button type="button" variant="ghost" size="sm" onClick={() => update({ service_areas: [] })}>
-                {lang === "bn" ? "সব মুছে \"সর্বত্র\" করুন" : "Clear (set to everywhere)"}
+                {t("p4_ClearAreas")}
               </Button>
             )}
           </div>
         </div>
         <SheetFooter>
-          <Button variant="outline" onClick={onClose}>{lang === "bn" ? "বাতিল" : "Cancel"}</Button>
-          <Button onClick={onSave} disabled={saving}>{saving ? "…" : lang === "bn" ? "সংরক্ষণ" : "Save"}</Button>
+          <Button variant="outline" onClick={onClose}>{t("p4_Cancel")}</Button>
+          <Button onClick={onSave} disabled={saving}>{saving ? "…" : t("p4_Save")}</Button>
         </SheetFooter>
       </SheetContent>
     </Sheet>
@@ -599,7 +595,7 @@ function ServiceBookingsTab({ shopId }: { shopId: string }) {
     }
     const { error } = await supabase.from("service_bookings").update({ status }).eq("id", b.id);
     if (error) return toast.error(error.message);
-    toast.success(lang === "bn" ? "আপডেট হয়েছে" : "Updated");
+    toast.success(t("p4_Updated"));
     qc.invalidateQueries({ queryKey: ["service_bookings", shopId] });
   };
 
@@ -637,9 +633,9 @@ function ServiceBookingsTab({ shopId }: { shopId: string }) {
     qc.invalidateQueries({ queryKey: ["service_bookings", shopId] });
   };
 
-  if (isLoading) return <div className="text-sm text-muted-foreground">{lang === "bn" ? "লোড হচ্ছে…" : "Loading…"}</div>;
+  if (isLoading) return <div className="text-sm text-muted-foreground">{t("p4_Loading")}</div>;
   if (bookings.length === 0) {
-    return <EmptyState icon={<CalendarClock className="h-6 w-6" />} title={lang === "bn" ? "এখনও কোনো বুকিং আসেনি" : "No bookings yet"} />;
+    return <EmptyState icon={<CalendarClock className="h-6 w-6" />} title={t("p4_NoBookings")} />;
   }
   return (
     <div className="space-y-2">
@@ -662,7 +658,7 @@ function ServiceBookingsTab({ shopId }: { shopId: string }) {
               )}
               {b.scheduled_at && (
                 <div className="mt-0.5 text-xs text-muted-foreground inline-flex items-center gap-1">
-                  <CalendarClock className="h-3 w-3" /> {new Date(b.scheduled_at).toLocaleString(lang === "bn" ? "bn-BD" : "en-US")}
+                  <CalendarClock className="h-3 w-3" /> {new Date(b.scheduled_at).toLocaleString(t("p4_Locale"))}
                 </div>
               )}
               {b.note && <div className="mt-1 text-xs italic text-muted-foreground">"{b.note}"</div>}
@@ -674,8 +670,8 @@ function ServiceBookingsTab({ shopId }: { shopId: string }) {
           <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
             <span className="rounded-full bg-muted px-2 py-0.5">
               {b.status === "completed" && b.final_amount != null
-                ? (lang === "bn" ? "সম্পন্ন মূল্য" : "Final") + `: ৳${Number(b.final_amount).toLocaleString("bn-BD")}`
-                : (lang === "bn" ? "মূল্য" : "Price") + `: ৳${Number(b.service_price).toLocaleString("bn-BD")}`}
+                ? (t("p4_FinalShort")) + `: ৳${Number(b.final_amount).toLocaleString("bn-BD")}`
+                : (t("p4_Price")) + `: ৳${Number(b.service_price).toLocaleString("bn-BD")}`}
             </span>
           </div>
           <AdvancePaymentInfoCard
@@ -700,22 +696,22 @@ function ServiceBookingsTab({ shopId }: { shopId: string }) {
                 onClick={() => setStatus(b, "completed")}
               >
                 <CheckCircle2 className="h-3.5 w-3.5" />
-                {lang === "bn" ? "সম্পন্ন ও ইনভয়েস" : "Complete & invoice"}
+                {t("p4_CompleteInvoice")}
               </Button>
             )}
             {b.status === "completed" && b.sale_id && (
               <Button size="sm" variant="outline" className="h-8 gap-1" onClick={() => printInvoice(b)}>
                 <Printer className="h-3.5 w-3.5" />
-                {lang === "bn" ? "ইনভয়েস" : "Invoice"}
+                {t("p4_Invoice")}
               </Button>
             )}
             {b.advance_amount > 0 && (
               <Button size="sm" variant="outline" onClick={() => setAdvancePaid(b, !b.advance_paid)}>
-                {b.advance_paid ? (lang === "bn" ? "অগ্রিম বাকি দেখান" : "Mark unpaid") : (lang === "bn" ? "অগ্রিম পেইড" : "Mark paid")}
+                {b.advance_paid ? (t("p4_MarkUnpaid")) : (t("p4_MarkPaid"))}
               </Button>
             )}
             <a href={`tel:${b.customer_phone}`} className="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs hover:bg-accent">
-              <Phone className="h-3 w-3" /> {lang === "bn" ? "কল" : "Call"}
+              <Phone className="h-3 w-3" /> {t("p4_Call")}
             </a>
           </div>
         </div>
@@ -739,10 +735,10 @@ function ServiceAreaPicker({ value, onChange }: { value: string[]; onChange: (v:
   const [loc, setLoc] = useState<BdLocation>({ division: null, district: null, upazila: null, area: null });
 
   const add = () => {
-    if (!loc.division) return toast.error(lang === "bn" ? "বিভাগ দিন" : "Pick a division");
+    if (!loc.division) return toast.error(t("p4_PickDivision"));
     const parts = [loc.division, loc.district, loc.upazila].filter(Boolean) as string[];
     const label = parts.join(" › ") + (loc.area?.trim() ? ` • ${loc.area.trim()}` : "");
-    if (value.includes(label)) return toast.message(lang === "bn" ? "ইতিমধ্যে যোগ আছে" : "Already added");
+    if (value.includes(label)) return toast.message(t("p4_AlreadyAdded"));
     onChange([...value, label]);
     setLoc({ division: null, district: null, upazila: null, area: null });
   };
@@ -752,7 +748,7 @@ function ServiceAreaPicker({ value, onChange }: { value: string[]; onChange: (v:
     <div className="space-y-2">
       <BdLocationPicker value={loc} onChange={setLoc} showArea={false} />
       <Button type="button" variant="outline" size="sm" onClick={add} className="gap-1">
-        <Plus className="h-3.5 w-3.5" /> {lang === "bn" ? "এই এলাকা যোগ করুন" : "Add this area"}
+        <Plus className="h-3.5 w-3.5" /> {t("p4_AddThisArea")}
       </Button>
       {value.length > 0 && (
         <div className="flex flex-wrap gap-1.5 pt-1">
