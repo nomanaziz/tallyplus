@@ -1876,6 +1876,35 @@ const T: Record<string, Tr> = {
   p7_Reports_Cash_Book: { bn: "রিপোর্ট › ক্যাশবুক", en: "Reports › Cash Book", hi: "Reports › Cash Book", ta: "Reports › Cash Book", te: "Reports › Cash Book", ur: "Reports › Cash Book", ar: "Reports › Cash Book" },
   p7_Cash_Book_Monthly_Summary: { bn: "ক্যাশবুক (মাসিক হিসাব)", en: "Cash Book (Monthly Summary)", hi: "Cash Book (Monthly Summary)", ta: "Cash Book (Monthly Summary)", te: "Cash Book (Monthly Summary)", ur: "Cash Book (Monthly Summary)", ar: "Cash Book (Monthly Summary)" },
   p7_Full_categorized_income_and_ex: { bn: "এক মাসের সব খাত-ভিত্তিক আয় ও ব্যয়ের সম্পূর্ণ হিসাব।", en: "Full categorized income and expense for the selected month.", hi: "Full categorized income and expense for the selected month.", ta: "Full categorized income and expense for the selected month.", te: "Full categorized income and expense for the selected month.", ur: "Full categorized income and expense for the selected month.", ar: "Full categorized income and expense for the selected month." },
+
+  // ── Auth entry / Login card (multi-language) ──
+  ae_h1_prefix:   { bn: "আপনার", en: "Your", hi: "आपका", ta: "உங்கள்", te: "మీ", ur: "آپ کا", ar: "حساباتك" },
+  ae_h1_and:     { bn: "ও", en: "&", hi: "और", ta: "மற்றும்", te: "మరియు", ur: "اور", ar: "و" },
+  ae_h1_suffix:  { bn: "— এক অ্যাপেই", en: "— one app", hi: "— एक ऐप में", ta: "— ஒரே ஆப்", te: "— ఒక యాప్‌లో", ur: "— ایک ایپ میں", ar: "— تطبيق واحد" },
+  ae_personalLabel: { bn: "ব্যক্তিগত হিসাব", en: "personal finances", hi: "व्यक्तिगत खाते", ta: "தனிப்பட்ட கணக்குகள்", te: "వ్యక్తిగత ఖాతాలు", ur: "ذاتی حسابات", ar: "الشخصية" },
+  ae_shopLabel:   { bn: "দোকানের হিসাব", en: "shop accounting", hi: "दुकान का हिसाब", ta: "கடை கணக்கியல்", te: "షాప్ ఖాతాలు", ur: "دکان کا حساب", ar: "وحسابات المتجر" },
+  ae_heroSub:     { bn: "ব্যক্তিগত আয়-ব্যয়, দেনা-পাওনা ও ফর্দ থেকে শুরু করে পূর্ণাঙ্গ দোকান POS — সব এখানে।", en: "From personal income–expense, lending and wishlist to a full-featured shop POS — all here.", hi: "व्यक्तिगत आय-व्यय, उधार और सूची से लेकर पूर्ण दुकान POS तक — सब यहाँ।", ta: "தனிப்பட்ட வருமான-செலவு, கடன், விருப்பப்பட்டியல் முதல் முழு கடை POS வரை — அனைத்தும் இங்கே.", te: "వ్యక్తిగత ఆదాయ-వ్యయం, రుణాలు, విష్‌లిస్ట్ నుండి పూర్తి షాప్ POS వరకు — అన్నీ ఇక్కడే.", ur: "ذاتی آمدنی-اخراجات، قرض اور خواہشات کی فہرست سے لے کر مکمل شاپ POS تک — سب یہاں۔", ar: "من الدخل والمصاريف الشخصية والديون وقوائم الرغبات إلى نقاط بيع متكاملة للمتجر — كل ذلك هنا." },
+  ae_talkExpert:  { bn: "এক্সপার্টের সাথে কথা বলুন", en: "Talk to an Expert", hi: "विशेषज्ञ से बात करें", ta: "நிபுணரிடம் பேசுங்கள்", te: "నిపుణుడితో మాట్లాడండి", ur: "ماہر سے بات کریں", ar: "تحدث إلى خبير" },
+
+  lc_loginTitle:   { bn: "Account-এ লগইন করুন", en: "Log in to your account", hi: "अपने अकाउंट में लॉगिन करें", ta: "உங்கள் கணக்கில் உள்நுழைக", te: "మీ ఖాతాలోకి లాగిన్ అవ్వండి", ur: "اپنے اکاؤنٹ میں لاگ ان کریں", ar: "سجّل الدخول إلى حسابك" },
+  lc_signupTitle:  { bn: "নতুন account তৈরি করুন", en: "Create a new account", hi: "नया अकाउंट बनाएँ", ta: "புதிய கணக்கை உருவாக்கு", te: "కొత్త ఖాతా సృష్టించండి", ur: "نیا اکاؤنٹ بنائیں", ar: "أنشئ حسابًا جديدًا" },
+  lc_tabOwner:     { bn: "ব্যবসায়িক হিসাব", en: "Shop account", hi: "व्यापारिक खाता", ta: "வணிக கணக்கு", te: "వ్యాపార ఖాతా", ur: "کاروباری اکاؤنٹ", ar: "حساب تجاري" },
+  lc_tabCustomer:  { bn: "ব্যক্তিগত হিসাব", en: "Personal account", hi: "व्यक्तिगत खाता", ta: "தனிப்பட்ட கணக்கு", te: "వ్యక్తిగత ఖాతా", ur: "ذاتی اکاؤنٹ", ar: "حساب شخصي" },
+  lc_phonePh:      { bn: "মোবাইল নম্বর (যেমন 01XXXXXXXXX বা +8801…)", en: "Mobile number (e.g. 01XXXXXXXXX or +8801…)", hi: "मोबाइल नंबर (जैसे 01XXXXXXXXX या +8801…)", ta: "மொபைல் எண் (உதா. 01XXXXXXXXX அல்லது +8801…)", te: "మొబైల్ నంబర్ (ఉదా. 01XXXXXXXXX లేదా +8801…)", ur: "موبائل نمبر (مثلاً 01XXXXXXXXX یا +8801…)", ar: "رقم الجوال (مثل 01XXXXXXXXX أو +8801…)" },
+  lc_pinPh:        { bn: "৪ সংখ্যার PIN", en: "4-digit PIN", hi: "4 अंकों का PIN", ta: "4 இலக்க PIN", te: "4 అంకెల PIN", ur: "4 ہندسوں کا PIN", ar: "رمز PIN من 4 أرقام" },
+  lc_namePh:       { bn: "আপনার নাম", en: "Your name", hi: "आपका नाम", ta: "உங்கள் பெயர்", te: "మీ పేరు", ur: "آپ کا نام", ar: "اسمك" },
+  lc_shopNamePh:   { bn: "দোকানের নাম", en: "Shop name", hi: "दुकान का नाम", ta: "கடை பெயர்", te: "షాప్ పేరు", ur: "دکان کا نام", ar: "اسم المتجر" },
+  lc_shopTypeLbl:  { bn: "দোকানের ধরন", en: "Shop type", hi: "दुकान का प्रकार", ta: "கடை வகை", te: "షాప్ రకం", ur: "دکان کی قسم", ar: "نوع المتجر" },
+  lc_loginBtn:     { bn: "লগইন", en: "Log in", hi: "लॉगिन", ta: "உள்நுழை", te: "లాగిన్", ur: "لاگ ان", ar: "تسجيل الدخول" },
+  lc_createBtn:    { bn: "Account তৈরি করুন", en: "Create account", hi: "अकाउंट बनाएँ", ta: "கணக்கை உருவாக்கு", te: "ఖాతా సృష్టించండి", ur: "اکاؤنٹ بنائیں", ar: "إنشاء حساب" },
+  lc_createLink:   { bn: "Create account", en: "Create account", hi: "अकाउंट बनाएँ", ta: "கணக்கை உருவாக்கு", te: "ఖాతా సృష్టించండి", ur: "اکاؤنٹ بنائیں", ar: "إنشاء حساب" },
+  lc_backToLogin:  { bn: "← লগইনে ফিরুন", en: "← Back to login", hi: "← लॉगिन पर लौटें", ta: "← உள்நுழைக்கு திரும்பு", te: "← లాగిన్‌కి తిరిగి", ur: "← لاگ ان پر واپس", ar: "← العودة لتسجيل الدخول" },
+  lc_forgotHint:   { bn: "PIN মনে নেই? নিচের button থেকে WhatsApp এ admin কে জানান।", en: "Forgot PIN? Use the button below to message admin on WhatsApp.", hi: "PIN भूल गए? नीचे दिए बटन से WhatsApp पर admin को बताएँ।", ta: "PIN மறந்துவிட்டதா? கீழே உள்ள பட்டனில் இருந்து WhatsApp மூலம் admin-ஐ தொடர்பு கொள்ளவும்.", te: "PIN మర్చిపోయారా? క్రింది బటన్ నుండి WhatsApp లో admin కి సందేశం పంపండి.", ur: "PIN بھول گئے؟ نیچے بٹن سے WhatsApp پر admin کو پیغام دیں۔", ar: "نسيت رمز PIN؟ استخدم الزر أدناه لمراسلة المشرف عبر واتساب." },
+  lc_forgotBtn:    { bn: "PIN ভুলে গেছেন? WhatsApp করুন", en: "Forgot PIN? WhatsApp us", hi: "PIN भूल गए? WhatsApp करें", ta: "PIN மறந்தீர்களா? WhatsApp செய்யவும்", te: "PIN మర్చిపోయారా? WhatsApp చేయండి", ur: "PIN بھول گئے؟ WhatsApp کریں", ar: "نسيت PIN؟ راسلنا عبر واتساب" },
+  lc_successTitle: { bn: "Account তৈরি হয়েছে! 🎉", en: "Account created! 🎉", hi: "अकाउंट बन गया! 🎉", ta: "கணக்கு உருவாக்கப்பட்டது! 🎉", te: "ఖాతా సృష్టించబడింది! 🎉", ur: "اکاؤنٹ بن گیا! 🎉", ar: "تم إنشاء الحساب! 🎉" },
+  lc_sampleQ:      { bn: "আপনার দোকানের জন্য কিছু sample product import করব?", en: "Import some sample products for your shop?", hi: "क्या आपकी दुकान के लिए कुछ सैंपल प्रोडक्ट इम्पोर्ट करें?", ta: "உங்கள் கடைக்கான மாதிரி தயாரிப்புகளை இறக்குமதி செய்யவா?", te: "మీ షాప్ కోసం కొన్ని నమూనా ఉత్పత్తులను దిగుమతి చేయాలా?", ur: "آپ کی دکان کے لیے کچھ نمونہ پروڈکٹس امپورٹ کریں؟", ar: "هل تريد استيراد بعض المنتجات النموذجية لمتجرك؟" },
+  lc_yesImport:    { bn: "হ্যাঁ, import করুন", en: "Yes, import", hi: "हाँ, इम्पोर्ट करें", ta: "ஆம், இறக்குமதி", te: "అవును, దిగుమతి", ur: "ہاں، امپورٹ کریں", ar: "نعم، استورد" },
+  lc_noManual:     { bn: "না, আমি নিজে যোগ করব", en: "No, I'll add manually", hi: "नहीं, मैं खुद जोड़ूँगा", ta: "இல்லை, நானே சேர்ப்பேன்", te: "కాదు, నేనే జోడిస్తాను", ur: "نہیں، میں خود شامل کروں گا", ar: "لا، سأضيفها بنفسي" },
 };
 
 // Legacy keys still referenced by older pages (kept for backward compatibility).
