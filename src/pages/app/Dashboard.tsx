@@ -2,7 +2,7 @@ import { Link } from "@/lib/router";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useShop } from "@/lib/shop";
-import { useI18n, fmtMoney, type Lang } from "@/lib/i18n";
+import { useI18n, fmtMoney, type Lang, type TKey } from "@/lib/i18n";
 import { dashboardSummaryQuery, dashboardOverviewQuery } from "@/lib/queries";
 import { Package, Truck, Globe, Clock } from "lucide-react";
 import { icons, AppIcon } from "@/lib/icons";
@@ -27,7 +27,7 @@ function rangeStart(r: Range): Date | null {
 }
 
 function Dashboard() {
-  const { lang } = useI18n();
+  const { lang, t: tr } = useI18n();
   const { current } = useShop();
   const { isOwner, isAdmin, canGroup, loading: permLoading } = usePermissions();
   const [range, setRange] = useState<Range>("today");
@@ -39,12 +39,12 @@ function Dashboard() {
   const loading = isFetching;
   const load = () => { void refetch(); };
 
-  const tabs: { v: Range; bn: string; en: string }[] = [
-    { v: "today", bn: "দিন", en: "Day" },
-    { v: "month", bn: "মাস", en: "Month" },
-    { v: "week", bn: "সপ্তাহ", en: "Week" },
-    { v: "year", bn: "বছর", en: "Year" },
-    { v: "all", bn: "সব", en: "All" },
+  const tabs: { v: Range; tKey: TKey }[] = [
+    { v: "today", tKey: "tab_day" },
+    { v: "month", tKey: "tab_month" },
+    { v: "week", tKey: "tab_week" },
+    { v: "year", tKey: "tab_year" },
+    { v: "all", tKey: "tab_all" },
   ];
 
   const isVisible = (it: SidebarItem) => {
@@ -67,7 +67,7 @@ function Dashboard() {
       <div className="rounded-xl border bg-card shadow-sm">
         <div className="flex items-center justify-between border-b px-3 py-2">
           <div className="text-sm font-semibold">
-            {lang === "bn" ? "ব্যালেন্স" : "Balance"}:{" "}
+            {tr("balance")}:{" "}
             <span className={stats.balance < 0 ? "text-destructive" : "text-success"}>
               {fmtMoney(stats.balance, lang)}
             </span>
@@ -79,7 +79,7 @@ function Dashboard() {
                 onClick={() => setRange(t.v)}
                 className={`rounded-md px-2.5 py-1 font-semibold transition-colors ${range === t.v ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
               >
-                {lang === "bn" ? t.bn : t.en}
+                {tr(t.tKey)}
               </button>
             ))}
             <div className="hidden md:contents">
@@ -89,7 +89,7 @@ function Dashboard() {
                   onClick={() => setRange(t.v)}
                   className={`rounded-md px-2.5 py-1 font-semibold transition-colors ${range === t.v ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
                 >
-                  {lang === "bn" ? t.bn : t.en}
+                  {tr(t.tKey)}
                 </button>
               ))}
             </div>
@@ -99,39 +99,39 @@ function Dashboard() {
           </div>
         </div>
         <div className="grid grid-cols-3 divide-x">
-          <Stat label={lang === "bn" ? "আজকের বিক্রি" : "Sales"} value={fmtMoney(stats.sales, lang)} tone="primary" />
-          <Stat label={lang === "bn" ? "আজকের ক্রয়" : "Purchase"} value={fmtMoney(stats.purchases, lang)} tone="primary" />
-          <Stat label={lang === "bn" ? "আজকের খরচ" : "Expense"} value={fmtMoney(stats.expenses, lang)} tone="danger" />
+          <Stat label={tr("dash_sales")} value={fmtMoney(stats.sales, lang)} tone="primary" />
+          <Stat label={tr("dash_purchase")} value={fmtMoney(stats.purchases, lang)} tone="primary" />
+          <Stat label={tr("dash_expense")} value={fmtMoney(stats.expenses, lang)} tone="danger" />
         </div>
         <div className="grid grid-cols-3 divide-x border-t">
           <div className="p-2.5 text-center">
-            <div className="text-[11px] text-muted-foreground">{lang === "bn" ? "স্টক সংখ্যা" : "Stock"}</div>
+            <div className="text-[11px] text-muted-foreground">{tr("dash_stockCount")}</div>
             <div className="mt-0.5 text-sm font-bold">{(Math.round(stats.stockValue * 100) / 100).toFixed(0)}</div>
           </div>
           <div className="p-2.5 text-center">
-            <div className="text-[11px] text-muted-foreground">{lang === "bn" ? "বাকি দিয়েছি" : "Receivable"}</div>
+            <div className="text-[11px] text-muted-foreground">{tr("dash_receivable")}</div>
             <div className="mt-0.5 text-sm font-bold text-success">{fmtMoney(stats.receivable, lang)}</div>
           </div>
           <div className="p-2.5 text-center">
-            <div className="text-[11px] text-muted-foreground">{lang === "bn" ? "বাকি নিয়েছি" : "Payable"}</div>
+            <div className="text-[11px] text-muted-foreground">{tr("dash_payable")}</div>
             <div className="mt-0.5 text-sm font-bold text-destructive">{fmtMoney(stats.payable, lang)}</div>
           </div>
         </div>
         <div className="grid grid-cols-3 divide-x border-t md:hidden">
           <Link to="/app/online-shop/orders" className="p-2.5 text-center active:bg-accent">
-            <div className="text-[11px] text-muted-foreground">{lang === "bn" ? "নতুন অর্ডার" : "New orders"}</div>
+            <div className="text-[11px] text-muted-foreground">{tr("dash_newOrders")}</div>
             <div className={`mt-0.5 text-sm font-bold ${(overview?.ordersPending ?? 0) > 0 ? "text-primary" : "text-muted-foreground"}`}>
               {overview?.ordersPending ?? 0}
             </div>
           </Link>
           <Link to="/app/customer-wishlist" className="p-2.5 text-center active:bg-accent">
-            <div className="text-[11px] text-muted-foreground">{lang === "bn" ? "নতুন ফর্দ" : "New fordo"}</div>
+            <div className="text-[11px] text-muted-foreground">{tr("dash_newFordo")}</div>
             <div className={`mt-0.5 text-sm font-bold ${(overview?.fordoNew ?? 0) > 0 ? "text-success" : "text-muted-foreground"}`}>
               {overview?.fordoNew ?? 0}
             </div>
           </Link>
           <Link to="/app/products" className="p-2.5 text-center active:bg-accent">
-            <div className="text-[11px] text-muted-foreground">{lang === "bn" ? "কম স্টক" : "Low stock"}</div>
+            <div className="text-[11px] text-muted-foreground">{tr("dash_lowStock")}</div>
             <div className={`mt-0.5 text-sm font-bold ${(overview?.productsLowStock ?? 0) > 0 ? "text-destructive" : "text-muted-foreground"}`}>
               {overview?.productsLowStock ?? 0}
             </div>
@@ -153,9 +153,9 @@ function Dashboard() {
         {menuSections.map((section) => (
           <Section
             key={section.id}
-            title={lang === "bn" ? section.bn : section.en}
+            title={tr(section.tKey)}
             items={section.items}
-            lang={lang}
+            t={tr}
           />
         ))}
       </div>
@@ -170,18 +170,19 @@ function DesktopOverview({
   overview: import("@/lib/queries").DashboardOverview | undefined;
   lang: Lang;
 }) {
+  const { t } = useI18n();
   const o = overview;
   type IconC = React.ComponentType<{ className?: string }>;
   const tiles: Array<{ to: string; label: string; value: string | number; sub?: string; img?: IconC; icon?: IconC; tone: string }> = [
-    { to: "/app/products", label: lang === "bn" ? "মোট পণ্য" : "Products", value: o?.productsTotal ?? "—", icon: Package, tone: "indigo" },
-    { to: "/app/products", label: lang === "bn" ? "কম স্টক" : "Low stock", value: o?.productsLowStock ?? "—", img: icons.alert, tone: "amber" },
-    { to: "/app/online-shop/products", label: lang === "bn" ? "অনলাইন পণ্য" : "Online products", value: o?.productsPublished ?? "—", icon: Globe, tone: "sky" },
-    { to: "/app/online-shop/orders", label: lang === "bn" ? "নতুন অর্ডার" : "New orders", value: o?.ordersPending ?? "—", img: icons.pendingOrder, tone: "emerald" },
-    { to: "/app/customer-wishlist", label: lang === "bn" ? "নতুন ফর্দ" : "New fordo", value: o?.fordoNew ?? "—", img: icons.wishlist, tone: "violet" },
-    { to: "/app/warranty", label: lang === "bn" ? "ওয়ারেন্টি" : "Warranty", value: o?.warrantyActive ?? "—", img: icons.activeWarranty, tone: "rose" },
-    { to: "/app/contacts", label: lang === "bn" ? "গ্রাহক" : "Customers", value: o?.customersCount ?? "—", img: icons.customer, tone: "blue" },
-    { to: "/app/contacts", label: lang === "bn" ? "সরবরাহকারী" : "Suppliers", value: o?.suppliersCount ?? "—", icon: Truck, tone: "orange" },
-    { to: "/app/access", label: lang === "bn" ? "কর্মচারী" : "Employees", value: o?.employeesCount ?? "—", img: icons.employee, tone: "teal" },
+    { to: "/app/products", label: t("dash_products"), value: o?.productsTotal ?? "—", icon: Package, tone: "indigo" },
+    { to: "/app/products", label: t("dash_lowStock"), value: o?.productsLowStock ?? "—", img: icons.alert, tone: "amber" },
+    { to: "/app/online-shop/products", label: t("dash_onlineProducts"), value: o?.productsPublished ?? "—", icon: Globe, tone: "sky" },
+    { to: "/app/online-shop/orders", label: t("dash_newOrders"), value: o?.ordersPending ?? "—", img: icons.pendingOrder, tone: "emerald" },
+    { to: "/app/customer-wishlist", label: t("dash_newFordo"), value: o?.fordoNew ?? "—", img: icons.wishlist, tone: "violet" },
+    { to: "/app/warranty", label: t("dash_warranty"), value: o?.warrantyActive ?? "—", img: icons.activeWarranty, tone: "rose" },
+    { to: "/app/contacts", label: t("dash_customers"), value: o?.customersCount ?? "—", img: icons.customer, tone: "blue" },
+    { to: "/app/contacts", label: t("dash_suppliers"), value: o?.suppliersCount ?? "—", icon: Truck, tone: "orange" },
+    { to: "/app/access", label: t("dash_employees"), value: o?.employeesCount ?? "—", img: icons.employee, tone: "teal" },
   ];
   return (
     <div className="space-y-4">
@@ -192,7 +193,7 @@ function DesktopOverview({
       </div>
 
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-        <PanelCard title={lang === "bn" ? "সাম্প্রতিক বিক্রি" : "Recent sales"} img={icons.transaction} to="/app/sales-ledger" lang={lang}>
+        <PanelCard title={t("recentSales")} img={icons.transaction} to="/app/sales-ledger" lang={lang}>
           {(o?.recentSales ?? []).length === 0 ? (
             <Empty lang={lang} />
           ) : (
@@ -200,7 +201,7 @@ function DesktopOverview({
               {(o?.recentSales ?? []).map((r) => (
                 <li key={r.id} className="flex items-center justify-between gap-2 py-2 text-sm">
                   <div className="min-w-0">
-                    <div className="truncate font-medium">{r.customer_name || (lang === "bn" ? "নগদ গ্রাহক" : "Walk-in")}</div>
+                    <div className="truncate font-medium">{r.customer_name || t("walkInCustomer")}</div>
                     <div className="text-[11px] text-muted-foreground">#{r.invoice_no ?? "—"} · {timeAgo(r.created_at, lang)}</div>
                   </div>
                   <div className="font-bold tabular-nums">{fmtMoney(r.total, lang)}</div>
@@ -210,7 +211,7 @@ function DesktopOverview({
           )}
         </PanelCard>
 
-        <PanelCard title={lang === "bn" ? "নতুন অনলাইন অর্ডার" : "New online orders"} img={icons.pendingOrder} to="/app/online-shop/orders" lang={lang}>
+        <PanelCard title={t("newOnlineOrders")} img={icons.pendingOrder} to="/app/online-shop/orders" lang={lang}>
           {(o?.recentOrders ?? []).length === 0 ? (
             <Empty lang={lang} />
           ) : (
@@ -228,7 +229,7 @@ function DesktopOverview({
           )}
         </PanelCard>
 
-        <PanelCard title={lang === "bn" ? "সাম্প্রতিক ফর্দ" : "Recent fordo"} img={icons.wishlist} to="/app/customer-wishlist" lang={lang}>
+        <PanelCard title={t("recentFordo")} img={icons.wishlist} to="/app/customer-wishlist" lang={lang}>
           {(o?.recentWishlists ?? []).length === 0 ? (
             <Empty lang={lang} />
           ) : (
@@ -245,7 +246,7 @@ function DesktopOverview({
           )}
         </PanelCard>
 
-        <PanelCard title={lang === "bn" ? "কম স্টক পণ্য" : "Low-stock products"} img={icons.alert} to="/app/products" lang={lang}>
+        <PanelCard title={t("lowStockProducts")} img={icons.alert} to="/app/products" lang={lang}>
           {(o?.lowStockProducts ?? []).length === 0 ? (
             <Empty lang={lang} />
           ) : (
@@ -263,7 +264,7 @@ function DesktopOverview({
           )}
         </PanelCard>
 
-        <PanelCard title={lang === "bn" ? "মেয়াদোত্তীর্ণ হবে শীঘ্রই" : "Warranty expiring soon"} icon={Clock} to="/app/warranty" lang={lang}>
+        <PanelCard title={t("warrantyExpiring")} icon={Clock} to="/app/warranty" lang={lang}>
           {(o?.expiringWarranty ?? []).length === 0 ? (
             <Empty lang={lang} />
           ) : (
@@ -298,21 +299,21 @@ const TONES: Record<string, ToneStyle> = {
 function KpiTile({
   to, label, value, sub, icon: Icon, img: Img, tone,
 }: { to: string; label: string; value: string | number; sub?: string; icon?: React.ComponentType<{ className?: string }>; img?: React.ComponentType<{ className?: string }>; tone: string }) {
-  const t = TONES[tone] ?? TONES.indigo;
-  const { lang } = useI18n();
+  const tone_ = TONES[tone] ?? TONES.indigo;
+  const { t } = useI18n();
   return (
     <Link
       to={to as never}
-      className={`group flex flex-col justify-between rounded-xl border ${t.border} ${t.card} p-3 shadow-sm transition hover:shadow-md hover:-translate-y-0.5 min-h-[120px]`}
+      className={`group flex flex-col justify-between rounded-xl border ${tone_.border} ${tone_.card} p-3 shadow-sm transition hover:shadow-md hover:-translate-y-0.5 min-h-[120px]`}
     >
       <div className="flex items-start justify-between gap-2">
         <span className="truncate text-xs font-semibold text-foreground/80">{label}</span>
         {Img ? (
-          <span className={`flex h-9 w-9 flex-none items-center justify-center rounded-lg ${t.badge}`}>
+          <span className={`flex h-9 w-9 flex-none items-center justify-center rounded-lg ${tone_.badge}`}>
             <Img className="h-5 w-5 icon-inherit" />
           </span>
         ) : Icon ? (
-          <span className={`flex h-9 w-9 flex-none items-center justify-center rounded-lg ${t.badge}`}>
+          <span className={`flex h-9 w-9 flex-none items-center justify-center rounded-lg ${tone_.badge}`}>
             <Icon className="h-5 w-5 icon-inherit" />
           </span>
         ) : null}
@@ -320,8 +321,8 @@ function KpiTile({
       <div>
         <div className="text-[26px] leading-tight font-extrabold tabular-nums text-foreground">{value}</div>
         {sub ? <div className="text-[10px] text-foreground/70">{sub}</div> : null}
-        <div className={`mt-1.5 text-[11px] font-medium ${t.link} group-hover:underline`}>
-          {lang === "bn" ? "বিস্তারিত দেখুন →" : "View details →"}
+        <div className={`mt-1.5 text-[11px] font-medium ${tone_.link} group-hover:underline`}>
+          {t("viewDetails")}
         </div>
       </div>
     </Link>
@@ -331,6 +332,8 @@ function KpiTile({
 function PanelCard({
   title, icon: Icon, img: Img, to, lang, children,
 }: { title: string; icon?: React.ComponentType<{ className?: string }>; img?: React.ComponentType<{ className?: string }>; to: string; lang: Lang; children: React.ReactNode }) {
+  const { t } = useI18n();
+  void lang;
   return (
     <div className="rounded-xl border bg-card p-3 shadow-sm">
       <div className="flex items-center justify-between border-b pb-2">
@@ -339,7 +342,7 @@ function PanelCard({
           {title}
         </div>
         <Link to={to as never} className="text-[11px] font-semibold text-primary hover:underline">
-          {lang === "bn" ? "সব দেখুন →" : "View all →"}
+          {t("viewAll")}
         </Link>
       </div>
       <div className="pt-1">{children}</div>
@@ -348,9 +351,11 @@ function PanelCard({
 }
 
 function Empty({ lang }: { lang: Lang }) {
+  const { t } = useI18n();
+  void lang;
   return (
     <div className="py-6 text-center text-xs text-muted-foreground">
-      {lang === "bn" ? "কোনো তথ্য নেই" : "No data yet"}
+      {t("noData")}
     </div>
   );
 }
@@ -358,22 +363,26 @@ function Empty({ lang }: { lang: Lang }) {
 function timeAgo(iso: string, lang: Lang) {
   const diff = Date.now() - new Date(iso).getTime();
   const m = Math.floor(diff / 60000);
-  if (m < 1) return lang === "bn" ? "এখনই" : "just now";
-  if (m < 60) return `${m}${lang === "bn" ? " মি" : "m"}`;
+  const justNow: Record<Lang, string> = { bn: "এখনই", en: "just now", hi: "अभी", ta: "இப்போது", te: "ఇప్పుడే", ur: "ابھی", ar: "الآن" };
+  const min: Record<Lang, string> = { bn: " মি", en: "m", hi: "मि", ta: "நி", te: "ని", ur: "م", ar: "د" };
+  const hr:  Record<Lang, string> = { bn: " ঘ", en: "h", hi: "घं", ta: "ம", te: "గ", ur: "گھ", ar: "س" };
+  const day: Record<Lang, string> = { bn: " দি", en: "d", hi: "दि", ta: "நா", te: "రో", ur: "د", ar: "ي" };
+  if (m < 1) return justNow[lang];
+  if (m < 60) return `${m}${min[lang]}`;
   const h = Math.floor(m / 60);
-  if (h < 24) return `${h}${lang === "bn" ? " ঘ" : "h"}`;
+  if (h < 24) return `${h}${hr[lang]}`;
   const d = Math.floor(h / 24);
-  return `${d}${lang === "bn" ? " দি" : "d"}`;
+  return `${d}${day[lang]}`;
 }
 
 function Section({
   title,
   items,
-  lang,
+  t,
 }: {
   title: string;
-  items: { to: string; icon: React.ComponentType<{ className?: string }>; bn: string; en: string }[];
-  lang: Lang;
+  items: { to: string; icon: React.ComponentType<{ className?: string }>; tKey: TKey }[];
+  t: (k: TKey) => string;
 }) {
   return (
     <div className="rounded-xl border bg-card p-3 shadow-sm">
@@ -388,7 +397,7 @@ function Section({
             <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm">
               <it.icon className="h-6 w-6 icon-inherit" />
             </span>
-            <span className="text-[11px] font-semibold leading-tight">{lang === "bn" ? it.bn : it.en}</span>
+            <span className="text-[11px] font-semibold leading-tight">{t(it.tKey)}</span>
           </Link>
         ))}
       </div>
