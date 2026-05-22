@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { Lang } from "@/lib/i18n";
+import { useI18n, type Lang } from "@/lib/i18n";
 import { supabase } from "@/integrations/supabase/client";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
@@ -23,6 +23,7 @@ export function ShopTypePicker({
   lang?: Lang;
   label?: string;
 }) {
+  const { t } = useI18n();
   const [types, setTypes] = useState<ShopType[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -57,12 +58,8 @@ export function ShopTypePicker({
           <SelectValue
             placeholder={
               loading
-                ? lang === "bn"
-                  ? "লোড হচ্ছে..."
-                  : "Loading..."
-                : lang === "bn"
-                  ? "দোকানের ধরন বাছাই করুন"
-                  : "Choose shop type"
+                ? t("p7_Loading_2")
+                : t("p7_Choose_shop_type")
             }
           />
         </SelectTrigger>

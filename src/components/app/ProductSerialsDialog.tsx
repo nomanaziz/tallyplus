@@ -29,7 +29,7 @@ type Props = {
 };
 
 export function ProductSerialsDialog({ open, onOpenChange, productId, productName }: Props) {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const { current } = useShop();
   const [rows, setRows] = useState<SerialRow[]>([]);
   const [loading, setLoading] = useState(false);
@@ -63,7 +63,7 @@ export function ProductSerialsDialog({ open, onOpenChange, productId, productNam
     if (!current || !productId) return;
     const lines = bulkText.split(/\r?\n|,/).map((s) => s.trim()).filter(Boolean);
     if (lines.length === 0) {
-      toast.error(lang === "bn" ? "অন্তত একটি সিরিয়াল দিন" : "Enter at least one serial");
+      toast.error(t("p7_Enter_at_least_one_serial"));
       return;
     }
     setBusy(true);
@@ -87,7 +87,7 @@ export function ProductSerialsDialog({ open, onOpenChange, productId, productNam
   }
 
   async function removeRow(id: string) {
-    if (!confirm(lang === "bn" ? "ডিলিট করবেন? স্টক ১ কমে যাবে।" : "Delete? Stock will decrease by 1.")) return;
+    if (!confirm(t("p7_Delete_Stock_will_decrease_by_"))) return;
     // Find the row first to know its status — only in_stock serials should reduce product stock
     const target = rows.find((r) => r.id === id);
     const { error } = await supabase.from("product_serials").delete().eq("id", id);
@@ -120,34 +120,34 @@ export function ProductSerialsDialog({ open, onOpenChange, productId, productNam
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{lang === "bn" ? "সিরিয়াল / IMEI ম্যানেজ" : "Manage Serials / IMEI"}</DialogTitle>
+          <DialogTitle>{t("p7_Manage_Serials_IMEI")}</DialogTitle>
           <DialogDescription>{productName}</DialogDescription>
         </DialogHeader>
 
         {/* Bulk add */}
         <div className="rounded-lg border bg-muted/30 p-3 space-y-3">
           <div className="text-sm font-semibold">
-            {lang === "bn" ? "নতুন সিরিয়াল যোগ করুন" : "Add new serials"}
+            {t("p7_Add_new_serials")}
           </div>
           <div className="grid gap-1.5">
             <Label className="text-xs">
-              {lang === "bn" ? "IMEI/সিরিয়াল (প্রতি লাইনে একটি, অথবা কমা দিয়ে আলাদা)" : "IMEI/Serial (one per line or comma-separated)"}
+              {t("p7_IMEI_Serial_one_per_line_or_co")}
             </Label>
             <Textarea rows={3} value={bulkText} onChange={(e) => setBulkText(e.target.value)} placeholder="354897109876543" />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="grid gap-1.5">
-              <Label className="text-xs">{lang === "bn" ? "প্রতিটির ক্রয়মূল্য" : "Cost price each"}</Label>
+              <Label className="text-xs">{t("p7_Cost_price_each")}</Label>
               <Input type="number" value={bulkCost} onChange={(e) => setBulkCost(e.target.value)} placeholder="0" />
             </div>
             <div className="grid gap-1.5">
-              <Label className="text-xs">{lang === "bn" ? "ওয়ারেন্টি শেষ তারিখ" : "Warranty end date"}</Label>
+              <Label className="text-xs">{t("p7_Warranty_end_date")}</Label>
               <Input type="date" value={bulkWarranty} onChange={(e) => setBulkWarranty(e.target.value)} />
             </div>
           </div>
           <Button onClick={bulkAdd} disabled={busy} className="w-full gap-2">
             <Plus className="h-4 w-4" />
-            {lang === "bn" ? "যোগ করুন" : "Add"}
+            {t("p7_Add_2")}
           </Button>
         </div>
 
@@ -162,7 +162,7 @@ export function ProductSerialsDialog({ open, onOpenChange, productId, productNam
             <div className="py-6 text-center text-sm text-muted-foreground">...</div>
           ) : rows.length === 0 ? (
             <div className="rounded-lg border border-dashed py-6 text-center text-sm text-muted-foreground">
-              {lang === "bn" ? "কোন সিরিয়াল যোগ করা হয়নি" : "No serials added"}
+              {t("p7_No_serials_added")}
             </div>
           ) : (
             <ul className="divide-y rounded-lg border">
@@ -192,7 +192,7 @@ export function ProductSerialsDialog({ open, onOpenChange, productId, productNam
         <div className="flex justify-end pt-2">
           <Button variant="outline" onClick={() => onOpenChange(false)} className="gap-1.5">
             <X className="h-4 w-4" />
-            {lang === "bn" ? "বন্ধ করুন" : "Close"}
+            {t("p7_Close_2")}
           </Button>
         </div>
       </DialogContent>

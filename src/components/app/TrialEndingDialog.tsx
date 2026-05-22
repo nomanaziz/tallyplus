@@ -14,7 +14,7 @@ const KEY_WARN = "trial_popup_warn_on";
 const KEY_EXPIRED = "trial_popup_expired_seen";
 
 export function TrialEndingDialog() {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const { loading, isTrial, isExpired, isExpiringSoon, daysLeft } = useSubscriptionStatus();
   const [open, setOpen] = useState(false);
   const [variant, setVariant] = useState<"warn" | "expired">("warn");
@@ -51,20 +51,18 @@ export function TrialEndingDialog() {
             {variant === "expired" ? (
               <>
                 <AlertTriangle className="h-5 w-5 text-destructive" />
-                {lang === "bn" ? "ফ্রি ট্রায়াল শেষ" : "Free trial ended"}
+                {t("p7_Free_trial_ended")}
               </>
             ) : (
               <>
                 <Sparkles className="h-5 w-5 text-amber-600" />
-                {lang === "bn" ? "আপনার ট্রায়ালের মেয়াদ শেষের পথে" : "Your trial is ending soon"}
+                {t("p7_Your_trial_is_ending_soon")}
               </>
             )}
           </DialogTitle>
           <DialogDescription className="pt-2 text-sm leading-relaxed">
             {variant === "expired"
-              ? (lang === "bn"
-                  ? "আপনার ফ্রি ট্রায়াল শেষ হয়ে গেছে। এখন থেকে আপনি Free প্ল্যানে আছেন (সীমিত ব্যবহার)। সব ফিচার পেতে যেকোনো paid plan নিন।"
-                  : "Your free trial has ended. You are now on the Free plan with limited usage. Subscribe to a paid plan to unlock everything.")
+              ? (t("p7_Your_free_trial_has_ended_You_"))
               : (lang === "bn"
                   ? `আপনার ফ্রি ট্রায়াল আর মাত্র ${daysLeft} দিন বাকি। মেয়াদ শেষ হলে আপনি automatic Free প্ল্যানে চলে যাবেন। সব ফিচার চালু রাখতে এখনই subscribe করুন।`
                   : `Your free trial ends in ${daysLeft} day${daysLeft === 1 ? "" : "s"}. After that you will be moved to the Free plan automatically. Subscribe now to keep all features.`)}
@@ -72,11 +70,11 @@ export function TrialEndingDialog() {
         </DialogHeader>
         <DialogFooter className="gap-2 sm:gap-2">
           <Button variant="ghost" onClick={() => setOpen(false)}>
-            {lang === "bn" ? "পরে দেখব" : "Later"}
+            {t("p7_Later")}
           </Button>
           <Button asChild>
             <Link to="/app/subscribe" onClick={() => setOpen(false)}>
-              {lang === "bn" ? "Plan দেখুন" : "View plans"}
+              {t("p7_View_plans")}
             </Link>
           </Button>
         </DialogFooter>

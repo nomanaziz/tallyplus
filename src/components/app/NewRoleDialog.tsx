@@ -19,7 +19,7 @@ export function NewRoleDialog({
   onOpenChange: (v: boolean) => void;
   onCreated?: (role: { id: string; name: string; permissions: PermissionMap }) => void;
 }) {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const { current } = useShop();
   const [name, setName] = useState("");
   const [perms, setPerms] = useState<PermissionMap>({});
@@ -33,7 +33,7 @@ export function NewRoleDialog({
   const save = async () => {
     if (!current) return;
     if (!name.trim()) {
-      toast.error(lang === "bn" ? "পদবীর নাম দিন" : "Role name required");
+      toast.error(t("p7_Role_name_required"));
       return;
     }
     setBusy(true);
@@ -47,7 +47,7 @@ export function NewRoleDialog({
       toast.error(error.message);
       return;
     }
-    toast.success(lang === "bn" ? "পদবী যোগ হয়েছে" : "Role added");
+    toast.success(t("p7_Role_added"));
     onCreated?.(data as any);
     reset();
     onOpenChange(false);
@@ -67,7 +67,7 @@ export function NewRoleDialog({
         </DialogHeader>
         <div className="max-h-[70vh] overflow-y-auto px-5 py-4">
           <Label className="text-sm">
-            {lang === "bn" ? "পদবীর নাম" : "Role name"} <span className="text-rose-500">*</span>
+            {t("p7_Role_name")} <span className="text-rose-500">*</span>
           </Label>
           <Input
             value={name}
@@ -77,7 +77,7 @@ export function NewRoleDialog({
           />
 
           <div className="mt-5 mb-2 text-sm font-semibold">
-            {lang === "bn" ? "যেসব ফিচারে এক্সেস পাবে" : "Feature access"}
+            {t("p7_Feature_access")}
           </div>
           <div className="divide-y rounded-md border">
             {FEATURE_GROUPS.map((g) => {
@@ -103,7 +103,7 @@ export function NewRoleDialog({
             disabled={busy}
             className="h-11 w-full bg-primary text-primary-foreground hover:bg-primary/90"
           >
-            {busy ? "..." : lang === "bn" ? "সেভ করুন" : "Save"}
+            {busy ? "..." : t("p7_Save_4")}
           </Button>
         </div>
       </DialogContent>

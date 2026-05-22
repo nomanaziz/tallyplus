@@ -12,16 +12,16 @@ type Props = {
 };
 
 export function AdvancePaymentInfoCard({ amount, paid, method, txnId, payerPhone, customerPhone }: Props) {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   if (!amount || amount <= 0) return null;
   const sender = (payerPhone && payerPhone.trim()) || customerPhone;
 
   const copy = async (val: string, label: string) => {
     try {
       await navigator.clipboard.writeText(val);
-      toast.success((lang === "bn" ? "কপি হয়েছে — " : "Copied — ") + label);
+      toast.success((t("p7_Copied")) + label);
     } catch {
-      toast.error(lang === "bn" ? "কপি ব্যর্থ" : "Copy failed");
+      toast.error(t("p7_Copy_failed"));
     }
   };
 
@@ -30,14 +30,14 @@ export function AdvancePaymentInfoCard({ amount, paid, method, txnId, payerPhone
       <div className="flex items-center justify-between gap-2 font-semibold">
         <span className="inline-flex items-center gap-1">
           <BadgeDollarSign className="h-3.5 w-3.5" />
-          {lang === "bn" ? "অগ্রিম পেমেন্ট" : "Advance payment"}
+          {t("p7_Advance_payment")}
           {method && <span className="ml-1 rounded-full bg-background/80 px-1.5 py-0.5 text-[10px] uppercase tracking-wide">{method}</span>}
         </span>
-        <span>৳{Number(amount).toLocaleString("bn-BD")} {paid ? (lang === "bn" ? "(পেইড)" : "(paid)") : (lang === "bn" ? "(বাকি)" : "(unpaid)")}</span>
+        <span>৳{Number(amount).toLocaleString("bn-BD")} {paid ? (t("p7_paid")) : (t("p7_unpaid"))}</span>
       </div>
       <div className="mt-2 grid gap-1.5 sm:grid-cols-2">
-        <CopyRow label={lang === "bn" ? "পাঠানো নাম্বার" : "Sender number"} value={sender} onCopy={() => copy(sender, lang === "bn" ? "নাম্বার" : "number")} />
-        <CopyRow label={lang === "bn" ? "ট্রানজেকশন আইডি" : "Transaction ID"} value={txnId ?? "—"} disabled={!txnId} onCopy={() => txnId && copy(txnId, "TxnID")} />
+        <CopyRow label={t("p7_Sender_number")} value={sender} onCopy={() => copy(sender, t("p7_number"))} />
+        <CopyRow label={t("p7_Transaction_ID")} value={txnId ?? "—"} disabled={!txnId} onCopy={() => txnId && copy(txnId, "TxnID")} />
       </div>
     </div>
   );

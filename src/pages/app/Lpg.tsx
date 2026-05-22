@@ -48,7 +48,7 @@ const TYPE_LABELS_EN: Record<string, string> = {
 
 export default function LpgPage() {
   const { current } = useShop();
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const tr = (bn: string, en: string) => (lang === "bn" ? bn : en);
 
   const [types, setTypes] = useState<BottleType[]>([]);
@@ -434,7 +434,7 @@ function MovementDialog({
   shopId: string; onSaved: () => void;
   initialType?: MoveType; initialBottleId?: string;
 }) {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const tr = (bn: string, en: string) => (lang === "bn" ? bn : en);
   const [tab, setTab] = useState<MoveType>("refill");
   const [bottleId, setBottleId] = useState<string>("");
@@ -587,7 +587,7 @@ function MovementDialog({
 
 /* ---------- Bottle type dialog ---------- */
 function BottleTypeDialog({ open, onOpenChange, shopId, onSaved }: { open: boolean; onOpenChange: (v: boolean) => void; shopId: string; onSaved: () => void }) {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const tr = (bn: string, en: string) => (lang === "bn" ? bn : en);
   const [name, setName] = useState("");
   const [size, setSize] = useState("");
@@ -631,7 +631,7 @@ function BottleTypeDialog({ open, onOpenChange, shopId, onSaved }: { open: boole
 
 /* ---------- Delivery man dialog ---------- */
 function DeliveryManDialog({ open, onOpenChange, shopId, onSaved }: { open: boolean; onOpenChange: (v: boolean) => void; shopId: string; onSaved: () => void }) {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const tr = (bn: string, en: string) => (lang === "bn" ? bn : en);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");

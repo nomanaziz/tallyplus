@@ -17,7 +17,7 @@ import { toast } from "sonner";
 
 
 function ShopsPage() {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const { shops, current, setCurrent, refresh: refreshShops } = useShop();
   const { signOut, user } = useAuth();
   const nav = useNavigate();
@@ -46,12 +46,12 @@ function ShopsPage() {
 
   const transferLabel = (status: string): { text: string; cls: string } | null => {
     const map: Record<string, { text: string; cls: string }> = {
-      pending_payment: { text: lang === "bn" ? "পেমেন্ট যাচাই বাকি" : "Awaiting payment review", cls: "bg-amber-100 text-amber-800 border-amber-200" },
-      pending_admin: { text: lang === "bn" ? "Admin verify চলছে" : "Pending admin", cls: "bg-purple-100 text-purple-800 border-purple-200" },
-      pending_recipient: { text: lang === "bn" ? "নতুন owner accept করেননি" : "Awaiting recipient", cls: "bg-blue-100 text-blue-800 border-blue-200" },
-      approved: { text: lang === "bn" ? "হস্তান্তর সম্পন্ন" : "Transferred", cls: "bg-emerald-100 text-emerald-800 border-emerald-200" },
-      rejected_admin: { text: lang === "bn" ? "প্রত্যাখ্যাত" : "Rejected", cls: "bg-rose-100 text-rose-800 border-rose-200" },
-      rejected_recipient: { text: lang === "bn" ? "Recipient প্রত্যাখ্যান" : "Recipient rejected", cls: "bg-rose-100 text-rose-800 border-rose-200" },
+      pending_payment: { text: t("p7_Awaiting_payment_review"), cls: "bg-amber-100 text-amber-800 border-amber-200" },
+      pending_admin: { text: t("p7_Pending_admin"), cls: "bg-purple-100 text-purple-800 border-purple-200" },
+      pending_recipient: { text: t("p7_Awaiting_recipient"), cls: "bg-blue-100 text-blue-800 border-blue-200" },
+      approved: { text: t("p7_Transferred"), cls: "bg-emerald-100 text-emerald-800 border-emerald-200" },
+      rejected_admin: { text: t("p7_Rejected_2"), cls: "bg-rose-100 text-rose-800 border-rose-200" },
+      rejected_recipient: { text: t("p7_Recipient_rejected"), cls: "bg-rose-100 text-rose-800 border-rose-200" },
     };
     if (status === "approved") {
       return map.approved; // show recently
@@ -101,18 +101,16 @@ function ShopsPage() {
           onClick={() => signOut().then(() => nav({ to: "/" }))}
         >
           <LogOut className="mr-2 h-4 w-4" />
-          {lang === "bn" ? "লগআউট" : "Log out"}
+          {t("p7_Log_out")}
         </Button>
       </header>
 
       <div className="container px-4 py-6">
         <h1 className="mb-1 text-center text-2xl font-extrabold">
-          {lang === "bn" ? "দোকান সিলেক্ট করুন" : "Select a Shop"}
+          {t("p7_Select_a_Shop")}
         </h1>
         <p className="mb-6 text-center text-sm text-muted-foreground">
-          {lang === "bn"
-            ? "একাধিক দোকান থাকলে যেকোনো একটি বেছে নিন"
-            : "Choose one of your shops to continue"}
+          {t("p7_Choose_one_of_your_shops_to_co")}
         </p>
 
         <p className="mb-4 text-center text-xs text-muted-foreground">
@@ -153,7 +151,7 @@ function ShopsPage() {
                   <div className="min-w-0 flex-1">
                     <div className="truncate font-bold">{s.name}</div>
                     <div className="truncate text-xs text-muted-foreground">
-                      {s.address || (lang === "bn" ? "ঠিকানা যোগ করা হয়নি" : "No address")}
+                      {s.address || (t("p7_No_address"))}
                     </div>
                   </div>
                     {active && <CheckCircle2 className="h-5 w-5 flex-none text-primary" />}
@@ -165,8 +163,8 @@ function ShopsPage() {
                       className="h-10 flex-1 font-semibold"
                   >
                     {active
-                      ? lang === "bn" ? "বর্তমান দোকান" : "Current Shop"
-                      : lang === "bn" ? "সিলেক্ট করুন" : "Select"}
+                      ? t("p7_Current_Shop")
+                      : t("p7_Select_2")}
                   </Button>
                   {user?.id === s.owner_id && (
                     <>
@@ -177,8 +175,8 @@ function ShopsPage() {
                         disabled={hasPending}
                         onClick={() => setTransferTarget({ id: s.id, name: s.name })}
                         title={hasPending
-                          ? (lang === "bn" ? "একটি request ইতিমধ্যে চলছে" : "A transfer request is already in progress")
-                          : (lang === "bn" ? "দোকান হস্তান্তর" : "Transfer shop")}
+                          ? (t("p7_A_transfer_request_is_already_"))
+                          : (t("p7_Transfer_shop"))}
                       >
                         <ArrowRightLeft className="h-4 w-4" />
                       </Button>
@@ -187,7 +185,7 @@ function ShopsPage() {
                         size="icon"
                         className="h-10 w-10 border-rose-300 text-rose-600 hover:bg-rose-50 hover:text-rose-700"
                         onClick={() => setDelTarget({ id: s.id, name: s.name })}
-                        title={lang === "bn" ? "দোকান মুছুন" : "Delete shop"}
+                        title={t("p7_Delete_shop")}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -214,8 +212,8 @@ function ShopsPage() {
             </div>
             <span className="font-semibold">
               {atLimit
-                ? (lang === "bn" ? "Plan upgrade করুন" : "Upgrade plan to add")
-                : (lang === "bn" ? "নতুন দোকান যুক্ত করুন" : "Add new shop")}
+                ? (t("p7_Upgrade_plan_to_add"))
+                : (t("p7_Add_new_shop"))}
             </span>
             <span className="text-xs">
               {lang === "bn" ? `সর্বোচ্চ ${limit} টি অনুমোদিত` : `Max ${limit} allowed`}

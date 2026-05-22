@@ -18,7 +18,7 @@ export function UpdateStockDialog({
   currentStock: number;
   onSave: (newStock: number) => Promise<void> | void;
 }) {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const [val, setVal] = useState(0);
   const [busy, setBusy] = useState(false);
 
@@ -37,7 +37,7 @@ export function UpdateStockDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>{lang === "bn" ? "স্টক আপডেট" : "Update Stock"}</DialogTitle>
+          <DialogTitle>{t("p7_Update_Stock")}</DialogTitle>
         </DialogHeader>
         <div className="flex items-center gap-3 border-b pb-3">
           <div className="flex h-10 w-10 flex-none items-center justify-center rounded-md bg-muted">
@@ -72,7 +72,7 @@ export function UpdateStockDialog({
         </div>
         <Button onClick={handleSave} disabled={busy} className="h-11 bg-primary text-primary-foreground hover:opacity-90">
           <Save className="mr-2 h-4 w-4" />
-          {busy ? "..." : lang === "bn" ? "পণ্য সংখ্যা আপডেট করুন" : "Update stock count"}
+          {busy ? "..." : t("p7_Update_stock_count")}
         </Button>
       </DialogContent>
     </Dialog>

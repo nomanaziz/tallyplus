@@ -35,7 +35,7 @@ export function BarcodeScannerButton({
   className?: string;
   label?: string;
 }) {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const [open, setOpen] = useState(false);
 
   const handle = (code: string) => {
@@ -51,12 +51,12 @@ export function BarcodeScannerButton({
         variant={variant}
         size={size}
         className={className}
-        aria-label={label || (lang === "bn" ? "বারকোড স্ক্যান" : "Scan barcode")}
+        aria-label={label || (t("p7_Scan_barcode"))}
         onClick={() => setOpen(true)}
       >
         <ScanLine className="h-4 w-4" />
         {size !== "icon" && (
-          <span className="ml-1.5">{label || (lang === "bn" ? "স্ক্যান" : "Scan")}</span>
+          <span className="ml-1.5">{label || (t("p7_Scan"))}</span>
         )}
       </Button>
       <ScannerDialog open={open} onOpenChange={setOpen} onDetected={handle} />
@@ -73,24 +73,24 @@ function ScannerDialog({
   onOpenChange: (v: boolean) => void;
   onDetected: (code: string) => void;
 }) {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const [tab, setTab] = useState<"camera" | "hardware">("camera");
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>{lang === "bn" ? "বারকোড স্ক্যানার" : "Barcode Scanner"}</DialogTitle>
+          <DialogTitle>{t("p7_Barcode_Scanner")}</DialogTitle>
         </DialogHeader>
         <Tabs value={tab} onValueChange={(v) => setTab(v as any)}>
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="camera">
               <Camera className="mr-1.5 h-4 w-4" />
-              {lang === "bn" ? "ক্যামেরা" : "Camera"}
+              {t("p7_Camera")}
             </TabsTrigger>
             <TabsTrigger value="hardware">
               <Keyboard className="mr-1.5 h-4 w-4" />
-              {lang === "bn" ? "হার্ডওয়্যার" : "Hardware"}
+              {t("p7_Hardware")}
             </TabsTrigger>
           </TabsList>
           <TabsContent value="camera" className="mt-3">
@@ -106,7 +106,7 @@ function ScannerDialog({
 }
 
 function CameraPane({ onDetected }: { onDetected: (code: string) => void }) {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const controlsRef = useRef<IScannerControls | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -143,9 +143,7 @@ function CameraPane({ onDetected }: { onDetected: (code: string) => void }) {
         if (!cancelled) {
           setError(
             e?.name === "NotAllowedError"
-              ? lang === "bn"
-                ? "ক্যামেরার অনুমতি দিন।"
-                : "Camera permission denied."
+              ? t("p7_Camera_permission_denied")
               : (e?.message ?? "Camera error"),
           );
         }
@@ -174,9 +172,7 @@ function CameraPane({ onDetected }: { onDetected: (code: string) => void }) {
       <div className="rounded-md border border-destructive/40 bg-destructive/10 p-4 text-sm">
         <p className="font-medium text-destructive">{error}</p>
         <p className="mt-1 text-muted-foreground">
-          {lang === "bn"
-            ? "অথবা হার্ডওয়্যার ট্যাবে গিয়ে USB স্ক্যানার ব্যবহার করুন।"
-            : "Or switch to the Hardware tab to use a USB scanner."}
+          {t("p7_Or_switch_to_the_Hardware_tab_")}
         </p>
       </div>
     );
@@ -192,12 +188,12 @@ function CameraPane({ onDetected }: { onDetected: (code: string) => void }) {
       </div>
       <div className="flex items-center justify-between">
         <p className="text-xs text-muted-foreground">
-          {lang === "bn" ? "বারকোড ক্যামেরার সামনে ধরুন" : "Hold a barcode in front of the camera"}
+          {t("p7_Hold_a_barcode_in_front_of_the")}
         </p>
         {torchSupported && (
           <Button type="button" variant="ghost" size="sm" onClick={toggleTorch}>
             {torchOn ? <ZapOff className="mr-1 h-4 w-4" /> : <Zap className="mr-1 h-4 w-4" />}
-            {lang === "bn" ? "টর্চ" : "Torch"}
+            {t("p7_Torch")}
           </Button>
         )}
       </div>
@@ -206,7 +202,7 @@ function CameraPane({ onDetected }: { onDetected: (code: string) => void }) {
 }
 
 function HardwarePane({ open, onDetected }: { open: boolean; onDetected: (code: string) => void }) {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [val, setVal] = useState("");
 
@@ -217,9 +213,7 @@ function HardwarePane({ open, onDetected }: { open: boolean; onDetected: (code: 
   return (
     <div className="space-y-3">
       <p className="text-sm text-muted-foreground">
-        {lang === "bn"
-          ? "USB স্ক্যানার সংযুক্ত করুন, তারপর বারকোডে ট্রিগার চাপুন। নিচের বক্সে ফোকাস থাকতে হবে।"
-          : "Connect a USB scanner, then trigger a scan. Keep the field below focused."}
+        {t("p7_Connect_a_USB_scanner_then_tri")}
       </p>
       <Input
         ref={inputRef}
@@ -232,7 +226,7 @@ function HardwarePane({ open, onDetected }: { open: boolean; onDetected: (code: 
             setVal("");
           }
         }}
-        placeholder={lang === "bn" ? "এখানে স্ক্যান করুন বা টাইপ করুন..." : "Scan or type here..."}
+        placeholder={t("p7_Scan_or_type_here")}
         autoFocus
       />
       <div className="flex justify-end">
@@ -247,7 +241,7 @@ function HardwarePane({ open, onDetected }: { open: boolean; onDetected: (code: 
             }
           }}
         >
-          {lang === "bn" ? "ব্যবহার করুন" : "Use"}
+          {t("p7_Use")}
         </Button>
       </div>
     </div>

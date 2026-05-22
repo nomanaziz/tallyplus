@@ -14,7 +14,7 @@ type Banner = {
 };
 
 export function DashboardBannerCarousel() {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true, align: "start" });
   const [selected, setSelected] = useState(0);
 

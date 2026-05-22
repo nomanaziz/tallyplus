@@ -40,7 +40,7 @@ export function ProductDetailsDialog({
   onUpdateStock: () => void;
   onDelete: () => void;
 }) {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   if (!product) return null;
   const profit = Number(product.sale_price) - Number(product.cost_price);
 
@@ -61,7 +61,7 @@ export function ProductDetailsDialog({
           {/* Sticky header */}
           <div className="flex items-center justify-between border-b px-4 py-3 sm:px-6">
             <DialogTitle className="text-base font-bold sm:text-lg">
-              {lang === "bn" ? "পণ্যের বিস্তারিত" : "Product Details"}
+              {t("p7_Product_Details")}
             </DialogTitle>
             <DialogPrimitive.Close className="rounded-sm p-1 opacity-70 transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring">
               <X className="h-5 w-5" />
@@ -86,31 +86,31 @@ export function ProductDetailsDialog({
         </div>
 
         <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
-          <Field label={lang === "bn" ? "বর্তমান মজুদ" : "Current stock"} value={lang === "bn" ? bnNum(product.stock) : product.stock} />
+          <Field label={t("p7_Current_stock")} value={lang === "bn" ? bnNum(product.stock) : product.stock} />
           <Field
-            label={lang === "bn" ? "বিক্রয় মূল্য (ডিসকাউন্ট ও ভ্যাট প্রযোজ্য)" : "Sale price"}
+            label={t("p7_Sale_price")}
             value={fmtMoney(Number(product.sale_price), lang)}
           />
-          <Field label={lang === "bn" ? "লাভ" : "Profit"} value={fmtMoney(profit, lang)} />
-          <Field label={lang === "bn" ? "ক্রয় মূল্য" : "Cost price"} value={fmtMoney(Number(product.cost_price), lang)} />
-          <Field label={lang === "bn" ? "ডিসকাউন্ট" : "Discount"} value="N/A" />
-          <Field label={lang === "bn" ? "সাব ক্যাটাগরি" : "Sub category"} value={product.category_id ? "—" : "N/A"} />
+          <Field label={t("p7_Profit")} value={fmtMoney(profit, lang)} />
+          <Field label={t("p7_Cost_price")} value={fmtMoney(Number(product.cost_price), lang)} />
+          <Field label={t("p7_Discount")} value="N/A" />
+          <Field label={t("p7_Sub_category")} value={product.category_id ? "—" : "N/A"} />
         </div>
 
         <div className="mt-4 text-xs font-bold uppercase tracking-wide text-muted-foreground">
-          {lang === "bn" ? "MORE DETAILS OF PRODUCT" : "More details of product"}
+          {t("p7_More_details_of_product")}
         </div>
         <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-3">
-          <Field label={lang === "bn" ? "ভ্যাট শতাংশ (%)" : "VAT %"} value="N/A" />
-          <Field label={lang === "bn" ? "ওয়ারেন্টি" : "Warranty"} value="N/A Day" />
+          <Field label={t("p7_VAT")} value="N/A" />
+          <Field label={t("p7_Warranty")} value="N/A Day" />
           <Field
-            label={lang === "bn" ? "স্টক কমের অ্যালার্ট" : "Low stock alert"}
+            label={t("p7_Low_stock_alert")}
             value={product.low_stock_alert ? (lang === "bn" ? bnNum(Number(product.low_stock_alert)) : product.low_stock_alert) : "N/A"}
           />
         </div>
 
         <div className="mt-4">
-          <div className="text-sm font-semibold">{lang === "bn" ? "পণ্যের বিস্তারিত" : "Description"}</div>
+          <div className="text-sm font-semibold">{t("p7_Description")}</div>
           <div className="text-sm text-muted-foreground">N/A</div>
         </div>
           </div>
@@ -119,11 +119,11 @@ export function ProductDetailsDialog({
           <div className="grid flex-none grid-cols-2 gap-2 border-t bg-background px-4 py-3 sm:px-6 [padding-bottom:max(0.75rem,env(safe-area-inset-bottom))]">
             <Button variant="outline" onClick={onDelete} className="border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100">
               <Trash2 className="mr-2 h-4 w-4" />
-              {lang === "bn" ? "মুছে ফেলুন" : "Delete"}
+              {t("p7_Delete_2")}
             </Button>
             <Button onClick={onUpdateStock} className="bg-primary text-primary-foreground hover:opacity-90">
               <Plus className="mr-2 h-4 w-4" />
-              {lang === "bn" ? "স্টক আপডেট" : "Update Stock"}
+              {t("p7_Update_Stock")}
             </Button>
           </div>
         </DialogPrimitive.Content>

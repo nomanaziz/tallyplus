@@ -16,8 +16,8 @@ export function AdminSearchBar({
   count?: number;
   className?: string;
 }) {
-  const { lang } = useI18n();
-  const ph = placeholder ?? (lang === "bn" ? "খুঁজুন..." : "Search...");
+  const { lang, t } = useI18n();
+  const ph = placeholder ?? (t("p7_Search_2"));
   return (
     <div className={`flex items-center gap-2 ${className}`}>
       <div className="relative w-full sm:w-72">
@@ -43,7 +43,7 @@ export function AdminSearchBar({
       </div>
       {typeof count === "number" && value && (
         <span className="whitespace-nowrap text-xs text-muted-foreground">
-          {count} {lang === "bn" ? "ফলাফল" : "results"}
+          {count} {t("p7_results")}
         </span>
       )}
     </div>

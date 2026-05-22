@@ -18,7 +18,7 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export default function SmsHistoryPage() {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const { current } = useShop();
   const nav = useNavigate();
   const [q, setQ] = useState("");
@@ -44,11 +44,11 @@ export default function SmsHistoryPage() {
   return (
     <div className="min-h-full bg-muted/30">
       <PageHeader
-        breadcrumb={lang === "bn" ? "SMS হিস্টোরি" : "SMS History"}
+        breadcrumb={t("p7_SMS_History")}
         title={
           <span className="flex items-center gap-2">
             <button onClick={() => nav({ to: "/app/marketing" })} className="-ml-1 flex h-7 w-7 items-center justify-center rounded hover:bg-accent" aria-label="Back"><ArrowLeft className="h-4 w-4" /></button>
-            {lang === "bn" ? "SMS হিস্টোরি" : "SMS History"}
+            {t("p7_SMS_History")}
           </span>
         }
       />
@@ -56,7 +56,7 @@ export default function SmsHistoryPage() {
         <div className="mb-3 flex flex-wrap items-center gap-2">
           <div className="relative min-w-0 flex-1">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder={lang === "bn" ? "নাম বা ফোন দিয়ে খুঁজুন" : "Search name or phone"} className="h-10 pl-9" />
+            <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t("p7_Search_name_or_phone_2")} className="h-10 pl-9" />
           </div>
           <Select value={status} onValueChange={setStatus}>
             <SelectTrigger className="h-10 w-32"><SelectValue /></SelectTrigger>
@@ -75,7 +75,7 @@ export default function SmsHistoryPage() {
 
         <div className="rounded-xl border bg-background">
           {filtered.length === 0 ? (
-            <div className="p-12 text-center text-sm text-muted-foreground">{lang === "bn" ? "কোনো SMS হিস্টোরি নেই" : "No SMS history yet"}</div>
+            <div className="p-12 text-center text-sm text-muted-foreground">{t("p7_No_SMS_history_yet")}</div>
           ) : (
             <div className="divide-y">
               {filtered.map((r: any) => (

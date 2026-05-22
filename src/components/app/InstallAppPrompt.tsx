@@ -16,7 +16,7 @@ type DesktopGuidance = {
 };
 
 export function InstallAppPrompt() {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const pwa = usePwaInstall();
   const [show, setShow] = useState(false);
   const [iosOpen, setIosOpen] = useState(false);
@@ -40,7 +40,7 @@ export function InstallAppPrompt() {
     if (pwa.canInstall) {
       const outcome = await pwa.promptInstall();
       if (outcome === "accepted") {
-        toast.success(lang === "bn" ? "অ্যাপ ইনস্টল হচ্ছে…" : "Installing…");
+        toast.success(t("p7_Installing"));
       }
       setShow(false);
       return;
@@ -63,14 +63,14 @@ export function InstallAppPrompt() {
           </div>
           <div className="min-w-0 flex-1">
             <div className="text-sm font-bold">
-              {lang === "bn" ? "অ্যাপ ইনস্টল করুন" : "Install the app"}
+              {t("p7_Install_the_app")}
             </div>
             <div className="truncate text-xs text-muted-foreground">
-              {lang === "bn" ? "এক ক্লিকে হোম স্ক্রিনে যোগ করুন" : "Add to home screen in one tap"}
+              {t("p7_Add_to_home_screen_in_one_tap")}
             </div>
           </div>
           <Button size="sm" onClick={onInstall} className="flex-none">
-            {lang === "bn" ? "ইনস্টল" : "Install"}
+            {t("p7_Install")}
           </Button>
           <button
             onClick={dismiss}
@@ -85,19 +85,19 @@ export function InstallAppPrompt() {
       <Dialog open={iosOpen} onOpenChange={setIosOpen}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>{lang === "bn" ? "iPhone-এ ইনস্টল করুন" : "Install on iPhone"}</DialogTitle>
+            <DialogTitle>{t("p7_Install_on_iPhone")}</DialogTitle>
             <DialogDescription>
-              {lang === "bn" ? "Safari ব্রাউজার থেকে নিচের ধাপগুলো অনুসরণ করুন" : "Follow these steps in Safari"}
+              {t("p7_Follow_these_steps_in_Safari")}
             </DialogDescription>
           </DialogHeader>
           <ol className="space-y-3 text-sm">
             <li className="flex items-start gap-2">
               <Share className="mt-0.5 h-5 w-5 flex-none text-primary" />
-              <span>{lang === "bn" ? "নিচের Share বাটন ট্যাপ করুন" : "Tap the Share button at the bottom"}</span>
+              <span>{t("p7_Tap_the_Share_button_at_the_bo")}</span>
             </li>
             <li className="flex items-start gap-2">
               <Plus className="mt-0.5 h-5 w-5 flex-none text-primary" />
-              <span>{lang === "bn" ? "“Add to Home Screen” সিলেক্ট করুন" : "Choose “Add to Home Screen”"}</span>
+              <span>{t("p7_Choose_Add_to_Home_Screen")}</span>
             </li>
           </ol>
         </DialogContent>
@@ -113,7 +113,7 @@ export function InstallAppPrompt() {
 }
 
 export function InstallAppButton({ className }: { className?: string }) {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const pwa = usePwaInstall();
   const [iosOpen, setIosOpen] = useState(false);
   const [desktop, setDesktop] = useState<DesktopGuidance>({ open: false, reason: "no-bip" });
@@ -124,7 +124,7 @@ export function InstallAppButton({ className }: { className?: string }) {
     if (pwa.canInstall) {
       const outcome = await pwa.promptInstall();
       if (outcome === "accepted") {
-        toast.success(lang === "bn" ? "অ্যাপ ইনস্টল হচ্ছে…" : "Installing…");
+        toast.success(t("p7_Installing"));
       }
       return;
     }
@@ -137,24 +137,24 @@ export function InstallAppButton({ className }: { className?: string }) {
       <button
         onClick={onClick}
         type="button"
-        aria-label={lang === "bn" ? "অ্যাপ ইনস্টল" : "Install app"}
-        title={lang === "bn" ? "অ্যাপ ইনস্টল" : "Install app"}
+        aria-label={t("p7_Install_app")}
+        title={t("p7_Install_app")}
         className={className ?? "flex h-9 items-center gap-1.5 rounded-full px-2 text-sm font-medium text-muted-foreground hover:bg-accent"}
       >
         <Download className="h-4 w-4" />
-        <span className="inline md:inline">{lang === "bn" ? "অ্যাপ ইনস্টল" : "Install app"}</span>
+        <span className="inline md:inline">{t("p7_Install_app")}</span>
       </button>
       <Dialog open={iosOpen} onOpenChange={setIosOpen}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>{lang === "bn" ? "iPhone-এ ইনস্টল করুন" : "Install on iPhone"}</DialogTitle>
+            <DialogTitle>{t("p7_Install_on_iPhone")}</DialogTitle>
             <DialogDescription>
-              {lang === "bn" ? "Safari ব্রাউজার থেকে নিচের ধাপগুলো অনুসরণ করুন" : "Follow these steps in Safari"}
+              {t("p7_Follow_these_steps_in_Safari")}
             </DialogDescription>
           </DialogHeader>
           <ol className="space-y-3 text-sm">
-            <li className="flex items-start gap-2"><Share className="mt-0.5 h-5 w-5 flex-none text-primary" /><span>{lang === "bn" ? "নিচের Share বাটন ট্যাপ করুন" : "Tap the Share button at the bottom"}</span></li>
-            <li className="flex items-start gap-2"><Plus className="mt-0.5 h-5 w-5 flex-none text-primary" /><span>{lang === "bn" ? "“Add to Home Screen” সিলেক্ট করুন" : "Choose “Add to Home Screen”"}</span></li>
+            <li className="flex items-start gap-2"><Share className="mt-0.5 h-5 w-5 flex-none text-primary" /><span>{t("p7_Tap_the_Share_button_at_the_bo")}</span></li>
+            <li className="flex items-start gap-2"><Plus className="mt-0.5 h-5 w-5 flex-none text-primary" /><span>{t("p7_Choose_Add_to_Home_Screen")}</span></li>
           </ol>
         </DialogContent>
       </Dialog>
@@ -179,7 +179,7 @@ function DesktopInstallDialog({
   reason: "no-bip" | "unsupported";
   browser: ReturnType<typeof usePwaInstall>["browser"];
 }) {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const isFirefox = browser === "firefox" || reason === "unsupported";
 
   return (
@@ -188,21 +188,17 @@ function DesktopInstallDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <MonitorDown className="h-5 w-5 text-primary" />
-            {lang === "bn" ? "ডেস্কটপে ইনস্টল করুন" : "Install on Desktop"}
+            {t("p7_Install_on_Desktop")}
           </DialogTitle>
           <DialogDescription>
-            {lang === "bn"
-              ? "আপনার ব্রাউজার অনুযায়ী নিচের ধাপগুলো অনুসরণ করুন"
-              : "Follow the steps for your browser"}
+            {t("p7_Follow_the_steps_for_your_brow")}
           </DialogDescription>
         </DialogHeader>
 
         {isFirefox ? (
           <div className="space-y-3 text-sm">
             <div className="rounded-lg border border-amber-300/60 bg-amber-50 p-3 text-amber-900 dark:border-amber-800/60 dark:bg-amber-950/40 dark:text-amber-200">
-              {lang === "bn"
-                ? "Firefox ডেস্কটপে PWA ইনস্টল সাপোর্ট করে না। দয়া করে Chrome / Edge / Brave দিয়ে এই পেজটি খুলে আবার চেষ্টা করুন।"
-                : "Firefox does not support installing PWAs on desktop. Please open this page in Chrome / Edge / Brave and try again."}
+              {t("p7_Firefox_does_not_support_insta")}
             </div>
           </div>
         ) : (
@@ -210,17 +206,15 @@ function DesktopInstallDialog({
             <div className="rounded-lg border bg-muted/40 p-3 text-[13px]">
               <div className="mb-1 flex items-center gap-1.5 font-bold">
                 <Info className="h-4 w-4 text-primary" />
-                {lang === "bn" ? "কেন \"Install\" আইকন এখনই দেখাচ্ছে না?" : "Why is the install icon not showing yet?"}
+                {t("p7_Why_is_the_install_icon_not_sh")}
               </div>
               <p className="text-muted-foreground">
-                {lang === "bn"
-                  ? "Chrome কিছু সময় (১–২ মিনিট) সাইট ব্যবহার না হলে install আইকন দেখায় না। নিচের যেকোনো একটা পদ্ধতি কাজ করবে:"
-                  : "Chrome only shows the address-bar install icon after a short engagement period. Either of the methods below will work right now:"}
+                {t("p7_Chrome_only_shows_the_address_")}
               </p>
             </div>
 
             <div>
-              <div className="font-bold">{lang === "bn" ? "পদ্ধতি ১ — মেনু থেকে (সবচেয়ে নিশ্চিত)" : "Method 1 — From the browser menu (most reliable)"}</div>
+              <div className="font-bold">{t("p7_Method_1_From_the_browser_menu")}</div>
               <ol className="ml-5 mt-1 list-decimal space-y-1 text-muted-foreground">
                 <li>{lang === "bn" ? "ডান-উপরের ⋮ (তিন ডট) মেনুতে ক্লিক করুন" : 'Click the ⋮ (three-dot) menu at the top right'}</li>
                 <li>
@@ -233,18 +227,14 @@ function DesktopInstallDialog({
             </div>
 
             <div>
-              <div className="font-bold">{lang === "bn" ? "পদ্ধতি ২ — অ্যাড্রেস বার আইকন" : "Method 2 — Address bar icon"}</div>
+              <div className="font-bold">{t("p7_Method_2_Address_bar_icon")}</div>
               <ol className="ml-5 mt-1 list-decimal space-y-1 text-muted-foreground">
                 <li>
-                  {lang === "bn"
-                    ? "অ্যাড্রেস বারের ডান পাশে একটি ছোট মনিটর/ডাউনলোড আইকন দেখুন (⊕ বা ⤓)"
-                    : "Look for a small monitor / download icon (⊕ or ⤓) on the right of the address bar"}
+                  {t("p7_Look_for_a_small_monitor_downl")}
                 </li>
                 <li>{lang === "bn" ? "আইকনে ক্লিক → \"Install\"" : 'Click the icon → "Install"'}</li>
                 <li className="text-[12px] opacity-80">
-                  {lang === "bn"
-                    ? "যদি আইকন না দেখায়: পেইজে কয়েক সেকেন্ড স্ক্রল/ক্লিক করুন, তারপর পেইজটি একবার রিলোড করুন।"
-                    : "If you don't see the icon: scroll/click around for a few seconds, then reload the page."}
+                  {t("p7_If_you_don_t_see_the_icon_scro")}
                 </li>
               </ol>
             </div>

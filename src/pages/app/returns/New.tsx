@@ -29,7 +29,7 @@ const REASONS = [
 ];
 
 function NewReturnPage() {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const { current } = useShop();
   const nav = useNavigate();
 
@@ -112,8 +112,8 @@ function NewReturnPage() {
 
   async function onSave() {
     if (!current?.id) return;
-    if (items.length === 0) { toast.error(lang === "bn" ? "অন্তত একটি পণ্য যোগ করুন" : "Add at least one item"); return; }
-    if (items.some((it) => !it.name.trim() || Number(it.qty) <= 0)) { toast.error(lang === "bn" ? "প্রতিটি লাইনে পণ্য ও পরিমাণ দিন" : "Fill in every line"); return; }
+    if (items.length === 0) { toast.error(t("p7_Add_at_least_one_item")); return; }
+    if (items.some((it) => !it.name.trim() || Number(it.qty) <= 0)) { toast.error(t("p7_Fill_in_every_line")); return; }
     setSaving(true);
     try {
       // Generate return number: R-{count+1 padded}
@@ -185,7 +185,7 @@ function NewReturnPage() {
         await supabase.from("customers").update({ due_balance: newDue }).eq("id", pickedSale.customer_id);
       }
 
-      toast.success(lang === "bn" ? "রিটার্ন সংরক্ষিত হয়েছে" : "Return saved");
+      toast.success(t("p7_Return_saved"));
       nav({ to: "/app/returns" });
     } catch (e: any) {
       toast.error(e.message ?? "Save failed");
@@ -196,23 +196,23 @@ function NewReturnPage() {
 
   return (
     <div className="min-h-full bg-muted/30">
-      <PageHeader breadcrumb={lang === "bn" ? "প্রোডাক্ট রিটার্ন" : "Product Return"} title={lang === "bn" ? "নতুন রিটার্ন" : "New return"} />
+      <PageHeader breadcrumb={t("p7_Product_Return")} title={t("p7_New_return")} />
       <div className="container space-y-3 px-3 py-3 md:space-y-4 md:px-4 md:py-4">
 
         {/* Sale picker */}
         <div className="rounded-xl border bg-background p-3 md:p-4">
-          <Label className="text-xs">{lang === "bn" ? "মূল ইনভয়েস (ঐচ্ছিক)" : "Original invoice (optional)"}</Label>
+          <Label className="text-xs">{t("p7_Original_invoice_optional")}</Label>
           {pickedSale ? (
             <div className="mt-2 flex items-center justify-between rounded-lg border bg-muted/30 px-3 py-2">
               <div>
                 <div className="text-sm font-bold">{pickedSale.invoice_no ?? pickedSale.id.slice(0, 6)}</div>
                 <div className="text-xs text-muted-foreground">{fmtMoney(Number(pickedSale.total ?? 0), lang)} · {new Date(pickedSale.created_at).toLocaleDateString("en-GB")}</div>
               </div>
-              <Button variant="ghost" className="h-9 gap-2" onClick={clearSale}>{lang === "bn" ? "মুছুন" : "Clear"}</Button>
+              <Button variant="ghost" className="h-9 gap-2" onClick={clearSale}>{t("p7_Clear")}</Button>
             </div>
           ) : (
             <>
-              <Input className="mt-2" placeholder={lang === "bn" ? "ইনভয়েস নং দিয়ে খুঁজুন" : "Search invoice no"} value={saleSearch} onChange={(e) => setSaleSearch(e.target.value)} />
+              <Input className="mt-2" placeholder={t("p7_Search_invoice_no")} value={saleSearch} onChange={(e) => setSaleSearch(e.target.value)} />
               {(saleHits?.length ?? 0) > 0 && (
                 <ul className="mt-1 max-h-48 overflow-auto rounded-md border bg-background">
                   {(saleHits ?? []).map((s: any) => (
@@ -225,7 +225,7 @@ function NewReturnPage() {
                   ))}
                 </ul>
               )}
-              <p className="mt-1 text-[11px] text-muted-foreground">{lang === "bn" ? "ওয়াক-ইন রিটার্নের জন্য ফাঁকা রাখুন।" : "Leave empty for walk-in returns."}</p>
+              <p className="mt-1 text-[11px] text-muted-foreground">{t("p7_Leave_empty_for_walk_in_return")}</p>
             </>
           )}
         </div>
@@ -233,21 +233,21 @@ function NewReturnPage() {
         {/* Items */}
         <div className="rounded-xl border bg-background p-3 md:p-4">
           <div className="mb-2 flex items-center justify-between">
-            <Label className="text-sm font-bold">{lang === "bn" ? "ফেরত আসা পণ্য" : "Returned items"}</Label>
-            <Button variant="outline" className="h-10 gap-2" onClick={addBlankRow}><Plus className="h-4 w-4" />{lang === "bn" ? "যোগ" : "Add"}</Button>
+            <Label className="text-sm font-bold">{t("p7_Returned_items")}</Label>
+            <Button variant="outline" className="h-10 gap-2" onClick={addBlankRow}><Plus className="h-4 w-4" />{t("p7_Add")}</Button>
           </div>
           {items.length === 0 ? (
-            <div className="py-4 text-center text-xs text-muted-foreground">{lang === "bn" ? "কোনো পণ্য নেই" : "No items"}</div>
+            <div className="py-4 text-center text-xs text-muted-foreground">{t("p7_No_items")}</div>
           ) : (
             <div className="space-y-2">
               {items.map((it, idx) => (
                 <div key={idx} className="grid grid-cols-12 gap-2 rounded-lg border p-2">
                   <div className="col-span-12 md:col-span-5">
                     {pickedSaleId || it.product_id ? (
-                      <Input value={it.name} onChange={(e) => updateRow(idx, { name: e.target.value })} placeholder={lang === "bn" ? "পণ্যের নাম" : "Product name"} />
+                      <Input value={it.name} onChange={(e) => updateRow(idx, { name: e.target.value })} placeholder={t("p7_Product_name")} />
                     ) : (
                       <Select value={it.product_id ?? ""} onValueChange={(v) => pickProduct(idx, v)}>
-                        <SelectTrigger><SelectValue placeholder={lang === "bn" ? "পণ্য বাছুন" : "Pick product"} /></SelectTrigger>
+                        <SelectTrigger><SelectValue placeholder={t("p7_Pick_product")} /></SelectTrigger>
                         <SelectContent>
                           {(products ?? []).map((p) => (
                             <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
@@ -257,10 +257,10 @@ function NewReturnPage() {
                     )}
                   </div>
                   <div className="col-span-5 md:col-span-3">
-                    <Input type="number" min={0} step="any" value={it.qty} onChange={(e) => updateRow(idx, { qty: Number(e.target.value) })} placeholder={lang === "bn" ? "পরিমাণ" : "Qty"} />
+                    <Input type="number" min={0} step="any" value={it.qty} onChange={(e) => updateRow(idx, { qty: Number(e.target.value) })} placeholder={t("p7_Qty")} />
                   </div>
                   <div className="col-span-5 md:col-span-3">
-                    <Input type="number" min={0} step="any" value={it.price} onChange={(e) => updateRow(idx, { price: Number(e.target.value) })} placeholder={lang === "bn" ? "একক মূল্য" : "Unit price"} />
+                    <Input type="number" min={0} step="any" value={it.price} onChange={(e) => updateRow(idx, { price: Number(e.target.value) })} placeholder={t("p7_Unit_price")} />
                   </div>
                   <div className="col-span-2 md:col-span-1 flex items-center justify-end">
                     <Button size="icon" variant="ghost" className="h-8 w-8 text-rose-600" onClick={() => removeRow(idx)}><Trash2 className="h-4 w-4" /></Button>
@@ -270,14 +270,14 @@ function NewReturnPage() {
             </div>
           )}
           <div className="mt-3 flex items-center justify-between border-t pt-2">
-            <span className="text-sm font-bold">{lang === "bn" ? "মোট রিটার্ন মূল্য" : "Total"}</span>
+            <span className="text-sm font-bold">{t("p7_Total")}</span>
             <span className="text-base font-extrabold">{fmtMoney(total, lang)}</span>
           </div>
         </div>
 
         {/* Reason */}
         <div className="rounded-xl border bg-background p-3 md:p-4">
-          <Label className="text-xs">{lang === "bn" ? "ফেরতের কারণ" : "Reason"}</Label>
+          <Label className="text-xs">{t("p7_Reason")}</Label>
           <Select value={reason} onValueChange={setReason}>
             <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
             <SelectContent>
@@ -286,70 +286,70 @@ function NewReturnPage() {
               ))}
             </SelectContent>
           </Select>
-          <Textarea className="mt-2" rows={2} placeholder={lang === "bn" ? "অতিরিক্ত নোট (ঐচ্ছিক)" : "Additional note (optional)"} value={reasonNote} onChange={(e) => setReasonNote(e.target.value)} />
+          <Textarea className="mt-2" rows={2} placeholder={t("p7_Additional_note_optional")} value={reasonNote} onChange={(e) => setReasonNote(e.target.value)} />
         </div>
 
         {/* Refund */}
         <div className="rounded-xl border bg-background p-3 md:p-4 space-y-3">
-          <Label className="text-sm font-bold">{lang === "bn" ? "টাকা ফেরত" : "Refund"}</Label>
+          <Label className="text-sm font-bold">{t("p7_Refund")}</Label>
           <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
             <div>
-              <Label className="text-[11px] text-muted-foreground">{lang === "bn" ? "ফেরতের পরিমাণ" : "Refund amount"}</Label>
+              <Label className="text-[11px] text-muted-foreground">{t("p7_Refund_amount")}</Label>
               <Input type="number" min={0} step="any" value={refundAmount} onChange={(e) => setRefundAmount(e.target.value)} />
             </div>
             <div>
-              <Label className="text-[11px] text-muted-foreground">{lang === "bn" ? "অবস্থা" : "Status"}</Label>
+              <Label className="text-[11px] text-muted-foreground">{t("p7_Status")}</Label>
               <Select value={refundStatus} onValueChange={(v) => setRefundStatus(v as any)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="refunded">{lang === "bn" ? "এখনই ফেরত দিচ্ছি" : "Refund now"}</SelectItem>
-                  <SelectItem value="adjusted_to_due">{lang === "bn" ? "বাকিতে সমন্বয়" : "Adjust to due"}</SelectItem>
-                  <SelectItem value="pending">{lang === "bn" ? "অপেক্ষমান" : "Pending"}</SelectItem>
+                  <SelectItem value="refunded">{t("p7_Refund_now")}</SelectItem>
+                  <SelectItem value="adjusted_to_due">{t("p7_Adjust_to_due")}</SelectItem>
+                  <SelectItem value="pending">{t("p7_Pending")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div>
-              <Label className="text-[11px] text-muted-foreground">{lang === "bn" ? "মাধ্যম" : "Method"}</Label>
+              <Label className="text-[11px] text-muted-foreground">{t("p7_Method")}</Label>
               <Select value={refundMethod} onValueChange={setRefundMethod} disabled={refundStatus !== "refunded"}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="cash">{lang === "bn" ? "নগদ" : "Cash"}</SelectItem>
+                  <SelectItem value="cash">{t("p7_Cash")}</SelectItem>
                   <SelectItem value="bkash">bKash</SelectItem>
                   <SelectItem value="nagad">Nagad</SelectItem>
                   <SelectItem value="rocket">Rocket</SelectItem>
-                  <SelectItem value="bank">{lang === "bn" ? "ব্যাংক" : "Bank"}</SelectItem>
+                  <SelectItem value="bank">{t("p7_Bank")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
           {refundStatus === "refunded" && refundMethod === "cash" && (
             <p className="text-[11px] text-rose-600">
-              {lang === "bn" ? "এই টাকা স্বয়ংক্রিয়ভাবে ক্যাশবক্স থেকে কেটে নেওয়া হবে।" : "This amount will be deducted from cash automatically."}
+              {t("p7_This_amount_will_be_deducted_f")}
             </p>
           )}
           {refundStatus === "adjusted_to_due" && !pickedSale?.customer_id && (
             <p className="text-[11px] text-amber-600">
-              {lang === "bn" ? "মূল ইনভয়েসে কোনো কাস্টমার নেই — বাকিতে সমন্বয় হবে না।" : "No customer on the sale — adjustment will be skipped."}
+              {t("p7_No_customer_on_the_sale_adjust")}
             </p>
           )}
 
           <div className="flex items-center justify-between rounded-lg border p-2">
             <div>
-              <div className="text-sm font-semibold">{lang === "bn" ? "স্টকে যোগ করুন" : "Restock items"}</div>
-              <div className="text-[11px] text-muted-foreground">{lang === "bn" ? "ফেরত আসা পণ্য আবার স্টকে যোগ হবে" : "Returned qty added back to stock"}</div>
+              <div className="text-sm font-semibold">{t("p7_Restock_items")}</div>
+              <div className="text-[11px] text-muted-foreground">{t("p7_Returned_qty_added_back_to_sto")}</div>
             </div>
             <Switch checked={restock} onCheckedChange={setRestock} />
           </div>
 
-          <Textarea rows={2} placeholder={lang === "bn" ? "অভ্যন্তরীণ নোট (ঐচ্ছিক)" : "Internal note (optional)"} value={note} onChange={(e) => setNote(e.target.value)} />
+          <Textarea rows={2} placeholder={t("p7_Internal_note_optional")} value={note} onChange={(e) => setNote(e.target.value)} />
         </div>
 
         <div className="flex items-center justify-end gap-2">
           <Button variant="outline" className="h-10 gap-2 flex-1 sm:flex-none" onClick={() => nav({ to: "/app/returns" })}>
-            {lang === "bn" ? "বাতিল" : "Cancel"}
+            {t("p7_Cancel")}
           </Button>
           <Button className="h-10 gap-2 flex-1 sm:flex-none" onClick={onSave} disabled={saving}>
-            {saving ? "…" : (lang === "bn" ? "সংরক্ষণ" : "Save")}
+            {saving ? "…" : (t("p7_Save"))}
           </Button>
         </div>
         <ChevronDown className="hidden" />

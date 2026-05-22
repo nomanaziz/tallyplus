@@ -12,8 +12,7 @@ export function AppTour() {
     if (isTourCompleted()) return;
     // Wait a tick so sidebar items are mounted in the DOM.
     const id = window.setTimeout(() => {
-      const tourLang = lang === "bn" ? "bn" : "en";
-      startTour(tourLang);
+      startTour(lang === "bn" ? "bn" : "en");
     }, 800);
     return () => window.clearTimeout(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps

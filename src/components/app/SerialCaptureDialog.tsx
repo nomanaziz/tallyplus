@@ -40,7 +40,7 @@ export function SerialCaptureDialog({
   open, onOpenChange, productId, productName, qty,
   costPrice = 0, warrantyUntil = null, onSaved,
 }: Props) {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const { current } = useShop();
 
   // ===== Sequential mode (Start → End) =====
@@ -80,12 +80,10 @@ export function SerialCaptureDialog({
 
     const { prefix: pStart, tail: tStart } = splitTrailingDigits(startTrim);
     if (!tStart) {
-      return { ok: false, error: lang === "bn"
-        ? "শুরু সিরিয়ালের শেষে অন্তত কয়েকটি সংখ্যা থাকতে হবে (যেমন: ABC001)"
-        : "Start serial must end with digits (e.g. ABC001)", count: 0, preview: [] };
+      return { ok: false, error: t("p7_Start_serial_must_end_with_dig"), count: 0, preview: [] };
     }
     if (!endTrim) {
-      return { ok: false, error: lang === "bn" ? "শেষ সিরিয়াল দিন" : "Enter end serial", count: 0, preview: [] };
+      return { ok: false, error: t("p7_Enter_end_serial"), count: 0, preview: [] };
     }
     const { prefix: pEnd, tail: tEnd } = splitTrailingDigits(endTrim);
     if (pStart !== pEnd) {
@@ -96,7 +94,7 @@ export function SerialCaptureDialog({
     const sNum = parseInt(tStart, 10);
     const eNum = parseInt(tEnd, 10);
     if (eNum < sNum) {
-      return { ok: false, error: lang === "bn" ? "শেষ নম্বর শুরুর চেয়ে বড় হতে হবে" : "End must be greater than start", count: 0, preview: [] };
+      return { ok: false, error: t("p7_End_must_be_greater_than_start"), count: 0, preview: [] };
     }
     const count = eNum - sNum + 1;
     const tailLen = Math.max(tStart.length, tEnd.length);
@@ -132,7 +130,7 @@ export function SerialCaptureDialog({
 
   async function saveSequential() {
     if (!seqInfo.ok || seqInfo.count === 0) {
-      toast.error(seqInfo.error || (lang === "bn" ? "সঠিক রেঞ্জ দিন" : "Enter a valid range"));
+      toast.error(seqInfo.error || (t("p7_Enter_a_valid_range")));
       return;
     }
     if (qtyMismatch) {
@@ -158,14 +156,14 @@ export function SerialCaptureDialog({
   async function saveRandom() {
     const cleaned = manualVals.map((s) => s.trim()).filter(Boolean);
     if (cleaned.length === 0) {
-      toast.error(lang === "bn" ? "অন্তত একটি সিরিয়াল দিন" : "Enter at least one serial");
+      toast.error(t("p7_Enter_at_least_one_serial"));
       return;
     }
     const seen = new Set<string>();
     const dups: string[] = [];
     for (const s of cleaned) { if (seen.has(s)) dups.push(s); seen.add(s); }
     if (dups.length) {
-      toast.error((lang === "bn" ? "ডুপ্লিকেট: " : "Duplicate: ") + dups.slice(0, 3).join(", "));
+      toast.error((t("p7_Duplicate")) + dups.slice(0, 3).join(", "));
       return;
     }
     setBusy(true);
@@ -200,10 +198,10 @@ export function SerialCaptureDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Hash className="h-4 w-4" />
-            {lang === "bn" ? "সিরিয়াল / IMEI যোগ করুন" : "Add Serials / IMEI"}
+            {t("p7_Add_Serials_IMEI")}
           </DialogTitle>
           <DialogDescription>
-            {productName} • {qty} {lang === "bn" ? "ইউনিট" : "units"}
+            {productName} • {qty} {t("p7_units")}
           </DialogDescription>
         </DialogHeader>
 
@@ -218,26 +216,24 @@ export function SerialCaptureDialog({
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="sequential">
               <Sparkles className="mr-1 h-3.5 w-3.5" />
-              {lang === "bn" ? "ক্রমিক" : "Sequential"}
+              {t("p7_Sequential")}
             </TabsTrigger>
             <TabsTrigger value="random">
               <Shuffle className="mr-1 h-3.5 w-3.5" />
-              {lang === "bn" ? "র‍্যান্ডম" : "Random"}
+              {t("p7_Random")}
             </TabsTrigger>
-            <TabsTrigger value="skip">{lang === "bn" ? "পরে" : "Skip"}</TabsTrigger>
+            <TabsTrigger value="skip">{t("p7_Skip")}</TabsTrigger>
           </TabsList>
 
           {/* ============ Sequential (Start → End) ============ */}
           <TabsContent value="sequential" className="space-y-3 pt-3">
             <p className="text-xs text-muted-foreground">
-              {lang === "bn"
-                ? "একই প্রিফিক্স দিয়ে ক্রমিক সিরিয়াল। উদাহরণ: 001 → 010 দিলে দশটি ক্রমিক সিরিয়াল তৈরি হবে।"
-                : "Sequential serials sharing a prefix. e.g. 001 → 010 generates ten consecutive serials."}
+              {t("p7_Sequential_serials_sharing_a_p")}
             </p>
 
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="grid gap-1.5">
-                <Label className="text-xs">{lang === "bn" ? "শুরু IMEI / সিরিয়াল" : "Start IMEI / Serial"}</Label>
+                <Label className="text-xs">{t("p7_Start_IMEI_Serial")}</Label>
                 <Input
                   value={startSerial}
                   onChange={(e) => setStartSerial(e.target.value)}
@@ -245,11 +241,11 @@ export function SerialCaptureDialog({
                   className="font-mono"
                 />
                 <p className="text-[10px] text-muted-foreground">
-                  {lang === "bn" ? "শেষে সংখ্যা থাকতে হবে (যেমন 001)" : "Must end with digits (e.g. 001)"}
+                  {t("p7_Must_end_with_digits_e_g_001")}
                 </p>
               </div>
               <div className="grid gap-1.5">
-                <Label className="text-xs">{lang === "bn" ? "শেষ IMEI / সিরিয়াল" : "End IMEI / Serial"}</Label>
+                <Label className="text-xs">{t("p7_End_IMEI_Serial")}</Label>
                 <Input
                   value={endSerial}
                   onChange={(e) => { setEndSerial(e.target.value); setEndTouched(true); }}
@@ -258,8 +254,8 @@ export function SerialCaptureDialog({
                 />
                 <p className="text-[10px] text-muted-foreground">
                   {endTouched
-                    ? (lang === "bn" ? "ম্যানুয়ালি সম্পাদিত" : "Manually edited")
-                    : (lang === "bn" ? "স্টক অনুযায়ী auto-filled" : "Auto-filled from stock qty")}
+                    ? (t("p7_Manually_edited"))
+                    : (t("p7_Auto_filled_from_stock_qty"))}
                 </p>
               </div>
             </div>
@@ -291,7 +287,7 @@ export function SerialCaptureDialog({
 
             <DialogFooter className="gap-2 sm:gap-2">
               <Button variant="outline" className="h-10 gap-2 flex-1 sm:flex-none" onClick={() => onOpenChange(false)}>
-                <X className="h-4 w-4" />{lang === "bn" ? "বাতিল" : "Cancel"}
+                <X className="h-4 w-4" />{t("p7_Cancel")}
               </Button>
               <Button className="h-10 gap-2 flex-1 sm:flex-none" onClick={saveSequential} disabled={busy || !seqInfo.ok}>
                 <Save className="h-4 w-4" />{busy ? "…" : (lang === "bn" ? `${seqInfo.count || qty}টি জেনারেট` : `Generate ${seqInfo.count || qty}`)}
@@ -320,7 +316,7 @@ export function SerialCaptureDialog({
             </div>
             <Textarea
               rows={2}
-              placeholder={lang === "bn" ? "একসাথে অনেকগুলো paste করুন (এক লাইনে একটি)" : "Paste many at once (one per line)"}
+              placeholder={t("p7_Paste_many_at_once_one_per_lin")}
               onPaste={(e) => {
                 const text = e.clipboardData.getData("text");
                 if (text.includes("\n") || text.includes(",")) {
@@ -338,7 +334,7 @@ export function SerialCaptureDialog({
                     <Input
                       value={v}
                       onChange={(e) => setManualVals((arr) => { const n = [...arr]; n[realIdx] = e.target.value; return n; })}
-                      placeholder={lang === "bn" ? "IMEI/সিরিয়াল" : "IMEI/Serial"}
+                      placeholder={t("p7_IMEI_Serial")}
                       className="h-9 font-mono"
                     />
                   </div>
@@ -347,10 +343,10 @@ export function SerialCaptureDialog({
             </div>
             <DialogFooter className="gap-2 sm:gap-2">
               <Button variant="outline" className="h-10 gap-2 flex-1 sm:flex-none" onClick={() => onOpenChange(false)}>
-                <X className="h-4 w-4" />{lang === "bn" ? "বাতিল" : "Cancel"}
+                <X className="h-4 w-4" />{t("p7_Cancel")}
               </Button>
               <Button className="h-10 gap-2 flex-1 sm:flex-none" onClick={saveRandom} disabled={busy}>
-                <Save className="h-4 w-4" />{busy ? "…" : (lang === "bn" ? "সংরক্ষণ" : "Save all")}
+                <Save className="h-4 w-4" />{busy ? "…" : (t("p7_Save_all"))}
               </Button>
             </DialogFooter>
           </TabsContent>
@@ -358,16 +354,14 @@ export function SerialCaptureDialog({
           {/* ============ Skip ============ */}
           <TabsContent value="skip" className="space-y-3 pt-3">
             <p className="text-sm">
-              {lang === "bn"
-                ? "স্টক যোগ হবে কিন্তু সিরিয়াল এখন সেভ হবে না। পরে \"সিরিয়াল ম্যানেজ\" থেকে যোগ করতে পারবেন।"
-                : "Stock will be added but no serials saved now. You can add them later from \"Manage Serials\"."}
+              {t("p7_Stock_will_be_added_but_no_ser")}
             </p>
             <DialogFooter className="gap-2 sm:gap-2">
               <Button variant="outline" className="h-10 gap-2 flex-1 sm:flex-none" onClick={() => onOpenChange(false)}>
-                <X className="h-4 w-4" />{lang === "bn" ? "বাতিল" : "Cancel"}
+                <X className="h-4 w-4" />{t("p7_Cancel")}
               </Button>
               <Button className="h-10 gap-2 flex-1 sm:flex-none" onClick={() => { onSaved?.(0); onOpenChange(false); }}>
-                {lang === "bn" ? "পরে যোগ করব" : "I'll add later"}
+                {t("p7_I_ll_add_later")}
               </Button>
             </DialogFooter>
           </TabsContent>

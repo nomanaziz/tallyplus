@@ -34,7 +34,7 @@ type Contact = { id: string; name: string; phone: string | null };
 const SMS_PER_SEGMENT = 160;
 
 function MarketingPage() {
-  const { lang } = useI18n();
+  const { lang, t: tr } = useI18n();
   const { current } = useShop();
   const nav = useNavigate();
   const [tab, setTab] = useState<ContactTab>("customer");
@@ -73,7 +73,7 @@ function MarketingPage() {
   const previewBody = useMemo(() => {
     if (!selectedTemplate) return "";
     return selectedTemplate.body_template
-      .replaceAll("{name}", lang === "bn" ? "গ্রাহক" : "Customer")
+      .replaceAll("{name}", tr("p7_Customer_2"))
       .replaceAll("{amount}", "0")
       .replaceAll("{due}", "0");
   }, [selectedTemplate, lang]);
@@ -152,12 +152,12 @@ function MarketingPage() {
 
   const addRecipient = (phoneRaw: string | null | undefined) => {
     if (!phoneRaw) {
-      toast.error(lang === "bn" ? "ফোন নম্বর নেই" : "No phone number");
+      toast.error(tr("p7_No_phone_number"));
       return;
     }
     const norm = normalizePhone(phoneRaw);
     if (!norm) {
-      toast.error(lang === "bn" ? "সঠিক BD নম্বর দিন (11 digit)" : "Enter a valid BD number");
+      toast.error(tr("p7_Enter_a_valid_BD_number"));
       return;
     }
     setRecipients((prev) => (prev.includes(norm) ? prev : [...prev, norm]));
@@ -166,7 +166,7 @@ function MarketingPage() {
   const addManualPhone = () => {
     const norm = normalizePhone(phoneInput);
     if (!norm) {
-      toast.error(lang === "bn" ? "সঠিক 11 digit নম্বর দিন" : "Enter valid 11-digit number");
+      toast.error(tr("p7_Enter_valid_11_digit_number"));
       return;
     }
     setRecipients((prev) => (prev.includes(norm) ? prev : [...prev, norm]));
@@ -188,11 +188,11 @@ function MarketingPage() {
 
   const sendSms = async () => {
     if (recipients.length === 0) {
-      toast.error(lang === "bn" ? "কোনো প্রাপক নেই" : "No recipients");
+      toast.error(tr("p7_No_recipients"));
       return;
     }
     if (!templateCode) {
-      toast.error(lang === "bn" ? "Template নির্বাচন করুন" : "Select a template");
+      toast.error(tr("p7_Select_a_template"));
       return;
     }
     if (!current?.id) return;
@@ -230,12 +230,12 @@ function MarketingPage() {
 
   const copyMessage = async () => {
     if (!fullMessage.trim()) {
-      toast.error(lang === "bn" ? "বার্তা নেই" : "No message");
+      toast.error(tr("p7_No_message"));
       return;
     }
     try {
       await navigator.clipboard.writeText(fullMessage);
-      toast.success(lang === "bn" ? "কপি হয়েছে! মোবাইল থেকে পাঠান" : "Copied! Send from your phone");
+      toast.success(tr("p7_Copied_Send_from_your_phone"));
       // Log copied entries to history if recipients selected
       if (current?.id && recipients.length > 0) {
         const rows = recipients.map((p) => {
@@ -255,28 +255,24 @@ function MarketingPage() {
 
   const sendVoice = () => {
     if (recipients.length === 0) {
-      toast.error(lang === "bn" ? "কোনো প্রাপক নেই" : "No recipients");
+      toast.error(tr("p7_No_recipients"));
       return;
     }
     if (minuteBalance <= 0) {
       toast.error(
-        lang === "bn"
-          ? "Minute balance কম। কিনুন → Buy Minutes"
-          : "Insufficient minutes. Please Buy Minutes.",
+        tr("p7_Insufficient_minutes_Please_Bu"),
       );
       return;
     }
     toast.info(
-      lang === "bn"
-        ? "Voice message ফিচারটি শীঘ্রই আসছে"
-        : "Voice message coming soon",
+      tr("p7_Voice_message_coming_soon"),
     );
   };
 
   return (
     <div className="min-h-full bg-muted/30">
       <PageHeader
-        breadcrumb={lang === "bn" ? "মার্কেটিং" : "Marketing"}
+        breadcrumb={tr("p7_Marketing")}
         title={
           <span className="flex items-center gap-2">
             <button
@@ -286,13 +282,13 @@ function MarketingPage() {
             >
               <ArrowLeft className="h-4 w-4" />
             </button>
-            {lang === "bn" ? "মার্কেটিং" : "Marketing"}
+            {tr("p7_Marketing")}
           </span>
         }
         actions={
           <Button className="h-10 gap-2" onClick={() => nav({ to: "/app/sms-history" })}>
             <History className="h-4 w-4" />
-            {lang === "bn" ? "SMS হিস্টোরি" : "SMS History"}
+            {tr("p7_SMS_History")}
           </Button>
         }
       />
@@ -314,10 +310,10 @@ function MarketingPage() {
                   }
                 >
                   {t === "customer"
-                    ? lang === "bn" ? "কাস্টমার" : "Customer"
+                    ? tr("p7_Customer")
                     : t === "supplier"
-                      ? lang === "bn" ? "সাপ্লায়ার" : "Supplier"
-                      : lang === "bn" ? "কর্মচারী" : "Employee"}
+                      ? tr("p7_Supplier")
+                      : tr("p7_Employee")}
                   {tab === t && (
                     <span className="ml-1 align-super text-[10px] text-muted-foreground">
                       ({filtered.length})
@@ -333,7 +329,7 @@ function MarketingPage() {
                 <Input
                   value={q}
                   onChange={(e) => setQ(e.target.value)}
-                  placeholder={lang === "bn" ? "নাম দিয়ে খুঁজুন" : "Search by name"}
+                  placeholder={tr("p7_Search_by_name")}
                   className="h-9 pl-9 text-sm"
                 />
               </div>
@@ -342,7 +338,7 @@ function MarketingPage() {
                 className="h-9 bg-primary text-primary-foreground hover:bg-primary/90"
                 onClick={selectAll}
               >
-                {lang === "bn" ? "সব যোগ" : "Select All"}
+                {tr("p7_Select_All")}
               </Button>
               <Button
                 size="sm"
@@ -359,7 +355,7 @@ function MarketingPage() {
             <div className="max-h-[60vh] space-y-2 overflow-y-auto pr-1">
               {filtered.length === 0 ? (
                 <div className="py-8 text-center text-xs text-muted-foreground">
-                  {lang === "bn" ? "কোনো কন্টাক্ট নেই" : "No contacts"}
+                  {tr("p7_No_contacts")}
                 </div>
               ) : (
                 filtered.map((c) => {
@@ -376,7 +372,7 @@ function MarketingPage() {
                       <div className="min-w-0 flex-1">
                         <div className="truncate text-sm font-medium">{c.name}</div>
                         <div className="truncate text-xs text-muted-foreground">
-                          {c.phone ? `+88 ${c.phone}` : (lang === "bn" ? "ফোন নেই" : "no phone")}
+                          {c.phone ? `+88 ${c.phone}` : (tr("p7_no_phone"))}
                         </div>
                       </div>
                       <Button
@@ -389,7 +385,7 @@ function MarketingPage() {
                         onClick={() => (added ? removeRecipient(norm!) : addRecipient(c.phone))}
                         disabled={!c.phone}
                       >
-                        {added ? (lang === "bn" ? "আনডু" : "Added") : (lang === "bn" ? "যোগ" : "Add")}
+                        {added ? (tr("p7_Added")) : (tr("p7_Add"))}
                       </Button>
                     </div>
                   );
@@ -404,7 +400,7 @@ function MarketingPage() {
             <div className="grid gap-3 lg:grid-cols-[1fr,auto]">
               <div>
                 <label className="mb-1 block text-xs font-semibold">
-                  {lang === "bn" ? "ফোন নম্বর" : "Phone Number"} <span className="text-rose-500">*</span>
+                  {tr("p7_Phone_Number")} <span className="text-rose-500">*</span>
                 </label>
                 <div className="flex h-10 items-center overflow-hidden rounded-md border bg-background">
                   <span className="flex h-full items-center gap-1 border-r bg-muted/40 px-3 text-xs font-medium">
@@ -431,11 +427,11 @@ function MarketingPage() {
                 <div className="flex flex-wrap gap-2">
                   <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
                     <Phone className="h-3 w-3" />
-                    {lang === "bn" ? "মিনিট ব্যালেন্স" : "MINUTE BALANCE"} {minuteBalance}
+                    {tr("p7_MINUTE_BALANCE")} {minuteBalance}
                   </span>
                   <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
                     <MessageSquareText className="h-3 w-3" />
-                    {lang === "bn" ? "SMS ব্যালেন্স" : "SMS BALANCE"} {smsBalance}
+                    {tr("p7_SMS_BALANCE")} {smsBalance}
                   </span>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -443,9 +439,9 @@ function MarketingPage() {
                     size="sm"
                     variant="outline"
                     className="h-8 border-amber-300 text-amber-700 hover:bg-amber-50"
-                    onClick={() => toast.info(lang === "bn" ? "শীঘ্রই আসছে" : "Coming soon")}
+                    onClick={() => toast.info(tr("p7_Coming_soon"))}
                   >
-                    {lang === "bn" ? "মিনিট কিনুন" : "Buy Minutes"}
+                    {tr("p7_Buy_Minutes")}
                     <ArrowRight className="ml-1 h-3 w-3" />
                   </Button>
                   <Button
@@ -453,7 +449,7 @@ function MarketingPage() {
                     className="h-8 bg-amber-500 text-white hover:bg-amber-600"
                     onClick={() => nav({ to: "/app/buy-sms" })}
                   >
-                    {lang === "bn" ? "SMS কিনুন" : "Buy SMS"}
+                    {tr("p7_Buy_SMS")}
                     <ArrowRight className="ml-1 h-3 w-3" />
                   </Button>
                 </div>
@@ -463,13 +459,13 @@ function MarketingPage() {
             {/* Recipients */}
             <div>
               <div className="mb-1 text-xs font-semibold">
-                {lang === "bn" ? "যাদের পাঠানো হবে" : "SMS Sending to"}
+                {tr("p7_SMS_Sending_to")}
                 <span className="ml-1 text-muted-foreground">({recipients.length})</span>
               </div>
               <div className="min-h-[44px] rounded-lg border bg-background p-2">
                 {recipients.length === 0 ? (
                   <span className="text-xs text-muted-foreground">
-                    {lang === "bn" ? "কাস্টমার তালিকা থেকে যোগ করুন" : "Add from contact list"}
+                    {tr("p7_Add_from_contact_list")}
                   </span>
                 ) : (
                   <div className="flex flex-wrap gap-1.5">
@@ -496,10 +492,10 @@ function MarketingPage() {
             {/* Template selector + preview */}
             <div className="rounded-xl border bg-background p-4">
               <label className="mb-2 block text-sm font-semibold">
-                {lang === "bn" ? "টেমপ্লেট নির্বাচন করুন" : "Choose Template"}
+                {tr("p7_Choose_Template")}
               </label>
               <Select value={templateCode} onValueChange={setTemplateCode}>
-                <SelectTrigger className="mb-2 h-10"><SelectValue placeholder={lang === "bn" ? "টেমপ্লেট" : "Template"} /></SelectTrigger>
+                <SelectTrigger className="mb-2 h-10"><SelectValue placeholder={tr("p7_Template")} /></SelectTrigger>
                 <SelectContent>
                   {templates.map((t: any) => (
                     <SelectItem key={t.code} value={t.code}>{lang === "bn" ? t.name_bn : t.name_en}</SelectItem>
@@ -507,9 +503,7 @@ function MarketingPage() {
                 </SelectContent>
               </Select>
               <div className="rounded-md border bg-muted/30 p-2 text-xs text-muted-foreground">
-                {lang === "bn"
-                  ? "Custom message অনুমোদিত নয়। Admin-approved টেমপ্লেট ব্যবহার করুন।"
-                  : "Custom messages are not allowed. Use admin-approved templates only."}
+                {tr("p7_Custom_messages_are_not_allowe")}
               </div>
               <Textarea
                 value={previewBody}
@@ -522,7 +516,7 @@ function MarketingPage() {
                 </div>
               )}
               <div className="mt-2 text-xs text-muted-foreground">
-                {charCount} {lang === "bn" ? "অক্ষর" : "Character"} | {smsCount} SMS (160 Character/SMS)
+                {charCount} {tr("p7_Character")} | {smsCount} SMS (160 Character/SMS)
               </div>
             </div>
 
@@ -534,7 +528,7 @@ function MarketingPage() {
                 className="h-11 border-2 border-emerald-500 text-emerald-700 hover:bg-emerald-50"
               >
                 <Copy className="mr-2 h-4 w-4" />
-                {lang === "bn" ? "কপি করুন" : "Copy Message"}
+                {tr("p7_Copy_Message")}
               </Button>
               <Button
                 variant="outline"
@@ -542,14 +536,14 @@ function MarketingPage() {
                 disabled={sending}
                 className="h-11 border-2 border-blue-500 text-blue-600 hover:bg-blue-50"
               >
-                {lang === "bn" ? "SMS পাঠান" : "Send SMS"}
+                {tr("p7_Send_SMS_2")}
                 {sending ? <Loader2 className="ml-2 h-4 w-4 animate-spin" /> : <Send className="ml-2 h-4 w-4" />}
               </Button>
               <Button
                 onClick={sendVoice}
                 className="h-11 bg-blue-600 text-white hover:bg-blue-700"
               >
-                {lang === "bn" ? "ভয়েস পাঠান" : "Send Voice Message"}
+                {tr("p7_Send_Voice_Message")}
                 <Phone className="ml-2 h-4 w-4" />
               </Button>
             </div>

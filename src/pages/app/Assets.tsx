@@ -35,7 +35,7 @@ const STATUS_LABEL: Record<string, { bn: string; en: string; cls: string }> = {
 };
 
 function AssetsPage() {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const { current } = useShop();
   const nav = useNavigate();
   const qc = useQueryClient();
@@ -67,10 +67,10 @@ function AssetsPage() {
   const refresh = async () => { await qc.invalidateQueries({ queryKey: ["assets"] }); await refetch(); };
 
   const onDelete = async (a: AssetRow) => {
-    if (!confirm(lang === "bn" ? "ডিলিট করবেন?" : "Delete?")) return;
+    if (!confirm(t("p7_Delete"))) return;
     const { error } = await supabase.from("assets").update({ deleted_at: new Date().toISOString() }).eq("id", a.id);
     if (error) { toast.error(error.message); return; }
-    toast.success(lang === "bn" ? "ডিলিট হয়েছে" : "Deleted");
+    toast.success(t("p7_Deleted"));
     void refresh();
   };
 
@@ -83,21 +83,21 @@ function AssetsPage() {
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <Package className="h-6 w-6 text-primary" />
-          <h1 className="text-xl font-extrabold md:text-2xl">{lang === "bn" ? "দোকানের সম্পদ" : "Shop Assets"}</h1>
+          <h1 className="text-xl font-extrabold md:text-2xl">{t("p7_Shop_Assets")}</h1>
         </div>
         <Button onClick={() => { setEditing(null); setOpen(true); }} className="gap-1">
-          <Plus className="h-4 w-4" /> <span className="text-xs">{lang === "bn" ? "নতুন সম্পদ" : "New asset"}</span>
+          <Plus className="h-4 w-4" /> <span className="text-xs">{t("p7_New_asset")}</span>
         </Button>
       </div>
 
       {/* Summary */}
       <div className="mt-4 grid grid-cols-2 gap-2">
         <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3">
-          <div className="text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground">{lang === "bn" ? "মোট সচল সম্পদ" : "Active asset value"}</div>
+          <div className="text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground">{t("p7_Active_asset_value")}</div>
           <div className="mt-1 text-base font-extrabold text-emerald-700 md:text-xl">{fmtMoney(totals.activeVal, lang)}</div>
         </div>
         <div className="rounded-xl border border-rose-200 bg-rose-50 p-3">
-          <div className="text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground">{lang === "bn" ? "নষ্ট/বিক্রিত ক্ষতি" : "Loss / disposal"}</div>
+          <div className="text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground">{t("p7_Loss_disposal")}</div>
           <div className="mt-1 text-base font-extrabold text-rose-700 md:text-xl">{fmtMoney(totals.loss, lang)}</div>
         </div>
       </div>
@@ -110,24 +110,24 @@ function AssetsPage() {
             onClick={() => setFilter(f)}
             className={"rounded-full border px-3 py-1 text-xs font-semibold " + (filter === f ? "border-primary bg-primary text-primary-foreground" : "bg-background")}
           >
-            {f === "all" ? (lang === "bn" ? "সব" : "All") : f === "active" ? (lang === "bn" ? "সচল" : "Active") : (lang === "bn" ? "নষ্ট/বিক্রিত" : "Damaged/sold")}
+            {f === "all" ? (t("p7_All_2")) : f === "active" ? (t("p7_Active_4")) : (t("p7_Damaged_sold"))}
           </button>
         ))}
       </div>
 
       <div className="mt-3 rounded-xl border bg-card">
         {filtered.length === 0 ? (
-          <EmptyState icon={<Package className="h-6 w-6" />} title={lang === "bn" ? "কোনো সম্পদ নেই" : "No assets"} />
+          <EmptyState icon={<Package className="h-6 w-6" />} title={t("p7_No_assets")} />
         ) : (
           <>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>{lang === "bn" ? "নাম" : "Name"}</TableHead>
-                <TableHead>{lang === "bn" ? "ক্যাটাগরি" : "Category"}</TableHead>
-                <TableHead>{lang === "bn" ? "তারিখ" : "Date"}</TableHead>
-                <TableHead className="text-right">{lang === "bn" ? "মূল্য" : "Price"}</TableHead>
-                <TableHead>{lang === "bn" ? "অবস্থা" : "Status"}</TableHead>
+                <TableHead>{t("p7_Name")}</TableHead>
+                <TableHead>{t("p7_Category")}</TableHead>
+                <TableHead>{t("p7_Date")}</TableHead>
+                <TableHead className="text-right">{t("p7_Price")}</TableHead>
+                <TableHead>{t("p7_Status")}</TableHead>
                 <TableHead className="text-right">Action</TableHead>
               </TableRow>
             </TableHeader>
@@ -155,15 +155,15 @@ function AssetsPage() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem onClick={() => { setEditing(a); setOpen(true); }}>
-                            <Pencil className="mr-2 h-4 w-4" /> {lang === "bn" ? "এডিট" : "Edit"}
+                            <Pencil className="mr-2 h-4 w-4" /> {t("p7_Edit")}
                           </DropdownMenuItem>
                           {a.status === "active" && (
                             <DropdownMenuItem onClick={() => { setDisposeTarget(a); setDisposeOpen(true); }}>
-                              <AlertTriangle className="mr-2 h-4 w-4" /> {lang === "bn" ? "নষ্ট/বিক্রিত চিহ্নিত করুন" : "Mark damaged/sold"}
+                              <AlertTriangle className="mr-2 h-4 w-4" /> {t("p7_Mark_damaged_sold")}
                             </DropdownMenuItem>
                           )}
                           <DropdownMenuItem className="text-destructive" onClick={() => onDelete(a)}>
-                            <Trash2 className="mr-2 h-4 w-4" /> {lang === "bn" ? "ডিলিট" : "Delete"}
+                            <Trash2 className="mr-2 h-4 w-4" /> {t("p7_Delete_3")}
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -196,7 +196,7 @@ function AssetsPage() {
 const CATEGORY_SUGGESTIONS = ["ইলেকট্রনিক্স", "ফার্নিচার", "ডেকোরেশন", "ফিক্সচার", "যন্ত্রপাতি", "অন্যান্য"];
 
 function AssetDialog({ open, onOpenChange, editing, onSaved }: { open: boolean; onOpenChange: (v: boolean) => void; editing: AssetRow | null; onSaved: () => void }) {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const { current } = useShop();
   const { user } = useAuth();
   const [name, setName] = useState("");
@@ -222,9 +222,9 @@ function AssetDialog({ open, onOpenChange, editing, onSaved }: { open: boolean; 
 
   const save = async () => {
     if (!current || !user) return;
-    if (!name.trim()) { toast.error(lang === "bn" ? "নাম দিন" : "Enter name"); return; }
+    if (!name.trim()) { toast.error(t("p7_Enter_name")); return; }
     const p = Number(price);
-    if (p < 0 || isNaN(p)) { toast.error(lang === "bn" ? "মূল্য সঠিক নয়" : "Invalid price"); return; }
+    if (p < 0 || isNaN(p)) { toast.error(t("p7_Invalid_price")); return; }
     setBusy(true);
     const payload = {
       shop_id: current.id,
@@ -258,7 +258,7 @@ function AssetDialog({ open, onOpenChange, editing, onSaved }: { open: boolean; 
       });
     }
     setBusy(false);
-    toast.success(lang === "bn" ? "সেভ হয়েছে" : "Saved");
+    toast.success(t("p7_Saved"));
     onOpenChange(false);
     onSaved();
   };
@@ -267,37 +267,37 @@ function AssetDialog({ open, onOpenChange, editing, onSaved }: { open: boolean; 
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>{editing ? (lang === "bn" ? "সম্পদ এডিট" : "Edit asset") : (lang === "bn" ? "নতুন সম্পদ" : "New asset")}</DialogTitle>
+          <DialogTitle>{editing ? (t("p7_Edit_asset")) : (t("p7_New_asset"))}</DialogTitle>
         </DialogHeader>
         <div className="grid gap-3">
           <div className="grid gap-1.5">
-            <Label>{lang === "bn" ? "নাম" : "Name"}</Label>
-            <Input autoFocus value={name} onChange={(e) => setName(e.target.value)} placeholder={lang === "bn" ? "যেমন: ছাদের ফ্যান" : "e.g. Ceiling fan"} />
+            <Label>{t("p7_Name")}</Label>
+            <Input autoFocus value={name} onChange={(e) => setName(e.target.value)} placeholder={t("p7_e_g_Ceiling_fan")} />
           </div>
           <div className="grid gap-1.5">
-            <Label>{lang === "bn" ? "ক্যাটাগরি" : "Category"}</Label>
-            <Input value={category} onChange={(e) => setCategory(e.target.value)} list="asset-cats" placeholder={lang === "bn" ? "ইলেকট্রনিক্স / ফার্নিচার..." : "Electronics / Furniture"} />
+            <Label>{t("p7_Category")}</Label>
+            <Input value={category} onChange={(e) => setCategory(e.target.value)} list="asset-cats" placeholder={t("p7_Electronics_Furniture")} />
             <datalist id="asset-cats">
               {CATEGORY_SUGGESTIONS.map((c) => <option key={c} value={c} />)}
             </datalist>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="grid gap-1.5">
-              <Label>{lang === "bn" ? "মূল্য" : "Price"}</Label>
+              <Label>{t("p7_Price")}</Label>
               <Input type="number" value={price} onChange={(e) => setPrice(e.target.value)} />
             </div>
             <div className="grid gap-1.5">
-              <Label>{lang === "bn" ? "পরিমাণ" : "Qty"}</Label>
+              <Label>{t("p7_Qty")}</Label>
               <Input type="number" value={qty} onChange={(e) => setQty(e.target.value)} />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="grid gap-1.5">
-              <Label>{lang === "bn" ? "তারিখ" : "Date"}</Label>
+              <Label>{t("p7_Date")}</Label>
               <Input type="date" value={pDate} onChange={(e) => setPDate(e.target.value)} />
             </div>
             <div className="grid gap-1.5">
-              <Label>{lang === "bn" ? "মাধ্যম" : "Paid via"}</Label>
+              <Label>{t("p7_Paid_via_2")}</Label>
               <Select value={paidVia} onValueChange={(v) => setPaidVia(v as typeof paidVia)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -311,13 +311,13 @@ function AssetDialog({ open, onOpenChange, editing, onSaved }: { open: boolean; 
             </div>
           </div>
           <div className="grid gap-1.5">
-            <Label>{lang === "bn" ? "নোট" : "Note"}</Label>
+            <Label>{t("p7_Note")}</Label>
             <Textarea value={note} onChange={(e) => setNote(e.target.value)} rows={2} />
           </div>
         </div>
         <DialogFooter>
-          <Button variant="ghost" onClick={() => onOpenChange(false)}>{lang === "bn" ? "বাতিল" : "Cancel"}</Button>
-          <Button onClick={save} disabled={busy}>{busy ? "..." : lang === "bn" ? "সেভ" : "Save"}</Button>
+          <Button variant="ghost" onClick={() => onOpenChange(false)}>{t("p7_Cancel")}</Button>
+          <Button onClick={save} disabled={busy}>{busy ? "..." : t("p7_Save_2")}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -325,7 +325,7 @@ function AssetDialog({ open, onOpenChange, editing, onSaved }: { open: boolean; 
 }
 
 function DisposeDialog({ open, onOpenChange, target, onSaved }: { open: boolean; onOpenChange: (v: boolean) => void; target: AssetRow | null; onSaved: () => void }) {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const { current } = useShop();
   const { user } = useAuth();
   const [status, setStatus] = useState<"damaged" | "sold" | "disposed">("damaged");
@@ -364,7 +364,7 @@ function DisposeDialog({ open, onOpenChange, target, onSaved }: { open: boolean;
       });
     }
     setBusy(false);
-    toast.success(lang === "bn" ? "আপডেট হয়েছে" : "Updated");
+    toast.success(t("p7_Updated"));
     onOpenChange(false);
     onSaved();
   };
@@ -373,32 +373,32 @@ function DisposeDialog({ open, onOpenChange, target, onSaved }: { open: boolean;
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>{lang === "bn" ? "অবস্থা পরিবর্তন" : "Change status"} — {target?.name}</DialogTitle>
+          <DialogTitle>{t("p7_Change_status")} — {target?.name}</DialogTitle>
         </DialogHeader>
         <div className="grid gap-3">
           <div className="grid gap-1.5">
-            <Label>{lang === "bn" ? "অবস্থা" : "Status"}</Label>
+            <Label>{t("p7_Status")}</Label>
             <Select value={status} onValueChange={(v) => setStatus(v as any)}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="damaged">{lang === "bn" ? "নষ্ট" : "Damaged"}</SelectItem>
-                <SelectItem value="sold">{lang === "bn" ? "বিক্রি করা হয়েছে" : "Sold"}</SelectItem>
-                <SelectItem value="disposed">{lang === "bn" ? "বাতিল/ফেলে দেওয়া" : "Disposed"}</SelectItem>
+                <SelectItem value="damaged">{t("p7_Damaged")}</SelectItem>
+                <SelectItem value="sold">{t("p7_Sold")}</SelectItem>
+                <SelectItem value="disposed">{t("p7_Disposed")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
           <div className="grid gap-1.5">
-            <Label>{lang === "bn" ? "প্রাপ্ত মূল্য (যদি বিক্রি করেন)" : "Received value (if sold)"}</Label>
+            <Label>{t("p7_Received_value_if_sold")}</Label>
             <Input type="number" value={value} onChange={(e) => setValue(e.target.value)} placeholder="0" />
           </div>
           <div className="grid gap-1.5">
-            <Label>{lang === "bn" ? "তারিখ" : "Date"}</Label>
+            <Label>{t("p7_Date")}</Label>
             <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
           </div>
         </div>
         <DialogFooter>
-          <Button variant="ghost" onClick={() => onOpenChange(false)}>{lang === "bn" ? "বাতিল" : "Cancel"}</Button>
-          <Button onClick={save} disabled={busy}>{busy ? "..." : lang === "bn" ? "আপডেট" : "Update"}</Button>
+          <Button variant="ghost" onClick={() => onOpenChange(false)}>{t("p7_Cancel")}</Button>
+          <Button onClick={save} disabled={busy}>{busy ? "..." : t("p7_Update")}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

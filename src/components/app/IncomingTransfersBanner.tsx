@@ -15,7 +15,7 @@ type Req = {
 };
 
 export function IncomingTransfersBanner() {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const { user } = useAuth();
   const [reqs, setReqs] = useState<Req[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
@@ -39,8 +39,8 @@ export function IncomingTransfersBanner() {
     const res = data as { ok: boolean; error?: string } | null;
     if (!res?.ok) { toast.error(res?.error ?? "Failed"); return; }
     toast.success(accept
-      ? (lang === "bn" ? "Accept করা হয়েছে — admin চূড়ান্ত approve করবে" : "Accepted — admin will finalize")
-      : (lang === "bn" ? "Reject করা হয়েছে" : "Rejected"));
+      ? (t("p7_Accepted_admin_will_finalize"))
+      : (t("p7_Rejected")));
     await load();
   };
 
@@ -53,21 +53,19 @@ export function IncomingTransfersBanner() {
           <ArrowRightLeft className="h-5 w-5 text-amber-700" />
           <div className="min-w-0 flex-1 text-sm">
             <div className="font-bold text-amber-900">
-              {lang === "bn" ? "দোকান হস্তান্তর অনুরোধ" : "Shop transfer request"} — {r.shop_name ?? r.shop_id.slice(0, 8)}
+              {t("p7_Shop_transfer_request")} — {r.shop_name ?? r.shop_id.slice(0, 8)}
             </div>
             {r.reason && <div className="text-xs text-amber-800">{r.reason}</div>}
             <div className="mt-1 text-[11px] text-amber-700">
-              {lang === "bn"
-                ? "Accept করলে admin চূড়ান্ত করবে। Subscription না থাকলে এই দোকানে ৩০ দিনের ফ্রি Trial পাবেন।"
-                : "After you accept, admin finalizes. If you have no subscription, you'll get a 30-day free trial for this shop."}
+              {t("p7_After_you_accept_admin_finaliz")}
             </div>
           </div>
           <Button size="sm" variant="outline" disabled={busy === r.id} onClick={() => respond(r.id, false)}>
-            <X className="mr-1 h-4 w-4" /> {lang === "bn" ? "বাতিল" : "Reject"}
+            <X className="mr-1 h-4 w-4" /> {t("p7_Reject")}
           </Button>
           <Button size="sm" disabled={busy === r.id} onClick={() => respond(r.id, true)}>
             {busy === r.id ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Check className="mr-1 h-4 w-4" />}
-            {lang === "bn" ? "গ্রহণ" : "Accept"}
+            {t("p7_Accept")}
           </Button>
         </div>
       ))}

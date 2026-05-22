@@ -54,7 +54,7 @@ function initials(name: string) {
 }
 
 export function PhonebookPickerDialog({ open, onOpenChange, onPick, onPickMany }: Props) {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const [list, setList] = useState<PhonebookContact[]>([]);
   const [search, setSearch] = useState("");
   const [busy, setBusy] = useState(false);
@@ -81,9 +81,7 @@ export function PhonebookPickerDialog({ open, onOpenChange, onPick, onPickMany }
   const pickFromDevice = async () => {
     if (!supportsApi) {
       toast.error(
-        lang === "bn"
-          ? "এই ব্রাউজারে ফোনবুক সরাসরি অ্যাক্সেস করা যায় না — .vcf ফাইল আপলোড করুন"
-          : "This browser cannot access contacts directly — upload a .vcf file",
+        t("p7_This_browser_cannot_access_con"),
       );
       return;
     }
@@ -124,12 +122,12 @@ export function PhonebookPickerDialog({ open, onOpenChange, onPick, onPickMany }
       const text = await f.text();
       const parsed = parseVCards(text);
       if (parsed.length === 0) {
-        toast.error(lang === "bn" ? "কোনো কন্ট্যাক্ট পাওয়া যায়নি" : "No contacts found");
+        toast.error(t("p7_No_contacts_found"));
         return;
       }
       setList(parsed);
     } catch {
-      toast.error(lang === "bn" ? "ফাইল পড়া যায়নি" : "Could not read file");
+      toast.error(t("p7_Could_not_read_file"));
     } finally {
       setBusy(false);
     }
@@ -163,7 +161,7 @@ export function PhonebookPickerDialog({ open, onOpenChange, onPick, onPickMany }
     const out: PhonebookContact[] = [];
     list.forEach((c, i) => { if (picked.has(keyOf(c, i))) out.push(c); });
     if (out.length === 0) {
-      toast.error(lang === "bn" ? "অন্তত একজন বাছাই করুন" : "Select at least one");
+      toast.error(t("p7_Select_at_least_one"));
       return;
     }
     onPickMany?.(out);
@@ -176,7 +174,7 @@ export function PhonebookPickerDialog({ open, onOpenChange, onPick, onPickMany }
         <DialogHeader className="border-b px-4 py-3">
           <DialogTitle className="flex items-center gap-2 text-base">
             <BookUser className="h-5 w-5 text-primary" />
-            {lang === "bn" ? "ফোনবুক থেকে যোগ করি" : "Add from phonebook"}
+            {t("p7_Add_from_phonebook")}
           </DialogTitle>
         </DialogHeader>
 
@@ -186,7 +184,7 @@ export function PhonebookPickerDialog({ open, onOpenChange, onPick, onPickMany }
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder={lang === "bn" ? "খোঁজ" : "Search"}
+              placeholder={t("p7_Search_3")}
               className="h-11 rounded-full bg-muted pl-9"
             />
           </div>
@@ -200,18 +198,14 @@ export function PhonebookPickerDialog({ open, onOpenChange, onPick, onPickMany }
               </div>
               <div className="text-sm text-muted-foreground">
                 {supportsApi
-                  ? lang === "bn"
-                    ? "মোবাইলের কন্ট্যাক্ট থেকে নির্বাচন করুন"
-                    : "Pick a contact from your phone"
-                  : lang === "bn"
-                    ? "ফোন থেকে .vcf ফাইল আপলোড করুন (কন্ট্যাক্ট অ্যাপ → এক্সপোর্ট)"
-                    : "Upload a .vcf file from your phone (Contacts app → Export)"}
+                  ? t("p7_Pick_a_contact_from_your_phone")
+                  : t("p7_Upload_a_vcf_file_from_your_ph")}
               </div>
               <div className="flex flex-col gap-2 w-full">
                 {supportsApi && (
                   <Button onClick={pickFromDevice} disabled={busy} className="h-11 w-full gap-2">
                     <BookUser className="h-4 w-4" />
-                    {lang === "bn" ? "কন্ট্যাক্ট নির্বাচন" : "Select contact"}
+                    {t("p7_Select_contact")}
                   </Button>
                 )}
                 <Button
@@ -221,7 +215,7 @@ export function PhonebookPickerDialog({ open, onOpenChange, onPick, onPickMany }
                   className="h-11 w-full gap-2"
                 >
                   <Upload className="h-4 w-4" />
-                  {lang === "bn" ? ".vcf ফাইল আপলোড" : "Upload .vcf file"}
+                  {t("p7_Upload_vcf_file")}
                 </Button>
                 <input
                   ref={fileRef}
@@ -236,7 +230,7 @@ export function PhonebookPickerDialog({ open, onOpenChange, onPick, onPickMany }
               </div>
             </div>
           ) : filtered.length === 0 ? (
-            <EmptyState title={lang === "bn" ? "কিছু পাওয়া যায়নি" : "No matches"} />
+            <EmptyState title={t("p7_No_matches")} />
           ) : (
             <div className="flex flex-col">
               {multi && (
@@ -246,8 +240,8 @@ export function PhonebookPickerDialog({ open, onOpenChange, onPick, onPickMany }
                 >
                   {allSelected ? <CheckSquare className="h-4 w-4 text-primary" /> : <Square className="h-4 w-4" />}
                   {allSelected
-                    ? (lang === "bn" ? "সব বাদ দিন" : "Deselect all")
-                    : (lang === "bn" ? "সব নির্বাচন" : "Select all")}
+                    ? (t("p7_Deselect_all"))
+                    : (t("p7_Select_all"))}
                 </button>
               )}
               {filtered.map((c, i) => (
@@ -281,13 +275,13 @@ export function PhonebookPickerDialog({ open, onOpenChange, onPick, onPickMany }
           <div className="flex items-center justify-between gap-2 border-t p-3">
             <Button variant="ghost" size="sm" onClick={() => setList([])} className="gap-1.5">
               <X className="h-4 w-4" />
-              {lang === "bn" ? "পরিষ্কার" : "Clear"}
+              {t("p7_Clear_2")}
             </Button>
             <div className="flex items-center gap-2">
               {!supportsApi && (
                 <Button variant="outline" size="sm" onClick={() => fileRef.current?.click()} className="gap-1.5">
                   <Upload className="h-4 w-4" />
-                  {lang === "bn" ? "অন্য ফাইল" : "Another file"}
+                  {t("p7_Another_file")}
                 </Button>
               )}
               {multi && (

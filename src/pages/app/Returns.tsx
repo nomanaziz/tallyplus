@@ -30,7 +30,7 @@ type ReturnRow = {
 };
 
 function ReturnsListPage() {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const { current } = useShop();
   const nav = useNavigate();
   const [search, setSearch] = useState("");
@@ -90,10 +90,10 @@ function ReturnsListPage() {
   }, [filtered]);
 
   async function onDelete(id: string) {
-    if (!confirm(lang === "bn" ? "এই রিটার্নটি মুছবেন?" : "Delete this return?")) return;
+    if (!confirm(t("p7_Delete_this_return"))) return;
     const { error } = await supabase.from("sale_returns").update({ deleted_at: new Date().toISOString() }).eq("id", id);
     if (error) { toast.error(error.message); return; }
-    toast.success(lang === "bn" ? "রিটার্ন মোছা হয়েছে" : "Return deleted");
+    toast.success(t("p7_Return_deleted"));
     refetch();
   }
 
@@ -103,7 +103,7 @@ function ReturnsListPage() {
       return {
         date: new Date(r.created_at).toLocaleDateString("en-GB"),
         return_no: r.return_no ?? r.id.slice(0, 6),
-        customer: cust?.name ?? (lang === "bn" ? "ওয়াক-ইন" : "Walk-in"),
+        customer: cust?.name ?? (t("p7_Walk_in")),
         reason: r.reason ?? "—",
         total: fmtMoney(Number(r.total ?? 0), lang),
         refund: fmtMoney(Number(r.refund_amount ?? 0), lang),
@@ -114,7 +114,7 @@ function ReturnsListPage() {
 
   function handleDownload() {
     if (filtered.length === 0) {
-      toast.error(lang === "bn" ? "ডাউনলোড করার মতো কিছু নেই" : "Nothing to download");
+      toast.error(t("p7_Nothing_to_download"));
       return;
     }
     const headers = ["Date", "Return No", "Customer", "Reason", "Total", "Refund", "Status"];
@@ -133,7 +133,7 @@ function ReturnsListPage() {
 
   function handlePrint(asReport: boolean) {
     if (filtered.length === 0) {
-      toast.error(lang === "bn" ? "প্রিন্ট করার মতো কিছু নেই" : "Nothing to print");
+      toast.error(t("p7_Nothing_to_print"));
       return;
     }
     const today = new Date().toISOString().slice(0, 10);
@@ -142,7 +142,7 @@ function ReturnsListPage() {
     const end = dates.length ? new Date(dates[dates.length - 1]).toISOString().slice(0, 10) : today;
     const exportRows = buildExportRows();
     const footer = asReport
-      ? `${lang === "bn" ? "মোট রিটার্ন" : "Total returns"}: ${totals.count}  •  ${lang === "bn" ? "মোট মূল্য" : "Total"}: ${fmtMoney(totals.value, lang)}  •  ${lang === "bn" ? "ফেরত" : "Refunded"}: ${fmtMoney(totals.refunded, lang)}  •  ${lang === "bn" ? "অপেক্ষমান" : "Pending"}: ${fmtMoney(totals.pending, lang)}`
+      ? `${t("p7_Total_returns")}: ${totals.count}  •  ${t("p7_Total_3")}: ${fmtMoney(totals.value, lang)}  •  ${t("p7_Refunded_2")}: ${fmtMoney(totals.refunded, lang)}  •  ${t("p7_Pending")}: ${fmtMoney(totals.pending, lang)}`
       : undefined;
     printTableReport({
       shopName: current?.name ?? "",
@@ -155,13 +155,13 @@ function ReturnsListPage() {
       endDate: end,
       lang,
       columns: [
-        { key: "date", label: lang === "bn" ? "তারিখ" : "Date" },
-        { key: "return_no", label: lang === "bn" ? "রিটার্ন নং" : "Return No" },
-        { key: "customer", label: lang === "bn" ? "কাস্টমার" : "Customer" },
-        { key: "reason", label: lang === "bn" ? "কারণ" : "Reason" },
-        { key: "total", label: lang === "bn" ? "মোট" : "Total", align: "right" },
-        { key: "refund", label: lang === "bn" ? "ফেরত" : "Refund", align: "right" },
-        { key: "status", label: lang === "bn" ? "অবস্থা" : "Status" },
+        { key: "date", label: t("p7_Date") },
+        { key: "return_no", label: t("p7_Return_No") },
+        { key: "customer", label: t("p7_Customer") },
+        { key: "reason", label: t("p7_Reason_2") },
+        { key: "total", label: t("p7_Total_2"), align: "right" },
+        { key: "refund", label: t("p7_Refund_2"), align: "right" },
+        { key: "status", label: t("p7_Status") },
       ],
       rows: exportRows,
       footer,
@@ -169,33 +169,33 @@ function ReturnsListPage() {
   }
 
   const statusBadge = (s: string) => {
-    if (s === "refunded") return <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-semibold text-emerald-700">{lang === "bn" ? "ফেরত দেওয়া" : "Refunded"}</span>;
-    if (s === "adjusted_to_due") return <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-700">{lang === "bn" ? "বাকিতে সমন্বয়" : "Adjusted"}</span>;
-    return <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-700">{lang === "bn" ? "অপেক্ষমান" : "Pending"}</span>;
+    if (s === "refunded") return <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-semibold text-emerald-700">{t("p7_Refunded")}</span>;
+    if (s === "adjusted_to_due") return <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-700">{t("p7_Adjusted")}</span>;
+    return <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-700">{t("p7_Pending")}</span>;
   };
 
   return (
     <div className="min-h-full bg-muted/30">
       <PageHeader
-        breadcrumb={lang === "bn" ? "প্রোডাক্ট রিটার্ন" : "Product Return"}
-        title={lang === "bn" ? "প্রোডাক্ট রিটার্ন" : "Product Return"}
+        breadcrumb={t("p7_Product_Return")}
+        title={t("p7_Product_Return")}
         actions={
           <div className="flex flex-wrap items-center gap-2">
             <Button variant="outline" className="h-10 gap-2" onClick={handleDownload}>
               <Download className="h-4 w-4" />
-              {lang === "bn" ? "ডাউনলোড" : "Download"}
+              {t("p7_Download_2")}
             </Button>
             <Button variant="outline" className="h-10 gap-2" onClick={() => handlePrint(true)}>
               <FileText className="h-4 w-4" />
-              {lang === "bn" ? "রিপোর্ট" : "Report"}
+              {t("p7_Report")}
             </Button>
             <Button variant="outline" className="h-10 gap-2" onClick={() => handlePrint(false)}>
               <Printer className="h-4 w-4" />
-              {lang === "bn" ? "প্রিন্ট" : "Print"}
+              {t("p7_Print")}
             </Button>
             <Button className="h-10 gap-2" onClick={() => nav({ to: "/app/returns/new" })}>
               <Plus className="h-4 w-4" />
-              {lang === "bn" ? "নতুন রিটার্ন" : "New return"}
+              {t("p7_New_return")}
             </Button>
           </div>
         }
@@ -204,25 +204,25 @@ function ReturnsListPage() {
       <div className="container space-y-3 px-3 py-3 md:space-y-4 md:px-4 md:py-4">
         {/* Summary tiles */}
         <StatGrid>
-          <StatCard label={lang === "bn" ? "মোট রিটার্ন" : "Total returns"} value={String(totals.count)} />
-          <StatCard label={lang === "bn" ? "রিটার্ন মূল্য" : "Return value"} value={fmtMoney(totals.value, lang)} tone="primary" />
-          <StatCard label={lang === "bn" ? "টাকা ফেরত" : "Refunded"} value={fmtMoney(totals.refunded, lang)} tone="danger" />
-          <StatCard label={lang === "bn" ? "অপেক্ষমান" : "Pending"} value={fmtMoney(totals.pending, lang)} tone="warn" />
+          <StatCard label={t("p7_Total_returns")} value={String(totals.count)} />
+          <StatCard label={t("p7_Return_value")} value={fmtMoney(totals.value, lang)} tone="primary" />
+          <StatCard label={t("p7_Refunded_3")} value={fmtMoney(totals.refunded, lang)} tone="danger" />
+          <StatCard label={t("p7_Pending")} value={fmtMoney(totals.pending, lang)} tone="warn" />
         </StatGrid>
 
         {/* Filters */}
         <div className="flex flex-col gap-2 rounded-xl border bg-background p-3 md:flex-row md:items-center">
           <div className="relative flex-1">
             <Search className="pointer-events-none absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input className="pl-8" placeholder={lang === "bn" ? "রিটার্ন নং, কারণ, কাস্টমার…" : "Return no, reason, customer…"} value={search} onChange={(e) => setSearch(e.target.value)} />
+            <Input className="pl-8" placeholder={t("p7_Return_no_reason_customer")} value={search} onChange={(e) => setSearch(e.target.value)} />
           </div>
           <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as typeof statusFilter)}>
             <SelectTrigger className="w-full md:w-44"><SelectValue /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">{lang === "bn" ? "সব স্ট্যাটাস" : "All statuses"}</SelectItem>
-              <SelectItem value="pending">{lang === "bn" ? "অপেক্ষমান" : "Pending"}</SelectItem>
-              <SelectItem value="refunded">{lang === "bn" ? "ফেরত দেওয়া" : "Refunded"}</SelectItem>
-              <SelectItem value="adjusted_to_due">{lang === "bn" ? "বাকিতে সমন্বয়" : "Adjusted to due"}</SelectItem>
+              <SelectItem value="all">{t("p7_All_statuses")}</SelectItem>
+              <SelectItem value="pending">{t("p7_Pending")}</SelectItem>
+              <SelectItem value="refunded">{t("p7_Refunded")}</SelectItem>
+              <SelectItem value="adjusted_to_due">{t("p7_Adjusted_to_due")}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -234,8 +234,8 @@ function ReturnsListPage() {
           ) : filtered.length === 0 ? (
             <EmptyState
               icon={<Undo2 className="h-8 w-8" />}
-              title={lang === "bn" ? "এখনো কোনো রিটার্ন নেই" : "No returns yet"}
-              action={<Button className="h-10 gap-2" onClick={() => nav({ to: "/app/returns/new" })}><Plus className="h-4 w-4" />{lang === "bn" ? "নতুন রিটার্ন" : "New return"}</Button>}
+              title={t("p7_No_returns_yet")}
+              action={<Button className="h-10 gap-2" onClick={() => nav({ to: "/app/returns/new" })}><Plus className="h-4 w-4" />{t("p7_New_return")}</Button>}
             />
           ) : (
             <ul className="divide-y">
@@ -252,14 +252,14 @@ function ReturnsListPage() {
                         {statusBadge(r.refund_status)}
                       </div>
                       <div className="mt-0.5 truncate text-xs text-muted-foreground">
-                        {cust?.name ?? (lang === "bn" ? "ওয়াক-ইন" : "Walk-in")}
+                        {cust?.name ?? (t("p7_Walk_in"))}
                         {r.reason ? ` · ${r.reason}` : ""}
                         {" · "}{new Date(r.created_at).toLocaleDateString("en-GB")}
                       </div>
                     </div>
                     <div className="shrink-0 text-right">
                       <div className="text-sm font-extrabold">{fmtMoney(r.total, lang)}</div>
-                      <div className="text-[11px] text-muted-foreground">{lang === "bn" ? "ফেরত: " : "Refund: "}{fmtMoney(r.refund_amount, lang)}</div>
+                      <div className="text-[11px] text-muted-foreground">{t("p7_Refund_3")}{fmtMoney(r.refund_amount, lang)}</div>
                     </div>
                     <div className="ml-2 flex shrink-0 items-center gap-1">
                       <Link to="/app/returns/$id" params={{ id: r.id }}>

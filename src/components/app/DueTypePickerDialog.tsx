@@ -18,7 +18,7 @@ export function DueTypePickerDialog({
   onOpenChange: (v: boolean) => void;
   onPickMoney: (dir: DueDirection) => void;
 }) {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const nav = useNavigate();
   const [kind, setKind] = useState<DueKind>("money");
   const [dir, setDir] = useState<DueDirection>("giving");
@@ -39,7 +39,7 @@ export function DueTypePickerDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>{lang === "bn" ? "বাকির ধরন নির্বাচন করুন" : "Select the due type"}</DialogTitle>
+          <DialogTitle>{t("p7_Select_the_due_type")}</DialogTitle>
           <DialogDescription className="sr-only">Choose due type</DialogDescription>
         </DialogHeader>
         <div className="grid grid-cols-2 gap-3">
@@ -49,7 +49,7 @@ export function DueTypePickerDialog({
             className={cn("flex flex-col items-center gap-2 rounded-lg border-2 p-6 transition", kind === "goods" ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground/40")}
           >
             <Package className="h-10 w-10 text-amber-500" />
-            <span className="font-semibold">{lang === "bn" ? "পণ্য বাকি" : "Goods due"}</span>
+            <span className="font-semibold">{t("p7_Goods_due")}</span>
           </button>
           <button
             type="button"
@@ -57,11 +57,11 @@ export function DueTypePickerDialog({
             className={cn("flex flex-col items-center gap-2 rounded-lg border-2 p-6 transition", kind === "money" ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground/40")}
           >
             <Banknote className="h-10 w-10 text-emerald-600" />
-            <span className="font-semibold">{lang === "bn" ? "টাকা বাকি" : "Money due"}</span>
+            <span className="font-semibold">{t("p7_Money_due")}</span>
           </button>
         </div>
         <div>
-          <p className="mb-2 text-sm font-medium">{lang === "bn" ? "বাকির ধরণ" : "Direction"}</p>
+          <p className="mb-2 text-sm font-medium">{t("p7_Direction")}</p>
           <div className="grid grid-cols-2 gap-3">
             {(["giving", "taking"] as DueDirection[]).map((d) => (
               <button
@@ -74,9 +74,9 @@ export function DueTypePickerDialog({
                   {dir === d && <span className="h-2 w-2 rounded-full bg-foreground" />}
                 </span>
                 <span>
-                  <span className="block font-medium">{d === "giving" ? (lang === "bn" ? "দিচ্ছি" : "Giving") : (lang === "bn" ? "নিচ্ছি" : "Taking")}</span>
+                  <span className="block font-medium">{d === "giving" ? (t("p7_Giving")) : (t("p7_Taking"))}</span>
                   <span className="block text-xs text-muted-foreground">
-                    {d === "giving" ? (lang === "bn" ? "আপনি বাকি দিচ্ছেন" : "You are giving on credit") : (lang === "bn" ? "আপনি বাকি নিচ্ছেন" : "You are taking on credit")}
+                    {d === "giving" ? (t("p7_You_are_giving_on_credit")) : (t("p7_You_are_taking_on_credit"))}
                   </span>
                 </span>
               </button>

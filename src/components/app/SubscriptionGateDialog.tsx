@@ -12,7 +12,7 @@ export function SubscriptionGateDialog({
   onClose: () => void;
   onUnlock: () => void;
 }) {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const isBn = lang === "bn";
 
   const benefits = [

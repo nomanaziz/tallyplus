@@ -16,7 +16,7 @@ export function ProductBulkImportDialog({
   onOpenChange: (v: boolean) => void;
   onImported: () => void;
 }) {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const { current } = useShop();
   const [rows, setRows] = useState<ParsedRow[] | null>(null);
   const [parsing, setParsing] = useState(false);
@@ -29,13 +29,13 @@ export function ProductBulkImportDialog({
     try {
       const parsed = await parseImportFile(file);
       if (parsed.length === 0) {
-        toast.error(lang === "bn" ? "ফাইলে কোনো ডাটা নেই" : "No data in file");
+        toast.error(t("p7_No_data_in_file"));
         setRows(null);
         return;
       }
       setRows(parsed);
     } catch (e) {
-      toast.error((e as Error).message || (lang === "bn" ? "ফাইল পড়া যায়নি" : "Failed to read file"));
+      toast.error((e as Error).message || (t("p7_Failed_to_read_file")));
     } finally {
       setParsing(false);
     }
@@ -75,23 +75,23 @@ export function ProductBulkImportDialog({
     <Dialog open={open} onOpenChange={(v) => { if (!v) reset(); onOpenChange(v); }}>
       <DialogContent className="max-w-3xl">
         <DialogHeader>
-          <DialogTitle>{lang === "bn" ? "পণ্য Bulk Import (Excel/CSV)" : "Bulk Import Products (Excel/CSV)"}</DialogTitle>
+          <DialogTitle>{t("p7_Bulk_Import_Products_Excel_CSV")}</DialogTitle>
         </DialogHeader>
 
         {!rows ? (
           <div className="space-y-4 py-4">
             <div className="rounded-lg border bg-muted/40 p-4">
               <div className="text-sm font-semibold">
-                {lang === "bn" ? "নিয়ম" : "Instructions"}
+                {t("p7_Instructions")}
               </div>
               <ul className="mt-2 list-inside list-disc text-xs text-muted-foreground space-y-1">
-                <li>{lang === "bn" ? "Excel (.xlsx) বা CSV file দিন" : "Upload Excel (.xlsx) or CSV file"}</li>
-                <li>{lang === "bn" ? "Columns: নাম, পরিমাণ, ক্রয়মূল্য, বিক্রয়মূল্য (ইউনিট, বারকোড — optional)" : "Columns: Name, Quantity, Cost Price, Sale Price (Unit, Barcode — optional)"}</li>
-                <li>{lang === "bn" ? "টেমপ্লেট ডাউনলোড করে শুরু করতে পারেন" : "Download the template to get started"}</li>
+                <li>{t("p7_Upload_Excel_xlsx_or_CSV_file")}</li>
+                <li>{t("p7_Columns_Name_Quantity_Cost_Pri")}</li>
+                <li>{t("p7_Download_the_template_to_get_s")}</li>
               </ul>
               <Button variant="outline" size="sm" className="mt-3 gap-2" onClick={downloadProductImportTemplate}>
                 <Download className="h-4 w-4" />
-                {lang === "bn" ? "টেমপ্লেট ডাউনলোড" : "Download Template"}
+                {t("p7_Download_Template")}
               </Button>
             </div>
 
@@ -99,8 +99,8 @@ export function ProductBulkImportDialog({
               {parsing ? <Loader2 className="h-8 w-8 animate-spin text-primary" /> : <Upload className="h-8 w-8 text-muted-foreground" />}
               <span className="text-sm font-semibold">
                 {parsing
-                  ? (lang === "bn" ? "পড়া হচ্ছে..." : "Parsing...")
-                  : (lang === "bn" ? "ফাইল নির্বাচন করুন" : "Choose file")}
+                  ? (t("p7_Parsing"))
+                  : (t("p7_Choose_file"))}
               </span>
               <span className="text-xs text-muted-foreground">.xlsx, .xls, .csv</span>
               <input
@@ -115,11 +115,11 @@ export function ProductBulkImportDialog({
           <div className="space-y-3 py-3">
             <div className="flex items-center gap-3 text-sm">
               <span className="flex items-center gap-1 text-emerald-600 font-semibold">
-                <CheckCircle2 className="h-4 w-4" /> {valid.length} {lang === "bn" ? "বৈধ" : "valid"}
+                <CheckCircle2 className="h-4 w-4" /> {valid.length} {t("p7_valid")}
               </span>
               {invalid.length > 0 && (
                 <span className="flex items-center gap-1 text-rose-600 font-semibold">
-                  <AlertCircle className="h-4 w-4" /> {invalid.length} {lang === "bn" ? "অবৈধ" : "invalid"}
+                  <AlertCircle className="h-4 w-4" /> {invalid.length} {t("p7_invalid")}
                 </span>
               )}
             </div>
@@ -128,12 +128,12 @@ export function ProductBulkImportDialog({
                 <thead className="sticky top-0 bg-muted">
                   <tr>
                     <th className="p-2 text-left">#</th>
-                    <th className="p-2 text-left">{lang === "bn" ? "নাম" : "Name"}</th>
-                    <th className="p-2 text-right">{lang === "bn" ? "পরিমাণ" : "Qty"}</th>
-                    <th className="p-2 text-right">{lang === "bn" ? "ক্রয়" : "Cost"}</th>
-                    <th className="p-2 text-right">{lang === "bn" ? "বিক্রয়" : "Sale"}</th>
+                    <th className="p-2 text-left">{t("p7_Name")}</th>
+                    <th className="p-2 text-right">{t("p7_Qty")}</th>
+                    <th className="p-2 text-right">{t("p7_Cost")}</th>
+                    <th className="p-2 text-right">{t("p7_Sale")}</th>
                     <th className="p-2 text-left">Unit</th>
-                    <th className="p-2 text-left">{lang === "bn" ? "অবস্থা" : "Status"}</th>
+                    <th className="p-2 text-left">{t("p7_Status")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -157,7 +157,7 @@ export function ProductBulkImportDialog({
         <DialogFooter>
           {rows && (
             <Button variant="outline" onClick={reset}>
-              {lang === "bn" ? "অন্য ফাইল" : "Choose another"}
+              {t("p7_Choose_another")}
             </Button>
           )}
           <Button onClick={doImport} disabled={!rows || valid.length === 0 || importing}>

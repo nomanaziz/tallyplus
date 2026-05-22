@@ -15,7 +15,7 @@ type Popup = {
 };
 
 export function PromoPopupDialog() {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const { user } = useAuth();
   const [popup, setPopup] = useState<Popup | null>(null);
   const [open, setOpen] = useState(false);
@@ -70,7 +70,7 @@ export function PromoPopupDialog() {
             </Button>
           )}
           <Button variant="outline" className="flex-1" onClick={close}>
-            {lang === "bn" ? "বন্ধ" : "Close"}
+            {t("p7_Close")}
           </Button>
         </div>
       </DialogContent>

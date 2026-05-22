@@ -22,7 +22,7 @@ export function DeleteShopDialog({
   shop: ShopLite | null;
   onDeleted: () => void | Promise<void>;
 }) {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const [confirmName, setConfirmName] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -45,11 +45,11 @@ export function DeleteShopDialog({
       if (error) throw error;
       const res = data as { ok?: boolean; error?: string };
       if (!res?.ok) { toast.error(res?.error || "delete_failed"); return; }
-      toast.success(lang === "bn" ? "দোকান মুছে ফেলা হয়েছে — Snapshot Admin-এর কাছে ৩০ দিনের জন্য সংরক্ষিত।" : "Shop deleted — Snapshot kept by Admin for 30 days.");
+      toast.success(t("p7_Shop_deleted_Snapshot_kept_by_"));
       onOpenChange(false);
       await onDeleted();
     } catch (e: any) {
-      toast.error(e?.message ?? (lang === "bn" ? "মুছতে ব্যর্থ" : "Delete failed"));
+      toast.error(e?.message ?? (t("p7_Delete_failed")));
     } finally {
       setBusy(false);
     }
@@ -61,7 +61,7 @@ export function DeleteShopDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-rose-600">
             <AlertTriangle className="h-5 w-5" />
-            {lang === "bn" ? "দোকান স্থায়ীভাবে মুছুন" : "Permanently delete shop"}
+            {t("p7_Permanently_delete_shop")}
           </DialogTitle>
         </DialogHeader>
 
@@ -108,7 +108,7 @@ export function DeleteShopDialog({
 
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={busy}>
-            {lang === "bn" ? "বাতিল" : "Cancel"}
+            {t("p7_Cancel")}
           </Button>
           <Button
             onClick={onDelete}
@@ -116,7 +116,7 @@ export function DeleteShopDialog({
             className="bg-rose-600 text-white hover:bg-rose-700 disabled:opacity-50"
           >
             {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-            {lang === "bn" ? "স্থায়ীভাবে মুছুন" : "Permanently delete"}
+            {t("p7_Permanently_delete")}
           </Button>
         </DialogFooter>
       </DialogContent>

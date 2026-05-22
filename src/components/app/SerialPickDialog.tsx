@@ -21,7 +21,7 @@ type Props = {
 };
 
 export function SerialPickDialog({ open, onOpenChange, productId, productName, excludeSerialIds = [], onPicked }: Props) {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const { current } = useShop();
   const [list, setList] = useState<Available[]>([]);
   const [loading, setLoading] = useState(false);
@@ -75,17 +75,17 @@ export function SerialPickDialog({ open, onOpenChange, productId, productName, e
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md max-h-[85vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{lang === "bn" ? "সিরিয়াল বেছে নিন" : "Pick a serial"}</DialogTitle>
+          <DialogTitle>{t("p7_Pick_a_serial")}</DialogTitle>
           <DialogDescription>{productName}</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-2">
-          <Label className="text-xs">{lang === "bn" ? "স্টকে থাকা সিরিয়াল" : "In-stock serials"}</Label>
+          <Label className="text-xs">{t("p7_In_stock_serials")}</Label>
           {loading ? (
             <div className="py-3 text-center text-sm text-muted-foreground">...</div>
           ) : list.length === 0 ? (
             <div className="rounded border border-dashed py-4 text-center text-xs text-muted-foreground">
-              {lang === "bn" ? "স্টকে কোন সিরিয়াল নেই — নিচ থেকে যোগ করুন" : "No serials in stock — add one below"}
+              {t("p7_No_serials_in_stock_add_one_be")}
             </div>
           ) : (
             <ul className="max-h-48 divide-y overflow-y-auto rounded border">
@@ -105,17 +105,17 @@ export function SerialPickDialog({ open, onOpenChange, productId, productName, e
         </div>
 
         <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
-          <Label className="text-xs">{lang === "bn" ? "নতুন সিরিয়াল যোগ করে বিক্রি" : "Add new serial & sell"}</Label>
+          <Label className="text-xs">{t("p7_Add_new_serial_sell")}</Label>
           <div className="flex gap-2">
             <Input
               value={newSerial}
               onChange={(e) => setNewSerial(e.target.value)}
-              placeholder={lang === "bn" ? "IMEI/সিরিয়াল" : "IMEI/Serial"}
+              placeholder={t("p7_IMEI_Serial")}
               className="font-mono"
             />
             <Button onClick={addAndPick} disabled={busy || !newSerial.trim()} className="gap-1">
               <Plus className="h-4 w-4" />
-              {lang === "bn" ? "যোগ" : "Add"}
+              {t("p7_Add")}
             </Button>
           </div>
         </div>

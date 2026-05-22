@@ -30,7 +30,7 @@ export function EmployeeEditDialog({
   employee: EmployeeEditData | null;
   onSaved: () => void;
 }) {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const [name, setName] = useState("");
   const [address, setAddress] = useState("");
   const [salary, setSalary] = useState("");
@@ -57,7 +57,7 @@ export function EmployeeEditDialog({
   const save = async () => {
     if (!employee) return;
     if (!name.trim()) {
-      toast.error(lang === "bn" ? "নাম দিন" : "Name required");
+      toast.error(t("p7_Name_required"));
       return;
     }
     setBusy(true);
@@ -80,7 +80,7 @@ export function EmployeeEditDialog({
       toast.error(error.message);
       return;
     }
-    toast.success(lang === "bn" ? "সেভ হয়েছে" : "Saved");
+    toast.success(t("p7_Saved"));
     onOpenChange(false);
     onSaved();
   };
@@ -89,52 +89,52 @@ export function EmployeeEditDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{lang === "bn" ? "কর্মচারী এডিট" : "Edit Employee"}</DialogTitle>
+          <DialogTitle>{t("p7_Edit_Employee")}</DialogTitle>
         </DialogHeader>
         <div className="grid gap-3">
           <div className="grid gap-1.5">
-            <Label>{lang === "bn" ? "পুরো নাম" : "Full name"}</Label>
+            <Label>{t("p7_Full_name")}</Label>
             <Input value={name} onChange={(e) => setName(e.target.value)} />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="grid gap-1.5">
-              <Label>{lang === "bn" ? "মাসিক বেতন (৳)" : "Monthly salary (৳)"}</Label>
+              <Label>{t("p7_Monthly_salary")}</Label>
               <Input type="number" value={salary} onChange={(e) => setSalary(e.target.value)} />
             </div>
             <div className="grid gap-1.5">
-              <Label>{lang === "bn" ? "NID নম্বর" : "NID number"}</Label>
+              <Label>{t("p7_NID_number")}</Label>
               <Input value={nid} onChange={(e) => setNid(e.target.value)} />
             </div>
           </div>
           <div className="grid gap-1.5">
-            <Label>{lang === "bn" ? "বর্তমান ঠিকানা" : "Current address"}</Label>
+            <Label>{t("p7_Current_address")}</Label>
             <Input value={address} onChange={(e) => setAddress(e.target.value)} />
           </div>
           <div className="grid gap-1.5">
-            <Label>{lang === "bn" ? "স্থায়ী ঠিকানা" : "Permanent address"}</Label>
+            <Label>{t("p7_Permanent_address")}</Label>
             <Input value={permanentAddress} onChange={(e) => setPermanentAddress(e.target.value)} />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="grid gap-1.5">
-              <Label>{lang === "bn" ? "পিতার নাম" : "Father's name"}</Label>
+              <Label>{t("p7_Father_s_name")}</Label>
               <Input value={fatherName} onChange={(e) => setFatherName(e.target.value)} />
             </div>
             <div className="grid gap-1.5">
-              <Label>{lang === "bn" ? "মাতার নাম" : "Mother's name"}</Label>
+              <Label>{t("p7_Mother_s_name")}</Label>
               <Input value={motherName} onChange={(e) => setMotherName(e.target.value)} />
             </div>
           </div>
           <div className="grid gap-1.5">
-            <Label>{lang === "bn" ? "জরুরি যোগাযোগ নম্বর" : "Emergency contact phone"}</Label>
+            <Label>{t("p7_Emergency_contact_phone")}</Label>
             <Input value={emergencyPhone} onChange={(e) => setEmergencyPhone(e.target.value)} />
           </div>
         </div>
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
-            {lang === "bn" ? "বাতিল" : "Cancel"}
+            {t("p7_Cancel")}
           </Button>
           <Button onClick={save} disabled={busy}>
-            {busy ? "..." : lang === "bn" ? "সেভ" : "Save"}
+            {busy ? "..." : t("p7_Save_2")}
           </Button>
         </DialogFooter>
       </DialogContent>

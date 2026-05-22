@@ -9,7 +9,7 @@ import { useI18n } from "@/lib/i18n";
 
 function CashBookPage() {
   const { current } = useShop();
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const def = useDefaultMonth();
   const [cursor, setCursor] = useState<MonthCursor>(def);
 
@@ -23,15 +23,15 @@ function CashBookPage() {
   return (
     <div className="min-h-full bg-muted/30">
       <PageHeader
-        breadcrumb={lang === "bn" ? "রিপোর্ট › ক্যাশবুক" : "Reports › Cash Book"}
-        title={lang === "bn" ? "ক্যাশবুক (মাসিক হিসাব)" : "Cash Book (Monthly Summary)"}
+        breadcrumb={t("p7_Reports_Cash_Book")}
+        title={t("p7_Cash_Book_Monthly_Summary")}
         actions={<MonthSwitcher value={cursor} onChange={setCursor} />}
       />
       <CashBookView
         data={data ?? null}
         loading={isFetching}
         ownerName={current?.name ?? ""}
-        subtitle={lang === "bn" ? "এক মাসের সব খাত-ভিত্তিক আয় ও ব্যয়ের সম্পূর্ণ হিসাব।" : "Full categorized income and expense for the selected month."}
+        subtitle={t("p7_Full_categorized_income_and_ex")}
       />
     </div>
   );

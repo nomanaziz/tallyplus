@@ -35,7 +35,7 @@ export function InvoiceEditDialog({
   onOpenChange: (open: boolean) => void;
   onSaved: () => void;
 }) {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const open = !!target;
 
   const [loading, setLoading] = useState(false);
@@ -131,11 +131,11 @@ export function InvoiceEditDialog({
   const save = async () => {
     if (!target) return;
     if (items.length === 0) {
-      toast.error(lang === "bn" ? "অন্তত একটি পণ্য দিন" : "Add at least one item");
+      toast.error(t("p7_Add_at_least_one_item_2"));
       return;
     }
     if (items.some((it) => !it.name.trim() || it.qty <= 0)) {
-      toast.error(lang === "bn" ? "সব পণ্যের নাম ও পরিমাণ দিন" : "Fill all item names and quantities");
+      toast.error(t("p7_Fill_all_item_names_and_quanti"));
       return;
     }
     setBusy(true);
@@ -174,7 +174,7 @@ export function InvoiceEditDialog({
       toast.error(error.message);
       return;
     }
-    toast.success(lang === "bn" ? "ইনভয়েস আপডেট হয়েছে" : "Invoice updated");
+    toast.success(t("p7_Invoice_updated"));
     onSaved();
   };
 
@@ -184,25 +184,25 @@ export function InvoiceEditDialog({
         <DialogHeader>
           <DialogTitle>
             {target?.kind === "sale"
-              ? lang === "bn" ? "বিক্রয় ইনভয়েস এডিট" : "Edit Sale Invoice"
-              : lang === "bn" ? "ক্রয় ইনভয়েস এডিট" : "Edit Purchase Invoice"}
+              ? t("p7_Edit_Sale_Invoice")
+              : t("p7_Edit_Purchase_Invoice")}
           </DialogTitle>
         </DialogHeader>
         {loading ? (
-          <div className="py-8 text-center text-sm text-muted-foreground">{lang === "bn" ? "লোড হচ্ছে…" : "Loading…"}</div>
+          <div className="py-8 text-center text-sm text-muted-foreground">{t("p7_Loading")}</div>
         ) : (
           <div className="grid gap-4">
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="grid gap-1.5">
                 <Label>
                   {target?.kind === "sale"
-                    ? lang === "bn" ? "কাস্টমার" : "Customer"
-                    : lang === "bn" ? "সাপ্লায়ার" : "Supplier"}
+                    ? t("p7_Customer")
+                    : t("p7_Supplier")}
                 </Label>
                 <Select value={contactId || "__none__"} onValueChange={(v) => setContactId(v === "__none__" ? "" : v)}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="__none__">{lang === "bn" ? "—" : "—"}</SelectItem>
+                    <SelectItem value="__none__">{t("p7_x")}</SelectItem>
                     {contacts.map((c) => (
                       <SelectItem key={c.id} value={c.id}>{c.name}{c.phone ? ` (${c.phone})` : ""}</SelectItem>
                     ))}
@@ -210,14 +210,14 @@ export function InvoiceEditDialog({
                 </Select>
               </div>
               <div className="grid gap-1.5">
-                <Label>{lang === "bn" ? "তারিখ" : "Date"}</Label>
+                <Label>{t("p7_Date")}</Label>
                 <Input type="datetime-local" value={createdAt} onChange={(e) => setCreatedAt(e.target.value)} />
               </div>
             </div>
 
             <div className="rounded-lg border">
               <div className="border-b bg-muted/40 px-3 py-2 text-xs font-semibold">
-                {lang === "bn" ? "পণ্য সমূহ" : "Items"}
+                {t("p7_Items")}
               </div>
               <div className="divide-y">
                 {items.map((it, idx) => (
@@ -226,7 +226,7 @@ export function InvoiceEditDialog({
                       <Select value={it.product_id ?? "__custom__"} onValueChange={(v) => pickProduct(idx, v)}>
                         <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="__custom__">{lang === "bn" ? "কাস্টম পণ্য" : "Custom item"}</SelectItem>
+                          <SelectItem value="__custom__">{t("p7_Custom_item")}</SelectItem>
                           {products.map((p) => (
                             <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
                           ))}
@@ -234,7 +234,7 @@ export function InvoiceEditDialog({
                       </Select>
                       <Input
                         className="mt-1 h-8 text-xs"
-                        placeholder={lang === "bn" ? "পণ্যের নাম" : "Item name"}
+                        placeholder={t("p7_Item_name")}
                         value={it.name}
                         onChange={(e) => updateItem(idx, { name: e.target.value })}
                       />
@@ -267,38 +267,38 @@ export function InvoiceEditDialog({
               <div className="border-t p-2">
                 <Button variant="outline" size="sm" className="gap-1.5" onClick={addItem}>
                   <Plus className="h-3.5 w-3.5" />
-                  {lang === "bn" ? "নতুন পণ্য" : "Add item"}
+                  {t("p7_Add_item")}
                 </Button>
               </div>
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="grid gap-1.5">
-                <Label>{lang === "bn" ? "ডিসকাউন্ট" : "Discount"}</Label>
+                <Label>{t("p7_Discount")}</Label>
                 <Input type="number" value={discount} onChange={(e) => setDiscount(e.target.value)} />
               </div>
               <div className="grid gap-1.5">
-                <Label>{lang === "bn" ? "পরিশোধিত" : "Paid"}</Label>
+                <Label>{t("p7_Paid")}</Label>
                 <Input type="number" value={paid} onChange={(e) => setPaid(e.target.value)} />
               </div>
               <div className="grid gap-1.5 sm:col-span-2">
-                <Label>{lang === "bn" ? "নোট" : "Note"}</Label>
+                <Label>{t("p7_Note")}</Label>
                 <Input value={note} onChange={(e) => setNote(e.target.value)} />
               </div>
             </div>
 
             <div className="rounded-lg border bg-muted/30 p-3 text-sm">
-              <div className="flex justify-between"><span>{lang === "bn" ? "সাবটোটাল" : "Subtotal"}</span><span>{fmtMoney(subtotal, lang)}</span></div>
-              <div className="flex justify-between"><span>{lang === "bn" ? "ডিসকাউন্ট" : "Discount"}</span><span>-{fmtMoney(Number(discount || 0), lang)}</span></div>
-              <div className="flex justify-between font-bold"><span>{lang === "bn" ? "মোট" : "Total"}</span><span>{fmtMoney(total, lang)}</span></div>
-              <div className="flex justify-between"><span>{lang === "bn" ? "পরিশোধিত" : "Paid"}</span><span>{fmtMoney(Number(paid || 0), lang)}</span></div>
-              <div className="flex justify-between font-bold text-rose-600"><span>{lang === "bn" ? "বাকি" : "Due"}</span><span>{fmtMoney(due, lang)}</span></div>
+              <div className="flex justify-between"><span>{t("p7_Subtotal")}</span><span>{fmtMoney(subtotal, lang)}</span></div>
+              <div className="flex justify-between"><span>{t("p7_Discount")}</span><span>-{fmtMoney(Number(discount || 0), lang)}</span></div>
+              <div className="flex justify-between font-bold"><span>{t("p7_Total_2")}</span><span>{fmtMoney(total, lang)}</span></div>
+              <div className="flex justify-between"><span>{t("p7_Paid")}</span><span>{fmtMoney(Number(paid || 0), lang)}</span></div>
+              <div className="flex justify-between font-bold text-rose-600"><span>{t("p7_Due")}</span><span>{fmtMoney(due, lang)}</span></div>
             </div>
           </div>
         )}
         <DialogFooter>
-          <Button variant="ghost" onClick={() => onOpenChange(false)}>{lang === "bn" ? "বাতিল" : "Cancel"}</Button>
-          <Button onClick={save} disabled={busy || loading}>{busy ? "..." : lang === "bn" ? "সেভ" : "Save"}</Button>
+          <Button variant="ghost" onClick={() => onOpenChange(false)}>{t("p7_Cancel")}</Button>
+          <Button onClick={save} disabled={busy || loading}>{busy ? "..." : t("p7_Save_2")}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

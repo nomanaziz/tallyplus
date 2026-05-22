@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 type State = "loading" | "success" | "pending" | "failed";
 
 export default function SmsCallback() {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const params = useSearch() as Record<string, string>;
   const navigate = useNavigate();
   const [state, setState] = useState<State>("loading");
@@ -32,19 +32,19 @@ export default function SmsCallback() {
         }
         if (data?.paid) {
           setState("success");
-          setMsg(lang === "bn" ? "SMS ব্যালেন্স যোগ হয়েছে!" : "SMS balance credited!");
+          setMsg(t("p7_SMS_balance_credited"));
           return;
         }
         if (data?.status === "pending") {
           setState("pending");
-          setMsg(lang === "bn" ? "পেমেন্ট প্রক্রিয়াধীন" : "Payment is being processed");
+          setMsg(t("p7_Payment_is_being_processed"));
           return;
         }
         setState("failed");
         setMsg(
           status === "cancel"
-            ? (lang === "bn" ? "পেমেন্ট বাতিল করা হয়েছে" : "Payment was cancelled")
-            : (lang === "bn" ? "পেমেন্ট সফল হয়নি" : "Payment was not successful"),
+            ? (t("p7_Payment_was_cancelled"))
+            : (t("p7_Payment_was_not_successful")),
         );
         return;
       }
@@ -59,8 +59,8 @@ export default function SmsCallback() {
       setState("failed");
       setMsg(
         status === "cancel"
-          ? (lang === "bn" ? "পেমেন্ট বাতিল হয়েছে" : "Payment was cancelled")
-          : (lang === "bn" ? "Transaction ID পাওয়া যায়নি" : "Transaction ID missing"),
+          ? (t("p7_Payment_was_cancelled_2"))
+          : (t("p7_Transaction_ID_missing")),
       );
     })();
   }, [transactionId, status, localId, lang]);
@@ -78,7 +78,7 @@ export default function SmsCallback() {
           <>
             <Loader2 className="mx-auto h-12 w-12 animate-spin text-primary" />
             <h1 className="mt-4 text-xl font-bold">
-              {lang === "bn" ? "পেমেন্ট যাচাই হচ্ছে..." : "Verifying payment..."}
+              {t("p7_Verifying_payment")}
             </h1>
           </>
         )}
@@ -87,10 +87,10 @@ export default function SmsCallback() {
             <CheckCircle2 className="mx-auto h-14 w-14 text-emerald-500" />
             <h1 className="mt-3 text-xl font-extrabold">{msg}</h1>
             {paidAmount && (
-              <p className="mt-1 text-sm text-muted-foreground">৳{paidAmount} {lang === "bn" ? "পরিশোধিত" : "paid"}</p>
+              <p className="mt-1 text-sm text-muted-foreground">৳{paidAmount} {t("p7_paid_2")}</p>
             )}
             <Button asChild className="mt-6 w-full">
-              <Link to="/app/buy-sms">{lang === "bn" ? "এখনই যান" : "Go now"}</Link>
+              <Link to="/app/buy-sms">{t("p7_Go_now")}</Link>
             </Button>
           </>
         )}
@@ -99,7 +99,7 @@ export default function SmsCallback() {
             <Clock className="mx-auto h-14 w-14 text-amber-500" />
             <h1 className="mt-3 text-xl font-bold">{msg}</h1>
             <Button asChild variant="outline" className="mt-6 w-full">
-              <Link to="/app/buy-sms">{lang === "bn" ? "ফিরে যান" : "Go back"}</Link>
+              <Link to="/app/buy-sms">{t("p7_Go_back")}</Link>
             </Button>
           </>
         )}
@@ -108,7 +108,7 @@ export default function SmsCallback() {
             <XCircle className="mx-auto h-14 w-14 text-destructive" />
             <h1 className="mt-3 text-xl font-bold">{msg}</h1>
             <Button className="mt-6 w-full" onClick={() => navigate("/app/buy-sms", { replace: true })}>
-              {lang === "bn" ? "আবার চেষ্টা করুন" : "Try again"}
+              {t("p7_Try_again")}
             </Button>
           </>
         )}

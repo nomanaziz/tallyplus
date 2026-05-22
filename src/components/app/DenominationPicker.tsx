@@ -31,7 +31,7 @@ export function DenominationPicker({
   onChange: (next: DenomCounts) => void;
   available?: DenomCounts; // for cash-out hint
 }) {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const total = useMemo(() => denomTotal(counts), [counts]);
 
   const setOne = (d: number, v: number) => {
@@ -42,9 +42,9 @@ export function DenominationPicker({
   return (
     <div className="rounded-lg border bg-card">
       <div className="grid grid-cols-[auto_1fr_auto] items-center gap-2 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground border-b">
-        <span>{lang === "bn" ? "নোট" : "Note"}</span>
-        <span className="text-center">{lang === "bn" ? "সংখ্যা" : "Qty"}</span>
-        <span className="text-right">{lang === "bn" ? "মোট" : "Total"}</span>
+        <span>{t("p7_Note")}</span>
+        <span className="text-center">{t("p7_Qty_3")}</span>
+        <span className="text-right">{t("p7_Total_2")}</span>
       </div>
       <div className="divide-y">
         {BDT_DENOMS.map((d) => {
@@ -98,7 +98,7 @@ export function DenominationPicker({
         })}
       </div>
       <div className="flex items-center justify-between border-t bg-muted/40 px-3 py-2">
-        <span className="text-sm font-semibold">{lang === "bn" ? "মোট" : "Total"}</span>
+        <span className="text-sm font-semibold">{t("p7_Total_2")}</span>
         <span className="text-lg font-extrabold tabular-nums">{fmtMoney(total, lang)}</span>
       </div>
     </div>
