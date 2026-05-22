@@ -30,7 +30,7 @@ export function StoreSettingsDialog({
   };
   onSaved: () => void;
 }) {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const [name, setName] = useState("");
   const [username, setUsername] = useState("");
   const [tagline, setTagline] = useState("");
@@ -56,20 +56,18 @@ export function StoreSettingsDialog({
   }, [open, shop]);
 
   const validateUsername = (u: string): string | null => {
-    if (!u) return lang === "bn" ? "Username দিতে হবে" : "Username required";
+    if (!u) return t("p6_Username_required");
     if (!/^[a-z0-9][a-z0-9_-]{2,31}$/.test(u))
-      return lang === "bn"
-        ? "৩-৩২ অক্ষর, lowercase, শুধু a-z, 0-9, _, -"
-        : "3-32 chars, lowercase letters/digits/_/- only";
+      return t("p6_3_32_chars_lowercase_letters_d");
     if (RESERVED.has(u))
-      return lang === "bn" ? "এই নাম সংরক্ষিত" : "Reserved username";
+      return t("p6_Reserved_username");
     return null;
   };
 
   const save = async () => {
     const err = validateUsername(username);
     if (err) { toast.error(err); return; }
-    if (!name.trim()) { toast.error(lang === "bn" ? "দোকানের নাম দিতে হবে" : "Shop name required"); return; }
+    if (!name.trim()) { toast.error(t("p6_Shop_name_required")); return; }
 
     setSaving(true);
     const { error } = await supabase
@@ -89,12 +87,12 @@ export function StoreSettingsDialog({
     setSaving(false);
     if (error) {
       if (error.code === "23505")
-        toast.error(lang === "bn" ? "এই username নেওয়া আছে" : "Username taken");
+        toast.error(t("p6_Username_taken"));
       else
         toast.error(error.message);
       return;
     }
-    toast.success(lang === "bn" ? "সংরক্ষিত হয়েছে" : "Saved");
+    toast.success(t("p6_Saved"));
     onSaved();
     onOpenChange(false);
   };
@@ -103,26 +101,24 @@ export function StoreSettingsDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>{lang === "bn" ? "স্টোর সেটিংস" : "Store Settings"}</DialogTitle>
+          <DialogTitle>{t("p6_Store_Settings")}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-3">
           <div className="flex items-center justify-between rounded-lg border p-3">
             <div>
               <div className="text-sm font-semibold">
-                {lang === "bn" ? "অনলাইন স্টোর সক্রিয়" : "Online store enabled"}
+                {t("p6_Online_store_enabled")}
               </div>
               <div className="text-xs text-muted-foreground">
-                {lang === "bn"
-                  ? "বন্ধ করলে আপনার পাবলিক পেজ দেখা যাবে না"
-                  : "Disable to hide your public page"}
+                {t("p6_Disable_to_hide_your_public_pa")}
               </div>
             </div>
             <Switch checked={enabled} onCheckedChange={setEnabled} />
           </div>
 
           <div>
-            <Label>{lang === "bn" ? "দোকানের নাম *" : "Shop name *"}</Label>
+            <Label>{t("p6_Shop_name")}</Label>
             <Input value={name} onChange={(e) => setName(e.target.value)} />
           </div>
 
@@ -140,20 +136,18 @@ export function StoreSettingsDialog({
               />
             </div>
             <p className="mt-1 text-xs text-muted-foreground">
-              {lang === "bn"
-                ? "৩-৩২ অক্ষর। শুধু a-z, 0-9, _, -"
-                : "3-32 chars. lowercase a-z, 0-9, _, -"}
+              {t("p6_3_32_chars_lowercase_a_z_0_9")}
             </p>
           </div>
 
           <div>
-            <Label>{lang === "bn" ? "ট্যাগলাইন" : "Tagline"}</Label>
+            <Label>{t("p6_Tagline")}</Label>
             <Input value={tagline} onChange={(e) => setTagline(e.target.value)} maxLength={120} />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label>{lang === "bn" ? "ফোন" : "Phone"}</Label>
+              <Label>{t("p6_Phone")}</Label>
               <Input value={phone} onChange={(e) => setPhone(e.target.value)} />
             </div>
             <div>
@@ -163,7 +157,7 @@ export function StoreSettingsDialog({
           </div>
 
           <div>
-            <Label>{lang === "bn" ? "ঠিকানা" : "Address"}</Label>
+            <Label>{t("p6_Address")}</Label>
             <Input value={address} onChange={(e) => setAddress(e.target.value)} />
           </div>
 
@@ -173,18 +167,18 @@ export function StoreSettingsDialog({
           </div>
 
           <div>
-            <Label>{lang === "bn" ? "দোকান সম্পর্কে" : "About"}</Label>
+            <Label>{t("p6_About")}</Label>
             <Textarea value={about} onChange={(e) => setAbout(e.target.value)} rows={3} />
           </div>
         </div>
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            {lang === "bn" ? "বাতিল" : "Cancel"}
+            {t("p6_Cancel")}
           </Button>
           <Button onClick={save} disabled={saving}>
             {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {lang === "bn" ? "সংরক্ষণ" : "Save"}
+            {t("p6_Save")}
           </Button>
         </DialogFooter>
       </DialogContent>

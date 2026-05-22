@@ -21,7 +21,7 @@ type Row = {
 };
 
 function MarketingPage() {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const { current } = useShop();
   const shopId = current?.id ?? null;
 
@@ -82,39 +82,39 @@ function MarketingPage() {
     }).eq("id", shopId);
     setSaving(false);
     if (error) { toast.error(error.message); return; }
-    toast.success(lang === "bn" ? "সংরক্ষিত হয়েছে" : "Saved");
+    toast.success(t("p6_Saved"));
     void refetch();
   };
 
   return (
     <div className="container mx-auto max-w-3xl px-4 pb-24">
-      <PageHeader breadcrumb={`Online-shop / ${lang === "bn" ? "মার্কেটিং ও SEO" : "Marketing & SEO"}`} title="" />
+      <PageHeader breadcrumb={`Online-shop / ${t("p6_Marketing_SEO")}`} title="" />
 
       <div className="mt-3 space-y-4">
-        <Section title={lang === "bn" ? "SEO তথ্য" : "SEO Information"}>
+        <Section title={t("p6_SEO_Information")}>
           <div>
-            <Label>{lang === "bn" ? "ট্যাগলাইন" : "Tagline"}</Label>
+            <Label>{t("p6_Tagline")}</Label>
             <Input value={form.tagline} onChange={(e) => setForm({ ...form, tagline: e.target.value })}
-              placeholder={lang === "bn" ? "যেমন: সেরা দামে আসল পণ্য" : "e.g. Best prices, original products"} />
+              placeholder={t("p6_e_g_Best_prices_original_produ")} />
           </div>
           <div>
-            <Label>{lang === "bn" ? "মেটা টাইটেল" : "Meta Title"} <span className="text-xs text-muted-foreground">({form.meta_title.length}/60)</span></Label>
+            <Label>{t("p6_Meta_Title")} <span className="text-xs text-muted-foreground">({form.meta_title.length}/60)</span></Label>
             <Input value={form.meta_title} maxLength={70} onChange={(e) => setForm({ ...form, meta_title: e.target.value })}
-              placeholder={lang === "bn" ? "Google-এ দেখানো শিরোনাম" : "Title shown in Google"} />
+              placeholder={t("p6_Title_shown_in_Google")} />
           </div>
           <div>
-            <Label>{lang === "bn" ? "মেটা ডেসক্রিপশন" : "Meta Description"} <span className="text-xs text-muted-foreground">({form.meta_description.length}/160)</span></Label>
+            <Label>{t("p6_Meta_Description")} <span className="text-xs text-muted-foreground">({form.meta_description.length}/160)</span></Label>
             <Textarea value={form.meta_description} maxLength={200} rows={3}
               onChange={(e) => setForm({ ...form, meta_description: e.target.value })}
-              placeholder={lang === "bn" ? "সংক্ষিপ্ত বিবরণ" : "Short description"} />
+              placeholder={t("p6_Short_description")} />
           </div>
           <div>
-            <Label>{lang === "bn" ? "কীওয়ার্ড (কমা দিয়ে)" : "Keywords (comma separated)"}</Label>
+            <Label>{t("p6_Keywords_comma_separated")}</Label>
             <Input value={form.meta_keywords} onChange={(e) => setForm({ ...form, meta_keywords: e.target.value })}
               placeholder="electronics, mobile, accessories" />
           </div>
           <div>
-            <Label>{lang === "bn" ? "OG / সোশ্যাল শেয়ার ইমেজ" : "OG / Social Share Image"}</Label>
+            <Label>{t("p6_OG_Social_Share_Image")}</Label>
             <div className="mt-1 flex items-center gap-3">
               {form.og_image_url ? (
                 <img src={form.og_image_url} alt="" className="h-16 w-28 rounded border object-cover" />
@@ -124,14 +124,14 @@ function MarketingPage() {
               <label className="cursor-pointer">
                 <input type="file" accept="image/*" className="hidden" onChange={onUpload} />
                 <Button asChild size="sm" variant="outline" disabled={uploading}>
-                  <span>{uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : (lang === "bn" ? "ইমেজ আপলোড" : "Upload image")}</span>
+                  <span>{uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : (t("p6_Upload_image"))}</span>
                 </Button>
               </label>
             </div>
           </div>
         </Section>
 
-        <Section title={lang === "bn" ? "অ্যানালিটিক্স" : "Analytics"}>
+        <Section title={t("p6_Analytics")}>
           <div>
             <Label>Google Analytics ID</Label>
             <Input value={form.google_analytics_id} onChange={(e) => setForm({ ...form, google_analytics_id: e.target.value })} placeholder="G-XXXXXXX" />
@@ -147,7 +147,7 @@ function MarketingPage() {
         <div className="mx-auto max-w-3xl">
           <Button onClick={save} disabled={saving} className="w-full" size="lg">
             {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {lang === "bn" ? "সংরক্ষণ" : "Save"}
+            {t("p6_Save")}
           </Button>
         </div>
       </div>

@@ -16,7 +16,7 @@ type FraudResult = {
 };
 
 function FraudCheckPage() {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const { current } = useShop();
   const shopId = current?.id ?? null;
   const [phone, setPhone] = useState("");
@@ -26,7 +26,7 @@ function FraudCheckPage() {
   const search = async () => {
     const p = phone.trim().replace(/\s+/g, "");
     if (!/^\+?\d{10,14}$/.test(p)) {
-      toast.error(lang === "bn" ? "সঠিক মোবাইল নম্বর দিন" : "Enter valid phone");
+      toast.error(t("p6_Enter_valid_phone"));
       return;
     }
     setLoading(true); setResult(null);
@@ -45,11 +45,11 @@ function FraudCheckPage() {
     <div className="container mx-auto max-w-3xl px-4 pb-10">
       <PageHeader breadcrumb="Online-shop" title="" />
       <div className="mt-3 flex gap-2">
-        <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder={lang === "bn" ? "মোবাইল নম্বর" : "Phone number"} maxLength={14}
+        <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder={t("p6_Phone_number")} maxLength={14}
           onKeyDown={(e) => e.key === "Enter" && search()} />
         <Button onClick={search} disabled={loading}>
           {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
-          <span className="ml-1.5">{lang === "bn" ? "খুঁজুন" : "Search"}</span>
+          <span className="ml-1.5">{t("p6_Search")}</span>
         </Button>
       </div>
 
@@ -58,9 +58,9 @@ function FraudCheckPage() {
           <div className="grid h-16 w-16 place-items-center rounded-full bg-primary text-primary-foreground shadow-lg">
             <ShieldAlert className="h-8 w-8" />
           </div>
-          <h2 className="mt-3 text-lg font-bold">{lang === "bn" ? "কাস্টমার ফ্রড চেক করুন" : "Check customer fraud"}</h2>
+          <h2 className="mt-3 text-lg font-bold">{t("p6_Check_customer_fraud")}</h2>
           <p className="mt-1 max-w-sm text-sm text-muted-foreground">
-            {lang === "bn" ? "ফ্রড ও ডেলিভারি ইতিহাস দেখতে উপরে মোবাইল নম্বর দিন।" : "Enter a phone number above to see fraud and delivery history."}
+            {t("p6_Enter_a_phone_number_above_to_")}
           </p>
         </div>
       )}
@@ -69,22 +69,20 @@ function FraudCheckPage() {
         <div className="mt-4 rounded-xl border bg-card p-4 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <div className="text-xs text-muted-foreground">{lang === "bn" ? "মোবাইল" : "Phone"}</div>
+              <div className="text-xs text-muted-foreground">{t("p6_Phone_2")}</div>
               <div className="text-lg font-bold">{result.phone}</div>
             </div>
             <div className={`rounded-md px-3 py-1 text-sm font-bold ${result.fraud_score > 50 ? "bg-red-100 text-red-700" : "bg-emerald-100 text-emerald-700"}`}>
-              {lang === "bn" ? "ঝুঁকি" : "Risk"} {result.fraud_score}%
+              {t("p6_Risk")} {result.fraud_score}%
             </div>
           </div>
           <div className="mt-4 grid grid-cols-3 gap-3">
-            <Stat label={lang === "bn" ? "মোট অর্ডার" : "Total"} value={result.total_orders} />
-            <Stat label={lang === "bn" ? "সফল" : "Success"} value={result.success} accent="text-emerald-600" />
-            <Stat label={lang === "bn" ? "বাতিল" : "Cancelled"} value={result.cancelled} accent="text-red-600" />
+            <Stat label={t("p6_Total")} value={result.total_orders} />
+            <Stat label={t("p6_Success")} value={result.success} accent="text-emerald-600" />
+            <Stat label={t("p6_Cancelled")} value={result.cancelled} accent="text-red-600" />
           </div>
           <p className="mt-4 text-xs text-muted-foreground">
-            {lang === "bn"
-              ? "কুরিয়ার API ইন্টিগ্রেশন (BDCourier/RedX/Pathao) admin সেটিংসে কনফিগার করতে হবে।"
-              : "Courier API integration (BDCourier/RedX/Pathao) must be configured in admin settings."}
+            {t("p6_Courier_API_integration_BDCour")}
           </p>
         </div>
       )}

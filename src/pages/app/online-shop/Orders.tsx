@@ -24,7 +24,7 @@ type OrderItem = { id: string; name: string; qty: number; price: number; total: 
 const STATUSES = ["pending", "processing", "shipped", "delivered", "cancelled"] as const;
 
 function OrdersPage() {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const { current } = useShop();
   const qc = useQueryClient();
   const shopId = current?.id ?? null;
@@ -49,22 +49,22 @@ function OrdersPage() {
   const updateStatus = async (id: string, status: string) => {
     const { error } = await supabase.from("marketplace_orders" as never).update({ status } as never).eq("id", id);
     if (error) { toast.error(error.message); return; }
-    toast.success(lang === "bn" ? "স্ট্যাটাস আপডেট" : "Status updated");
+    toast.success(t("p6_Status_updated"));
     await qc.invalidateQueries({ queryKey: ["mp-orders", shopId] });
     setOpenOrder((o) => o ? { ...o, status } : o);
   };
 
   return (
     <div className="container mx-auto max-w-3xl px-4 pb-10">
-      <PageHeader breadcrumb={`Online-shop / ${lang === "bn" ? "অর্ডার লিস্ট" : "Order List"}`} title="" />
+      <PageHeader breadcrumb={`Online-shop / ${t("p6_Order_List")}`} title="" />
       {isLoading ? (
         <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
       ) : (
         <Tabs defaultValue="on-order" className="mt-3">
           <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="on-order">{lang === "bn" ? "নতুন" : "On Order"} ({onOrder.length})</TabsTrigger>
-            <TabsTrigger value="ongoing">{lang === "bn" ? "চলমান" : "Ongoing"} ({ongoing.length})</TabsTrigger>
-            <TabsTrigger value="completed">{lang === "bn" ? "সম্পন্ন" : "Completed"} ({completed.length})</TabsTrigger>
+            <TabsTrigger value="on-order">{t("p6_On_Order")} ({onOrder.length})</TabsTrigger>
+            <TabsTrigger value="ongoing">{t("p6_Ongoing")} ({ongoing.length})</TabsTrigger>
+            <TabsTrigger value="completed">{t("p6_Completed")} ({completed.length})</TabsTrigger>
           </TabsList>
           <TabsContent value="on-order" className="mt-3 space-y-2">
             {onOrder.length === 0 ? <EmptyOrders lang={lang} /> : onOrder.map((o) => <OrderRow key={o.id} o={o} lang={lang} onView={() => setOpenOrder(o)} />)}
@@ -87,7 +87,7 @@ function EmptyOrders({ lang }: { lang: string }) {
   return (
     <div className="flex flex-col items-center py-16 text-center">
       <ClipboardList className="h-12 w-12 text-muted-foreground" />
-      <p className="mt-2 text-muted-foreground">{lang === "bn" ? "কোনো অর্ডার নেই" : "No orders yet"}</p>
+      <p className="mt-2 text-muted-foreground">{t("p6_No_orders_yet")}</p>
     </div>
   );
 }
@@ -147,9 +147,9 @@ function OrderDetailDialog({ order, onClose, onStatusChange, lang }: { order: Or
               {order.customer_address && <div className="mt-1 flex items-start gap-1 text-xs text-muted-foreground"><MapPin className="h-3 w-3 mt-0.5" />{order.customer_address}</div>}
             </div>
             <div className="rounded-md border">
-              <div className="border-b bg-muted/40 px-3 py-2 text-xs font-semibold">{lang === "bn" ? "আইটেম" : "Items"}</div>
+              <div className="border-b bg-muted/40 px-3 py-2 text-xs font-semibold">{t("p6_Items")}</div>
               {items.length === 0 ? (
-                <div className="flex items-center gap-2 px-3 py-3 text-xs text-muted-foreground"><Package className="h-4 w-4" />{lang === "bn" ? "কোনো আইটেম নেই" : "No items"}</div>
+                <div className="flex items-center gap-2 px-3 py-3 text-xs text-muted-foreground"><Package className="h-4 w-4" />{t("p6_No_items")}</div>
               ) : (
                 <div className="divide-y">
                   {items.map((it) => (
@@ -161,12 +161,12 @@ function OrderDetailDialog({ order, onClose, onStatusChange, lang }: { order: Or
                 </div>
               )}
               <div className="flex justify-between border-t bg-muted/40 px-3 py-2 text-sm font-bold">
-                <span>{lang === "bn" ? "মোট" : "Total"}</span>
+                <span>{t("p6_Total_2")}</span>
                 <span>৳ {lang === "bn" ? bnNum(order.total) : order.total}</span>
               </div>
             </div>
             <div>
-              <label className="text-xs text-muted-foreground">{lang === "bn" ? "স্ট্যাটাস" : "Status"}</label>
+              <label className="text-xs text-muted-foreground">{t("p6_Status")}</label>
               <Select value={order.status} onValueChange={(v) => onStatusChange(order.id, v)}>
                 <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -177,7 +177,7 @@ function OrderDetailDialog({ order, onClose, onStatusChange, lang }: { order: Or
           </div>
         )}
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>{lang === "bn" ? "বন্ধ" : "Close"}</Button>
+          <Button variant="outline" onClick={onClose}>{t("p6_Close")}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

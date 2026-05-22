@@ -20,7 +20,7 @@ type Zone = {
 };
 
 function DeliveryPage() {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const { current } = useShop();
   const qc = useQueryClient();
   const shopId = current?.id ?? null;
@@ -44,8 +44,8 @@ function DeliveryPage() {
     if (zones.length > 0) return;
     (async () => {
       const { error } = await supabase.from("shop_delivery_zones").insert([
-        { shop_id: shopId, name: lang === "bn" ? "ঢাকার ভিতরে" : "Inside Dhaka", charge: 60, sort_order: 0 },
-        { shop_id: shopId, name: lang === "bn" ? "ঢাকার বাইরে" : "Outside Dhaka", charge: 120, sort_order: 1 },
+        { shop_id: shopId, name: t("p6_Inside_Dhaka"), charge: 60, sort_order: 0 },
+        { shop_id: shopId, name: t("p6_Outside_Dhaka"), charge: 120, sort_order: 1 },
       ]);
       if (!error) qc.invalidateQueries({ queryKey: ["delivery-zones", shopId] });
     })();
@@ -58,27 +58,25 @@ function DeliveryPage() {
   };
 
   const remove = async (id: string) => {
-    if (!confirm(lang === "bn" ? "মুছে ফেলবেন?" : "Delete this zone?")) return;
+    if (!confirm(t("p6_Delete_this_zone"))) return;
     await supabase.from("shop_delivery_zones").delete().eq("id", id);
     qc.invalidateQueries({ queryKey: ["delivery-zones", shopId] });
   };
 
   return (
     <div className="container mx-auto max-w-2xl px-4 pb-24">
-      <PageHeader breadcrumb={`Online-shop / ${lang === "bn" ? "ডেলিভারি" : "Delivery"}`} title="" />
+      <PageHeader breadcrumb={`Online-shop / ${t("p6_Delivery")}`} title="" />
       <div className="mt-3 rounded-xl border bg-muted/40 p-3">
         <div className="text-sm font-semibold">
-          {lang === "bn" ? "ডেলিভারি এরিয়া ও চার্জ" : "Delivery Zones & Charges"}
+          {t("p6_Delivery_Zones_Charges")}
         </div>
         <p className="mt-1 text-xs text-muted-foreground">
-          {lang === "bn"
-            ? "নতুন এরিয়া যোগ করুন বা চার্জ পরিবর্তন করুন। যেকোনো এরিয়াতে নির্দিষ্ট পরিমাণের বেশি অর্ডারে ফ্রি শিপিং দিতে পারেন।"
-            : "Add zones or change charges. Optionally offer free shipping above a minimum order amount."}
+          {t("p6_Add_zones_or_change_charges_Op")}
         </p>
         <div className="mt-3 space-y-2">
           {zones.length === 0 && !isLoading && (
             <div className="py-8 text-center text-sm text-muted-foreground">
-              {lang === "bn" ? "ডিফল্ট এরিয়া তৈরি করা হচ্ছে…" : "Setting up defaults…"}
+              {t("p6_Setting_up_defaults")}
             </div>
           )}
           {zones.map((z) => (
@@ -90,9 +88,9 @@ function DeliveryPage() {
                     <span className="font-bold">{z.name}</span>
                   </div>
                   <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs">
-                    <span><span className="text-muted-foreground">{lang === "bn" ? "চার্জ:" : "Charge:"}</span> <b className="text-primary">৳ {z.charge}</b></span>
+                    <span><span className="text-muted-foreground">{t("p6_Charge")}</span> <b className="text-primary">৳ {z.charge}</b></span>
                     {z.free_shipping_min ? (
-                      <span><span className="text-muted-foreground">{lang === "bn" ? "ফ্রি শিপিং:" : "Free above:"}</span> <b>৳ {z.free_shipping_min}+</b></span>
+                      <span><span className="text-muted-foreground">{t("p6_Free_above")}</span> <b>৳ {z.free_shipping_min}+</b></span>
                     ) : null}
                   </div>
                 </div>
@@ -111,7 +109,7 @@ function DeliveryPage() {
         <div className="mx-auto max-w-2xl">
           <Button className="w-full" onClick={() => setCreating(true)}>
             <Plus className="mr-1.5 h-4 w-4" />
-            {lang === "bn" ? "নতুন এরিয়া যোগ" : "Add New Zone"}
+            {t("p6_Add_New_Zone")}
           </Button>
         </div>
       </div>
@@ -141,9 +139,9 @@ function ZoneDialog({ open, onOpenChange, shopId, lang, zone, onSaved }: {
   const [saving, setSaving] = useState(false);
 
   const submit = async () => {
-    if (!name.trim()) { toast.error(lang === "bn" ? "নাম দিন" : "Enter name"); return; }
+    if (!name.trim()) { toast.error(t("p6_Enter_name")); return; }
     const c = Number(charge);
-    if (isNaN(c) || c < 0) { toast.error(lang === "bn" ? "সঠিক চার্জ দিন" : "Enter valid charge"); return; }
+    if (isNaN(c) || c < 0) { toast.error(t("p6_Enter_valid_charge")); return; }
     setSaving(true);
     const payload = {
       name: name.trim(), charge: c,
@@ -155,7 +153,7 @@ function ZoneDialog({ open, onOpenChange, shopId, lang, zone, onSaved }: {
       : await supabase.from("shop_delivery_zones").insert({ ...payload, shop_id: shopId });
     setSaving(false);
     if (error) { toast.error(error.message); return; }
-    toast.success(lang === "bn" ? "সংরক্ষিত" : "Saved");
+    toast.success(t("p6_Saved_3"));
     onSaved(); onOpenChange(false);
   };
 
@@ -163,32 +161,32 @@ function ZoneDialog({ open, onOpenChange, shopId, lang, zone, onSaved }: {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>{zone ? (lang === "bn" ? "এরিয়া এডিট" : "Edit Zone") : (lang === "bn" ? "নতুন এরিয়া" : "New Zone")}</DialogTitle>
+          <DialogTitle>{zone ? (t("p6_Edit_Zone")) : (t("p6_New_Zone"))}</DialogTitle>
         </DialogHeader>
         <div className="space-y-3">
           <div>
-            <Label>{lang === "bn" ? "এরিয়ার নাম" : "Zone Name"}</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder={lang === "bn" ? "যেমন: ঢাকার ভিতরে" : "e.g. Inside Dhaka"} />
+            <Label>{t("p6_Zone_Name")}</Label>
+            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder={t("p6_e_g_Inside_Dhaka")} />
           </div>
           <div>
-            <Label>{lang === "bn" ? "ডেলিভারি চার্জ (৳)" : "Delivery Charge (৳)"}</Label>
+            <Label>{t("p6_Delivery_Charge")}</Label>
             <Input type="number" value={charge} onChange={(e) => setCharge(e.target.value)} placeholder="60" />
           </div>
           <div>
-            <Label>{lang === "bn" ? "ফ্রি শিপিং (এই অঙ্কের বেশি অর্ডারে)" : "Free shipping above (৳)"}</Label>
-            <Input type="number" value={freeMin} onChange={(e) => setFreeMin(e.target.value)} placeholder={lang === "bn" ? "ঐচ্ছিক" : "Optional"} />
+            <Label>{t("p6_Free_shipping_above")}</Label>
+            <Input type="number" value={freeMin} onChange={(e) => setFreeMin(e.target.value)} placeholder={t("p6_Optional")} />
             <p className="mt-1 text-xs text-muted-foreground">
-              {lang === "bn" ? "খালি রাখলে ফ্রি শিপিং বন্ধ থাকবে।" : "Leave blank to disable free shipping."}
+              {t("p6_Leave_blank_to_disable_free_sh")}
             </p>
           </div>
           <div className="flex items-center justify-between rounded-md border px-3 py-2">
-            <span className="text-sm">{lang === "bn" ? "সক্রিয়" : "Active"}</span>
+            <span className="text-sm">{t("p6_Active")}</span>
             <Switch checked={active} onCheckedChange={setActive} />
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>{lang === "bn" ? "বাতিল" : "Cancel"}</Button>
-          <Button onClick={submit} disabled={saving}>{lang === "bn" ? "সংরক্ষণ" : "Save"}</Button>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>{t("p6_Cancel")}</Button>
+          <Button onClick={submit} disabled={saving}>{t("p6_Save")}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
