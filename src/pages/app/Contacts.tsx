@@ -485,6 +485,7 @@ function ContactsPage() {
 }
 
 function EmployeeBiodataPanel({ row, lang }: { row: any; lang: string }) {
+  const { t } = useI18n();
   if (!row) {
     return (
       <div className="p-4 text-sm text-muted-foreground">
@@ -492,21 +493,21 @@ function EmployeeBiodataPanel({ row, lang }: { row: any; lang: string }) {
       </div>
     );
   }
-  const items: { label_bn: string; label_en: string; value: string | number | null | undefined }[] = [
-    { label_bn: "মাসিক বেতন", label_en: "Monthly salary", value: row.salary != null ? `৳ ${row.salary}` : null },
-    { label_bn: "NID নম্বর", label_en: "NID number", value: row.nid },
-    { label_bn: "বর্তমান ঠিকানা", label_en: "Current address", value: row.address },
-    { label_bn: "স্থায়ী ঠিকানা", label_en: "Permanent address", value: row.permanent_address },
-    { label_bn: "পিতার নাম", label_en: "Father's name", value: row.father_name },
-    { label_bn: "মাতার নাম", label_en: "Mother's name", value: row.mother_name },
-    { label_bn: "জরুরি যোগাযোগ", label_en: "Emergency contact", value: row.emergency_phone },
+  const items: { labelKey: string; value: string | number | null | undefined }[] = [
+    { labelKey: "p2b_emp_salary",   value: row.salary != null ? `৳ ${row.salary}` : null },
+    { labelKey: "p2b_emp_nid",      value: row.nid },
+    { labelKey: "p2b_emp_address",  value: row.address },
+    { labelKey: "p2b_emp_permAddr", value: row.permanent_address },
+    { labelKey: "p2b_emp_father",   value: row.father_name },
+    { labelKey: "p2b_emp_mother",   value: row.mother_name },
+    { labelKey: "p2b_emp_emerg",    value: row.emergency_phone },
   ];
   return (
     <div className="p-4">
       <div className="grid gap-3 sm:grid-cols-2">
         {items.map((it, i) => (
           <div key={i} className="rounded-lg border bg-background p-3">
-            <div className="text-xs text-muted-foreground">{lang === "bn" ? it.label_bn : it.label_en}</div>
+            <div className="text-xs text-muted-foreground">{t(it.labelKey as never)}</div>
             <div className="mt-0.5 text-sm font-medium">{it.value || "—"}</div>
           </div>
         ))}
