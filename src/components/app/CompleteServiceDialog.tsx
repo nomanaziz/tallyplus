@@ -40,7 +40,7 @@ export function CompleteServiceDialog({
   shop: { id: string; name: string; address: string | null; phone: string | null; logo_url: string | null };
   onCompleted: () => void;
 }) {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const [serviceCharge, setServiceCharge] = useState(0);
   const [extras, setExtras] = useState<Line[]>([]);
   const [discount, setDiscount] = useState(0);
@@ -96,7 +96,7 @@ export function CompleteServiceDialog({
 
   const addExtra = (p: ProductRow) => {
     if (extras.find((e) => e.kind === "product" && e.product_id === p.id)) {
-      toast.message(lang === "bn" ? "ইতিমধ্যে যোগ আছে" : "Already added");
+      toast.message(t("p4_AlreadyAdded"));
       return;
     }
     setExtras((es) => [...es, { kind: "product", product_id: p.id, name: p.name, qty: 1, price: Number(p.sale_price) || 0 }]);
@@ -300,12 +300,12 @@ export function CompleteServiceDialog({
         })
         .eq("id", booking.id);
 
-      toast.success(lang === "bn" ? "সার্ভিস সম্পন্ন — ইনভয়েস তৈরি হয়েছে" : "Service completed — invoice generated");
+      toast.success(t("p4_ServiceCompletedInv"));
       onCompleted();
 
       // Show invoice
       const invoiceItems = [
-        { name: booking.service_name + (lang === "bn" ? " (সার্ভিস চার্জ)" : " (Service charge)"), qty: 1, unit: "service", price: serviceCharge, total: serviceCharge },
+        { name: booking.service_name + (t("p4_ServiceChargeParen")), qty: 1, unit: "service", price: serviceCharge, total: serviceCharge },
         ...extras.map((l) => ({ name: l.name, qty: l.qty, unit: null, price: l.price, total: l.qty * l.price })),
       ];
       setInvoice({
@@ -340,48 +340,48 @@ export function CompleteServiceDialog({
       <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
         <DialogContent className="max-w-2xl max-h-[92vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2"><Wrench className="h-5 w-5" /> {lang === "bn" ? "সার্ভিস সম্পন্ন করুন" : "Complete service"}</DialogTitle>
+            <DialogTitle className="flex items-center gap-2"><Wrench className="h-5 w-5" /> {t("p4_CompleteService")}</DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4">
             <div className="rounded-md border bg-muted/30 p-3 text-sm">
               <div className="font-semibold">{booking.service_name}</div>
               <div className="text-xs text-muted-foreground">{booking.customer_name} • {booking.customer_phone}</div>
-              <div className="mt-1 text-xs">{lang === "bn" ? "বুকড মূল্য" : "Booked price"}: <strong>{fmtMoney(booking.service_price, lang)}</strong></div>
+              <div className="mt-1 text-xs">{t("p4_BookedPrice")}: <strong>{fmtMoney(booking.service_price, lang)}</strong></div>
               {booking.advance_paid && booking.advance_amount > 0 && (
                 <div className="text-xs text-emerald-700 dark:text-emerald-400">
-                  {lang === "bn" ? "অগ্রিম পেইড" : "Advance paid"}: {fmtMoney(booking.advance_amount, lang)}
+                  {t("p4_AdvancePaid")}: {fmtMoney(booking.advance_amount, lang)}
                 </div>
               )}
             </div>
 
             <div>
-              <Label>{lang === "bn" ? "চূড়ান্ত সার্ভিস চার্জ" : "Final service charge"}</Label>
+              <Label>{t("p4_FinalServiceCharge")}</Label>
               <Input type="number" inputMode="decimal" value={serviceCharge} onChange={(e) => setServiceCharge(Math.max(0, Number(e.target.value) || 0))} />
-              <p className="mt-1 text-xs text-muted-foreground">{lang === "bn" ? "কম/বেশি নিয়ে থাকলে এখানে আপডেট করুন" : "Update if you charged more or less"}</p>
+              <p className="mt-1 text-xs text-muted-foreground">{t("p4_UpdateChargeHint")}</p>
             </div>
 
             <div>
               <div className="mb-2 flex items-center justify-between">
-                <Label>{lang === "bn" ? "অতিরিক্ত পণ্য" : "Extra products"}</Label>
-                <span className="text-xs text-muted-foreground">{extras.length} {lang === "bn" ? "টি" : "items"}</span>
+                <Label>{t("p4_ExtraProducts")}</Label>
+                <span className="text-xs text-muted-foreground">{extras.length} {t("p4_Items")}</span>
               </div>
               <div className="relative">
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={lang === "bn" ? "পণ্য খুঁজুন বা টাইপ করুন" : "Search or type product"} className="pl-9" />
+                <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t("p4_SearchOrType")} className="pl-9" />
                 {results.length > 0 && (
                   <div className="absolute left-0 right-0 z-10 mt-1 max-h-56 overflow-y-auto rounded-md border bg-popover shadow-lg">
                     {results.map((p) => (
                       <button key={p.id} type="button" onClick={() => addExtra(p)} className="flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-accent">
                         <span className="truncate">{p.name}</span>
-                        <span className="text-xs text-muted-foreground">৳{p.sale_price} • {lang === "bn" ? "স্টক" : "stock"}: {p.stock}</span>
+                        <span className="text-xs text-muted-foreground">৳{p.sale_price} • {t("p4_StockLower")}: {p.stock}</span>
                       </button>
                     ))}
                   </div>
                 )}
                 {search.trim().length >= 2 && !searching && results.length === 0 && (
                   <button type="button" onClick={addCustom} className="mt-1 inline-flex items-center gap-1 text-xs text-primary hover:underline">
-                    <Plus className="h-3 w-3" /> {lang === "bn" ? `"${search.trim()}" কাস্টম আইটেম হিসেবে যোগ করুন` : `Add "${search.trim()}" as custom item`}
+                    <Plus className="h-3 w-3" /> {t("p4_AddXCustom", { name: search.trim() })}
                   </button>
                 )}
                 {searching && <Loader2 className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground" />}
@@ -407,45 +407,45 @@ export function CompleteServiceDialog({
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label>{lang === "bn" ? "ছাড় (৳)" : "Discount (৳)"}</Label>
+                <Label>{t("p4_DiscountTk")}</Label>
                 <Input type="number" value={discount} onChange={(e) => setDiscount(Math.max(0, Number(e.target.value) || 0))} />
               </div>
               <div>
-                <Label>{lang === "bn" ? "এখন পরিশোধ" : "Paid now"}</Label>
+                <Label>{t("p4_PaidNow")}</Label>
                 <Input type="number" value={paid} onChange={(e) => setPaid(Math.max(0, Number(e.target.value) || 0))} />
               </div>
             </div>
 
             <div>
-              <Label>{lang === "bn" ? "পেমেন্ট মাধ্যম" : "Payment method"}</Label>
+              <Label>{t("p4_PaymentMethod")}</Label>
               <Select value={paymentMethod} onValueChange={(v) => setPaymentMethod(v as typeof paymentMethod)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="cash">{lang === "bn" ? "ক্যাশ" : "Cash"}</SelectItem>
+                  <SelectItem value="cash">{t("p4_Cash")}</SelectItem>
                   <SelectItem value="bkash">bKash</SelectItem>
                   <SelectItem value="nagad">Nagad</SelectItem>
                   <SelectItem value="rocket">Rocket</SelectItem>
-                  <SelectItem value="card">{lang === "bn" ? "কার্ড" : "Card"}</SelectItem>
-                  <SelectItem value="bank">{lang === "bn" ? "ব্যাংক" : "Bank"}</SelectItem>
+                  <SelectItem value="card">{t("p4_Card")}</SelectItem>
+                  <SelectItem value="bank">{t("p4_Bank")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div className="rounded-lg border bg-muted/30 p-3 text-sm">
-              <Row label={lang === "bn" ? "সাব-টোটাল" : "Subtotal"} value={fmtMoney(totals.subtotal, lang)} />
-              <Row label={lang === "bn" ? "ছাড়" : "Discount"} value={`- ${fmtMoney(discount, lang)}`} />
-              <Row label={lang === "bn" ? "মোট" : "Total"} value={fmtMoney(totals.total, lang)} bold />
-              {totals.advance > 0 && <Row label={lang === "bn" ? "অগ্রিম (পেইড)" : "Advance (paid)"} value={`- ${fmtMoney(totals.advance, lang)}`} />}
-              <Row label={lang === "bn" ? "এখন পরিশোধ" : "Paid now"} value={`- ${fmtMoney(paid, lang)}`} />
-              <Row label={lang === "bn" ? "বাকি" : "Due"} value={fmtMoney(totals.due, lang)} bold />
+              <Row label={t("p4_Subtotal")} value={fmtMoney(totals.subtotal, lang)} />
+              <Row label={t("p4_Discount")} value={`- ${fmtMoney(discount, lang)}`} />
+              <Row label={t("p4_Total")} value={fmtMoney(totals.total, lang)} bold />
+              {totals.advance > 0 && <Row label={t("p4_AdvancePaidParen")} value={`- ${fmtMoney(totals.advance, lang)}`} />}
+              <Row label={t("p4_PaidNow")} value={`- ${fmtMoney(paid, lang)}`} />
+              <Row label={t("p4_Due")} value={fmtMoney(totals.due, lang)} bold />
             </div>
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={onClose}>{lang === "bn" ? "বাতিল" : "Cancel"}</Button>
+            <Button variant="outline" onClick={onClose}>{t("p4_Cancel")}</Button>
             <Button onClick={submit} disabled={submitting}>
               {submitting && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
-              {lang === "bn" ? "সম্পন্ন ও ইনভয়েস" : "Complete & invoice"}
+              {t("p4_CompleteInvoice")}
             </Button>
           </DialogFooter>
         </DialogContent>

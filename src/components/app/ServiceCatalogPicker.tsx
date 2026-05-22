@@ -14,7 +14,7 @@ export function ServiceCatalogPicker({
   value?: string | null;
   onPick: (item: CatalogItem) => void;
 }) {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const [open, setOpen] = useState(false);
   const groups = catalogCategoriesGrouped(lang as "en" | "bn");
   const selected = value ? SERVICE_CATALOG.find((s) => s.slug === value) : null;
@@ -33,18 +33,16 @@ export function ServiceCatalogPicker({
             <Sparkles className="h-4 w-4 text-primary" />
             {selected
               ? lang === "bn" ? selected.name_bn : selected.name_en
-              : lang === "bn"
-                ? "ক্যাটালগ থেকে বেছে নিন (বিবরণ অটো ভরবে)"
-                : "Pick from catalog (auto-fills description)"}
+              : t("p4_PickCatalog")}
           </span>
           <ChevronsUpDown className="h-4 w-4 opacity-50 shrink-0" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[min(540px,calc(100vw-2rem))] p-0" align="start">
         <Command>
-          <CommandInput placeholder={lang === "bn" ? "সার্ভিস খুঁজুন…" : "Search service…"} />
+          <CommandInput placeholder={t("p4_SearchServiceDots")} />
           <CommandList className="max-h-[60vh]">
-            <CommandEmpty>{lang === "bn" ? "কিছু পাওয়া যায়নি" : "No matches"}</CommandEmpty>
+            <CommandEmpty>{t("p4_NoMatches")}</CommandEmpty>
             {groups.map(([catLabel, items]) => (
               <CommandGroup key={catLabel} heading={catLabel}>
                 {items.map((item) => {

@@ -36,7 +36,7 @@ type Warranty = {
 };
 
 export function ServiceHistoryTab({ shopId }: { shopId: string }) {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const { current } = useShop();
   const [search, setSearch] = useState("");
   const [invoice, setInvoice] = useState<InvoiceData | null>(null);
@@ -112,30 +112,30 @@ export function ServiceHistoryTab({ shopId }: { shopId: string }) {
     });
   };
 
-  if (isLoading) return <div className="text-sm text-muted-foreground">{lang === "bn" ? "লোড হচ্ছে…" : "Loading…"}</div>;
+  if (isLoading) return <div className="text-sm text-muted-foreground">{t("p4_Loading")}</div>;
   if (rows.length === 0) {
-    return <EmptyState icon={<CalendarClock className="h-6 w-6" />} title={lang === "bn" ? "এখনও কোনো সম্পন্ন সার্ভিস নেই" : "No completed services yet"} />;
+    return <EmptyState icon={<CalendarClock className="h-6 w-6" />} title={t("p4_NoCompletedYet")} />;
   }
 
   return (
     <div className="space-y-3">
       <div className="relative max-w-md">
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={lang === "bn" ? "সার্ভিস / গ্রাহক / ফোন" : "Service / customer / phone"} className="pl-9" />
+        <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t("p4_ServCustPhone")} className="pl-9" />
       </div>
 
       <div className="space-y-2">
         {filtered.map((r) => {
           const w = findWarranty(r);
           const now = Date.now();
-          let badge: { tone: "active" | "expired" | "none"; label: string } = { tone: "none", label: lang === "bn" ? "ওয়ারেন্টি নেই" : "No warranty" };
+          let badge: { tone: "active" | "expired" | "none"; label: string } = { tone: "none", label: t("p4_NoWarranty") };
           if (w) {
             const exp = new Date(w.expires_at).getTime();
             if (exp > now) {
               const daysLeft = Math.ceil((exp - now) / (1000 * 60 * 60 * 24));
-              badge = { tone: "active", label: (lang === "bn" ? "ওয়ারেন্টি — " : "Warranty — ") + daysLeft + (lang === "bn" ? " দিন বাকি" : " days left") };
+              badge = { tone: "active", label: (t("p4_WarrantyDash")) + daysLeft + (t("p4_DaysLeft")) };
             } else {
-              badge = { tone: "expired", label: lang === "bn" ? "ওয়ারেন্টি শেষ" : "Warranty expired" };
+              badge = { tone: "expired", label: t("p4_WarrantyExpired") };
             }
           }
           const place = [r.area, r.upazila, r.district].filter(Boolean).join(", ");
@@ -157,14 +157,14 @@ export function ServiceHistoryTab({ shopId }: { shopId: string }) {
                   )}
                   {r.completed_at && (
                     <div className="mt-0.5 text-xs text-muted-foreground inline-flex items-center gap-1">
-                      <CalendarClock className="h-3 w-3" /> {new Date(r.completed_at).toLocaleString(lang === "bn" ? "bn-BD" : "en-US")}
+                      <CalendarClock className="h-3 w-3" /> {new Date(r.completed_at).toLocaleString(t("p4_Locale"))}
                     </div>
                   )}
                 </div>
                 <div className="text-right">
                   <div className="text-base font-bold text-primary">{fmtMoney(Number(r.final_amount ?? 0), lang)}</div>
                   {r.discount_amount && r.discount_amount > 0 ? (
-                    <div className="text-[10px] text-emerald-700 dark:text-emerald-400">{lang === "bn" ? "ছাড়" : "Discount"}: {fmtMoney(Number(r.discount_amount), lang)}</div>
+                    <div className="text-[10px] text-emerald-700 dark:text-emerald-400">{t("p4_Discount")}: {fmtMoney(Number(r.discount_amount), lang)}</div>
                   ) : null}
                 </div>
               </div>
@@ -179,12 +179,12 @@ export function ServiceHistoryTab({ shopId }: { shopId: string }) {
                 {w && badge.tone !== "none" && (
                   <span className="text-[10px] text-muted-foreground inline-flex items-center gap-1">
                     <Shield className="h-3 w-3" />
-                    {new Date(w.starts_at).toLocaleDateString(lang === "bn" ? "bn-BD" : "en-US")} → {new Date(w.expires_at).toLocaleDateString(lang === "bn" ? "bn-BD" : "en-US")}
+                    {new Date(w.starts_at).toLocaleDateString(t("p4_Locale"))} → {new Date(w.expires_at).toLocaleDateString(t("p4_Locale"))}
                   </span>
                 )}
                 {r.sale_id && (
                   <Button size="sm" variant="outline" className="ml-auto h-8 gap-1" onClick={() => printInvoice(r)}>
-                    <Printer className="h-3.5 w-3.5" /> {lang === "bn" ? "ইনভয়েস" : "Invoice"}
+                    <Printer className="h-3.5 w-3.5" /> {t("p4_Invoice")}
                   </Button>
                 )}
               </div>

@@ -34,7 +34,7 @@ export function QuickAddServiceDialog({
   onClose: () => void;
   onAdded?: (s: QuickService) => void;
 }) {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const { current } = useShop();
   const qc = useQueryClient();
   const [name, setName] = useState("");
@@ -55,7 +55,7 @@ export function QuickAddServiceDialog({
   const save = async () => {
     if (!current) return;
     if (!name.trim()) {
-      toast.error(lang === "bn" ? "সার্ভিসের নাম দিন" : "Enter service name");
+      toast.error(t("p4_EnterServiceName"));
       return;
     }
     setSaving(true);
@@ -77,11 +77,11 @@ export function QuickAddServiceDialog({
     setSaving(false);
     if (error) {
       const li = parseLimitError(error.message);
-      if (li) toast.error(lang === "bn" ? "সীমা শেষ — আপগ্রেড করুন" : "Limit reached — upgrade");
+      if (li) toast.error(t("p4_LimitUpgrade"));
       else toast.error(error.message);
       return;
     }
-    toast.success(lang === "bn" ? "সার্ভিস যোগ হয়েছে" : "Service added");
+    toast.success(t("p4_ServiceAdded"));
     void qc.invalidateQueries({ queryKey: ["services"] });
     if (data) onAdded?.(data as QuickService);
     onClose();
@@ -91,36 +91,34 @@ export function QuickAddServiceDialog({
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>{lang === "bn" ? "দ্রুত সার্ভিস যোগ" : "Quick add service"}</DialogTitle>
+          <DialogTitle>{t("p4_QuickAddService")}</DialogTitle>
         </DialogHeader>
         <div className="grid gap-3">
           <div className="grid gap-1.5">
-            <Label>{lang === "bn" ? "সার্ভিসের নাম" : "Service name"}</Label>
+            <Label>{t("p4_ServiceName")}</Label>
             <Input value={name} onChange={(e) => setName(e.target.value)} autoFocus />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="grid gap-1.5">
-              <Label>{lang === "bn" ? "মূল্য" : "Price"}</Label>
+              <Label>{t("p4_Price")}</Label>
               <Input type="number" inputMode="decimal" value={price} onChange={(e) => setPrice(e.target.value)} />
             </div>
             <div className="grid gap-1.5">
-              <Label>{lang === "bn" ? "সময় (মিনিট)" : "Duration (min)"}</Label>
-              <Input type="number" inputMode="numeric" value={duration} onChange={(e) => setDuration(e.target.value)} placeholder={lang === "bn" ? "ঐচ্ছিক" : "optional"} />
+              <Label>{t("p4_DurationMin")}</Label>
+              <Input type="number" inputMode="numeric" value={duration} onChange={(e) => setDuration(e.target.value)} placeholder={t("p4_Optional")} />
             </div>
           </div>
           <div className="flex items-center justify-between rounded-md border px-3 py-2">
-            <div className="text-sm">{lang === "bn" ? "হোম সার্ভিস" : "Home service"}</div>
+            <div className="text-sm">{t("p4_HomeService")}</div>
             <Switch checked={homeService} onCheckedChange={setHomeService} />
           </div>
           <p className="text-xs text-muted-foreground">
-            {lang === "bn"
-              ? "পরবর্তীতে বিস্তারিত (বিবরণ, ওয়ারেন্টি, ছবি, এলাকা) এডিট করতে পারবেন।"
-              : "You can edit full details (description, warranty, image, areas) later."}
+            {t("p4_EditLaterHint")}
           </p>
         </div>
         <DialogFooter>
-          <Button variant="ghost" onClick={onClose}>{lang === "bn" ? "বাতিল" : "Cancel"}</Button>
-          <Button onClick={save} disabled={saving}>{saving ? (lang === "bn" ? "সেভ হচ্ছে…" : "Saving…") : (lang === "bn" ? "সেভ" : "Save")}</Button>
+          <Button variant="ghost" onClick={onClose}>{t("p4_Cancel")}</Button>
+          <Button onClick={save} disabled={saving}>{saving ? (t("p4_Saving")) : (t("p4_SaveShort"))}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
