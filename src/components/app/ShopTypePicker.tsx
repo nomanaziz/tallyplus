@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { Lang } from "@/lib/i18n";
+import { useI18n, type Lang } from "@/lib/i18n";
 import { supabase } from "@/integrations/supabase/client";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
