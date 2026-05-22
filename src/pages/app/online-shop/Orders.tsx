@@ -84,6 +84,7 @@ function OrdersPage() {
 }
 
 function EmptyOrders({ lang }: { lang: string }) {
+  const { t } = useI18n();
   return (
     <div className="flex flex-col items-center py-16 text-center">
       <ClipboardList className="h-12 w-12 text-muted-foreground" />

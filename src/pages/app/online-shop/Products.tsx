@@ -203,6 +203,7 @@ function OnlineProductsPage() {
 }
 
 function EmptyState({ lang }: { lang: string }) {
+  const { t } = useI18n();
   return (
     <div className="flex flex-col items-center py-10 text-center">
       <Package className="h-10 w-10 text-muted-foreground" />
