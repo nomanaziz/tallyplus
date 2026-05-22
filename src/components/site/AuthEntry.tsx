@@ -20,22 +20,11 @@ export function AuthEntry() {
         {/* Brand pitch */}
         <div className="order-2 md:order-1">
           <h1 className="text-3xl font-extrabold leading-tight tracking-tight md:text-5xl">
-            {lang === "bn" ? (
-              <>
-                আপনার <span className="text-primary">ব্যক্তিগত হিসাব</span> ও
-                <br /> <span className="text-primary">দোকানের হিসাব</span> — এক অ্যাপেই
-              </>
-            ) : (
-              <>
-                Your <span className="text-primary">personal finances</span> &
-                <br /> <span className="text-primary">shop accounting</span> — one app
-              </>
-            )}
+            {t("ae_h1_prefix")} <span className="text-primary">{t("ae_personalLabel")}</span> {t("ae_h1_and")}
+            <br /> <span className="text-primary">{t("ae_shopLabel")}</span> {t("ae_h1_suffix")}
           </h1>
           <p className="mt-4 max-w-md text-base text-muted-foreground md:text-lg">
-            {lang === "bn"
-              ? "ব্যক্তিগত আয়-ব্যয়, দেনা-পাওনা ও ফর্দ থেকে শুরু করে পূর্ণাঙ্গ দোকান POS — সব এখানে।"
-              : "From personal income–expense, lending and wishlist to a full-featured shop POS — all here."}
+            {t("ae_heroSub")}
           </p>
 
           <div className="mt-6 grid gap-3 sm:grid-cols-2">
@@ -64,7 +53,7 @@ export function AuthEntry() {
             <Button asChild size="lg" variant="ghost" className="h-12 rounded-full px-5 text-sm font-semibold">
               <a href="https://wa.me/8801841577944?text=Hello" target="_blank" rel="noopener noreferrer">
                 <MessageCircle className="mr-1.5 h-4 w-4" />
-                {lang === "bn" ? "এক্সপার্টের সাথে কথা বলুন" : "Talk to an Expert"}
+                {t("ae_talkExpert")}
               </a>
             </Button>
           </div>
