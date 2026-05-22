@@ -2043,14 +2043,14 @@ const ar: Dict = {
 
 const dict: Record<Lang, Dict> = { en, bn, hi, ta, te, ur, ar };
 
-export const LANG_NAMES: { code: Lang; native: string }[] = [
-  { code: "bn", native: "বাংলা" },
-  { code: "en", native: "English" },
-  { code: "hi", native: "हिन्दी" },
-  { code: "ta", native: "தமிழ்" },
-  { code: "te", native: "తెలుగు" },
-  { code: "ur", native: "اردو" },
-  { code: "ar", native: "العربية" },
+export const LANG_NAMES: { code: Lang; native: string; english: string; flag: string }[] = [
+  { code: "bn", native: "বাংলা",    english: "Bangla",  flag: "🇧🇩" },
+  { code: "en", native: "English",  english: "English", flag: "🇬🇧" },
+  { code: "hi", native: "हिन्दी",     english: "Hindi",   flag: "🇮🇳" },
+  { code: "ta", native: "தமிழ்",    english: "Tamil",   flag: "🇮🇳" },
+  { code: "te", native: "తెలుగు",   english: "Telugu",  flag: "🇮🇳" },
+  { code: "ur", native: "اردو",     english: "Urdu",    flag: "🇵🇰" },
+  { code: "ar", native: "العربية",  english: "Arabic",  flag: "🇸🇦" },
 ];
 
 type LegacyKey = keyof typeof en;
