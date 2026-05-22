@@ -7,13 +7,12 @@ import { isTourCompleted, startTour } from "@/lib/tour";
  * Mounted once inside AppLayout. Safe no-op for returning users.
  */
 export function AppTour() {
-  const { lang, t } = useI18n();
+  const { lang } = useI18n();
   useEffect(() => {
     if (isTourCompleted()) return;
     // Wait a tick so sidebar items are mounted in the DOM.
     const id = window.setTimeout(() => {
-      const tourLang = t("p7_en");
-      startTour(tourLang);
+      startTour(lang === "bn" ? "bn" : "en");
     }, 800);
     return () => window.clearTimeout(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
