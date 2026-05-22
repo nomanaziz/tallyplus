@@ -91,7 +91,7 @@ function applyBulkPricing(item: CartItem): CartItem {
 type Contact = { id: string; name: string; phone: string | null; address: string | null };
 
 export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue?: boolean }) {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const { current } = useShop();
   const { user } = useAuth();
   const nav = useNavigate();
@@ -731,7 +731,7 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
 function QuickAddProductDialog({
   open, onClose, onAdded,
 }: { open: boolean; onClose: () => void; onAdded: (p: Product) => void }) {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const { current } = useShop();
   const [name, setName] = useState("");
   const [salePrice, setSalePrice] = useState("0");
@@ -804,7 +804,7 @@ function PaymentDialog(props: {
   partyLabelBn?: string; partyLabelEn?: string;
   onSaved: (invoice?: InvoiceData) => void;
 }) {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const { current } = useShop();
   const { user } = useAuth();
   const isSell = props.mode === "sell";
