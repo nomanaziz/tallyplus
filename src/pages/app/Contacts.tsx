@@ -186,9 +186,10 @@ function ContactsPage() {
       const { error } = await supabase.from(table).insert(toInsert);
       if (error) { toast.error(error.message); return; }
       toast.success(
-        lang === "bn"
-          ? `${bnNum(toInsert.length)} জন যুক্ত হয়েছে${skipped ? ` · ${bnNum(skipped)} জন বাদ` : ""}`
-          : `Added ${toInsert.length}${skipped ? ` · skipped ${skipped}` : ""}`,
+        t("p2b_bulkAddedX", {
+          n: lang === "bn" ? bnNum(toInsert.length) : toInsert.length,
+          tail: skipped ? t("p2b_bulkSkippedTail", { n: lang === "bn" ? bnNum(skipped) : skipped }) : "",
+        }),
       );
       void refresh();
     } finally {
@@ -574,9 +575,7 @@ function ContactDialog({
       if (existing) {
         setBusy(false);
         toast.error(
-          lang === "bn"
-            ? `এই ফোন নম্বরে ইতিমধ্যেই "${(existing as { name: string }).name}" আছে`
-            : `A contact "${(existing as { name: string }).name}" with this phone already exists`,
+          t("p2b_contactExistsX", { name: (existing as { name: string }).name }),
         );
         return;
       }
