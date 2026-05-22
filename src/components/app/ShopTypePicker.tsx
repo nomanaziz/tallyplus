@@ -23,6 +23,7 @@ export function ShopTypePicker({
   lang?: Lang;
   label?: string;
 }) {
+  const { t } = useI18n();
   const [types, setTypes] = useState<ShopType[]>([]);
   const [loading, setLoading] = useState(true);
 
