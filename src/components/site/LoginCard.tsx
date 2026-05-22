@@ -10,6 +10,7 @@ import { Loader2, MessageCircle, Sparkles } from "lucide-react";
 import { ShopTypePicker } from "@/components/app/ShopTypePicker";
 import { detectCountryFromPhone, normalizePhoneSimple } from "@/lib/countries";
 import { BrandWordmark } from "@/components/brand/BrandWordmark";
+import { useI18n } from "@/lib/i18n";
 
 type Mode = "login" | "signup";
 type Role = "owner" | "customer";
@@ -32,6 +33,7 @@ async function callFn(name: string, body: unknown) {
 }
 
 export function LoginCard() {
+  const { t, lang } = useI18n();
   const { ensureProfile } = useAuth();
   const navigate = useNavigate();
   const search = useSearch<{ role?: string; mode?: string; phone?: string; redirect?: string }>();
@@ -197,16 +199,16 @@ export function LoginCard() {
           <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
             <Sparkles className="h-7 w-7 text-primary" />
           </div>
-          <h2 className="text-xl font-bold">Account তৈরি হয়েছে! 🎉</h2>
-          <p className="text-sm text-muted-foreground">আপনার দোকানের জন্য কিছু sample product import করব?</p>
+          <h2 className="text-xl font-bold">{t("lc_successTitle")}</h2>
+          <p className="text-sm text-muted-foreground">{t("lc_sampleQ")}</p>
         </div>
         <div className="space-y-2">
           <Button className="h-12 w-full text-base font-semibold" onClick={() => {
             try { localStorage.setItem("pending_sample_import", "1"); } catch { /* ignore */ }
             navigate({ to: "/app/dashboard", replace: true });
-          }}>হ্যাঁ, import করুন</Button>
+          }}>{t("lc_yesImport")}</Button>
           <Button variant="outline" className="h-12 w-full text-base" onClick={() => navigate({ to: "/app/dashboard", replace: true })}>
-            না, আমি নিজে যোগ করব
+            {t("lc_noManual")}
           </Button>
         </div>
       </div>
@@ -217,7 +219,7 @@ export function LoginCard() {
     <Input
       value={phone}
       onChange={(e) => setPhone(e.target.value)}
-      placeholder="মোবাইল নম্বর (যেমন 01XXXXXXXXX বা +8801…)"
+      placeholder={t("lc_phonePh")}
       inputMode="tel"
     />
   );
@@ -227,7 +229,7 @@ export function LoginCard() {
       <div className="text-center">
         <BrandWordmark className="text-2xl font-bold block" />
         <p className="mt-1 text-sm text-muted-foreground">
-          {mode === "login" ? "Account-এ লগইন করুন" : "নতুন account তৈরি করুন"}
+          {mode === "login" ? t("lc_loginTitle") : t("lc_signupTitle")}
         </p>
       </div>
 
@@ -235,33 +237,33 @@ export function LoginCard() {
         <div className="space-y-3">
           <Tabs value={role} onValueChange={(v) => setRole(v as Role)}>
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="owner">ব্যবসায়িক হিসাব</TabsTrigger>
-              <TabsTrigger value="customer">ব্যক্তিগত হিসাব</TabsTrigger>
+              <TabsTrigger value="owner">{t("lc_tabOwner")}</TabsTrigger>
+              <TabsTrigger value="customer">{t("lc_tabCustomer")}</TabsTrigger>
             </TabsList>
           </Tabs>
           {PhoneField}
           <Input
             value={pin}
             onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 4))}
-            placeholder="৪ সংখ্যার PIN"
+            placeholder={t("lc_pinPh")}
             inputMode="numeric"
             maxLength={4}
             type="password"
           />
           <Button onClick={handleSubmit} disabled={loading} className="w-full">
             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            লগইন
+            {t("lc_loginBtn")}
           </Button>
           <button type="button" onClick={() => setMode("signup")} className="w-full text-center text-sm text-primary hover:underline">
-            Create account
+            {t("lc_createLink")}
           </button>
           {canShowForgotPin && (
             <div className="space-y-1.5">
-              <p className="text-center text-[11px] text-muted-foreground">PIN মনে নেই? নিচের button থেকে WhatsApp এ admin কে জানান।</p>
+              <p className="text-center text-[11px] text-muted-foreground">{t("lc_forgotHint")}</p>
               <a href={waUrl()} target="_blank" rel="noopener noreferrer"
                 className="flex items-center justify-center gap-2 rounded-md border border-green-600/30 bg-green-50 px-3 py-2 text-xs text-green-700 hover:bg-green-100 dark:bg-green-950/30 dark:text-green-400">
                 <MessageCircle className="h-3.5 w-3.5" />
-                PIN ভুলে গেছেন? WhatsApp করুন
+                {t("lc_forgotBtn")}
               </a>
             </div>
           )}
@@ -270,33 +272,33 @@ export function LoginCard() {
         <div className="space-y-3">
           <Tabs value={role} onValueChange={(v) => setRole(v as Role)}>
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="owner">ব্যবসায়িক হিসাব</TabsTrigger>
-              <TabsTrigger value="customer">ব্যক্তিগত হিসাব</TabsTrigger>
+              <TabsTrigger value="owner">{t("lc_tabOwner")}</TabsTrigger>
+              <TabsTrigger value="customer">{t("lc_tabCustomer")}</TabsTrigger>
             </TabsList>
           </Tabs>
 
-          <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="আপনার নাম" />
+          <Input value={name} onChange={(e) => setName(e.target.value)} placeholder={t("lc_namePh")} />
           {role === "owner" && (
             <>
-              <Input value={shopName} onChange={(e) => setShopName(e.target.value)} placeholder="দোকানের নাম" />
-              <ShopTypePicker value={shopTypeCode} onChange={(code) => setShopTypeCode(code)} lang="bn" label="দোকানের ধরন" />
+              <Input value={shopName} onChange={(e) => setShopName(e.target.value)} placeholder={t("lc_shopNamePh")} />
+              <ShopTypePicker value={shopTypeCode} onChange={(code) => setShopTypeCode(code)} lang={lang === "bn" ? "bn" : "en"} label={t("lc_shopTypeLbl")} />
             </>
           )}
           {PhoneField}
           <Input
             value={pin}
             onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 4))}
-            placeholder="৪ সংখ্যার PIN"
+            placeholder={t("lc_pinPh")}
             inputMode="numeric"
             maxLength={4}
             type="password"
           />
           <Button onClick={handleSubmit} disabled={loading} className="w-full">
             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Account তৈরি করুন
+            {t("lc_createBtn")}
           </Button>
           <button type="button" onClick={() => setMode("login")} className="w-full text-center text-sm text-primary hover:underline">
-            ← লগইনে ফিরুন
+            {t("lc_backToLogin")}
           </button>
         </div>
       )}
