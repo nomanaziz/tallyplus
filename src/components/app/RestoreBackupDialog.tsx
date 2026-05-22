@@ -17,7 +17,7 @@ export function RestoreBackupDialog({
   onOpenChange: (v: boolean) => void;
   shopId: string;
 }) {
-  const { lang, t } = useI18n();
+  const { lang, t: tr } = useI18n();
   const [parsed, setParsed] = useState<Backup | null>(null);
   const [errors, setErrors] = useState<string[]>([]);
   const [counts, setCounts] = useState<Record<string, number>>({});
@@ -27,7 +27,7 @@ export function RestoreBackupDialog({
     if (!f) return;
     setErrors([]); setParsed(null); setCounts({});
     if (f.size > 20 * 1024 * 1024) {
-      setErrors([t("p7_File_must_be_under_20MB")]);
+      setErrors([tr("p7_File_must_be_under_20MB")]);
       return;
     }
     try {
@@ -114,7 +114,7 @@ export function RestoreBackupDialog({
         }
       }
 
-      toast.success(t("p7_Restore_complete"));
+      toast.success(tr("p7_Restore_complete"));
       onOpenChange(false);
       setParsed(null); setCounts({}); setErrors([]);
     } catch (e) {
@@ -128,15 +128,15 @@ export function RestoreBackupDialog({
     <Dialog open={open} onOpenChange={(v) => { if (!busy) onOpenChange(v); }}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{t("p7_Restore_from_Backup")}</DialogTitle>
+          <DialogTitle>{tr("p7_Restore_from_Backup")}</DialogTitle>
           <DialogDescription>
-            {t("p7_Upload_a_JSON_backup_file_Inva")}
+            {tr("p7_Upload_a_JSON_backup_file_Inva")}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-3">
           <div>
-            <Label>{t("p7_Backup_file")}</Label>
+            <Label>{tr("p7_Backup_file")}</Label>
             <input
               type="file"
               accept="application/json,.json"
@@ -148,19 +148,19 @@ export function RestoreBackupDialog({
           {errors.length > 0 && (
             <div className="rounded-lg bg-rose-50 p-3 text-sm text-rose-900">
               <div className="flex items-center gap-1 font-semibold">
-                <AlertTriangle className="h-4 w-4" /> {t("p7_Validation_failed")}
+                <AlertTriangle className="h-4 w-4" /> {tr("p7_Validation_failed")}
               </div>
               <ul className="mt-1 list-disc pl-5 text-xs">
                 {errors.map((e, i) => <li key={i}>{e}</li>)}
               </ul>
-              <p className="mt-2 text-xs">{t("p7_Fix_the_file_and_try_again")}</p>
+              <p className="mt-2 text-xs">{tr("p7_Fix_the_file_and_try_again")}</p>
             </div>
           )}
 
           {parsed && (
             <div className="rounded-lg bg-emerald-50 p-3 text-sm text-emerald-900">
               <div className="flex items-center gap-1 font-semibold">
-                <CheckCircle2 className="h-4 w-4" /> {t("p7_File_is_valid")}
+                <CheckCircle2 className="h-4 w-4" /> {tr("p7_File_is_valid")}
               </div>
               <ul className="mt-1 list-disc pl-5 text-xs">
                 {Object.entries(counts).map(([k, v]) => (
@@ -173,11 +173,11 @@ export function RestoreBackupDialog({
 
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={busy}>
-            {t("p7_Cancel")}
+            {tr("p7_Cancel")}
           </Button>
           <Button onClick={onRestore} disabled={!parsed || busy}>
             {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
-            {t("p7_Restore_2")}
+            {tr("p7_Restore_2")}
           </Button>
         </DialogFooter>
       </DialogContent>

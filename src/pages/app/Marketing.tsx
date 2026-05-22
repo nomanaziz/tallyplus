@@ -34,7 +34,7 @@ type Contact = { id: string; name: string; phone: string | null };
 const SMS_PER_SEGMENT = 160;
 
 function MarketingPage() {
-  const { lang, t } = useI18n();
+  const { lang, t: tr } = useI18n();
   const { current } = useShop();
   const nav = useNavigate();
   const [tab, setTab] = useState<ContactTab>("customer");
@@ -73,7 +73,7 @@ function MarketingPage() {
   const previewBody = useMemo(() => {
     if (!selectedTemplate) return "";
     return selectedTemplate.body_template
-      .replaceAll("{name}", t("p7_Customer_2"))
+      .replaceAll("{name}", tr("p7_Customer_2"))
       .replaceAll("{amount}", "0")
       .replaceAll("{due}", "0");
   }, [selectedTemplate, lang]);
@@ -152,12 +152,12 @@ function MarketingPage() {
 
   const addRecipient = (phoneRaw: string | null | undefined) => {
     if (!phoneRaw) {
-      toast.error(t("p7_No_phone_number"));
+      toast.error(tr("p7_No_phone_number"));
       return;
     }
     const norm = normalizePhone(phoneRaw);
     if (!norm) {
-      toast.error(t("p7_Enter_a_valid_BD_number"));
+      toast.error(tr("p7_Enter_a_valid_BD_number"));
       return;
     }
     setRecipients((prev) => (prev.includes(norm) ? prev : [...prev, norm]));
@@ -166,7 +166,7 @@ function MarketingPage() {
   const addManualPhone = () => {
     const norm = normalizePhone(phoneInput);
     if (!norm) {
-      toast.error(t("p7_Enter_valid_11_digit_number"));
+      toast.error(tr("p7_Enter_valid_11_digit_number"));
       return;
     }
     setRecipients((prev) => (prev.includes(norm) ? prev : [...prev, norm]));
@@ -188,11 +188,11 @@ function MarketingPage() {
 
   const sendSms = async () => {
     if (recipients.length === 0) {
-      toast.error(t("p7_No_recipients"));
+      toast.error(tr("p7_No_recipients"));
       return;
     }
     if (!templateCode) {
-      toast.error(t("p7_Select_a_template"));
+      toast.error(tr("p7_Select_a_template"));
       return;
     }
     if (!current?.id) return;
@@ -230,12 +230,12 @@ function MarketingPage() {
 
   const copyMessage = async () => {
     if (!fullMessage.trim()) {
-      toast.error(t("p7_No_message"));
+      toast.error(tr("p7_No_message"));
       return;
     }
     try {
       await navigator.clipboard.writeText(fullMessage);
-      toast.success(t("p7_Copied_Send_from_your_phone"));
+      toast.success(tr("p7_Copied_Send_from_your_phone"));
       // Log copied entries to history if recipients selected
       if (current?.id && recipients.length > 0) {
         const rows = recipients.map((p) => {
@@ -255,24 +255,24 @@ function MarketingPage() {
 
   const sendVoice = () => {
     if (recipients.length === 0) {
-      toast.error(t("p7_No_recipients"));
+      toast.error(tr("p7_No_recipients"));
       return;
     }
     if (minuteBalance <= 0) {
       toast.error(
-        t("p7_Insufficient_minutes_Please_Bu"),
+        tr("p7_Insufficient_minutes_Please_Bu"),
       );
       return;
     }
     toast.info(
-      t("p7_Voice_message_coming_soon"),
+      tr("p7_Voice_message_coming_soon"),
     );
   };
 
   return (
     <div className="min-h-full bg-muted/30">
       <PageHeader
-        breadcrumb={t("p7_Marketing")}
+        breadcrumb={tr("p7_Marketing")}
         title={
           <span className="flex items-center gap-2">
             <button
@@ -282,13 +282,13 @@ function MarketingPage() {
             >
               <ArrowLeft className="h-4 w-4" />
             </button>
-            {t("p7_Marketing")}
+            {tr("p7_Marketing")}
           </span>
         }
         actions={
           <Button className="h-10 gap-2" onClick={() => nav({ to: "/app/sms-history" })}>
             <History className="h-4 w-4" />
-            {t("p7_SMS_History")}
+            {tr("p7_SMS_History")}
           </Button>
         }
       />
@@ -310,10 +310,10 @@ function MarketingPage() {
                   }
                 >
                   {t === "customer"
-                    ? t("p7_Customer")
+                    ? tr("p7_Customer")
                     : t === "supplier"
-                      ? t("p7_Supplier")
-                      : t("p7_Employee")}
+                      ? tr("p7_Supplier")
+                      : tr("p7_Employee")}
                   {tab === t && (
                     <span className="ml-1 align-super text-[10px] text-muted-foreground">
                       ({filtered.length})
@@ -329,7 +329,7 @@ function MarketingPage() {
                 <Input
                   value={q}
                   onChange={(e) => setQ(e.target.value)}
-                  placeholder={t("p7_Search_by_name")}
+                  placeholder={tr("p7_Search_by_name")}
                   className="h-9 pl-9 text-sm"
                 />
               </div>
@@ -338,7 +338,7 @@ function MarketingPage() {
                 className="h-9 bg-primary text-primary-foreground hover:bg-primary/90"
                 onClick={selectAll}
               >
-                {t("p7_Select_All")}
+                {tr("p7_Select_All")}
               </Button>
               <Button
                 size="sm"
@@ -355,7 +355,7 @@ function MarketingPage() {
             <div className="max-h-[60vh] space-y-2 overflow-y-auto pr-1">
               {filtered.length === 0 ? (
                 <div className="py-8 text-center text-xs text-muted-foreground">
-                  {t("p7_No_contacts")}
+                  {tr("p7_No_contacts")}
                 </div>
               ) : (
                 filtered.map((c) => {
@@ -372,7 +372,7 @@ function MarketingPage() {
                       <div className="min-w-0 flex-1">
                         <div className="truncate text-sm font-medium">{c.name}</div>
                         <div className="truncate text-xs text-muted-foreground">
-                          {c.phone ? `+88 ${c.phone}` : (t("p7_no_phone"))}
+                          {c.phone ? `+88 ${c.phone}` : (tr("p7_no_phone"))}
                         </div>
                       </div>
                       <Button
@@ -385,7 +385,7 @@ function MarketingPage() {
                         onClick={() => (added ? removeRecipient(norm!) : addRecipient(c.phone))}
                         disabled={!c.phone}
                       >
-                        {added ? (t("p7_Added")) : (t("p7_Add"))}
+                        {added ? (tr("p7_Added")) : (tr("p7_Add"))}
                       </Button>
                     </div>
                   );
@@ -400,7 +400,7 @@ function MarketingPage() {
             <div className="grid gap-3 lg:grid-cols-[1fr,auto]">
               <div>
                 <label className="mb-1 block text-xs font-semibold">
-                  {t("p7_Phone_Number")} <span className="text-rose-500">*</span>
+                  {tr("p7_Phone_Number")} <span className="text-rose-500">*</span>
                 </label>
                 <div className="flex h-10 items-center overflow-hidden rounded-md border bg-background">
                   <span className="flex h-full items-center gap-1 border-r bg-muted/40 px-3 text-xs font-medium">
@@ -427,11 +427,11 @@ function MarketingPage() {
                 <div className="flex flex-wrap gap-2">
                   <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
                     <Phone className="h-3 w-3" />
-                    {t("p7_MINUTE_BALANCE")} {minuteBalance}
+                    {tr("p7_MINUTE_BALANCE")} {minuteBalance}
                   </span>
                   <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
                     <MessageSquareText className="h-3 w-3" />
-                    {t("p7_SMS_BALANCE")} {smsBalance}
+                    {tr("p7_SMS_BALANCE")} {smsBalance}
                   </span>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -439,9 +439,9 @@ function MarketingPage() {
                     size="sm"
                     variant="outline"
                     className="h-8 border-amber-300 text-amber-700 hover:bg-amber-50"
-                    onClick={() => toast.info(t("p7_Coming_soon"))}
+                    onClick={() => toast.info(tr("p7_Coming_soon"))}
                   >
-                    {t("p7_Buy_Minutes")}
+                    {tr("p7_Buy_Minutes")}
                     <ArrowRight className="ml-1 h-3 w-3" />
                   </Button>
                   <Button
@@ -449,7 +449,7 @@ function MarketingPage() {
                     className="h-8 bg-amber-500 text-white hover:bg-amber-600"
                     onClick={() => nav({ to: "/app/buy-sms" })}
                   >
-                    {t("p7_Buy_SMS")}
+                    {tr("p7_Buy_SMS")}
                     <ArrowRight className="ml-1 h-3 w-3" />
                   </Button>
                 </div>
@@ -459,13 +459,13 @@ function MarketingPage() {
             {/* Recipients */}
             <div>
               <div className="mb-1 text-xs font-semibold">
-                {t("p7_SMS_Sending_to")}
+                {tr("p7_SMS_Sending_to")}
                 <span className="ml-1 text-muted-foreground">({recipients.length})</span>
               </div>
               <div className="min-h-[44px] rounded-lg border bg-background p-2">
                 {recipients.length === 0 ? (
                   <span className="text-xs text-muted-foreground">
-                    {t("p7_Add_from_contact_list")}
+                    {tr("p7_Add_from_contact_list")}
                   </span>
                 ) : (
                   <div className="flex flex-wrap gap-1.5">
@@ -492,10 +492,10 @@ function MarketingPage() {
             {/* Template selector + preview */}
             <div className="rounded-xl border bg-background p-4">
               <label className="mb-2 block text-sm font-semibold">
-                {t("p7_Choose_Template")}
+                {tr("p7_Choose_Template")}
               </label>
               <Select value={templateCode} onValueChange={setTemplateCode}>
-                <SelectTrigger className="mb-2 h-10"><SelectValue placeholder={t("p7_Template")} /></SelectTrigger>
+                <SelectTrigger className="mb-2 h-10"><SelectValue placeholder={tr("p7_Template")} /></SelectTrigger>
                 <SelectContent>
                   {templates.map((t: any) => (
                     <SelectItem key={t.code} value={t.code}>{lang === "bn" ? t.name_bn : t.name_en}</SelectItem>
@@ -503,7 +503,7 @@ function MarketingPage() {
                 </SelectContent>
               </Select>
               <div className="rounded-md border bg-muted/30 p-2 text-xs text-muted-foreground">
-                {t("p7_Custom_messages_are_not_allowe")}
+                {tr("p7_Custom_messages_are_not_allowe")}
               </div>
               <Textarea
                 value={previewBody}
@@ -516,7 +516,7 @@ function MarketingPage() {
                 </div>
               )}
               <div className="mt-2 text-xs text-muted-foreground">
-                {charCount} {t("p7_Character")} | {smsCount} SMS (160 Character/SMS)
+                {charCount} {tr("p7_Character")} | {smsCount} SMS (160 Character/SMS)
               </div>
             </div>
 
@@ -528,7 +528,7 @@ function MarketingPage() {
                 className="h-11 border-2 border-emerald-500 text-emerald-700 hover:bg-emerald-50"
               >
                 <Copy className="mr-2 h-4 w-4" />
-                {t("p7_Copy_Message")}
+                {tr("p7_Copy_Message")}
               </Button>
               <Button
                 variant="outline"
@@ -536,14 +536,14 @@ function MarketingPage() {
                 disabled={sending}
                 className="h-11 border-2 border-blue-500 text-blue-600 hover:bg-blue-50"
               >
-                {t("p7_Send_SMS_2")}
+                {tr("p7_Send_SMS_2")}
                 {sending ? <Loader2 className="ml-2 h-4 w-4 animate-spin" /> : <Send className="ml-2 h-4 w-4" />}
               </Button>
               <Button
                 onClick={sendVoice}
                 className="h-11 bg-blue-600 text-white hover:bg-blue-700"
               >
-                {t("p7_Send_Voice_Message")}
+                {tr("p7_Send_Voice_Message")}
                 <Phone className="ml-2 h-4 w-4" />
               </Button>
             </div>
