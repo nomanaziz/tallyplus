@@ -23,15 +23,10 @@ export function ContactActionsBar({ name, phone, due = 0 }: Props) {
   };
 
   const reminderText = () => {
-    if (lang === "bn") {
-      const base = `আসসালামু আলাইকুম ${name}।`;
-      return due > 0
-        ? `${base} আপনার বর্তমান বাকি ${fmtMoney(due, "bn")}। অনুগ্রহ করে পরিশোধ করুন। ধন্যবাদ।`
-        : `${base} ধন্যবাদ।`;
-    }
+    const greet = t("p2b_remGreet", { name });
     return due > 0
-      ? `Hi ${name}, your current due is ${fmtMoney(due, "en")}. Kindly settle it. Thanks.`
-      : `Hi ${name}, thanks.`;
+      ? greet + t("p2b_remDue", { amt: fmtMoney(due, lang) })
+      : greet + t("p2b_remThanks");
   };
 
   const onCall = () => {
