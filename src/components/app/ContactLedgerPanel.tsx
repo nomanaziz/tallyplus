@@ -23,7 +23,7 @@ export type LedgerContact = {
 };
 
 export function ContactLedgerPanel({ contact, onChanged }: { contact: LedgerContact | null; onChanged?: () => void }) {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const { current } = useShop();
 
   const today = new Date().toISOString().slice(0, 10);
@@ -60,7 +60,7 @@ export function ContactLedgerPanel({ contact, onChanged }: { contact: LedgerCont
   if (!contact) {
     return (
       <div className="flex h-full items-center justify-center">
-        <EmptyState title={lang === "bn" ? "একজন কন্টাক্ট নির্বাচন করুন" : "Select a contact"} />
+        <EmptyState title={t("p2b_selectContactA")} />
       </div>
     );
   }
@@ -71,13 +71,13 @@ export function ContactLedgerPanel({ contact, onChanged }: { contact: LedgerCont
 
   const balanceLabel = (() => {
     if (contact.party === "customer") {
-      if (balance > 0) return { text: lang === "bn" ? "পাবো" : "Will Get", cls: "text-emerald-600" };
-      if (balance < 0) return { text: lang === "bn" ? "অগ্রিম" : "Advance", cls: "text-blue-600" };
-      return { text: lang === "bn" ? "পরিশোধিত" : "Paid", cls: "text-muted-foreground" };
+      if (balance > 0) return { text: t("p2b_willGet"), cls: "text-emerald-600" };
+      if (balance < 0) return { text: t("p2b_advance"), cls: "text-blue-600" };
+      return { text: t("p2b_paid"), cls: "text-muted-foreground" };
     }
-    if (balance > 0) return { text: lang === "bn" ? "দিবো" : "Will Give", cls: "text-rose-600" };
-    if (balance < 0) return { text: lang === "bn" ? "অগ্রিম দেওয়া" : "Advance Paid", cls: "text-blue-600" };
-    return { text: lang === "bn" ? "পরিশোধিত" : "Settled", cls: "text-muted-foreground" };
+    if (balance > 0) return { text: t("p2b_willGive"), cls: "text-rose-600" };
+    if (balance < 0) return { text: t("p2b_advancePaid"), cls: "text-blue-600" };
+    return { text: t("p2b_settled"), cls: "text-muted-foreground" };
   })();
 
   const fmtDt = (iso: string) => {
@@ -87,10 +87,10 @@ export function ContactLedgerPanel({ contact, onChanged }: { contact: LedgerCont
   };
 
   const kindLabel = contact.kind === "customer"
-    ? (lang === "bn" ? "কাস্টমার" : "CUSTOMER")
+    ? (t("p2b_CUSTOMER"))
     : contact.kind === "supplier"
-      ? (lang === "bn" ? "সাপ্লায়ার" : "SUPPLIER")
-      : (lang === "bn" ? "কর্মচারী" : "EMPLOYEE");
+      ? (t("p2b_SUPPLIER"))
+      : (t("p2b_EMPLOYEE"));
 
   return (
     <div className="flex h-full flex-col">
@@ -109,7 +109,7 @@ export function ContactLedgerPanel({ contact, onChanged }: { contact: LedgerCont
           </div>
         </div>
         <div className="text-right">
-          <div className="text-xs text-muted-foreground">{lang === "bn" ? "ব্যালেন্স" : "Balance"}</div>
+          <div className="text-xs text-muted-foreground">{t("p2b_balance")}</div>
           <div className={`text-xl font-bold ${balanceLabel.cls}`}>
             {fmtMoney(Math.abs(balance), lang)}
             <span className="ml-1 text-xs font-normal">{balanceLabel.text}</span>
@@ -122,7 +122,7 @@ export function ContactLedgerPanel({ contact, onChanged }: { contact: LedgerCont
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" className="gap-1.5">
             <Receipt className="h-4 w-4" />
-            {lang === "bn" ? "ইনভয়েস" : "Invoice"}
+            {t("p2b_invoice")}
           </Button>
           <div className="flex items-center gap-1.5 rounded-md border bg-background px-2">
             <Calendar className="h-4 w-4 text-muted-foreground" />
@@ -135,17 +135,22 @@ export function ContactLedgerPanel({ contact, onChanged }: { contact: LedgerCont
         {contact.party === "customer" && balance > 0 && contact.phone && (
           <Button size="sm" className="gap-1.5 bg-blue-600 hover:bg-blue-700 text-white" onClick={() => setReminderOpen(true)}>
             <Send className="h-4 w-4" />
-            {lang === "bn" ? "রিমাইন্ডার পাঠান" : "Send Reminder"}
+            {t("p2b_sendReminder")}
           </Button>
         )}
         <ShareMenu
           phone={contact.phone}
           filename={`statement-${contact.name.replace(/\s+/g, "_")}.pdf`}
-          label={lang === "bn" ? "শেয়ার / পাঠান" : "Share"}
+          label={t("p2b_share")}
           text={
-            lang === "bn"
-              ? `প্রিয় ${contact.name},\n${current?.name ? current.name + " — " : ""}আপনার ${balance >= 0 ? "মোট বাকি" : "অগ্রিম"}: ${fmtMoney(Math.abs(balance), lang)}\nসময়কাল: ${from} থেকে ${to}\nবিস্তারিত PDF সংযুক্ত।\n\nধন্যবাদ।`
-              : `Dear ${contact.name},\n${current?.name ? current.name + " — " : ""}Your ${balance >= 0 ? "outstanding balance" : "advance"}: ${fmtMoney(Math.abs(balance), lang)}\nPeriod: ${from} to ${to}\nPDF attached.\n\nThank you.`
+            t("p2b_shareMsg", {
+              name: contact.name,
+              shop: current?.name ? current.name + " — " : "",
+              kind: balance >= 0 ? t("p2b_outstanding") : t("p2b_advanceWord"),
+              amt: fmtMoney(Math.abs(balance), lang),
+              from,
+              to,
+            })
           }
           buildPdf={() =>
             generatePdfFromHtml(
@@ -170,17 +175,17 @@ export function ContactLedgerPanel({ contact, onChanged }: { contact: LedgerCont
         <table className="w-full text-sm">
           <thead className="sticky top-0 bg-muted/50 text-xs uppercase">
             <tr>
-              <th className="px-4 py-2 text-left font-medium">{lang === "bn" ? "বাকির ইতিহাস" : "Due History"}</th>
-              <th className="px-4 py-2 text-right font-medium text-emerald-700">{lang === "bn" ? "পেলাম" : "YOU GOT"}</th>
-              <th className="px-4 py-2 text-right font-medium text-rose-700">{lang === "bn" ? "দিলাম" : "YOU GAVE"}</th>
-              <th className="px-4 py-2 text-right font-medium">{lang === "bn" ? "ব্যালেন্স" : "BALANCE"}</th>
+              <th className="px-4 py-2 text-left font-medium">{t("p2b_dueHistory")}</th>
+              <th className="px-4 py-2 text-right font-medium text-emerald-700">{t("p2b_youGot")}</th>
+              <th className="px-4 py-2 text-right font-medium text-rose-700">{t("p2b_youGave")}</th>
+              <th className="px-4 py-2 text-right font-medium">{t("p2b_BALANCE")}</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={4} className="py-6 text-center text-muted-foreground">{lang === "bn" ? "লোড হচ্ছে..." : "Loading..."}</td></tr>
+              <tr><td colSpan={4} className="py-6 text-center text-muted-foreground">{t("p2b_loadingDots")}</td></tr>
             ) : rows.length === 0 ? (
-              <tr><td colSpan={4} className="py-6 text-center text-muted-foreground">{lang === "bn" ? "কোন লেনদেন নেই" : "No transactions"}</td></tr>
+              <tr><td colSpan={4} className="py-6 text-center text-muted-foreground">{t("p2b_noTransactions2")}</td></tr>
             ) : (
               rows.map((r) => (
                 <tr key={r.id} className="border-b">
@@ -198,7 +203,7 @@ export function ContactLedgerPanel({ contact, onChanged }: { contact: LedgerCont
           {rows.length > 0 && (
             <tfoot>
               <tr className="bg-muted/40 font-semibold">
-                <td className="px-4 py-2">{lang === "bn" ? "মোট" : "Total"}</td>
+                <td className="px-4 py-2">{t("p2b_total")}</td>
                 <td className="px-4 py-2 text-right tabular-nums text-emerald-700">{fmtMoney(totalGot, lang)}</td>
                 <td className="px-4 py-2 text-right tabular-nums text-rose-700">{fmtMoney(totalGave, lang)}</td>
                 <td className="px-4 py-2 text-right tabular-nums">{fmtMoney(Math.abs(balance), lang)}</td>
@@ -214,13 +219,13 @@ export function ContactLedgerPanel({ contact, onChanged }: { contact: LedgerCont
           className="h-12 bg-rose-500 hover:bg-rose-600 text-white text-base font-semibold"
           onClick={() => { setPayDir("out"); setPayOpen(true); }}
         >
-          {lang === "bn" ? "দিলাম" : "Given"}
+          {t("p2b_given")}
         </Button>
         <Button
           className="h-12 bg-emerald-500 hover:bg-emerald-600 text-white text-base font-semibold"
           onClick={() => { setPayDir("in"); setPayOpen(true); }}
         >
-          {lang === "bn" ? "পেলাম" : "Received"}
+          {t("p2b_received")}
         </Button>
       </div>
 

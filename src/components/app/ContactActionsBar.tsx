@@ -11,27 +11,22 @@ type Props = {
 };
 
 export function ContactActionsBar({ name, phone, due = 0 }: Props) {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const normalized = normalizeBdPhone(phone);
 
   const guard = () => {
     if (!normalized) {
-      toast.error(lang === "bn" ? "ফোন নাম্বার নেই" : "No phone number");
+      toast.error(t("p2b_noPhone"));
       return false;
     }
     return true;
   };
 
   const reminderText = () => {
-    if (lang === "bn") {
-      const base = `আসসালামু আলাইকুম ${name}।`;
-      return due > 0
-        ? `${base} আপনার বর্তমান বাকি ${fmtMoney(due, "bn")}। অনুগ্রহ করে পরিশোধ করুন। ধন্যবাদ।`
-        : `${base} ধন্যবাদ।`;
-    }
+    const greet = t("p2b_remGreet", { name });
     return due > 0
-      ? `Hi ${name}, your current due is ${fmtMoney(due, "en")}. Kindly settle it. Thanks.`
-      : `Hi ${name}, thanks.`;
+      ? greet + t("p2b_remDue", { amt: fmtMoney(due, lang) })
+      : greet + t("p2b_remThanks");
   };
 
   const onCall = () => {
@@ -56,7 +51,7 @@ export function ContactActionsBar({ name, phone, due = 0 }: Props) {
     <div className="flex flex-wrap items-center gap-2">
       <Button variant="outline" size="sm" className="gap-1.5" onClick={onCall}>
         <Phone className="h-4 w-4 text-emerald-600" />
-        {lang === "bn" ? "কল" : "Call"}
+        {t("p2b_call")}
       </Button>
       <Button variant="outline" size="sm" className="gap-1.5" onClick={onWhatsApp}>
         <MessageCircle className="h-4 w-4 text-green-600" />

@@ -25,7 +25,7 @@ type Tx = { id: string; invoice_no: string | null; total: number; due: number; p
 
 
 function ContactsPage() {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const { current } = useShop();
   const qc = useQueryClient();
   const [tab, setTab] = useState<Tab>("customers");
@@ -87,7 +87,7 @@ function ContactsPage() {
   };
 
   const onDelete = async (c: Contact) => {
-    if (!confirm(lang === "bn" ? "ডিলিট করবেন?" : "Delete?")) return;
+    if (!confirm(t("p2b_deleteQ"))) return;
     if (tab === "employees") {
       const { error } = await supabase.from("shop_members").delete().eq("id", c.id);
       if (error) { toast.error(error.message); return; }
@@ -95,7 +95,7 @@ function ContactsPage() {
       const { error } = await supabase.from(tab).update({ deleted_at: new Date().toISOString() }).eq("id", c.id);
       if (error) { toast.error(error.message); return; }
     }
-    toast.success(lang === "bn" ? "ডিলিট হয়েছে" : "Deleted");
+    toast.success(t("p2b_deleted"));
     setSelected(null);
     void refresh();
   };
@@ -118,18 +118,18 @@ function ContactsPage() {
     return null;
   };
 
-  const tabs: { key: Tab; label_bn: string; label_en: string; icon: React.ReactNode }[] = [
-    { key: "customers", label_bn: "কাস্টমার", label_en: "Customer", icon: <UserRound className="h-4 w-4" /> },
-    { key: "suppliers", label_bn: "সাপ্লায়ার", label_en: "Supplier", icon: <Truck className="h-4 w-4" /> },
-    { key: "employees", label_bn: "কর্মচারী", label_en: "Employee", icon: <Users className="h-4 w-4" /> },
+  const tabs: { key: Tab; labelKey: string; icon: React.ReactNode }[] = [
+    { key: "customers", labelKey: "p2b_customer", icon: <UserRound className="h-4 w-4" /> },
+    { key: "suppliers", labelKey: "p2b_supplier", icon: <Truck className="h-4 w-4" /> },
+    { key: "employees", labelKey: "p2b_employee", icon: <Users className="h-4 w-4" /> },
   ];
 
   const addBtnLabel =
     tab === "customers"
-      ? lang === "bn" ? "কাস্টমার যুক্ত করুন" : "Add customer"
+      ? t("p2b_addCustomer")
       : tab === "suppliers"
-        ? lang === "bn" ? "সাপ্লায়ার যুক্ত করুন" : "Add supplier"
-        : lang === "bn" ? "কর্মচারী যুক্ত করুন" : "Add employee";
+        ? t("p2b_addSupplier")
+        : t("p2b_addEmployee");
 
   const handleAdd = () => {
     if (tab === "employees") {
@@ -160,7 +160,7 @@ function ContactsPage() {
           return true;
         });
       if (cleaned.length === 0) {
-        toast.error(lang === "bn" ? "যোগ করার মতো কিছু নেই" : "Nothing to add");
+        toast.error(t("p2b_nothingToAdd"));
         return;
       }
       // Pre-fetch existing phones in this shop to skip duplicates
@@ -180,15 +180,16 @@ function ContactsPage() {
         .map((c) => ({ name: c.name, phone: c.phone, shop_id: current.id }));
       const skipped = cleaned.length - toInsert.length;
       if (toInsert.length === 0) {
-        toast.info(lang === "bn" ? "সবাই ইতিমধ্যেই আছে" : "All already exist");
+        toast.info(t("p2b_allAlreadyExist"));
         return;
       }
       const { error } = await supabase.from(table).insert(toInsert);
       if (error) { toast.error(error.message); return; }
       toast.success(
-        lang === "bn"
-          ? `${bnNum(toInsert.length)} জন যুক্ত হয়েছে${skipped ? ` · ${bnNum(skipped)} জন বাদ` : ""}`
-          : `Added ${toInsert.length}${skipped ? ` · skipped ${skipped}` : ""}`,
+        t("p2b_bulkAddedX", {
+          n: lang === "bn" ? bnNum(toInsert.length) : toInsert.length,
+          tail: skipped ? t("p2b_bulkSkippedTail", { n: lang === "bn" ? bnNum(skipped) : skipped }) : "",
+        }),
       );
       void refresh();
     } finally {
@@ -209,7 +210,7 @@ function ContactsPage() {
   return (
     <div className="container px-4 py-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-extrabold">{lang === "bn" ? "কাস্টমার ও স্টাফ" : "Customer & Staff"}</h1>
+        <h1 className="text-2xl font-extrabold">{t("p2b_customerStaff")}</h1>
         <div className="flex items-center gap-2">
           {tab !== "employees" && (
             <Button
@@ -219,12 +220,12 @@ function ContactsPage() {
               className="gap-1.5"
             >
               <BookUser className="h-4 w-4" />
-              {lang === "bn" ? "ফোনবুক থেকে অনেকজন" : "Bulk from phonebook"}
+              {t("p2b_bulkPhonebook")}
             </Button>
           )}
           <Button onClick={handleAdd} className="gap-1.5">
             <Plus className="h-4 w-4" />
-            {lang === "bn" ? "যুক্ত করুন" : "Add"}
+            {t("p2b_add")}
           </Button>
         </div>
       </div>
@@ -233,20 +234,20 @@ function ContactsPage() {
         {/* LEFT */}
         <div className="flex flex-col rounded-xl border bg-card">
           <div className="flex border-b">
-            {tabs.map((t) => {
-              const active = tab === t.key;
-              const n = tabBadge(t.key);
+            {tabs.map((tb) => {
+              const active = tab === tb.key;
+              const n = tabBadge(tb.key);
               return (
                 <button
-                  key={t.key}
-                  onClick={() => setTab(t.key)}
+                  key={tb.key}
+                  onClick={() => setTab(tb.key)}
                   className={
                     "relative flex flex-1 items-center justify-center gap-1.5 px-2 py-3 text-xs font-semibold transition " +
                     (active ? "text-foreground" : "text-muted-foreground hover:text-foreground")
                   }
                 >
-                  {t.icon}
-                  <span>{lang === "bn" ? t.label_bn : t.label_en}</span>
+                  {tb.icon}
+                  <span>{t(tb.labelKey as never)}</span>
                   {n != null && n > 0 && (
                     <span className="text-[10px] text-muted-foreground">({lang === "bn" ? bnNum(n) : n})</span>
                   )}
@@ -262,7 +263,7 @@ function ContactsPage() {
               <Input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder={lang === "bn" ? "কন্ট্যাক্ট খোঁজ করুন" : "Search contacts"}
+                placeholder={t("p2b_searchContacts")}
                 className="h-9 pl-8"
               />
             </div>
@@ -270,7 +271,7 @@ function ContactsPage() {
 
           <div className="min-h-[260px] flex-1">
             {filtered.length === 0 ? (
-              <EmptyState icon={<Users className="h-6 w-6" />} title={lang === "bn" ? "কোনো কন্ট্যাক্ট নেই" : "No contacts"} />
+              <EmptyState icon={<Users className="h-6 w-6" />} title={t("p2b_noContacts")} />
             ) : (
               <div className="flex flex-col">
                 {filtered.map((c) => {
@@ -310,7 +311,7 @@ function ContactsPage() {
         <div className="rounded-xl border bg-card">
           {!selected ? (
             <div className="flex h-full min-h-[400px] items-center justify-center">
-              <EmptyState title={lang === "bn" ? "একজন নির্বাচন করুন" : "Select a contact"} />
+              <EmptyState title={t("p2b_selectContact")} />
             </div>
           ) : (
             <>
@@ -366,7 +367,7 @@ function ContactsPage() {
                     }}
                   >
                     <Pencil className="h-4 w-4" />
-                    {lang === "bn" ? "এডিট করুন" : "Edit"}
+                    {t("p2b_edit")}
                   </Button>
                   {tab === "customers" && Number(selected.due_balance) > 0 && selected.phone && (
                     <Button
@@ -375,16 +376,16 @@ function ContactsPage() {
                       onClick={() => setReminderOpen(true)}
                     >
                       <MessageCircle className="h-4 w-4" />
-                      {lang === "bn" ? "রিমাইন্ডার" : "Remind"}
+                      {t("p2b_remind")}
                     </Button>
                   )}
                   <Button variant="destructive" size="sm" className="gap-1.5" onClick={() => onDelete(selected)}>
                     <Trash2 className="h-4 w-4" />
-                    {lang === "bn" ? "মুছে ফেলুন" : "Delete"}
+                    {t("p2b_delete")}
                   </Button>
                   <Button variant="outline" size="sm" className="gap-1.5" onClick={refresh}>
                     <RefreshCw className="h-4 w-4" />
-                    {lang === "bn" ? "রিফ্রেশ" : "Refresh"}
+                    {t("p2b_refresh")}
                   </Button>
                 </div>
               </div>
@@ -392,26 +393,26 @@ function ContactsPage() {
               {isContactTable ? (
                 <div className="p-3">
                   {transactions.length === 0 ? (
-                    <EmptyState title={lang === "bn" ? "কোনো লেনদেন নেই" : "No transactions"} />
+                    <EmptyState title={t("p2b_noTransactions")} />
                   ) : (
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead>{tab === "customers" ? (lang === "bn" ? "বিক্রির রিপোর্ট" : "Sale #") : (lang === "bn" ? "ক্রয়ের রিপোর্ট" : "Purchase #")}</TableHead>
-                          <TableHead>{lang === "bn" ? "সময়" : "Time"}</TableHead>
-                          <TableHead>{lang === "bn" ? "তথ্য" : "Info"}</TableHead>
-                          <TableHead className="text-right">{lang === "bn" ? "লেনদেনের ধরন" : "Type"}</TableHead>
-                          <TableHead className="text-right">{lang === "bn" ? "পরিমাণ" : "Amount"}</TableHead>
+                          <TableHead>{tab === "customers" ? (t("p2b_saleHash")) : (t("p2b_purchaseHash"))}</TableHead>
+                          <TableHead>{t("p2b_time")}</TableHead>
+                          <TableHead>{t("p2b_info")}</TableHead>
+                          <TableHead className="text-right">{t("p2b_txType")}</TableHead>
+                          <TableHead className="text-right">{t("p2b_amount")}</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {transactions.map((t) => {
-                          const isDue = Number(t.due) > 0;
+                        {transactions.map((tx) => {
+                          const isDue = Number(tx.due) > 0;
                           return (
-                            <TableRow key={t.id}>
-                              <TableCell className="font-mono text-xs">{t.invoice_no ?? t.id.slice(0, 8)}</TableCell>
+                            <TableRow key={tx.id}>
+                              <TableCell className="font-mono text-xs">{tx.invoice_no ?? tx.id.slice(0, 8)}</TableCell>
                               <TableCell className="text-xs">
-                                {new Date(t.created_at).toLocaleString(lang === "bn" ? "bn-BD" : "en-US", {
+                                {new Date(tx.created_at).toLocaleString(t("p2b_localeFull"), {
                                   dateStyle: "medium",
                                   timeStyle: "short",
                                 })}
@@ -422,11 +423,11 @@ function ContactsPage() {
                                   "inline-flex rounded px-2 py-0.5 text-[11px] font-semibold " +
                                   (isDue ? "bg-rose-100 text-rose-700" : "bg-emerald-100 text-emerald-700")
                                 }>
-                                  {isDue ? (lang === "bn" ? "বাকি" : "Due") : (lang === "bn" ? "ক্যাশ" : "Cash")}
+                                  {isDue ? (t("p2b_due")) : (t("p2b_cash"))}
                                 </span>
                               </TableCell>
                               <TableCell className={"text-right font-semibold " + (isDue ? "text-rose-600" : "")}>
-                                {fmtMoney(Number(t.total), lang)}
+                                {fmtMoney(Number(tx.total), lang)}
                               </TableCell>
                             </TableRow>
                           );
@@ -485,36 +486,35 @@ function ContactsPage() {
 }
 
 function EmployeeBiodataPanel({ row, lang }: { row: any; lang: string }) {
+  const { t } = useI18n();
   if (!row) {
     return (
       <div className="p-4 text-sm text-muted-foreground">
-        {lang === "bn" ? "তথ্য লোড হচ্ছে…" : "Loading…"}
+        {t("p2b_loadingDotsLong")}
       </div>
     );
   }
-  const items: { label_bn: string; label_en: string; value: string | number | null | undefined }[] = [
-    { label_bn: "মাসিক বেতন", label_en: "Monthly salary", value: row.salary != null ? `৳ ${row.salary}` : null },
-    { label_bn: "NID নম্বর", label_en: "NID number", value: row.nid },
-    { label_bn: "বর্তমান ঠিকানা", label_en: "Current address", value: row.address },
-    { label_bn: "স্থায়ী ঠিকানা", label_en: "Permanent address", value: row.permanent_address },
-    { label_bn: "পিতার নাম", label_en: "Father's name", value: row.father_name },
-    { label_bn: "মাতার নাম", label_en: "Mother's name", value: row.mother_name },
-    { label_bn: "জরুরি যোগাযোগ", label_en: "Emergency contact", value: row.emergency_phone },
+  const items: { labelKey: string; value: string | number | null | undefined }[] = [
+    { labelKey: "p2b_emp_salary",   value: row.salary != null ? `৳ ${row.salary}` : null },
+    { labelKey: "p2b_emp_nid",      value: row.nid },
+    { labelKey: "p2b_emp_address",  value: row.address },
+    { labelKey: "p2b_emp_permAddr", value: row.permanent_address },
+    { labelKey: "p2b_emp_father",   value: row.father_name },
+    { labelKey: "p2b_emp_mother",   value: row.mother_name },
+    { labelKey: "p2b_emp_emerg",    value: row.emergency_phone },
   ];
   return (
     <div className="p-4">
       <div className="grid gap-3 sm:grid-cols-2">
         {items.map((it, i) => (
           <div key={i} className="rounded-lg border bg-background p-3">
-            <div className="text-xs text-muted-foreground">{lang === "bn" ? it.label_bn : it.label_en}</div>
+            <div className="text-xs text-muted-foreground">{t(it.labelKey as never)}</div>
             <div className="mt-0.5 text-sm font-medium">{it.value || "—"}</div>
           </div>
         ))}
       </div>
       <div className="mt-4 rounded-lg border border-dashed bg-muted/30 p-3 text-xs text-muted-foreground">
-        {lang === "bn"
-          ? "এক্সেস/পারমিশন পরিবর্তন করতে এক্সেস ম্যানেজমেন্ট পেজে যান।"
-          : "Manage permissions from the Access Management page."}
+        {t("p2b_managePerms")}
       </div>
     </div>
   );
@@ -533,7 +533,7 @@ function ContactDialog({
   table: "customers" | "suppliers";
   onSaved: () => void;
 }) {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const { current } = useShop();
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -552,16 +552,14 @@ function ContactDialog({
 
   const save = async () => {
     if (!current) return;
-    if (!name.trim()) { toast.error(lang === "bn" ? "নাম দিন" : "Name required"); return; }
+    if (!name.trim()) { toast.error(t("p2b_nameRequired")); return; }
     setBusy(true);
     // Defensive: verify the active shop exists & is accessible to this user.
     const { data: shopRow, error: shopErr } = await supabase
       .from("shops").select("id").eq("id", current.id).maybeSingle();
     if (shopErr || !shopRow) {
       setBusy(false);
-      toast.error(lang === "bn"
-        ? "এই দোকানে এক্সেস নেই — পেজ রিফ্রেশ করুন"
-        : "Active shop not accessible — please refresh");
+      toast.error(t("p2b_activeShopRefresh"));
       return;
     }
     const payload = { name: name.trim(), phone: phone.trim() || null, address: address.trim() || null, shop_id: current.id };
@@ -577,9 +575,7 @@ function ContactDialog({
       if (existing) {
         setBusy(false);
         toast.error(
-          lang === "bn"
-            ? `এই ফোন নম্বরে ইতিমধ্যেই "${(existing as { name: string }).name}" আছে`
-            : `A contact "${(existing as { name: string }).name}" with this phone already exists`,
+          t("p2b_contactExistsX", { name: (existing as { name: string }).name }),
         );
         return;
       }
@@ -591,12 +587,12 @@ function ContactDialog({
     if (error) {
       // Catch unique-index violation as a friendly message
       const msg = error.message.includes("customers_shop_phone_unique") || error.message.includes("suppliers_shop_phone_unique")
-        ? (lang === "bn" ? "এই ফোন নম্বরে আগেই একজন আছেন" : "Someone with this phone already exists")
+        ? (t("p2b_phoneExists"))
         : error.message;
       toast.error(msg);
       return;
     }
-    toast.success(lang === "bn" ? "সেভ হয়েছে" : "Saved");
+    toast.success(t("p2b_savedShort"));
     onOpenChange(false);
     onSaved();
   };
@@ -606,8 +602,8 @@ function ContactDialog({
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>
-            {editing ? (lang === "bn" ? "এডিট" : "Edit") : (lang === "bn" ? "নতুন" : "New")} —{" "}
-            {table === "customers" ? (lang === "bn" ? "কাস্টমার" : "Customer") : (lang === "bn" ? "সাপ্লায়ার" : "Supplier")}
+            {editing ? (t("p2b_editShort")) : (t("p2b_new"))} —{" "}
+            {table === "customers" ? (t("p2b_customer")) : (t("p2b_supplier"))}
           </DialogTitle>
         </DialogHeader>
         <div className="grid gap-3">
@@ -619,25 +615,25 @@ function ContactDialog({
               onClick={() => setPickerOpen(true)}
             >
               <BookUser className="h-4 w-4" />
-              {lang === "bn" ? "ফোনবুক থেকে যোগ করি" : "Add from phonebook"}
+              {t("p2b_addFromPhonebook")}
             </Button>
           )}
           <div className="grid gap-1.5">
-            <Label>{lang === "bn" ? "নাম" : "Name"}</Label>
+            <Label>{t("p2b_name")}</Label>
             <Input value={name} onChange={(e) => setName(e.target.value)} />
           </div>
           <div className="grid gap-1.5">
-            <Label>{lang === "bn" ? "ফোন" : "Phone"}</Label>
+            <Label>{t("p2b_phone")}</Label>
             <Input value={phone} onChange={(e) => setPhone(e.target.value)} />
           </div>
           <div className="grid gap-1.5">
-            <Label>{lang === "bn" ? "ঠিকানা" : "Address"}</Label>
+            <Label>{t("p2b_address")}</Label>
             <Input value={address} onChange={(e) => setAddress(e.target.value)} />
           </div>
         </div>
         <DialogFooter>
-          <Button variant="ghost" onClick={() => onOpenChange(false)}>{lang === "bn" ? "বাতিল" : "Cancel"}</Button>
-          <Button onClick={save} disabled={busy}>{busy ? "..." : lang === "bn" ? "সেভ" : "Save"}</Button>
+          <Button variant="ghost" onClick={() => onOpenChange(false)}>{t("p2b_cancel")}</Button>
+          <Button onClick={save} disabled={busy}>{busy ? "..." : t("p2b_save")}</Button>
         </DialogFooter>
         <PhonebookPickerDialog
           open={pickerOpen}
