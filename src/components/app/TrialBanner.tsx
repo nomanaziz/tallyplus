@@ -50,7 +50,7 @@ export function TrialBanner() {
           <div className="flex items-center gap-2 text-amber-800 dark:text-amber-200">
             <AlertTriangle className="h-4 w-4 shrink-0" />
             <span className="font-medium">
-              {t("trialDaysLeft", { n: daysLeft })}
+              {t("trialDaysLeft", { n: daysLeft ?? 0 })}
             </span>
           </div>
           <Button asChild size="sm" className="bg-amber-600 hover:bg-amber-700 text-white">
@@ -69,7 +69,7 @@ export function TrialBanner() {
         <div className="flex items-center gap-2 text-emerald-800 dark:text-emerald-200">
           <Sparkles className="h-4 w-4 shrink-0" />
           <span>
-            {t("trialActive", { n: daysLeft })}
+            {t("trialActive", { n: daysLeft ?? 0 })}
           </span>
         </div>
         <div className="flex items-center gap-1">
