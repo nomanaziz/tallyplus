@@ -36,7 +36,7 @@ type Movement = {
 
 
 function CashboxPage() {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const { current } = useShop();
   const qc = useQueryClient();
   const { data: rawData = [], refetch } = useQuery(cashMovementsQuery(current?.id ?? null));
@@ -93,32 +93,32 @@ function CashboxPage() {
   return (
     <div className="container px-4 py-4">
       <div className="mb-1 text-xs text-muted-foreground">Cashbox</div>
-      <h1 className="text-xl font-extrabold md:text-2xl">{lang === "bn" ? "ক্যাশবক্স" : "Cashbox"}</h1>
+      <h1 className="text-xl font-extrabold md:text-2xl">{t("p2a_cashbox")}</h1>
 
       <ActionTilePair
         className="mt-4"
         tiles={[
-          { label: lang === "bn" ? "জমা" : "Cash In", icon: <ArrowDownCircle className="h-5 w-5" />, tone: "success", onClick: () => setOpenDir("in") },
-          { label: lang === "bn" ? "খরচ" : "Cash Out", icon: <ArrowUpCircle className="h-5 w-5" />, tone: "danger", onClick: () => setOpenDir("out") },
+          { label: t("p2a_cashIn"), icon: <ArrowDownCircle className="h-5 w-5" />, tone: "success", onClick: () => setOpenDir("in") },
+          { label: t("p2a_cashOut"), icon: <ArrowUpCircle className="h-5 w-5" />, tone: "danger", onClick: () => setOpenDir("out") },
         ]}
       />
 
       <StatGrid className="mt-4">
         <StatCard
           icon={<ArrowDownCircle className="h-4 w-4" />}
-          label={lang === "bn" ? "মোট জমা" : "Total in"}
+          label={t("p2a_totalIn")}
           value={fmtMoney(totals.in, lang)}
           tone="success"
         />
         <StatCard
           icon={<ArrowUpCircle className="h-4 w-4" />}
-          label={lang === "bn" ? "মোট খরচ" : "Total out"}
+          label={t("p2a_totalOut")}
           value={fmtMoney(totals.out, lang)}
           tone="danger"
         />
         <StatCard
           icon={<Wallet className="h-4 w-4" />}
-          label={lang === "bn" ? "ব্যালেন্স" : "Balance"}
+          label={t("p2a_balance")}
           value={fmtMoney(totals.balance, lang)}
           tone="primary"
         />
@@ -126,8 +126,8 @@ function CashboxPage() {
 
       <Tabs defaultValue="entries" className="mt-4">
         <TabsList>
-          <TabsTrigger value="entries">{lang === "bn" ? "এন্ট্রি লিস্ট" : "Entries"}</TabsTrigger>
-          <TabsTrigger value="ledger">{lang === "bn" ? "নোটের হিসাব" : "Note Ledger"}</TabsTrigger>
+          <TabsTrigger value="entries">{t("p2a_entries")}</TabsTrigger>
+          <TabsTrigger value="ledger">{t("p2a_noteLedger")}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="entries" className="mt-4">
@@ -135,21 +135,21 @@ function CashboxPage() {
             search={search}
             onSearch={setSearch}
             onRefresh={refresh}
-            placeholder={lang === "bn" ? "নোট খুঁজুন" : "Search note"}
+            placeholder={t("p2a_searchNote")}
           />
           <div className="mt-3 rounded-xl border bg-card">
             {filtered.length === 0 ? (
-              <EmptyState icon={<Wallet className="h-6 w-6" />} title={lang === "bn" ? "কোনো এন্ট্রি নেই" : "No entries"} />
+              <EmptyState icon={<Wallet className="h-6 w-6" />} title={t("p2a_noEntries")} />
             ) : (
               <>
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>{lang === "bn" ? "তারিখ" : "Date"}</TableHead>
-                    <TableHead>{lang === "bn" ? "উৎস" : "Source"}</TableHead>
-                    <TableHead>{lang === "bn" ? "নোটের ভাঙতি" : "Notes"}</TableHead>
-                    <TableHead>{lang === "bn" ? "ধরন" : "Type"}</TableHead>
-                    <TableHead className="text-right">{lang === "bn" ? "পরিমাণ" : "Amount"}</TableHead>
+                    <TableHead>{t("p2a_date")}</TableHead>
+                    <TableHead>{t("p2a_source")}</TableHead>
+                    <TableHead>{t("p2a_notesBreakdown")}</TableHead>
+                    <TableHead>{t("p2a_type")}</TableHead>
+                    <TableHead className="text-right">{t("p2a_amount")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -161,7 +161,7 @@ function CashboxPage() {
                         <TableCell className="text-xs">{new Date(m.created_at).toLocaleString()}</TableCell>
                         <TableCell className="text-xs">
                           <span className="rounded bg-muted px-1.5 py-0.5 font-medium">
-                            {sourceLabel(m.ref_table, lang)}
+                            {sourceLabel(m.ref_table, t)}
                           </span>
                           {m.note && <div className="mt-0.5 text-muted-foreground">{m.note}</div>}
                         </TableCell>
@@ -185,7 +185,7 @@ function CashboxPage() {
                         </TableCell>
                         <TableCell>
                           <span className={m.direction === "in" ? "text-emerald-600 font-semibold" : "text-rose-600 font-semibold"}>
-                            {m.direction === "in" ? (lang === "bn" ? "জমা" : "In") : (lang === "bn" ? "খরচ" : "Out")}
+                            {m.direction === "in" ? (t("p2a_in")) : (t("p2a_out"))}
                           </span>
                         </TableCell>
                         <TableCell className="text-right font-semibold">{fmtMoney(Number(m.amount), lang)}</TableCell>
@@ -224,17 +224,17 @@ function CashboxPage() {
   );
 }
 
-function sourceLabel(ref: string | null, lang: string) {
-  const map: Record<string, { bn: string; en: string }> = {
-    sales: { bn: "বিক্রি", en: "Sale" },
-    purchases: { bn: "ক্রয়", en: "Purchase" },
-    expenses: { bn: "খরচ", en: "Expense" },
-    payments: { bn: "পেমেন্ট", en: "Payment" },
-    other_income: { bn: "অন্যান্য আয়", en: "Income" },
-  };
+function sourceLabel(ref: string | null, t: (k: string) => string) {
   const k = ref ?? "manual";
-  if (k === "manual") return lang === "bn" ? "ম্যানুয়াল" : "Manual";
-  return map[k]?.[lang === "bn" ? "bn" : "en"] ?? k;
+  const map: Record<string, string> = {
+    sales: t("p2a_src_sale"),
+    purchases: t("p2a_src_purchase"),
+    expenses: t("p2a_src_expense"),
+    payments: t("p2a_src_payment"),
+    other_income: t("p2a_src_income"),
+    manual: t("p2a_manual"),
+  };
+  return map[k] ?? k;
 }
 
 function NoteLedgerView({
@@ -246,7 +246,7 @@ function NoteLedgerView({
   outC: Record<string, number>;
   bySource: Record<string, { in: number; out: number }>;
 }) {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   let totalBal = 0;
   return (
     <div className="grid gap-4 lg:grid-cols-3">
@@ -254,11 +254,11 @@ function NoteLedgerView({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>{lang === "bn" ? "নোট" : "Note"}</TableHead>
-              <TableHead className="text-right text-emerald-700">{lang === "bn" ? "জমা সংখ্যা" : "In qty"}</TableHead>
-              <TableHead className="text-right text-rose-700">{lang === "bn" ? "খরচ সংখ্যা" : "Out qty"}</TableHead>
-              <TableHead className="text-right">{lang === "bn" ? "বর্তমান সংখ্যা" : "Balance qty"}</TableHead>
-              <TableHead className="text-right">{lang === "bn" ? "বর্তমান টাকা" : "Balance ৳"}</TableHead>
+              <TableHead>{t("p2a_note")}</TableHead>
+              <TableHead className="text-right text-emerald-700">{t("p2a_inQty")}</TableHead>
+              <TableHead className="text-right text-rose-700">{t("p2a_outQty")}</TableHead>
+              <TableHead className="text-right">{t("p2a_balanceQty")}</TableHead>
+              <TableHead className="text-right">{t("p2a_balanceMoney")}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -279,7 +279,7 @@ function NoteLedgerView({
               );
             })}
             <TableRow>
-              <TableCell colSpan={4} className="text-right font-bold">{lang === "bn" ? "মোট ব্যালেন্স (নোট হিসাবে)" : "Total balance (by notes)"}</TableCell>
+              <TableCell colSpan={4} className="text-right font-bold">{t("p2a_totalBalanceNotes")}</TableCell>
               <TableCell className="text-right text-lg font-extrabold tabular-nums">{fmtMoney(totalBal, lang)}</TableCell>
             </TableRow>
           </TableBody>
@@ -287,14 +287,14 @@ function NoteLedgerView({
       </div>
 
       <div className="rounded-xl border bg-card p-4">
-        <div className="text-sm font-bold mb-2">{lang === "bn" ? "উৎস অনুযায়ী" : "By source"}</div>
+        <div className="text-sm font-bold mb-2">{t("p2a_bySource")}</div>
         <div className="space-y-2">
           {Object.keys(bySource).length === 0 && (
-            <div className="text-xs text-muted-foreground">{lang === "bn" ? "কোনো ডেটা নেই" : "No data"}</div>
+            <div className="text-xs text-muted-foreground">{t("p2a_noData")}</div>
           )}
           {Object.entries(bySource).map(([src, v]) => (
             <div key={src} className="rounded-lg border p-2">
-              <div className="text-xs font-semibold">{sourceLabel(src === "manual" ? null : src, lang)}</div>
+              <div className="text-xs font-semibold">{sourceLabel(src === "manual" ? null : src, t)}</div>
               <div className="mt-1 grid grid-cols-2 gap-2 text-xs">
                 <div className="text-emerald-700">↓ {fmtMoney(v.in, lang)}</div>
                 <div className="text-rose-700 text-right">↑ {fmtMoney(v.out, lang)}</div>
@@ -330,7 +330,7 @@ function CashEntryDialog({
   onSaved: () => void;
   available?: DenomCounts;
 }) {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const { current } = useShop();
   const { user } = useAuth();
   const [amount, setAmount] = useState("");
@@ -350,7 +350,7 @@ function CashEntryDialog({
   const save = async () => {
     if (!current || !user || !direction) return;
     const amt = effectiveAmount;
-    if (!amt || amt <= 0) { toast.error(lang === "bn" ? "সঠিক পরিমাণ দিন" : "Enter amount"); return; }
+    if (!amt || amt <= 0) { toast.error(t("p2a_enterAmount")); return; }
     const denom = manualMode ? {} : cleanDenoms(counts);
     setBusy(true);
     const { error } = await supabase.from("cash_movements").insert({
@@ -363,15 +363,15 @@ function CashEntryDialog({
     });
     setBusy(false);
     if (error) { toast.error(error.message); return; }
-    toast.success(lang === "bn" ? "সেভ হয়েছে" : "Saved");
+    toast.success(t("p2a_saved"));
     onClose();
     onSaved();
   };
 
   const isIn = direction === "in";
   const title = isIn
-    ? (lang === "bn" ? "জমা যোগ করুন" : "Add Cash In")
-    : (lang === "bn" ? "খরচ যোগ করুন" : "Add Cash Out");
+    ? (t("p2a_addCashIn"))
+    : (t("p2a_addCashOut"));
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
@@ -387,9 +387,9 @@ function CashEntryDialog({
         <div className="grid gap-3">
           <div className="flex items-center justify-between rounded-lg bg-muted/40 px-3 py-2">
             <div>
-              <div className="text-sm font-semibold">{lang === "bn" ? "ম্যানুয়াল পরিমাণ" : "Manual amount"}</div>
+              <div className="text-sm font-semibold">{t("p2a_manualAmount")}</div>
               <div className="text-[11px] text-muted-foreground">
-                {lang === "bn" ? "নোট গণনা না করে সরাসরি টাকা লিখুন" : "Skip note counting, type amount directly"}
+                {t("p2a_skipNote")}
               </div>
             </div>
             <Switch checked={manualMode} onCheckedChange={setManualMode} />
@@ -397,7 +397,7 @@ function CashEntryDialog({
 
           {manualMode ? (
             <div className="grid gap-1.5">
-              <Label>{lang === "bn" ? "পরিমাণ" : "Amount"}</Label>
+              <Label>{t("p2a_amount")}</Label>
               <Input type="number" autoFocus value={amount} onChange={(e) => setAmount(e.target.value)} />
             </div>
           ) : (
@@ -409,18 +409,18 @@ function CashEntryDialog({
           )}
 
           <div className="grid gap-1.5">
-            <Label>{lang === "bn" ? "নোট" : "Note"}</Label>
+            <Label>{t("p2a_note")}</Label>
             <Textarea value={note} onChange={(e) => setNote(e.target.value)} rows={3} />
           </div>
         </div>
         <DialogFooter>
-          <Button variant="ghost" onClick={onClose}>{lang === "bn" ? "বাতিল" : "Cancel"}</Button>
+          <Button variant="ghost" onClick={onClose}>{t("p2a_cancel")}</Button>
           <Button
             onClick={save}
             disabled={busy || effectiveAmount <= 0}
             className={isIn ? "bg-emerald-600 hover:bg-emerald-700" : "bg-rose-600 hover:bg-rose-700"}
           >
-            {busy ? "..." : `${lang === "bn" ? "সেভ" : "Save"} • ${fmtMoney(effectiveAmount, lang)}`}
+            {busy ? "..." : `${t("p2a_save")} • ${fmtMoney(effectiveAmount, lang)}`}
           </Button>
         </DialogFooter>
       </DialogContent>
