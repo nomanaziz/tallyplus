@@ -301,6 +301,7 @@ function SectionCard({
   total: number;
   lang: Lang;
 }) {
+  const { t } = useI18n();
   const toneCls =
     tone === "success" ? "text-emerald-600" : tone === "danger" ? "text-rose-600" : "text-foreground";
   return (
