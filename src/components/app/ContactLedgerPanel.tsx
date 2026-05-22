@@ -23,7 +23,7 @@ export type LedgerContact = {
 };
 
 export function ContactLedgerPanel({ contact, onChanged }: { contact: LedgerContact | null; onChanged?: () => void }) {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const { current } = useShop();
 
   const today = new Date().toISOString().slice(0, 10);

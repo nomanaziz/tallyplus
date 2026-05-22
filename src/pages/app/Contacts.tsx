@@ -25,7 +25,7 @@ type Tx = { id: string; invoice_no: string | null; total: number; due: number; p
 
 
 function ContactsPage() {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const { current } = useShop();
   const qc = useQueryClient();
   const [tab, setTab] = useState<Tab>("customers");
@@ -531,7 +531,7 @@ function ContactDialog({
   table: "customers" | "suppliers";
   onSaved: () => void;
 }) {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const { current } = useShop();
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");

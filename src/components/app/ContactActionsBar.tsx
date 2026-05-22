@@ -11,7 +11,7 @@ type Props = {
 };
 
 export function ContactActionsBar({ name, phone, due = 0 }: Props) {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const normalized = normalizeBdPhone(phone);
 
   const guard = () => {
