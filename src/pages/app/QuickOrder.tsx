@@ -768,6 +768,7 @@ function PrintDialog({
   custPhone: string;
   lang: Lang;
 }) {
+  const { t } = useI18n();
   const update = (id: string, patch: Partial<Row>) =>
     onChange(rows.map((r) => (r.tempId === id ? { ...r, ...patch } : r)));
 
