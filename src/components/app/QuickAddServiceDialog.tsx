@@ -34,7 +34,7 @@ export function QuickAddServiceDialog({
   onClose: () => void;
   onAdded?: (s: QuickService) => void;
 }) {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const { current } = useShop();
   const qc = useQueryClient();
   const [name, setName] = useState("");

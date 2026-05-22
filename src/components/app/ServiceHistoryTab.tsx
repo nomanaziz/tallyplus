@@ -36,7 +36,7 @@ type Warranty = {
 };
 
 export function ServiceHistoryTab({ shopId }: { shopId: string }) {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const { current } = useShop();
   const [search, setSearch] = useState("");
   const [invoice, setInvoice] = useState<InvoiceData | null>(null);

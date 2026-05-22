@@ -32,7 +32,7 @@ import { History, CheckCircle2, Printer } from "lucide-react";
 import { InvoiceDialog, type InvoiceData } from "@/components/app/InvoiceDialog";
 
 function ServicesPage() {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const { current } = useShop();
   const qc = useQueryClient();
   const { data: items = [], isLoading } = useQuery(servicesListQuery(current?.id ?? null));
@@ -271,7 +271,7 @@ function ServiceFormSheet({ open, onClose, editing, shopId, categories, onSaved 
   open: boolean; onClose: () => void; editing: Service | null; shopId: string;
   categories: { id: string; name: string }[]; onSaved: () => void;
 }) {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const [form, setForm] = useState<Partial<Service>>({});
   const [saving, setSaving] = useState(false);
 
@@ -558,7 +558,7 @@ const STATUSES: { value: string; bn: string; en: string }[] = [
 ];
 
 function ServiceBookingsTab({ shopId }: { shopId: string }) {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const { current } = useShop();
   const qc = useQueryClient();
   const [completing, setCompleting] = useState<CompleteBooking | null>(null);
@@ -731,7 +731,7 @@ function ServiceBookingsTab({ shopId }: { shopId: string }) {
 }
 
 function ServiceAreaPicker({ value, onChange }: { value: string[]; onChange: (v: string[]) => void }) {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const [loc, setLoc] = useState<BdLocation>({ division: null, district: null, upazila: null, area: null });
 
   const add = () => {

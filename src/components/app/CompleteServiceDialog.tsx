@@ -40,7 +40,7 @@ export function CompleteServiceDialog({
   shop: { id: string; name: string; address: string | null; phone: string | null; logo_url: string | null };
   onCompleted: () => void;
 }) {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const [serviceCharge, setServiceCharge] = useState(0);
   const [extras, setExtras] = useState<Line[]>([]);
   const [discount, setDiscount] = useState(0);

@@ -14,7 +14,7 @@ export function ServiceCatalogPicker({
   value?: string | null;
   onPick: (item: CatalogItem) => void;
 }) {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const [open, setOpen] = useState(false);
   const groups = catalogCategoriesGrouped(lang as "en" | "bn");
   const selected = value ? SERVICE_CATALOG.find((s) => s.slug === value) : null;
