@@ -131,7 +131,7 @@ function AppLayoutWithShop() {
 }
 
 function AppLayout({ ownsShop }: { ownsShop: boolean }) {
-  const { lang } = useI18n();
+  const { t } = useI18n();
   const { user, loading, ensureProfile } = useAuth();
   const { shops, current, loading: shopsLoading } = useShop();
   const nav = useNavigate();
@@ -189,7 +189,7 @@ function AppLayout({ ownsShop }: { ownsShop: boolean }) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-background text-sm text-muted-foreground">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-        <div>{lang === "bn" ? "লোড হচ্ছে..." : "Loading..."}</div>
+        <div>{t("loading")}</div>
       </div>
     );
   }
@@ -200,7 +200,7 @@ function AppLayout({ ownsShop }: { ownsShop: boolean }) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-background text-sm text-muted-foreground">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-        <div>{lang === "bn" ? "লগইন পেজে যাচ্ছি..." : "Redirecting to login..."}</div>
+        <div>{t("redirecting")}</div>
       </div>
     );
   }
@@ -212,7 +212,7 @@ function AppLayout({ ownsShop }: { ownsShop: boolean }) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-background text-sm text-muted-foreground">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-        <div>{lang === "bn" ? "আপনার দোকান লোড হচ্ছে..." : "Loading your shop..."}</div>
+        <div>{t("loadingShop")}</div>
       </div>
     );
   }

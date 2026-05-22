@@ -1,6 +1,6 @@
 import { useNavigate, useLocation, useRouter } from "@/lib/router";
 import { ArrowLeft } from "lucide-react";
-import { useI18n } from "@/lib/i18n";
+import { useI18n, type TKey } from "@/lib/i18n";
 
 // Mobile-only sticky back bar shown on every /app/* page EXCEPT the dashboard.
 // Tapping the arrow goes back in history; if there is no history it returns to dashboard.
@@ -8,7 +8,7 @@ export function MobileBackBar() {
   const nav = useNavigate();
   const loc = useLocation();
   const router = useRouter();
-  const { lang } = useI18n();
+  const { t } = useI18n();
 
   // Hide on the home/dashboard route — that's the "root" of the app.
   if (loc.pathname === "/app/dashboard" || loc.pathname === "/app" || loc.pathname === "/app/") {
@@ -26,41 +26,41 @@ export function MobileBackBar() {
 
   // Derive a friendly label from the path.
   const seg = loc.pathname.replace(/^\/app\/?/, "").split("/")[0] || "";
-  const labelMap: Record<string, { bn: string; en: string }> = {
-    sell: { bn: "বিক্রয়", en: "Sell" },
-    purchase: { bn: "ক্রয়", en: "Purchase" },
-    products: { bn: "পণ্য", en: "Products" },
-    stock: { bn: "স্টক", en: "Stock" },
-    contacts: { bn: "যোগাযোগ", en: "Contacts" },
-    reports: { bn: "ব্যবসার রিপোর্ট", en: "Business Report" },
-    "due-ledger": { bn: "বাকির বই", en: "Due Book" },
-    "sales-ledger": { bn: "বিক্রয়ের বই", en: "Sales Book" },
-    "purchase-ledger": { bn: "ক্রয়ের বই", en: "Purchase Book" },
-    "expense-ledger": { bn: "খরচের বই", en: "Expense Book" },
-    "online-shop": { bn: "অনলাইন শপ", en: "Online Shop" },
-    cashbox: { bn: "ক্যাশবক্স", en: "Cashbox" },
-    "quick-order": { bn: "দ্রুত ফর্দ", en: "Quick Order" },
-    marketing: { bn: "মার্কেটিং", en: "Marketing" },
-    printer: { bn: "প্রিন্টার", en: "Printer" },
-    access: { bn: "অ্যাপ অ্যাক্সেস", en: "App Access" },
-    affiliate: { bn: "গ্রোথ পার্টনার", en: "Growth Partner" },
-    training: { bn: "অ্যাপ ট্রেনিং", en: "App Training" },
-    subscribe: { bn: "সাবস্ক্রিপশন", en: "Subscription" },
-    shops: { bn: "দোকান", en: "Shops" },
-    "combined-report": { bn: "কম্বাইন্ড রিপোর্ট", en: "Combined Report" },
-    "customer-wishlist": { bn: "গ্রাহক ফর্দ", en: "Customer Wishlist" },
-    expiring: { bn: "মেয়াদোত্তীর্ণ", en: "Expiring" },
-    warranty: { bn: "ওয়ারেন্টি", en: "Warranty" },
-    "recycle-bin": { bn: "রিসাইকেল বিন", en: "Recycle Bin" },
+  const keyMap: Record<string, TKey> = {
+    sell: "nav_sell",
+    purchase: "nav_purchase",
+    products: "nav_productsStock",
+    stock: "nav_productsStock",
+    contacts: "nav_customerStaff",
+    reports: "nav_businessReport",
+    "due-ledger": "nav_dueBook",
+    "sales-ledger": "nav_salesBook",
+    "purchase-ledger": "nav_purchaseBook",
+    "expense-ledger": "nav_expenseBook",
+    "online-shop": "nav_onlineShop",
+    cashbox: "nav_cashbox",
+    "quick-order": "nav_quickSell",
+    marketing: "nav_marketing",
+    printer: "nav_printer",
+    access: "nav_appAccess",
+    affiliate: "nav_growthPartner",
+    training: "nav_appTraining",
+    subscribe: "nav_buySubscription",
+    shops: "switchShop",
+    "combined-report": "combinedReport",
+    "customer-wishlist": "nav_customerFordo",
+    expiring: "nav_expiringProducts",
+    warranty: "nav_warranty",
+    "recycle-bin": "nav_recycleBin",
   };
-  const label = labelMap[seg] ? (lang === "bn" ? labelMap[seg].bn : labelMap[seg].en) : "";
+  const label = keyMap[seg] ? t(keyMap[seg]) : "";
 
   return (
     <div className="sticky top-0 z-20 flex h-11 items-center gap-2 border-b bg-background/95 px-2 backdrop-blur md:hidden">
       <button
         onClick={goBack}
         className="flex h-9 w-9 items-center justify-center rounded-full text-foreground hover:bg-accent active:scale-95 transition"
-        aria-label={lang === "bn" ? "পিছনে" : "Back"}
+        aria-label={t("back")}
       >
         <ArrowLeft className="h-5 w-5" />
       </button>

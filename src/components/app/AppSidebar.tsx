@@ -1,5 +1,5 @@
 import { Link, useLocation } from "@/lib/router";
-import { useI18n } from "@/lib/i18n";
+import { useI18n, type TKey } from "@/lib/i18n";
 import { icons } from "@/lib/icons";
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -17,92 +17,85 @@ import { HelpCircle } from "lucide-react";
 import { useShop } from "@/lib/shop";
 import { useEnabledModules } from "@/lib/modules";
 
-export type SidebarItem = { to: string; bn: string; en: string; icon: LucideIcon; highlight?: boolean; perm?: string; module?: string };
-export type SidebarSection = { id: string; bn: string; en: string; items: SidebarItem[] };
+export type SidebarItem = { to: string; tKey: TKey; icon: LucideIcon; highlight?: boolean; perm?: string; module?: string };
+export type SidebarSection = { id: string; tKey: TKey; items: SidebarItem[] };
 
 export const SECTIONS: SidebarSection[] = [
   {
     id: "main",
-    bn: "মূল",
-    en: "Main",
-    items: [{ to: "/app/dashboard", bn: "ড্যাশবোর্ড", en: "Dashboard", icon: icons.home }],
+    tKey: "sec_main",
+    items: [{ to: "/app/dashboard", tKey: "nav_dashboard", icon: icons.home }],
   },
   {
     id: "transactions",
-    bn: "লেনদেন",
-    en: "Transactions",
+    tKey: "sec_transactions",
     items: [
-      { to: "/app/lpg", bn: "LPG / বোতল", en: "LPG / Bottle", icon: Flame, module: "lpg", highlight: true },
-      { to: "/app/purchase", bn: "ক্রয়", en: "Purchase", icon: icons.purchase, perm: "purchase", module: "purchase" },
-      { to: "/app/sell", bn: "বিক্রয়", en: "Sell", icon: icons.sell, perm: "sell", module: "sales" },
-      { to: "/app/quick-order", bn: "দ্রুত বিক্রি", en: "Quick Sell", icon: icons.quickSell, perm: "sell", module: "sales" },
-      { to: "/app/cashbox", bn: "ক্যাশবক্স", en: "Cashbox", icon: icons.cashbox, module: "cashbook" },
+      { to: "/app/lpg", tKey: "nav_lpg", icon: Flame, module: "lpg", highlight: true },
+      { to: "/app/purchase", tKey: "nav_purchase", icon: icons.purchase, perm: "purchase", module: "purchase" },
+      { to: "/app/sell", tKey: "nav_sell", icon: icons.sell, perm: "sell", module: "sales" },
+      { to: "/app/quick-order", tKey: "nav_quickSell", icon: icons.quickSell, perm: "sell", module: "sales" },
+      { to: "/app/cashbox", tKey: "nav_cashbox", icon: icons.cashbox, module: "cashbook" },
     ],
   },
   {
     id: "ledgers",
-    bn: "হিসাবের বই",
-    en: "Books",
+    tKey: "sec_books",
     items: [
-      { to: "/app/purchase-ledger", bn: "ক্রয়ের বই", en: "Purchase Book", icon: icons.purchaseList, perm: "purchase", module: "purchase" },
-      { to: "/app/sales-ledger", bn: "বিক্রয়ের বই", en: "Sales Book", icon: icons.salesList, perm: "sell", module: "sales" },
-      { to: "/app/due-ledger", bn: "বাকির বই", en: "Due Book", icon: icons.due, perm: "due" },
-      { to: "/app/expense-ledger", bn: "খরচের বই", en: "Expense Book", icon: icons.expense, perm: "expense", module: "expense" },
-      { to: "/app/owner-ledger", bn: "মালিকের বই", en: "Owner Book", icon: icons.cashbox, perm: "expense", module: "cashbook" },
-      { to: "/app/assets", bn: "দোকানের সম্পদ", en: "Shop Assets", icon: icons.cashbox, perm: "expense", module: "cashbook" },
+      { to: "/app/purchase-ledger", tKey: "nav_purchaseBook", icon: icons.purchaseList, perm: "purchase", module: "purchase" },
+      { to: "/app/sales-ledger", tKey: "nav_salesBook", icon: icons.salesList, perm: "sell", module: "sales" },
+      { to: "/app/due-ledger", tKey: "nav_dueBook", icon: icons.due, perm: "due" },
+      { to: "/app/expense-ledger", tKey: "nav_expenseBook", icon: icons.expense, perm: "expense", module: "expense" },
+      { to: "/app/owner-ledger", tKey: "nav_ownerBook", icon: icons.cashbox, perm: "expense", module: "cashbook" },
+      { to: "/app/assets", tKey: "nav_shopAssets", icon: icons.cashbox, perm: "expense", module: "cashbook" },
     ],
   },
   {
     id: "inventory",
-    bn: "পণ্য ও স্টক",
-    en: "Inventory",
+    tKey: "sec_inventory",
     items: [
-      { to: "/app/products", bn: "প্রোডাক্ট ও স্টক", en: "Products & Stock", icon: icons.productList, perm: "products", module: "products" },
-      { to: "/app/services", bn: "সার্ভিস", en: "Services", icon: icons.training, perm: "services", module: "services" },
-      { to: "/app/returns", bn: "প্রোডাক্ট রিটার্ন", en: "Product Return", icon: icons.salesList, perm: "returns", module: "products" },
-      { to: "/app/expiring", bn: "মেয়াদোত্তীর্ণ পণ্য", en: "Expiring Products", icon: icons.expired, perm: "products", module: "products" },
-      { to: "/app/warranty", bn: "ওয়ারেন্টি পণ্য", en: "Warranty", icon: icons.warranty, perm: "products", module: "products" },
+      { to: "/app/products", tKey: "nav_productsStock", icon: icons.productList, perm: "products", module: "products" },
+      { to: "/app/services", tKey: "nav_services", icon: icons.training, perm: "services", module: "services" },
+      { to: "/app/returns", tKey: "nav_productReturn", icon: icons.salesList, perm: "returns", module: "products" },
+      { to: "/app/expiring", tKey: "nav_expiringProducts", icon: icons.expired, perm: "products", module: "products" },
+      { to: "/app/warranty", tKey: "nav_warranty", icon: icons.warranty, perm: "products", module: "products" },
     ],
   },
   {
     id: "customers",
-    bn: "গ্রাহক ও যোগাযোগ",
-    en: "Customers",
+    tKey: "sec_customers",
     items: [
-      { to: "/app/contacts", bn: "কাস্টমার ও স্টাফ", en: "Customer & Staff", icon: icons.contact, perm: "contacts", module: "contacts" },
-      { to: "/app/customer-wishlist", bn: "গ্রাহক ফর্দ", en: "Customer Fordo", icon: icons.contact, perm: "contacts", module: "contacts" },
-      { to: "/app/fordo-history", bn: "ফর্দ ইতিহাস", en: "Fordo History", icon: icons.contact, perm: "contacts", module: "contacts" },
-      { to: "/app/marketing", bn: "মার্কেটিং", en: "Marketing", icon: icons.marketing, perm: "sms", module: "contacts" },
-      { to: "/app/online-shop", bn: "অনলাইন শপ", en: "Online Shop", icon: icons.onlineShop, perm: "online_shop", module: "online_shop" },
+      { to: "/app/contacts", tKey: "nav_customerStaff", icon: icons.contact, perm: "contacts", module: "contacts" },
+      { to: "/app/customer-wishlist", tKey: "nav_customerFordo", icon: icons.contact, perm: "contacts", module: "contacts" },
+      { to: "/app/fordo-history", tKey: "nav_fordoHistory", icon: icons.contact, perm: "contacts", module: "contacts" },
+      { to: "/app/marketing", tKey: "nav_marketing", icon: icons.marketing, perm: "sms", module: "contacts" },
+      { to: "/app/online-shop", tKey: "nav_onlineShop", icon: icons.onlineShop, perm: "online_shop", module: "online_shop" },
     ],
   },
   {
     id: "reports",
-    bn: "রিপোর্ট ও সেটিংস",
-    en: "Reports & Settings",
+    tKey: "sec_reportsSettings",
     items: [
-      { to: "/app/reports", bn: "ব্যবসার রিপোর্ট", en: "Business Report", icon: icons.businessReport, perm: "report", module: "reports" },
-      { to: "/app/owner-report", bn: "মালিকের রিপোর্ট", en: "Owner Report", icon: icons.businessReport, perm: "report", module: "reports" },
-      { to: "/app/usage-limits", bn: "ব্যবহারের সীমা", en: "Usage Limits", icon: icons.businessReport },
-      { to: "/app/printer", bn: "প্রিন্টার", en: "Printer", icon: icons.printer, perm: "shop" },
-      { to: "/app/access", bn: "অ্যাপ অ্যাক্সেস", en: "App Access", icon: icons.access, perm: "__owner__" },
-      { to: "/app/recycle-bin", bn: "রিসাইকেল বিন", en: "Recycle Bin", icon: icons.recycle, perm: "__owner__" },
+      { to: "/app/reports", tKey: "nav_businessReport", icon: icons.businessReport, perm: "report", module: "reports" },
+      { to: "/app/owner-report", tKey: "nav_ownerReport", icon: icons.businessReport, perm: "report", module: "reports" },
+      { to: "/app/usage-limits", tKey: "nav_usageLimits", icon: icons.businessReport },
+      { to: "/app/printer", tKey: "nav_printer", icon: icons.printer, perm: "shop" },
+      { to: "/app/access", tKey: "nav_appAccess", icon: icons.access, perm: "__owner__" },
+      { to: "/app/recycle-bin", tKey: "nav_recycleBin", icon: icons.recycle, perm: "__owner__" },
     ],
   },
   {
     id: "more",
-    bn: "অন্যান্য",
-    en: "Others",
+    tKey: "sec_others",
     items: [
-      { to: "/app/training", bn: "অ্যাপ ট্রেনিং", en: "App Training", icon: icons.training },
-      { to: "/app/affiliate", bn: "গ্রোথ পার্টনার", en: "Growth Partner", icon: icons.contact },
-      { to: "/app/subscribe", bn: "সাবস্ক্রিপশন কিনুন", en: "Buy Subscription", icon: icons.buySubscription },
+      { to: "/app/training", tKey: "nav_appTraining", icon: icons.training },
+      { to: "/app/affiliate", tKey: "nav_growthPartner", icon: icons.contact },
+      { to: "/app/subscribe", tKey: "nav_buySubscription", icon: icons.buySubscription },
     ],
   },
 ];
 
 export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
-  const { lang } = useI18n();
+  const { t } = useI18n();
   const loc = useLocation();
   const { isOwner, isAdmin, canGroup, loading } = usePermissions();
   const { current } = useShop();
@@ -152,7 +145,7 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
         )}>
           <it.icon className="h-4 w-4 icon-inherit" />
         </span>
-        {!collapsed && <span className="truncate">{lang === "bn" ? it.bn : it.en}</span>}
+        {!collapsed && <span className="truncate">{t(it.tKey)}</span>}
       </Link>
     );
     if (!collapsed) return <div key={it.to}>{node}</div>;
@@ -160,7 +153,7 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
       <Tooltip key={it.to} delayDuration={150}>
         <TooltipTrigger asChild>{node}</TooltipTrigger>
         <TooltipContent side="right" className="text-xs">
-          {lang === "bn" ? it.bn : it.en}
+          {t(it.tKey)}
         </TooltipContent>
       </Tooltip>
     );
@@ -177,7 +170,7 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
               type="button"
               onClick={() => setCollapsed(true)}
               className="ml-auto flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent"
-              title={lang === "bn" ? "মেনু সংকুচিত করুন" : "Collapse menu"}
+              title={t("collapseMenu")}
               aria-label="Collapse sidebar"
             >
               <ChevronsLeft className="h-4 w-4" />
@@ -189,7 +182,7 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
             type="button"
             onClick={() => setCollapsed(false)}
             className="mx-auto my-1 flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent"
-            title={lang === "bn" ? "মেনু খুলুন" : "Expand menu"}
+            title={t("expandMenu")}
             aria-label="Expand sidebar"
           >
             <ChevronsRight className="h-4 w-4" />
@@ -206,7 +199,7 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
                   {!collapsed && (
                     <div className="px-2 pb-0.5">
                       <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                        {lang === "bn" ? section.bn : section.en}
+                        {t(section.tKey)}
                       </span>
                     </div>
                   )}
@@ -221,7 +214,7 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
                               if (pwa.canInstall) {
                                 await pwa.promptInstall();
                               } else {
-                                toast.info(lang === "bn" ? "ব্রাউজার মেনু থেকে 'Install app'" : "Use browser → Install app");
+                                toast.info(t("useBrowserInstall"));
                               }
                             }}
                             className="flex justify-center rounded-md px-1 py-1.5 text-emerald-700 hover:bg-sidebar-accent dark:text-emerald-400"
@@ -232,7 +225,7 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
                           </button>
                         </TooltipTrigger>
                         <TooltipContent side="right" className="text-xs">
-                          {lang === "bn" ? "অ্যাপ ইনস্টল করুন" : "Install App"}
+                          {t("installApp")}
                         </TooltipContent>
                       </Tooltip>
                     ) : (
@@ -242,22 +235,12 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
                           if (pwa.canInstall) {
                             const outcome = await pwa.promptInstall();
                             if (outcome === "accepted") {
-                              toast.success(lang === "bn" ? "অ্যাপ ইনস্টল হচ্ছে…" : "Installing app…");
+                              toast.success(t("installingApp"));
                             }
                           } else if (pwa.isIos) {
-                            toast.info(
-                              lang === "bn"
-                                ? "Safari Share → 'Add to Home Screen' সিলেক্ট করুন"
-                                : "Tap Safari Share → 'Add to Home Screen'",
-                              { duration: 6000 },
-                            );
+                            toast.info(t("useSafariShare"), { duration: 6000 });
                           } else {
-                            toast.info(
-                              lang === "bn"
-                                ? "ব্রাউজার মেনু থেকে 'Install app' সিলেক্ট করুন"
-                                : "Use browser menu → 'Install app'",
-                              { duration: 6000 },
-                            );
+                            toast.info(t("useBrowserInstall"), { duration: 6000 });
                           }
                         }}
                         className="group flex items-center gap-2.5 rounded-md px-2 py-1.5 text-[13px] leading-tight text-emerald-700 transition-colors hover:bg-sidebar-accent dark:text-emerald-400"
@@ -265,7 +248,7 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
                         <span className="flex h-7 w-7 flex-none items-center justify-center rounded-md bg-primary text-primary-foreground shadow-sm">
                           <Download className="h-4 w-4 icon-inherit" />
                         </span>
-                        <span className="truncate">{lang === "bn" ? "অ্যাপ ইনস্টল করুন" : "Install App"}</span>
+                        <span className="truncate">{t("installApp")}</span>
                       </button>
                     )
                   )}
@@ -279,16 +262,16 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
             type="button"
             onClick={() => {
               resetTour();
-              startTour(lang === "bn" ? "bn" : "en");
+              startTour("bn");
             }}
             className={cn(
               "flex items-center gap-2 rounded-md text-[12px] text-muted-foreground hover:bg-sidebar-accent hover:text-foreground transition-colors",
               collapsed ? "h-8 w-8 justify-center" : "w-full px-2 py-1.5",
             )}
-            title={lang === "bn" ? "টুর আবার দেখুন" : "Restart tour"}
+            title={t("restartTour")}
           >
             <HelpCircle className="h-4 w-4" />
-            {!collapsed && <span>{lang === "bn" ? "টুর আবার দেখুন" : "Restart tour"}</span>}
+            {!collapsed && <span>{t("restartTour")}</span>}
           </button>
         </div>
       </aside>

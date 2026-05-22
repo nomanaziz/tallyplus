@@ -23,7 +23,7 @@ const SettingsSheet = lazy(() =>
 export function AppTopbar() {
   const { profile, signOut, user } = useAuth();
   const { current, shops } = useShop();
-  const { lang } = useI18n();
+  const { t } = useI18n();
   const nav = useNavigate();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const isOwner = !!(user && current && current.owner_id === user.id);
@@ -56,7 +56,7 @@ export function AppTopbar() {
           className="flex h-9 items-center gap-1.5 rounded-full px-2 text-sm font-medium text-muted-foreground hover:bg-accent"
         >
           <AppIcon name="settings" className="h-4 w-4" />
-          <span className="hidden md:inline">{lang === "bn" ? "সেটিংস" : "Settings"}</span>
+          <span className="hidden md:inline">{t("settings")}</span>
         </button>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -79,16 +79,16 @@ export function AppTopbar() {
             {canSwitchShop && (
               <DropdownMenuItem onClick={() => nav({ to: "/app/shops" })}>
                 <ArrowLeftRight className="mr-2 h-4 w-4" />
-                {lang === "bn" ? "দোকান পরিবর্তন" : "Switch Shop"}
+                {t("switchShop")}
               </DropdownMenuItem>
             )}
             <DropdownMenuItem onClick={() => nav({ to: "/app/combined-report" })}>
               <LayoutDashboard className="mr-2 h-4 w-4" />
-              {lang === "bn" ? "কম্বাইন্ড রিপোর্ট" : "Combined Report"}
+              {t("combinedReport")}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => signOut().then(() => nav({ to: "/" }))} className="text-destructive">
               <LogOut className="mr-2 h-4 w-4" />
-              {lang === "bn" ? "লগআউট" : "Log out"}
+              {t("logout")}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
