@@ -1,5 +1,6 @@
 import { queryOptions } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { cacheQueryFn } from "@/lib/offlineCache";
 
 /* ---------- Products (per shop) ---------- */
 export const productsListQuery = (shopId: string | null | undefined) =>
@@ -7,7 +8,7 @@ export const productsListQuery = (shopId: string | null | undefined) =>
     queryKey: ["products", "list", shopId],
     enabled: !!shopId,
     staleTime: 60_000,
-    queryFn: async () => {
+    queryFn: cacheQueryFn(shopId ? `${shopId}:products-list` : null, async () => {
       if (!shopId) return [];
       const { data, error } = await supabase
         .from("products")
@@ -17,7 +18,7 @@ export const productsListQuery = (shopId: string | null | undefined) =>
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data ?? [];
-    },
+    }),
   });
 
 /* Lightweight product list for POS/Stock (smaller payload) */
@@ -26,7 +27,7 @@ export const productsLiteQuery = (shopId: string | null | undefined) =>
     queryKey: ["products", "lite", shopId],
     enabled: !!shopId,
     staleTime: 60_000,
-    queryFn: async () => {
+    queryFn: cacheQueryFn(shopId ? `${shopId}:products-lite` : null, async () => {
       if (!shopId) return [];
       const { data, error } = await supabase
         .from("products")
@@ -36,7 +37,7 @@ export const productsLiteQuery = (shopId: string | null | undefined) =>
         .order("name");
       if (error) throw error;
       return data ?? [];
-    },
+    }),
   });
 
 /* ---------- Dashboard summary (single RPC) ---------- */
