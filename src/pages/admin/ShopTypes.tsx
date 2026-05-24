@@ -29,6 +29,10 @@ type ShopType = {
   default_categories: string[];
   sort_order: number;
   is_active: boolean;
+  is_group_head?: boolean;
+  category_group?: string | null;
+  includes_bn?: string | null;
+  includes_en?: string | null;
 };
 
 function ShopTypesAdmin() {
@@ -77,6 +81,10 @@ function ShopTypesAdmin() {
       default_categories: cats,
       sort_order: Number(editing.sort_order) || 0,
       is_active: editing.is_active ?? true,
+      is_group_head: editing.is_group_head ?? false,
+      category_group: editing.category_group?.trim() || null,
+      includes_bn: editing.includes_bn?.trim() || null,
+      includes_en: editing.includes_en?.trim() || null,
     };
     const { error } = editing.id
       ? await supabase.from("shop_types").update(payload).eq("id", editing.id)
