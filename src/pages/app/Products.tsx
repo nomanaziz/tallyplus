@@ -1282,9 +1282,16 @@ function ProductFormDialog({
   const [barcodeOn, setBarcodeOn] = useState(false);
   const [serializedOn, setSerializedOn] = useState(false);
 
+  // LPG cylinder-type and empty-pricing fields. Only shown for LPG shops.
+  const [cylinderType, setCylinderType] = useState<"none" | "full" | "empty">("none");
+  const [emptyCost, setEmptyCost] = useState("");
+  const [emptySale, setEmptySale] = useState("");
+  const [emptyWholesale, setEmptyWholesale] = useState("");
+  const [emptyAgent, setEmptyAgent] = useState("");
+  const isLpg = shopTypeCode === "lpg";
+
   // IMEI/Serial tracking is available for all shop types — any product
   // (jewelry, hardware, furniture, etc.) can opt in to per-unit serial tracking.
-  void shopTypeCode;
 
   const reloadCats = async (sid: string) => {
     const { data } = await supabase
