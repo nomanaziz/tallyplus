@@ -40,7 +40,7 @@ export function WarehousesTab({ shopId, tr }: { shopId: string; tr: TR }) {
       payload: { shop_id: shopId, name: name.trim(), location: location.trim() || null, is_default: isDefault },
     });
     setBusy(false);
-    if (res.ok) {
+    if (!res.error) {
       toast.success(tr("যোগ হয়েছে", "Added"));
       setName(""); setLocation(""); setIsDefault(false); setTick(t => t + 1);
     } else toast.error(res.error || "Error");
@@ -108,7 +108,7 @@ export function StockTransferTab({ shopId, types, tr, lang }: { shopId: string; 
       payload: { shop_id: shopId, from_warehouse_id: fromW, to_warehouse_id: toW, bottle_type_id: bottle || null, qty: Number(qty), note: note || null, status: "completed" },
     });
     setBusy(false);
-    if (res.ok) { toast.success(tr("ট্রান্সফার হয়েছে", "Transferred")); setQty("1"); setNote(""); setTick(t => t + 1); }
+    if (!res.error) { toast.success(tr("ট্রান্সফার হয়েছে", "Transferred")); setQty("1"); setNote(""); setTick(t => t + 1); }
     else toast.error(res.error || "Error");
   };
 
@@ -193,7 +193,7 @@ export function BrandBalanceTab({ shopId, tr }: { shopId: string; tr: TR }) {
       payload: { shop_id: shopId, brand_from: bFrom.trim(), brand_to: bTo.trim(), size_label: size.trim() || null, qty: Number(qty) || 0, note: note.trim() || null },
     });
     setBusy(false);
-    if (res.ok) { toast.success(tr("যোগ হয়েছে", "Added")); setQty("1"); setNote(""); setTick(t => t + 1); }
+    if (!res.error) { toast.success(tr("যোগ হয়েছে", "Added")); setQty("1"); setNote(""); setTick(t => t + 1); }
     else toast.error(res.error || "Error");
   };
 
@@ -272,7 +272,7 @@ export function DeliveriesTab({ shopId, types, contacts, deliveryMen, tr }: { sh
       payload: { shop_id: shopId, customer_id: customer, delivery_man_id: dm || null, bottle_type_id: bottle || null, qty: Number(qty) || 1, address: address || null, phone: phone || null, note: note || null, status: "assigned" },
     });
     setBusy(false);
-    if (res.ok) { toast.success(tr("যোগ হয়েছে", "Added")); setCustomer(""); setDm(""); setBottle(""); setQty("1"); setAddress(""); setPhone(""); setNote(""); setTick(t => t + 1); }
+    if (!res.error) { toast.success(tr("যোগ হয়েছে", "Added")); setCustomer(""); setDm(""); setBottle(""); setQty("1"); setAddress(""); setPhone(""); setNote(""); setTick(t => t + 1); }
     else toast.error(res.error || "Error");
   };
 
@@ -363,7 +363,7 @@ export function RefillBookingsTab({ shopId, types, contacts, tr }: { shopId: str
       payload: { shop_id: shopId, customer_id: customer, bottle_type_id: bottle || null, qty: Number(qty) || 1, phone: phone || null, address: address || null, booked_for: bookedFor || null, note: note || null, status: "pending" },
     });
     setBusy(false);
-    if (res.ok) { toast.success(tr("বুকিং হয়েছে", "Booked")); setCustomer(""); setBottle(""); setQty("1"); setPhone(""); setAddress(""); setBookedFor(""); setNote(""); setTick(t => t + 1); }
+    if (!res.error) { toast.success(tr("বুকিং হয়েছে", "Booked")); setCustomer(""); setBottle(""); setQty("1"); setPhone(""); setAddress(""); setBookedFor(""); setNote(""); setTick(t => t + 1); }
     else toast.error(res.error || "Error");
   };
 
