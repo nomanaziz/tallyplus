@@ -61,6 +61,8 @@ type CartItem = {
   price_overridden?: boolean;
   is_bulk?: boolean;
   line_discount_pct?: number;
+  line_discount_amt?: number;
+  line_discount_mode?: "pct" | "amt";
   unit_label?: string;
   // Serialized item fields
   is_serialized?: boolean;
