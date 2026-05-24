@@ -78,22 +78,35 @@ export default function LpgPage() {
   useEffect(() => {
     if (!current?.id) return;
     let cancelled = false;
+    const sid = current.id;
     (async () => {
       const [t, m, h, c, d, s] = await Promise.all([
-        supabase.from("bottle_types").select("*").eq("shop_id", current.id).order("created_at"),
-        supabase.from("bottle_movements").select("*").eq("shop_id", current.id).order("occurred_at", { ascending: false }).limit(200),
-        supabase.from("bottle_holdings").select("*").eq("shop_id", current.id).gt("qty", 0),
-        supabase.from("customers").select("id,name,phone").eq("shop_id", current.id).order("name"),
-        supabase.from("delivery_men").select("*").eq("shop_id", current.id).order("name"),
-        supabase.from("lpg_suppliers").select("*").eq("shop_id", current.id).eq("is_active", true).order("name"),
+        cachedQuery<BottleType[]>(`${sid}:bottle_types`, () =>
+          supabase.from("bottle_types").select("*").eq("shop_id", sid).order("created_at"),
+        ),
+        cachedQuery<Movement[]>(`${sid}:bottle_movements`, () =>
+          supabase.from("bottle_movements").select("*").eq("shop_id", sid).order("occurred_at", { ascending: false }).limit(200),
+        ),
+        cachedQuery<Holding[]>(`${sid}:bottle_holdings`, () =>
+          supabase.from("bottle_holdings").select("*").eq("shop_id", sid).gt("qty", 0),
+        ),
+        cachedQuery<Contact[]>(`${sid}:customers`, () =>
+          supabase.from("customers").select("id,name,phone").eq("shop_id", sid).order("name"),
+        ),
+        cachedQuery<DeliveryMan[]>(`${sid}:delivery_men`, () =>
+          supabase.from("delivery_men").select("*").eq("shop_id", sid).order("name"),
+        ),
+        cachedQuery<Supplier[]>(`${sid}:lpg_suppliers`, () =>
+          supabase.from("lpg_suppliers").select("*").eq("shop_id", sid).eq("is_active", true).order("name"),
+        ),
       ]);
       if (cancelled) return;
-      setTypes((t.data ?? []) as BottleType[]);
-      setMovements((m.data ?? []) as Movement[]);
-      setHoldings((h.data ?? []) as Holding[]);
-      setContacts((c.data ?? []) as Contact[]);
-      setDeliveryMen((d.data ?? []) as DeliveryMan[]);
-      setSuppliers((s.data ?? []) as Supplier[]);
+      setTypes(t.data ?? []);
+      setMovements(m.data ?? []);
+      setHoldings(h.data ?? []);
+      setContacts(c.data ?? []);
+      setDeliveryMen(d.data ?? []);
+      setSuppliers(s.data ?? []);
     })();
     return () => { cancelled = true; };
   }, [current?.id, tick]);
