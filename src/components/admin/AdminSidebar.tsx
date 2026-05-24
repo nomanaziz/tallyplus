@@ -98,11 +98,11 @@ export function AdminSidebar({ onNavigate }: { onNavigate?: () => void }) {
                 className={cn(
                   "group flex h-9 items-center gap-3 rounded-lg px-3 text-[13px] leading-tight transition-colors",
                   active
-                    ? "bg-primary/10 font-semibold text-primary"
+                    ? "bg-primary/15 font-bold text-primary shadow-sm"
                     : "text-foreground/80 hover:bg-accent/60",
                 )}
               >
-                <Icon className={cn("h-5 w-5 flex-none", active ? "text-primary" : "text-muted-foreground")} />
+                <Icon className={cn("h-5 w-5 flex-none", active ? "stroke-[2.5] text-primary" : "text-muted-foreground")} />
                 <span className="truncate">{it.label}</span>
               </Link>
             );
