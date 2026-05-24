@@ -73,6 +73,11 @@ export async function writeCache<T>(key: string, data: T): Promise<void> {
   await set(key, { data, savedAt: Date.now() }, store).catch(() => {});
 }
 
+async function readCacheRaw<T>(key: string): Promise<T | null> {
+  const e = await get<CacheEntry<T>>(key, store).catch(() => undefined);
+  return e ? e.data : null;
+}
+
 /**
  * Wrap a React Query `queryFn` to automatically:
  *  - cache successful results in IndexedDB
@@ -93,7 +98,7 @@ export function cacheQueryFn<T>(
   return async () => {
     if (!key) return fn();
     if (!isOnline()) {
-      const cached = await readCache<T>(key);
+      const cached = await readCacheRaw<T>(key);
       if (cached !== null) return cached;
       return fn();
     }
@@ -102,7 +107,7 @@ export function cacheQueryFn<T>(
       await writeCache(key, res);
       return res;
     } catch (e) {
-      const cached = await readCache<T>(key);
+      const cached = await readCacheRaw<T>(key);
       if (cached !== null) return cached;
       throw e;
     }
