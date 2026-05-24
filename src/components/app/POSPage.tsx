@@ -324,7 +324,7 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
     },
   });
 
-  // F1 → checkout, F2 → hold (placeholder)
+  // F1 → cash checkout, F2 → due (sell mode only)
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement | null;
@@ -335,15 +335,7 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
         if (cart.length > 0) setCashOpen(true);
       } else if (e.key === "F2") {
         e.preventDefault();
-        if (cart.length > 0) {
-          try {
-            const holds = JSON.parse(localStorage.getItem("pos-holds") || "[]");
-            holds.push({ at: Date.now(), mode, cart, discount, delivery });
-            localStorage.setItem("pos-holds", JSON.stringify(holds));
-            toast.success(lang === "bn" ? "অর্ডার হোল্ড করা হয়েছে" : "Order held");
-            clearCart();
-          } catch { /* ignore */ }
-        }
+        if (cart.length > 0 && mode === "sell") setDueOpen(true);
       }
     };
     window.addEventListener("keydown", onKey);
