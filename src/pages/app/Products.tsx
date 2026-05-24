@@ -1578,6 +1578,53 @@ function ProductFormDialog({
             </div>
           </div>
 
+          {isLpg && (
+            <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 space-y-3">
+              <div className="flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="text-sm font-medium">🛢️ সিলিন্ডারের ধরন</div>
+                  <div className="mt-0.5 text-xs text-muted-foreground">
+                    গ্যাস/পানির বোতলের জন্য পূর্ণ বা খালি নির্বাচন করুন
+                  </div>
+                </div>
+                <Select value={cylinderType} onValueChange={(v) => setCylinderType(v as "none"|"full"|"empty")}>
+                  <SelectTrigger className="w-[140px]"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">প্রযোজ্য নয়</SelectItem>
+                    <SelectItem value="full">পূর্ণ (Full)</SelectItem>
+                    <SelectItem value="empty">খালি (Empty)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {cylinderType === "full" && (
+                <div className="space-y-2">
+                  <div className="text-xs font-medium text-muted-foreground">
+                    খালি অবস্থায় বিক্রির দাম (ঐচ্ছিক — খালি হিসেবে বিক্রি করলে এই দামগুলো ব্যবহৃত হবে)
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="grid gap-1.5">
+                      <Label className="text-xs">খালি ক্রয়মূল্য</Label>
+                      <Input type="number" value={emptyCost} onChange={(e) => setEmptyCost(e.target.value)} placeholder="0" />
+                    </div>
+                    <div className="grid gap-1.5">
+                      <Label className="text-xs">খালি বিক্রয়মূল্য</Label>
+                      <Input type="number" value={emptySale} onChange={(e) => setEmptySale(e.target.value)} placeholder="0" />
+                    </div>
+                    <div className="grid gap-1.5">
+                      <Label className="text-xs">খালি পাইকারি দাম</Label>
+                      <Input type="number" value={emptyWholesale} onChange={(e) => setEmptyWholesale(e.target.value)} placeholder="0" />
+                    </div>
+                    <div className="grid gap-1.5">
+                      <Label className="text-xs">খালি এজেন্ট দাম</Label>
+                      <Input type="number" value={emptyAgent} onChange={(e) => setEmptyAgent(e.target.value)} placeholder="0" />
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="grid gap-1.5">
             <Label>SKU</Label>
             <Input value={sku} onChange={(e) => setSku(e.target.value)} placeholder="Optional" />
