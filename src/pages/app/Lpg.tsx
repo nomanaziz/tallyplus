@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Flame, Droplet, Truck, Wallet, Plus, RefreshCw, ArrowDownToLine, ArrowUpFromLine, Building2, Trash2 } from "lucide-react";
+import { WarehousesTab, StockTransferTab, BrandBalanceTab, DeliveriesTab, RefillBookingsTab, CapitalTab, CashClosingTab } from "./LpgExtras";
 
 type BottleType = {
   id: string; name: string; size_label: string | null;
@@ -205,6 +206,13 @@ export default function LpgPage() {
           <TabsTrigger value="types">{tr("বোতলের ধরন", "Bottle types")}</TabsTrigger>
           <TabsTrigger value="suppliers">{tr("সরবরাহকারী", "Suppliers")}</TabsTrigger>
           <TabsTrigger value="delivery">{tr("ডেলিভারি ম্যান", "Delivery men")}</TabsTrigger>
+          <TabsTrigger value="warehouses">{tr("গুদাম", "Warehouses")}</TabsTrigger>
+          <TabsTrigger value="transfers">{tr("স্টক ট্রান্সফার", "Stock transfer")}</TabsTrigger>
+          <TabsTrigger value="brand_balance">{tr("ব্র্যান্ড ব্যালেন্স", "Brand balance")}</TabsTrigger>
+          <TabsTrigger value="deliveries">{tr("ডেলিভারি", "Deliveries")}</TabsTrigger>
+          <TabsTrigger value="bookings">{tr("রিফিল বুকিং", "Refill bookings")}</TabsTrigger>
+          <TabsTrigger value="capital">{tr("মূলধন", "Capital")}</TabsTrigger>
+          <TabsTrigger value="closing">{tr("দৈনিক ক্লোজিং", "Daily closing")}</TabsTrigger>
         </TabsList>
 
         {/* STOCK */}
@@ -565,6 +573,14 @@ export default function LpgPage() {
         <TabsContent value="suppliers" className="mt-3 space-y-3">
           <SuppliersTab shopId={current.id} suppliers={suppliers} onReload={reload} tr={tr} />
         </TabsContent>
+
+        <TabsContent value="warehouses" className="mt-3"><WarehousesTab shopId={current.id} tr={tr} /></TabsContent>
+        <TabsContent value="transfers" className="mt-3"><StockTransferTab shopId={current.id} types={types} tr={tr} lang={lang} /></TabsContent>
+        <TabsContent value="brand_balance" className="mt-3"><BrandBalanceTab shopId={current.id} tr={tr} /></TabsContent>
+        <TabsContent value="deliveries" className="mt-3"><DeliveriesTab shopId={current.id} types={types} contacts={contacts} deliveryMen={deliveryMen} tr={tr} /></TabsContent>
+        <TabsContent value="bookings" className="mt-3"><RefillBookingsTab shopId={current.id} types={types} contacts={contacts} tr={tr} /></TabsContent>
+        <TabsContent value="capital" className="mt-3"><CapitalTab shopId={current.id} tr={tr} lang={lang} /></TabsContent>
+        <TabsContent value="closing" className="mt-3"><CashClosingTab shopId={current.id} tr={tr} lang={lang} /></TabsContent>
       </Tabs>
 
       <MovementDialog
