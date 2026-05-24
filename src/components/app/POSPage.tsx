@@ -733,29 +733,30 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
                       </button>
                     </div>
 
-                    {/* Unit Price + Discount (compact inline) */}
-                    <div className="mt-1.5 flex items-center gap-2">
-                      <label className="flex flex-1 items-center gap-1">
-                        <span className="text-[10px] text-muted-foreground">{lang === "bn" ? "মূল্য" : "Price"}</span>
-                        <div className="relative flex-1">
-                          <Input type="number" value={it.price}
-                            className="h-7 pr-5 text-right text-[11px] tabular-nums"
-                            onChange={(e) => updateCart(idx, { price: Number(e.target.value) || 0 })} />
-                          <span className="pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">৳</span>
-                        </div>
-                      </label>
-                      <label className="flex items-center gap-1">
-                        <span className="text-[10px] text-muted-foreground">{lang === "bn" ? "ছাড়" : "Disc"}</span>
-                        <div className="relative w-16">
-                          <Input type="number" value={it.line_discount_pct ?? 0}
-                            className="h-7 pr-5 text-right text-[11px] tabular-nums"
-                            onChange={(e) => {
-                              const v = Math.max(0, Math.min(100, Number(e.target.value) || 0));
-                              updateCart(idx, { line_discount_pct: v });
-                            }} />
-                          <span className="pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">%</span>
-                        </div>
-                      </label>
+                    {/* Discount only (mode toggle: % or ৳) */}
+                    <div className="mt-1.5 flex items-center justify-end gap-1.5">
+                      <span className="text-[10px] text-muted-foreground">{lang === "bn" ? "ছাড়" : "Disc"}</span>
+                      <Input
+                        type="number"
+                        value={(it.line_discount_mode === "amt" ? it.line_discount_amt : it.line_discount_pct) ?? 0}
+                        className="h-7 w-20 text-right text-[11px] tabular-nums"
+                        onChange={(e) => {
+                          const raw = Number(e.target.value) || 0;
+                          if (it.line_discount_mode === "amt") {
+                            updateCart(idx, { line_discount_amt: Math.max(0, raw) });
+                          } else {
+                            updateCart(idx, { line_discount_pct: Math.max(0, Math.min(100, raw)) });
+                          }
+                        }}
+                      />
+                      <div className="inline-flex overflow-hidden rounded-md border text-[10px] font-bold">
+                        <button type="button"
+                          onClick={() => updateCart(idx, { line_discount_mode: "pct", line_discount_amt: 0 })}
+                          className={`px-1.5 py-1 ${(it.line_discount_mode ?? "pct") === "pct" ? "bg-primary text-primary-foreground" : "bg-background text-muted-foreground"}`}>%</button>
+                        <button type="button"
+                          onClick={() => updateCart(idx, { line_discount_mode: "amt", line_discount_pct: 0 })}
+                          className={`px-1.5 py-1 ${it.line_discount_mode === "amt" ? "bg-primary text-primary-foreground" : "bg-background text-muted-foreground"}`}>৳</button>
+                      </div>
                     </div>
 
                     {/* Quick add + qty stepper + line total */}
