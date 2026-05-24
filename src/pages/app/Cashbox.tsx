@@ -353,17 +353,22 @@ function CashEntryDialog({
     if (!amt || amt <= 0) { toast.error(t("p2a_enterAmount")); return; }
     const denom = manualMode ? {} : cleanDenoms(counts);
     setBusy(true);
-    const { error } = await supabase.from("cash_movements").insert({
-      shop_id: current.id,
-      direction,
-      amount: amt,
-      note: note.trim() || null,
-      created_by: user.id,
-      denominations: denom,
+    const { writeWithOffline } = await import("@/lib/useOfflineWrite");
+    const res = await writeWithOffline({
+      table: "cash_movements",
+      op: "insert",
+      payload: {
+        shop_id: current.id,
+        direction,
+        amount: amt,
+        note: note.trim() || null,
+        created_by: user.id,
+        denominations: denom,
+      },
     });
     setBusy(false);
-    if (error) { toast.error(error.message); return; }
-    toast.success(t("p2a_saved"));
+    if (res.error) { toast.error(res.error); return; }
+    if (!res.queued) toast.success(t("p2a_saved"));
     onClose();
     onSaved();
   };
