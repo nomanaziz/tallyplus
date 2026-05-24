@@ -484,9 +484,9 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
                       type="button"
                       onClick={() => addToCart(p)}
                       disabled={outOfStock}
-                      className={`group relative flex flex-col overflow-hidden rounded-lg border bg-background text-left transition-all hover:shadow-md ${inCart ? "ring-2 ring-primary/60" : ""} ${outOfStock ? "opacity-50 cursor-not-allowed" : ""}`}
+                      className={`group relative flex flex-col overflow-hidden rounded-xl border bg-card text-center shadow-sm transition-all hover:shadow-md ${inCart ? "ring-2 ring-primary bg-primary/5" : ""} ${outOfStock ? "opacity-50 cursor-not-allowed" : ""}`}
                     >
-                      <div className="relative aspect-square w-full overflow-hidden bg-muted/40">
+                      <div className="relative aspect-square w-full overflow-hidden bg-muted/30">
                         {p.image_url ? (
                           <img src={p.image_url} alt={p.name} loading="lazy" decoding="async" className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105" />
                         ) : (
@@ -496,27 +496,25 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
                         )}
                         {inCart && (
                           <span className="absolute left-1 top-1 rounded-full bg-primary px-1 py-px text-[9px] font-bold text-primary-foreground shadow">
-                            ×{lang === "bn" ? bnNum(inCart.qty) : inCart.qty}
+                            ×{inCart.qty}
                           </span>
                         )}
                         <span className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground shadow ring-1 ring-background transition-transform group-hover:scale-110">
                           <Plus className="h-3 w-3" strokeWidth={3} />
                         </span>
-                        <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-1 bg-gradient-to-t from-black/75 via-black/35 to-transparent px-1 pb-0.5 pt-3">
-                          <span className="text-[11px] font-extrabold leading-none text-white drop-shadow">
-                            {fmtMoney(price, lang)}
-                          </span>
-                          {p.unit && <span className="text-[9px] leading-none text-white/85">/{p.unit}</span>}
-                        </div>
                       </div>
-                      <div className="px-1.5 py-1">
-                        <div className="line-clamp-2 min-h-[1.9em] text-[10.5px] font-medium leading-tight text-foreground">
+                      <div className="flex flex-1 flex-col items-center px-2 py-2">
+                        <div className="line-clamp-2 min-h-[2.2em] text-[11px] font-medium leading-tight text-foreground">
                           {p.name}
                         </div>
-                        <div className="mt-0.5 text-[9px] text-muted-foreground">
+                        <div className="mt-1 text-sm font-extrabold leading-none text-primary tabular-nums">
+                          {fmtMoney(price, lang)}
+                          {p.unit && <span className="ml-0.5 text-[9px] font-normal text-muted-foreground">/{p.unit}</span>}
+                        </div>
+                        <div className="mt-1 text-[10px] text-muted-foreground">
                           {t("p2c_stock")}:{" "}
-                          <span className={p.stock <= 0 ? "font-semibold text-destructive" : ""}>
-                            {lang === "bn" ? bnNum(p.stock) : p.stock}
+                          <span className={p.stock <= 0 ? "font-semibold text-destructive" : "font-medium text-foreground/70"}>
+                            {p.stock}
                           </span>
                         </div>
                       </div>
