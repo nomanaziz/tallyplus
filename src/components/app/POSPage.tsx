@@ -924,8 +924,11 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
         onClose={() => setCashOpen(false)}
         mode={mode}
         kind="cash"
-        cart={cart}
-        subtotal={subtotal}
+        cart={cart.map((it) => ({
+          ...it,
+          price: it.price * (1 - (Number(it.line_discount_pct) || 0) / 100),
+        }))}
+        subtotal={subtotalAfterLineDisc}
         discount={Number(discount) || 0}
         delivery={Number(delivery) || 0}
         grandTotal={grandTotal}
@@ -936,8 +939,11 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
         onClose={() => setDueOpen(false)}
         mode={mode}
         kind="due"
-        cart={cart}
-        subtotal={subtotal}
+        cart={cart.map((it) => ({
+          ...it,
+          price: it.price * (1 - (Number(it.line_discount_pct) || 0) / 100),
+        }))}
+        subtotal={subtotalAfterLineDisc}
         discount={Number(discount) || 0}
         delivery={Number(delivery) || 0}
         grandTotal={grandTotal}
