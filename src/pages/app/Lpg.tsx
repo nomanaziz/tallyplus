@@ -140,6 +140,14 @@ export default function LpgPage() {
   const totalDeposit = holdings.reduce((a, h) => a + Number(h.deposit_held || 0), 0);
   const totalOut = holdings.reduce((a, h) => a + h.qty, 0);
 
+  // Empty cylinder hub metrics
+  const emptyReceivedToday = movements
+    .filter((m) => m.occurred_at.slice(0, 10) === todayStr && (m.type === "refill" || m.type === "return_empty"))
+    .reduce((a, m) => a + m.qty, 0);
+  const emptySentToFactoryToday = movements
+    .filter((m) => m.occurred_at.slice(0, 10) === todayStr && m.type === "refill_factory")
+    .reduce((a, m) => a + m.qty, 0);
+
   // Top due customers (by qty out)
   const topDue = useMemo(() => {
     const m = new Map<string, { qty: number; deposit: number }>();
