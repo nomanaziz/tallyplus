@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Plus, Minus, X, Package, ShoppingCart, ChevronDown, MessageSquare, RefreshCw, Search, UserRound, LayoutGrid, List as ListIcon, RotateCcw } from "lucide-react";
+import { ArrowLeft, Plus, Minus, X, Package, ShoppingCart, ChevronDown, MessageSquare, RefreshCw, Search, UserRound, LayoutGrid, List as ListIcon, RotateCcw, Trash2, Pause, ShoppingBag } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { useNavigate } from "@/lib/router";
 import { supabase } from "@/integrations/supabase/client";
@@ -60,6 +60,8 @@ type CartItem = {
   bulk_min_qty?: number | null;
   price_overridden?: boolean;
   is_bulk?: boolean;
+  line_discount_pct?: number;
+  unit_label?: string;
   // Serialized item fields
   is_serialized?: boolean;
   serial_id?: string | null;
