@@ -31,9 +31,9 @@ export const SECTIONS: SidebarSection[] = [
     tKey: "sec_transactions",
     items: [
       { to: "/app/lpg", tKey: "nav_lpg", icon: Flame, module: "lpg", highlight: true },
-      { to: "/app/purchase", tKey: "nav_purchase", icon: icons.purchase, perm: "purchase", module: "purchase" },
       { to: "/app/sell", tKey: "nav_sell", icon: icons.sell, perm: "sell", module: "sales" },
       { to: "/app/quick-order", tKey: "nav_quickSell", icon: icons.quickSell, perm: "sell", module: "sales" },
+      { to: "/app/purchase", tKey: "nav_purchase", icon: icons.purchase, perm: "purchase", module: "purchase" },
       { to: "/app/cashbox", tKey: "nav_cashbox", icon: icons.cashbox, module: "cashbook" },
     ],
   },
@@ -41,8 +41,8 @@ export const SECTIONS: SidebarSection[] = [
     id: "ledgers",
     tKey: "sec_books",
     items: [
-      { to: "/app/purchase-ledger", tKey: "nav_purchaseBook", icon: icons.purchaseList, perm: "purchase", module: "purchase" },
       { to: "/app/sales-ledger", tKey: "nav_salesBook", icon: icons.salesList, perm: "sell", module: "sales" },
+      { to: "/app/purchase-ledger", tKey: "nav_purchaseBook", icon: icons.purchaseList, perm: "purchase", module: "purchase" },
       { to: "/app/due-ledger", tKey: "nav_dueBook", icon: icons.due, perm: "due" },
       { to: "/app/expense-ledger", tKey: "nav_expenseBook", icon: icons.expense, perm: "expense", module: "expense" },
       { to: "/app/owner-ledger", tKey: "nav_ownerBook", icon: icons.cashbox, perm: "expense", module: "cashbook" },
