@@ -137,6 +137,19 @@ function ShopTypesAdmin() {
                     ))}
                   </div>
                 )}
+                <div className="mt-2 flex flex-wrap gap-1">
+                  {s.is_group_head && (
+                    <Badge className="text-[10px]">Group Head</Badge>
+                  )}
+                  {s.category_group && (
+                    <Badge variant="secondary" className="text-[10px]">
+                      group: {s.category_group}
+                    </Badge>
+                  )}
+                  {!s.is_group_head && (
+                    <Badge variant="outline" className="text-[10px]">Legacy</Badge>
+                  )}
+                </div>
                 <Button variant="outline" size="sm" className="mt-3" onClick={() => openEditor(s)}>
                   <Pencil className="mr-1 h-3.5 w-3.5" /> Edit
                 </Button>
