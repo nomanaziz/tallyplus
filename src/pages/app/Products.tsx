@@ -1432,6 +1432,11 @@ function ProductFormDialog({
       discount_value: discountOn ? (Number(discountValue) || 0) : null,
       discount_type: discountOn ? discountType : null,
       is_serialized: serializedOn,
+      cylinder_type: isLpg && cylinderType !== "none" ? cylinderType : null,
+      empty_cost_price: isLpg && cylinderType === "full" && emptyCost !== "" ? Number(emptyCost) : null,
+      empty_sale_price: isLpg && cylinderType === "full" && emptySale !== "" ? Number(emptySale) : null,
+      empty_wholesale_price: isLpg && cylinderType === "full" && emptyWholesale !== "" ? Number(emptyWholesale) : null,
+      empty_agent_price: isLpg && cylinderType === "full" && emptyAgent !== "" ? Number(emptyAgent) : null,
     };
     const { data: savedRow, error } = product
       ? await supabase.from("products").update(payload).eq("id", product.id).select("id").maybeSingle()
