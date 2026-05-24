@@ -291,7 +291,7 @@ export const contactsQuery = (
     queryKey: ["contacts", type, shopId],
     enabled: !!shopId,
     staleTime: 30_000,
-    queryFn: async () => {
+    queryFn: cacheQueryFn(shopId ? `${shopId}:contacts:${type}` : null, async () => {
       if (!shopId) return [];
       const { data, error } = await supabase
         .from(type)
@@ -301,7 +301,7 @@ export const contactsQuery = (
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data ?? [];
-    },
+    }),
   });
 
 /* ---------- Recycle bin (soft-deleted) ---------- */
