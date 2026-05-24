@@ -450,18 +450,25 @@ function ProductsPage() {
       return;
     }
     setSavingStock(true);
+    const { writeWithOffline } = await import("@/lib/useOfflineWrite");
     for (const p of changes) {
       const newStock = updates[p.id];
       const diff = newStock - Number(p.stock);
-      const { error } = await supabase.from("products").update({ stock: newStock }).eq("id", p.id);
-      if (error) { toast.error(error.message); setSavingStock(false); return; }
-      await supabase.from("stock_movements").insert({
-        shop_id: current.id,
-        product_id: p.id,
-        qty: Math.abs(diff),
-        type: diff > 0 ? "in" : "out",
-        note: "bulk edit",
-        created_by: user.id,
+      const u = await writeWithOffline({
+        table: "products", op: "update",
+        payload: { set: { stock: newStock }, match: { id: p.id } },
+      });
+      if (u.error) { toast.error(u.error); setSavingStock(false); return; }
+      await writeWithOffline({
+        table: "stock_movements", op: "insert",
+        payload: {
+          shop_id: current.id,
+          product_id: p.id,
+          qty: Math.abs(diff),
+          type: diff > 0 ? "in" : "out",
+          note: "bulk edit",
+          created_by: user.id,
+        },
       });
     }
     setSavingStock(false);
