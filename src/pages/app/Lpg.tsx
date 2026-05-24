@@ -504,20 +504,25 @@ function MovementDialog({
     if (!q || q <= 0) return toast.error(tr("সংখ্যা ঠিক নয়", "Invalid quantity"));
 
     setBusy(true);
-    const { error } = await supabase.from("bottle_movements").insert({
-      shop_id: shopId,
-      bottle_type_id: bottleId,
-      contact_id: needsContact ? contactId : null,
-      supplier_id: isPurchase && supplierId ? supplierId : null,
-      type: tab,
-      qty: q,
-      cash_collected: Number(cash || 0),
-      deposit_change: Number(deposit || 0),
-      note: note || null,
+    const res = await writeWithOffline({
+      table: "bottle_movements",
+      op: "insert",
+      payload: {
+        shop_id: shopId,
+        bottle_type_id: bottleId,
+        contact_id: needsContact ? contactId : null,
+        supplier_id: isPurchase && supplierId ? supplierId : null,
+        type: tab,
+        qty: q,
+        cash_collected: Number(cash || 0),
+        deposit_change: Number(deposit || 0),
+        note: note || null,
+      },
+      offlineMessage: tr("অফলাইনে সংরক্ষিত — sync হলে cloud-এ যাবে", "Saved offline — will sync to cloud"),
     });
     setBusy(false);
-    if (error) return toast.error(error.message);
-    toast.success(tr("সংরক্ষিত হলো", "Saved"));
+    if (res.error) return toast.error(res.error);
+    if (!res.queued) toast.success(tr("সংরক্ষিত হলো", "Saved"));
     onSaved();
   };
 
@@ -616,13 +621,18 @@ function BottleTypeDialog({ open, onOpenChange, shopId, onSaved }: { open: boole
   const save = async () => {
     if (!name.trim()) return toast.error(tr("নাম দিন", "Enter name"));
     setBusy(true);
-    const { error } = await supabase.from("bottle_types").insert({
-      shop_id: shopId, name: name.trim(), size_label: size.trim() || null,
-      purchase_price: Number(buy || 0), sale_price: Number(sell || 0), deposit_amount: Number(dep || 0),
+    const res = await writeWithOffline({
+      table: "bottle_types",
+      op: "insert",
+      payload: {
+        shop_id: shopId, name: name.trim(), size_label: size.trim() || null,
+        purchase_price: Number(buy || 0), sale_price: Number(sell || 0), deposit_amount: Number(dep || 0),
+      },
+      offlineMessage: tr("অফলাইনে সংরক্ষিত", "Saved offline"),
     });
     setBusy(false);
-    if (error) return toast.error(error.message);
-    toast.success(tr("সংরক্ষিত হলো", "Saved"));
+    if (res.error) return toast.error(res.error);
+    if (!res.queued) toast.success(tr("সংরক্ষিত হলো", "Saved"));
     onSaved();
   };
   return (
@@ -656,12 +666,15 @@ function DeliveryManDialog({ open, onOpenChange, shopId, onSaved }: { open: bool
   const save = async () => {
     if (!name.trim()) return toast.error(tr("নাম দিন", "Enter name"));
     setBusy(true);
-    const { error } = await supabase.from("delivery_men").insert({
-      shop_id: shopId, name: name.trim(), phone: phone.trim() || null, vehicle_no: veh.trim() || null,
+    const res = await writeWithOffline({
+      table: "delivery_men",
+      op: "insert",
+      payload: { shop_id: shopId, name: name.trim(), phone: phone.trim() || null, vehicle_no: veh.trim() || null },
+      offlineMessage: tr("অফলাইনে সংরক্ষিত", "Saved offline"),
     });
     setBusy(false);
-    if (error) return toast.error(error.message);
-    toast.success(tr("সংরক্ষিত হলো", "Saved"));
+    if (res.error) return toast.error(res.error);
+    if (!res.queued) toast.success(tr("সংরক্ষিত হলো", "Saved"));
     onSaved();
   };
   return (
@@ -697,13 +710,18 @@ function SuppliersTab({
   const save = async () => {
     if (!name.trim()) return toast.error(tr("নাম দিন", "Enter name"));
     setBusy(true);
-    const { error } = await supabase.from("lpg_suppliers").insert({
-      shop_id: shopId, name: name.trim(), phone: phone.trim() || null,
-      address: addr.trim() || null, type,
+    const res = await writeWithOffline({
+      table: "lpg_suppliers",
+      op: "insert",
+      payload: {
+        shop_id: shopId, name: name.trim(), phone: phone.trim() || null,
+        address: addr.trim() || null, type,
+      },
+      offlineMessage: tr("অফলাইনে সংরক্ষিত", "Saved offline"),
     });
     setBusy(false);
-    if (error) return toast.error(error.message);
-    toast.success(tr("সংরক্ষিত হলো", "Saved"));
+    if (res.error) return toast.error(res.error);
+    if (!res.queued) toast.success(tr("সংরক্ষিত হলো", "Saved"));
     reset(); setOpen(false); onReload();
   };
 
