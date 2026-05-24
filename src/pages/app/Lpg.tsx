@@ -290,8 +290,6 @@ export default function LpgPage() {
 
         {/* MOVEMENTS */}
         <TabsContent value="moves" className="mt-3">
-          {/* placeholder anchor — Empty Hub inserted above via separate edit */}
-          {null}
           <div className="overflow-hidden rounded-xl border bg-card">
             <table className="w-full text-sm">
               <thead className="bg-muted/40 text-xs uppercase text-muted-foreground">
