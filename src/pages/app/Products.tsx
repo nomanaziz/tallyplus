@@ -285,8 +285,12 @@ function ProductsPage() {
       return;
     }
     if (!confirm(t("p3_DeleteConfirm"))) return;
-    const { error } = await supabase.from("products").update({ deleted_at: new Date().toISOString() }).eq("id", p.id);
-    if (error) { toast.error(error.message); return; }
+    const { writeWithOffline } = await import("@/lib/useOfflineWrite");
+    const res = await writeWithOffline({
+      table: "products", op: "update",
+      payload: { set: { deleted_at: new Date().toISOString() }, match: { id: p.id } },
+    });
+    if (res.error) { toast.error(res.error); return; }
     toast.success(t("p3_Deleted"));
     setDetails(null);
     void load();
