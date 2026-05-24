@@ -186,7 +186,7 @@ function DesktopOverview({
   ];
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-3 gap-2 sm:gap-3 lg:grid-cols-6 xl:grid-cols-9">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-9">
         {tiles.map((t) => (
           <KpiTile key={t.label} {...t} />
         ))}
