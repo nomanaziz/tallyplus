@@ -288,7 +288,7 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
   const grandTotal = Math.max(0, subtotal - (Number(discount) || 0) + (Number(delivery) || 0));
 
   return (
-    <div className="container px-4 py-4">
+    <div className="w-full px-3 py-3 xl:px-5">
       <div className="mb-1 text-xs text-muted-foreground">{titleEn}</div>
       <div className="mb-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -333,9 +333,9 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
         </Tabs>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-4 lg:grid-cols-12">
         {/* Product picker */}
-        <div className={`rounded-xl border bg-card ${mobileTab === "cart" ? "hidden lg:block" : ""}`}>
+        <div className={`rounded-xl border bg-card lg:col-span-8 ${mobileTab === "cart" ? "hidden lg:block" : ""}`}>
           <div className="flex items-center justify-between border-b p-3">
             <div className="text-sm font-semibold">
               {t("p2c_select")}
@@ -561,7 +561,7 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
         </div>
 
         {/* Cart */}
-        <div className={`rounded-xl border bg-card ${mobileTab === "products" ? "hidden lg:block" : ""}`}>
+        <div className={`rounded-xl border bg-card lg:col-span-4 ${mobileTab === "products" ? "hidden lg:block" : ""}`}>
           <div className="flex items-center justify-between border-b p-3">
             <div className="text-sm font-semibold">
               {t("p2c_selectedItemsN", { n: lang === "bn" ? bnNum(cart.length) : cart.length })}
