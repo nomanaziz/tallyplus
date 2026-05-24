@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useShop } from "@/lib/shop";
 import { useI18n, fmtMoney, bnNum } from "@/lib/i18n";
 import { supabase } from "@/integrations/supabase/client";
+import { cachedQuery } from "@/lib/offlineCache";
+import { writeWithOffline } from "@/lib/useOfflineWrite";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
