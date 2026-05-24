@@ -209,7 +209,7 @@ export const cashMovementsQuery = (shopId: string | null | undefined) =>
     queryKey: ["cash", "movements", shopId],
     enabled: !!shopId,
     staleTime: 30_000,
-    queryFn: async () => {
+    queryFn: cacheQueryFn(shopId ? `${shopId}:cash-movements` : null, async () => {
       if (!shopId) return [];
       const { data, error } = await supabase
         .from("cash_movements")
@@ -219,7 +219,7 @@ export const cashMovementsQuery = (shopId: string | null | undefined) =>
         .limit(500);
       if (error) throw error;
       return data ?? [];
-    },
+    }),
   });
 
 /* ---------- Sales list ---------- */
