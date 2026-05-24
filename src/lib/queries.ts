@@ -228,7 +228,7 @@ export const salesListQuery = (shopId: string | null | undefined) =>
     queryKey: ["sales", "list", shopId],
     enabled: !!shopId,
     staleTime: 30_000,
-    queryFn: async () => {
+    queryFn: cacheQueryFn(shopId ? `${shopId}:sales-list` : null, async () => {
       if (!shopId) return [];
       const { data, error } = await supabase
         .from("sales")
@@ -239,7 +239,7 @@ export const salesListQuery = (shopId: string | null | undefined) =>
         .limit(500);
       if (error) throw error;
       return data ?? [];
-    },
+    }),
   });
 
 /* ---------- Purchases list ---------- */
@@ -248,7 +248,7 @@ export const purchasesListQuery = (shopId: string | null | undefined) =>
     queryKey: ["purchases", "list", shopId],
     enabled: !!shopId,
     staleTime: 30_000,
-    queryFn: async () => {
+    queryFn: cacheQueryFn(shopId ? `${shopId}:purchases-list` : null, async () => {
       if (!shopId) return [];
       const { data, error } = await supabase
         .from("purchases")
@@ -259,7 +259,7 @@ export const purchasesListQuery = (shopId: string | null | undefined) =>
         .limit(500);
       if (error) throw error;
       return data ?? [];
-    },
+    }),
   });
 
 /* ---------- Expenses list ---------- */
@@ -268,7 +268,7 @@ export const expensesListQuery = (shopId: string | null | undefined) =>
     queryKey: ["expenses", "list", shopId],
     enabled: !!shopId,
     staleTime: 30_000,
-    queryFn: async () => {
+    queryFn: cacheQueryFn(shopId ? `${shopId}:expenses-list` : null, async () => {
       if (!shopId) return [];
       const { data, error } = await supabase
         .from("expenses")
@@ -279,7 +279,7 @@ export const expensesListQuery = (shopId: string | null | undefined) =>
         .limit(500);
       if (error) throw error;
       return data ?? [];
-    },
+    }),
   });
 
 /* ---------- Contacts (customers / suppliers) ---------- */
