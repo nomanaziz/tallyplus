@@ -1358,6 +1358,15 @@ function ProductFormDialog({
       } else {
         setSerializedOn(shopTypeCode === "mobile");
       }
+      // LPG cylinder fields
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const pa = p as any;
+      const ct = (pa?.cylinder_type as string | null) ?? null;
+      setCylinderType(ct === "full" || ct === "empty" ? ct : "none");
+      setEmptyCost(pa?.empty_cost_price != null ? String(pa.empty_cost_price) : "");
+      setEmptySale(pa?.empty_sale_price != null ? String(pa.empty_sale_price) : "");
+      setEmptyWholesale(pa?.empty_wholesale_price != null ? String(pa.empty_wholesale_price) : "");
+      setEmptyAgent(pa?.empty_agent_price != null ? String(pa.empty_agent_price) : "");
     }
   }, [open, product, shopTypeCode]);
 
