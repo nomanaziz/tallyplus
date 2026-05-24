@@ -135,13 +135,13 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
           "group flex items-center gap-3 rounded-lg text-[13px] leading-tight transition-colors",
           collapsed ? "h-9 justify-center px-1" : "h-9 px-3",
           active
-            ? "bg-primary/10 font-semibold text-primary"
+            ? "bg-primary/15 font-bold text-primary shadow-sm"
             : it.highlight
               ? "font-semibold text-primary hover:bg-primary/10"
               : "text-foreground/80 hover:bg-accent/60",
         )}
       >
-        <it.icon className={cn("h-5 w-5 flex-none", active ? "text-primary" : "text-muted-foreground")} />
+        <it.icon className={cn("h-5 w-5 flex-none", active ? "stroke-[2.5] text-primary" : "text-muted-foreground")} />
         {!collapsed && <span className="truncate">{t(it.tKey)}</span>}
       </Link>
     );
