@@ -316,9 +316,9 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
         const ids = rows.map((r) => r.id);
         const { data: its } = await supabase
           .from(itemsTable)
-          .select(`${fk},qty`)
+          .select("qty")
           .in(fk, ids);
-        items = ((its as { qty: number }[]) ?? []).reduce((s, r) => s + Number(r.qty || 0), 0);
+        items = (((its as unknown) as { qty: number }[]) ?? []).reduce((s, r) => s + Number(r.qty || 0), 0);
       }
       return { total, items, txns: rows.length };
     },
