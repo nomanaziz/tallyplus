@@ -27,6 +27,16 @@ export async function writeWithOffline(args: {
           .select();
         if (error) throw error;
         return { queued: false, data };
+      } else if (args.op === "update") {
+        const set = (args.payload as { set?: Record<string, unknown> }).set ?? {};
+        const match = (args.payload as { match?: Record<string, unknown> }).match ?? {};
+        let q = supabase.from(args.table as never).update(set as never);
+        for (const c of Object.keys(match)) {
+          q = q.eq(c, match[c] as never);
+        }
+        const { error } = await q;
+        if (error) throw error;
+        return { queued: false };
       } else {
         const cols = args.matchOn ?? ["id"];
         let q = supabase.from(args.table as never).delete();

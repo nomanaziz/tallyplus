@@ -1,5 +1,6 @@
 import { queryOptions } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { cacheQueryFn } from "@/lib/offlineCache";
 
 /* ---------- Products (per shop) ---------- */
 export const productsListQuery = (shopId: string | null | undefined) =>
@@ -7,7 +8,7 @@ export const productsListQuery = (shopId: string | null | undefined) =>
     queryKey: ["products", "list", shopId],
     enabled: !!shopId,
     staleTime: 60_000,
-    queryFn: async () => {
+    queryFn: cacheQueryFn(shopId ? `${shopId}:products-list` : null, async () => {
       if (!shopId) return [];
       const { data, error } = await supabase
         .from("products")
@@ -17,7 +18,7 @@ export const productsListQuery = (shopId: string | null | undefined) =>
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data ?? [];
-    },
+    }),
   });
 
 /* Lightweight product list for POS/Stock (smaller payload) */
@@ -26,7 +27,7 @@ export const productsLiteQuery = (shopId: string | null | undefined) =>
     queryKey: ["products", "lite", shopId],
     enabled: !!shopId,
     staleTime: 60_000,
-    queryFn: async () => {
+    queryFn: cacheQueryFn(shopId ? `${shopId}:products-lite` : null, async () => {
       if (!shopId) return [];
       const { data, error } = await supabase
         .from("products")
@@ -36,7 +37,7 @@ export const productsLiteQuery = (shopId: string | null | undefined) =>
         .order("name");
       if (error) throw error;
       return data ?? [];
-    },
+    }),
   });
 
 /* ---------- Dashboard summary (single RPC) ---------- */
@@ -59,7 +60,7 @@ export const dashboardSummaryQuery = (
     enabled: !!shopId,
     staleTime: 60_000,
     gcTime: 5 * 60_000,
-    queryFn: async (): Promise<DashboardSummary> => {
+    queryFn: cacheQueryFn(shopId ? `${shopId}:dashboard-summary:${sinceIso}` : null, async (): Promise<DashboardSummary> => {
       if (!shopId) {
         return { sales: 0, purchases: 0, expenses: 0, receivable: 0, payable: 0, stockValue: 0, balance: 0 };
       }
@@ -90,7 +91,7 @@ export const dashboardSummaryQuery = (
         stockValue: n(row?.stock_value),
         balance: n(row?.cash_in) - n(row?.cash_out),
       };
-    },
+    }),
   });
 
 /* ---------- Stock movements history ---------- */
@@ -208,7 +209,7 @@ export const cashMovementsQuery = (shopId: string | null | undefined) =>
     queryKey: ["cash", "movements", shopId],
     enabled: !!shopId,
     staleTime: 30_000,
-    queryFn: async () => {
+    queryFn: cacheQueryFn(shopId ? `${shopId}:cash-movements` : null, async () => {
       if (!shopId) return [];
       const { data, error } = await supabase
         .from("cash_movements")
@@ -218,7 +219,7 @@ export const cashMovementsQuery = (shopId: string | null | undefined) =>
         .limit(500);
       if (error) throw error;
       return data ?? [];
-    },
+    }),
   });
 
 /* ---------- Sales list ---------- */
@@ -227,7 +228,7 @@ export const salesListQuery = (shopId: string | null | undefined) =>
     queryKey: ["sales", "list", shopId],
     enabled: !!shopId,
     staleTime: 30_000,
-    queryFn: async () => {
+    queryFn: cacheQueryFn(shopId ? `${shopId}:sales-list` : null, async () => {
       if (!shopId) return [];
       const { data, error } = await supabase
         .from("sales")
@@ -238,7 +239,7 @@ export const salesListQuery = (shopId: string | null | undefined) =>
         .limit(500);
       if (error) throw error;
       return data ?? [];
-    },
+    }),
   });
 
 /* ---------- Purchases list ---------- */
@@ -247,7 +248,7 @@ export const purchasesListQuery = (shopId: string | null | undefined) =>
     queryKey: ["purchases", "list", shopId],
     enabled: !!shopId,
     staleTime: 30_000,
-    queryFn: async () => {
+    queryFn: cacheQueryFn(shopId ? `${shopId}:purchases-list` : null, async () => {
       if (!shopId) return [];
       const { data, error } = await supabase
         .from("purchases")
@@ -258,7 +259,7 @@ export const purchasesListQuery = (shopId: string | null | undefined) =>
         .limit(500);
       if (error) throw error;
       return data ?? [];
-    },
+    }),
   });
 
 /* ---------- Expenses list ---------- */
@@ -267,7 +268,7 @@ export const expensesListQuery = (shopId: string | null | undefined) =>
     queryKey: ["expenses", "list", shopId],
     enabled: !!shopId,
     staleTime: 30_000,
-    queryFn: async () => {
+    queryFn: cacheQueryFn(shopId ? `${shopId}:expenses-list` : null, async () => {
       if (!shopId) return [];
       const { data, error } = await supabase
         .from("expenses")
@@ -278,7 +279,7 @@ export const expensesListQuery = (shopId: string | null | undefined) =>
         .limit(500);
       if (error) throw error;
       return data ?? [];
-    },
+    }),
   });
 
 /* ---------- Contacts (customers / suppliers) ---------- */
@@ -290,7 +291,7 @@ export const contactsQuery = (
     queryKey: ["contacts", type, shopId],
     enabled: !!shopId,
     staleTime: 30_000,
-    queryFn: async () => {
+    queryFn: cacheQueryFn(shopId ? `${shopId}:contacts:${type}` : null, async () => {
       if (!shopId) return [];
       const { data, error } = await supabase
         .from(type)
@@ -300,7 +301,7 @@ export const contactsQuery = (
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data ?? [];
-    },
+    }),
   });
 
 /* ---------- Recycle bin (soft-deleted) ---------- */

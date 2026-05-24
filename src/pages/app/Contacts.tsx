@@ -88,12 +88,18 @@ function ContactsPage() {
 
   const onDelete = async (c: Contact) => {
     if (!confirm(t("p2b_deleteQ"))) return;
+    const { writeWithOffline } = await import("@/lib/useOfflineWrite");
     if (tab === "employees") {
-      const { error } = await supabase.from("shop_members").delete().eq("id", c.id);
-      if (error) { toast.error(error.message); return; }
+      const res = await writeWithOffline({
+        table: "shop_members", op: "delete", payload: { id: c.id },
+      });
+      if (res.error) { toast.error(res.error); return; }
     } else {
-      const { error } = await supabase.from(tab).update({ deleted_at: new Date().toISOString() }).eq("id", c.id);
-      if (error) { toast.error(error.message); return; }
+      const res = await writeWithOffline({
+        table: tab, op: "update",
+        payload: { set: { deleted_at: new Date().toISOString() }, match: { id: c.id } },
+      });
+      if (res.error) { toast.error(res.error); return; }
     }
     toast.success(t("p2b_deleted"));
     setSelected(null);
@@ -580,19 +586,25 @@ function ContactDialog({
         return;
       }
     }
-    const { error } = editing
-      ? await supabase.from(table).update(payload).eq("id", editing.id)
-      : await supabase.from(table).insert(payload);
+    const { writeWithOffline } = await import("@/lib/useOfflineWrite");
+    const res = editing
+      ? await writeWithOffline({
+          table, op: "update",
+          payload: { set: payload as Record<string, unknown>, match: { id: editing.id } },
+        })
+      : await writeWithOffline({
+          table, op: "insert", payload: payload as Record<string, unknown>,
+        });
     setBusy(false);
-    if (error) {
+    if (res.error) {
       // Catch unique-index violation as a friendly message
-      const msg = error.message.includes("customers_shop_phone_unique") || error.message.includes("suppliers_shop_phone_unique")
+      const msg = res.error.includes("customers_shop_phone_unique") || res.error.includes("suppliers_shop_phone_unique")
         ? (t("p2b_phoneExists"))
-        : error.message;
+        : res.error;
       toast.error(msg);
       return;
     }
-    toast.success(t("p2b_savedShort"));
+    if (!res.queued) toast.success(t("p2b_savedShort"));
     onOpenChange(false);
     onSaved();
   };

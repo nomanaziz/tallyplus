@@ -285,8 +285,12 @@ function ProductsPage() {
       return;
     }
     if (!confirm(t("p3_DeleteConfirm"))) return;
-    const { error } = await supabase.from("products").update({ deleted_at: new Date().toISOString() }).eq("id", p.id);
-    if (error) { toast.error(error.message); return; }
+    const { writeWithOffline } = await import("@/lib/useOfflineWrite");
+    const res = await writeWithOffline({
+      table: "products", op: "update",
+      payload: { set: { deleted_at: new Date().toISOString() }, match: { id: p.id } },
+    });
+    if (res.error) { toast.error(res.error); return; }
     toast.success(t("p3_Deleted"));
     setDetails(null);
     void load();
@@ -410,15 +414,22 @@ function ProductsPage() {
     if (!current || !user) return;
     const diff = newStock - Number(p.stock);
     if (diff === 0) return;
-    const { error: e1 } = await supabase.from("products").update({ stock: newStock }).eq("id", p.id);
-    if (e1) { toast.error(e1.message); return; }
-    await supabase.from("stock_movements").insert({
-      shop_id: current.id,
-      product_id: p.id,
-      qty: Math.abs(diff),
-      type: diff > 0 ? "in" : "out",
-      note: "manual adjust",
-      created_by: user.id,
+    const { writeWithOffline } = await import("@/lib/useOfflineWrite");
+    const u = await writeWithOffline({
+      table: "products", op: "update",
+      payload: { set: { stock: newStock }, match: { id: p.id } },
+    });
+    if (u.error) { toast.error(u.error); return; }
+    await writeWithOffline({
+      table: "stock_movements", op: "insert",
+      payload: {
+        shop_id: current.id,
+        product_id: p.id,
+        qty: Math.abs(diff),
+        type: diff > 0 ? "in" : "out",
+        note: "manual adjust",
+        created_by: user.id,
+      },
     });
     toast.success(t("p3_Updated"));
     void load();
@@ -439,18 +450,25 @@ function ProductsPage() {
       return;
     }
     setSavingStock(true);
+    const { writeWithOffline } = await import("@/lib/useOfflineWrite");
     for (const p of changes) {
       const newStock = updates[p.id];
       const diff = newStock - Number(p.stock);
-      const { error } = await supabase.from("products").update({ stock: newStock }).eq("id", p.id);
-      if (error) { toast.error(error.message); setSavingStock(false); return; }
-      await supabase.from("stock_movements").insert({
-        shop_id: current.id,
-        product_id: p.id,
-        qty: Math.abs(diff),
-        type: diff > 0 ? "in" : "out",
-        note: "bulk edit",
-        created_by: user.id,
+      const u = await writeWithOffline({
+        table: "products", op: "update",
+        payload: { set: { stock: newStock }, match: { id: p.id } },
+      });
+      if (u.error) { toast.error(u.error); setSavingStock(false); return; }
+      await writeWithOffline({
+        table: "stock_movements", op: "insert",
+        payload: {
+          shop_id: current.id,
+          product_id: p.id,
+          qty: Math.abs(diff),
+          type: diff > 0 ? "in" : "out",
+          note: "bulk edit",
+          created_by: user.id,
+        },
       });
     }
     setSavingStock(false);
