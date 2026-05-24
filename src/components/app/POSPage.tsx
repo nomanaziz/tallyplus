@@ -531,7 +531,7 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
             {/* F-key shortcut row */}
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] font-medium text-muted-foreground">
               <span><kbd className="rounded bg-muted px-1 py-px text-[10px]">F1</kbd>: {lang === "bn" ? "চেকআউট" : "Checkout"}</span>
-              <span><kbd className="rounded bg-muted px-1 py-px text-[10px]">F2</kbd>: {lang === "bn" ? "হোল্ড" : "Hold"}</span>
+              <span><kbd className="rounded bg-muted px-1 py-px text-[10px]">F2</kbd>: {lang === "bn" ? "বাকি" : "Due"}</span>
               <span><kbd className="rounded bg-muted px-1 py-px text-[10px]">F3</kbd>: {lang === "bn" ? "ড্রয়ার" : "Drawer"}</span>
               <span><kbd className="rounded bg-muted px-1 py-px text-[10px]">F4</kbd>: {lang === "bn" ? "আর্থ" : "Earn"}</span>
               <span><kbd className="rounded bg-muted px-1 py-px text-[10px]">F5</kbd>: {lang === "bn" ? "প্রিন্ট" : "Print"}</span>
