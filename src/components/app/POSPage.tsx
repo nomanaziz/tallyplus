@@ -289,8 +289,13 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
   const clearCart = () => { setCart([]); setDiscount("0"); setDelivery("0"); };
 
   const subtotal = cart.reduce((s, it) => s + it.qty * it.price, 0);
-  const lineTotal = (it: CartItem) =>
-    it.qty * it.price * (1 - (Number(it.line_discount_pct) || 0) / 100);
+  const lineTotal = (it: CartItem) => {
+    const gross = it.qty * it.price;
+    if (it.line_discount_mode === "amt") {
+      return Math.max(0, gross - (Number(it.line_discount_amt) || 0));
+    }
+    return gross * (1 - (Number(it.line_discount_pct) || 0) / 100);
+  };
   const subtotalAfterLineDisc = cart.reduce((s, it) => s + lineTotal(it), 0);
   const grandTotal = Math.max(0, subtotalAfterLineDisc - (Number(discount) || 0) + (Number(delivery) || 0));
 
