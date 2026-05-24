@@ -307,8 +307,8 @@ function KpiTile({
       className={`group flex flex-col gap-2 rounded-xl border ${tone_.border} ${tone_.card} p-3 shadow-sm transition hover:shadow-md hover:-translate-y-0.5 min-h-[130px]`}
     >
       {(Img || Icon) && (
-        <span className={`flex h-8 w-8 flex-none items-center justify-center rounded-lg ${tone_.badge}`}>
-          {Img ? <Img className="h-4.5 w-4.5 icon-inherit" /> : Icon ? <Icon className="h-4.5 w-4.5 icon-inherit" /> : null}
+        <span className={`flex h-9 w-9 flex-none items-center justify-center rounded-lg ${tone_.badge}`}>
+          {Img ? <Img className="h-5 w-5 icon-inherit" /> : Icon ? <Icon className="h-5 w-5 icon-inherit" /> : null}
         </span>
       )}
       <div className="text-[28px] leading-none font-extrabold tabular-nums text-foreground">{value}</div>
