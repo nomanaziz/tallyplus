@@ -840,42 +840,25 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
             </div>
           </div>
 
-          <div className="flex flex-col gap-2 p-3">
+          <div className={`grid ${isSell ? "grid-cols-2" : "grid-cols-1"} gap-2 p-3`}>
             <Button
-              className="h-14 text-base font-bold"
+              className="h-12 text-sm font-bold"
               disabled={cart.length === 0}
               onClick={() => setCashOpen(true)}
             >
-              <ShoppingBag className="mr-2 h-5 w-5" />
+              <ShoppingBag className="mr-1.5 h-4 w-4" />
               {lang === "bn" ? "ক্যাশ (F1)" : "Cash (F1)"}
             </Button>
             {isSell && (
               <Button
                 variant="outline"
-                className="h-14 border-2 text-base font-bold"
+                className="h-12 border-2 text-sm font-bold"
                 disabled={cart.length === 0}
                 onClick={() => setDueOpen(true)}
               >
-                {lang === "bn" ? "বাকি" : "Due"}
+                {lang === "bn" ? "বাকি (F2)" : "Due (F2)"}
               </Button>
             )}
-            <Button
-              variant="ghost"
-              className="h-9 text-xs font-medium text-amber-700 hover:bg-amber-50 hover:text-amber-800 dark:text-amber-400 dark:hover:bg-amber-500/10"
-              disabled={cart.length === 0}
-              onClick={() => {
-                try {
-                  const holds = JSON.parse(localStorage.getItem("pos-holds") || "[]");
-                  holds.push({ at: Date.now(), mode, cart, discount, delivery });
-                  localStorage.setItem("pos-holds", JSON.stringify(holds));
-                  toast.success(lang === "bn" ? "অর্ডার হোল্ড করা হয়েছে" : "Order held");
-                  clearCart();
-                } catch { /* ignore */ }
-              }}
-            >
-              <Pause className="mr-1 h-3.5 w-3.5" />
-              {lang === "bn" ? "হোল্ড (F2)" : "Hold (F2)"}
-            </Button>
           </div>
         </div>
       </div>
