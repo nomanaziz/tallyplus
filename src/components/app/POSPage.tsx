@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Plus, Minus, X, Package, ShoppingCart, ChevronDown, MessageSquare, RefreshCw, Search, UserRound, LayoutGrid, List as ListIcon, RotateCcw } from "lucide-react";
+import { ArrowLeft, Plus, Minus, X, Package, ShoppingCart, ChevronDown, MessageSquare, RefreshCw, Search, UserRound, LayoutGrid, List as ListIcon, RotateCcw, Trash2, Pause, ShoppingBag } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { useNavigate } from "@/lib/router";
 import { supabase } from "@/integrations/supabase/client";
@@ -60,6 +60,8 @@ type CartItem = {
   bulk_min_qty?: number | null;
   price_overridden?: boolean;
   is_bulk?: boolean;
+  line_discount_pct?: number;
+  unit_label?: string;
   // Serialized item fields
   is_serialized?: boolean;
   serial_id?: string | null;
@@ -285,37 +287,137 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
   const clearCart = () => { setCart([]); setDiscount("0"); setDelivery("0"); };
 
   const subtotal = cart.reduce((s, it) => s + it.qty * it.price, 0);
-  const grandTotal = Math.max(0, subtotal - (Number(discount) || 0) + (Number(delivery) || 0));
+  const lineTotal = (it: CartItem) =>
+    it.qty * it.price * (1 - (Number(it.line_discount_pct) || 0) / 100);
+  const subtotalAfterLineDisc = cart.reduce((s, it) => s + lineTotal(it), 0);
+  const grandTotal = Math.max(0, subtotalAfterLineDisc - (Number(discount) || 0) + (Number(delivery) || 0));
+
+  // Today's stats (sell or purchase mode)
+  const todayKey = new Date().toISOString().slice(0, 10);
+  const { data: todayStats } = useQuery({
+    queryKey: ["pos-today-stats", current?.id, mode, todayKey],
+    enabled: !!current?.id,
+    queryFn: async () => {
+      if (!current?.id) return { total: 0, items: 0, txns: 0 };
+      const start = new Date(todayKey + "T00:00:00").toISOString();
+      const table = mode === "sell" ? "sales" : "purchases";
+      const itemsTable = mode === "sell" ? "sale_items" : "purchase_items";
+      const fk = mode === "sell" ? "sale_id" : "purchase_id";
+      const { data: txs } = await supabase
+        .from(table)
+        .select("id,total")
+        .eq("shop_id", current.id)
+        .is("deleted_at", null)
+        .gte("created_at", start);
+      const rows = (txs as { id: string; total: number }[]) ?? [];
+      const total = rows.reduce((s, r) => s + Number(r.total || 0), 0);
+      let items = 0;
+      if (rows.length > 0) {
+        const ids = rows.map((r) => r.id);
+        const { data: its } = await supabase
+          .from(itemsTable)
+          .select("qty")
+          .in(fk, ids);
+        items = (((its as unknown) as { qty: number }[]) ?? []).reduce((s, r) => s + Number(r.qty || 0), 0);
+      }
+      return { total, items, txns: rows.length };
+    },
+  });
+
+  // F1 → checkout, F2 → hold (placeholder)
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      const tag = target?.tagName?.toLowerCase();
+      if (tag === "input" || tag === "textarea" || tag === "select") return;
+      if (e.key === "F1") {
+        e.preventDefault();
+        if (cart.length > 0) setCashOpen(true);
+      } else if (e.key === "F2") {
+        e.preventDefault();
+        if (cart.length > 0) {
+          try {
+            const holds = JSON.parse(localStorage.getItem("pos-holds") || "[]");
+            holds.push({ at: Date.now(), mode, cart, discount, delivery });
+            localStorage.setItem("pos-holds", JSON.stringify(holds));
+            toast.success(lang === "bn" ? "অর্ডার হোল্ড করা হয়েছে" : "Order held");
+            clearCart();
+          } catch { /* ignore */ }
+        }
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cart, discount, delivery, mode, lang]);
+
+  const holdsCount = (() => {
+    if (typeof window === "undefined") return 0;
+    try { return (JSON.parse(localStorage.getItem("pos-holds") || "[]") as unknown[]).length; }
+    catch { return 0; }
+  })();
+
+  const unitOptions = [
+    { v: "piece", bn: "পিস", en: "Piece" },
+    { v: "packet", bn: "প্যাকেট", en: "Packet" },
+    { v: "bottle", bn: "বোতল", en: "Bottle" },
+    { v: "can", bn: "ক্যান", en: "Can" },
+    { v: "kg", bn: "কেজি", en: "Kg" },
+    { v: "liter", bn: "লিটার", en: "Liter" },
+    { v: "dozen", bn: "ডজন", en: "Dozen" },
+  ];
+  const unitLabel = (v?: string) => {
+    const u = unitOptions.find((x) => x.v === v);
+    if (!u) return v || (lang === "bn" ? "পিস" : "Piece");
+    return lang === "bn" ? `${u.bn} (${u.en})` : `${u.en} (${u.bn})`;
+  };
+
+  const totalDiscPctDisplay = subtotalAfterLineDisc > 0
+    ? Math.round(((Number(discount) || 0) / subtotalAfterLineDisc) * 100)
+    : 0;
 
   return (
     <div className="w-full px-3 py-3 xl:px-5">
-      <div className="mb-1 text-xs text-muted-foreground">{titleEn}</div>
-      <div className="mb-3 flex items-center justify-between">
+      {/* ───── Top header bar (reference image style) ───── */}
+      <div className="mb-3 flex flex-wrap items-center gap-3 rounded-2xl border bg-card px-3 py-2 shadow-sm">
+        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => nav({ to: "/app/dashboard" })}>
+          <ArrowLeft className="h-4 w-4" />
+        </Button>
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => nav({ to: "/app/dashboard" })}>
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <h1 className="text-xl font-extrabold md:text-2xl">{lang === "bn" ? titleBn : titleEn}</h1>
+          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm">
+            <ShoppingBag className="h-4 w-4" strokeWidth={2.5} />
+          </div>
+          <div className="leading-tight">
+            <div className="text-sm font-bold">{lang === "bn" ? (isSell ? "POS সিস্টেম" : "ক্রয় সিস্টেম") : (isSell ? "POS System" : "Purchase System")}</div>
+            <div className="text-[10px] text-muted-foreground">{lang === "bn" ? "পয়েন্ট অফ সেল" : "Point of Sale"}</div>
+          </div>
         </div>
-        <div className="inline-flex rounded-full border bg-card p-0.5 shadow-sm">
-          <button
-            type="button"
-            onClick={() => setViewMode("grid")}
-            className={`flex h-7 w-9 items-center justify-center rounded-full transition-colors ${viewMode === "grid" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"}`}
-            aria-label="Grid view"
-            title={t("p2c_gridView")}
-          >
-            <LayoutGrid className="h-3.5 w-3.5" />
-          </button>
-          <button
-            type="button"
-            onClick={() => setViewMode("list")}
-            className={`flex h-7 w-9 items-center justify-center rounded-full transition-colors ${viewMode === "list" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"}`}
-            aria-label="List view"
-            title={t("p2c_listView")}
-          >
-            <ListIcon className="h-3.5 w-3.5" />
-          </button>
+
+        {/* Center stats */}
+        <div className="ml-auto flex flex-wrap items-center gap-2">
+          <div className="rounded-xl bg-primary/10 px-3 py-1.5 text-center ring-1 ring-primary/20">
+            <div className="text-[10px] font-semibold text-primary/80">{lang === "bn" ? (isSell ? "আজকের বিক্রয়" : "আজকের ক্রয়") : (isSell ? "Today's Sales" : "Today's Purchase")}</div>
+            <div className="text-sm font-extrabold tabular-nums text-primary">{fmtMoney(todayStats?.total ?? 0, lang)}</div>
+          </div>
+          <div className="rounded-xl bg-amber-100 px-3 py-1.5 text-center ring-1 ring-amber-200 dark:bg-amber-500/15 dark:ring-amber-400/30">
+            <div className="text-[10px] font-semibold text-amber-800 dark:text-amber-200">{lang === "bn" ? "আইটেম বিক্রি" : "Items Sold"}</div>
+            <div className="text-sm font-extrabold tabular-nums text-amber-900 dark:text-amber-100">{todayStats?.items ?? 0}</div>
+          </div>
+          <div className="rounded-xl bg-emerald-100 px-3 py-1.5 text-center ring-1 ring-emerald-200 dark:bg-emerald-500/15 dark:ring-emerald-400/30">
+            <div className="text-[10px] font-semibold text-emerald-800 dark:text-emerald-200">{lang === "bn" ? "লেনদেন" : "Txns"}</div>
+            <div className="text-sm font-extrabold tabular-nums text-emerald-900 dark:text-emerald-100">{todayStats?.txns ?? 0}</div>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <div className="hidden text-right md:block">
+            <div className="text-xs font-semibold">{user?.email?.split("@")[0] ?? "User"}</div>
+            <div className="text-[10px] text-muted-foreground">{current?.name ?? ""}</div>
+          </div>
+          <Button size="sm" className="rounded-full bg-primary text-primary-foreground">
+            <Pause className="mr-1 h-3.5 w-3.5" />
+            {lang === "bn" ? "হোল্ড অর্ডার" : "Hold Orders"} ({holdsCount})
+          </Button>
         </div>
       </div>
 
@@ -323,42 +425,10 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
       <div className="mb-3 lg:hidden">
         <Tabs value={mobileTab} onValueChange={(v) => setMobileTab(v as "products" | "cart")}>
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="products">
-              {t("p2c_products")}
-            </TabsTrigger>
-            <TabsTrigger value="cart">
-              {t("p2c_cart")} ({lang === "bn" ? bnNum(cart.length) : cart.length})
-            </TabsTrigger>
+            <TabsTrigger value="products">{t("p2c_products")}</TabsTrigger>
+            <TabsTrigger value="cart">{t("p2c_cart")} ({cart.length})</TabsTrigger>
           </TabsList>
         </Tabs>
-      </div>
-
-      {/* Top stat strip — colored pills like reference */}
-      <div className="mb-3 hidden gap-2 lg:grid lg:grid-cols-3">
-        <div className="rounded-2xl bg-gradient-to-br from-primary/15 to-primary/5 px-4 py-3 ring-1 ring-primary/20">
-          <div className="text-[10px] font-semibold uppercase tracking-wide text-primary/80">
-            {t("p2c_cart")}
-          </div>
-          <div className="mt-0.5 text-2xl font-extrabold tabular-nums text-primary">
-            {fmtMoney(subtotal, lang)}
-          </div>
-        </div>
-        <div className="rounded-2xl bg-gradient-to-br from-amber-200/60 to-amber-100/30 px-4 py-3 ring-1 ring-amber-300/50 dark:from-amber-500/15 dark:to-amber-500/5 dark:ring-amber-400/30">
-          <div className="text-[10px] font-semibold uppercase tracking-wide text-amber-900/80 dark:text-amber-200/90">
-            {t("p2c_selectedItemsN", { n: "" }).replace(/\s*\(\)\s*/, "")}
-          </div>
-          <div className="mt-0.5 text-2xl font-extrabold tabular-nums text-amber-900 dark:text-amber-100">
-            {lang === "bn" ? bnNum(cart.reduce((s, it) => s + it.qty, 0)) : cart.reduce((s, it) => s + it.qty, 0)}
-          </div>
-        </div>
-        <div className="rounded-2xl bg-gradient-to-br from-emerald-200/60 to-emerald-100/30 px-4 py-3 ring-1 ring-emerald-300/50 dark:from-emerald-500/15 dark:to-emerald-500/5 dark:ring-emerald-400/30">
-          <div className="text-[10px] font-semibold uppercase tracking-wide text-emerald-900/80 dark:text-emerald-200/90">
-            {lang === "bn" ? "লেনদেন" : "Lines"}
-          </div>
-          <div className="mt-0.5 text-2xl font-extrabold tabular-nums text-emerald-900 dark:text-emerald-100">
-            {lang === "bn" ? bnNum(cart.length) : cart.length}
-          </div>
-        </div>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-12">
@@ -430,26 +500,50 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
             </div>
           ) : (
           <>
-          <div className="flex flex-wrap items-center gap-2 p-3">
-            <div className="relative min-w-0 flex-1">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder={t("p2c_searchProduct")}
-                className="h-10 pl-9"
-              />
+          <div className="space-y-2 p-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="relative min-w-0 flex-1">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder={lang === "bn" ? "পণ্যের নাম, SKU বা বারকোড লিখুন (এন্টার চাপুন)..." : "Search product name, SKU or barcode..."}
+                  className="h-10 pl-9"
+                />
+              </div>
+              <BarcodeScannerButton onDetected={handleScannedCode} className="h-10 px-3 flex-none" label={lang === "bn" ? "বারকোড / SKU" : "Barcode / SKU"} />
+              <button
+                type="button"
+                className="h-10 inline-flex items-center gap-1 rounded-md border bg-background px-3 text-xs font-medium text-foreground/80 hover:bg-accent"
+              >
+                {lang === "bn" ? "সব ক্যাটাগরি" : "All Categories"}
+                <ChevronDown className="h-3.5 w-3.5" />
+              </button>
+              <Button size="icon" variant="outline" className="h-10 w-10 flex-none" onClick={() => setQuickOpen(true)} aria-label="Quick add" title={lang === "bn" ? "দ্রুত যোগ" : "Quick add"}>
+                <Plus className="h-4 w-4" />
+              </Button>
+              <Button variant="outline" size="icon" className="h-10 w-10 flex-none" onClick={loadProducts} aria-label="Refresh">
+                <RefreshCw className="h-4 w-4" />
+              </Button>
+              <div className="ml-auto inline-flex rounded-full border bg-card p-0.5 shadow-sm">
+                <button type="button" onClick={() => setViewMode("grid")}
+                  className={`flex h-7 w-9 items-center justify-center rounded-full transition-colors ${viewMode === "grid" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"}`}>
+                  <LayoutGrid className="h-3.5 w-3.5" />
+                </button>
+                <button type="button" onClick={() => setViewMode("list")}
+                  className={`flex h-7 w-9 items-center justify-center rounded-full transition-colors ${viewMode === "list" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"}`}>
+                  <ListIcon className="h-3.5 w-3.5" />
+                </button>
+              </div>
             </div>
-            <BarcodeScannerButton
-              onDetected={handleScannedCode}
-              className="h-10 w-10 flex-none"
-            />
-            <Button size="icon" className="h-10 w-10 flex-none" onClick={() => setQuickOpen(true)} aria-label="Quick add">
-              <Plus className="h-4 w-4" />
-            </Button>
-            <Button variant="outline" size="icon" className="h-10 w-10 flex-none" onClick={loadProducts} aria-label="Refresh">
-              <RefreshCw className="h-4 w-4" />
-            </Button>
+            {/* F-key shortcut row */}
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] font-medium text-muted-foreground">
+              <span><kbd className="rounded bg-muted px-1 py-px text-[10px]">F1</kbd>: {lang === "bn" ? "চেকআউট" : "Checkout"}</span>
+              <span><kbd className="rounded bg-muted px-1 py-px text-[10px]">F2</kbd>: {lang === "bn" ? "হোল্ড" : "Hold"}</span>
+              <span><kbd className="rounded bg-muted px-1 py-px text-[10px]">F3</kbd>: {lang === "bn" ? "ড্রয়ার" : "Drawer"}</span>
+              <span><kbd className="rounded bg-muted px-1 py-px text-[10px]">F4</kbd>: {lang === "bn" ? "আর্থ" : "Earn"}</span>
+              <span><kbd className="rounded bg-muted px-1 py-px text-[10px]">F5</kbd>: {lang === "bn" ? "প্রিন্ট" : "Print"}</span>
+            </div>
           </div>
           <div className="max-h-[60vh] overflow-y-auto px-3 pb-3">
             {filtered.length === 0 ? (
@@ -484,9 +578,9 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
                       type="button"
                       onClick={() => addToCart(p)}
                       disabled={outOfStock}
-                      className={`group relative flex flex-col overflow-hidden rounded-xl border bg-card text-center shadow-sm transition-all hover:shadow-md ${inCart ? "ring-2 ring-primary bg-primary/5" : ""} ${outOfStock ? "opacity-50 cursor-not-allowed" : ""}`}
+                      className={`group relative flex flex-col overflow-hidden rounded-xl border bg-card text-center shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5 ${inCart ? "ring-2 ring-primary bg-primary/5" : ""} ${outOfStock ? "opacity-50 cursor-not-allowed" : ""}`}
                     >
-                      <div className="relative aspect-square w-full overflow-hidden bg-muted/30">
+                      <div className="relative mx-auto mt-2 h-16 w-16 overflow-hidden rounded-lg bg-muted/30">
                         {p.image_url ? (
                           <img src={p.image_url} alt={p.name} loading="lazy" decoding="async" className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105" />
                         ) : (
@@ -495,26 +589,30 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
                           </div>
                         )}
                         {inCart && (
-                          <span className="absolute left-1 top-1 rounded-full bg-primary px-1 py-px text-[9px] font-bold text-primary-foreground shadow">
+                          <span className="absolute -left-1 -top-1 rounded-full bg-primary px-1.5 py-px text-[9px] font-bold text-primary-foreground shadow">
                             ×{inCart.qty}
                           </span>
                         )}
-                        <span className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground shadow ring-1 ring-background transition-transform group-hover:scale-110">
+                        <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground shadow ring-1 ring-background transition-transform group-hover:scale-110">
                           <Plus className="h-3 w-3" strokeWidth={3} />
                         </span>
                       </div>
-                      <div className="flex flex-1 flex-col items-center px-2 py-2">
-                        <div className="line-clamp-2 min-h-[2.2em] text-[11px] font-medium leading-tight text-foreground">
+                      <div className="flex flex-1 flex-col items-center justify-center px-2 py-2">
+                        <div className="line-clamp-1 text-sm font-semibold leading-tight text-foreground">
                           {p.name}
                         </div>
-                        <div className="mt-1 text-sm font-extrabold leading-none text-primary tabular-nums">
-                          {fmtMoney(price, lang)}
-                          {p.unit && <span className="ml-0.5 text-[9px] font-normal text-muted-foreground">/{p.unit}</span>}
+                        {((p as unknown as { variant_label?: string | null }).variant_label) && (
+                          <div className="mt-0.5 line-clamp-1 text-[10px] text-muted-foreground">
+                            {(p as unknown as { variant_label?: string | null }).variant_label}
+                          </div>
+                        )}
+                        <div className="mt-1 text-lg font-extrabold leading-none text-primary tabular-nums">
+                          ৳{Math.round(price)}
                         </div>
                         <div className="mt-1 text-[10px] text-muted-foreground">
-                          {t("p2c_stock")}:{" "}
+                          {lang === "bn" ? "স্টক" : "Stock"}:{" "}
                           <span className={p.stock <= 0 ? "font-semibold text-destructive" : "font-medium text-foreground/70"}>
-                            {p.stock}
+                            {p.stock} {p.unit || ""}
                           </span>
                         </div>
                       </div>
@@ -588,101 +686,205 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
 
         {/* Cart */}
         <div className={`rounded-xl border bg-card lg:col-span-4 ${mobileTab === "products" ? "hidden lg:block" : ""}`}>
-          <div className="flex items-center justify-between border-b p-3">
-            <div className="text-sm font-semibold">
-              {t("p2c_selectedItemsN", { n: lang === "bn" ? bnNum(cart.length) : cart.length })}
+          <div className="flex items-center justify-between border-b bg-primary/5 p-3">
+            <div className="inline-flex items-center gap-2 text-sm font-bold text-primary">
+              <ShoppingCart className="h-4 w-4" />
+              {lang === "bn" ? "কার্ট" : "Cart"} ({cart.length})
             </div>
             {cart.length > 0 && (
               <Button variant="ghost" size="sm" onClick={clearCart}>
-                {t("p2c_clearCart")}
+                {lang === "bn" ? "খালি" : "Clear"}
               </Button>
             )}
           </div>
-          <div className="max-h-[50vh] overflow-y-auto p-3">
+          <div className="max-h-[55vh] space-y-2 overflow-y-auto p-3">
             {cart.length === 0 ? (
               <EmptyState icon={<ShoppingCart className="h-6 w-6" />} title={t("p2c_cartEmpty")} />
             ) : (
-              <table className="w-full text-xs">
-                <thead className="text-[10px] uppercase text-muted-foreground">
-                  <tr className="border-b">
-                    <th className="w-6 py-1 text-left font-medium">#</th>
-                    <th className="py-1 text-left font-medium">{t("p2c_item")}</th>
-                    <th className="w-16 py-1 text-right font-medium">{t("p2c_price")}</th>
-                    <th className="w-14 py-1 text-center font-medium">{t("p2c_qty")}</th>
-                    <th className="w-16 py-1 text-right font-medium">{t("p2c_total")}</th>
-                    <th className="w-7" />
-                  </tr>
-                </thead>
-                <tbody>
-                  {cart.map((it, idx) => (
-                    <tr key={idx} className="border-b align-middle">
-                      <td className="py-1 text-muted-foreground">{lang === "bn" ? bnNum(idx + 1) : idx + 1}</td>
-                      <td className="py-1 pr-1">
-                        <div className="line-clamp-2 break-words font-medium leading-tight">{it.name}</div>
-                        {it.is_bulk && (
-                          <span className="text-[9px] font-semibold text-primary">[{t("p2c_bulk")}]</span>
+              cart.map((it, idx) => {
+                const prod = it.product_id ? products.find((p) => p.id === it.product_id) : null;
+                const lt = lineTotal(it);
+                return (
+                  <div key={idx} className="rounded-xl border bg-card p-2.5 shadow-sm">
+                    {/* Header row */}
+                    <div className="flex items-start gap-2">
+                      <div className="flex h-10 w-10 flex-none items-center justify-center overflow-hidden rounded-md bg-muted">
+                        {prod?.image_url ? (
+                          <img src={prod.image_url} alt={it.name} className="h-full w-full object-cover" />
+                        ) : (
+                          <Package className="h-5 w-5 text-muted-foreground" />
                         )}
-                      </td>
-                      <td className="py-1">
-                        <Input type="number" value={it.price}
-                          className="h-7 w-full px-1 text-right text-xs"
-                          onChange={(e) => updateCart(idx, { price: Number(e.target.value) || 0 })} />
-                      </td>
-                      <td className="py-1">
-                        <Input type="number" value={it.qty}
-                          className="h-7 w-full px-1 text-center text-xs"
-                          onChange={(e) => updateCart(idx, { qty: Math.max(1, Number(e.target.value) || 1) })} />
-                      </td>
-                      <td className="py-1 text-right font-semibold">{fmtMoney(it.qty * it.price, lang)}</td>
-                      <td className="py-1">
-                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => removeCart(idx)}>
-                          <X className="h-3 w-3" />
-                        </Button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="line-clamp-1 text-sm font-semibold leading-tight">{it.name}</div>
+                        {(prod?.sku || prod?.barcode) && (
+                          <div className="text-[10px] text-muted-foreground">SKU: {prod?.sku || prod?.barcode}</div>
+                        )}
+                      </div>
+                      <button type="button" onClick={() => removeCart(idx)}
+                        className="text-destructive/70 hover:text-destructive">
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+
+                    {/* Unit selector */}
+                    {it.item_type !== "service" && (
+                      <div className="mt-2">
+                        <select
+                          value={it.unit_label || prod?.unit || "piece"}
+                          onChange={(e) => updateCart(idx, { unit_label: e.target.value })}
+                          className="h-8 w-full rounded-md border bg-background px-2 text-xs"
+                        >
+                          {unitOptions.map((u) => (
+                            <option key={u.v} value={u.v}>{lang === "bn" ? `${u.bn} (${u.en})` : `${u.en} (${u.bn})`}</option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+
+                    {/* Unit Price + Discount */}
+                    <div className="mt-2 grid grid-cols-2 gap-2">
+                      <div>
+                        <div className="mb-0.5 text-[10px] text-muted-foreground">Unit Price</div>
+                        <div className="relative">
+                          <Input type="number" value={it.price}
+                            className="h-8 pr-10 text-right text-xs tabular-nums"
+                            onChange={(e) => updateCart(idx, { price: Number(e.target.value) || 0 })} />
+                          <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">টাকা</span>
+                        </div>
+                      </div>
+                      <div>
+                        <div className="mb-0.5 text-[10px] text-muted-foreground">{lang === "bn" ? "ডিসকাউন্ট" : "Discount"}</div>
+                        <div className="relative">
+                          <Input type="number" value={it.line_discount_pct ?? 0}
+                            className="h-8 pr-8 text-right text-xs tabular-nums"
+                            onChange={(e) => {
+                              const v = Math.max(0, Math.min(100, Number(e.target.value) || 0));
+                              updateCart(idx, { line_discount_pct: v });
+                            }} />
+                          <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">%</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Quick add + qty stepper + line total */}
+                    <div className="mt-2 flex items-center justify-between gap-2">
+                      <div className="inline-flex gap-1">
+                        {[1, 2, 5].map((n) => (
+                          <button key={n} type="button"
+                            onClick={() => updateCart(idx, { qty: it.qty + n })}
+                            className="rounded-md border bg-primary/10 px-1.5 py-0.5 text-[10px] font-bold text-primary hover:bg-primary/20">
+                            +{n}
+                          </button>
+                        ))}
+                      </div>
+                      <div className="inline-flex items-center rounded-md border">
+                        <button type="button" onClick={() => updateCart(idx, { qty: Math.max(1, it.qty - 1) })}
+                          className="flex h-7 w-7 items-center justify-center text-muted-foreground hover:text-foreground">
+                          <Minus className="h-3 w-3" />
+                        </button>
+                        <input type="number" value={it.qty}
+                          onChange={(e) => updateCart(idx, { qty: Math.max(1, Number(e.target.value) || 1) })}
+                          className="h-7 w-10 border-x bg-transparent text-center text-xs font-semibold tabular-nums outline-none" />
+                        <button type="button" onClick={() => updateCart(idx, { qty: it.qty + 1 })}
+                          className="flex h-7 w-7 items-center justify-center text-muted-foreground hover:text-foreground">
+                          <Plus className="h-3 w-3" />
+                        </button>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-[9px] uppercase text-muted-foreground">{lang === "bn" ? "মোট" : "Total"}</div>
+                        <div className="text-sm font-extrabold tabular-nums text-primary">{fmtMoney(lt, lang)}</div>
+                      </div>
+                    </div>
+
+                    {it.is_bulk && (
+                      <div className="mt-1 text-[9px] font-semibold text-primary">[{t("p2c_bulk")} pricing applied]</div>
+                    )}
+                  </div>
+                );
+              })
             )}
           </div>
 
           {/* Totals */}
           <div className="space-y-2 border-t p-3 text-sm">
-            <div className="flex items-center justify-between">
-              <span className="text-muted-foreground">{t("p2c_subtotal")}</span>
-              <span className="font-semibold">{fmtMoney(subtotal, lang)}</span>
+            {/* Bulk-discount-all helper */}
+            <div className="flex items-center justify-between gap-2 rounded-md bg-muted/30 px-2 py-1.5">
+              <span className="text-[11px] text-muted-foreground">{lang === "bn" ? "সকল আইটেমে ডিসকাউন্ট একসাথে:" : "Discount all items:"}</span>
+              <Button size="sm" variant="outline" className="h-6 text-[10px]"
+                onClick={() => {
+                  const v = window.prompt(lang === "bn" ? "ডিসকাউন্ট % (০-১০০)" : "Discount % (0-100)", "0");
+                  if (v === null) return;
+                  const pct = Math.max(0, Math.min(100, Number(v) || 0));
+                  setCart((prev) => prev.map((it) => ({ ...it, line_discount_pct: pct })));
+                }}>
+                {lang === "bn" ? "প্রয়োগ করুন" : "Apply"}
+              </Button>
             </div>
+
             <div className="flex items-center justify-between gap-2">
-              <span className="text-muted-foreground">{t("p2c_discount")}</span>
-              <Input type="number" value={discount} onChange={(e) => setDiscount(e.target.value)} className="h-8 w-28 text-right" />
+              <span className="text-muted-foreground">{lang === "bn" ? "নির্দিষ্ট পরিমাণ ছাড়" : "Fixed discount"}</span>
+              <div className="relative">
+                <Input type="number" value={discount} onChange={(e) => setDiscount(e.target.value)}
+                  className="h-8 w-28 pr-8 text-right" />
+                <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">৳</span>
+              </div>
             </div>
             <div className="flex items-center justify-between gap-2">
               <span className="text-muted-foreground">{t("p2c_delivery")}</span>
               <Input type="number" value={delivery} onChange={(e) => setDelivery(e.target.value)} className="h-8 w-28 text-right" />
             </div>
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span>{lang === "bn" ? "সাবটোটাল" : "Subtotal"}</span>
+              <span className="tabular-nums">{fmtMoney(subtotalAfterLineDisc, lang)}</span>
+            </div>
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span>{lang === "bn" ? "ছাড়" : "Discount"} ({totalDiscPctDisplay}%)</span>
+              <span className="tabular-nums">-{fmtMoney(Number(discount) || 0, lang)}</span>
+            </div>
             <div className="flex items-center justify-between border-t pt-2">
-              <span className="text-base font-semibold">{t("p2c_grandTotal")}</span>
-              <span className="text-lg font-extrabold text-primary">{fmtMoney(grandTotal, lang)}</span>
+              <span className="text-base font-bold">{lang === "bn" ? "মোট:" : "Total:"}</span>
+              <span className="text-xl font-extrabold text-primary tabular-nums">{fmtMoney(grandTotal, lang)}</span>
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-2 p-3">
             <Button
               variant="outline"
-              className="h-12 border-emerald-500 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800 dark:hover:bg-emerald-950"
+              className="h-12 border-amber-500 bg-amber-50 font-bold text-amber-700 hover:bg-amber-100 dark:bg-amber-500/10 dark:hover:bg-amber-500/20"
+              disabled={cart.length === 0}
+              onClick={() => {
+                try {
+                  const holds = JSON.parse(localStorage.getItem("pos-holds") || "[]");
+                  holds.push({ at: Date.now(), mode, cart, discount, delivery });
+                  localStorage.setItem("pos-holds", JSON.stringify(holds));
+                  toast.success(lang === "bn" ? "অর্ডার হোল্ড করা হয়েছে" : "Order held");
+                  clearCart();
+                } catch { /* ignore */ }
+              }}
+            >
+              <Pause className="mr-1 h-4 w-4" />
+              {lang === "bn" ? "হোল্ড (F2)" : "Hold (F2)"}
+            </Button>
+            <Button
+              className="h-12 font-bold"
               disabled={cart.length === 0}
               onClick={() => setCashOpen(true)}
             >
-              {t("p2c_cashArrow")}
-            </Button>
-            <Button
-              className="h-12 bg-amber-500 text-white hover:bg-amber-600"
-              disabled={cart.length === 0}
-              onClick={() => setDueOpen(true)}
-            >
-              {t("p2c_dueArrow")}
+              <ShoppingBag className="mr-1 h-4 w-4" />
+              {lang === "bn" ? "চেকআউট (F1)" : "Checkout (F1)"}
             </Button>
           </div>
+          {/* Due row */}
+          {isSell && (
+            <div className="border-t p-3">
+              <Button variant="ghost" className="h-9 w-full text-xs text-muted-foreground hover:text-foreground"
+                disabled={cart.length === 0}
+                onClick={() => setDueOpen(true)}>
+                {t("p2c_dueArrow")}
+              </Button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -722,8 +924,11 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
         onClose={() => setCashOpen(false)}
         mode={mode}
         kind="cash"
-        cart={cart}
-        subtotal={subtotal}
+        cart={cart.map((it) => ({
+          ...it,
+          price: it.price * (1 - (Number(it.line_discount_pct) || 0) / 100),
+        }))}
+        subtotal={subtotalAfterLineDisc}
         discount={Number(discount) || 0}
         delivery={Number(delivery) || 0}
         grandTotal={grandTotal}
@@ -734,8 +939,11 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
         onClose={() => setDueOpen(false)}
         mode={mode}
         kind="due"
-        cart={cart}
-        subtotal={subtotal}
+        cart={cart.map((it) => ({
+          ...it,
+          price: it.price * (1 - (Number(it.line_discount_pct) || 0) / 100),
+        }))}
+        subtotal={subtotalAfterLineDisc}
         discount={Number(discount) || 0}
         delivery={Number(delivery) || 0}
         grandTotal={grandTotal}

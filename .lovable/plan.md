@@ -1,66 +1,117 @@
 
-# Sidebar style + POS card polish + English digits
+# POS page (বিক্রয়/ক্রয়) — Reference image অনুযায়ী full redesign
 
-আগের ৩-চারবার বলা according to:
-- Menu item/order/section/brand/footer — কোনোটাই change হবে না
-- শুধু visual styling ও digit handling change
+File: `src/components/app/POSPage.tsx` (single file change, supporting i18n string add)
 
-## ১. Sidebar menu item styling
+আগের মতই — **menu/route/business logic অপরিবর্তিত**, শুধু POS page-এর visual layout reference image-এর মত করা হবে। একটাই নতুন feature: **per-line discount %** (user explicitly চেয়েছে)।
 
-ফাইল: `src/components/app/AppSidebar.tsx`, `src/pages/customer/CustomerLayout.tsx`, `src/components/admin/AdminSidebar.tsx`
+## ১. Top bar (header strip)
 
-পরিবর্তন:
-- প্রতিটা menu item-এর colored primary square (h-7 w-7) সরিয়ে দিব
-- নতুন pattern: simple outline lucide icon (h-5 w-5, `text-muted-foreground`) + label
-- Active item: `bg-primary/10 text-primary font-semibold rounded-md` (soft tint, reference-এর মত)
-- Inactive: `text-foreground/80 hover:bg-accent/60`
-- Row height `h-9`, gap-3, px-3
-- তিন sidebar-এ same class pattern
-- Brand header, section label, footer, collapse button — সব অপরিবর্তিত
+বর্তমান: title + grid/list toggle, তারপর আলাদা ৩-card stat strip।
 
-## ২. Bangla font load
+নতুন (reference-এর মত এক row-এ):
+- বাম দিকে: গোল primary badge `POS` icon + "POS System / Point of Sale" lockup
+- মাঝে: তিনটে compact rounded stat pill side-by-side
+  - **আজকের বিক্রয়** — ৳ আজকের sales total (sell mode) / ক্রয় total (purchase mode)
+  - **আইটেম বিক্রি** — আজকের sold items count
+  - **লেনদেন** — আজকের transactions count
+- ডান দিকে: user name (`Mahfuz Sakib` style) + primary pill button "হোল্ড অর্ডার (০)"
 
-ফাইল: `index.html` বা `src/styles.css`
+আজকের stat-গুলো cheap query (existing `sales`/`purchases` table) — অথবা placeholder `০` দেখাব আর `TODO` রাখব backend-wired later (user স্পষ্ট করলে)। **Default: today's actual values থেকে aggregate**।
 
-- Google Fonts থেকে "Hind Siliguri" import (reference-এর Bangla font)
-- `body { font-family: 'Hind Siliguri', system-ui, ... }` set
-- Existing English font fallback রাখব
+## ২. F-key shortcut row
 
-## ৩. English digits সর্বত্র
+Search bar-এর নিচে একটা thin row (reference-এ "F1: চেকআউট  F2: হোল্ড  F3: ড্রয়ার  F4: আর্থ  F5: প্রিন্ট"):
+- ছোট muted text chip-style, কেবল visual hint। F1/F2 already handled by checkout/hold buttons; F3-F5 placeholder hint দেখাব।
 
-ফাইল: `src/lib/i18n.ts`
+## ৩. Search row redesign
 
-- `bnNum()` function → সবসময় English digit return করবে (Bangla conversion সরাব)
-- `fmtMoney()` automatically এতে English digit দেখাবে কারণ এটা `bnNum` ব্যবহার করে
-- এক জায়গায় change — POS, Dashboard, cart, invoice, report সব জায়গায় টাকা/সংখ্যা English
-- বাংলা text যেমন আছে তেমন থাকবে
+বর্তমান: search + barcode + plus + refresh।
 
-## ৪. POS product card styling polish
+নতুন: 
+- বড় search input (icon left, "পণ্যের নাম, SKU বা বারকোড লিখুন (এন্টার চাপুন)..." placeholder) 
+- ডান পাশে badge-button "বারকোড / SKU" (scanner trigger)
+- তারপর "সব ক্যাটাগরি ▾" dropdown (categories filter — existing `category` field থেকে)
+- Plus / refresh button দুটো ছোট icon button পাশে
 
-ফাইল: `src/components/app/POSPage.tsx`
+## ৪. Product card (reference-এর মত)
 
-- Product card background: clean white/card, soft shadow
-- Image area aspect-square (যেটা আছে)
-- নাম center, font-medium
-- Price বড় (text-lg), bold, `text-primary` (reference-এর মত colored ৳)
-- "স্টক: 851 পিস" — ছোট text-muted-foreground, center
-- Selected: `ring-2 ring-primary` + `bg-primary/5`
-- Logic, handler, layout grid — অপরিবর্তিত
+বর্তমান card মোটামুটি similar, কিন্তু adjust:
+- **Image area ছোট** (aspect-square কিন্তু compact, max ~96-110px)
+- নিচে **বড় product name** (text-sm font-semibold, 1 line truncate)
+- নাম-এর নিচে ছোট muted variant/category label (e.g. "ড্রিংকস")
+- তারপর **price বড় ও primary color** এ — `৳30` style (text-xl extrabold text-primary)
+- সর্বশেষ ছোট muted "স্টক: 851 পিস"
+- Selected/in-cart হলে `ring-2 ring-primary bg-primary/5`
+- Image-এর right-top-এ ছোট `+` plus-badge রাখব (existing pattern, keep)
 
-## ফাইল সারাংশ
+## ৫. Cart panel (sidebar, reference-এর মত) — সবচেয়ে বড় visual change
+
+বর্তমান cart একটা compact table। Reference-এ প্রতিটি cart item আলাদা **rich card** হিসেবে দেখানো হয়েছে:
+
+প্রতি cart line card:
+```
+[img] Product Name                      [🗑 delete]
+      SKU: PER001
+      ┌──────────────────────────┐
+      │ পিস (Piece) ▾            │   ← unit dropdown
+      └──────────────────────────┘
+      Unit Price            ডিসকাউন্ট
+      [  ৳30   ] টাকা       [  0  ] %
+      [+1] [+2] [+5]   [− 1 +]  Piece    মোট
+                                          ৳30
+```
+
+Components per line:
+1. Header row: 32×32 thumbnail + name (font-medium) + delete icon
+2. SKU line (muted, small)
+3. Unit selector — `<select>` showing `unit` (default product.unit, options: পিস/Piece, প্যাকেট/Packet, বোতল/Bottle, ক্যান/Can, কেজি/Kg, লিটার/Liter — common Bangla retail units). শুধু display label পরিবর্তন; pricing-এ effect নেই unless explicitly mapped। **MVP**: unit একটা informational dropdown — actual price একই থাকবে (user later বললে pack-size pricing wire করব)।
+4. Two-column row: Unit Price input (number, taka label) + Discount input (number, % label)
+5. Quick-add chips: `+1` `+2` `+5` (qty increment buttons)
+6. Qty stepper `− N +` with unit label "Piece"
+7. মোট badge (right-aligned): line total after per-line discount = `qty × price × (1 - discount%/100)`
+
+### Per-line discount logic
+- `CartItem`-এ `line_discount_pct?: number` field add (default 0)
+- Line total = `qty * price * (1 - line_discount_pct/100)`
+- Subtotal = sum of line totals
+- Cart-level overall discount existing থাকবে (নিচে separately)
+
+## ৬. Cart bottom totals + actions (reference-এর মত)
+
+cart-এর নিচে:
+- "সকল আইটেমে ডিসকাউন্ট একসাথে দিতে চান: [প্রয়োগ করুন]" — single button যা একটা ডিসকাউন্ট % সব line-এ apply করবে (small dialog with % input)
+- "নিদিষ্ট পরিমাণ ছাড় [ — ] [% / টাকা toggle] [Enter চাপুন]" — overall discount input (existing discount field, with % vs taka toggle)
+- Note line: "আপনার নগদ পরিশোধ এর Enter চাপুন" (muted helper text)
+- সাবটোটাল: ৳N
+- ছাড় (0%): ৳N
+- **মোট:** ৳N (large primary)
+- দুটো বড় action buttons পাশাপাশি:
+  - amber outline: "হোল্ড (F2)"
+  - primary blue: "চেকআউট (F1)"
+- F1/F2 keyboard shortcut wire করব (existing cashOpen → F1, simple hold = save to localStorage placeholder for F2)
+
+## ৭. যা পরিবর্তন হবে না
+
+- Routes, menu, sidebar, permissions
+- Backend tables/columns
+- Sales/purchase save logic, invoice generation, serial picking, services tab
+- Bulk pricing logic (already exists for "5 packet কিনলে discount" — keep as-is, will trigger automatically when bulk_min_qty met)
+- Mobile tab structure
+
+## ৮. Technical notes
+
+- New CartItem field: `line_discount_pct?: number`
+- Subtotal computation update to respect per-line discount
+- `unit` dropdown options list: hardcoded array `[পিস, প্যাকেট, বোতল, ক্যান, কেজি, লিটার, ডজন, পিচ]` with en labels
+- Categories dropdown: derive from `products[].category` distinct values
+- F1/F2 hotkeys: `useEffect` keydown listener
+- All digits English (already done globally via `bnNum`)
+- Color tokens: `text-primary`, `bg-primary/5`, semantic — no hardcoded hex
+
+## File summary
 
 | File | কাজ |
 |---|---|
-| `src/lib/i18n.ts` | `bnNum()` always English |
-| `index.html` | Hind Siliguri font link |
-| `src/styles.css` | font-family update |
-| `src/components/app/AppSidebar.tsx` | item style (square সরিয়ে flat icon + active tint) |
-| `src/pages/customer/CustomerLayout.tsx` | same item style |
-| `src/components/admin/AdminSidebar.tsx` | same item style |
-| `src/components/app/POSPage.tsx` | product card price/stock styling |
-
-## যা পরিবর্তন হবে না
-
-- Menu items, order, section, brand header, sidebar footer, collapse logic
-- কোনো business logic, route, permission, handler, hotkey
-- POS structure, cart logic, checkout flow
+| `src/components/app/POSPage.tsx` | পুরো layout reference-image-এর মত redesign + per-line discount + unit selector + F-shortcut row + category filter + rich cart cards |
+| `src/lib/i18n.tsx` | কয়েকটা নতুন translation key (unit names, F-shortcut labels, "আজকের বিক্রয়" ইত্যাদি) |
