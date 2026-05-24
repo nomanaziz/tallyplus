@@ -1,12 +1,16 @@
 import { get, set, del, keys, createStore } from "idb-keyval";
 import { supabase } from "@/integrations/supabase/client";
 
-export type QueueOp = "insert" | "delete";
+export type QueueOp = "insert" | "update" | "delete";
 export type QueuedMutation = {
   id: string;
   table: string;
   op: QueueOp;
-  /** For insert: the row payload. For delete: a record with the eq filters (e.g. { id: "..." }) */
+  /**
+   * For insert: the row payload.
+   * For delete: a record with the eq filters (e.g. { id: "..." }).
+   * For update: shape `{ set: {...fields}, match: {...filters} }`.
+   */
   payload: Record<string, unknown>;
   /** For delete: which column(s) to match. Defaults to ["id"]. */
   matchOn?: string[];
@@ -79,6 +83,15 @@ export async function flushQueue(): Promise<{ pushed: number; remaining: number;
       try {
         if (item.op === "insert") {
           const { error } = await supabase.from(item.table as never).insert(item.payload as never);
+          if (error) throw error;
+        } else if (item.op === "update") {
+          const set = (item.payload as { set?: Record<string, unknown> }).set ?? {};
+          const match = (item.payload as { match?: Record<string, unknown> }).match ?? {};
+          let q = supabase.from(item.table as never).update(set as never);
+          for (const c of Object.keys(match)) {
+            q = q.eq(c, match[c] as never);
+          }
+          const { error } = await q;
           if (error) throw error;
         } else if (item.op === "delete") {
           const cols = item.matchOn ?? ["id"];
