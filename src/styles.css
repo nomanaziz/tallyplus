@@ -4,12 +4,10 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* Global Bengali-friendly font stack. Uses Noto Sans Bengali as the
-   primary UI font — its digit forms (especially ১) are far more
-   legible on screens than Hind Siliguri / Tiro Bangla. Hind Siliguri
-   stays as a fallback for wider weight coverage. */
+/* Global Bengali UI font. Hind Siliguri matches the reference design —
+   rounder, friendlier Bangla letterforms with full weight coverage. */
 html, body {
-  font-family: "Noto Sans Bengali", "Hind Siliguri", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-family: "Hind Siliguri", "Noto Sans Bengali", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   font-feature-settings: "lnum" 1;
 }
 
