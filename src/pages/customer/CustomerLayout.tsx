@@ -87,7 +87,7 @@ export default function CustomerLayout() {
                 <Link
                   key={to}
                   to={to}
-                  activeProps={{ className: "bg-primary/10 font-semibold text-primary [&_svg]:text-primary" }}
+                  activeProps={{ className: "bg-primary/15 font-bold text-primary shadow-sm [&_svg]:text-primary [&_svg]:stroke-[2.5]" }}
                   inactiveProps={{ className: "text-foreground/80 hover:bg-accent/60 [&_svg]:text-muted-foreground" }}
                   className="group flex h-9 items-center gap-3 rounded-lg px-3 text-[13px] leading-tight transition-colors"
                 >
