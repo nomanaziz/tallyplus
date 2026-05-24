@@ -500,26 +500,50 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
             </div>
           ) : (
           <>
-          <div className="flex flex-wrap items-center gap-2 p-3">
-            <div className="relative min-w-0 flex-1">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder={t("p2c_searchProduct")}
-                className="h-10 pl-9"
-              />
+          <div className="space-y-2 p-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="relative min-w-0 flex-1">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder={lang === "bn" ? "পণ্যের নাম, SKU বা বারকোড লিখুন (এন্টার চাপুন)..." : "Search product name, SKU or barcode..."}
+                  className="h-10 pl-9"
+                />
+              </div>
+              <BarcodeScannerButton onDetected={handleScannedCode} className="h-10 px-3 flex-none" label={lang === "bn" ? "বারকোড / SKU" : "Barcode / SKU"} />
+              <button
+                type="button"
+                className="h-10 inline-flex items-center gap-1 rounded-md border bg-background px-3 text-xs font-medium text-foreground/80 hover:bg-accent"
+              >
+                {lang === "bn" ? "সব ক্যাটাগরি" : "All Categories"}
+                <ChevronDown className="h-3.5 w-3.5" />
+              </button>
+              <Button size="icon" variant="outline" className="h-10 w-10 flex-none" onClick={() => setQuickOpen(true)} aria-label="Quick add" title={lang === "bn" ? "দ্রুত যোগ" : "Quick add"}>
+                <Plus className="h-4 w-4" />
+              </Button>
+              <Button variant="outline" size="icon" className="h-10 w-10 flex-none" onClick={loadProducts} aria-label="Refresh">
+                <RefreshCw className="h-4 w-4" />
+              </Button>
+              <div className="ml-auto inline-flex rounded-full border bg-card p-0.5 shadow-sm">
+                <button type="button" onClick={() => setViewMode("grid")}
+                  className={`flex h-7 w-9 items-center justify-center rounded-full transition-colors ${viewMode === "grid" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"}`}>
+                  <LayoutGrid className="h-3.5 w-3.5" />
+                </button>
+                <button type="button" onClick={() => setViewMode("list")}
+                  className={`flex h-7 w-9 items-center justify-center rounded-full transition-colors ${viewMode === "list" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"}`}>
+                  <ListIcon className="h-3.5 w-3.5" />
+                </button>
+              </div>
             </div>
-            <BarcodeScannerButton
-              onDetected={handleScannedCode}
-              className="h-10 w-10 flex-none"
-            />
-            <Button size="icon" className="h-10 w-10 flex-none" onClick={() => setQuickOpen(true)} aria-label="Quick add">
-              <Plus className="h-4 w-4" />
-            </Button>
-            <Button variant="outline" size="icon" className="h-10 w-10 flex-none" onClick={loadProducts} aria-label="Refresh">
-              <RefreshCw className="h-4 w-4" />
-            </Button>
+            {/* F-key shortcut row */}
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] font-medium text-muted-foreground">
+              <span><kbd className="rounded bg-muted px-1 py-px text-[10px]">F1</kbd>: {lang === "bn" ? "চেকআউট" : "Checkout"}</span>
+              <span><kbd className="rounded bg-muted px-1 py-px text-[10px]">F2</kbd>: {lang === "bn" ? "হোল্ড" : "Hold"}</span>
+              <span><kbd className="rounded bg-muted px-1 py-px text-[10px]">F3</kbd>: {lang === "bn" ? "ড্রয়ার" : "Drawer"}</span>
+              <span><kbd className="rounded bg-muted px-1 py-px text-[10px]">F4</kbd>: {lang === "bn" ? "আর্থ" : "Earn"}</span>
+              <span><kbd className="rounded bg-muted px-1 py-px text-[10px]">F5</kbd>: {lang === "bn" ? "প্রিন্ট" : "Print"}</span>
+            </div>
           </div>
           <div className="max-h-[60vh] overflow-y-auto px-3 pb-3">
             {filtered.length === 0 ? (
