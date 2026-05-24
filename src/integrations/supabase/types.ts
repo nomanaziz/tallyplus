@@ -1170,6 +1170,45 @@ export type Database = {
           },
         ]
       }
+      brand_balance_entries: {
+        Row: {
+          brand_from: string | null
+          brand_to: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          note: string | null
+          occurred_at: string
+          qty: number
+          shop_id: string
+          size_label: string | null
+        }
+        Insert: {
+          brand_from?: string | null
+          brand_to?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          note?: string | null
+          occurred_at?: string
+          qty?: number
+          shop_id: string
+          size_label?: string | null
+        }
+        Update: {
+          brand_from?: string | null
+          brand_to?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          note?: string | null
+          occurred_at?: string
+          qty?: number
+          shop_id?: string
+          size_label?: string | null
+        }
+        Relationships: []
+      }
       cash_movements: {
         Row: {
           amount: number
@@ -2184,6 +2223,60 @@ export type Database = {
           sort_order?: number
           title_bn?: string | null
           title_en?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      deliveries: {
+        Row: {
+          address: string | null
+          bottle_type_id: string | null
+          created_at: string
+          created_by: string | null
+          customer_id: string | null
+          delivered_at: string | null
+          delivery_man_id: string | null
+          id: string
+          note: string | null
+          phone: string | null
+          qty: number
+          scheduled_at: string | null
+          shop_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          bottle_type_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string | null
+          delivered_at?: string | null
+          delivery_man_id?: string | null
+          id?: string
+          note?: string | null
+          phone?: string | null
+          qty?: number
+          scheduled_at?: string | null
+          shop_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          bottle_type_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string | null
+          delivered_at?: string | null
+          delivery_man_id?: string | null
+          id?: string
+          note?: string | null
+          phone?: string | null
+          qty?: number
+          scheduled_at?: string | null
+          shop_id?: string
+          status?: string
           updated_at?: string
         }
         Relationships: []
@@ -4149,6 +4242,54 @@ export type Database = {
         }
         Relationships: []
       }
+      refill_bookings: {
+        Row: {
+          address: string | null
+          booked_for: string | null
+          bottle_type_id: string | null
+          created_at: string
+          created_by: string | null
+          customer_id: string | null
+          id: string
+          note: string | null
+          phone: string | null
+          qty: number
+          shop_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          booked_for?: string | null
+          bottle_type_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string | null
+          id?: string
+          note?: string | null
+          phone?: string | null
+          qty?: number
+          shop_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          booked_for?: string | null
+          bottle_type_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string | null
+          id?: string
+          note?: string | null
+          phone?: string | null
+          qty?: number
+          shop_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       sale_adjustments: {
         Row: {
           amount: number
@@ -4212,6 +4353,7 @@ export type Database = {
           cost: number
           created_at: string
           id: string
+          is_empty_only: boolean
           item_type: string
           name: string
           price: number
@@ -4226,6 +4368,7 @@ export type Database = {
           cost?: number
           created_at?: string
           id?: string
+          is_empty_only?: boolean
           item_type?: string
           name: string
           price: number
@@ -4240,6 +4383,7 @@ export type Database = {
           cost?: number
           created_at?: string
           id?: string
+          is_empty_only?: boolean
           item_type?: string
           name?: string
           price?: number
@@ -5274,6 +5418,30 @@ export type Database = {
           },
         ]
       }
+      shop_settings: {
+        Row: {
+          capital_set_at: string | null
+          extra: Json
+          opening_capital: number
+          shop_id: string
+          updated_at: string
+        }
+        Insert: {
+          capital_set_at?: string | null
+          extra?: Json
+          opening_capital?: number
+          shop_id: string
+          updated_at?: string
+        }
+        Update: {
+          capital_set_at?: string | null
+          extra?: Json
+          opening_capital?: number
+          shop_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       shop_sms_balance: {
         Row: {
           balance: number
@@ -6009,6 +6177,51 @@ export type Database = {
           },
         ]
       }
+      stock_transfers: {
+        Row: {
+          bottle_type_id: string | null
+          created_at: string
+          created_by: string | null
+          from_warehouse_id: string | null
+          id: string
+          note: string | null
+          product_id: string | null
+          qty: number
+          shop_id: string
+          status: string
+          to_warehouse_id: string | null
+          transferred_at: string
+        }
+        Insert: {
+          bottle_type_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          from_warehouse_id?: string | null
+          id?: string
+          note?: string | null
+          product_id?: string | null
+          qty?: number
+          shop_id: string
+          status?: string
+          to_warehouse_id?: string | null
+          transferred_at?: string
+        }
+        Update: {
+          bottle_type_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          from_warehouse_id?: string | null
+          id?: string
+          note?: string | null
+          product_id?: string | null
+          qty?: number
+          shop_id?: string
+          status?: string
+          to_warehouse_id?: string | null
+          transferred_at?: string
+        }
+        Relationships: []
+      }
       subscription_plans: {
         Row: {
           code: string
@@ -6429,6 +6642,39 @@ export type Database = {
           sort_order?: number
           updated_at?: string
           values?: Json
+        }
+        Relationships: []
+      }
+      warehouses: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          is_default: boolean
+          location: string | null
+          name: string
+          shop_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          location?: string | null
+          name: string
+          shop_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          location?: string | null
+          name?: string
+          shop_id?: string
+          updated_at?: string
         }
         Relationships: []
       }
