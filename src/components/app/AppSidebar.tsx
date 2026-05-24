@@ -132,19 +132,16 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
         onClick={onNavigate}
         data-tour={tourKey}
         className={cn(
-          "group flex items-center gap-2.5 rounded-md py-1.5 text-[13px] leading-tight transition-colors",
-          collapsed ? "justify-center px-1" : "px-2",
-          it.highlight && !active && "bg-primary/15 font-semibold hover:bg-primary/25",
-          active && "bg-primary/25 font-semibold text-foreground",
-          !active && !it.highlight && "hover:bg-sidebar-accent",
+          "group flex items-center gap-3 rounded-lg text-[13px] leading-tight transition-colors",
+          collapsed ? "h-9 justify-center px-1" : "h-9 px-3",
+          active
+            ? "bg-primary/10 font-semibold text-primary"
+            : it.highlight
+              ? "font-semibold text-primary hover:bg-primary/10"
+              : "text-foreground/80 hover:bg-accent/60",
         )}
       >
-        <span className={cn(
-          "flex h-7 w-7 flex-none items-center justify-center rounded-md bg-primary text-primary-foreground shadow-sm",
-          active && "ring-2 ring-primary/40",
-        )}>
-          <it.icon className="h-4 w-4 icon-inherit" />
-        </span>
+        <it.icon className={cn("h-5 w-5 flex-none", active ? "text-primary" : "text-muted-foreground")} />
         {!collapsed && <span className="truncate">{t(it.tKey)}</span>}
       </Link>
     );
@@ -243,11 +240,9 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
                             toast.info(t("useBrowserInstall"), { duration: 6000 });
                           }
                         }}
-                        className="group flex items-center gap-2.5 rounded-md px-2 py-1.5 text-[13px] leading-tight text-emerald-700 transition-colors hover:bg-sidebar-accent dark:text-emerald-400"
+                        className="group flex h-9 items-center gap-3 rounded-lg px-3 text-[13px] leading-tight text-emerald-700 transition-colors hover:bg-accent/60 dark:text-emerald-400"
                       >
-                        <span className="flex h-7 w-7 flex-none items-center justify-center rounded-md bg-primary text-primary-foreground shadow-sm">
-                          <Download className="h-4 w-4 icon-inherit" />
-                        </span>
+                        <Download className="h-5 w-5 flex-none" />
                         <span className="truncate">{t("installApp")}</span>
                       </button>
                     )

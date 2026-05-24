@@ -2098,9 +2098,11 @@ export function I18nProvider({ children }: { children: ReactNode }) {
 
 export const useI18n = () => useContext(I18nCtx);
 
+// Always return English digits across the whole app — money, counts, qty,
+// stock — so users get a single consistent number style regardless of UI
+// language. (Earlier this converted to ০-৯ when in Bangla.)
 export function bnNum(v: number | string) {
-  const map: Record<string, string> = { "0": "০", "1": "১", "2": "২", "3": "৩", "4": "৪", "5": "৫", "6": "৬", "7": "৭", "8": "৮", "9": "৯" };
-  return String(v).replace(/[0-9]/g, (d) => map[d] ?? d);
+  return String(v);
 }
 
 function getCurrency(): string {
@@ -2112,6 +2114,8 @@ export function fmtMoney(v: number, lang: Lang, currency?: string) {
   const cur = currency || getCurrency();
   const sym = CURRENCY_SYMBOLS[cur] || cur;
   const s = (Math.round(v * 100) / 100).toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
-  const out = lang === "bn" ? bnNum(s) : s;
-  return `${sym} ${out}`;
+  // Digits stay English in both languages — only the currency symbol/text
+  // varies. `lang` is kept in the signature for back-compat with callers.
+  void lang;
+  return `${sym} ${s}`;
 }

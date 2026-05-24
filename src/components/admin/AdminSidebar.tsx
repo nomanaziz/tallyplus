@@ -96,18 +96,13 @@ export function AdminSidebar({ onNavigate }: { onNavigate?: () => void }) {
                 to={it.to as never}
                 onClick={onNavigate}
                 className={cn(
-                  "group flex items-center gap-2.5 rounded-md px-2 py-1.5 text-[13px] leading-tight transition-colors",
+                  "group flex h-9 items-center gap-3 rounded-lg px-3 text-[13px] leading-tight transition-colors",
                   active
-                    ? "bg-primary/25 font-semibold text-foreground"
-                    : "hover:bg-sidebar-accent",
+                    ? "bg-primary/10 font-semibold text-primary"
+                    : "text-foreground/80 hover:bg-accent/60",
                 )}
               >
-                <span className={cn(
-                  "flex h-7 w-7 flex-none items-center justify-center rounded-md bg-primary text-primary-foreground shadow-sm",
-                  active && "ring-2 ring-primary/40",
-                )}>
-                  <Icon className="h-4 w-4" />
-                </span>
+                <Icon className={cn("h-5 w-5 flex-none", active ? "text-primary" : "text-muted-foreground")} />
                 <span className="truncate">{it.label}</span>
               </Link>
             );
