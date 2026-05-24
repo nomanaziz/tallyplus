@@ -5614,39 +5614,51 @@ export type Database = {
       }
       shop_types: {
         Row: {
+          category_group: string | null
           code: string
           created_at: string
           default_categories: string[]
           default_modules: string[]
           icon: string | null
           id: string
+          includes_bn: string | null
+          includes_en: string | null
           is_active: boolean
+          is_group_head: boolean
           name_bn: string
           name_en: string
           sort_order: number
           updated_at: string
         }
         Insert: {
+          category_group?: string | null
           code: string
           created_at?: string
           default_categories?: string[]
           default_modules?: string[]
           icon?: string | null
           id?: string
+          includes_bn?: string | null
+          includes_en?: string | null
           is_active?: boolean
+          is_group_head?: boolean
           name_bn: string
           name_en: string
           sort_order?: number
           updated_at?: string
         }
         Update: {
+          category_group?: string | null
           code?: string
           created_at?: string
           default_categories?: string[]
           default_modules?: string[]
           icon?: string | null
           id?: string
+          includes_bn?: string | null
+          includes_en?: string | null
           is_active?: boolean
+          is_group_head?: boolean
           name_bn?: string
           name_en?: string
           sort_order?: number

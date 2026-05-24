@@ -29,6 +29,10 @@ type ShopType = {
   default_categories: string[];
   sort_order: number;
   is_active: boolean;
+  is_group_head?: boolean;
+  category_group?: string | null;
+  includes_bn?: string | null;
+  includes_en?: string | null;
 };
 
 function ShopTypesAdmin() {
@@ -77,6 +81,10 @@ function ShopTypesAdmin() {
       default_categories: cats,
       sort_order: Number(editing.sort_order) || 0,
       is_active: editing.is_active ?? true,
+      is_group_head: editing.is_group_head ?? false,
+      category_group: editing.category_group?.trim() || null,
+      includes_bn: editing.includes_bn?.trim() || null,
+      includes_en: editing.includes_en?.trim() || null,
     };
     const { error } = editing.id
       ? await supabase.from("shop_types").update(payload).eq("id", editing.id)
@@ -129,6 +137,19 @@ function ShopTypesAdmin() {
                     ))}
                   </div>
                 )}
+                <div className="mt-2 flex flex-wrap gap-1">
+                  {s.is_group_head && (
+                    <Badge className="text-[10px]">Group Head</Badge>
+                  )}
+                  {s.category_group && (
+                    <Badge variant="secondary" className="text-[10px]">
+                      group: {s.category_group}
+                    </Badge>
+                  )}
+                  {!s.is_group_head && (
+                    <Badge variant="outline" className="text-[10px]">Legacy</Badge>
+                  )}
+                </div>
                 <Button variant="outline" size="sm" className="mt-3" onClick={() => openEditor(s)}>
                   <Pencil className="mr-1 h-3.5 w-3.5" /> Edit
                 </Button>
@@ -174,6 +195,41 @@ function ShopTypesAdmin() {
                 value={catText}
                 onChange={(e) => setCatText(e.target.value)}
                 placeholder="ওষুধ, বেবি কেয়ার, প্রসাধনী"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Category group</Label>
+                <Input
+                  value={editing?.category_group ?? ""}
+                  onChange={(e) => setEditing({ ...editing, category_group: e.target.value })}
+                  placeholder="retail, wholesale, restaurant, service, lpg, water, digital, online"
+                />
+              </div>
+              <div className="flex items-center gap-2 pt-6">
+                <Switch
+                  checked={editing?.is_group_head ?? false}
+                  onCheckedChange={(v) => setEditing({ ...editing, is_group_head: v })}
+                />
+                <Label>Group head (signup-এ দেখাবে)</Label>
+              </div>
+            </div>
+            <div>
+              <Label>Includes (Bangla) — কোন কোন দোকান এই category-তে পড়ে</Label>
+              <Textarea
+                rows={2}
+                value={editing?.includes_bn ?? ""}
+                onChange={(e) => setEditing({ ...editing, includes_bn: e.target.value })}
+                placeholder="মুদি, ফার্মেসি, স্টেশনারি..."
+              />
+            </div>
+            <div>
+              <Label>Includes (English)</Label>
+              <Textarea
+                rows={2}
+                value={editing?.includes_en ?? ""}
+                onChange={(e) => setEditing({ ...editing, includes_en: e.target.value })}
+                placeholder="Grocery, pharmacy, stationery..."
               />
             </div>
             <div className="grid grid-cols-2 gap-3">
