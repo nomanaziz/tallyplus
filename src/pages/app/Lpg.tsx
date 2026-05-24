@@ -435,6 +435,90 @@ export default function LpgPage() {
           </div>
         </TabsContent>
 
+        {/* DEPOSITS & RETURNS — per-customer cards */}
+        <TabsContent value="deposits" className="mt-3 space-y-3">
+          <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+            <KpiCard icon={<Truck className="h-4 w-4" />} color="from-amber-500 to-orange-600"
+              label={tr("মোট বকেয়া বোতল", "Total bottles out")}
+              value={bnNum(String(totalOut))} />
+            <KpiCard icon={<Wallet className="h-4 w-4" />} color="from-violet-500 to-fuchsia-600"
+              label={tr("মোট জামানত হাতে", "Total deposit held")}
+              value={fmtMoney(totalDeposit, lang)} />
+            <KpiCard icon={<Building2 className="h-4 w-4" />} color="from-sky-500 to-sky-700"
+              label={tr("বকেয়া গ্রাহক", "Customers with dues")}
+              value={bnNum(String(new Set(holdings.map((h) => h.contact_id)).size))} />
+            <KpiCard icon={<ArrowDownToLine className="h-4 w-4" />} color="from-emerald-500 to-emerald-700"
+              label={tr("আজ ফেরত আসা", "Returned today")}
+              value={bnNum(String(emptyReceivedToday))} />
+          </div>
+
+          {holdings.length === 0 ? (
+            <EmptyHint
+              title={tr("কোনো গ্রাহকের কাছে বোতল নেই", "No bottles out with customers")}
+              hint={tr("যখন গ্রাহকের কাছে বোতল যাবে এবং জামানত ধরা থাকবে, এখানে কার্ড আকারে দেখা যাবে।", "Customer holdings and deposits will appear here as cards.")}
+            />
+          ) : (
+            <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-3">
+              {Array.from(
+                holdings.reduce((map, h) => {
+                  const cur = map.get(h.contact_id) ?? { qty: 0, deposit: 0, items: [] as Holding[], last: "" as string };
+                  cur.qty += h.qty;
+                  cur.deposit += Number(h.deposit_held || 0);
+                  cur.items.push(h);
+                  if ((h.last_movement_at ?? "") > cur.last) cur.last = h.last_movement_at ?? "";
+                  map.set(h.contact_id, cur);
+                  return map;
+                }, new Map<string, { qty: number; deposit: number; items: Holding[]; last: string }>())
+              )
+                .sort((a, b) => b[1].qty - a[1].qty)
+                .map(([cid, v]) => {
+                  const contact = contacts.find((c) => c.id === cid);
+                  return (
+                    <div key={cid} className="rounded-xl border bg-card p-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <div className="truncate font-semibold">{contact?.name ?? tr("অজানা", "Unknown")}</div>
+                          {contact?.phone && <div className="text-xs text-muted-foreground">{contact.phone}</div>}
+                        </div>
+                        <Badge variant="secondary" className="bg-amber-100 text-amber-800">
+                          {bnNum(String(v.qty))} {tr("টি বকেয়া", "out")}
+                        </Badge>
+                      </div>
+                      <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
+                        <div className="rounded-md bg-violet-50 px-2 py-1.5 text-violet-700">
+                          <div className="opacity-70">{tr("জামানত", "Deposit")}</div>
+                          <div className="font-bold tabular-nums">{fmtMoney(v.deposit, lang)}</div>
+                        </div>
+                        <div className="rounded-md bg-muted px-2 py-1.5">
+                          <div className="opacity-70">{tr("শেষ আপডেট", "Last")}</div>
+                          <div className="font-medium">{v.last ? new Date(v.last).toLocaleDateString("en-GB") : "—"}</div>
+                        </div>
+                      </div>
+                      <div className="mt-2 space-y-0.5 text-xs">
+                        {v.items.map((it, i) => (
+                          <div key={i} className="flex justify-between text-muted-foreground">
+                            <span className="truncate">{typeName(it.bottle_type_id)}</span>
+                            <span className="tabular-nums">×{bnNum(String(it.qty))}</span>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="mt-2 grid grid-cols-2 gap-1.5">
+                        <Button size="sm" variant="outline" className="text-xs"
+                          onClick={() => openMovement("return_empty", v.items[0]?.bottle_type_id)}>
+                          <ArrowDownToLine className="mr-1 h-3 w-3" />{tr("খালি ফেরত", "Empty back")}
+                        </Button>
+                        <Button size="sm" variant="outline" className="text-xs"
+                          onClick={() => openMovement("return_full", v.items[0]?.bottle_type_id)}>
+                          <Wallet className="mr-1 h-3 w-3" />{tr("জামানত ফেরত", "Refund deposit")}
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+          )}
+        </TabsContent>
+
         {/* BOTTLE TYPES */}
         <TabsContent value="types" className="mt-3 space-y-3">
           <div className="flex justify-end">
