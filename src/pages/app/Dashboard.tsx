@@ -304,26 +304,20 @@ function KpiTile({
   return (
     <Link
       to={to as never}
-      className={`group flex flex-col justify-between rounded-xl border ${tone_.border} ${tone_.card} p-3 shadow-sm transition hover:shadow-md hover:-translate-y-0.5 min-h-[120px]`}
+      className={`group flex flex-col gap-2 rounded-xl border ${tone_.border} ${tone_.card} p-3 shadow-sm transition hover:shadow-md hover:-translate-y-0.5 min-h-[130px]`}
     >
-      <div className="flex items-start justify-between gap-2">
-        <span className="truncate text-xs font-semibold text-foreground/80">{label}</span>
-        {Img ? (
-          <span className={`flex h-9 w-9 flex-none items-center justify-center rounded-lg ${tone_.badge}`}>
-            <Img className="h-5 w-5 icon-inherit" />
-          </span>
-        ) : Icon ? (
-          <span className={`flex h-9 w-9 flex-none items-center justify-center rounded-lg ${tone_.badge}`}>
-            <Icon className="h-5 w-5 icon-inherit" />
-          </span>
-        ) : null}
+      {(Img || Icon) && (
+        <span className={`flex h-8 w-8 flex-none items-center justify-center rounded-lg ${tone_.badge}`}>
+          {Img ? <Img className="h-4.5 w-4.5 icon-inherit" /> : Icon ? <Icon className="h-4.5 w-4.5 icon-inherit" /> : null}
+        </span>
+      )}
+      <div className="text-[28px] leading-none font-extrabold tabular-nums text-foreground">{value}</div>
+      <div className="line-clamp-2 min-h-[2.4em] text-[12px] font-semibold leading-tight text-foreground/85">
+        {label}
       </div>
-      <div>
-        <div className="text-[26px] leading-tight font-extrabold tabular-nums text-foreground">{value}</div>
-        {sub ? <div className="text-[10px] text-foreground/70">{sub}</div> : null}
-        <div className={`mt-1.5 text-[11px] font-medium ${tone_.link} group-hover:underline`}>
-          {t("viewDetails")}
-        </div>
+      {sub ? <div className="text-[10px] text-foreground/60">{sub}</div> : null}
+      <div className={`mt-auto text-[11px] font-medium ${tone_.link} group-hover:underline`}>
+        {t("viewDetails")} →
       </div>
     </Link>
   );
