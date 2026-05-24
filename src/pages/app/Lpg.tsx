@@ -565,17 +565,17 @@ function MovementDialog({
           {isPurchase && (
             <div>
               <Label>{tr("সরবরাহকারী / কোম্পানি", "Supplier / Company")}</Label>
-              {suppliers.length === 0 ? (
-                <p className="mt-1 rounded-md border border-dashed bg-muted/30 p-2 text-xs text-muted-foreground">
-                  {tr("কোনো সরবরাহকারী যোগ করা নেই। 'সরবরাহকারী' পেজ থেকে যোগ করুন (পানির জন্য ঐচ্ছিক)।", "No suppliers added yet. Add from the Suppliers page (optional for water).")}
+              <Select value={supplierId || "__local__"} onValueChange={(v) => setSupplierId(v === "__local__" ? "" : v)}>
+                <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__local__">🏠 {tr("লোকাল সরবরাহকারী (ডিফল্ট)", "Local Supplier (Default)")}</SelectItem>
+                  {suppliers.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}{s.phone ? ` · ${s.phone}` : ""}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              {!supplierId && (
+                <p className="mt-1 text-[11px] text-muted-foreground">
+                  {tr("কোনো নির্দিষ্ট সরবরাহকারী না থাকলে লোকাল হিসেবে রেকর্ড হবে।", "If no specific supplier, recorded as Local.")}
                 </p>
-              ) : (
-                <Select value={supplierId} onValueChange={setSupplierId}>
-                  <SelectTrigger className="mt-1"><SelectValue placeholder={tr("বাছাই করুন (ঐচ্ছিক)", "Choose (optional)")} /></SelectTrigger>
-                  <SelectContent>
-                    {suppliers.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}{s.phone ? ` · ${s.phone}` : ""}</SelectItem>)}
-                  </SelectContent>
-                </Select>
               )}
             </div>
           )}
