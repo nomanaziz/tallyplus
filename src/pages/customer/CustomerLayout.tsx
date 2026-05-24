@@ -80,19 +80,21 @@ export default function CustomerLayout() {
       <SiteHeader />
       <main className="flex-1 pb-24 md:pb-8">
         <div className="container mx-auto grid gap-6 px-4 py-6 md:grid-cols-[220px_1fr]">
-          {/* Desktop side nav */}
+          {/* Desktop side nav — matches business/admin sidebar pill-icon style */}
           <aside className="hidden md:block">
-            <div className="sticky top-24 space-y-1 rounded-2xl border bg-card p-2 shadow-sm">
+            <div className="sticky top-24 space-y-0.5 rounded-2xl border bg-card p-2 shadow-sm">
               {NAV.map(({ to, label, Icon }) => (
                 <Link
                   key={to}
                   to={to}
-                  activeProps={{ className: "bg-primary text-primary-foreground" }}
-                  inactiveProps={{ className: "text-foreground hover:bg-accent" }}
-                  className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition"
+                  activeProps={{ className: "bg-primary/25 font-semibold text-foreground" }}
+                  inactiveProps={{ className: "text-foreground hover:bg-sidebar-accent" }}
+                  className="group flex items-center gap-2.5 rounded-md px-2 py-1.5 text-[13px] leading-tight transition-colors"
                 >
-                  <Icon className="h-5 w-5 flex-none" />
-                  {label}
+                  <span className="flex h-7 w-7 flex-none items-center justify-center rounded-md bg-primary text-primary-foreground shadow-sm">
+                    <Icon className="h-4 w-4" />
+                  </span>
+                  <span className="truncate">{label}</span>
                 </Link>
               ))}
               <div className="pt-1">

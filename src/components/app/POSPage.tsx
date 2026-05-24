@@ -333,29 +333,29 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
         </Tabs>
       </div>
 
-      {/* Top stat strip — cart summary at-a-glance */}
+      {/* Top stat strip — colored pills like reference */}
       <div className="mb-3 hidden gap-2 lg:grid lg:grid-cols-3">
-        <div className="rounded-xl border bg-card px-4 py-2.5 shadow-sm">
-          <div className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+        <div className="rounded-2xl bg-gradient-to-br from-primary/15 to-primary/5 px-4 py-3 ring-1 ring-primary/20">
+          <div className="text-[10px] font-semibold uppercase tracking-wide text-primary/80">
             {t("p2c_cart")}
           </div>
-          <div className="text-xl font-extrabold tabular-nums text-foreground">
+          <div className="mt-0.5 text-2xl font-extrabold tabular-nums text-primary">
             {fmtMoney(subtotal, lang)}
           </div>
         </div>
-        <div className="rounded-xl border bg-card px-4 py-2.5 shadow-sm">
-          <div className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+        <div className="rounded-2xl bg-gradient-to-br from-amber-200/60 to-amber-100/30 px-4 py-3 ring-1 ring-amber-300/50 dark:from-amber-500/15 dark:to-amber-500/5 dark:ring-amber-400/30">
+          <div className="text-[10px] font-semibold uppercase tracking-wide text-amber-900/80 dark:text-amber-200/90">
             {t("p2c_selectedItemsN", { n: "" }).replace(/\s*\(\)\s*/, "")}
           </div>
-          <div className="text-xl font-extrabold tabular-nums text-foreground">
+          <div className="mt-0.5 text-2xl font-extrabold tabular-nums text-amber-900 dark:text-amber-100">
             {lang === "bn" ? bnNum(cart.reduce((s, it) => s + it.qty, 0)) : cart.reduce((s, it) => s + it.qty, 0)}
           </div>
         </div>
-        <div className="rounded-xl border bg-card px-4 py-2.5 shadow-sm">
-          <div className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-            {lang === "bn" ? "মোট লাইন" : "Lines"}
+        <div className="rounded-2xl bg-gradient-to-br from-emerald-200/60 to-emerald-100/30 px-4 py-3 ring-1 ring-emerald-300/50 dark:from-emerald-500/15 dark:to-emerald-500/5 dark:ring-emerald-400/30">
+          <div className="text-[10px] font-semibold uppercase tracking-wide text-emerald-900/80 dark:text-emerald-200/90">
+            {lang === "bn" ? "লেনদেন" : "Lines"}
           </div>
-          <div className="text-xl font-extrabold tabular-nums text-foreground">
+          <div className="mt-0.5 text-2xl font-extrabold tabular-nums text-emerald-900 dark:text-emerald-100">
             {lang === "bn" ? bnNum(cart.length) : cart.length}
           </div>
         </div>
