@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { writeWithOffline } from "@/lib/useOfflineWrite";
-import { fmtMoney, bnNum } from "@/lib/i18n";
+import { fmtMoney, bnNum, type Lang } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,7 +12,6 @@ import { toast } from "sonner";
 import { Plus, Trash2, Truck, ClipboardList, GitBranch, PiggyBank, CalendarDays, Building2, ArrowLeftRight } from "lucide-react";
 
 type TR = (bn: string, en: string) => string;
-type Lang = string;
 type BottleType = { id: string; name: string; size_label: string | null };
 type Contact = { id: string; name: string; phone: string | null };
 type DeliveryMan = { id: string; name: string; phone: string | null };
