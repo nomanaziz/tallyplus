@@ -88,12 +88,18 @@ function ContactsPage() {
 
   const onDelete = async (c: Contact) => {
     if (!confirm(t("p2b_deleteQ"))) return;
+    const { writeWithOffline } = await import("@/lib/useOfflineWrite");
     if (tab === "employees") {
-      const { error } = await supabase.from("shop_members").delete().eq("id", c.id);
-      if (error) { toast.error(error.message); return; }
+      const res = await writeWithOffline({
+        table: "shop_members", op: "delete", payload: { id: c.id },
+      });
+      if (res.error) { toast.error(res.error); return; }
     } else {
-      const { error } = await supabase.from(tab).update({ deleted_at: new Date().toISOString() }).eq("id", c.id);
-      if (error) { toast.error(error.message); return; }
+      const res = await writeWithOffline({
+        table: tab, op: "update",
+        payload: { set: { deleted_at: new Date().toISOString() }, match: { id: c.id } },
+      });
+      if (res.error) { toast.error(res.error); return; }
     }
     toast.success(t("p2b_deleted"));
     setSelected(null);
