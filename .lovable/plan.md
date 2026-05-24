@@ -1,117 +1,41 @@
+## POS পেজে ৩টি ছোট fix
 
-# POS page (বিক্রয়/ক্রয়) — Reference image অনুযায়ী full redesign
+### ১) Product card-এ `+` button আর quantity badge ঠিক করা
+ফাইল: `src/components/app/POSPage.tsx` (line 583–599)
 
-File: `src/components/app/POSPage.tsx` (single file change, supporting i18n string add)
+বর্তমানে `+` button আর `×qty` badge শুধু ছোট image box-এর কোণায় বসানো — তাই কেটে যাচ্ছে এবং ছোট দেখাচ্ছে।
 
-আগের মতই — **menu/route/business logic অপরিবর্তিত**, শুধু POS page-এর visual layout reference image-এর মত করা হবে। একটাই নতুন feature: **per-line discount %** (user explicitly চেয়েছে)।
+পরিবর্তন:
+- `+` button-কে image box থেকে সরিয়ে **পুরো card-এর top-right corner**-এ নিয়ে যাওয়া হবে (card-এর `relative` wrapper-এ `absolute right-1.5 top-1.5`)। Size বাড়িয়ে `h-7 w-7` করা হবে যাতে স্পষ্ট দেখা যায়।
+- `×qty` badge-ও card-এর top-left corner-এ বড় করে বসানো হবে (`absolute left-1.5 top-1.5`, `text-[11px] px-2 py-0.5`), যাতে cart-এ কতগুলো আছে স্পষ্ট পড়া যায়।
+- Image box-এর `overflow-hidden` ঠিকই থাকবে; badge/button card-এর বাইরের layer-এ থাকবে তাই আর clip হবে না।
+- Card-এ `pt-1` যোগ করে room রাখা হবে যাতে badge content-এর সাথে overlap না করে।
 
-## ১. Top bar (header strip)
+### ২) Right cart panel-এ Cash / Due / Hold button layout পরিবর্তন
+ফাইল: `src/components/app/POSPage.tsx` (line 851–887)
 
-বর্তমান: title + grid/list toggle, তারপর আলাদা ৩-card stat strip।
+বর্তমান: Hold আর Checkout পাশাপাশি (2 column), নিচে আলাদা ছোট "বাকি →" link।
 
-নতুন (reference-এর মত এক row-এ):
-- বাম দিকে: গোল primary badge `POS` icon + "POS System / Point of Sale" lockup
-- মাঝে: তিনটে compact rounded stat pill side-by-side
-  - **আজকের বিক্রয়** — ৳ আজকের sales total (sell mode) / ক্রয় total (purchase mode)
-  - **আইটেম বিক্রি** — আজকের sold items count
-  - **লেনদেন** — আজকের transactions count
-- ডান দিকে: user name (`Mahfuz Sakib` style) + primary pill button "হোল্ড অর্ডার (০)"
+নতুন layout (উপর থেকে নিচ):
+1. **বড় Cash button** (পুরো width, `h-14`, primary color, bold) — label: `Cash (F1)` / `ক্যাশ (F1)` ("নগদ" শব্দটা সরানো হবে যাতে Nagad payment method-এর সাথে confusion না হয়)। Icon: `ShoppingBag` বা `Banknote`।
+2. **বড় Due button** (পুরো width, `h-14`, outline style, secondary tone) — label: `Due` / `বাকি`। শুধু sell mode-এ দেখাবে। `setDueOpen(true)` call করবে।
+3. **ছোট Hold button** নিচে (`h-9`, subtle ghost/outline amber tone, ছোট text) — label: `Hold (F2)` / `হোল্ড (F2)`।
 
-আজকের stat-গুলো cheap query (existing `sales`/`purchases` table) — অথবা placeholder `০` দেখাব আর `TODO` রাখব backend-wired later (user স্পষ্ট করলে)। **Default: today's actual values থেকে aggregate**।
+এতে main two actions (Cash + Due) বড় ও prominent হবে, আর Hold secondary action হিসেবে নিচে থাকবে।
 
-## ২. F-key shortcut row
+### ৩) "নগদ" শব্দ POS UI থেকে সরানো
+ফাইল: `src/lib/i18n.tsx`
 
-Search bar-এর নিচে একটা thin row (reference-এ "F1: চেকআউট  F2: হোল্ড  F3: ড্রয়ার  F4: আর্থ  F5: প্রিন্ট"):
-- ছোট muted text chip-style, কেবল visual hint। F1/F2 already handled by checkout/hold buttons; F3-F5 placeholder hint দেখাব।
+শুধু POS-related key গুলোতে Bangla string `"নগদ টাকা"` → `"ক্যাশ"` করা হবে:
+- `p2c_cashArrow`: `"নগদ টাকা →"` → `"ক্যাশ →"`
+- `p2c_cash`: `"নগদ টাকা"` → `"ক্যাশ"`
 
-## ৩. Search row redesign
+বাকি জায়গা (cashbox permission, customer money page, finance methods, report labels) **touch করা হবে না** — শুধু POS এর Cash button-এর label।
 
-বর্তমান: search + barcode + plus + refresh।
+### যা পরিবর্তন হবে না
+- Menu order, sidebar, routing, backend logic, payment flow, discount calculation — কিছুই না।
+- শুধু POS page-এর product card visual, cart panel button layout, এবং Cash button-এর Bangla label।
 
-নতুন: 
-- বড় search input (icon left, "পণ্যের নাম, SKU বা বারকোড লিখুন (এন্টার চাপুন)..." placeholder) 
-- ডান পাশে badge-button "বারকোড / SKU" (scanner trigger)
-- তারপর "সব ক্যাটাগরি ▾" dropdown (categories filter — existing `category` field থেকে)
-- Plus / refresh button দুটো ছোট icon button পাশে
-
-## ৪. Product card (reference-এর মত)
-
-বর্তমান card মোটামুটি similar, কিন্তু adjust:
-- **Image area ছোট** (aspect-square কিন্তু compact, max ~96-110px)
-- নিচে **বড় product name** (text-sm font-semibold, 1 line truncate)
-- নাম-এর নিচে ছোট muted variant/category label (e.g. "ড্রিংকস")
-- তারপর **price বড় ও primary color** এ — `৳30` style (text-xl extrabold text-primary)
-- সর্বশেষ ছোট muted "স্টক: 851 পিস"
-- Selected/in-cart হলে `ring-2 ring-primary bg-primary/5`
-- Image-এর right-top-এ ছোট `+` plus-badge রাখব (existing pattern, keep)
-
-## ৫. Cart panel (sidebar, reference-এর মত) — সবচেয়ে বড় visual change
-
-বর্তমান cart একটা compact table। Reference-এ প্রতিটি cart item আলাদা **rich card** হিসেবে দেখানো হয়েছে:
-
-প্রতি cart line card:
-```
-[img] Product Name                      [🗑 delete]
-      SKU: PER001
-      ┌──────────────────────────┐
-      │ পিস (Piece) ▾            │   ← unit dropdown
-      └──────────────────────────┘
-      Unit Price            ডিসকাউন্ট
-      [  ৳30   ] টাকা       [  0  ] %
-      [+1] [+2] [+5]   [− 1 +]  Piece    মোট
-                                          ৳30
-```
-
-Components per line:
-1. Header row: 32×32 thumbnail + name (font-medium) + delete icon
-2. SKU line (muted, small)
-3. Unit selector — `<select>` showing `unit` (default product.unit, options: পিস/Piece, প্যাকেট/Packet, বোতল/Bottle, ক্যান/Can, কেজি/Kg, লিটার/Liter — common Bangla retail units). শুধু display label পরিবর্তন; pricing-এ effect নেই unless explicitly mapped। **MVP**: unit একটা informational dropdown — actual price একই থাকবে (user later বললে pack-size pricing wire করব)।
-4. Two-column row: Unit Price input (number, taka label) + Discount input (number, % label)
-5. Quick-add chips: `+1` `+2` `+5` (qty increment buttons)
-6. Qty stepper `− N +` with unit label "Piece"
-7. মোট badge (right-aligned): line total after per-line discount = `qty × price × (1 - discount%/100)`
-
-### Per-line discount logic
-- `CartItem`-এ `line_discount_pct?: number` field add (default 0)
-- Line total = `qty * price * (1 - line_discount_pct/100)`
-- Subtotal = sum of line totals
-- Cart-level overall discount existing থাকবে (নিচে separately)
-
-## ৬. Cart bottom totals + actions (reference-এর মত)
-
-cart-এর নিচে:
-- "সকল আইটেমে ডিসকাউন্ট একসাথে দিতে চান: [প্রয়োগ করুন]" — single button যা একটা ডিসকাউন্ট % সব line-এ apply করবে (small dialog with % input)
-- "নিদিষ্ট পরিমাণ ছাড় [ — ] [% / টাকা toggle] [Enter চাপুন]" — overall discount input (existing discount field, with % vs taka toggle)
-- Note line: "আপনার নগদ পরিশোধ এর Enter চাপুন" (muted helper text)
-- সাবটোটাল: ৳N
-- ছাড় (0%): ৳N
-- **মোট:** ৳N (large primary)
-- দুটো বড় action buttons পাশাপাশি:
-  - amber outline: "হোল্ড (F2)"
-  - primary blue: "চেকআউট (F1)"
-- F1/F2 keyboard shortcut wire করব (existing cashOpen → F1, simple hold = save to localStorage placeholder for F2)
-
-## ৭. যা পরিবর্তন হবে না
-
-- Routes, menu, sidebar, permissions
-- Backend tables/columns
-- Sales/purchase save logic, invoice generation, serial picking, services tab
-- Bulk pricing logic (already exists for "5 packet কিনলে discount" — keep as-is, will trigger automatically when bulk_min_qty met)
-- Mobile tab structure
-
-## ৮. Technical notes
-
-- New CartItem field: `line_discount_pct?: number`
-- Subtotal computation update to respect per-line discount
-- `unit` dropdown options list: hardcoded array `[পিস, প্যাকেট, বোতল, ক্যান, কেজি, লিটার, ডজন, পিচ]` with en labels
-- Categories dropdown: derive from `products[].category` distinct values
-- F1/F2 hotkeys: `useEffect` keydown listener
-- All digits English (already done globally via `bnNum`)
-- Color tokens: `text-primary`, `bg-primary/5`, semantic — no hardcoded hex
-
-## File summary
-
-| File | কাজ |
-|---|---|
-| `src/components/app/POSPage.tsx` | পুরো layout reference-image-এর মত redesign + per-line discount + unit selector + F-shortcut row + category filter + rich cart cards |
-| `src/lib/i18n.tsx` | কয়েকটা নতুন translation key (unit names, F-shortcut labels, "আজকের বিক্রয়" ইত্যাদি) |
+### Files
+- `src/components/app/POSPage.tsx` — card badge/+ button repositioning + cart action buttons restructure
+- `src/lib/i18n.tsx` — দুটি Bangla string update

@@ -578,9 +578,18 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
                       type="button"
                       onClick={() => addToCart(p)}
                       disabled={outOfStock}
-                      className={`group relative flex flex-col overflow-hidden rounded-xl border bg-card text-center shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5 ${inCart ? "ring-2 ring-primary bg-primary/5" : ""} ${outOfStock ? "opacity-50 cursor-not-allowed" : ""}`}
                     >
-                      <div className="relative mx-auto mt-2 h-16 w-16 overflow-hidden rounded-lg bg-muted/30">
+                      {/* qty badge — top-left of whole card */}
+                      {inCart && (
+                        <span className="absolute left-1.5 top-1.5 z-10 rounded-full bg-primary px-2 py-0.5 text-[11px] font-bold text-primary-foreground shadow ring-1 ring-background">
+                          ×{lang === "bn" ? bnNum(inCart.qty) : inCart.qty}
+                        </span>
+                      )}
+                      {/* + button — top-right of whole card */}
+                      <span className="absolute right-1.5 top-1.5 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-primary text-primary-foreground shadow ring-1 ring-background transition-transform group-hover:scale-110">
+                        <Plus className="h-4 w-4" strokeWidth={3} />
+                      </span>
+                      <div className="relative mx-auto mt-3 h-16 w-16 overflow-hidden rounded-lg bg-muted/30">
                         {p.image_url ? (
                           <img src={p.image_url} alt={p.name} loading="lazy" decoding="async" className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105" />
                         ) : (
@@ -588,14 +597,6 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
                             <Package className="h-6 w-6" />
                           </div>
                         )}
-                        {inCart && (
-                          <span className="absolute -left-1 -top-1 rounded-full bg-primary px-1.5 py-px text-[9px] font-bold text-primary-foreground shadow">
-                            ×{inCart.qty}
-                          </span>
-                        )}
-                        <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground shadow ring-1 ring-background transition-transform group-hover:scale-110">
-                          <Plus className="h-3 w-3" strokeWidth={3} />
-                        </span>
                       </div>
                       <div className="flex flex-1 flex-col items-center justify-center px-2 py-2">
                         <div className="line-clamp-1 text-sm font-semibold leading-tight text-foreground">
@@ -848,10 +849,28 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-2 p-3">
+          <div className="flex flex-col gap-2 p-3">
             <Button
-              variant="outline"
-              className="h-12 border-amber-500 bg-amber-50 font-bold text-amber-700 hover:bg-amber-100 dark:bg-amber-500/10 dark:hover:bg-amber-500/20"
+              className="h-14 text-base font-bold"
+              disabled={cart.length === 0}
+              onClick={() => setCashOpen(true)}
+            >
+              <ShoppingBag className="mr-2 h-5 w-5" />
+              {lang === "bn" ? "ক্যাশ (F1)" : "Cash (F1)"}
+            </Button>
+            {isSell && (
+              <Button
+                variant="outline"
+                className="h-14 border-2 text-base font-bold"
+                disabled={cart.length === 0}
+                onClick={() => setDueOpen(true)}
+              >
+                {lang === "bn" ? "বাকি" : "Due"}
+              </Button>
+            )}
+            <Button
+              variant="ghost"
+              className="h-9 text-xs font-medium text-amber-700 hover:bg-amber-50 hover:text-amber-800 dark:text-amber-400 dark:hover:bg-amber-500/10"
               disabled={cart.length === 0}
               onClick={() => {
                 try {
@@ -863,28 +882,10 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
                 } catch { /* ignore */ }
               }}
             >
-              <Pause className="mr-1 h-4 w-4" />
+              <Pause className="mr-1 h-3.5 w-3.5" />
               {lang === "bn" ? "হোল্ড (F2)" : "Hold (F2)"}
             </Button>
-            <Button
-              className="h-12 font-bold"
-              disabled={cart.length === 0}
-              onClick={() => setCashOpen(true)}
-            >
-              <ShoppingBag className="mr-1 h-4 w-4" />
-              {lang === "bn" ? "চেকআউট (F1)" : "Checkout (F1)"}
-            </Button>
           </div>
-          {/* Due row */}
-          {isSell && (
-            <div className="border-t p-3">
-              <Button variant="ghost" className="h-9 w-full text-xs text-muted-foreground hover:text-foreground"
-                disabled={cart.length === 0}
-                onClick={() => setDueOpen(true)}>
-                {t("p2c_dueArrow")}
-              </Button>
-            </div>
-          )}
         </div>
       </div>
 
