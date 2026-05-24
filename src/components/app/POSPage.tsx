@@ -686,101 +686,205 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
 
         {/* Cart */}
         <div className={`rounded-xl border bg-card lg:col-span-4 ${mobileTab === "products" ? "hidden lg:block" : ""}`}>
-          <div className="flex items-center justify-between border-b p-3">
-            <div className="text-sm font-semibold">
-              {t("p2c_selectedItemsN", { n: lang === "bn" ? bnNum(cart.length) : cart.length })}
+          <div className="flex items-center justify-between border-b bg-primary/5 p-3">
+            <div className="inline-flex items-center gap-2 text-sm font-bold text-primary">
+              <ShoppingCart className="h-4 w-4" />
+              {lang === "bn" ? "কার্ট" : "Cart"} ({cart.length})
             </div>
             {cart.length > 0 && (
               <Button variant="ghost" size="sm" onClick={clearCart}>
-                {t("p2c_clearCart")}
+                {lang === "bn" ? "খালি" : "Clear"}
               </Button>
             )}
           </div>
-          <div className="max-h-[50vh] overflow-y-auto p-3">
+          <div className="max-h-[55vh] space-y-2 overflow-y-auto p-3">
             {cart.length === 0 ? (
               <EmptyState icon={<ShoppingCart className="h-6 w-6" />} title={t("p2c_cartEmpty")} />
             ) : (
-              <table className="w-full text-xs">
-                <thead className="text-[10px] uppercase text-muted-foreground">
-                  <tr className="border-b">
-                    <th className="w-6 py-1 text-left font-medium">#</th>
-                    <th className="py-1 text-left font-medium">{t("p2c_item")}</th>
-                    <th className="w-16 py-1 text-right font-medium">{t("p2c_price")}</th>
-                    <th className="w-14 py-1 text-center font-medium">{t("p2c_qty")}</th>
-                    <th className="w-16 py-1 text-right font-medium">{t("p2c_total")}</th>
-                    <th className="w-7" />
-                  </tr>
-                </thead>
-                <tbody>
-                  {cart.map((it, idx) => (
-                    <tr key={idx} className="border-b align-middle">
-                      <td className="py-1 text-muted-foreground">{lang === "bn" ? bnNum(idx + 1) : idx + 1}</td>
-                      <td className="py-1 pr-1">
-                        <div className="line-clamp-2 break-words font-medium leading-tight">{it.name}</div>
-                        {it.is_bulk && (
-                          <span className="text-[9px] font-semibold text-primary">[{t("p2c_bulk")}]</span>
+              cart.map((it, idx) => {
+                const prod = it.product_id ? products.find((p) => p.id === it.product_id) : null;
+                const lt = lineTotal(it);
+                return (
+                  <div key={idx} className="rounded-xl border bg-card p-2.5 shadow-sm">
+                    {/* Header row */}
+                    <div className="flex items-start gap-2">
+                      <div className="flex h-10 w-10 flex-none items-center justify-center overflow-hidden rounded-md bg-muted">
+                        {prod?.image_url ? (
+                          <img src={prod.image_url} alt={it.name} className="h-full w-full object-cover" />
+                        ) : (
+                          <Package className="h-5 w-5 text-muted-foreground" />
                         )}
-                      </td>
-                      <td className="py-1">
-                        <Input type="number" value={it.price}
-                          className="h-7 w-full px-1 text-right text-xs"
-                          onChange={(e) => updateCart(idx, { price: Number(e.target.value) || 0 })} />
-                      </td>
-                      <td className="py-1">
-                        <Input type="number" value={it.qty}
-                          className="h-7 w-full px-1 text-center text-xs"
-                          onChange={(e) => updateCart(idx, { qty: Math.max(1, Number(e.target.value) || 1) })} />
-                      </td>
-                      <td className="py-1 text-right font-semibold">{fmtMoney(it.qty * it.price, lang)}</td>
-                      <td className="py-1">
-                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => removeCart(idx)}>
-                          <X className="h-3 w-3" />
-                        </Button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="line-clamp-1 text-sm font-semibold leading-tight">{it.name}</div>
+                        {(prod?.sku || prod?.barcode) && (
+                          <div className="text-[10px] text-muted-foreground">SKU: {prod?.sku || prod?.barcode}</div>
+                        )}
+                      </div>
+                      <button type="button" onClick={() => removeCart(idx)}
+                        className="text-destructive/70 hover:text-destructive">
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+
+                    {/* Unit selector */}
+                    {it.item_type !== "service" && (
+                      <div className="mt-2">
+                        <select
+                          value={it.unit_label || prod?.unit || "piece"}
+                          onChange={(e) => updateCart(idx, { unit_label: e.target.value })}
+                          className="h-8 w-full rounded-md border bg-background px-2 text-xs"
+                        >
+                          {unitOptions.map((u) => (
+                            <option key={u.v} value={u.v}>{lang === "bn" ? `${u.bn} (${u.en})` : `${u.en} (${u.bn})`}</option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+
+                    {/* Unit Price + Discount */}
+                    <div className="mt-2 grid grid-cols-2 gap-2">
+                      <div>
+                        <div className="mb-0.5 text-[10px] text-muted-foreground">Unit Price</div>
+                        <div className="relative">
+                          <Input type="number" value={it.price}
+                            className="h-8 pr-10 text-right text-xs tabular-nums"
+                            onChange={(e) => updateCart(idx, { price: Number(e.target.value) || 0 })} />
+                          <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">টাকা</span>
+                        </div>
+                      </div>
+                      <div>
+                        <div className="mb-0.5 text-[10px] text-muted-foreground">{lang === "bn" ? "ডিসকাউন্ট" : "Discount"}</div>
+                        <div className="relative">
+                          <Input type="number" value={it.line_discount_pct ?? 0}
+                            className="h-8 pr-8 text-right text-xs tabular-nums"
+                            onChange={(e) => {
+                              const v = Math.max(0, Math.min(100, Number(e.target.value) || 0));
+                              updateCart(idx, { line_discount_pct: v });
+                            }} />
+                          <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">%</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Quick add + qty stepper + line total */}
+                    <div className="mt-2 flex items-center justify-between gap-2">
+                      <div className="inline-flex gap-1">
+                        {[1, 2, 5].map((n) => (
+                          <button key={n} type="button"
+                            onClick={() => updateCart(idx, { qty: it.qty + n })}
+                            className="rounded-md border bg-primary/10 px-1.5 py-0.5 text-[10px] font-bold text-primary hover:bg-primary/20">
+                            +{n}
+                          </button>
+                        ))}
+                      </div>
+                      <div className="inline-flex items-center rounded-md border">
+                        <button type="button" onClick={() => updateCart(idx, { qty: Math.max(1, it.qty - 1) })}
+                          className="flex h-7 w-7 items-center justify-center text-muted-foreground hover:text-foreground">
+                          <Minus className="h-3 w-3" />
+                        </button>
+                        <input type="number" value={it.qty}
+                          onChange={(e) => updateCart(idx, { qty: Math.max(1, Number(e.target.value) || 1) })}
+                          className="h-7 w-10 border-x bg-transparent text-center text-xs font-semibold tabular-nums outline-none" />
+                        <button type="button" onClick={() => updateCart(idx, { qty: it.qty + 1 })}
+                          className="flex h-7 w-7 items-center justify-center text-muted-foreground hover:text-foreground">
+                          <Plus className="h-3 w-3" />
+                        </button>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-[9px] uppercase text-muted-foreground">{lang === "bn" ? "মোট" : "Total"}</div>
+                        <div className="text-sm font-extrabold tabular-nums text-primary">{fmtMoney(lt, lang)}</div>
+                      </div>
+                    </div>
+
+                    {it.is_bulk && (
+                      <div className="mt-1 text-[9px] font-semibold text-primary">[{t("p2c_bulk")} pricing applied]</div>
+                    )}
+                  </div>
+                );
+              })
             )}
           </div>
 
           {/* Totals */}
           <div className="space-y-2 border-t p-3 text-sm">
-            <div className="flex items-center justify-between">
-              <span className="text-muted-foreground">{t("p2c_subtotal")}</span>
-              <span className="font-semibold">{fmtMoney(subtotal, lang)}</span>
+            {/* Bulk-discount-all helper */}
+            <div className="flex items-center justify-between gap-2 rounded-md bg-muted/30 px-2 py-1.5">
+              <span className="text-[11px] text-muted-foreground">{lang === "bn" ? "সকল আইটেমে ডিসকাউন্ট একসাথে:" : "Discount all items:"}</span>
+              <Button size="sm" variant="outline" className="h-6 text-[10px]"
+                onClick={() => {
+                  const v = window.prompt(lang === "bn" ? "ডিসকাউন্ট % (০-১০০)" : "Discount % (0-100)", "0");
+                  if (v === null) return;
+                  const pct = Math.max(0, Math.min(100, Number(v) || 0));
+                  setCart((prev) => prev.map((it) => ({ ...it, line_discount_pct: pct })));
+                }}>
+                {lang === "bn" ? "প্রয়োগ করুন" : "Apply"}
+              </Button>
             </div>
+
             <div className="flex items-center justify-between gap-2">
-              <span className="text-muted-foreground">{t("p2c_discount")}</span>
-              <Input type="number" value={discount} onChange={(e) => setDiscount(e.target.value)} className="h-8 w-28 text-right" />
+              <span className="text-muted-foreground">{lang === "bn" ? "নির্দিষ্ট পরিমাণ ছাড়" : "Fixed discount"}</span>
+              <div className="relative">
+                <Input type="number" value={discount} onChange={(e) => setDiscount(e.target.value)}
+                  className="h-8 w-28 pr-8 text-right" />
+                <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">৳</span>
+              </div>
             </div>
             <div className="flex items-center justify-between gap-2">
               <span className="text-muted-foreground">{t("p2c_delivery")}</span>
               <Input type="number" value={delivery} onChange={(e) => setDelivery(e.target.value)} className="h-8 w-28 text-right" />
             </div>
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span>{lang === "bn" ? "সাবটোটাল" : "Subtotal"}</span>
+              <span className="tabular-nums">{fmtMoney(subtotalAfterLineDisc, lang)}</span>
+            </div>
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span>{lang === "bn" ? "ছাড়" : "Discount"} ({totalDiscPctDisplay}%)</span>
+              <span className="tabular-nums">-{fmtMoney(Number(discount) || 0, lang)}</span>
+            </div>
             <div className="flex items-center justify-between border-t pt-2">
-              <span className="text-base font-semibold">{t("p2c_grandTotal")}</span>
-              <span className="text-lg font-extrabold text-primary">{fmtMoney(grandTotal, lang)}</span>
+              <span className="text-base font-bold">{lang === "bn" ? "মোট:" : "Total:"}</span>
+              <span className="text-xl font-extrabold text-primary tabular-nums">{fmtMoney(grandTotal, lang)}</span>
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-2 p-3">
             <Button
               variant="outline"
-              className="h-12 border-emerald-500 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800 dark:hover:bg-emerald-950"
+              className="h-12 border-amber-500 bg-amber-50 font-bold text-amber-700 hover:bg-amber-100 dark:bg-amber-500/10 dark:hover:bg-amber-500/20"
+              disabled={cart.length === 0}
+              onClick={() => {
+                try {
+                  const holds = JSON.parse(localStorage.getItem("pos-holds") || "[]");
+                  holds.push({ at: Date.now(), mode, cart, discount, delivery });
+                  localStorage.setItem("pos-holds", JSON.stringify(holds));
+                  toast.success(lang === "bn" ? "অর্ডার হোল্ড করা হয়েছে" : "Order held");
+                  clearCart();
+                } catch { /* ignore */ }
+              }}
+            >
+              <Pause className="mr-1 h-4 w-4" />
+              {lang === "bn" ? "হোল্ড (F2)" : "Hold (F2)"}
+            </Button>
+            <Button
+              className="h-12 font-bold"
               disabled={cart.length === 0}
               onClick={() => setCashOpen(true)}
             >
-              {t("p2c_cashArrow")}
-            </Button>
-            <Button
-              className="h-12 bg-amber-500 text-white hover:bg-amber-600"
-              disabled={cart.length === 0}
-              onClick={() => setDueOpen(true)}
-            >
-              {t("p2c_dueArrow")}
+              <ShoppingBag className="mr-1 h-4 w-4" />
+              {lang === "bn" ? "চেকআউট (F1)" : "Checkout (F1)"}
             </Button>
           </div>
+          {/* Due row */}
+          {isSell && (
+            <div className="border-t p-3">
+              <Button variant="ghost" className="h-9 w-full text-xs text-muted-foreground hover:text-foreground"
+                disabled={cart.length === 0}
+                onClick={() => setDueOpen(true)}>
+                {t("p2c_dueArrow")}
+              </Button>
+            </div>
+          )}
         </div>
       </div>
 
