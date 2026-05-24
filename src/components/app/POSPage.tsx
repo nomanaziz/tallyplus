@@ -866,6 +866,258 @@ function PaymentDialog(props: {
     if (!partyPhone.trim()) { toast.error(t("p2c_mobileRequired")); return; }
     setSaving(true);
 
+    // ───────────────── Offline path ─────────────────
+    // যখন network নেই, পুরো sale/purchase queue-এ গিয়ে stack হবে।
+    // sale_id / purchase_id client-side এ generate, পরে flush হলে server এ যাবে।
+    const isOffline = typeof navigator !== "undefined" && !navigator.onLine;
+    if (isOffline) {
+      try {
+        const paidNumO = isCash ? props.grandTotal : (Number(paid) || 0);
+        const dueNumO = Math.max(0, props.grandTotal - paidNumO);
+        const createdAtO = new Date(date).toISOString();
+        const noteO = [comment, staffInfo ? staffNote : ""].filter(Boolean).join(" | ") || null;
+        const partyTableO = isSell ? "customers" : "suppliers";
+
+        // contact: try cache first, else generate id + queue insert
+        let contactIdO: string | null = null;
+        if (!isCash || partyName.trim()) {
+          if (partyName.trim()) {
+            if (partyPhone.trim()) {
+              const cachedContacts = await readCache<Array<{ id: string; phone: string | null }>>(
+                `${current.id}:contacts:${isSell ? "customer" : "supplier"}`,
+              );
+              const hit = cachedContacts?.find((c) => (c.phone ?? "") === partyPhone.trim());
+              if (hit) contactIdO = hit.id;
+            }
+            if (!contactIdO) {
+              contactIdO = crypto.randomUUID();
+              await writeWithOffline({
+                table: partyTableO,
+                op: "insert",
+                payload: {
+                  id: contactIdO,
+                  shop_id: current.id,
+                  name: partyName.trim(),
+                  phone: partyPhone.trim() || null,
+                  address: partyAddress.trim() || null,
+                },
+              });
+            }
+          }
+        }
+
+        const txIdO = crypto.randomUUID();
+        const prodCacheO = (await readCache<Array<{ id: string; stock: number }>>(`${current.id}:products-lite`)) ?? [];
+        const stockMapO = new Map(prodCacheO.map((p) => [p.id, Number(p.stock || 0)]));
+
+        if (isSell) {
+          await writeWithOffline({
+            table: "sales",
+            op: "insert",
+            payload: {
+              id: txIdO,
+              shop_id: current.id,
+              customer_id: contactIdO,
+              subtotal: props.subtotal,
+              discount: props.discount,
+              tax: 0,
+              total: props.grandTotal,
+              paid: paidNumO,
+              due: dueNumO,
+              payment_method: "cash",
+              status: "completed",
+              note: noteO,
+              invoice_no: customInvoice && invoiceNo.trim() ? invoiceNo.trim() : null,
+              created_by: user.id,
+              created_at: createdAtO,
+            },
+          });
+
+          const itemsO = props.cart.map((c) => ({
+            sale_id: txIdO,
+            product_id: c.item_type === "service" ? null : c.product_id,
+            service_id: c.item_type === "service" ? (c.service_id ?? null) : null,
+            item_type: c.item_type ?? "product",
+            name: c.name,
+            qty: c.qty,
+            price: c.price,
+            total: c.qty * c.price,
+            serial_id: c.serial_id ?? null,
+          }));
+          await writeWithOffline({
+            table: "sale_items",
+            op: "insert",
+            payload: itemsO as unknown as Record<string, unknown>,
+          });
+
+          for (const c of props.cart) {
+            if ((c.item_type ?? "product") === "service" || !c.product_id) continue;
+            await writeWithOffline({
+              table: "stock_movements",
+              op: "insert",
+              payload: {
+                shop_id: current.id,
+                product_id: c.product_id,
+                qty: c.qty,
+                type: "out",
+                ref_table: "sales",
+                ref_id: txIdO,
+                note: "sale",
+                created_by: user.id,
+              },
+            });
+            const cur = stockMapO.get(c.product_id) ?? 0;
+            const next = Math.max(0, cur - c.qty);
+            stockMapO.set(c.product_id, next);
+            await writeWithOffline({
+              table: "products",
+              op: "update",
+              payload: { set: { stock: next }, match: { id: c.product_id } },
+            });
+          }
+
+          if (paidNumO > 0) {
+            await writeWithOffline({
+              table: "cash_movements",
+              op: "insert",
+              payload: {
+                shop_id: current.id,
+                direction: "in",
+                amount: paidNumO,
+                note: `sale ${txIdO}`,
+                ref_table: "sales",
+                ref_id: txIdO,
+                created_by: user.id,
+              },
+            });
+          }
+          if (dueNumO > 0 && contactIdO) {
+            const cCache = (await readCache<Array<{ id: string; due_balance: number | null }>>(`${current.id}:contacts:customer`)) ?? [];
+            const curDue = Number(cCache.find((x) => x.id === contactIdO)?.due_balance ?? 0);
+            await writeWithOffline({
+              table: "customers",
+              op: "update",
+              payload: { set: { due_balance: curDue + dueNumO }, match: { id: contactIdO } },
+            });
+          }
+        } else {
+          await writeWithOffline({
+            table: "purchases",
+            op: "insert",
+            payload: {
+              id: txIdO,
+              shop_id: current.id,
+              supplier_id: contactIdO,
+              subtotal: props.subtotal,
+              discount: props.discount,
+              total: props.grandTotal,
+              paid: paidNumO,
+              due: dueNumO,
+              payment_method: "cash",
+              note: noteO,
+              invoice_no: customInvoice && invoiceNo.trim() ? invoiceNo.trim() : null,
+              created_by: user.id,
+              created_at: createdAtO,
+            },
+          });
+          const itemsO = props.cart.map((c) => ({
+            purchase_id: txIdO,
+            product_id: c.product_id ?? null,
+            name: c.name,
+            qty: c.qty,
+            price: c.price,
+            total: c.qty * c.price,
+          }));
+          await writeWithOffline({
+            table: "purchase_items",
+            op: "insert",
+            payload: itemsO as unknown as Record<string, unknown>,
+          });
+          for (const c of props.cart) {
+            if (!c.product_id) continue;
+            await writeWithOffline({
+              table: "stock_movements",
+              op: "insert",
+              payload: {
+                shop_id: current.id,
+                product_id: c.product_id,
+                qty: c.qty,
+                type: "in",
+                ref_table: "purchases",
+                ref_id: txIdO,
+                note: "purchase",
+                created_by: user.id,
+              },
+            });
+            const cur = stockMapO.get(c.product_id) ?? 0;
+            const next = cur + c.qty;
+            stockMapO.set(c.product_id, next);
+            await writeWithOffline({
+              table: "products",
+              op: "update",
+              payload: { set: { stock: next }, match: { id: c.product_id } },
+            });
+          }
+          if (paidNumO > 0) {
+            await writeWithOffline({
+              table: "cash_movements",
+              op: "insert",
+              payload: {
+                shop_id: current.id,
+                direction: "out",
+                amount: paidNumO,
+                note: `purchase ${txIdO}`,
+                ref_table: "purchases",
+                ref_id: txIdO,
+                created_by: user.id,
+              },
+            });
+          }
+          if (dueNumO > 0 && contactIdO) {
+            const cCache = (await readCache<Array<{ id: string; due_balance: number | null }>>(`${current.id}:contacts:supplier`)) ?? [];
+            const curDue = Number(cCache.find((x) => x.id === contactIdO)?.due_balance ?? 0);
+            await writeWithOffline({
+              table: "suppliers",
+              op: "update",
+              payload: { set: { due_balance: curDue + dueNumO }, match: { id: contactIdO } },
+            });
+          }
+        }
+
+        toast.success("📴 Offline সংরক্ষণ — online এ এলে cloud-এ auto-sync হবে");
+        const finalInvoiceNoO = customInvoice && invoiceNo.trim()
+          ? invoiceNo.trim()
+          : txIdO.replace(/-/g, "").slice(0, 12).toUpperCase();
+        const invoiceO: InvoiceData = {
+          mode: props.mode,
+          shop: {
+            name: current.name,
+            address: (current as { address?: string | null }).address ?? null,
+            phone: (current as { phone?: string | null }).phone ?? null,
+            logo_url: (current as { logo_url?: string | null }).logo_url ?? null,
+          },
+          party: { name: partyName.trim() || null, phone: partyPhone.trim() || null, address: partyAddress.trim() || null },
+          invoiceNo: finalInvoiceNoO,
+          date: createdAtO,
+          items: props.cart.map((c) => ({ name: c.name, qty: c.qty, price: c.price, total: c.qty * c.price })),
+          subtotal: props.subtotal,
+          discount: props.discount,
+          delivery: 0,
+          grandTotal: props.grandTotal,
+          paid: paidNumO,
+          previousDue: 0,
+          currentDue: dueNumO,
+        };
+        props.onSaved(invoiceO);
+      } catch (e) {
+        toast.error((e as Error).message ?? "Failed to save offline");
+      } finally {
+        setSaving(false);
+      }
+      return;
+    }
+    // ───────────────── End offline path ─────────────────
+
     try {
       // Stock guard for sales (race-safe: re-fetch latest stock)
       if (isSell) {
