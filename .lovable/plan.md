@@ -1,41 +1,55 @@
-## POS পেজে ৩টি ছোট fix
+## POS পেজে ৪টি fix
 
-### ১) Product card-এ `+` button আর quantity badge ঠিক করা
-ফাইল: `src/components/app/POSPage.tsx` (line 583–599)
+### ১) Product card-এ `+` button আবার ঠিকমতো দেখানো
+ফাইল: `src/components/app/POSPage.tsx` (line 576-581)
 
-বর্তমানে `+` button আর `×qty` badge শুধু ছোট image box-এর কোণায় বসানো — তাই কেটে যাচ্ছে এবং ছোট দেখাচ্ছে।
+সমস্যা: `<button>` element-এ কোনো `className` নেই — তাই card-এর border/bg/padding নেই, `relative` wrapper-ও নেই। ফলে `absolute` positioned `+` button আর qty badge ভুল জায়গায় বসছে বা parent card-এর বাইরে যাচ্ছে।
 
-পরিবর্তন:
-- `+` button-কে image box থেকে সরিয়ে **পুরো card-এর top-right corner**-এ নিয়ে যাওয়া হবে (card-এর `relative` wrapper-এ `absolute right-1.5 top-1.5`)। Size বাড়িয়ে `h-7 w-7` করা হবে যাতে স্পষ্ট দেখা যায়।
-- `×qty` badge-ও card-এর top-left corner-এ বড় করে বসানো হবে (`absolute left-1.5 top-1.5`, `text-[11px] px-2 py-0.5`), যাতে cart-এ কতগুলো আছে স্পষ্ট পড়া যায়।
-- Image box-এর `overflow-hidden` ঠিকই থাকবে; badge/button card-এর বাইরের layer-এ থাকবে তাই আর clip হবে না।
-- Card-এ `pt-1` যোগ করে room রাখা হবে যাতে badge content-এর সাথে overlap না করে।
+ঠিক করা:
+- Button-এ পুরো card styling ফিরিয়ে আনব: `group relative flex flex-col rounded-xl border bg-card p-2 pt-2 shadow-sm transition hover:border-primary/40 hover:shadow-md disabled:opacity-50`
+- `+` button card-এর top-right corner-এ স্পষ্ট দেখাবে (`absolute right-1.5 top-1.5`, `h-7 w-7`, primary bg, ring) — এখন যেমন আছে সেটাই, শুধু parent ঠিক হলে দেখা যাবে।
+- qty badge top-left-এ (এখনকার মতই)।
 
-### ২) Right cart panel-এ Cash / Due / Hold button layout পরিবর্তন
-ফাইল: `src/components/app/POSPage.tsx` (line 851–887)
+### ২) Cart panel-এ ক্যাশ + বাকি আগের মতো পাশাপাশি
+ফাইল: `src/components/app/POSPage.tsx` (line 852-888)
 
-বর্তমান: Hold আর Checkout পাশাপাশি (2 column), নিচে আলাদা ছোট "বাকি →" link।
+সমস্যা: এখন তিনটা button (ক্যাশ, বাকি, হোল্ড) উপর-নিচ stacked — জায়গা নষ্ট হচ্ছে।
 
-নতুন layout (উপর থেকে নিচ):
-1. **বড় Cash button** (পুরো width, `h-14`, primary color, bold) — label: `Cash (F1)` / `ক্যাশ (F1)` ("নগদ" শব্দটা সরানো হবে যাতে Nagad payment method-এর সাথে confusion না হয়)। Icon: `ShoppingBag` বা `Banknote`।
-2. **বড় Due button** (পুরো width, `h-14`, outline style, secondary tone) — label: `Due` / `বাকি`। শুধু sell mode-এ দেখাবে। `setDueOpen(true)` call করবে।
-3. **ছোট Hold button** নিচে (`h-9`, subtle ghost/outline amber tone, ছোট text) — label: `Hold (F2)` / `হোল্ড (F2)`।
+ঠিক করা:
+- `flex flex-col gap-2` → `grid grid-cols-2 gap-2`
+- ক্যাশ (F1) আর বাকি (F2) **পাশাপাশি**, দুটোই `h-12` size।
+- **হোল্ড button সম্পূর্ণ সরিয়ে দেব** (user বলেছে hold না থাকলেও চলবে)। F2 shortcut বাকি-তে assign হবে।
 
-এতে main two actions (Cash + Due) বড় ও prominent হবে, আর Hold secondary action হিসেবে নিচে থাকবে।
+### ৩) Cart item card compact করা — unit dropdown সরানো
+ফাইল: `src/components/app/POSPage.tsx` (line 731-744)
 
-### ৩) "নগদ" শব্দ POS UI থেকে সরানো
-ফাইল: `src/lib/i18n.tsx`
+সমস্যা: প্রতিটা cart item-এ আলাদা unit dropdown (Piece/Packet/Bottle...) অনেক জায়গা নিচ্ছে। Product-এর নিজস্ব unit তো product entry-তেই আছে।
 
-শুধু POS-related key গুলোতে Bangla string `"নগদ টাকা"` → `"ক্যাশ"` করা হবে:
-- `p2c_cashArrow`: `"নগদ টাকা →"` → `"ক্যাশ →"`
-- `p2c_cash`: `"নগদ টাকা"` → `"ক্যাশ"`
+ঠিক করা:
+- Unit dropdown পুরো **সরিয়ে দেব**।
+- পরিবর্তে item name-এর পাশে ছোট label হিসেবে product-এর unit দেখাব (যেমন: "৫০০ গ্রাম চাল · piece") — একদম minimal text, কোনো input নেই।
 
-বাকি জায়গা (cashbox permission, customer money page, finance methods, report labels) **touch করা হবে না** — শুধু POS এর Cash button-এর label।
+### ৪) Unit Price + Discount input compact
+ফাইল: `src/components/app/POSPage.tsx` (line 746-769)
+
+সমস্যা: দুটো input field অনেক বড় (`h-8` + label + suffix padding), discount-এ একশোর বেশি হবে না তবু চওড়া।
+
+ঠিক করা:
+- Two-column grid রাখব কিন্তু height `h-7`, text `text-[11px]`।
+- Unit Price label "মূল্য" / "Price", suffix `৳` ছোট করব (pr-6)।
+- Discount input narrower — suffix `%` ছোট, max width কম। Inline single-row layout: label বাঁদিকে, input ডানদিকে (label উপরে আর নয়)।
+- Result: cart card-এর vertical space প্রায় ৩০% কমবে।
+
+### ৫) Quick add buttons (+1, +2, +5) compact
+ফাইল: `src/components/app/POSPage.tsx` (line 771-799)
+
+- `+1 +2 +5` buttons আর qty stepper আর line total — তিনটাই একই row-এ আছে এখন, ঠিকই আছে।
+- শুধু buttons-এর padding `px-1.5 py-0.5` → `px-1 py-0.5`, text smaller করে আরও tight করব।
 
 ### যা পরিবর্তন হবে না
-- Menu order, sidebar, routing, backend logic, payment flow, discount calculation — কিছুই না।
-- শুধু POS page-এর product card visual, cart panel button layout, এবং Cash button-এর Bangla label।
+- Discount calculation logic, payment flow, F1/F2 shortcut behavior (F2 শুধু hold থেকে due-তে যাবে)
+- Sidebar, menu, routing, backend, i18n strings (Bangla "ক্যাশ"/"বাকি" আগের মতই)
+- Product grid layout, search/shortcut bar, top stat strip
 
 ### Files
-- `src/components/app/POSPage.tsx` — card badge/+ button repositioning + cart action buttons restructure
-- `src/lib/i18n.tsx` — দুটি Bangla string update
+- `src/components/app/POSPage.tsx` — উপরের ৫টা change
