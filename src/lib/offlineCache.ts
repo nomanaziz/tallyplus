@@ -35,7 +35,7 @@ function isOnline(): boolean {
  */
 export async function cachedQuery<T>(
   key: string,
-  fetcher: () => Promise<{ data: T | null; error: unknown }>,
+  fetcher: () => PromiseLike<{ data: T | null; error: unknown }>,
 ): Promise<CachedQueryResult<T>> {
   const cached = await get<CacheEntry<T>>(key, store).catch(() => undefined);
 
