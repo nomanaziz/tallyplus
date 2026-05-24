@@ -849,10 +849,28 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-2 p-3">
+          <div className="flex flex-col gap-2 p-3">
             <Button
-              variant="outline"
-              className="h-12 border-amber-500 bg-amber-50 font-bold text-amber-700 hover:bg-amber-100 dark:bg-amber-500/10 dark:hover:bg-amber-500/20"
+              className="h-14 text-base font-bold"
+              disabled={cart.length === 0}
+              onClick={() => setCashOpen(true)}
+            >
+              <ShoppingBag className="mr-2 h-5 w-5" />
+              {lang === "bn" ? "ক্যাশ (F1)" : "Cash (F1)"}
+            </Button>
+            {isSell && (
+              <Button
+                variant="outline"
+                className="h-14 border-2 text-base font-bold"
+                disabled={cart.length === 0}
+                onClick={() => setDueOpen(true)}
+              >
+                {lang === "bn" ? "বাকি" : "Due"}
+              </Button>
+            )}
+            <Button
+              variant="ghost"
+              className="h-9 text-xs font-medium text-amber-700 hover:bg-amber-50 hover:text-amber-800 dark:text-amber-400 dark:hover:bg-amber-500/10"
               disabled={cart.length === 0}
               onClick={() => {
                 try {
@@ -864,28 +882,10 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
                 } catch { /* ignore */ }
               }}
             >
-              <Pause className="mr-1 h-4 w-4" />
+              <Pause className="mr-1 h-3.5 w-3.5" />
               {lang === "bn" ? "হোল্ড (F2)" : "Hold (F2)"}
             </Button>
-            <Button
-              className="h-12 font-bold"
-              disabled={cart.length === 0}
-              onClick={() => setCashOpen(true)}
-            >
-              <ShoppingBag className="mr-1 h-4 w-4" />
-              {lang === "bn" ? "চেকআউট (F1)" : "Checkout (F1)"}
-            </Button>
           </div>
-          {/* Due row */}
-          {isSell && (
-            <div className="border-t p-3">
-              <Button variant="ghost" className="h-9 w-full text-xs text-muted-foreground hover:text-foreground"
-                disabled={cart.length === 0}
-                onClick={() => setDueOpen(true)}>
-                {t("p2c_dueArrow")}
-              </Button>
-            </div>
-          )}
         </div>
       </div>
 
