@@ -372,35 +372,52 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
     return lang === "bn" ? `${u.bn} (${u.en})` : `${u.en} (${u.bn})`;
   };
 
+  const totalDiscPctDisplay = subtotalAfterLineDisc > 0
+    ? Math.round(((Number(discount) || 0) / subtotalAfterLineDisc) * 100)
+    : 0;
+
   return (
     <div className="w-full px-3 py-3 xl:px-5">
-      <div className="mb-1 text-xs text-muted-foreground">{titleEn}</div>
-      <div className="mb-3 flex items-center justify-between">
+      {/* ───── Top header bar (reference image style) ───── */}
+      <div className="mb-3 flex flex-wrap items-center gap-3 rounded-2xl border bg-card px-3 py-2 shadow-sm">
+        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => nav({ to: "/app/dashboard" })}>
+          <ArrowLeft className="h-4 w-4" />
+        </Button>
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => nav({ to: "/app/dashboard" })}>
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <h1 className="text-xl font-extrabold md:text-2xl">{lang === "bn" ? titleBn : titleEn}</h1>
+          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm">
+            <ShoppingBag className="h-4 w-4" strokeWidth={2.5} />
+          </div>
+          <div className="leading-tight">
+            <div className="text-sm font-bold">{lang === "bn" ? (isSell ? "POS সিস্টেম" : "ক্রয় সিস্টেম") : (isSell ? "POS System" : "Purchase System")}</div>
+            <div className="text-[10px] text-muted-foreground">{lang === "bn" ? "পয়েন্ট অফ সেল" : "Point of Sale"}</div>
+          </div>
         </div>
-        <div className="inline-flex rounded-full border bg-card p-0.5 shadow-sm">
-          <button
-            type="button"
-            onClick={() => setViewMode("grid")}
-            className={`flex h-7 w-9 items-center justify-center rounded-full transition-colors ${viewMode === "grid" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"}`}
-            aria-label="Grid view"
-            title={t("p2c_gridView")}
-          >
-            <LayoutGrid className="h-3.5 w-3.5" />
-          </button>
-          <button
-            type="button"
-            onClick={() => setViewMode("list")}
-            className={`flex h-7 w-9 items-center justify-center rounded-full transition-colors ${viewMode === "list" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"}`}
-            aria-label="List view"
-            title={t("p2c_listView")}
-          >
-            <ListIcon className="h-3.5 w-3.5" />
-          </button>
+
+        {/* Center stats */}
+        <div className="ml-auto flex flex-wrap items-center gap-2">
+          <div className="rounded-xl bg-primary/10 px-3 py-1.5 text-center ring-1 ring-primary/20">
+            <div className="text-[10px] font-semibold text-primary/80">{lang === "bn" ? (isSell ? "আজকের বিক্রয়" : "আজকের ক্রয়") : (isSell ? "Today's Sales" : "Today's Purchase")}</div>
+            <div className="text-sm font-extrabold tabular-nums text-primary">{fmtMoney(todayStats?.total ?? 0, lang)}</div>
+          </div>
+          <div className="rounded-xl bg-amber-100 px-3 py-1.5 text-center ring-1 ring-amber-200 dark:bg-amber-500/15 dark:ring-amber-400/30">
+            <div className="text-[10px] font-semibold text-amber-800 dark:text-amber-200">{lang === "bn" ? "আইটেম বিক্রি" : "Items Sold"}</div>
+            <div className="text-sm font-extrabold tabular-nums text-amber-900 dark:text-amber-100">{todayStats?.items ?? 0}</div>
+          </div>
+          <div className="rounded-xl bg-emerald-100 px-3 py-1.5 text-center ring-1 ring-emerald-200 dark:bg-emerald-500/15 dark:ring-emerald-400/30">
+            <div className="text-[10px] font-semibold text-emerald-800 dark:text-emerald-200">{lang === "bn" ? "লেনদেন" : "Txns"}</div>
+            <div className="text-sm font-extrabold tabular-nums text-emerald-900 dark:text-emerald-100">{todayStats?.txns ?? 0}</div>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <div className="hidden text-right md:block">
+            <div className="text-xs font-semibold">{user?.email?.split("@")[0] ?? "User"}</div>
+            <div className="text-[10px] text-muted-foreground">{current?.name ?? ""}</div>
+          </div>
+          <Button size="sm" className="rounded-full bg-primary text-primary-foreground">
+            <Pause className="mr-1 h-3.5 w-3.5" />
+            {lang === "bn" ? "হোল্ড অর্ডার" : "Hold Orders"} ({holdsCount})
+          </Button>
         </div>
       </div>
 
@@ -408,42 +425,10 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
       <div className="mb-3 lg:hidden">
         <Tabs value={mobileTab} onValueChange={(v) => setMobileTab(v as "products" | "cart")}>
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="products">
-              {t("p2c_products")}
-            </TabsTrigger>
-            <TabsTrigger value="cart">
-              {t("p2c_cart")} ({lang === "bn" ? bnNum(cart.length) : cart.length})
-            </TabsTrigger>
+            <TabsTrigger value="products">{t("p2c_products")}</TabsTrigger>
+            <TabsTrigger value="cart">{t("p2c_cart")} ({cart.length})</TabsTrigger>
           </TabsList>
         </Tabs>
-      </div>
-
-      {/* Top stat strip — colored pills like reference */}
-      <div className="mb-3 hidden gap-2 lg:grid lg:grid-cols-3">
-        <div className="rounded-2xl bg-gradient-to-br from-primary/15 to-primary/5 px-4 py-3 ring-1 ring-primary/20">
-          <div className="text-[10px] font-semibold uppercase tracking-wide text-primary/80">
-            {t("p2c_cart")}
-          </div>
-          <div className="mt-0.5 text-2xl font-extrabold tabular-nums text-primary">
-            {fmtMoney(subtotal, lang)}
-          </div>
-        </div>
-        <div className="rounded-2xl bg-gradient-to-br from-amber-200/60 to-amber-100/30 px-4 py-3 ring-1 ring-amber-300/50 dark:from-amber-500/15 dark:to-amber-500/5 dark:ring-amber-400/30">
-          <div className="text-[10px] font-semibold uppercase tracking-wide text-amber-900/80 dark:text-amber-200/90">
-            {t("p2c_selectedItemsN", { n: "" }).replace(/\s*\(\)\s*/, "")}
-          </div>
-          <div className="mt-0.5 text-2xl font-extrabold tabular-nums text-amber-900 dark:text-amber-100">
-            {lang === "bn" ? bnNum(cart.reduce((s, it) => s + it.qty, 0)) : cart.reduce((s, it) => s + it.qty, 0)}
-          </div>
-        </div>
-        <div className="rounded-2xl bg-gradient-to-br from-emerald-200/60 to-emerald-100/30 px-4 py-3 ring-1 ring-emerald-300/50 dark:from-emerald-500/15 dark:to-emerald-500/5 dark:ring-emerald-400/30">
-          <div className="text-[10px] font-semibold uppercase tracking-wide text-emerald-900/80 dark:text-emerald-200/90">
-            {lang === "bn" ? "লেনদেন" : "Lines"}
-          </div>
-          <div className="mt-0.5 text-2xl font-extrabold tabular-nums text-emerald-900 dark:text-emerald-100">
-            {lang === "bn" ? bnNum(cart.length) : cart.length}
-          </div>
-        </div>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-12">
