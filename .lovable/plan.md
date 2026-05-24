@@ -1,3 +1,15 @@
+# Phase 4 — POS Offline (sale + purchase)
+
+POSPage.tsx এর `save()` এ একটা offline branch যোগ হয়েছে:
+- `navigator.onLine === false` হলে পুরো flow client-side UUID দিয়ে queue হয়।
+- contact (customer/supplier): cache এ phone-match খুঁজে নেয়, নাহলে নতুন id generate করে insert queue।
+- sale/purchase, items, stock_movements, cash_movements সব `writeWithOffline` দিয়ে insert queue।
+- products.stock এবং customers/suppliers.due_balance: cache থেকে current value পড়ে delta apply করে update queue।
+- Invoice popup locally-generated id দিয়ে print/share করা যায়।
+- Online থাকলে আগের code path অপরিবর্তিত — কোনো behavior change নেই।
+
+---
+
 # Phase 3 — বাকি Module গুলোকে Offline-first করা
 
 Phase 1+2 এ যা হয়েছে: global sync icon, IDB read cache (`cachedQuery`), write queue (insert/delete), LPG পুরো module offline।
