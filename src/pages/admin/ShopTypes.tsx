@@ -199,6 +199,41 @@ function ShopTypesAdmin() {
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
+                <Label>Category group</Label>
+                <Input
+                  value={editing?.category_group ?? ""}
+                  onChange={(e) => setEditing({ ...editing, category_group: e.target.value })}
+                  placeholder="retail, wholesale, restaurant, service, lpg, water, digital, online"
+                />
+              </div>
+              <div className="flex items-center gap-2 pt-6">
+                <Switch
+                  checked={editing?.is_group_head ?? false}
+                  onCheckedChange={(v) => setEditing({ ...editing, is_group_head: v })}
+                />
+                <Label>Group head (signup-এ দেখাবে)</Label>
+              </div>
+            </div>
+            <div>
+              <Label>Includes (Bangla) — কোন কোন দোকান এই category-তে পড়ে</Label>
+              <Textarea
+                rows={2}
+                value={editing?.includes_bn ?? ""}
+                onChange={(e) => setEditing({ ...editing, includes_bn: e.target.value })}
+                placeholder="মুদি, ফার্মেসি, স্টেশনারি..."
+              />
+            </div>
+            <div>
+              <Label>Includes (English)</Label>
+              <Textarea
+                rows={2}
+                value={editing?.includes_en ?? ""}
+                onChange={(e) => setEditing({ ...editing, includes_en: e.target.value })}
+                placeholder="Grocery, pharmacy, stationery..."
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
                 <Label>Sort order</Label>
                 <Input type="number" value={editing?.sort_order ?? 0} onChange={(e) => setEditing({ ...editing, sort_order: Number(e.target.value) })} />
               </div>
