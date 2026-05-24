@@ -1282,9 +1282,16 @@ function ProductFormDialog({
   const [barcodeOn, setBarcodeOn] = useState(false);
   const [serializedOn, setSerializedOn] = useState(false);
 
+  // LPG cylinder-type and empty-pricing fields. Only shown for LPG shops.
+  const [cylinderType, setCylinderType] = useState<"none" | "full" | "empty">("none");
+  const [emptyCost, setEmptyCost] = useState("");
+  const [emptySale, setEmptySale] = useState("");
+  const [emptyWholesale, setEmptyWholesale] = useState("");
+  const [emptyAgent, setEmptyAgent] = useState("");
+  const isLpg = shopTypeCode === "lpg";
+
   // IMEI/Serial tracking is available for all shop types — any product
   // (jewelry, hardware, furniture, etc.) can opt in to per-unit serial tracking.
-  void shopTypeCode;
 
   const reloadCats = async (sid: string) => {
     const { data } = await supabase
@@ -1351,6 +1358,15 @@ function ProductFormDialog({
       } else {
         setSerializedOn(shopTypeCode === "mobile");
       }
+      // LPG cylinder fields
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const pa = p as any;
+      const ct = (pa?.cylinder_type as string | null) ?? null;
+      setCylinderType(ct === "full" || ct === "empty" ? ct : "none");
+      setEmptyCost(pa?.empty_cost_price != null ? String(pa.empty_cost_price) : "");
+      setEmptySale(pa?.empty_sale_price != null ? String(pa.empty_sale_price) : "");
+      setEmptyWholesale(pa?.empty_wholesale_price != null ? String(pa.empty_wholesale_price) : "");
+      setEmptyAgent(pa?.empty_agent_price != null ? String(pa.empty_agent_price) : "");
     }
   }, [open, product, shopTypeCode]);
 
@@ -1416,6 +1432,11 @@ function ProductFormDialog({
       discount_value: discountOn ? (Number(discountValue) || 0) : null,
       discount_type: discountOn ? discountType : null,
       is_serialized: serializedOn,
+      cylinder_type: isLpg && cylinderType !== "none" ? cylinderType : null,
+      empty_cost_price: isLpg && cylinderType === "full" && emptyCost !== "" ? Number(emptyCost) : null,
+      empty_sale_price: isLpg && cylinderType === "full" && emptySale !== "" ? Number(emptySale) : null,
+      empty_wholesale_price: isLpg && cylinderType === "full" && emptyWholesale !== "" ? Number(emptyWholesale) : null,
+      empty_agent_price: isLpg && cylinderType === "full" && emptyAgent !== "" ? Number(emptyAgent) : null,
     };
     const { data: savedRow, error } = product
       ? await supabase.from("products").update(payload).eq("id", product.id).select("id").maybeSingle()
@@ -1556,6 +1577,53 @@ function ProductFormDialog({
               <Input type="number" value={sale} onChange={(e) => setSale(e.target.value)} />
             </div>
           </div>
+
+          {isLpg && (
+            <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 space-y-3">
+              <div className="flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="text-sm font-medium">🛢️ সিলিন্ডারের ধরন</div>
+                  <div className="mt-0.5 text-xs text-muted-foreground">
+                    গ্যাস/পানির বোতলের জন্য পূর্ণ বা খালি নির্বাচন করুন
+                  </div>
+                </div>
+                <Select value={cylinderType} onValueChange={(v) => setCylinderType(v as "none"|"full"|"empty")}>
+                  <SelectTrigger className="w-[140px]"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">প্রযোজ্য নয়</SelectItem>
+                    <SelectItem value="full">পূর্ণ (Full)</SelectItem>
+                    <SelectItem value="empty">খালি (Empty)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {cylinderType === "full" && (
+                <div className="space-y-2">
+                  <div className="text-xs font-medium text-muted-foreground">
+                    খালি অবস্থায় বিক্রির দাম (ঐচ্ছিক — খালি হিসেবে বিক্রি করলে এই দামগুলো ব্যবহৃত হবে)
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="grid gap-1.5">
+                      <Label className="text-xs">খালি ক্রয়মূল্য</Label>
+                      <Input type="number" value={emptyCost} onChange={(e) => setEmptyCost(e.target.value)} placeholder="0" />
+                    </div>
+                    <div className="grid gap-1.5">
+                      <Label className="text-xs">খালি বিক্রয়মূল্য</Label>
+                      <Input type="number" value={emptySale} onChange={(e) => setEmptySale(e.target.value)} placeholder="0" />
+                    </div>
+                    <div className="grid gap-1.5">
+                      <Label className="text-xs">খালি পাইকারি দাম</Label>
+                      <Input type="number" value={emptyWholesale} onChange={(e) => setEmptyWholesale(e.target.value)} placeholder="0" />
+                    </div>
+                    <div className="grid gap-1.5">
+                      <Label className="text-xs">খালি এজেন্ট দাম</Label>
+                      <Input type="number" value={emptyAgent} onChange={(e) => setEmptyAgent(e.target.value)} placeholder="0" />
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="grid gap-1.5">
             <Label>SKU</Label>
