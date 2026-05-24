@@ -578,9 +578,18 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
                       type="button"
                       onClick={() => addToCart(p)}
                       disabled={outOfStock}
-                      className={`group relative flex flex-col overflow-hidden rounded-xl border bg-card text-center shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5 ${inCart ? "ring-2 ring-primary bg-primary/5" : ""} ${outOfStock ? "opacity-50 cursor-not-allowed" : ""}`}
                     >
-                      <div className="relative mx-auto mt-2 h-16 w-16 overflow-hidden rounded-lg bg-muted/30">
+                      {/* qty badge — top-left of whole card */}
+                      {inCart && (
+                        <span className="absolute left-1.5 top-1.5 z-10 rounded-full bg-primary px-2 py-0.5 text-[11px] font-bold text-primary-foreground shadow ring-1 ring-background">
+                          ×{lang === "bn" ? bnNum(inCart.qty) : inCart.qty}
+                        </span>
+                      )}
+                      {/* + button — top-right of whole card */}
+                      <span className="absolute right-1.5 top-1.5 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-primary text-primary-foreground shadow ring-1 ring-background transition-transform group-hover:scale-110">
+                        <Plus className="h-4 w-4" strokeWidth={3} />
+                      </span>
+                      <div className="relative mx-auto mt-3 h-16 w-16 overflow-hidden rounded-lg bg-muted/30">
                         {p.image_url ? (
                           <img src={p.image_url} alt={p.name} loading="lazy" decoding="async" className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105" />
                         ) : (
@@ -588,14 +597,6 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
                             <Package className="h-6 w-6" />
                           </div>
                         )}
-                        {inCart && (
-                          <span className="absolute -left-1 -top-1 rounded-full bg-primary px-1.5 py-px text-[9px] font-bold text-primary-foreground shadow">
-                            ×{inCart.qty}
-                          </span>
-                        )}
-                        <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground shadow ring-1 ring-background transition-transform group-hover:scale-110">
-                          <Plus className="h-3 w-3" strokeWidth={3} />
-                        </span>
                       </div>
                       <div className="flex flex-1 flex-col items-center justify-center px-2 py-2">
                         <div className="line-clamp-1 text-sm font-semibold leading-tight text-foreground">
