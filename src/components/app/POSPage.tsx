@@ -901,7 +901,7 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
         kind="cash"
         cart={cart.map((it) => ({
           ...it,
-          price: it.price * (1 - (Number(it.line_discount_pct) || 0) / 100),
+          price: it.qty > 0 ? lineTotal(it) / it.qty : it.price,
         }))}
         subtotal={subtotalAfterLineDisc}
         discount={Number(discount) || 0}
@@ -916,7 +916,7 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
         kind="due"
         cart={cart.map((it) => ({
           ...it,
-          price: it.price * (1 - (Number(it.line_discount_pct) || 0) / 100),
+          price: it.qty > 0 ? lineTotal(it) / it.qty : it.price,
         }))}
         subtotal={subtotalAfterLineDisc}
         discount={Number(discount) || 0}
