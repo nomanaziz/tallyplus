@@ -29,7 +29,7 @@ type Holding = {
 type Contact = { id: string; name: string; phone: string | null };
 type DeliveryMan = { id: string; name: string; phone: string | null; vehicle_no: string | null; is_active: boolean };
 type Supplier = { id: string; name: string; phone: string | null; type: string; is_active: boolean };
-type MoveType = "sale_new" | "refill" | "return_empty" | "purchase_full" | "refill_factory";
+type MoveType = "sale_new" | "refill" | "return_empty" | "return_full" | "purchase_full" | "refill_factory";
 
 const TYPE_LABELS_BN: Record<string, string> = {
   sale_new: "নতুন বিক্রি",
