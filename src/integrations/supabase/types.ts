@@ -3355,11 +3355,16 @@ export type Database = {
           category_id: string | null
           cost_price: number
           created_at: string
+          cylinder_type: string | null
           deleted_at: string | null
           description: string | null
           discount_enabled: boolean
           discount_type: string | null
           discount_value: number | null
+          empty_agent_price: number | null
+          empty_cost_price: number | null
+          empty_sale_price: number | null
+          empty_wholesale_price: number | null
           expiry_date: string | null
           id: string
           image_url: string | null
@@ -3396,11 +3401,16 @@ export type Database = {
           category_id?: string | null
           cost_price?: number
           created_at?: string
+          cylinder_type?: string | null
           deleted_at?: string | null
           description?: string | null
           discount_enabled?: boolean
           discount_type?: string | null
           discount_value?: number | null
+          empty_agent_price?: number | null
+          empty_cost_price?: number | null
+          empty_sale_price?: number | null
+          empty_wholesale_price?: number | null
           expiry_date?: string | null
           id?: string
           image_url?: string | null
@@ -3437,11 +3447,16 @@ export type Database = {
           category_id?: string | null
           cost_price?: number
           created_at?: string
+          cylinder_type?: string | null
           deleted_at?: string | null
           description?: string | null
           discount_enabled?: boolean
           discount_type?: string | null
           discount_value?: number | null
+          empty_agent_price?: number | null
+          empty_cost_price?: number | null
+          empty_sale_price?: number | null
+          empty_wholesale_price?: number | null
           expiry_date?: string | null
           id?: string
           image_url?: string | null
