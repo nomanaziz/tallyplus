@@ -288,6 +288,94 @@ export default function LpgPage() {
           )}
         </TabsContent>
 
+        {/* EMPTY CYLINDER HUB */}
+        <TabsContent value="empty_hub" className="mt-3 space-y-3">
+          <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+            <KpiCard icon={<Droplet className="h-4 w-4" />} color="from-sky-500 to-sky-700"
+              label={tr("মোট খালি স্টক", "Total empty in stock")}
+              value={lang === "bn" ? bnNum(sumEmpty(stockSummary)) : String(sumEmpty(stockSummary))} />
+            <KpiCard icon={<ArrowDownToLine className="h-4 w-4" />} color="from-emerald-500 to-emerald-700"
+              label={tr("আজ খালি ফেরত", "Empty received today")}
+              value={bnNum(String(emptyReceivedToday))} />
+            <KpiCard icon={<ArrowUpFromLine className="h-4 w-4" />} color="from-amber-500 to-orange-600"
+              label={tr("আজ কারখানায় পাঠানো", "Sent to factory today")}
+              value={bnNum(String(emptySentToFactoryToday))} />
+            <KpiCard icon={<Truck className="h-4 w-4" />} color="from-rose-500 to-rose-700"
+              label={tr("গ্রাহকের কাছে বকেয়া", "Pending with customers")}
+              value={bnNum(String(totalOut))} />
+          </div>
+
+          {types.length === 0 ? (
+            <EmptyHint
+              title={tr("কোনো বোতলের ধরন যোগ করা হয়নি", "No bottle types yet")}
+              hint={tr("শুরু করতে 'বোতলের ধরন' ট্যাব থেকে একটা ধরন যোগ করুন।", "Add a bottle type from the 'Bottle types' tab.")}
+              action={<Button size="sm" onClick={() => setTypeOpen(true)}><Plus className="mr-1.5 h-4 w-4" />{tr("ধরন যোগ", "Add type")}</Button>}
+            />
+          ) : (
+            <>
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                <Button
+                  onClick={() => openMovement("return_empty")}
+                  className="h-auto justify-start gap-2 bg-sky-600 py-3 text-left text-white hover:bg-sky-700"
+                >
+                  <ArrowDownToLine className="h-5 w-5 flex-none" />
+                  <div>
+                    <div className="font-bold">{tr("খালি বোতল ফেরত নিন", "Receive empty bottle")}</div>
+                    <div className="text-xs opacity-90">{tr("গ্রাহক থেকে শুধু খালি ফেরত এসেছে", "Customer returned empty only")}</div>
+                  </div>
+                </Button>
+                <Button
+                  onClick={() => openMovement("refill_factory")}
+                  className="h-auto justify-start gap-2 bg-amber-600 py-3 text-left text-white hover:bg-amber-700"
+                >
+                  <ArrowUpFromLine className="h-5 w-5 flex-none" />
+                  <div>
+                    <div className="font-bold">{tr("কারখানায় খালি পাঠান", "Send empty to factory")}</div>
+                    <div className="text-xs opacity-90">{tr("খালি পাঠিয়ে ভর্তি রিফিল আনুন", "Send empties, bring back full")}</div>
+                  </div>
+                </Button>
+              </div>
+
+              <div className="overflow-hidden rounded-xl border bg-card">
+                <table className="w-full text-sm">
+                  <thead className="bg-muted/40 text-xs uppercase text-muted-foreground">
+                    <tr>
+                      <th className="px-3 py-2 text-left">{tr("ব্র্যান্ড / সাইজ", "Brand / Size")}</th>
+                      <th className="px-3 py-2 text-right">{tr("খালি স্টক", "Empty in stock")}</th>
+                      <th className="px-3 py-2 text-right">{tr("গ্রাহকের কাছে", "With customers")}</th>
+                      <th className="px-3 py-2 text-right">{tr("জামানত / টি", "Deposit / pc")}</th>
+                      <th className="px-3 py-2"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {types.map((t) => {
+                      const s = stockSummary.get(t.id) ?? { full: 0, empty: 0, out: 0 };
+                      return (
+                        <tr key={t.id} className="border-t">
+                          <td className="px-3 py-2">
+                            <div className="font-medium">{t.name}</div>
+                            {t.size_label && <div className="text-xs text-muted-foreground">{t.size_label}</div>}
+                          </td>
+                          <td className="px-3 py-2 text-right tabular-nums">
+                            <span className="rounded-md bg-sky-50 px-2 py-0.5 font-semibold text-sky-700">{bnNum(String(s.empty))}</span>
+                          </td>
+                          <td className="px-3 py-2 text-right tabular-nums text-muted-foreground">{bnNum(String(s.out))}</td>
+                          <td className="px-3 py-2 text-right tabular-nums text-muted-foreground">{fmtMoney(t.deposit_amount, lang)}</td>
+                          <td className="px-3 py-2 text-right">
+                            <Button size="sm" variant="outline" onClick={() => openMovement("return_empty", t.id)}>
+                              <Plus className="mr-1 h-3 w-3" />{tr("খালি যোগ", "Add empty")}
+                            </Button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
+        </TabsContent>
+
         {/* MOVEMENTS */}
         <TabsContent value="moves" className="mt-3">
           <div className="overflow-hidden rounded-xl border bg-card">
