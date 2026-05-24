@@ -60,7 +60,7 @@ export const dashboardSummaryQuery = (
     enabled: !!shopId,
     staleTime: 60_000,
     gcTime: 5 * 60_000,
-    queryFn: async (): Promise<DashboardSummary> => {
+    queryFn: cacheQueryFn(shopId ? `${shopId}:dashboard-summary:${sinceIso}` : null, async (): Promise<DashboardSummary> => {
       if (!shopId) {
         return { sales: 0, purchases: 0, expenses: 0, receivable: 0, payable: 0, stockValue: 0, balance: 0 };
       }
@@ -91,7 +91,7 @@ export const dashboardSummaryQuery = (
         stockValue: n(row?.stock_value),
         balance: n(row?.cash_in) - n(row?.cash_out),
       };
-    },
+    }),
   });
 
 /* ---------- Stock movements history ---------- */
