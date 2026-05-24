@@ -9,6 +9,8 @@ import { useAuth } from "@/lib/auth";
 import { useI18n, fmtMoney, bnNum } from "@/lib/i18n";
 import { productsLiteQuery } from "@/lib/queries";
 import { servicesLiteQuery, durationToText, type Service } from "@/lib/services-queries";
+import { writeWithOffline } from "@/lib/useOfflineWrite";
+import { readCache } from "@/lib/offlineCache";
 import { SerialPickDialog } from "@/components/app/SerialPickDialog";
 import { BarcodeScannerButton } from "@/components/app/BarcodeScannerButton";
 import { useHardwareScanner } from "@/hooks/useHardwareScanner";
