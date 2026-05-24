@@ -12,7 +12,7 @@ import { toast } from "sonner";
 import { Plus, Trash2, Truck, ClipboardList, GitBranch, PiggyBank, CalendarDays, Building2, ArrowLeftRight } from "lucide-react";
 
 type TR = (bn: string, en: string) => string;
-type Lang = "bn" | "en";
+type Lang = string;
 type BottleType = { id: string; name: string; size_label: string | null };
 type Contact = { id: string; name: string; phone: string | null };
 type DeliveryMan = { id: string; name: string; phone: string | null };
