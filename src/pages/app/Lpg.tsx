@@ -201,6 +201,7 @@ export default function LpgPage() {
           <TabsTrigger value="empty_hub">{tr("খালি সিলিন্ডার হাব", "Empty Hub")}</TabsTrigger>
           <TabsTrigger value="moves">{tr("লেনদেন", "Movements")}</TabsTrigger>
           <TabsTrigger value="customers">{tr("গ্রাহকের বোতল", "Customer bottles")}</TabsTrigger>
+          <TabsTrigger value="deposits">{tr("জামানত ও ফেরত", "Deposits & Returns")}</TabsTrigger>
           <TabsTrigger value="types">{tr("বোতলের ধরন", "Bottle types")}</TabsTrigger>
           <TabsTrigger value="suppliers">{tr("সরবরাহকারী", "Suppliers")}</TabsTrigger>
           <TabsTrigger value="delivery">{tr("ডেলিভারি ম্যান", "Delivery men")}</TabsTrigger>
