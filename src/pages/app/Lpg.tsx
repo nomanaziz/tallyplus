@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useShop } from "@/lib/shop";
 import { useI18n, fmtMoney, bnNum } from "@/lib/i18n";
 import { supabase } from "@/integrations/supabase/client";
+import { cachedQuery } from "@/lib/offlineCache";
+import { writeWithOffline } from "@/lib/useOfflineWrite";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -76,22 +78,35 @@ export default function LpgPage() {
   useEffect(() => {
     if (!current?.id) return;
     let cancelled = false;
+    const sid = current.id;
     (async () => {
       const [t, m, h, c, d, s] = await Promise.all([
-        supabase.from("bottle_types").select("*").eq("shop_id", current.id).order("created_at"),
-        supabase.from("bottle_movements").select("*").eq("shop_id", current.id).order("occurred_at", { ascending: false }).limit(200),
-        supabase.from("bottle_holdings").select("*").eq("shop_id", current.id).gt("qty", 0),
-        supabase.from("customers").select("id,name,phone").eq("shop_id", current.id).order("name"),
-        supabase.from("delivery_men").select("*").eq("shop_id", current.id).order("name"),
-        supabase.from("lpg_suppliers").select("*").eq("shop_id", current.id).eq("is_active", true).order("name"),
+        cachedQuery<BottleType[]>(`${sid}:bottle_types`, () =>
+          supabase.from("bottle_types").select("*").eq("shop_id", sid).order("created_at"),
+        ),
+        cachedQuery<Movement[]>(`${sid}:bottle_movements`, () =>
+          supabase.from("bottle_movements").select("*").eq("shop_id", sid).order("occurred_at", { ascending: false }).limit(200),
+        ),
+        cachedQuery<Holding[]>(`${sid}:bottle_holdings`, () =>
+          supabase.from("bottle_holdings").select("*").eq("shop_id", sid).gt("qty", 0),
+        ),
+        cachedQuery<Contact[]>(`${sid}:customers`, () =>
+          supabase.from("customers").select("id,name,phone").eq("shop_id", sid).order("name"),
+        ),
+        cachedQuery<DeliveryMan[]>(`${sid}:delivery_men`, () =>
+          supabase.from("delivery_men").select("*").eq("shop_id", sid).order("name"),
+        ),
+        cachedQuery<Supplier[]>(`${sid}:lpg_suppliers`, () =>
+          supabase.from("lpg_suppliers").select("*").eq("shop_id", sid).eq("is_active", true).order("name"),
+        ),
       ]);
       if (cancelled) return;
-      setTypes((t.data ?? []) as BottleType[]);
-      setMovements((m.data ?? []) as Movement[]);
-      setHoldings((h.data ?? []) as Holding[]);
-      setContacts((c.data ?? []) as Contact[]);
-      setDeliveryMen((d.data ?? []) as DeliveryMan[]);
-      setSuppliers((s.data ?? []) as Supplier[]);
+      setTypes(t.data ?? []);
+      setMovements(m.data ?? []);
+      setHoldings(h.data ?? []);
+      setContacts(c.data ?? []);
+      setDeliveryMen(d.data ?? []);
+      setSuppliers(s.data ?? []);
     })();
     return () => { cancelled = true; };
   }, [current?.id, tick]);
@@ -489,20 +504,25 @@ function MovementDialog({
     if (!q || q <= 0) return toast.error(tr("সংখ্যা ঠিক নয়", "Invalid quantity"));
 
     setBusy(true);
-    const { error } = await supabase.from("bottle_movements").insert({
-      shop_id: shopId,
-      bottle_type_id: bottleId,
-      contact_id: needsContact ? contactId : null,
-      supplier_id: isPurchase && supplierId ? supplierId : null,
-      type: tab,
-      qty: q,
-      cash_collected: Number(cash || 0),
-      deposit_change: Number(deposit || 0),
-      note: note || null,
+    const res = await writeWithOffline({
+      table: "bottle_movements",
+      op: "insert",
+      payload: {
+        shop_id: shopId,
+        bottle_type_id: bottleId,
+        contact_id: needsContact ? contactId : null,
+        supplier_id: isPurchase && supplierId ? supplierId : null,
+        type: tab,
+        qty: q,
+        cash_collected: Number(cash || 0),
+        deposit_change: Number(deposit || 0),
+        note: note || null,
+      },
+      offlineMessage: tr("অফলাইনে সংরক্ষিত — sync হলে cloud-এ যাবে", "Saved offline — will sync to cloud"),
     });
     setBusy(false);
-    if (error) return toast.error(error.message);
-    toast.success(tr("সংরক্ষিত হলো", "Saved"));
+    if (res.error) return toast.error(res.error);
+    if (!res.queued) toast.success(tr("সংরক্ষিত হলো", "Saved"));
     onSaved();
   };
 
@@ -601,13 +621,18 @@ function BottleTypeDialog({ open, onOpenChange, shopId, onSaved }: { open: boole
   const save = async () => {
     if (!name.trim()) return toast.error(tr("নাম দিন", "Enter name"));
     setBusy(true);
-    const { error } = await supabase.from("bottle_types").insert({
-      shop_id: shopId, name: name.trim(), size_label: size.trim() || null,
-      purchase_price: Number(buy || 0), sale_price: Number(sell || 0), deposit_amount: Number(dep || 0),
+    const res = await writeWithOffline({
+      table: "bottle_types",
+      op: "insert",
+      payload: {
+        shop_id: shopId, name: name.trim(), size_label: size.trim() || null,
+        purchase_price: Number(buy || 0), sale_price: Number(sell || 0), deposit_amount: Number(dep || 0),
+      },
+      offlineMessage: tr("অফলাইনে সংরক্ষিত", "Saved offline"),
     });
     setBusy(false);
-    if (error) return toast.error(error.message);
-    toast.success(tr("সংরক্ষিত হলো", "Saved"));
+    if (res.error) return toast.error(res.error);
+    if (!res.queued) toast.success(tr("সংরক্ষিত হলো", "Saved"));
     onSaved();
   };
   return (
@@ -641,12 +666,15 @@ function DeliveryManDialog({ open, onOpenChange, shopId, onSaved }: { open: bool
   const save = async () => {
     if (!name.trim()) return toast.error(tr("নাম দিন", "Enter name"));
     setBusy(true);
-    const { error } = await supabase.from("delivery_men").insert({
-      shop_id: shopId, name: name.trim(), phone: phone.trim() || null, vehicle_no: veh.trim() || null,
+    const res = await writeWithOffline({
+      table: "delivery_men",
+      op: "insert",
+      payload: { shop_id: shopId, name: name.trim(), phone: phone.trim() || null, vehicle_no: veh.trim() || null },
+      offlineMessage: tr("অফলাইনে সংরক্ষিত", "Saved offline"),
     });
     setBusy(false);
-    if (error) return toast.error(error.message);
-    toast.success(tr("সংরক্ষিত হলো", "Saved"));
+    if (res.error) return toast.error(res.error);
+    if (!res.queued) toast.success(tr("সংরক্ষিত হলো", "Saved"));
     onSaved();
   };
   return (
@@ -682,13 +710,18 @@ function SuppliersTab({
   const save = async () => {
     if (!name.trim()) return toast.error(tr("নাম দিন", "Enter name"));
     setBusy(true);
-    const { error } = await supabase.from("lpg_suppliers").insert({
-      shop_id: shopId, name: name.trim(), phone: phone.trim() || null,
-      address: addr.trim() || null, type,
+    const res = await writeWithOffline({
+      table: "lpg_suppliers",
+      op: "insert",
+      payload: {
+        shop_id: shopId, name: name.trim(), phone: phone.trim() || null,
+        address: addr.trim() || null, type,
+      },
+      offlineMessage: tr("অফলাইনে সংরক্ষিত", "Saved offline"),
     });
     setBusy(false);
-    if (error) return toast.error(error.message);
-    toast.success(tr("সংরক্ষিত হলো", "Saved"));
+    if (res.error) return toast.error(res.error);
+    if (!res.queued) toast.success(tr("সংরক্ষিত হলো", "Saved"));
     reset(); setOpen(false); onReload();
   };
 
