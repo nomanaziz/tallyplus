@@ -287,7 +287,90 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
   const clearCart = () => { setCart([]); setDiscount("0"); setDelivery("0"); };
 
   const subtotal = cart.reduce((s, it) => s + it.qty * it.price, 0);
-  const grandTotal = Math.max(0, subtotal - (Number(discount) || 0) + (Number(delivery) || 0));
+  const lineTotal = (it: CartItem) =>
+    it.qty * it.price * (1 - (Number(it.line_discount_pct) || 0) / 100);
+  const subtotalAfterLineDisc = cart.reduce((s, it) => s + lineTotal(it), 0);
+  const grandTotal = Math.max(0, subtotalAfterLineDisc - (Number(discount) || 0) + (Number(delivery) || 0));
+
+  // Today's stats (sell or purchase mode)
+  const todayKey = new Date().toISOString().slice(0, 10);
+  const { data: todayStats } = useQuery({
+    queryKey: ["pos-today-stats", current?.id, mode, todayKey],
+    enabled: !!current?.id,
+    queryFn: async () => {
+      if (!current?.id) return { total: 0, items: 0, txns: 0 };
+      const start = new Date(todayKey + "T00:00:00").toISOString();
+      const table = mode === "sell" ? "sales" : "purchases";
+      const itemsTable = mode === "sell" ? "sale_items" : "purchase_items";
+      const fk = mode === "sell" ? "sale_id" : "purchase_id";
+      const { data: txs } = await supabase
+        .from(table)
+        .select("id,total")
+        .eq("shop_id", current.id)
+        .is("deleted_at", null)
+        .gte("created_at", start);
+      const rows = (txs as { id: string; total: number }[]) ?? [];
+      const total = rows.reduce((s, r) => s + Number(r.total || 0), 0);
+      let items = 0;
+      if (rows.length > 0) {
+        const ids = rows.map((r) => r.id);
+        const { data: its } = await supabase
+          .from(itemsTable)
+          .select(`${fk},qty`)
+          .in(fk, ids);
+        items = ((its as { qty: number }[]) ?? []).reduce((s, r) => s + Number(r.qty || 0), 0);
+      }
+      return { total, items, txns: rows.length };
+    },
+  });
+
+  // F1 → checkout, F2 → hold (placeholder)
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      const tag = target?.tagName?.toLowerCase();
+      if (tag === "input" || tag === "textarea" || tag === "select") return;
+      if (e.key === "F1") {
+        e.preventDefault();
+        if (cart.length > 0) setCashOpen(true);
+      } else if (e.key === "F2") {
+        e.preventDefault();
+        if (cart.length > 0) {
+          try {
+            const holds = JSON.parse(localStorage.getItem("pos-holds") || "[]");
+            holds.push({ at: Date.now(), mode, cart, discount, delivery });
+            localStorage.setItem("pos-holds", JSON.stringify(holds));
+            toast.success(lang === "bn" ? "অর্ডার হোল্ড করা হয়েছে" : "Order held");
+            clearCart();
+          } catch { /* ignore */ }
+        }
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cart, discount, delivery, mode, lang]);
+
+  const holdsCount = (() => {
+    if (typeof window === "undefined") return 0;
+    try { return (JSON.parse(localStorage.getItem("pos-holds") || "[]") as unknown[]).length; }
+    catch { return 0; }
+  })();
+
+  const unitOptions = [
+    { v: "piece", bn: "পিস", en: "Piece" },
+    { v: "packet", bn: "প্যাকেট", en: "Packet" },
+    { v: "bottle", bn: "বোতল", en: "Bottle" },
+    { v: "can", bn: "ক্যান", en: "Can" },
+    { v: "kg", bn: "কেজি", en: "Kg" },
+    { v: "liter", bn: "লিটার", en: "Liter" },
+    { v: "dozen", bn: "ডজন", en: "Dozen" },
+  ];
+  const unitLabel = (v?: string) => {
+    const u = unitOptions.find((x) => x.v === v);
+    if (!u) return v || (lang === "bn" ? "পিস" : "Piece");
+    return lang === "bn" ? `${u.bn} (${u.en})` : `${u.en} (${u.bn})`;
+  };
 
   return (
     <div className="w-full px-3 py-3 xl:px-5">
