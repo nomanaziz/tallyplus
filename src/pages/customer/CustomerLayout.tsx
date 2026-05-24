@@ -87,13 +87,11 @@ export default function CustomerLayout() {
                 <Link
                   key={to}
                   to={to}
-                  activeProps={{ className: "bg-primary/25 font-semibold text-foreground" }}
-                  inactiveProps={{ className: "text-foreground hover:bg-sidebar-accent" }}
-                  className="group flex items-center gap-2.5 rounded-md px-2 py-1.5 text-[13px] leading-tight transition-colors"
+                  activeProps={{ className: "bg-primary/10 font-semibold text-primary [&_svg]:text-primary" }}
+                  inactiveProps={{ className: "text-foreground/80 hover:bg-accent/60 [&_svg]:text-muted-foreground" }}
+                  className="group flex h-9 items-center gap-3 rounded-lg px-3 text-[13px] leading-tight transition-colors"
                 >
-                  <span className="flex h-7 w-7 flex-none items-center justify-center rounded-md bg-primary text-primary-foreground shadow-sm">
-                    <Icon className="h-4 w-4" />
-                  </span>
+                  <Icon className="h-5 w-5 flex-none" />
                   <span className="truncate">{label}</span>
                 </Link>
               ))}
