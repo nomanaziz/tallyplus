@@ -718,7 +718,12 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
                         )}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <div className="line-clamp-1 text-sm font-semibold leading-tight">{it.name}</div>
+                        <div className="line-clamp-1 text-sm font-semibold leading-tight">
+                          {it.name}
+                          {(it.unit_label || prod?.unit) && (
+                            <span className="ml-1 text-[10px] font-normal text-muted-foreground">· {it.unit_label || prod?.unit}</span>
+                          )}
+                        </div>
                         {(prod?.sku || prod?.barcode) && (
                           <div className="text-[10px] text-muted-foreground">SKU: {prod?.sku || prod?.barcode}</div>
                         )}
@@ -729,53 +734,38 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
                       </button>
                     </div>
 
-                    {/* Unit selector */}
-                    {it.item_type !== "service" && (
-                      <div className="mt-2">
-                        <select
-                          value={it.unit_label || prod?.unit || "piece"}
-                          onChange={(e) => updateCart(idx, { unit_label: e.target.value })}
-                          className="h-8 w-full rounded-md border bg-background px-2 text-xs"
-                        >
-                          {unitOptions.map((u) => (
-                            <option key={u.v} value={u.v}>{lang === "bn" ? `${u.bn} (${u.en})` : `${u.en} (${u.bn})`}</option>
-                          ))}
-                        </select>
-                      </div>
-                    )}
-
-                    {/* Unit Price + Discount */}
-                    <div className="mt-2 grid grid-cols-2 gap-2">
-                      <div>
-                        <div className="mb-0.5 text-[10px] text-muted-foreground">Unit Price</div>
-                        <div className="relative">
+                    {/* Unit Price + Discount (compact inline) */}
+                    <div className="mt-1.5 flex items-center gap-2">
+                      <label className="flex flex-1 items-center gap-1">
+                        <span className="text-[10px] text-muted-foreground">{lang === "bn" ? "মূল্য" : "Price"}</span>
+                        <div className="relative flex-1">
                           <Input type="number" value={it.price}
-                            className="h-8 pr-10 text-right text-xs tabular-nums"
+                            className="h-7 pr-5 text-right text-[11px] tabular-nums"
                             onChange={(e) => updateCart(idx, { price: Number(e.target.value) || 0 })} />
-                          <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">টাকা</span>
+                          <span className="pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">৳</span>
                         </div>
-                      </div>
-                      <div>
-                        <div className="mb-0.5 text-[10px] text-muted-foreground">{lang === "bn" ? "ডিসকাউন্ট" : "Discount"}</div>
-                        <div className="relative">
+                      </label>
+                      <label className="flex items-center gap-1">
+                        <span className="text-[10px] text-muted-foreground">{lang === "bn" ? "ছাড়" : "Disc"}</span>
+                        <div className="relative w-16">
                           <Input type="number" value={it.line_discount_pct ?? 0}
-                            className="h-8 pr-8 text-right text-xs tabular-nums"
+                            className="h-7 pr-5 text-right text-[11px] tabular-nums"
                             onChange={(e) => {
                               const v = Math.max(0, Math.min(100, Number(e.target.value) || 0));
                               updateCart(idx, { line_discount_pct: v });
                             }} />
-                          <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">%</span>
+                          <span className="pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">%</span>
                         </div>
-                      </div>
+                      </label>
                     </div>
 
                     {/* Quick add + qty stepper + line total */}
-                    <div className="mt-2 flex items-center justify-between gap-2">
+                    <div className="mt-1.5 flex items-center justify-between gap-2">
                       <div className="inline-flex gap-1">
                         {[1, 2, 5].map((n) => (
                           <button key={n} type="button"
                             onClick={() => updateCart(idx, { qty: it.qty + n })}
-                            className="rounded-md border bg-primary/10 px-1.5 py-0.5 text-[10px] font-bold text-primary hover:bg-primary/20">
+                            className="rounded-md border bg-primary/10 px-1 py-0.5 text-[10px] font-bold text-primary hover:bg-primary/20">
                             +{n}
                           </button>
                         ))}
