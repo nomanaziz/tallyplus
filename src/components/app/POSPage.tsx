@@ -831,11 +831,29 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
             </div>
 
             <div className="flex items-center justify-between gap-2">
-              <span className="text-muted-foreground">{lang === "bn" ? "নির্দিষ্ট পরিমাণ ছাড়" : "Fixed discount"}</span>
-              <div className="relative">
-                <Input type="number" value={discount} onChange={(e) => setDiscount(e.target.value)}
-                  className="h-8 w-28 pr-8 text-right" />
-                <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">৳</span>
+              <span className="text-muted-foreground">{lang === "bn" ? "ছাড়" : "Discount"}</span>
+              <div className="flex items-center gap-1.5">
+                <Input
+                  type="number"
+                  value={discount}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    if (discountMode === "pct") {
+                      const n = Math.max(0, Math.min(100, Number(v) || 0));
+                      setDiscount(String(n));
+                    } else {
+                      setDiscount(v);
+                    }
+                  }}
+                  className="h-8 w-24 text-right" />
+                <div className="inline-flex overflow-hidden rounded-md border text-[10px] font-bold">
+                  <button type="button"
+                    onClick={() => { setDiscountMode("pct"); setDiscount("0"); }}
+                    className={`px-2 py-1 ${discountMode === "pct" ? "bg-primary text-primary-foreground" : "bg-background text-muted-foreground"}`}>%</button>
+                  <button type="button"
+                    onClick={() => { setDiscountMode("amt"); setDiscount("0"); }}
+                    className={`px-2 py-1 ${discountMode === "amt" ? "bg-primary text-primary-foreground" : "bg-background text-muted-foreground"}`}>৳</button>
+                </div>
               </div>
             </div>
             <div className="flex items-center justify-between gap-2">
@@ -848,7 +866,7 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
             </div>
             <div className="flex items-center justify-between text-xs text-muted-foreground">
               <span>{lang === "bn" ? "ছাড়" : "Discount"} ({totalDiscPctDisplay}%)</span>
-              <span className="tabular-nums">-{fmtMoney(Number(discount) || 0, lang)}</span>
+              <span className="tabular-nums">-{fmtMoney(totalDiscValue, lang)}</span>
             </div>
             <div className="flex items-center justify-between border-t pt-2">
               <span className="text-base font-bold">{lang === "bn" ? "মোট:" : "Total:"}</span>
