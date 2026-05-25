@@ -31,9 +31,10 @@ export const productsLiteQuery = (shopId: string | null | undefined) =>
       if (!shopId) return [];
       const { data, error } = await supabase
         .from("products")
-        .select("id,name,unit,cost_price,sale_price,stock,image_url,bulk_enabled,bulk_price,bulk_min_qty,is_serialized,barcode,sku,parent_product_id,variant_label,variant_attributes")
+        .select("id,name,unit,cost_price,sale_price,stock,image_url,bulk_enabled,bulk_price,bulk_min_qty,is_serialized,barcode,sku,parent_product_id,variant_label,variant_attributes,track_stock")
         .eq("shop_id", shopId)
         .is("deleted_at", null)
+        .or("track_stock.eq.false,stock.gt.0")
         .order("name");
       if (error) throw error;
       return data ?? [];
