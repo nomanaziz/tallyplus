@@ -111,6 +111,7 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
   const [search, setSearch] = useState("");
   const [cart, setCart] = useState<CartItem[]>([]);
   const [discount, setDiscount] = useState<string>("0");
+  const [discountMode, setDiscountMode] = useState<"amt" | "pct">("amt");
   const [delivery, setDelivery] = useState<string>("0");
   const [quickOpen, setQuickOpen] = useState(false);
   const [cashOpen, setCashOpen] = useState(false);
@@ -286,18 +287,26 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
     );
   };
   const removeCart = (idx: number) => setCart((prev) => prev.filter((_, i) => i !== idx));
-  const clearCart = () => { setCart([]); setDiscount("0"); setDelivery("0"); };
+  const clearCart = () => { setCart([]); setDiscount("0"); setDelivery("0"); setDiscountMode("amt"); };
 
-  const subtotal = cart.reduce((s, it) => s + it.qty * it.price, 0);
-  const lineTotal = (it: CartItem) => {
+  const round2 = (n: number) => Math.round((Number(n) || 0) * 100) / 100;
+
+  const subtotal = round2(cart.reduce((s, it) => s + it.qty * it.price, 0));
+  const lineDiscAmount = (it: CartItem) => {
     const gross = it.qty * it.price;
     if (it.line_discount_mode === "amt") {
-      return Math.max(0, gross - (Number(it.line_discount_amt) || 0));
+      return Math.min(gross, Math.max(0, Number(it.line_discount_amt) || 0));
     }
-    return gross * (1 - (Number(it.line_discount_pct) || 0) / 100);
+    return gross * (Math.max(0, Math.min(100, Number(it.line_discount_pct) || 0)) / 100);
   };
-  const subtotalAfterLineDisc = cart.reduce((s, it) => s + lineTotal(it), 0);
-  const grandTotal = Math.max(0, subtotalAfterLineDisc - (Number(discount) || 0) + (Number(delivery) || 0));
+  const lineTotal = (it: CartItem) => round2(Math.max(0, it.qty * it.price - lineDiscAmount(it)));
+  const subtotalAfterLineDisc = round2(cart.reduce((s, it) => s + lineTotal(it), 0));
+  const totalDiscValue = round2(
+    discountMode === "pct"
+      ? subtotalAfterLineDisc * (Number(discount) || 0) / 100
+      : Number(discount) || 0,
+  );
+  const grandTotal = round2(Math.max(0, subtotalAfterLineDisc - totalDiscValue + (Number(delivery) || 0)));
 
   // Today's stats (sell or purchase mode)
   const todayKey = new Date().toISOString().slice(0, 10);
@@ -371,9 +380,11 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
     return lang === "bn" ? `${u.bn} (${u.en})` : `${u.en} (${u.bn})`;
   };
 
-  const totalDiscPctDisplay = subtotalAfterLineDisc > 0
-    ? Math.round(((Number(discount) || 0) / subtotalAfterLineDisc) * 100)
-    : 0;
+  const totalDiscPctDisplay = discountMode === "pct"
+    ? (Number(discount) || 0)
+    : (subtotalAfterLineDisc > 0
+        ? Math.round((totalDiscValue / subtotalAfterLineDisc) * 100)
+        : 0);
 
   return (
     <div className="w-full px-3 py-3 xl:px-5">
@@ -735,6 +746,11 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
 
                     {/* Discount only (mode toggle: % or ৳) */}
                     <div className="mt-1.5 flex items-center justify-end gap-1.5">
+                      {lineDiscAmount(it) > 0 && (
+                        <span className="text-[10px] font-semibold text-destructive tabular-nums">
+                          −{fmtMoney(round2(lineDiscAmount(it)), lang)}
+                        </span>
+                      )}
                       <span className="text-[10px] text-muted-foreground">{lang === "bn" ? "ছাড়" : "Disc"}</span>
                       <Input
                         type="number"
@@ -815,11 +831,29 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
             </div>
 
             <div className="flex items-center justify-between gap-2">
-              <span className="text-muted-foreground">{lang === "bn" ? "নির্দিষ্ট পরিমাণ ছাড়" : "Fixed discount"}</span>
-              <div className="relative">
-                <Input type="number" value={discount} onChange={(e) => setDiscount(e.target.value)}
-                  className="h-8 w-28 pr-8 text-right" />
-                <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">৳</span>
+              <span className="text-muted-foreground">{lang === "bn" ? "ছাড়" : "Discount"}</span>
+              <div className="flex items-center gap-1.5">
+                <Input
+                  type="number"
+                  value={discount}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    if (discountMode === "pct") {
+                      const n = Math.max(0, Math.min(100, Number(v) || 0));
+                      setDiscount(String(n));
+                    } else {
+                      setDiscount(v);
+                    }
+                  }}
+                  className="h-8 w-24 text-right" />
+                <div className="inline-flex overflow-hidden rounded-md border text-[10px] font-bold">
+                  <button type="button"
+                    onClick={() => { setDiscountMode("pct"); setDiscount("0"); }}
+                    className={`px-2 py-1 ${discountMode === "pct" ? "bg-primary text-primary-foreground" : "bg-background text-muted-foreground"}`}>%</button>
+                  <button type="button"
+                    onClick={() => { setDiscountMode("amt"); setDiscount("0"); }}
+                    className={`px-2 py-1 ${discountMode === "amt" ? "bg-primary text-primary-foreground" : "bg-background text-muted-foreground"}`}>৳</button>
+                </div>
               </div>
             </div>
             <div className="flex items-center justify-between gap-2">
@@ -832,7 +866,7 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
             </div>
             <div className="flex items-center justify-between text-xs text-muted-foreground">
               <span>{lang === "bn" ? "ছাড়" : "Discount"} ({totalDiscPctDisplay}%)</span>
-              <span className="tabular-nums">-{fmtMoney(Number(discount) || 0, lang)}</span>
+              <span className="tabular-nums">-{fmtMoney(totalDiscValue, lang)}</span>
             </div>
             <div className="flex items-center justify-between border-t pt-2">
               <span className="text-base font-bold">{lang === "bn" ? "মোট:" : "Total:"}</span>
@@ -901,10 +935,10 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
         kind="cash"
         cart={cart.map((it) => ({
           ...it,
-          price: it.qty > 0 ? lineTotal(it) / it.qty : it.price,
+          price: it.qty > 0 ? round2(lineTotal(it) / it.qty) : it.price,
         }))}
         subtotal={subtotalAfterLineDisc}
-        discount={Number(discount) || 0}
+        discount={totalDiscValue}
         delivery={Number(delivery) || 0}
         grandTotal={grandTotal}
         onSaved={(inv) => { clearCart(); setCashOpen(false); void loadProducts(); if (inv) setInvoice(inv); }}
@@ -916,10 +950,10 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
         kind="due"
         cart={cart.map((it) => ({
           ...it,
-          price: it.qty > 0 ? lineTotal(it) / it.qty : it.price,
+          price: it.qty > 0 ? round2(lineTotal(it) / it.qty) : it.price,
         }))}
         subtotal={subtotalAfterLineDisc}
-        discount={Number(discount) || 0}
+        discount={totalDiscValue}
         delivery={Number(delivery) || 0}
         grandTotal={grandTotal}
         partyLabelBn={partyLabelBn}
