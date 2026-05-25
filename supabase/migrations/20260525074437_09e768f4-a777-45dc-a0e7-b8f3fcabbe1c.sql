@@ -1,0 +1,1 @@
+UPDATE public.products SET track_stock = false WHERE stock < 0;

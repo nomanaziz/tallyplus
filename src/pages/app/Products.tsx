@@ -1412,6 +1412,7 @@ function ProductFormDialog({
       sale_price: Number(sale) || 0,
       stock: trackStock ? (Number(stock) || 0) : -1,
       low_stock_alert: trackStock && lowOn ? (Number(low) || 0) : 0,
+      track_stock: trackStock,
       shop_id: shopId,
       description: description.trim() || null,
       category_id: categoryId,
