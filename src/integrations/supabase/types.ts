@@ -3475,6 +3475,7 @@ export type Database = {
           sku: string | null
           stock: number
           sub_category_id: string | null
+          track_stock: boolean
           unit: string | null
           updated_at: string
           variant_attributes: Json
@@ -3521,6 +3522,7 @@ export type Database = {
           sku?: string | null
           stock?: number
           sub_category_id?: string | null
+          track_stock?: boolean
           unit?: string | null
           updated_at?: string
           variant_attributes?: Json
@@ -3567,6 +3569,7 @@ export type Database = {
           sku?: string | null
           stock?: number
           sub_category_id?: string | null
+          track_stock?: boolean
           unit?: string | null
           updated_at?: string
           variant_attributes?: Json
