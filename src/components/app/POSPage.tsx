@@ -935,10 +935,10 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
         kind="cash"
         cart={cart.map((it) => ({
           ...it,
-          price: it.qty > 0 ? lineTotal(it) / it.qty : it.price,
+          price: it.qty > 0 ? round2(lineTotal(it) / it.qty) : it.price,
         }))}
         subtotal={subtotalAfterLineDisc}
-        discount={Number(discount) || 0}
+        discount={totalDiscValue}
         delivery={Number(delivery) || 0}
         grandTotal={grandTotal}
         onSaved={(inv) => { clearCart(); setCashOpen(false); void loadProducts(); if (inv) setInvoice(inv); }}
@@ -950,10 +950,10 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
         kind="due"
         cart={cart.map((it) => ({
           ...it,
-          price: it.qty > 0 ? lineTotal(it) / it.qty : it.price,
+          price: it.qty > 0 ? round2(lineTotal(it) / it.qty) : it.price,
         }))}
         subtotal={subtotalAfterLineDisc}
-        discount={Number(discount) || 0}
+        discount={totalDiscValue}
         delivery={Number(delivery) || 0}
         grandTotal={grandTotal}
         partyLabelBn={partyLabelBn}
