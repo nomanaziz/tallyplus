@@ -746,6 +746,11 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
 
                     {/* Discount only (mode toggle: % or ৳) */}
                     <div className="mt-1.5 flex items-center justify-end gap-1.5">
+                      {lineDiscAmount(it) > 0 && (
+                        <span className="text-[10px] font-semibold text-destructive tabular-nums">
+                          −{fmtMoney(round2(lineDiscAmount(it)), lang)}
+                        </span>
+                      )}
                       <span className="text-[10px] text-muted-foreground">{lang === "bn" ? "ছাড়" : "Disc"}</span>
                       <Input
                         type="number"
