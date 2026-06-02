@@ -87,7 +87,7 @@ export function PricingSection() {
 
   return (
     <section id="pricing" className="scroll-mt-20 bg-secondary/30 py-16 md:py-24">
-      <div className="container mx-auto px-4">
+      <div className="site-container">
         <div className="text-center">
           <h2 className="text-3xl font-extrabold md:text-5xl">
             {lang === "bn" ? <>সহজ, <span className="text-primary">স্বচ্ছ প্রাইসিং</span></> : <>Simple, <span className="text-primary">transparent pricing</span></>}

@@ -23,7 +23,7 @@ export function SiteFooter() {
   if (wa) socials.push({ href: `https://wa.me/${wa}`, label: "WhatsApp", Icon: MessageCircle });
   return (
     <footer className="border-t bg-secondary/30">
-      <div className="container mx-auto flex flex-col items-center justify-between gap-6 px-4 py-8 text-sm text-muted-foreground md:flex-row">
+      <div className="site-container flex flex-col items-center justify-between gap-6 py-8 text-sm text-muted-foreground md:flex-row">
         <div className="flex flex-col items-center gap-2 md:items-start">
           <Link to="/" className="inline-flex items-center gap-1 font-semibold text-foreground hover:text-primary">
             <ArrowLeft className="h-3.5 w-3.5" />
