@@ -22,7 +22,7 @@ export function StatsStrip() {
       ];
   return (
     <section className="border-y bg-primary/10">
-      <div className="container mx-auto grid grid-cols-3 gap-4 px-4 py-10 text-center">
+      <div className="site-container grid grid-cols-3 gap-4 py-10 text-center">
         {items.map((x) => (
           <div key={x.l}>
             <div className="text-2xl font-extrabold md:text-4xl">{x.v}</div>
@@ -38,7 +38,7 @@ export function FinalCta() {
   const { lang } = useI18n();
   const { user } = useAuth();
   return (
-    <section className="container mx-auto px-4 py-16 md:py-24">
+    <section className="site-container py-16 md:py-24">
       <div className="mx-auto max-w-4xl rounded-3xl bg-gradient-to-br from-primary to-primary/70 p-8 text-center shadow-xl md:p-14">
         <h2 className="text-3xl font-extrabold text-primary-foreground md:text-5xl">
           {lang === "bn" ? <>সাফল্যের যাত্রা <span className="underline decoration-foreground/40 decoration-4 underline-offset-4">শুরু করুন</span></> : <>Start your <span className="underline decoration-foreground/40 decoration-4 underline-offset-4">journey</span> to success</>}

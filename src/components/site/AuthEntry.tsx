@@ -16,7 +16,7 @@ export function AuthEntry() {
     <div className="flex min-h-screen flex-col bg-gradient-to-br from-primary/15 via-background to-background">
       <SiteHeader />
 
-      <main className="container mx-auto grid flex-1 gap-8 px-4 py-8 md:grid-cols-2 md:items-center md:gap-12 md:py-16">
+      <main className="site-container grid flex-1 gap-8 py-8 md:grid-cols-2 md:items-center md:gap-12 md:py-16">
         {/* Brand pitch */}
         <div className="order-2 md:order-1">
           <h1 className="text-3xl font-extrabold leading-tight tracking-tight md:text-5xl">

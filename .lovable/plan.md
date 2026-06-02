@@ -1,36 +1,46 @@
-## POS-এ stock-out products লুকানো
+## সমস্যা
+`src/styles.css`-এ `.container` class globally override করা আছে — width 100%, max-width 100%। এটা app page-এর sidebar layout-এর জন্য করা হয়েছিল। কিন্তু ফলে marketing page (homepage / about page)-এর সব content edge-to-edge ছড়িয়ে যাচ্ছে বড় screen-এ।
 
-### সমস্যা
-সব product POS list-এ আসছে, এমনকি stock = 0 হলেও। যেসব product-এর stock track করা হচ্ছে, সেগুলো stock-out হলে POS-এ আসা উচিত না। যেসব product-এর stock track নাই (সেবা/অসীম), সেগুলো সবসময় দেখাবে।
+## লক্ষ্য
+Homepage (`/`) ও About page (`/about`)-এ শুধু content গুলো একটা নির্দিষ্ট max-width container-এর মধ্যে থাকবে। Design/background (section color, border, gradient) full-width থাকবে।
 
-### সমাধান
+## সমাধান
+নতুন `.site-container` utility class যোগ করে, যেটা traditional Tailwind container-এর মতো কাজ করবে (max-width ~1280px, centered, responsive padding)। তারপর marketing page-এর সব component-এ `container mx-auto px-4` বদলে `site-container` ব্যবহার করা হবে।
 
-**১) DB migration — `products.track_stock` column**
-- নতুন column: `track_stock boolean not null default true`
-- বিদ্যমান সব row default `true` পাবে (backward-safe — এখন যেমন আচরণ সেটাই)।
+## পদক্ষেপ
 
-**২) POS query filter (`src/lib/queries.ts` – `productsLiteQuery`)**
-- `.select(...)` এ `track_stock` যোগ করব।
-- Server-side filter:
-  ```
-  .or("track_stock.eq.false,stock.gt.0")
-  ```
-  অর্থাৎ — track বন্ধ থাকলে সবসময় দেখাও; track on থাকলে শুধু stock > 0 হলে দেখাও।
+1. `src/styles.css`-এ `.site-container` class যোগ করো:
+   ```css
+   .site-container {
+     width: 100%;
+     margin-left: auto;
+     margin-right: auto;
+     padding-left: 1rem;
+     padding-right: 1rem;
+     max-width: 80rem; /* 1280px */
+   }
+   @media (min-width: 640px)  { .site-container { padding-left: 1.5rem;  padding-right: 1.5rem;  } }
+   @media (min-width: 768px)  { .site-container { padding-left: 2rem;    padding-right: 2rem;    } }
+   @media (min-width: 1536px) { .site-container { padding-left: 2.5rem;  padding-right: 2.5rem;  } }
+   ```
 
-**৩) Products list page (`src/pages/app/Products.tsx`)**
-- Product create/edit form-এ একটা switch/checkbox যোগ করব: "স্টক হিসাব রাখব" (default on)।
-- Save করার সময় `track_stock` field insert/update হবে।
-- Stock input field-টা `track_stock=false` হলে disabled/hidden হবে।
+2. Homepage-এর component আপডেট করো:
+   - `src/components/site/AuthEntry.tsx`: `container mx-auto px-4` → `site-container`
 
-**৪) POS UI (`src/components/app/POSPage.tsx`)**
-- Already stock badge দেখায় — `track_stock=false` হলে badge না দেখাব (optional polish)।
-- Cart-এ add করার সময় stock check বর্তমানে আছে কিনা দেখব — থাকলে `track_stock=false` skip করব।
+3. About page-এর সব section component আপডেট করো:
+   - `src/components/site/HeroSection.tsx`
+   - `src/components/site/FeatureRows.tsx`
+   - `src/components/site/PainAndSolutions.tsx`
+   - `src/components/site/CompareTable.tsx`
+   - `src/components/site/BusinessTypes.tsx`
+   - `src/components/site/Testimonials.tsx`
+   - `src/components/site/PricingSection.tsx`
+   - `src/components/site/ContactSection.tsx`
+   - `src/components/site/StatsAndCta.tsx`
 
-### যা পরিবর্তন হবে না
-- Sale flow, stock_movement triggers, reports, marketplace।
+4. Shared site chrome আপডেট করো (homepage ও about উভয়েই ব্যবহার করে):
+   - `src/components/site/SiteHeader.tsx`
+   - `src/components/site/SiteFooter.tsx`
 
-### Files
-- নতুন migration: `track_stock` column add।
-- `src/lib/queries.ts` — productsLiteQuery filter।
-- `src/pages/app/Products.tsx` — form toggle।
-- `src/components/app/POSPage.tsx` — minor stock-check bypass for untracked।
+## কোন component আপডেট হবে না
+App page-এর কোনো component বা layout (dashboard, POS, products ইত্যাদি) — সেগুলো `.container` full-width override-এর উপর নির্ভরশীল।

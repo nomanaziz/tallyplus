@@ -24,7 +24,7 @@ export function CompareTable() {
     : ["Feature", "Tally Plus", "Pen & Paper", "Other Apps"];
 
   return (
-    <section className="container mx-auto px-4 py-16 md:py-24">
+    <section className="site-container py-16 md:py-24">
       <h2 className="text-center text-3xl font-extrabold md:text-4xl">
         {lang === "bn" ? <>টালি প্লাস <span className="text-primary">vs অন্যান্য</span></> : <>Tally Plus <span className="text-primary">vs others</span></>}
       </h2>

@@ -28,7 +28,7 @@ const data = [
 export function Testimonials() {
   const { lang } = useI18n();
   return (
-    <section className="container mx-auto px-4 py-16 md:py-24">
+    <section className="site-container py-16 md:py-24">
       <div className="text-center">
         <h2 className="text-3xl font-extrabold md:text-4xl">
           {lang === "bn" ? <>আমাদের <span className="text-primary">খুশি ক্রেতারা</span> বলছেন</> : <>Our <span className="text-primary">happy customers</span> say</>}

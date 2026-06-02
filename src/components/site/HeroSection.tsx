@@ -15,7 +15,7 @@ export function HeroSection() {
   return (
     <section className="relative overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-br from-primary/25 via-background to-background" aria-hidden />
-      <div className="container relative mx-auto grid gap-10 px-4 py-12 md:grid-cols-2 md:items-center md:py-20">
+      <div className="site-container relative grid gap-10 py-12 md:grid-cols-2 md:items-center md:py-20">
         <div className="order-2 md:order-1">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/15 px-3 py-1 text-xs font-semibold text-foreground ring-1 ring-primary/30">
             <TrendingUp className="h-3.5 w-3.5" />

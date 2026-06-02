@@ -13,7 +13,7 @@ export function BusinessTypes() {
   ];
   return (
     <section className="bg-secondary/40 py-16 md:py-24">
-      <div className="container mx-auto px-4">
+      <div className="site-container">
         <div className="text-center">
           <h2 className="text-3xl font-extrabold md:text-4xl">
             {lang === "bn" ? <>আপনার <span className="text-primary">ব্যবসার ধরন</span> বেছে নিন</> : <>Choose your <span className="text-primary">business type</span></>}

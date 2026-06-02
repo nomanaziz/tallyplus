@@ -26,7 +26,7 @@ export function SiteHeader() {
   const cartCount = useCartCount();
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-background/85 backdrop-blur">
-      <div className="container mx-auto flex h-16 md:h-20 items-center justify-between px-3 md:px-4 gap-2">
+      <div className="site-container flex h-16 md:h-20 items-center justify-between gap-2">
         <Link to={homeTarget} className="flex items-center gap-2 md:gap-3 min-w-0">
           <img src={logo} alt="Tally Plus" width={40} height={40} className="h-7 w-7 md:h-9 md:w-9 object-contain flex-none" />
           <BrandWordmark className="text-base md:text-2xl font-extrabold leading-tight tracking-tight truncate py-1" />

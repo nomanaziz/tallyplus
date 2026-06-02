@@ -63,7 +63,7 @@ const rows: Row[] = [
 export function FeatureRows() {
   const { lang } = useI18n();
   return (
-    <section id="features" className="container mx-auto px-4 py-16 md:py-24">
+    <section id="features" className="site-container py-16 md:py-24">
       <div className="mx-auto max-w-3xl text-center">
         <h2 className="text-3xl font-extrabold md:text-5xl">
           {lang === "bn" ? <>টালি প্লাস <span className="text-primary">আপনার ব্যবসা</span> কীভাবে বাড়াবে?</> : <>How will <span className="text-primary">Tally Plus</span> grow your business?</>}
