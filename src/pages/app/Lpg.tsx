@@ -197,7 +197,7 @@ export default function LpgPage() {
       </div>
 
       <Tabs defaultValue="stock" className="mt-4">
-        <TabsList className="flex w-full flex-wrap">
+        <TabsList className="flex h-auto w-full flex-wrap justify-start gap-1">
           <TabsTrigger value="stock">{tr("স্টক", "Stock")}</TabsTrigger>
           <TabsTrigger value="empty_hub">{tr("খালি সিলিন্ডার হাব", "Empty Hub")}</TabsTrigger>
           <TabsTrigger value="moves">{tr("লেনদেন", "Movements")}</TabsTrigger>
