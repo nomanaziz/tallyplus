@@ -1,0 +1,1 @@
+DROP POLICY IF EXISTS "seller_locations public read" ON public.seller_locations;
