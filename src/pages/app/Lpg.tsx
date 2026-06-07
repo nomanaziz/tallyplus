@@ -197,7 +197,7 @@ export default function LpgPage() {
       </div>
 
       <Tabs defaultValue="stock" className="mt-4">
-        <TabsList className="flex w-full flex-wrap">
+        <TabsList className="flex h-auto w-full flex-wrap justify-start gap-1">
           <TabsTrigger value="stock">{tr("স্টক", "Stock")}</TabsTrigger>
           <TabsTrigger value="empty_hub">{tr("খালি সিলিন্ডার হাব", "Empty Hub")}</TabsTrigger>
           <TabsTrigger value="moves">{tr("লেনদেন", "Movements")}</TabsTrigger>
@@ -729,7 +729,7 @@ function MovementDialog({
       <DialogContent className="max-w-lg">
         <DialogHeader><DialogTitle>{tr("বোতল লেনদেন", "Bottle movement")}</DialogTitle></DialogHeader>
         <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid h-auto w-full grid-cols-3 gap-1 sm:grid-cols-5">
             <TabsTrigger value="refill"><RefreshCw className="mr-1 h-3.5 w-3.5" />{tr("রিফিল", "Refill")}</TabsTrigger>
             <TabsTrigger value="sale_new">{tr("নতুন বিক্রি", "New Sale")}</TabsTrigger>
             <TabsTrigger value="return_empty"><ArrowDownToLine className="mr-1 h-3.5 w-3.5" />{tr("খালি ফেরত", "Empty")}</TabsTrigger>
