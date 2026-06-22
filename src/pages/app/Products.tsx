@@ -851,17 +851,17 @@ function ProductsPage() {
                                   : "bg-emerald-100 text-emerald-700";
                               return (
                                 <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-semibold tabular-nums ${tone}`}>
-                                  {lang === "bn" ? bnNum(stockNum) : stockNum}
+                                  {costHidden ? MASK : (lang === "bn" ? bnNum(stockNum) : stockNum)}
                                 </span>
                               );
                             })()}
                       </TableCell>
                       <TableCell className="text-right hidden sm:table-cell tabular-nums">
-                        {fmtMoney(Number(p.cost_price), lang)}
+                        {costHidden ? MASK : fmtMoney(Number(p.cost_price), lang)}
                       </TableCell>
-                      <TableCell className={"text-right tabular-nums " + (editStockMode ? "hidden sm:table-cell" : "")}>{fmtMoney(Number(p.sale_price), lang)}</TableCell>
+                      <TableCell className={"text-right tabular-nums " + (editStockMode ? "hidden sm:table-cell" : "")}>{costHidden ? MASK : fmtMoney(Number(p.sale_price), lang)}</TableCell>
                       <TableCell className="text-right hidden md:table-cell font-semibold tabular-nums">
-                        {isUnlimited ? "—" : fmtMoney(stockValue, lang)}
+                        {isUnlimited ? "—" : (costHidden ? MASK : fmtMoney(stockValue, lang))}
                       </TableCell>
                       {editStockMode ? (
                         <TableCell className="px-1 sm:px-2" onClick={(e) => e.stopPropagation()}>
