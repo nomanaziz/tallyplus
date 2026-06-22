@@ -1,7 +1,7 @@
 import { useNavigate } from "@/lib/router";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Coins, ArrowLeft, MoreVertical, Pencil, Trash2, Home, Truck, Zap, User, MoreHorizontal } from "lucide-react";
+import { Coins, ArrowLeft, MoreVertical, Pencil, Trash2, Home, Truck, Zap, User, MoreHorizontal, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useShop } from "@/lib/shop";
 import { useAuth } from "@/lib/auth";
@@ -54,6 +54,22 @@ function ExpenseLedgerPage() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Expense | null>(null);
   const [presetCat, setPresetCat] = useState<string | null>(null);
+  const customKey = current?.id ? `expense-custom-cats:${current.id}` : "";
+  const [customCats, setCustomCats] = useState<string[]>(() => {
+    if (typeof window === "undefined" || !customKey) return [];
+    try { return JSON.parse(localStorage.getItem(customKey) || "[]"); } catch { return []; }
+  });
+  useEffect(() => {
+    if (typeof window === "undefined" || !customKey) return;
+    try { setCustomCats(JSON.parse(localStorage.getItem(customKey) || "[]")); } catch { /* ignore */ }
+  }, [customKey]);
+  const addCustomCategory = () => {
+    const name = window.prompt(lang === "bn" ? "নতুন ক্যাটাগরির নাম লিখুন" : "Enter new category name");
+    if (!name || !name.trim()) return;
+    const next = Array.from(new Set([...customCats, name.trim()]));
+    setCustomCats(next);
+    if (customKey) localStorage.setItem(customKey, JSON.stringify(next));
+  };
 
   const total = useMemo(() => list.reduce((s, e) => s + Number(e.amount), 0), [list]);
   const filtered = useMemo(() => {
