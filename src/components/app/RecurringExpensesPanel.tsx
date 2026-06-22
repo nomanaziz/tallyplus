@@ -152,10 +152,13 @@ export function RecurringExpensesPanel() {
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <Wallet className="h-5 w-5 text-primary" />
-          <h2 className="text-base font-bold">{tr("p7_Monthly_recurring_expenses")}</h2>
+          <h2 className="text-base font-bold">
+            {lang === "bn" ? "নিয়মিত / মাসিক খরচ" : "Recurring expenses"}
+          </h2>
         </div>
         <Button size="sm" onClick={() => { setEditing(null); setOpen(true); }} className="gap-1">
-          <Plus className="h-4 w-4" /> {tr("p7_New_monthly_expense")}
+          <Plus className="h-4 w-4" />
+          {lang === "bn" ? "নতুন নিয়মিত খরচ" : "New recurring expense"}
         </Button>
       </div>
 
