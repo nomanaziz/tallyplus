@@ -383,8 +383,8 @@ function RecExpDialog({ open, onOpenChange, editing, onSaved }: { open: boolean;
               <Select value={kind} onValueChange={(v) => setKind(v as Kind)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="fixed">{tr("p7_Fixed_2")}</SelectItem>
-                  <SelectItem value="variable">{tr("p7_Variable_2")}</SelectItem>
+                  <SelectItem value="fixed">{lang === "bn" ? "নির্দিষ্ট পরিমাণ" : "Fixed amount"}</SelectItem>
+                  <SelectItem value="variable">{lang === "bn" ? "পরিবর্তনশীল পরিমাণ" : "Variable amount"}</SelectItem>
                   <SelectItem value="loan">{tr("p7_Loan_EMI")}</SelectItem>
                 </SelectContent>
               </Select>
