@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useI18n, fmtMoney } from "@/lib/i18n";
+import { useCostHide } from "@/lib/costHide";
 import { useShop } from "@/lib/shop";
 import { stockReportQuery, rangeToIso } from "@/lib/queries";
 import { ReportShell, StatTile, EmptyState } from "@/components/app/ReportShell";
@@ -11,6 +12,8 @@ import { RequirePerm } from "@/components/app/RequirePerm";
 function Page() {
   const { lang, t } = useI18n();
   const { current } = useShop();
+  const { hidden: costHidden } = useCostHide();
+  const M = "••••";
   const [range, setRange] = useState<DateRange>({ start: monthStartIso(), end: todayIso() });
   const iso = rangeToIso(range.start, range.end);
   const { data, isFetching, refetch } = useQuery(stockReportQuery(current?.id ?? null, iso));
@@ -54,10 +57,10 @@ function Page() {
       onPrint={onPrint}
     >
       <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
-        <StatTile label={t("p5_In_qty")} value={String(totals.inQty)} tone="success" />
-        <StatTile label={t("p5_In_amount")} value={fmtMoney(totals.inAmt, lang)} tone="success" />
-        <StatTile label={t("p5_Out_qty")} value={String(totals.outQty)} tone="danger" />
-        <StatTile label={t("p5_Out_amount")} value={fmtMoney(totals.outAmt, lang)} tone="danger" />
+        <StatTile label={t("p5_In_qty")} value={costHidden ? M : String(totals.inQty)} tone="success" />
+        <StatTile label={t("p5_In_amount")} value={costHidden ? M : fmtMoney(totals.inAmt, lang)} tone="success" />
+        <StatTile label={t("p5_Out_qty")} value={costHidden ? M : String(totals.outQty)} tone="danger" />
+        <StatTile label={t("p5_Out_amount")} value={costHidden ? M : fmtMoney(totals.outAmt, lang)} tone="danger" />
       </div>
 
       {rows.length === 0 ? (
@@ -78,10 +81,10 @@ function Page() {
               {rows.map((r) => (
                 <tr key={r.id} className="border-t">
                   <td className="px-3 py-2">{r.name}</td>
-                  <td className="px-3 py-2 text-right text-emerald-600">{r.in_qty}</td>
-                  <td className="px-3 py-2 text-right">{fmtMoney(r.in_amt, lang)}</td>
-                  <td className="px-3 py-2 text-right text-rose-600">{Math.abs(r.out_qty)}</td>
-                  <td className="px-3 py-2 text-right">{fmtMoney(Math.abs(r.out_amt), lang)}</td>
+                  <td className="px-3 py-2 text-right text-emerald-600">{costHidden ? M : r.in_qty}</td>
+                  <td className="px-3 py-2 text-right">{costHidden ? M : fmtMoney(r.in_amt, lang)}</td>
+                  <td className="px-3 py-2 text-right text-rose-600">{costHidden ? M : Math.abs(r.out_qty)}</td>
+                  <td className="px-3 py-2 text-right">{costHidden ? M : fmtMoney(Math.abs(r.out_amt), lang)}</td>
                 </tr>
               ))}
             </tbody>

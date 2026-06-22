@@ -9,6 +9,7 @@ import { useShop } from "@/lib/shop";
 import { useAuth } from "@/lib/auth";
 import { productsListQuery, stockHistoryQuery } from "@/lib/queries";
 import { useI18n, fmtMoney, bnNum } from "@/lib/i18n";
+import { useCostHide } from "@/lib/costHide";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -92,6 +93,8 @@ function ProductsPage() {
   const { current } = useShop();
   const { user } = useAuth();
   const qc = useQueryClient();
+  const { hidden: costHidden } = useCostHide();
+  const MASK = "••••";
   const { data: items = [], isLoading: loading, refetch } = useQuery(productsListQuery(current?.id ?? null));
   const { data: usage, refresh: refreshUsage } = useUsageLimit(current?.id ?? null, "products");
   const limitReached = !!usage && usage.limit !== -1 && usage.used >= usage.limit;
@@ -623,7 +626,7 @@ function ProductsPage() {
         <div className="grid grid-cols-2 gap-1.5 sm:gap-3">
           <div className="rounded-lg bg-primary-foreground/15 px-2 py-1 text-center sm:px-3 sm:py-2">
             <div className="text-sm font-extrabold tabular-nums sm:text-xl">
-              {lang === "bn" ? bnNum(totalStockCount) : totalStockCount.toLocaleString()}
+              {costHidden ? MASK : (lang === "bn" ? bnNum(totalStockCount) : totalStockCount.toLocaleString())}
             </div>
             <div className="mt-0 text-[10px] font-semibold sm:text-xs">
               {t("p3_TotalStock")}
@@ -631,7 +634,7 @@ function ProductsPage() {
           </div>
           <div className="rounded-lg bg-primary-foreground/15 px-2 py-1 text-center sm:px-3 sm:py-2">
             <div className="text-sm font-extrabold tabular-nums sm:text-xl">
-              {fmtMoney(totalStockValue, lang)}
+              {costHidden ? MASK : fmtMoney(totalStockValue, lang)}
             </div>
             <div className="mt-0 text-[10px] font-semibold sm:text-xs">
               {t("p3_StockValue")}
@@ -848,17 +851,17 @@ function ProductsPage() {
                                   : "bg-emerald-100 text-emerald-700";
                               return (
                                 <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-semibold tabular-nums ${tone}`}>
-                                  {lang === "bn" ? bnNum(stockNum) : stockNum}
+                                  {costHidden ? MASK : (lang === "bn" ? bnNum(stockNum) : stockNum)}
                                 </span>
                               );
                             })()}
                       </TableCell>
                       <TableCell className="text-right hidden sm:table-cell tabular-nums">
-                        {fmtMoney(Number(p.cost_price), lang)}
+                        {costHidden ? MASK : fmtMoney(Number(p.cost_price), lang)}
                       </TableCell>
-                      <TableCell className={"text-right tabular-nums " + (editStockMode ? "hidden sm:table-cell" : "")}>{fmtMoney(Number(p.sale_price), lang)}</TableCell>
+                      <TableCell className={"text-right tabular-nums " + (editStockMode ? "hidden sm:table-cell" : "")}>{costHidden ? MASK : fmtMoney(Number(p.sale_price), lang)}</TableCell>
                       <TableCell className="text-right hidden md:table-cell font-semibold tabular-nums">
-                        {isUnlimited ? "—" : fmtMoney(stockValue, lang)}
+                        {isUnlimited ? "—" : (costHidden ? MASK : fmtMoney(stockValue, lang))}
                       </TableCell>
                       {editStockMode ? (
                         <TableCell className="px-1 sm:px-2" onClick={(e) => e.stopPropagation()}>
@@ -1051,7 +1054,7 @@ function ProductsPage() {
                       <span className="text-xs text-muted-foreground tabular-nums">
                         {Number(p.stock) < 0
                           ? (t("p3_Unlimited"))
-                          : (lang === "bn" ? bnNum(Number(p.stock)) : Number(p.stock))}
+                          : (costHidden ? MASK : (lang === "bn" ? bnNum(Number(p.stock)) : Number(p.stock)))}
                       </span>
                     </label>
                   ))
@@ -1107,7 +1110,7 @@ function ProductsPage() {
                           <TableCell className="text-xs">{new Date(m.created_at).toLocaleString()}</TableCell>
                           <TableCell>{productMap[m.product_id] ?? "—"}</TableCell>
                           <TableCell><span className={m.type === "in" ? "text-emerald-600" : "text-destructive"}>{m.type}</span></TableCell>
-                          <TableCell className="text-right tabular-nums">{lang === "bn" ? bnNum(m.qty) : m.qty}</TableCell>
+                          <TableCell className="text-right tabular-nums">{costHidden ? MASK : (lang === "bn" ? bnNum(m.qty) : m.qty)}</TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
