@@ -567,13 +567,50 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
                 />
               </div>
               <BarcodeScannerButton onDetected={handleScannedCode} className="h-10 px-3 flex-none" label={lang === "bn" ? "বারকোড / SKU" : "Barcode / SKU"} />
-              <button
-                type="button"
-                className="h-10 inline-flex items-center gap-1 rounded-md border bg-background px-3 text-xs font-medium text-foreground/80 hover:bg-accent"
-              >
-                {lang === "bn" ? "সব ক্যাটাগরি" : "All Categories"}
-                <ChevronDown className="h-3.5 w-3.5" />
-              </button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    className="h-10 inline-flex items-center gap-1 rounded-md border bg-background px-3 text-xs font-medium text-foreground/80 hover:bg-accent"
+                  >
+                    {categoryFilter === "all"
+                      ? (lang === "bn" ? "সব ক্যাটাগরি" : "All Categories")
+                      : (categories.find((c) => c.id === categoryFilter)?.name ?? (lang === "bn" ? "ক্যাটাগরি" : "Category"))}
+                    <ChevronDown className="h-3.5 w-3.5" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="max-h-72 overflow-y-auto w-56">
+                  <DropdownMenuItem onClick={() => setCategoryFilter("all")}>
+                    {lang === "bn" ? "সব ক্যাটাগরি" : "All Categories"}
+                  </DropdownMenuItem>
+                  {categories.filter((c) => !c.parent_id).map((parent) => {
+                    const subs = categories.filter((c) => c.parent_id === parent.id);
+                    return (
+                      <div key={parent.id}>
+                        <DropdownMenuItem onClick={() => setCategoryFilter(parent.id)} className="font-semibold">
+                          {parent.name}
+                        </DropdownMenuItem>
+                        {subs.map((s) => (
+                          <DropdownMenuItem key={s.id} onClick={() => setCategoryFilter(s.id)} className="pl-6 text-xs">
+                            ↳ {s.name}
+                          </DropdownMenuItem>
+                        ))}
+                      </div>
+                    );
+                  })}
+                  {categories.length === 0 && (
+                    <div className="px-2 py-3 text-center text-xs text-muted-foreground">
+                      {lang === "bn" ? "কোনো ক্যাটাগরি নেই" : "No categories"}
+                    </div>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+              {isSell && (
+                <label className="inline-flex h-10 items-center gap-2 rounded-md border bg-background px-3 text-xs font-medium text-foreground/80">
+                  <Switch checked={showOutOfStock} onCheckedChange={setShowOutOfStock} />
+                  {lang === "bn" ? "স্টক ছাড়াও দেখাও" : "Show out of stock"}
+                </label>
+              )}
               <Button size="icon" variant="outline" className="h-10 w-10 flex-none" onClick={() => setQuickOpen(true)} aria-label="Quick add" title={lang === "bn" ? "দ্রুত যোগ" : "Quick add"}>
                 <Plus className="h-4 w-4" />
               </Button>
