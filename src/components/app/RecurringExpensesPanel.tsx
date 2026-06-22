@@ -152,10 +152,13 @@ export function RecurringExpensesPanel() {
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <Wallet className="h-5 w-5 text-primary" />
-          <h2 className="text-base font-bold">{tr("p7_Monthly_recurring_expenses")}</h2>
+          <h2 className="text-base font-bold">
+            {lang === "bn" ? "নিয়মিত / মাসিক খরচ" : "Recurring expenses"}
+          </h2>
         </div>
         <Button size="sm" onClick={() => { setEditing(null); setOpen(true); }} className="gap-1">
-          <Plus className="h-4 w-4" /> {tr("p7_New_monthly_expense")}
+          <Plus className="h-4 w-4" />
+          {lang === "bn" ? "নতুন নিয়মিত খরচ" : "New recurring expense"}
         </Button>
       </div>
 
@@ -203,7 +206,11 @@ export function RecurringExpensesPanel() {
                     <div className="text-[11px] text-muted-foreground">{t.category}</div>
                   </TableCell>
                   <TableCell className="text-xs capitalize">
-                    {t.kind === "loan" ? (tr("p7_Loan")) : t.kind === "variable" ? (tr("p7_Variable")) : (tr("p7_Fixed"))}
+                    {t.kind === "loan"
+                      ? (tr("p7_Loan"))
+                      : t.kind === "variable"
+                        ? (lang === "bn" ? "পরিবর্তনশীল পরিমাণ" : "Variable amount")
+                        : (lang === "bn" ? "নির্দিষ্ট পরিমাণ" : "Fixed amount")}
                   </TableCell>
                   <TableCell className="text-right font-semibold tabular-nums">{fmtMoney(calcMonthly(t), lang)}</TableCell>
                   <TableCell className="text-xs">{t.day_of_month}</TableCell>
@@ -376,8 +383,8 @@ function RecExpDialog({ open, onOpenChange, editing, onSaved }: { open: boolean;
               <Select value={kind} onValueChange={(v) => setKind(v as Kind)}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="fixed">{tr("p7_Fixed_2")}</SelectItem>
-                  <SelectItem value="variable">{tr("p7_Variable_2")}</SelectItem>
+                  <SelectItem value="fixed">{lang === "bn" ? "নির্দিষ্ট পরিমাণ" : "Fixed amount"}</SelectItem>
+                  <SelectItem value="variable">{lang === "bn" ? "পরিবর্তনশীল পরিমাণ" : "Variable amount"}</SelectItem>
                   <SelectItem value="loan">{tr("p7_Loan_EMI")}</SelectItem>
                 </SelectContent>
               </Select>

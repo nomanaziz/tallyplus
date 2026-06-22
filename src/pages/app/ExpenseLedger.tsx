@@ -1,7 +1,7 @@
 import { useNavigate } from "@/lib/router";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Coins, ArrowLeft, MoreVertical, Pencil, Trash2, Home, Truck, Zap, User, MoreHorizontal } from "lucide-react";
+import { Coins, ArrowLeft, MoreVertical, Pencil, Trash2, Home, Truck, Zap, User, MoreHorizontal, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useShop } from "@/lib/shop";
 import { useAuth } from "@/lib/auth";
@@ -54,6 +54,22 @@ function ExpenseLedgerPage() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Expense | null>(null);
   const [presetCat, setPresetCat] = useState<string | null>(null);
+  const customKey = current?.id ? `expense-custom-cats:${current.id}` : "";
+  const [customCats, setCustomCats] = useState<string[]>(() => {
+    if (typeof window === "undefined" || !customKey) return [];
+    try { return JSON.parse(localStorage.getItem(customKey) || "[]"); } catch { return []; }
+  });
+  useEffect(() => {
+    if (typeof window === "undefined" || !customKey) return;
+    try { setCustomCats(JSON.parse(localStorage.getItem(customKey) || "[]")); } catch { /* ignore */ }
+  }, [customKey]);
+  const addCustomCategory = () => {
+    const name = window.prompt(lang === "bn" ? "নতুন ক্যাটাগরির নাম লিখুন" : "Enter new category name");
+    if (!name || !name.trim()) return;
+    const next = Array.from(new Set([...customCats, name.trim()]));
+    setCustomCats(next);
+    if (customKey) localStorage.setItem(customKey, JSON.stringify(next));
+  };
 
   const total = useMemo(() => list.reduce((s, e) => s + Number(e.amount), 0), [list]);
   const filtered = useMemo(() => {
@@ -88,7 +104,7 @@ function ExpenseLedgerPage() {
       {/* Preset category tiles */}
       <div className="mt-4">
         <div className="mb-2 text-sm font-semibold text-muted-foreground">
-          {t("p5_Add_new_expense")}
+          {lang === "bn" ? "খরচের ধরন বাছাই করে নতুন খরচ যোগ করুন" : "Pick a category to add an expense"}
         </div>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
           {PRESET_CATS.map((c) => (
@@ -105,6 +121,23 @@ function ExpenseLedgerPage() {
               <span className="text-xs">{lang === "bn" ? c.bn : c.en}</span>
             </button>
           ))}
+          {customCats.map((name) => (
+            <button
+              key={name}
+              onClick={() => { setEditing(null); setPresetCat(name); setOpen(true); }}
+              className="flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-primary/30 bg-primary/5 px-3 py-4 font-semibold text-primary shadow-sm transition active:scale-[0.98] hover:bg-primary/10"
+            >
+              <MoreHorizontal className="h-6 w-6" />
+              <span className="text-xs line-clamp-1">{name}</span>
+            </button>
+          ))}
+          <button
+            onClick={addCustomCategory}
+            className="flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-muted-foreground/40 bg-background px-3 py-4 font-semibold text-muted-foreground transition active:scale-[0.98] hover:bg-accent"
+          >
+            <Plus className="h-6 w-6" />
+            <span className="text-xs">{lang === "bn" ? "নতুন ক্যাটাগরি" : "New category"}</span>
+          </button>
         </div>
       </div>
 

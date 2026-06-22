@@ -45,6 +45,8 @@ type Product = {
   is_serialized?: boolean | null;
   barcode?: string | null;
   sku?: string | null;
+  category_id?: string | null;
+  track_stock?: boolean | null;
 };
 
 type CartItem = {
@@ -109,6 +111,36 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
   const services = servicesData as Service[];
   const [pickerTab, setPickerTab] = useState<"products" | "services">("products");
   const [search, setSearch] = useState("");
+  const [showOutOfStock, setShowOutOfStock] = useState(false);
+  const [categoryFilter, setCategoryFilter] = useState<string | "all">("all");
+  const [categories, setCategories] = useState<Array<{ id: string; name: string; parent_id: string | null }>>([]);
+  const [quickStockProduct, setQuickStockProduct] = useState<Product | null>(null);
+  const [walkIn, setWalkIn] = useState(true);
+
+  // Load shop categories for the picker dropdown
+  useEffect(() => {
+    if (!current?.id) { setCategories([]); return; }
+    void supabase
+      .from("categories")
+      .select("id,name,parent_id")
+      .eq("shop_id", current.id)
+      .order("name")
+      .then(({ data }) => setCategories((data as Array<{ id: string; name: string; parent_id: string | null }>) ?? []));
+  }, [current?.id]);
+
+  // Realtime: when products change (stock update, new product), refresh the list automatically
+  useEffect(() => {
+    if (!current?.id) return;
+    const channel = supabase
+      .channel(`pos-products-${current.id}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "products", filter: `shop_id=eq.${current.id}` },
+        () => { void qc.invalidateQueries({ queryKey: ["products"] }); },
+      )
+      .subscribe();
+    return () => { void supabase.removeChannel(channel); };
+  }, [current?.id, qc]);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [discount, setDiscount] = useState<string>("0");
   const [discountMode, setDiscountMode] = useState<"amt" | "pct">("amt");
@@ -168,8 +200,11 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
   const partyLabelEn = isSell ? "Customer" : "Supplier";
 
   const loadProducts = async () => {
+    // Cache-bust: remove cached query data so the offline cache layer can't return stale stock.
+    qc.removeQueries({ queryKey: ["products"] });
     await qc.invalidateQueries({ queryKey: ["products"] });
     await refetch();
+    toast.success(lang === "bn" ? "তালিকা আপডেট হয়েছে" : "List refreshed", { duration: 1200 });
   };
 
   const filtered = useMemo(() => {
@@ -179,14 +214,24 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
         .map((p) => (p as unknown as { parent_product_id?: string | null }).parent_product_id)
         .filter((x): x is string => !!x),
     );
-    const visible = products.filter((p) => !parentIds.has(p.id));
+    let visible = products.filter((p) => !parentIds.has(p.id));
+    // Sell mode: hide out-of-stock by default unless "Show all" toggle is on
+    if (isSell && !showOutOfStock) {
+      visible = visible.filter((p) => (p.track_stock === false) || Number(p.stock) > 0);
+    }
+    // Category filter (includes children when a parent is selected)
+    if (categoryFilter !== "all") {
+      const ids = new Set<string>([categoryFilter]);
+      categories.forEach((c) => { if (c.parent_id === categoryFilter) ids.add(c.id); });
+      visible = visible.filter((p) => p.category_id && ids.has(p.category_id));
+    }
     const q = search.trim().toLowerCase();
     if (!q) return visible;
     return visible.filter((p) => {
       const vl = (p as unknown as { variant_label?: string | null }).variant_label ?? "";
       return p.name.toLowerCase().includes(q) || vl.toLowerCase().includes(q);
     });
-  }, [products, search]);
+  }, [products, search, isSell, showOutOfStock, categoryFilter, categories]);
 
   const handleScannedCode = (code: string) => {
     const c = code.trim();
@@ -522,13 +567,50 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
                 />
               </div>
               <BarcodeScannerButton onDetected={handleScannedCode} className="h-10 px-3 flex-none" label={lang === "bn" ? "বারকোড / SKU" : "Barcode / SKU"} />
-              <button
-                type="button"
-                className="h-10 inline-flex items-center gap-1 rounded-md border bg-background px-3 text-xs font-medium text-foreground/80 hover:bg-accent"
-              >
-                {lang === "bn" ? "সব ক্যাটাগরি" : "All Categories"}
-                <ChevronDown className="h-3.5 w-3.5" />
-              </button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    className="h-10 inline-flex items-center gap-1 rounded-md border bg-background px-3 text-xs font-medium text-foreground/80 hover:bg-accent"
+                  >
+                    {categoryFilter === "all"
+                      ? (lang === "bn" ? "সব ক্যাটাগরি" : "All Categories")
+                      : (categories.find((c) => c.id === categoryFilter)?.name ?? (lang === "bn" ? "ক্যাটাগরি" : "Category"))}
+                    <ChevronDown className="h-3.5 w-3.5" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="max-h-72 overflow-y-auto w-56">
+                  <DropdownMenuItem onClick={() => setCategoryFilter("all")}>
+                    {lang === "bn" ? "সব ক্যাটাগরি" : "All Categories"}
+                  </DropdownMenuItem>
+                  {categories.filter((c) => !c.parent_id).map((parent) => {
+                    const subs = categories.filter((c) => c.parent_id === parent.id);
+                    return (
+                      <div key={parent.id}>
+                        <DropdownMenuItem onClick={() => setCategoryFilter(parent.id)} className="font-semibold">
+                          {parent.name}
+                        </DropdownMenuItem>
+                        {subs.map((s) => (
+                          <DropdownMenuItem key={s.id} onClick={() => setCategoryFilter(s.id)} className="pl-6 text-xs">
+                            ↳ {s.name}
+                          </DropdownMenuItem>
+                        ))}
+                      </div>
+                    );
+                  })}
+                  {categories.length === 0 && (
+                    <div className="px-2 py-3 text-center text-xs text-muted-foreground">
+                      {lang === "bn" ? "কোনো ক্যাটাগরি নেই" : "No categories"}
+                    </div>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+              {isSell && (
+                <label className="inline-flex h-10 items-center gap-2 rounded-md border bg-background px-3 text-xs font-medium text-foreground/80">
+                  <Switch checked={showOutOfStock} onCheckedChange={setShowOutOfStock} />
+                  {lang === "bn" ? "স্টক ছাড়াও দেখাও" : "Show out of stock"}
+                </label>
+              )}
               <Button size="icon" variant="outline" className="h-10 w-10 flex-none" onClick={() => setQuickOpen(true)} aria-label="Quick add" title={lang === "bn" ? "দ্রুত যোগ" : "Quick add"}>
                 <Plus className="h-4 w-4" />
               </Button>
@@ -586,9 +668,11 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
                     <button
                       key={p.id}
                       type="button"
-                      onClick={() => addToCart(p)}
-                      disabled={outOfStock}
-                      className="group relative flex flex-col rounded-xl border bg-card p-2 shadow-sm transition hover:border-primary/40 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
+                      onClick={() => {
+                        if (outOfStock) { setQuickStockProduct(p); return; }
+                        addToCart(p);
+                      }}
+                      className={"group relative flex flex-col rounded-xl border bg-card p-2 shadow-sm transition hover:border-primary/40 hover:shadow-md " + (outOfStock ? "opacity-70" : "")}
                     >
                       {/* qty badge — top-left of whole card */}
                       {inCart && (
@@ -667,7 +751,10 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
                       </div>
                     </div>
                     <div className="flex">
-                      <Button size="sm" className="rounded-r-none px-3" onClick={() => addToCart(p)} disabled={isSell && Number(p.stock) <= 0} aria-label={t("p2c_add")}>
+                      <Button size="sm" className="rounded-r-none px-3" onClick={() => {
+                        if (isSell && Number(p.stock) <= 0) { setQuickStockProduct(p); return; }
+                        addToCart(p);
+                      }} aria-label={t("p2c_add")}>
                         <Plus className="h-4 w-4" />
                       </Button>
                       <DropdownMenu>
@@ -903,6 +990,16 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
         onAdded={(p) => { void loadProducts(); addToCart(p); }}
       />
 
+      <QuickStockDialog
+        product={quickStockProduct}
+        onClose={() => setQuickStockProduct(null)}
+        onUpdated={(p, newStock) => {
+          void loadProducts();
+          // Add to cart immediately if stock now available
+          if (newStock > 0) addToCart({ ...p, stock: newStock });
+        }}
+      />
+
       <SerialPickDialog
         open={serialPick !== null}
         onOpenChange={(v) => { if (!v) setSerialPick(null); }}
@@ -974,6 +1071,63 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
 }
 
 function QuickAddProductDialog({
+  open, onClose, onAdded,
+}: { open: boolean; onClose: () => void; onAdded: (p: Product) => void }) {
+  return _OriginalQuickAddProductDialog({ open, onClose, onAdded });
+}
+
+function QuickStockDialog({ product, onClose, onUpdated }: {
+  product: Product | null;
+  onClose: () => void;
+  onUpdated: (p: Product, newStock: number) => void;
+}) {
+  const { lang } = useI18n();
+  const [qty, setQty] = useState("1");
+  const [busy, setBusy] = useState(false);
+  useEffect(() => { if (product) setQty("1"); }, [product?.id]);
+  const save = async () => {
+    if (!product) return;
+    const add = Number(qty);
+    if (!add || add <= 0) { toast.error(lang === "bn" ? "পরিমাণ লিখুন" : "Enter quantity"); return; }
+    setBusy(true);
+    const newStock = Number(product.stock || 0) + add;
+    const { error } = await supabase.from("products").update({ stock: newStock }).eq("id", product.id);
+    setBusy(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success(lang === "bn" ? "স্টক আপডেট হয়েছে" : "Stock updated");
+    onUpdated(product, newStock);
+    onClose();
+  };
+  return (
+    <Dialog open={!!product} onOpenChange={(o) => { if (!o) onClose(); }}>
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle>{lang === "bn" ? "স্টক যোগ করুন" : "Add stock"}</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3">
+          <div className="text-sm">
+            <span className="font-semibold">{product?.name}</span>
+            <span className="ml-2 text-muted-foreground">
+              {lang === "bn" ? "বর্তমান স্টক" : "Current stock"}: {product?.stock ?? 0}
+            </span>
+          </div>
+          <div className="grid gap-1.5">
+            <Label>{lang === "bn" ? "যে পরিমাণ যোগ করবেন" : "Quantity to add"}</Label>
+            <Input type="number" autoFocus value={qty} onChange={(e) => setQty(e.target.value)} />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="ghost" onClick={onClose}>{lang === "bn" ? "বাতিল" : "Cancel"}</Button>
+          <Button onClick={save} disabled={busy}>
+            {busy ? "..." : (lang === "bn" ? "যোগ করে বিক্রয়ে আনুন" : "Add & continue")}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function _OriginalQuickAddProductDialog({
   open, onClose, onAdded,
 }: { open: boolean; onClose: () => void; onAdded: (p: Product) => void }) {
   const { lang, t } = useI18n();
@@ -1070,6 +1224,8 @@ function PaymentDialog(props: {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  // Walking customer (sell-only): when ON, no customer details required.
+  const [walkInCustomer, setWalkInCustomer] = useState<boolean>(isSell);
 
   useEffect(() => {
     if (props.open) {
@@ -1079,6 +1235,7 @@ function PaymentDialog(props: {
       setCustomInvoice(false); setInvoiceNo(""); setStaffInfo(false); setStaffNote("");
       setSendMessage(false);
       setPartyTab(isSell ? "customer" : "supplier");
+      setWalkInCustomer(isSell);
     }
   }, [props.open, props.grandTotal, isSell]);
 
@@ -1105,8 +1262,12 @@ function PaymentDialog(props: {
   const save = async () => {
     if (!current || !user) return;
     if (props.cart.length === 0) { toast.error(t("p2c_cartEmpty")); return; }
-    if (!partyName.trim()) { toast.error(t("p2c_nameRequired")); return; }
-    if (!partyPhone.trim()) { toast.error(t("p2c_mobileRequired")); return; }
+    // Sell + walking customer: skip all customer validation.
+    // Otherwise: only name is required. Mobile/address optional.
+    // Purchase mode keeps existing behavior (supplier name required, phone optional).
+    if (!(isSell && walkInCustomer)) {
+      if (!partyName.trim()) { toast.error(t("p2c_nameRequired")); return; }
+    }
     setSaving(true);
 
     // ───────────────── Offline path ─────────────────
@@ -1123,7 +1284,7 @@ function PaymentDialog(props: {
 
         // contact: try cache first, else generate id + queue insert
         let contactIdO: string | null = null;
-        if (!isCash || partyName.trim()) {
+        if (!(isSell && walkInCustomer) && (!isCash || partyName.trim())) {
           if (partyName.trim()) {
             if (partyPhone.trim()) {
               const cachedContacts = await readCache<Array<{ id: string; phone: string | null }>>(
@@ -1403,7 +1564,7 @@ function PaymentDialog(props: {
       // Find or create contact (only for due, or when name provided)
       let contactId: string | null = null;
       const partyTable = isSell ? "customers" : "suppliers";
-      if (!isCash || partyName.trim()) {
+      if (!(isSell && walkInCustomer) && (!isCash || partyName.trim())) {
         if (partyName.trim()) {
           // try find by phone
           if (partyPhone.trim()) {
@@ -1683,6 +1844,16 @@ function PaymentDialog(props: {
             )}
           </div>
 
+          {isSell && (
+            <div className="flex items-center justify-between rounded-md border bg-muted/30 px-3 py-2">
+              <Label className="text-sm">
+                {lang === "bn" ? "ওয়াকিং কাস্টমার (নাম/মোবাইল লাগবে না)" : "Walking customer (skip name/mobile)"}
+              </Label>
+              <Switch checked={walkInCustomer} onCheckedChange={setWalkInCustomer} />
+            </div>
+          )}
+          {!(isSell && walkInCustomer) && (
+          <>
           <div className="grid gap-1.5">
             <Label>{partyLabel} {t("p2c_nameLower")}</Label>
             <div className="flex gap-2">
@@ -1716,14 +1887,16 @@ function PaymentDialog(props: {
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="grid gap-1.5">
-              <Label>{t("p2c_mobile")}</Label>
+              <Label>{t("p2c_mobile")} <span className="text-xs text-muted-foreground">({lang === "bn" ? "ঐচ্ছিক" : "optional"})</span></Label>
               <Input value={partyPhone} onChange={(e) => setPartyPhone(e.target.value)} />
             </div>
             <div className="grid gap-1.5">
-              <Label>{t("p2c_address")}</Label>
+              <Label>{t("p2c_address")} <span className="text-xs text-muted-foreground">({lang === "bn" ? "ঐচ্ছিক" : "optional"})</span></Label>
               <Input value={partyAddress} onChange={(e) => setPartyAddress(e.target.value)} />
             </div>
           </div>
+          </>
+          )}
 
           <div className="grid gap-1.5">
             <Label>{t("p2c_comment")}</Label>

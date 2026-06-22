@@ -26,22 +26,22 @@ export function QuickSellSheet({ open, onOpenChange }: { open: boolean; onOpenCh
   const [note, setNote] = useState("");
   const [sms, setSms] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [walkIn, setWalkIn] = useState(true);
 
   const reset = () => {
     setDate(today); setAmount(""); setProfit(""); setCustName("");
-    setCustPhone(""); setNote(""); setSms(false);
+    setCustPhone(""); setNote(""); setSms(false); setWalkIn(true);
   };
 
   const save = async () => {
     if (!current?.id) { toast.error(t("p2c_selectShop")); return; }
     const amt = Number(amount);
     if (!amt || amt <= 0) { toast.error(t("p2c_enterAmount")); return; }
-    if (!custName.trim()) { toast.error(t("p2c_custNameReq")); return; }
-    if (!custPhone.trim()) { toast.error(t("p2c_mobileRequired")); return; }
+    if (!walkIn && !custName.trim()) { toast.error(t("p2c_custNameReq")); return; }
     setSaving(true);
     try {
       let customer_id: string | null = null;
-      if (custName.trim()) {
+      if (!walkIn && custName.trim()) {
         const { data: c, error: ce } = await supabase
           .from("customers")
           .insert({ shop_id: current.id, name: custName.trim(), phone: custPhone.trim() || null })
@@ -49,7 +49,11 @@ export function QuickSellSheet({ open, onOpenChange }: { open: boolean; onOpenCh
         if (ce) throw ce;
         customer_id = c.id;
       }
-      const noteText = [note.trim(), profit.trim() ? `${t("p2c_profit")}: ${profit}` : ""].filter(Boolean).join(" | ");
+      const noteText = [
+        walkIn ? (lang === "bn" ? "ওয়াকিং কাস্টমার" : "Walking customer") : "",
+        note.trim(),
+        profit.trim() ? `${t("p2c_profit")}: ${profit}` : "",
+      ].filter(Boolean).join(" | ");
       const { error } = await supabase.from("sales").insert({
         shop_id: current.id,
         customer_id,
@@ -104,6 +108,14 @@ export function QuickSellSheet({ open, onOpenChange }: { open: boolean; onOpenCh
             <Label>{t("p2c_profit")}</Label>
             <Input type="number" inputMode="decimal" placeholder={t("p2c_profit")} value={profit} onChange={(e) => setProfit(e.target.value)} />
           </div>
+          <div className="flex items-center justify-between rounded-md border bg-muted/30 px-3 py-2">
+            <Label className="text-sm">
+              {lang === "bn" ? "ওয়াকিং কাস্টমার" : "Walking customer"}
+            </Label>
+            <Switch checked={walkIn} onCheckedChange={setWalkIn} />
+          </div>
+          {!walkIn && (
+          <>
           <div className="space-y-1.5">
             <Label>{t("p2c_customerName")}</Label>
             <div className="relative">
@@ -112,12 +124,14 @@ export function QuickSellSheet({ open, onOpenChange }: { open: boolean; onOpenCh
             </div>
           </div>
           <div className="space-y-1.5">
-            <Label>{t("p2c_customerMobile")}</Label>
+            <Label>{t("p2c_customerMobile")} <span className="text-xs text-muted-foreground">({lang === "bn" ? "ঐচ্ছিক" : "optional"})</span></Label>
             <div className="flex gap-2">
               <div className="flex w-20 items-center justify-center rounded-md border bg-muted/30 text-sm">+88</div>
               <Input type="tel" placeholder="xxxxxxxxxx" value={custPhone} onChange={(e) => setCustPhone(e.target.value)} className="flex-1" />
             </div>
           </div>
+          </>
+          )}
           <div className="flex gap-2">
             <Textarea placeholder={t("p2c_writeNote")} value={note} onChange={(e) => setNote(e.target.value)} className="flex-1" />
             <Button variant="outline" size="icon" className="h-10 w-10 flex-none" type="button"><Link2 className="h-4 w-4" /></Button>
