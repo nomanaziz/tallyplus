@@ -26,22 +26,22 @@ export function QuickSellSheet({ open, onOpenChange }: { open: boolean; onOpenCh
   const [note, setNote] = useState("");
   const [sms, setSms] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [walkIn, setWalkIn] = useState(true);
 
   const reset = () => {
     setDate(today); setAmount(""); setProfit(""); setCustName("");
-    setCustPhone(""); setNote(""); setSms(false);
+    setCustPhone(""); setNote(""); setSms(false); setWalkIn(true);
   };
 
   const save = async () => {
     if (!current?.id) { toast.error(t("p2c_selectShop")); return; }
     const amt = Number(amount);
     if (!amt || amt <= 0) { toast.error(t("p2c_enterAmount")); return; }
-    if (!custName.trim()) { toast.error(t("p2c_custNameReq")); return; }
-    if (!custPhone.trim()) { toast.error(t("p2c_mobileRequired")); return; }
+    if (!walkIn && !custName.trim()) { toast.error(t("p2c_custNameReq")); return; }
     setSaving(true);
     try {
       let customer_id: string | null = null;
-      if (custName.trim()) {
+      if (!walkIn && custName.trim()) {
         const { data: c, error: ce } = await supabase
           .from("customers")
           .insert({ shop_id: current.id, name: custName.trim(), phone: custPhone.trim() || null })
@@ -49,7 +49,11 @@ export function QuickSellSheet({ open, onOpenChange }: { open: boolean; onOpenCh
         if (ce) throw ce;
         customer_id = c.id;
       }
-      const noteText = [note.trim(), profit.trim() ? `${t("p2c_profit")}: ${profit}` : ""].filter(Boolean).join(" | ");
+      const noteText = [
+        walkIn ? (lang === "bn" ? "ওয়াকিং কাস্টমার" : "Walking customer") : "",
+        note.trim(),
+        profit.trim() ? `${t("p2c_profit")}: ${profit}` : "",
+      ].filter(Boolean).join(" | ");
       const { error } = await supabase.from("sales").insert({
         shop_id: current.id,
         customer_id,
