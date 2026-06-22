@@ -206,7 +206,11 @@ export function RecurringExpensesPanel() {
                     <div className="text-[11px] text-muted-foreground">{t.category}</div>
                   </TableCell>
                   <TableCell className="text-xs capitalize">
-                    {t.kind === "loan" ? (tr("p7_Loan")) : t.kind === "variable" ? (tr("p7_Variable")) : (tr("p7_Fixed"))}
+                    {t.kind === "loan"
+                      ? (tr("p7_Loan"))
+                      : t.kind === "variable"
+                        ? (lang === "bn" ? "পরিবর্তনশীল পরিমাণ" : "Variable amount")
+                        : (lang === "bn" ? "নির্দিষ্ট পরিমাণ" : "Fixed amount")}
                   </TableCell>
                   <TableCell className="text-right font-semibold tabular-nums">{fmtMoney(calcMonthly(t), lang)}</TableCell>
                   <TableCell className="text-xs">{t.day_of_month}</TableCell>
