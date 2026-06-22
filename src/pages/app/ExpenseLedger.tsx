@@ -88,7 +88,7 @@ function ExpenseLedgerPage() {
       {/* Preset category tiles */}
       <div className="mt-4">
         <div className="mb-2 text-sm font-semibold text-muted-foreground">
-          {t("p5_Add_new_expense")}
+          {lang === "bn" ? "খরচের ধরন বাছাই করে নতুন খরচ যোগ করুন" : "Pick a category to add an expense"}
         </div>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
           {PRESET_CATS.map((c) => (
@@ -105,6 +105,23 @@ function ExpenseLedgerPage() {
               <span className="text-xs">{lang === "bn" ? c.bn : c.en}</span>
             </button>
           ))}
+          {customCats.map((name) => (
+            <button
+              key={name}
+              onClick={() => { setEditing(null); setPresetCat(name); setOpen(true); }}
+              className="flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-primary/30 bg-primary/5 px-3 py-4 font-semibold text-primary shadow-sm transition active:scale-[0.98] hover:bg-primary/10"
+            >
+              <MoreHorizontal className="h-6 w-6" />
+              <span className="text-xs line-clamp-1">{name}</span>
+            </button>
+          ))}
+          <button
+            onClick={addCustomCategory}
+            className="flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-muted-foreground/40 bg-background px-3 py-4 font-semibold text-muted-foreground transition active:scale-[0.98] hover:bg-accent"
+          >
+            <Plus className="h-6 w-6" />
+            <span className="text-xs">{lang === "bn" ? "নতুন ক্যাটাগরি" : "New category"}</span>
+          </button>
         </div>
       </div>
 
