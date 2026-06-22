@@ -13,9 +13,10 @@ import {
 import { InstallAppButton } from "./InstallAppPrompt";
 import { NotificationBell } from "./NotificationBell";
 import { SyncStatusButton } from "./SyncStatusButton";
-import { ChevronDown, LogOut, ArrowLeftRight, LayoutDashboard } from "lucide-react";
+import { ChevronDown, LogOut, ArrowLeftRight, LayoutDashboard, Eye, EyeOff } from "lucide-react";
 import { BrandWordmark } from "@/components/brand/BrandWordmark";
 import { icons, AppIcon } from "@/lib/icons";
+import { useCostHide } from "@/lib/costHide";
 
 const SettingsSheet = lazy(() =>
   import("./SettingsSheet").then((m) => ({ default: m.SettingsSheet }))
@@ -27,6 +28,7 @@ export function AppTopbar() {
   const { t } = useI18n();
   const nav = useNavigate();
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const { hidden: costHidden, toggle: toggleCostHide } = useCostHide();
   const isOwner = !!(user && current && current.owner_id === user.id);
   const canSwitchShop = isOwner && shops.length > 1;
 
@@ -52,6 +54,18 @@ export function AppTopbar() {
         <SyncStatusButton />
         <NotificationBell />
         <InstallAppButton />
+        <button
+          onClick={toggleCostHide}
+          aria-pressed={costHidden}
+          title={costHidden ? "Show prices" : "Hide prices (Cost Hide)"}
+          className={
+            "flex h-9 w-9 items-center justify-center rounded-full text-sm font-medium hover:bg-accent " +
+            (costHidden ? "text-primary" : "text-muted-foreground")
+          }
+        >
+          {costHidden ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          <span className="sr-only">Cost Hide</span>
+        </button>
         <button
           onClick={() => setSettingsOpen(true)}
           data-tour="profile"
