@@ -1110,7 +1110,7 @@ function ProductsPage() {
                           <TableCell className="text-xs">{new Date(m.created_at).toLocaleString()}</TableCell>
                           <TableCell>{productMap[m.product_id] ?? "—"}</TableCell>
                           <TableCell><span className={m.type === "in" ? "text-emerald-600" : "text-destructive"}>{m.type}</span></TableCell>
-                          <TableCell className="text-right tabular-nums">{lang === "bn" ? bnNum(m.qty) : m.qty}</TableCell>
+                          <TableCell className="text-right tabular-nums">{costHidden ? MASK : (lang === "bn" ? bnNum(m.qty) : m.qty)}</TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
