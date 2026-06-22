@@ -1054,7 +1054,7 @@ function ProductsPage() {
                       <span className="text-xs text-muted-foreground tabular-nums">
                         {Number(p.stock) < 0
                           ? (t("p3_Unlimited"))
-                          : (lang === "bn" ? bnNum(Number(p.stock)) : Number(p.stock))}
+                          : (costHidden ? MASK : (lang === "bn" ? bnNum(Number(p.stock)) : Number(p.stock)))}
                       </span>
                     </label>
                   ))
