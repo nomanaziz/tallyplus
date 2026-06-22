@@ -1157,6 +1157,8 @@ function PaymentDialog(props: {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  // Walking customer (sell-only): when ON, no customer details required.
+  const [walkInCustomer, setWalkInCustomer] = useState<boolean>(isSell);
 
   useEffect(() => {
     if (props.open) {
@@ -1166,6 +1168,7 @@ function PaymentDialog(props: {
       setCustomInvoice(false); setInvoiceNo(""); setStaffInfo(false); setStaffNote("");
       setSendMessage(false);
       setPartyTab(isSell ? "customer" : "supplier");
+      setWalkInCustomer(isSell);
     }
   }, [props.open, props.grandTotal, isSell]);
 
