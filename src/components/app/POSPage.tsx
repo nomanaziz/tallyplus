@@ -111,6 +111,36 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
   const services = servicesData as Service[];
   const [pickerTab, setPickerTab] = useState<"products" | "services">("products");
   const [search, setSearch] = useState("");
+  const [showOutOfStock, setShowOutOfStock] = useState(false);
+  const [categoryFilter, setCategoryFilter] = useState<string | "all">("all");
+  const [categories, setCategories] = useState<Array<{ id: string; name: string; parent_id: string | null }>>([]);
+  const [quickStockProduct, setQuickStockProduct] = useState<Product | null>(null);
+  const [walkIn, setWalkIn] = useState(true);
+
+  // Load shop categories for the picker dropdown
+  useEffect(() => {
+    if (!current?.id) { setCategories([]); return; }
+    void supabase
+      .from("categories")
+      .select("id,name,parent_id")
+      .eq("shop_id", current.id)
+      .order("name")
+      .then(({ data }) => setCategories((data as Array<{ id: string; name: string; parent_id: string | null }>) ?? []));
+  }, [current?.id]);
+
+  // Realtime: when products change (stock update, new product), refresh the list automatically
+  useEffect(() => {
+    if (!current?.id) return;
+    const channel = supabase
+      .channel(`pos-products-${current.id}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "products", filter: `shop_id=eq.${current.id}` },
+        () => { void qc.invalidateQueries({ queryKey: ["products"] }); },
+      )
+      .subscribe();
+    return () => { void supabase.removeChannel(channel); };
+  }, [current?.id, qc]);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [discount, setDiscount] = useState<string>("0");
   const [discountMode, setDiscountMode] = useState<"amt" | "pct">("amt");
