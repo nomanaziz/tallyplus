@@ -9,6 +9,7 @@ import { useShop } from "@/lib/shop";
 import { useAuth } from "@/lib/auth";
 import { productsListQuery, stockHistoryQuery } from "@/lib/queries";
 import { useI18n, fmtMoney, bnNum } from "@/lib/i18n";
+import { useCostHide } from "@/lib/costHide";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -92,6 +93,8 @@ function ProductsPage() {
   const { current } = useShop();
   const { user } = useAuth();
   const qc = useQueryClient();
+  const { hidden: costHidden } = useCostHide();
+  const MASK = "••••";
   const { data: items = [], isLoading: loading, refetch } = useQuery(productsListQuery(current?.id ?? null));
   const { data: usage, refresh: refreshUsage } = useUsageLimit(current?.id ?? null, "products");
   const limitReached = !!usage && usage.limit !== -1 && usage.used >= usage.limit;
