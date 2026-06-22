@@ -45,6 +45,8 @@ type Product = {
   is_serialized?: boolean | null;
   barcode?: string | null;
   sku?: string | null;
+  category_id?: string | null;
+  track_stock?: boolean | null;
 };
 
 type CartItem = {
