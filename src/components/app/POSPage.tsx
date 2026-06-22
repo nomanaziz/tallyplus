@@ -668,9 +668,11 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
                     <button
                       key={p.id}
                       type="button"
-                      onClick={() => addToCart(p)}
-                      disabled={outOfStock}
-                      className="group relative flex flex-col rounded-xl border bg-card p-2 shadow-sm transition hover:border-primary/40 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
+                      onClick={() => {
+                        if (outOfStock) { setQuickStockProduct(p); return; }
+                        addToCart(p);
+                      }}
+                      className={"group relative flex flex-col rounded-xl border bg-card p-2 shadow-sm transition hover:border-primary/40 hover:shadow-md " + (outOfStock ? "opacity-70" : "")}
                     >
                       {/* qty badge — top-left of whole card */}
                       {inCart && (
