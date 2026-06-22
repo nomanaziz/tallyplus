@@ -1073,6 +1073,63 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
 function QuickAddProductDialog({
   open, onClose, onAdded,
 }: { open: boolean; onClose: () => void; onAdded: (p: Product) => void }) {
+  return _OriginalQuickAddProductDialog({ open, onClose, onAdded });
+}
+
+function QuickStockDialog({ product, onClose, onUpdated }: {
+  product: Product | null;
+  onClose: () => void;
+  onUpdated: (p: Product, newStock: number) => void;
+}) {
+  const { lang } = useI18n();
+  const [qty, setQty] = useState("1");
+  const [busy, setBusy] = useState(false);
+  useEffect(() => { if (product) setQty("1"); }, [product?.id]);
+  const save = async () => {
+    if (!product) return;
+    const add = Number(qty);
+    if (!add || add <= 0) { toast.error(lang === "bn" ? "পরিমাণ লিখুন" : "Enter quantity"); return; }
+    setBusy(true);
+    const newStock = Number(product.stock || 0) + add;
+    const { error } = await supabase.from("products").update({ stock: newStock }).eq("id", product.id);
+    setBusy(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success(lang === "bn" ? "স্টক আপডেট হয়েছে" : "Stock updated");
+    onUpdated(product, newStock);
+    onClose();
+  };
+  return (
+    <Dialog open={!!product} onOpenChange={(o) => { if (!o) onClose(); }}>
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle>{lang === "bn" ? "স্টক যোগ করুন" : "Add stock"}</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3">
+          <div className="text-sm">
+            <span className="font-semibold">{product?.name}</span>
+            <span className="ml-2 text-muted-foreground">
+              {lang === "bn" ? "বর্তমান স্টক" : "Current stock"}: {product?.stock ?? 0}
+            </span>
+          </div>
+          <div className="grid gap-1.5">
+            <Label>{lang === "bn" ? "যে পরিমাণ যোগ করবেন" : "Quantity to add"}</Label>
+            <Input type="number" autoFocus value={qty} onChange={(e) => setQty(e.target.value)} />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="ghost" onClick={onClose}>{lang === "bn" ? "বাতিল" : "Cancel"}</Button>
+          <Button onClick={save} disabled={busy}>
+            {busy ? "..." : (lang === "bn" ? "যোগ করে বিক্রয়ে আনুন" : "Add & continue")}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function _OriginalQuickAddProductDialog({
+  open, onClose, onAdded,
+}: { open: boolean; onClose: () => void; onAdded: (p: Product) => void }) {
   const { lang, t } = useI18n();
   const { current } = useShop();
   const [name, setName] = useState("");
