@@ -1497,7 +1497,7 @@ function PaymentDialog(props: {
       // Find or create contact (only for due, or when name provided)
       let contactId: string | null = null;
       const partyTable = isSell ? "customers" : "suppliers";
-      if (!isCash || partyName.trim()) {
+      if (!(isSell && walkInCustomer) && (!isCash || partyName.trim())) {
         if (partyName.trim()) {
           // try find by phone
           if (partyPhone.trim()) {
