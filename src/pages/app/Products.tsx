@@ -626,7 +626,7 @@ function ProductsPage() {
         <div className="grid grid-cols-2 gap-1.5 sm:gap-3">
           <div className="rounded-lg bg-primary-foreground/15 px-2 py-1 text-center sm:px-3 sm:py-2">
             <div className="text-sm font-extrabold tabular-nums sm:text-xl">
-              {lang === "bn" ? bnNum(totalStockCount) : totalStockCount.toLocaleString()}
+              {costHidden ? MASK : (lang === "bn" ? bnNum(totalStockCount) : totalStockCount.toLocaleString())}
             </div>
             <div className="mt-0 text-[10px] font-semibold sm:text-xs">
               {t("p3_TotalStock")}
@@ -634,7 +634,7 @@ function ProductsPage() {
           </div>
           <div className="rounded-lg bg-primary-foreground/15 px-2 py-1 text-center sm:px-3 sm:py-2">
             <div className="text-sm font-extrabold tabular-nums sm:text-xl">
-              {fmtMoney(totalStockValue, lang)}
+              {costHidden ? MASK : fmtMoney(totalStockValue, lang)}
             </div>
             <div className="mt-0 text-[10px] font-semibold sm:text-xs">
               {t("p3_StockValue")}
