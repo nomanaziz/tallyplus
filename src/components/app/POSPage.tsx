@@ -200,8 +200,11 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
   const partyLabelEn = isSell ? "Customer" : "Supplier";
 
   const loadProducts = async () => {
+    // Cache-bust: remove cached query data so the offline cache layer can't return stale stock.
+    qc.removeQueries({ queryKey: ["products"] });
     await qc.invalidateQueries({ queryKey: ["products"] });
     await refetch();
+    toast.success(lang === "bn" ? "তালিকা আপডেট হয়েছে" : "List refreshed", { duration: 1200 });
   };
 
   const filtered = useMemo(() => {
@@ -211,14 +214,24 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
         .map((p) => (p as unknown as { parent_product_id?: string | null }).parent_product_id)
         .filter((x): x is string => !!x),
     );
-    const visible = products.filter((p) => !parentIds.has(p.id));
+    let visible = products.filter((p) => !parentIds.has(p.id));
+    // Sell mode: hide out-of-stock by default unless "Show all" toggle is on
+    if (isSell && !showOutOfStock) {
+      visible = visible.filter((p) => (p.track_stock === false) || Number(p.stock) > 0);
+    }
+    // Category filter (includes children when a parent is selected)
+    if (categoryFilter !== "all") {
+      const ids = new Set<string>([categoryFilter]);
+      categories.forEach((c) => { if (c.parent_id === categoryFilter) ids.add(c.id); });
+      visible = visible.filter((p) => p.category_id && ids.has(p.category_id));
+    }
     const q = search.trim().toLowerCase();
     if (!q) return visible;
     return visible.filter((p) => {
       const vl = (p as unknown as { variant_label?: string | null }).variant_label ?? "";
       return p.name.toLowerCase().includes(q) || vl.toLowerCase().includes(q);
     });
-  }, [products, search]);
+  }, [products, search, isSell, showOutOfStock, categoryFilter, categories]);
 
   const handleScannedCode = (code: string) => {
     const c = code.trim();
