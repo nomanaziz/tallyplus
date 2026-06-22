@@ -1777,6 +1777,16 @@ function PaymentDialog(props: {
             )}
           </div>
 
+          {isSell && (
+            <div className="flex items-center justify-between rounded-md border bg-muted/30 px-3 py-2">
+              <Label className="text-sm">
+                {lang === "bn" ? "ওয়াকিং কাস্টমার (নাম/মোবাইল লাগবে না)" : "Walking customer (skip name/mobile)"}
+              </Label>
+              <Switch checked={walkInCustomer} onCheckedChange={setWalkInCustomer} />
+            </div>
+          )}
+          {!(isSell && walkInCustomer) && (
+          <>
           <div className="grid gap-1.5">
             <Label>{partyLabel} {t("p2c_nameLower")}</Label>
             <div className="flex gap-2">
@@ -1810,14 +1820,16 @@ function PaymentDialog(props: {
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="grid gap-1.5">
-              <Label>{t("p2c_mobile")}</Label>
+              <Label>{t("p2c_mobile")} <span className="text-xs text-muted-foreground">({lang === "bn" ? "ঐচ্ছিক" : "optional"})</span></Label>
               <Input value={partyPhone} onChange={(e) => setPartyPhone(e.target.value)} />
             </div>
             <div className="grid gap-1.5">
-              <Label>{t("p2c_address")}</Label>
+              <Label>{t("p2c_address")} <span className="text-xs text-muted-foreground">({lang === "bn" ? "ঐচ্ছিক" : "optional"})</span></Label>
               <Input value={partyAddress} onChange={(e) => setPartyAddress(e.target.value)} />
             </div>
           </div>
+          </>
+          )}
 
           <div className="grid gap-1.5">
             <Label>{t("p2c_comment")}</Label>
