@@ -108,6 +108,14 @@ export function QuickSellSheet({ open, onOpenChange }: { open: boolean; onOpenCh
             <Label>{t("p2c_profit")}</Label>
             <Input type="number" inputMode="decimal" placeholder={t("p2c_profit")} value={profit} onChange={(e) => setProfit(e.target.value)} />
           </div>
+          <div className="flex items-center justify-between rounded-md border bg-muted/30 px-3 py-2">
+            <Label className="text-sm">
+              {lang === "bn" ? "ওয়াকিং কাস্টমার" : "Walking customer"}
+            </Label>
+            <Switch checked={walkIn} onCheckedChange={setWalkIn} />
+          </div>
+          {!walkIn && (
+          <>
           <div className="space-y-1.5">
             <Label>{t("p2c_customerName")}</Label>
             <div className="relative">
@@ -116,12 +124,14 @@ export function QuickSellSheet({ open, onOpenChange }: { open: boolean; onOpenCh
             </div>
           </div>
           <div className="space-y-1.5">
-            <Label>{t("p2c_customerMobile")}</Label>
+            <Label>{t("p2c_customerMobile")} <span className="text-xs text-muted-foreground">({lang === "bn" ? "ঐচ্ছিক" : "optional"})</span></Label>
             <div className="flex gap-2">
               <div className="flex w-20 items-center justify-center rounded-md border bg-muted/30 text-sm">+88</div>
               <Input type="tel" placeholder="xxxxxxxxxx" value={custPhone} onChange={(e) => setCustPhone(e.target.value)} className="flex-1" />
             </div>
           </div>
+          </>
+          )}
           <div className="flex gap-2">
             <Textarea placeholder={t("p2c_writeNote")} value={note} onChange={(e) => setNote(e.target.value)} className="flex-1" />
             <Button variant="outline" size="icon" className="h-10 w-10 flex-none" type="button"><Link2 className="h-4 w-4" /></Button>
