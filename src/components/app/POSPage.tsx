@@ -1195,8 +1195,12 @@ function PaymentDialog(props: {
   const save = async () => {
     if (!current || !user) return;
     if (props.cart.length === 0) { toast.error(t("p2c_cartEmpty")); return; }
-    if (!partyName.trim()) { toast.error(t("p2c_nameRequired")); return; }
-    if (!partyPhone.trim()) { toast.error(t("p2c_mobileRequired")); return; }
+    // Sell + walking customer: skip all customer validation.
+    // Otherwise: only name is required. Mobile/address optional.
+    // Purchase mode keeps existing behavior (supplier name required, phone optional).
+    if (!(isSell && walkInCustomer)) {
+      if (!partyName.trim()) { toast.error(t("p2c_nameRequired")); return; }
+    }
     setSaving(true);
 
     // ───────────────── Offline path ─────────────────
