@@ -1217,7 +1217,7 @@ function PaymentDialog(props: {
 
         // contact: try cache first, else generate id + queue insert
         let contactIdO: string | null = null;
-        if (!isCash || partyName.trim()) {
+        if (!(isSell && walkInCustomer) && (!isCash || partyName.trim())) {
           if (partyName.trim()) {
             if (partyPhone.trim()) {
               const cachedContacts = await readCache<Array<{ id: string; phone: string | null }>>(
