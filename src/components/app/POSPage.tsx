@@ -990,6 +990,16 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
         onAdded={(p) => { void loadProducts(); addToCart(p); }}
       />
 
+      <QuickStockDialog
+        product={quickStockProduct}
+        onClose={() => setQuickStockProduct(null)}
+        onUpdated={(p, newStock) => {
+          void loadProducts();
+          // Add to cart immediately if stock now available
+          if (newStock > 0) addToCart({ ...p, stock: newStock });
+        }}
+      />
+
       <SerialPickDialog
         open={serialPick !== null}
         onOpenChange={(v) => { if (!v) setSerialPick(null); }}
