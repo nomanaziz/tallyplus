@@ -751,7 +751,10 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
                       </div>
                     </div>
                     <div className="flex">
-                      <Button size="sm" className="rounded-r-none px-3" onClick={() => addToCart(p)} disabled={isSell && Number(p.stock) <= 0} aria-label={t("p2c_add")}>
+                      <Button size="sm" className="rounded-r-none px-3" onClick={() => {
+                        if (isSell && Number(p.stock) <= 0) { setQuickStockProduct(p); return; }
+                        addToCart(p);
+                      }} aria-label={t("p2c_add")}>
                         <Plus className="h-4 w-4" />
                       </Button>
                       <DropdownMenu>
