@@ -1,51 +1,55 @@
 ## Goal
-Add a privacy toggle in the topbar so the user can hide all monetary/stock digits on the **Products** and **Stock Report** pages when showing the screen to strangers (customers, visitors). One click hides; one click reveals.
-
-## UX
-- New eye icon button in `AppTopbar` (next to Settings).
-  - Icon: `Eye` (visible) / `EyeOff` (hidden) from lucide.
-  - Tooltip / label: "Cost Hide" (EN) / "মূল্য লুকান" (BN, via i18n).
-- When **ON (hidden)**:
-  - All cost, price, MRP, profit, totals, and stock-quantity numbers on **Products** (`/app/products`) and **Stock Report** (`/app/stock-report` etc.) render as `••••`.
-  - Product names, categories, images, units stay visible.
-- When **OFF**, everything renders normally.
-- State persists in `localStorage` so it survives reloads, and syncs across tabs.
+Make the **Purchase** page (`/app/purchase`) behave differently from Sell — let the user edit purchase price per line, add expiry/serial inline, pay via cash or online, optionally skip supplier as "Walking seller / Cash purchase", and respect the topbar Cost-Hide toggle.
 
 ## Scope
-Pages affected by the mask:
-1. `src/pages/app/Products.tsx` — cost, sale price, MRP, stock qty, profit columns/cells.
-2. `src/pages/app/StockReport.tsx` — stock value, qty, cost columns.
+Only frontend changes inside:
+- `src/components/app/POSPage.tsx` (cart card, checkout dialog)
+- topbar Cost-Hide masking extended into POS price/total displays
 
-All other pages (POS, Purchase, Reports, Dashboard) are **unchanged**.
+No DB / migration / queries change.
 
-## Technical Details
+## Changes
 
-1. **New hook + provider** `src/lib/costHide.tsx`
-   - `CostHideProvider` wraps the app (mount inside `AppLayout`).
-   - Exposes `useCostHide()` → `{ hidden: boolean, toggle: () => void }`.
-   - Persists to `localStorage` key `cost-hide` and listens to the `storage` event.
-   - Helper `maskNumber(value, hidden, fallback = "••••")` for convenience.
+### 1. Purchase cart card (different from Sell)
+In the cart loop, when `mode === "purchase"` render a dedicated card layout:
 
-2. **Topbar button** in `src/components/app/AppTopbar.tsx`
-   - Insert a small icon button before the Settings button.
-   - Uses `useCostHide()`; shows `Eye` when revealed, `EyeOff` when hidden.
-   - Adds `costHide` / `costShow` strings to `src/lib/i18n.tsx` (EN + BN).
+- **Product name + unit** (unchanged).
+- **Editable Price input** (cost / purchase price). Edits update `it.price` and mark `price_overridden`. Sell mode keeps current non-editable price.
+- **Qty stepper** (kept).
+- **Line total** (kept, recomputed live).
+- **Icon-row** with two small ghost-buttons:
+  - `CalendarClock` icon → opens a tiny popover with a `<Input type="date">` to set/clear an **expiry date** for this line (stored on the cart item as `expiry_date`; if product is not flagged perishable, the icon is still shown but greyed-tip).
+  - `Hash` icon → only visible when `prod?.is_serialized` — opens the existing serial picker to add/edit serial numbers for this purchase line.
+- Discount row stays available but de-emphasised (purchase rarely uses it).
 
-3. **Products page** (`src/pages/app/Products.tsx`)
-   - Read `hidden` from `useCostHide()`.
-   - Wrap every rendered cost / price / MRP / profit / stock-qty number with `hidden ? "••••" : <existing render>`.
-   - Keep currency symbol next to the mask (e.g. `৳ ••••`) for layout stability.
+Sell-mode card is untouched.
 
-4. **Stock Report page** (`src/pages/app/StockReport.tsx`)
-   - Same treatment for qty, unit cost, total value, and summary tiles.
+### 2. Online payment on Purchase checkout
+In `CheckoutDialog` (cash kind) add a small **Payment method** segmented control above the amount row:
+- Options: `Cash` / `Online`.
+- When `Online` is selected, store `payment_method: "online"` in the `purchases` insert and in the matching `cash_movements` row (skip cashbox entry for online, or tag it `method='online'` — keep existing column; just change the literal).
+- Default remains `cash`. Sell side already has its own flow; do not change it here (out of scope).
 
-5. **No backend / migration / schema changes.** Pure client-side UI preference.
+### 3. Walking seller / Cash purchase toggle
+Inside `CheckoutDialog` when `mode === "purchase"`, mirror the existing "Walking customer" checkbox:
+- Label: `Walking seller / Cash purchase` (EN) / `ক্যাশ ক্রয় / ওয়াকিং সেলার` (BN).
+- When checked: hide supplier name / phone inputs, skip supplier upsert, save the purchase with `supplier_id: null` and `supplier_name: "Cash Purchase"` (existing nullable columns).
+- When unchecked: current supplier selection flow is unchanged.
+
+### 4. Extend Cost-Hide to POS
+Import `useCostHide` in `POSPage.tsx`. When `hidden === true`, replace every visible money digit with `••••`:
+- Product grid card price (`৳{price}` → `৳ ••••`).
+- Cart line price input, line total, subtotal, discount, delivery, grand total.
+- Checkout dialog amount summary.
+Inputs remain editable (value kept), only the displayed numbers next to labels are masked; the actual input fields keep working so the owner can still type when needed.
 
 ## Out of Scope
-- Masking on POS, Purchase, Dashboard, Reports, Cashbook, etc. (can be a follow-up).
-- PIN-protecting the toggle. It is a quick visual hide, not access control.
+- Backend / schema changes (expiry + serial already exist on product/serial tables; we only store expiry_date on the cart item and pass through if columns exist — otherwise it is a UI-only hint for now).
+- Sell-mode card redesign.
+- New payment gateway integration — "Online" is just a label/flag.
 
 ## Acceptance
-- Toggling the topbar eye icon instantly masks/unmasks all numeric values on the Products and Stock Report pages.
-- Preference survives page reload and tab switches.
-- No other page's display changes.
+- Opening `/app/purchase`, the cart shows price-editable cards with expiry + serial icons.
+- Checkout shows Cash / Online toggle and a Walking-seller checkbox; saving with each combination writes the correct `payment_method` and supplier fields.
+- Toggling the topbar eye icon masks all money digits on the Purchase page too.
+- Sell page (`/app/sell`) looks and behaves exactly as before.
