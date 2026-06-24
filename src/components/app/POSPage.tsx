@@ -103,6 +103,8 @@ type Contact = { id: string; name: string; phone: string | null; address: string
 
 export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue?: boolean }) {
   const { lang, t } = useI18n();
+  const { hidden: costHidden } = useCostHide();
+  const maskMoney = (v: number) => (costHidden ? "৳ ••••" : fmtMoney(v, lang));
   const { current } = useShop();
   const { user } = useAuth();
   const nav = useNavigate();
