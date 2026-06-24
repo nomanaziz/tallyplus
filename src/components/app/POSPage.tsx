@@ -836,6 +836,63 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
                       </button>
                     </div>
 
+                    {/* Purchase-only: editable cost price + expiry + serial */}
+                    {!isSell && (
+                      <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                        <span className="text-[10px] text-muted-foreground">{lang === "bn" ? "ক্রয়মূল্য" : "Cost"}</span>
+                        <div className="inline-flex items-center rounded-md border bg-background">
+                          <span className="px-1.5 text-[11px] text-muted-foreground">৳</span>
+                          <input
+                            type="number"
+                            step="0.01"
+                            value={costHidden ? "" : it.price}
+                            placeholder={costHidden ? "••••" : undefined}
+                            onChange={(e) => updateCart(idx, { price: Math.max(0, Number(e.target.value) || 0) })}
+                            className="h-7 w-20 bg-transparent text-right text-[11px] font-semibold tabular-nums outline-none"
+                          />
+                        </div>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <button
+                              type="button"
+                              title={lang === "bn" ? "মেয়াদ" : "Expiry"}
+                              className={`inline-flex h-7 items-center gap-1 rounded-md border px-1.5 text-[10px] ${it.expiry_date ? "border-amber-400 bg-amber-50 text-amber-700" : "text-muted-foreground"}`}
+                            >
+                              <CalendarClock className="h-3.5 w-3.5" />
+                              {it.expiry_date ? it.expiry_date : (lang === "bn" ? "মেয়াদ" : "Expiry")}
+                            </button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-2" align="start">
+                            <div className="flex items-center gap-2">
+                              <Input
+                                type="date"
+                                value={it.expiry_date ?? ""}
+                                onChange={(e) => updateCart(idx, { expiry_date: e.target.value || null })}
+                                className="h-8 w-40"
+                              />
+                              {it.expiry_date && (
+                                <Button size="sm" variant="ghost" className="h-8 px-2 text-[11px]"
+                                  onClick={() => updateCart(idx, { expiry_date: null })}>
+                                  {lang === "bn" ? "মুছুন" : "Clear"}
+                                </Button>
+                              )}
+                            </div>
+                          </PopoverContent>
+                        </Popover>
+                        {prod?.is_serialized && (
+                          <button
+                            type="button"
+                            title={lang === "bn" ? "সিরিয়াল" : "Serial"}
+                            onClick={() => setSerialPick(prod)}
+                            className={`inline-flex h-7 items-center gap-1 rounded-md border px-1.5 text-[10px] ${it.serial_no ? "border-primary/50 bg-primary/10 text-primary" : "text-muted-foreground"}`}
+                          >
+                            <Hash className="h-3.5 w-3.5" />
+                            {it.serial_no ? it.serial_no : (lang === "bn" ? "সিরিয়াল" : "Serial")}
+                          </button>
+                        )}
+                      </div>
+                    )}
+
                     {/* Discount only (mode toggle: % or ৳) */}
                     <div className="mt-1.5 flex items-center justify-end gap-1.5">
                       {lineDiscAmount(it) > 0 && (
