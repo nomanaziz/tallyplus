@@ -708,7 +708,7 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
                           </div>
                         )}
                         <div className="mt-1 text-lg font-extrabold leading-none text-primary tabular-nums">
-                          ৳{Math.round(price)}
+                          {costHidden ? "৳ ••••" : `৳${Math.round(price)}`}
                         </div>
                         <div className="mt-1 text-[10px] text-muted-foreground">
                           {lang === "bn" ? "স্টক" : "Stock"}:{" "}
