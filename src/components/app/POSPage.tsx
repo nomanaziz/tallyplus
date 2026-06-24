@@ -1921,7 +1921,31 @@ function PaymentDialog(props: {
               <Switch checked={walkInCustomer} onCheckedChange={setWalkInCustomer} />
             </div>
           )}
-          {!skipParty && (
+          {!isSell && (
+            <div className="flex items-center justify-between rounded-md border bg-muted/30 px-3 py-2">
+              <Label className="text-sm">
+                {lang === "bn" ? "ক্যাশ ক্রয় / ওয়াকিং সেলার (সাপ্লায়ার লাগবে না)" : "Cash purchase / Walking seller (skip supplier)"}
+              </Label>
+              <Switch checked={walkInSeller} onCheckedChange={setWalkInSeller} />
+            </div>
+          )}
+
+          {/* Payment method selector — applies to both sell + purchase */}
+          <div className="flex items-center justify-between rounded-md border bg-muted/30 px-3 py-2">
+            <Label className="text-sm">{lang === "bn" ? "পেমেন্ট মাধ্যম" : "Payment method"}</Label>
+            <div className="inline-flex overflow-hidden rounded-md border text-xs font-semibold">
+              <button type="button" onClick={() => setPaymentMethod("cash")}
+                className={`flex items-center gap-1 px-3 py-1.5 ${paymentMethod === "cash" ? "bg-primary text-primary-foreground" : "bg-background text-muted-foreground"}`}>
+                <Banknote className="h-3.5 w-3.5" />{lang === "bn" ? "ক্যাশ" : "Cash"}
+              </button>
+              <button type="button" onClick={() => setPaymentMethod("online")}
+                className={`flex items-center gap-1 px-3 py-1.5 ${paymentMethod === "online" ? "bg-primary text-primary-foreground" : "bg-background text-muted-foreground"}`}>
+                <CreditCard className="h-3.5 w-3.5" />{lang === "bn" ? "অনলাইন" : "Online"}
+              </button>
+            </div>
+          </div>
+
+          {!((isSell && walkInCustomer) || (!isSell && walkInSeller)) && (
           <>
           <div className="grid gap-1.5">
             <Label>{partyLabel} {t("p2c_nameLower")}</Label>
