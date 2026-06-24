@@ -1288,6 +1288,10 @@ function PaymentDialog(props: {
   const [saving, setSaving] = useState(false);
   // Walking customer (sell-only): when ON, no customer details required.
   const [walkInCustomer, setWalkInCustomer] = useState<boolean>(isSell);
+  // Walking seller (purchase-only): when ON, no supplier details required.
+  const [walkInSeller, setWalkInSeller] = useState<boolean>(false);
+  // Payment method (cash | online) — applies to both sell and purchase.
+  const [paymentMethod, setPaymentMethod] = useState<"cash" | "online">("cash");
 
   useEffect(() => {
     if (props.open) {
@@ -1298,6 +1302,8 @@ function PaymentDialog(props: {
       setSendMessage(false);
       setPartyTab(isSell ? "customer" : "supplier");
       setWalkInCustomer(isSell);
+      setWalkInSeller(false);
+      setPaymentMethod("cash");
     }
   }, [props.open, props.grandTotal, isSell]);
 
