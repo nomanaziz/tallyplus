@@ -1353,7 +1353,7 @@ function PaymentDialog(props: {
 
         // contact: try cache first, else generate id + queue insert
         let contactIdO: string | null = null;
-        if (!(isSell && walkInCustomer) && (!isCash || partyName.trim())) {
+        if (!skipParty && (!isCash || partyName.trim())) {
           if (partyName.trim()) {
             if (partyPhone.trim()) {
               const cachedContacts = await readCache<Array<{ id: string; phone: string | null }>>(
@@ -1397,7 +1397,7 @@ function PaymentDialog(props: {
               total: props.grandTotal,
               paid: paidNumO,
               due: dueNumO,
-              payment_method: "cash",
+              payment_method: paymentMethod,
               status: "completed",
               note: noteO,
               invoice_no: customInvoice && invoiceNo.trim() ? invoiceNo.trim() : null,
@@ -1486,7 +1486,7 @@ function PaymentDialog(props: {
               total: props.grandTotal,
               paid: paidNumO,
               due: dueNumO,
-              payment_method: "cash",
+              payment_method: paymentMethod,
               note: noteO,
               invoice_no: customInvoice && invoiceNo.trim() ? invoiceNo.trim() : null,
               created_by: user.id,
@@ -1633,7 +1633,7 @@ function PaymentDialog(props: {
       // Find or create contact (only for due, or when name provided)
       let contactId: string | null = null;
       const partyTable = isSell ? "customers" : "suppliers";
-      if (!(isSell && walkInCustomer) && (!isCash || partyName.trim())) {
+      if (!skipParty && (!isCash || partyName.trim())) {
         if (partyName.trim()) {
           // try find by phone
           if (partyPhone.trim()) {
@@ -1675,7 +1675,7 @@ function PaymentDialog(props: {
             total: props.grandTotal,
             paid: paidNum,
             due: dueNum,
-            payment_method: "cash",
+            payment_method: paymentMethod,
             status: "completed",
             note,
             invoice_no: customInvoice && invoiceNo.trim() ? invoiceNo.trim() : null,
@@ -1769,7 +1769,7 @@ function PaymentDialog(props: {
             total: props.grandTotal,
             paid: paidNum,
             due: dueNum,
-            payment_method: "cash",
+            payment_method: paymentMethod,
             note,
             invoice_no: customInvoice && invoiceNo.trim() ? invoiceNo.trim() : null,
             created_by: user.id,
@@ -1921,7 +1921,7 @@ function PaymentDialog(props: {
               <Switch checked={walkInCustomer} onCheckedChange={setWalkInCustomer} />
             </div>
           )}
-          {!(isSell && walkInCustomer) && (
+          {!skipParty && (
           <>
           <div className="grid gap-1.5">
             <Label>{partyLabel} {t("p2c_nameLower")}</Label>
