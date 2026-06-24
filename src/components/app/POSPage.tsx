@@ -1449,7 +1449,7 @@ function PaymentDialog(props: {
             });
           }
 
-          if (paidNumO > 0) {
+          if (paidNumO > 0 && paymentMethod === "cash") {
             await writeWithOffline({
               table: "cash_movements",
               op: "insert",
@@ -1531,7 +1531,7 @@ function PaymentDialog(props: {
               payload: { set: { stock: next }, match: { id: c.product_id } },
             });
           }
-          if (paidNumO > 0) {
+          if (paidNumO > 0 && paymentMethod === "cash") {
             await writeWithOffline({
               table: "cash_movements",
               op: "insert",
@@ -1746,7 +1746,7 @@ function PaymentDialog(props: {
           }
         }
 
-        if (paidNum > 0) {
+        if (paidNum > 0 && paymentMethod === "cash") {
           await supabase.from("cash_movements").insert({
             shop_id: current.id, direction: "in", amount: paidNum,
             note: `sale ${saleId}`, ref_table: "sales", ref_id: saleId, created_by: user.id,
@@ -1803,7 +1803,7 @@ function PaymentDialog(props: {
           }
         }
 
-        if (paidNum > 0) {
+        if (paidNum > 0 && paymentMethod === "cash") {
           await supabase.from("cash_movements").insert({
             shop_id: current.id, direction: "out", amount: paidNum,
             note: `purchase ${purId}`, ref_table: "purchases", ref_id: purId, created_by: user.id,
