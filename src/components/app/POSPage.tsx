@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Plus, Minus, X, Package, ShoppingCart, ChevronDown, MessageSquare, RefreshCw, Search, UserRound, LayoutGrid, List as ListIcon, RotateCcw, Trash2, Pause, ShoppingBag } from "lucide-react";
+import { ArrowLeft, Plus, Minus, X, Package, ShoppingCart, ChevronDown, MessageSquare, RefreshCw, Search, UserRound, LayoutGrid, List as ListIcon, RotateCcw, Trash2, Pause, ShoppingBag, CalendarClock, Hash, Banknote, CreditCard } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { useNavigate } from "@/lib/router";
 import { supabase } from "@/integrations/supabase/client";
 import { useShop } from "@/lib/shop";
 import { useAuth } from "@/lib/auth";
 import { useI18n, fmtMoney, bnNum } from "@/lib/i18n";
+import { useCostHide } from "@/lib/costHide";
 import { productsLiteQuery } from "@/lib/queries";
 import { servicesLiteQuery, durationToText, type Service } from "@/lib/services-queries";
 import { writeWithOffline } from "@/lib/useOfflineWrite";
@@ -66,6 +67,8 @@ type CartItem = {
   line_discount_amt?: number;
   line_discount_mode?: "pct" | "amt";
   unit_label?: string;
+  // Purchase extras
+  expiry_date?: string | null;
   // Serialized item fields
   is_serialized?: boolean;
   serial_id?: string | null;
