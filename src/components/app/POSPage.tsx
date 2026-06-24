@@ -897,7 +897,7 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
                     <div className="mt-1.5 flex items-center justify-end gap-1.5">
                       {lineDiscAmount(it) > 0 && (
                         <span className="text-[10px] font-semibold text-destructive tabular-nums">
-                          −{fmtMoney(round2(lineDiscAmount(it)), lang)}
+                          −{maskMoney(round2(lineDiscAmount(it)))}
                         </span>
                       )}
                       <span className="text-[10px] text-muted-foreground">{lang === "bn" ? "ছাড়" : "Disc"}</span>
@@ -950,7 +950,7 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
                       </div>
                       <div className="text-right">
                         <div className="text-[9px] uppercase text-muted-foreground">{lang === "bn" ? "মোট" : "Total"}</div>
-                        <div className="text-sm font-extrabold tabular-nums text-primary">{fmtMoney(lt, lang)}</div>
+                        <div className="text-sm font-extrabold tabular-nums text-primary">{maskMoney(lt)}</div>
                       </div>
                     </div>
 
@@ -1011,15 +1011,15 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
             </div>
             <div className="flex items-center justify-between text-xs text-muted-foreground">
               <span>{lang === "bn" ? "সাবটোটাল" : "Subtotal"}</span>
-              <span className="tabular-nums">{fmtMoney(subtotalAfterLineDisc, lang)}</span>
+              <span className="tabular-nums">{maskMoney(subtotalAfterLineDisc)}</span>
             </div>
             <div className="flex items-center justify-between text-xs text-muted-foreground">
               <span>{lang === "bn" ? "ছাড়" : "Discount"} ({totalDiscPctDisplay}%)</span>
-              <span className="tabular-nums">-{fmtMoney(totalDiscValue, lang)}</span>
+              <span className="tabular-nums">-{maskMoney(totalDiscValue)}</span>
             </div>
             <div className="flex items-center justify-between border-t pt-2">
               <span className="text-base font-bold">{lang === "bn" ? "মোট:" : "Total:"}</span>
-              <span className="text-xl font-extrabold text-primary tabular-nums">{fmtMoney(grandTotal, lang)}</span>
+              <span className="text-xl font-extrabold text-primary tabular-nums">{maskMoney(grandTotal)}</span>
             </div>
           </div>
 
