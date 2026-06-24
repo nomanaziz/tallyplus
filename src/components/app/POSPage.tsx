@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Plus, Minus, X, Package, ShoppingCart, ChevronDown, MessageSquare, RefreshCw, Search, UserRound, LayoutGrid, List as ListIcon, RotateCcw, Trash2, Pause, ShoppingBag } from "lucide-react";
+import { ArrowLeft, Plus, Minus, X, Package, ShoppingCart, ChevronDown, MessageSquare, RefreshCw, Search, UserRound, LayoutGrid, List as ListIcon, RotateCcw, Trash2, Pause, ShoppingBag, CalendarClock, Hash, Banknote, CreditCard } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { useNavigate } from "@/lib/router";
 import { supabase } from "@/integrations/supabase/client";
 import { useShop } from "@/lib/shop";
 import { useAuth } from "@/lib/auth";
 import { useI18n, fmtMoney, bnNum } from "@/lib/i18n";
+import { useCostHide } from "@/lib/costHide";
 import { productsLiteQuery } from "@/lib/queries";
 import { servicesLiteQuery, durationToText, type Service } from "@/lib/services-queries";
 import { writeWithOffline } from "@/lib/useOfflineWrite";
@@ -66,6 +67,8 @@ type CartItem = {
   line_discount_amt?: number;
   line_discount_mode?: "pct" | "amt";
   unit_label?: string;
+  // Purchase extras
+  expiry_date?: string | null;
   // Serialized item fields
   is_serialized?: boolean;
   serial_id?: string | null;
@@ -100,6 +103,8 @@ type Contact = { id: string; name: string; phone: string | null; address: string
 
 export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue?: boolean }) {
   const { lang, t } = useI18n();
+  const { hidden: costHidden } = useCostHide();
+  const maskMoney = (v: number) => (costHidden ? "৳ ••••" : fmtMoney(v, lang));
   const { current } = useShop();
   const { user } = useAuth();
   const nav = useNavigate();
@@ -703,7 +708,7 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
                           </div>
                         )}
                         <div className="mt-1 text-lg font-extrabold leading-none text-primary tabular-nums">
-                          ৳{Math.round(price)}
+                          {costHidden ? "৳ ••••" : `৳${Math.round(price)}`}
                         </div>
                         <div className="mt-1 text-[10px] text-muted-foreground">
                           {lang === "bn" ? "স্টক" : "Stock"}:{" "}
@@ -831,11 +836,68 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
                       </button>
                     </div>
 
+                    {/* Purchase-only: editable cost price + expiry + serial */}
+                    {!isSell && (
+                      <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                        <span className="text-[10px] text-muted-foreground">{lang === "bn" ? "ক্রয়মূল্য" : "Cost"}</span>
+                        <div className="inline-flex items-center rounded-md border bg-background">
+                          <span className="px-1.5 text-[11px] text-muted-foreground">৳</span>
+                          <input
+                            type="number"
+                            step="0.01"
+                            value={costHidden ? "" : it.price}
+                            placeholder={costHidden ? "••••" : undefined}
+                            onChange={(e) => updateCart(idx, { price: Math.max(0, Number(e.target.value) || 0) })}
+                            className="h-7 w-20 bg-transparent text-right text-[11px] font-semibold tabular-nums outline-none"
+                          />
+                        </div>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <button
+                              type="button"
+                              title={lang === "bn" ? "মেয়াদ" : "Expiry"}
+                              className={`inline-flex h-7 items-center gap-1 rounded-md border px-1.5 text-[10px] ${it.expiry_date ? "border-amber-400 bg-amber-50 text-amber-700" : "text-muted-foreground"}`}
+                            >
+                              <CalendarClock className="h-3.5 w-3.5" />
+                              {it.expiry_date ? it.expiry_date : (lang === "bn" ? "মেয়াদ" : "Expiry")}
+                            </button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-2" align="start">
+                            <div className="flex items-center gap-2">
+                              <Input
+                                type="date"
+                                value={it.expiry_date ?? ""}
+                                onChange={(e) => updateCart(idx, { expiry_date: e.target.value || null })}
+                                className="h-8 w-40"
+                              />
+                              {it.expiry_date && (
+                                <Button size="sm" variant="ghost" className="h-8 px-2 text-[11px]"
+                                  onClick={() => updateCart(idx, { expiry_date: null })}>
+                                  {lang === "bn" ? "মুছুন" : "Clear"}
+                                </Button>
+                              )}
+                            </div>
+                          </PopoverContent>
+                        </Popover>
+                        {prod?.is_serialized && (
+                          <button
+                            type="button"
+                            title={lang === "bn" ? "সিরিয়াল" : "Serial"}
+                            onClick={() => setSerialPick(prod)}
+                            className={`inline-flex h-7 items-center gap-1 rounded-md border px-1.5 text-[10px] ${it.serial_no ? "border-primary/50 bg-primary/10 text-primary" : "text-muted-foreground"}`}
+                          >
+                            <Hash className="h-3.5 w-3.5" />
+                            {it.serial_no ? it.serial_no : (lang === "bn" ? "সিরিয়াল" : "Serial")}
+                          </button>
+                        )}
+                      </div>
+                    )}
+
                     {/* Discount only (mode toggle: % or ৳) */}
                     <div className="mt-1.5 flex items-center justify-end gap-1.5">
                       {lineDiscAmount(it) > 0 && (
                         <span className="text-[10px] font-semibold text-destructive tabular-nums">
-                          −{fmtMoney(round2(lineDiscAmount(it)), lang)}
+                          −{maskMoney(round2(lineDiscAmount(it)))}
                         </span>
                       )}
                       <span className="text-[10px] text-muted-foreground">{lang === "bn" ? "ছাড়" : "Disc"}</span>
@@ -888,7 +950,7 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
                       </div>
                       <div className="text-right">
                         <div className="text-[9px] uppercase text-muted-foreground">{lang === "bn" ? "মোট" : "Total"}</div>
-                        <div className="text-sm font-extrabold tabular-nums text-primary">{fmtMoney(lt, lang)}</div>
+                        <div className="text-sm font-extrabold tabular-nums text-primary">{maskMoney(lt)}</div>
                       </div>
                     </div>
 
@@ -949,15 +1011,15 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
             </div>
             <div className="flex items-center justify-between text-xs text-muted-foreground">
               <span>{lang === "bn" ? "সাবটোটাল" : "Subtotal"}</span>
-              <span className="tabular-nums">{fmtMoney(subtotalAfterLineDisc, lang)}</span>
+              <span className="tabular-nums">{maskMoney(subtotalAfterLineDisc)}</span>
             </div>
             <div className="flex items-center justify-between text-xs text-muted-foreground">
               <span>{lang === "bn" ? "ছাড়" : "Discount"} ({totalDiscPctDisplay}%)</span>
-              <span className="tabular-nums">-{fmtMoney(totalDiscValue, lang)}</span>
+              <span className="tabular-nums">-{maskMoney(totalDiscValue)}</span>
             </div>
             <div className="flex items-center justify-between border-t pt-2">
               <span className="text-base font-bold">{lang === "bn" ? "মোট:" : "Total:"}</span>
-              <span className="text-xl font-extrabold text-primary tabular-nums">{fmtMoney(grandTotal, lang)}</span>
+              <span className="text-xl font-extrabold text-primary tabular-nums">{maskMoney(grandTotal)}</span>
             </div>
           </div>
 
@@ -1226,6 +1288,10 @@ function PaymentDialog(props: {
   const [saving, setSaving] = useState(false);
   // Walking customer (sell-only): when ON, no customer details required.
   const [walkInCustomer, setWalkInCustomer] = useState<boolean>(isSell);
+  // Walking seller (purchase-only): when ON, no supplier details required.
+  const [walkInSeller, setWalkInSeller] = useState<boolean>(false);
+  // Payment method (cash | online) — applies to both sell and purchase.
+  const [paymentMethod, setPaymentMethod] = useState<"cash" | "online">("cash");
 
   useEffect(() => {
     if (props.open) {
@@ -1236,6 +1302,8 @@ function PaymentDialog(props: {
       setSendMessage(false);
       setPartyTab(isSell ? "customer" : "supplier");
       setWalkInCustomer(isSell);
+      setWalkInSeller(false);
+      setPaymentMethod("cash");
     }
   }, [props.open, props.grandTotal, isSell]);
 
@@ -1265,7 +1333,8 @@ function PaymentDialog(props: {
     // Sell + walking customer: skip all customer validation.
     // Otherwise: only name is required. Mobile/address optional.
     // Purchase mode keeps existing behavior (supplier name required, phone optional).
-    if (!(isSell && walkInCustomer)) {
+    const skipParty = (isSell && walkInCustomer) || (!isSell && walkInSeller);
+    if (!skipParty) {
       if (!partyName.trim()) { toast.error(t("p2c_nameRequired")); return; }
     }
     setSaving(true);
@@ -1284,7 +1353,7 @@ function PaymentDialog(props: {
 
         // contact: try cache first, else generate id + queue insert
         let contactIdO: string | null = null;
-        if (!(isSell && walkInCustomer) && (!isCash || partyName.trim())) {
+        if (!skipParty && (!isCash || partyName.trim())) {
           if (partyName.trim()) {
             if (partyPhone.trim()) {
               const cachedContacts = await readCache<Array<{ id: string; phone: string | null }>>(
@@ -1328,7 +1397,7 @@ function PaymentDialog(props: {
               total: props.grandTotal,
               paid: paidNumO,
               due: dueNumO,
-              payment_method: "cash",
+              payment_method: paymentMethod as "cash",
               status: "completed",
               note: noteO,
               invoice_no: customInvoice && invoiceNo.trim() ? invoiceNo.trim() : null,
@@ -1380,7 +1449,7 @@ function PaymentDialog(props: {
             });
           }
 
-          if (paidNumO > 0) {
+          if (paidNumO > 0 && paymentMethod === "cash") {
             await writeWithOffline({
               table: "cash_movements",
               op: "insert",
@@ -1417,7 +1486,7 @@ function PaymentDialog(props: {
               total: props.grandTotal,
               paid: paidNumO,
               due: dueNumO,
-              payment_method: "cash",
+              payment_method: paymentMethod as "cash",
               note: noteO,
               invoice_no: customInvoice && invoiceNo.trim() ? invoiceNo.trim() : null,
               created_by: user.id,
@@ -1462,7 +1531,7 @@ function PaymentDialog(props: {
               payload: { set: { stock: next }, match: { id: c.product_id } },
             });
           }
-          if (paidNumO > 0) {
+          if (paidNumO > 0 && paymentMethod === "cash") {
             await writeWithOffline({
               table: "cash_movements",
               op: "insert",
@@ -1564,7 +1633,7 @@ function PaymentDialog(props: {
       // Find or create contact (only for due, or when name provided)
       let contactId: string | null = null;
       const partyTable = isSell ? "customers" : "suppliers";
-      if (!(isSell && walkInCustomer) && (!isCash || partyName.trim())) {
+      if (!skipParty && (!isCash || partyName.trim())) {
         if (partyName.trim()) {
           // try find by phone
           if (partyPhone.trim()) {
@@ -1606,7 +1675,7 @@ function PaymentDialog(props: {
             total: props.grandTotal,
             paid: paidNum,
             due: dueNum,
-            payment_method: "cash",
+            payment_method: paymentMethod as "cash",
             status: "completed",
             note,
             invoice_no: customInvoice && invoiceNo.trim() ? invoiceNo.trim() : null,
@@ -1677,7 +1746,7 @@ function PaymentDialog(props: {
           }
         }
 
-        if (paidNum > 0) {
+        if (paidNum > 0 && paymentMethod === "cash") {
           await supabase.from("cash_movements").insert({
             shop_id: current.id, direction: "in", amount: paidNum,
             note: `sale ${saleId}`, ref_table: "sales", ref_id: saleId, created_by: user.id,
@@ -1700,7 +1769,7 @@ function PaymentDialog(props: {
             total: props.grandTotal,
             paid: paidNum,
             due: dueNum,
-            payment_method: "cash",
+            payment_method: paymentMethod as "cash",
             note,
             invoice_no: customInvoice && invoiceNo.trim() ? invoiceNo.trim() : null,
             created_by: user.id,
@@ -1734,7 +1803,7 @@ function PaymentDialog(props: {
           }
         }
 
-        if (paidNum > 0) {
+        if (paidNum > 0 && paymentMethod === "cash") {
           await supabase.from("cash_movements").insert({
             shop_id: current.id, direction: "out", amount: paidNum,
             note: `purchase ${purId}`, ref_table: "purchases", ref_id: purId, created_by: user.id,
@@ -1852,7 +1921,31 @@ function PaymentDialog(props: {
               <Switch checked={walkInCustomer} onCheckedChange={setWalkInCustomer} />
             </div>
           )}
-          {!(isSell && walkInCustomer) && (
+          {!isSell && (
+            <div className="flex items-center justify-between rounded-md border bg-muted/30 px-3 py-2">
+              <Label className="text-sm">
+                {lang === "bn" ? "ক্যাশ ক্রয় / ওয়াকিং সেলার (সাপ্লায়ার লাগবে না)" : "Cash purchase / Walking seller (skip supplier)"}
+              </Label>
+              <Switch checked={walkInSeller} onCheckedChange={setWalkInSeller} />
+            </div>
+          )}
+
+          {/* Payment method selector — applies to both sell + purchase */}
+          <div className="flex items-center justify-between rounded-md border bg-muted/30 px-3 py-2">
+            <Label className="text-sm">{lang === "bn" ? "পেমেন্ট মাধ্যম" : "Payment method"}</Label>
+            <div className="inline-flex overflow-hidden rounded-md border text-xs font-semibold">
+              <button type="button" onClick={() => setPaymentMethod("cash")}
+                className={`flex items-center gap-1 px-3 py-1.5 ${paymentMethod === "cash" ? "bg-primary text-primary-foreground" : "bg-background text-muted-foreground"}`}>
+                <Banknote className="h-3.5 w-3.5" />{lang === "bn" ? "ক্যাশ" : "Cash"}
+              </button>
+              <button type="button" onClick={() => setPaymentMethod("online")}
+                className={`flex items-center gap-1 px-3 py-1.5 ${paymentMethod === "online" ? "bg-primary text-primary-foreground" : "bg-background text-muted-foreground"}`}>
+                <CreditCard className="h-3.5 w-3.5" />{lang === "bn" ? "অনলাইন" : "Online"}
+              </button>
+            </div>
+          </div>
+
+          {!((isSell && walkInCustomer) || (!isSell && walkInSeller)) && (
           <>
           <div className="grid gap-1.5">
             <Label>{partyLabel} {t("p2c_nameLower")}</Label>
