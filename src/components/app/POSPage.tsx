@@ -1333,7 +1333,8 @@ function PaymentDialog(props: {
     // Sell + walking customer: skip all customer validation.
     // Otherwise: only name is required. Mobile/address optional.
     // Purchase mode keeps existing behavior (supplier name required, phone optional).
-    if (!(isSell && walkInCustomer)) {
+    const skipParty = (isSell && walkInCustomer) || (!isSell && walkInSeller);
+    if (!skipParty) {
       if (!partyName.trim()) { toast.error(t("p2c_nameRequired")); return; }
     }
     setSaving(true);
