@@ -1,7 +1,7 @@
 import { useNavigate } from "@/lib/router";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, FileText, ArrowLeft, MoreVertical, Printer, Eye, Trash2, Download, RefreshCw, Search, Calendar, Pencil } from "lucide-react";
+import { Plus, FileText, ArrowLeft, MoreVertical, Printer, Eye, Trash2, Download, RefreshCw, Search, Calendar, Pencil, Undo2, RotateCcw } from "lucide-react";
 import { BadgePercent } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useShop } from "@/lib/shop";
@@ -16,6 +16,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { InvoiceDialog, type InvoiceData } from "@/components/app/InvoiceDialog";
 import { InvoiceEditDialog, type InvoiceEditTarget } from "@/components/app/InvoiceEditDialog";
 import { DueDiscountDialog, type DueDiscountSale } from "@/components/app/DueDiscountDialog";
+import { PartialReturnDialog } from "@/components/app/PartialReturnDialog";
+import { createInstantReturn } from "@/lib/instant-return";
 import { DataPagination } from "@/components/app/DataPagination";
 import { usePagination } from "@/hooks/use-pagination";
 import { toast } from "sonner";
@@ -67,6 +69,7 @@ function SalesLedgerPage() {
 
   const salesIdsKey = useMemo(() => sales.map((s) => s.id).join(","), [sales]);
   const [itemCounts, setItemCounts] = useState<Record<string, number>>({});
+  const [returnedSet, setReturnedSet] = useState<Set<string>>(new Set());
   useEffect(() => {
     if (!salesIdsKey) { setItemCounts({}); return; }
     let cancel = false;
@@ -82,6 +85,24 @@ function SalesLedgerPage() {
         counts[r.sale_id] = (counts[r.sale_id] ?? 0) + 1;
       });
       setItemCounts(counts);
+    })();
+    return () => { cancel = true; };
+  }, [salesIdsKey]);
+
+  useEffect(() => {
+    if (!salesIdsKey) { setReturnedSet(new Set()); return; }
+    let cancel = false;
+    (async () => {
+      const ids = salesIdsKey.split(",");
+      const { data } = await supabase
+        .from("sale_returns")
+        .select("sale_id")
+        .in("sale_id", ids)
+        .is("deleted_at", null);
+      if (cancel) return;
+      const s = new Set<string>();
+      ((data as { sale_id: string | null }[]) ?? []).forEach((r) => { if (r.sale_id) s.add(r.sale_id); });
+      setReturnedSet(s);
     })();
     return () => { cancel = true; };
   }, [salesIdsKey]);
@@ -111,6 +132,22 @@ function SalesLedgerPage() {
   const [invoice, setInvoice] = useState<InvoiceData | null>(null);
   const [discountSale, setDiscountSale] = useState<DueDiscountSale | null>(null);
   const [editTarget, setEditTarget] = useState<InvoiceEditTarget | null>(null);
+  const [partialReturnSale, setPartialReturnSale] = useState<{ id: string; invoice_no: string | null } | null>(null);
+
+  const doInstantReturn = async (s: Sale) => {
+    if (!current?.id) return;
+    const msg = lang === "bn"
+      ? `এই invoice এর সব পণ্য ফেরত নেওয়া হবে এবং স্টকে ফিরে যাবে — নিশ্চিত?`
+      : `Return ALL items of this invoice and restock — confirm?`;
+    if (!confirm(msg)) return;
+    try {
+      await createInstantReturn({ shopId: current.id, saleId: s.id, refundMethod: Number(s.due) > 0 ? "due_adjust" : "cash" });
+      toast.success(lang === "bn" ? "ফেরত সম্পন্ন" : "Return completed");
+      void refresh();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Failed");
+    }
+  };
 
   const openInvoice = async (s: Sale) => {
     const { data: items } = await supabase
@@ -294,6 +331,11 @@ function SalesLedgerPage() {
                         <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium ${isPaid ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
                           {isPaid ? (t("p5_Cash_2")) : (t("p5_Due_2"))}
                         </span>
+                        {returnedSet.has(s.id) && (
+                          <span className="ml-1 inline-flex items-center rounded-md bg-rose-100 px-2 py-0.5 text-xs font-medium text-rose-700">
+                            {lang === "bn" ? "ফেরত" : "Returned"}
+                          </span>
+                        )}
                       </TableCell>
                       <TableCell className="text-right print:hidden" onClick={(e) => e.stopPropagation()}>
                         <DropdownMenu>
@@ -316,6 +358,14 @@ function SalesLedgerPage() {
                             <DropdownMenuItem onClick={() => void openInvoice(s)}>
                               <Printer className="mr-2 h-4 w-4" />
                               {t("p5_Print")}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => void doInstantReturn(s)} disabled={returnedSet.has(s.id)}>
+                              <Undo2 className="mr-2 h-4 w-4" />
+                              {lang === "bn" ? "সম্পূর্ণ ফেরত" : "Full return"}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setPartialReturnSale({ id: s.id, invoice_no: s.invoice_no })} disabled={returnedSet.has(s.id)}>
+                              <RotateCcw className="mr-2 h-4 w-4" />
+                              {lang === "bn" ? "আংশিক ফেরত" : "Partial return"}
                             </DropdownMenuItem>
                             {Number(s.due) > 0 && (
                               <DropdownMenuItem onClick={() => setDiscountSale({
@@ -369,6 +419,14 @@ function SalesLedgerPage() {
         onOpenChange={(o) => !o && setDiscountSale(null)}
         sale={discountSale}
         onApplied={() => void refresh()}
+      />
+      <PartialReturnDialog
+        open={!!partialReturnSale}
+        onOpenChange={(o) => !o && setPartialReturnSale(null)}
+        shopId={current?.id ?? ""}
+        saleId={partialReturnSale?.id ?? null}
+        invoiceNo={partialReturnSale?.invoice_no ?? null}
+        onDone={() => { setPartialReturnSale(null); void refresh(); }}
       />
     </div>
   );

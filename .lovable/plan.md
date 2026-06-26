@@ -1,55 +1,37 @@
-## Goal
-Make the **Purchase** page (`/app/purchase`) behave differently from Sell — let the user edit purchase price per line, add expiry/serial inline, pay via cash or online, optionally skip supplier as "Walking seller / Cash purchase", and respect the topbar Cost-Hide toggle.
+## লক্ষ্য
+বিক্রয় খাতা (Sales Ledger) থেকে এক ক্লিকে যেকোনো invoice **Instant Return** করার সুবিধা। আলাদা return form এ গিয়ে invoice খোঁজা, item বসানো — কোনো কিছুরই দরকার থাকবে না।
 
-## Scope
-Only frontend changes inside:
-- `src/components/app/POSPage.tsx` (cart card, checkout dialog)
-- topbar Cost-Hide masking extended into POS price/total displays
+## UI পরিবর্তন (`src/pages/app/SalesLedger.tsx`)
 
-No DB / migration / queries change.
+প্রতিটি invoice row এর action menu তে নতুন দুটি option যোগ:
 
-## Changes
+1. **"সম্পূর্ণ ফেরত (Instant Return)"** — পুরো invoice এক ক্লিকে return।
+2. **"আংশিক ফেরত"** — একটা ছোট dialog যেখানে invoice এর item গুলো check-list আকারে আসবে, প্রতিটার পাশে qty input (default = বিক্রিত qty), নিচে refund method (Cash / Due adjust / None) আর একটা ছোট reason field।
 
-### 1. Purchase cart card (different from Sell)
-In the cart loop, when `mode === "purchase"` render a dedicated card layout:
+ক্লিক করলে confirm dialog: "এই invoice এর সব পণ্য ফেরত নেওয়া হবে এবং স্টকে ফিরে যাবে — নিশ্চিত?"
 
-- **Product name + unit** (unchanged).
-- **Editable Price input** (cost / purchase price). Edits update `it.price` and mark `price_overridden`. Sell mode keeps current non-editable price.
-- **Qty stepper** (kept).
-- **Line total** (kept, recomputed live).
-- **Icon-row** with two small ghost-buttons:
-  - `CalendarClock` icon → opens a tiny popover with a `<Input type="date">` to set/clear an **expiry date** for this line (stored on the cart item as `expiry_date`; if product is not flagged perishable, the icon is still shown but greyed-tip).
-  - `Hash` icon → only visible when `prod?.is_serialized` — opens the existing serial picker to add/edit serial numbers for this purchase line.
-- Discount row stays available but de-emphasised (purchase rarely uses it).
+## Backend logic (নতুন helper: `src/lib/instant-return.ts`)
 
-Sell-mode card is untouched.
+একটা function `createInstantReturn({ saleId, items?, refundMethod })` যা নিচের কাজগুলো sequentially করবে — বর্তমান `returns/New.tsx` এর pattern অনুসরণ করে:
 
-### 2. Online payment on Purchase checkout
-In `CheckoutDialog` (cash kind) add a small **Payment method** segmented control above the amount row:
-- Options: `Cash` / `Online`.
-- When `Online` is selected, store `payment_method: "online"` in the `purchases` insert and in the matching `cash_movements` row (skip cashbox entry for online, or tag it `method='online'` — keep existing column; just change the literal).
-- Default remains `cash`. Sell side already has its own flow; do not change it here (out of scope).
+1. `sales` থেকে original invoice + `sale_items` fetch।
+2. `sale_returns` এ নতুন row insert (auto `R-XXXX` no, total = ফেরত item গুলোর যোগফল, `restock = true`, refund_method user-pick)।
+3. `sale_return_items` এ লাইন গুলো insert।
+4. **Stock restore**: প্রতিটি item এর `product_id` থেকে product fetch করে — শুধু যেগুলোর `track_stock = true` সেগুলোর `stock` কে qty দ্বারা বাড়াবে (যেগুলোর stock maintain হয় না সেগুলো skip)।
+5. **Sale adjustment**: `sales` row এর `total`/`paid`/`due` কমাবে (refund পরিমাণ অনুযায়ী)। `sale_adjustments` এ একটা negative entry লেখা হবে যাতে report এ trace পাওয়া যায়।
+6. **Cash refund**: যদি refund method = cash এবং sale টা cash ছিল — `cash_movements` এ `direction: 'out'` entry।
+7. **Due adjust**: যদি invoice এ due ছিল — `customers.due_balance` থেকে refund amount কমাবে।
 
-### 3. Walking seller / Cash purchase toggle
-Inside `CheckoutDialog` when `mode === "purchase"`, mirror the existing "Walking customer" checkbox:
-- Label: `Walking seller / Cash purchase` (EN) / `ক্যাশ ক্রয় / ওয়াকিং সেলার` (BN).
-- When checked: hide supplier name / phone inputs, skip supplier upsert, save the purchase with `supplier_id: null` and `supplier_name: "Cash Purchase"` (existing nullable columns).
-- When unchecked: current supplier selection flow is unchanged.
+সবকিছু sequentially হবে (existing offline layer queue handle করবে), শেষে `toast.success` + sales list refresh।
 
-### 4. Extend Cost-Hide to POS
-Import `useCostHide` in `POSPage.tsx`. When `hidden === true`, replace every visible money digit with `••••`:
-- Product grid card price (`৳{price}` → `৳ ••••`).
-- Cart line price input, line total, subtotal, discount, delivery, grand total.
-- Checkout dialog amount summary.
-Inputs remain editable (value kept), only the displayed numbers next to labels are masked; the actual input fields keep working so the owner can still type when needed.
+## ছোট কিছু বিষয়
 
-## Out of Scope
-- Backend / schema changes (expiry + serial already exist on product/serial tables; we only store expiry_date on the cart item and pass through if columns exist — otherwise it is a UI-only hint for now).
-- Sell-mode card redesign.
-- New payment gateway integration — "Online" is just a label/flag.
+- পুরো-ফেরত invoice কে UI তে একটা `Returned` badge দেখানো হবে (sale row এ যদি ওই sale_id এর জন্য sale_returns থাকে)।
+- দ্বিতীয়বার একই invoice return আটকাতে — যদি ইতিমধ্যে fully returned থাকে তাহলে menu item disabled।
+- কোনো DB schema পরিবর্তন লাগবে না — সব table আগে থেকেই আছে (`sale_returns`, `sale_return_items`, `sale_adjustments`, `cash_movements`, `stock_movements`)।
 
-## Acceptance
-- Opening `/app/purchase`, the cart shows price-editable cards with expiry + serial icons.
-- Checkout shows Cash / Online toggle and a Walking-seller checkbox; saving with each combination writes the correct `payment_method` and supplier fields.
-- Toggling the topbar eye icon masks all money digits on the Purchase page too.
-- Sell page (`/app/sell`) looks and behaves exactly as before.
+## ফাইল পরিবর্তনের সারসংক্ষেপ
+
+- নতুন: `src/lib/instant-return.ts` — সব return logic।
+- নতুন: `src/components/app/PartialReturnDialog.tsx` — আংশিক ফেরতের জন্য item-pick dialog।
+- edit: `src/pages/app/SalesLedger.tsx` — action menu তে দুটি নতুন option, Returned badge, dialog mount।
