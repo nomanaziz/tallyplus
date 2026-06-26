@@ -811,8 +811,8 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
               cart.map((it, idx) => {
                 const prod = it.product_id ? products.find((p) => p.id === it.product_id) : null;
                 const lt = lineTotal(it);
-                return (
-                  <div key={idx} className="rounded-xl border bg-card p-2.5 shadow-sm">
+                 return (
+                   <div key={idx} className={isSell ? "rounded-xl border bg-card p-2.5 shadow-sm" : "border-b border-border/60 px-2 py-2 last:border-0"}>
                     {/* Header row */}
                     <div className="flex items-start gap-2">
                       <div className="flex h-10 w-10 flex-none items-center justify-center overflow-hidden rounded-md bg-muted">
@@ -929,15 +929,17 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
 
                     {/* Quick add + qty stepper + line total */}
                     <div className="mt-1.5 flex items-center justify-between gap-2">
-                      <div className="inline-flex gap-1">
-                        {[1, 2, 5].map((n) => (
-                          <button key={n} type="button"
-                            onClick={() => updateCart(idx, { qty: it.qty + n })}
-                            className="rounded-md border bg-primary/10 px-1 py-0.5 text-[10px] font-bold text-primary hover:bg-primary/20">
-                            +{n}
-                          </button>
-                        ))}
-                      </div>
+                      {isSell ? (
+                        <div className="inline-flex gap-1">
+                          {[1, 2, 5].map((n) => (
+                            <button key={n} type="button"
+                              onClick={() => updateCart(idx, { qty: it.qty + n })}
+                              className="rounded-md border bg-primary/10 px-1 py-0.5 text-[10px] font-bold text-primary hover:bg-primary/20">
+                              +{n}
+                            </button>
+                          ))}
+                        </div>
+                      ) : <span />}
                       <div className="inline-flex items-center rounded-md border">
                         <button type="button" onClick={() => updateCart(idx, { qty: Math.max(1, it.qty - 1) })}
                           className="flex h-7 w-7 items-center justify-center text-muted-foreground hover:text-foreground">
