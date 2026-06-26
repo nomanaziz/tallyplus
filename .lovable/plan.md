@@ -1,37 +1,27 @@
-## লক্ষ্য
-বিক্রয় খাতা (Sales Ledger) থেকে এক ক্লিকে যেকোনো invoice **Instant Return** করার সুবিধা। আলাদা return form এ গিয়ে invoice খোঁজা, item বসানো — কোনো কিছুরই দরকার থাকবে না।
+## পরিবর্তনের তালিকা — `src/components/app/POSPage.tsx`
 
-## UI পরিবর্তন (`src/pages/app/SalesLedger.tsx`)
+### ১. Discount default টাকা (৳) — Buy + Sell দুই কার্টেই
+- কার্ট লাইনের `line_discount_mode` এর default `pct` থেকে পরিবর্তন করে **`amt`** করা হবে (নতুন item add হলে initialize হবে)।
+- টোগল বাটনটা থাকবে (% / ৳) যাতে দরকার হলে বদলানো যায়, তবে initial active = ৳।
+- Cart-এর নিচের overall **Discount** ইনপুটও default `amt` mode থাকবে (এটা আগে থেকেই `amt`, যাচাই করা হয়েছে)।
 
-প্রতিটি invoice row এর action menu তে নতুন দুটি option যোগ:
+### ২. Buy (Purchase) কার্টের card alignment + ছাদ সরানো
+শুধু `mode === "purchase"` এর সময়:
+- প্রতিটা cart item থেকে **per-card border/shadow/background সরানো** (`rounded-xl border bg-card shadow-sm` → শুধু `border-b` divider)। একটাই বাইরের কন্টেইনার থাকবে।
+- পুরো লাইনটাকে **single horizontal row** এ সাজানো: image · নাম+ইউনিট · cost · expiry · serial · disc · qty stepper · line total · delete। flex-wrap সরিয়ে compact একটানা row।
+- **+1 / +2 / +5 quick-add বাটন গুলো সরানো হবে (purchase mode এ)**। Sell mode এ যেমন আছে তেমন থাকবে।
 
-1. **"সম্পূর্ণ ফেরত (Instant Return)"** — পুরো invoice এক ক্লিকে return।
-2. **"আংশিক ফেরত"** — একটা ছোট dialog যেখানে invoice এর item গুলো check-list আকারে আসবে, প্রতিটার পাশে qty input (default = বিক্রিত qty), নিচে refund method (Cash / Due adjust / None) আর একটা ছোট reason field।
+### ৩. Sell কার্ট অপরিবর্তিত
+Sell এর design / +1 +2 +5 / per-card ছাদ — সব আগের মতো থাকবে।
 
-ক্লিক করলে confirm dialog: "এই invoice এর সব পণ্য ফেরত নেওয়া হবে এবং স্টকে ফিরে যাবে — নিশ্চিত?"
+### ৪. Walking customer/seller — empty title fix
+Checkout dialog এ যখন **Walking customer** (sell) বা **Walking seller / cash purchase** (purchase) টোগল on করে save করা হয়, এখন `customer_id` / `supplier_id` null থাকে — ফলে invoice/ledger এ contact কলাম খালি।
 
-## Backend logic (নতুন helper: `src/lib/instant-return.ts`)
+Fix: save এর সময় skipParty হলে contact insert পেলোডে `name` হিসেবে **"Walking customer"** (ইংরেজি) / **"ওয়াকিং কাস্টমার"** (বাংলা) সেট হবে (sell + purchase দুই ক্ষেত্রেই, user এর কথা অনুসারে দুটার জন্যই "Walking customer")। ফলে invoice ও ledger header এ ঐ নামটা দেখাবে। phone/address null থাকবে।
 
-একটা function `createInstantReturn({ saleId, items?, refundMethod })` যা নিচের কাজগুলো sequentially করবে — বর্তমান `returns/New.tsx` এর pattern অনুসরণ করে:
+দুই-পথেই (online + offline branch) এই default name apply হবে।
 
-1. `sales` থেকে original invoice + `sale_items` fetch।
-2. `sale_returns` এ নতুন row insert (auto `R-XXXX` no, total = ফেরত item গুলোর যোগফল, `restock = true`, refund_method user-pick)।
-3. `sale_return_items` এ লাইন গুলো insert।
-4. **Stock restore**: প্রতিটি item এর `product_id` থেকে product fetch করে — শুধু যেগুলোর `track_stock = true` সেগুলোর `stock` কে qty দ্বারা বাড়াবে (যেগুলোর stock maintain হয় না সেগুলো skip)।
-5. **Sale adjustment**: `sales` row এর `total`/`paid`/`due` কমাবে (refund পরিমাণ অনুযায়ী)। `sale_adjustments` এ একটা negative entry লেখা হবে যাতে report এ trace পাওয়া যায়।
-6. **Cash refund**: যদি refund method = cash এবং sale টা cash ছিল — `cash_movements` এ `direction: 'out'` entry।
-7. **Due adjust**: যদি invoice এ due ছিল — `customers.due_balance` থেকে refund amount কমাবে।
+### ফাইল
+- edit: `src/components/app/POSPage.tsx` — উপরের চারটা পরিবর্তন।
 
-সবকিছু sequentially হবে (existing offline layer queue handle করবে), শেষে `toast.success` + sales list refresh।
-
-## ছোট কিছু বিষয়
-
-- পুরো-ফেরত invoice কে UI তে একটা `Returned` badge দেখানো হবে (sale row এ যদি ওই sale_id এর জন্য sale_returns থাকে)।
-- দ্বিতীয়বার একই invoice return আটকাতে — যদি ইতিমধ্যে fully returned থাকে তাহলে menu item disabled।
-- কোনো DB schema পরিবর্তন লাগবে না — সব table আগে থেকেই আছে (`sale_returns`, `sale_return_items`, `sale_adjustments`, `cash_movements`, `stock_movements`)।
-
-## ফাইল পরিবর্তনের সারসংক্ষেপ
-
-- নতুন: `src/lib/instant-return.ts` — সব return logic।
-- নতুন: `src/components/app/PartialReturnDialog.tsx` — আংশিক ফেরতের জন্য item-pick dialog।
-- edit: `src/pages/app/SalesLedger.tsx` — action menu তে দুটি নতুন option, Returned badge, dialog mount।
+DB/schema পরিবর্তন নেই।

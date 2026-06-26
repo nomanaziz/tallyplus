@@ -296,6 +296,9 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
         bulk_enabled: isSell ? Boolean(p.bulk_enabled) : false,
         bulk_price: p.bulk_price != null ? Number(p.bulk_price) : null,
         bulk_min_qty: p.bulk_min_qty != null ? Number(p.bulk_min_qty) : null,
+        line_discount_mode: "amt",
+        line_discount_amt: 0,
+        line_discount_pct: 0,
       };
       return [...prev, applyBulkPricing(newItem)];
     });
@@ -808,8 +811,8 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
               cart.map((it, idx) => {
                 const prod = it.product_id ? products.find((p) => p.id === it.product_id) : null;
                 const lt = lineTotal(it);
-                return (
-                  <div key={idx} className="rounded-xl border bg-card p-2.5 shadow-sm">
+                 return (
+                   <div key={idx} className={isSell ? "rounded-xl border bg-card p-2.5 shadow-sm" : "border-b border-border/60 px-2 py-2 last:border-0"}>
                     {/* Header row */}
                     <div className="flex items-start gap-2">
                       <div className="flex h-10 w-10 flex-none items-center justify-center overflow-hidden rounded-md bg-muted">
@@ -926,15 +929,17 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
 
                     {/* Quick add + qty stepper + line total */}
                     <div className="mt-1.5 flex items-center justify-between gap-2">
-                      <div className="inline-flex gap-1">
-                        {[1, 2, 5].map((n) => (
-                          <button key={n} type="button"
-                            onClick={() => updateCart(idx, { qty: it.qty + n })}
-                            className="rounded-md border bg-primary/10 px-1 py-0.5 text-[10px] font-bold text-primary hover:bg-primary/20">
-                            +{n}
-                          </button>
-                        ))}
-                      </div>
+                      {isSell ? (
+                        <div className="inline-flex gap-1">
+                          {[1, 2, 5].map((n) => (
+                            <button key={n} type="button"
+                              onClick={() => updateCart(idx, { qty: it.qty + n })}
+                              className="rounded-md border bg-primary/10 px-1 py-0.5 text-[10px] font-bold text-primary hover:bg-primary/20">
+                              +{n}
+                            </button>
+                          ))}
+                        </div>
+                      ) : <span />}
                       <div className="inline-flex items-center rounded-md border">
                         <button type="button" onClick={() => updateCart(idx, { qty: Math.max(1, it.qty - 1) })}
                           className="flex h-7 w-7 items-center justify-center text-muted-foreground hover:text-foreground">
@@ -1353,7 +1358,29 @@ function PaymentDialog(props: {
 
         // contact: try cache first, else generate id + queue insert
         let contactIdO: string | null = null;
-        if (!skipParty && (!isCash || partyName.trim())) {
+        const walkingNameO = lang === "bn" ? "ওয়াকিং কাস্টমার" : "Walking customer";
+        if (skipParty) {
+          const cachedContactsW = await readCache<Array<{ id: string; name: string; phone: string | null }>>(
+            `${current.id}:contacts:${isSell ? "customer" : "supplier"}`,
+          );
+          const hitW = cachedContactsW?.find((c) => c.name === walkingNameO && !c.phone);
+          if (hitW) {
+            contactIdO = hitW.id;
+          } else {
+            contactIdO = crypto.randomUUID();
+            await writeWithOffline({
+              table: partyTableO,
+              op: "insert",
+              payload: {
+                id: contactIdO,
+                shop_id: current.id,
+                name: walkingNameO,
+                phone: null,
+                address: null,
+              },
+            });
+          }
+        } else if (!isCash || partyName.trim()) {
           if (partyName.trim()) {
             if (partyPhone.trim()) {
               const cachedContacts = await readCache<Array<{ id: string; phone: string | null }>>(
@@ -1633,7 +1660,29 @@ function PaymentDialog(props: {
       // Find or create contact (only for due, or when name provided)
       let contactId: string | null = null;
       const partyTable = isSell ? "customers" : "suppliers";
-      if (!skipParty && (!isCash || partyName.trim())) {
+      const walkingName = lang === "bn" ? "ওয়াকিং কাস্টমার" : "Walking customer";
+      if (skipParty) {
+        // Find or create the shared "Walking customer" contact so invoice/ledger shows a name.
+        const { data: found } = await supabase
+          .from(partyTable)
+          .select("id")
+          .eq("shop_id", current.id)
+          .eq("name", walkingName)
+          .is("phone", null)
+          .is("deleted_at", null)
+          .maybeSingle();
+        if (found) {
+          contactId = (found as { id: string }).id;
+        } else {
+          const { data: created, error: eW } = await supabase
+            .from(partyTable)
+            .insert({ shop_id: current.id, name: walkingName })
+            .select("id")
+            .single();
+          if (eW) throw eW;
+          contactId = (created as { id: string }).id;
+        }
+      } else if (!isCash || partyName.trim()) {
         if (partyName.trim()) {
           // try find by phone
           if (partyPhone.trim()) {
