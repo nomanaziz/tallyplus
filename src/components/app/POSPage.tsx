@@ -1638,7 +1638,29 @@ function PaymentDialog(props: {
       // Find or create contact (only for due, or when name provided)
       let contactId: string | null = null;
       const partyTable = isSell ? "customers" : "suppliers";
-      if (!skipParty && (!isCash || partyName.trim())) {
+      const walkingName = lang === "bn" ? "ওয়াকিং কাস্টমার" : "Walking customer";
+      if (skipParty) {
+        // Find or create the shared "Walking customer" contact so invoice/ledger shows a name.
+        const { data: found } = await supabase
+          .from(partyTable)
+          .select("id")
+          .eq("shop_id", current.id)
+          .eq("name", walkingName)
+          .is("phone", null)
+          .is("deleted_at", null)
+          .maybeSingle();
+        if (found) {
+          contactId = (found as { id: string }).id;
+        } else {
+          const { data: created, error: eW } = await supabase
+            .from(partyTable)
+            .insert({ shop_id: current.id, name: walkingName })
+            .select("id")
+            .single();
+          if (eW) throw eW;
+          contactId = (created as { id: string }).id;
+        }
+      } else if (!isCash || partyName.trim()) {
         if (partyName.trim()) {
           // try find by phone
           if (partyPhone.trim()) {
