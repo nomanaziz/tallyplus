@@ -296,6 +296,9 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
         bulk_enabled: isSell ? Boolean(p.bulk_enabled) : false,
         bulk_price: p.bulk_price != null ? Number(p.bulk_price) : null,
         bulk_min_qty: p.bulk_min_qty != null ? Number(p.bulk_min_qty) : null,
+        line_discount_mode: "amt",
+        line_discount_amt: 0,
+        line_discount_pct: 0,
       };
       return [...prev, applyBulkPricing(newItem)];
     });
