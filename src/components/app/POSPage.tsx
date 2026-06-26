@@ -1358,7 +1358,29 @@ function PaymentDialog(props: {
 
         // contact: try cache first, else generate id + queue insert
         let contactIdO: string | null = null;
-        if (!skipParty && (!isCash || partyName.trim())) {
+        const walkingNameO = lang === "bn" ? "ওয়াকিং কাস্টমার" : "Walking customer";
+        if (skipParty) {
+          const cachedContactsW = await readCache<Array<{ id: string; name: string; phone: string | null }>>(
+            `${current.id}:contacts:${isSell ? "customer" : "supplier"}`,
+          );
+          const hitW = cachedContactsW?.find((c) => c.name === walkingNameO && !c.phone);
+          if (hitW) {
+            contactIdO = hitW.id;
+          } else {
+            contactIdO = crypto.randomUUID();
+            await writeWithOffline({
+              table: partyTableO,
+              op: "insert",
+              payload: {
+                id: contactIdO,
+                shop_id: current.id,
+                name: walkingNameO,
+                phone: null,
+                address: null,
+              },
+            });
+          }
+        } else if (!isCash || partyName.trim()) {
           if (partyName.trim()) {
             if (partyPhone.trim()) {
               const cachedContacts = await readCache<Array<{ id: string; phone: string | null }>>(
