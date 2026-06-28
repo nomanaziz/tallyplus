@@ -1,5 +1,6 @@
 import { get, set, del, keys, createStore } from "idb-keyval";
 import { supabase } from "@/integrations/supabase/client";
+import { recordConflict } from "./conflictLog";
 
 export type QueueOp = "insert" | "update" | "delete";
 export type QueuedMutation = {
@@ -71,12 +72,20 @@ export async function getAllPending(): Promise<QueuedMutation[]> {
 
 let flushing = false;
 
+function isNetworkError(msg: string): boolean {
+  return (
+    /network|fetch|failed to fetch|load failed|timeout|networkerror/i.test(msg) ||
+    msg === ""
+  );
+}
+
 /** Try to push every queued mutation to Supabase. Stops on first auth/network failure. */
-export async function flushQueue(): Promise<{ pushed: number; remaining: number; failed: number }> {
-  if (flushing) return { pushed: 0, remaining: await getQueueSize(), failed: 0 };
+export async function flushQueue(): Promise<{ pushed: number; remaining: number; failed: number; conflicts: number }> {
+  if (flushing) return { pushed: 0, remaining: await getQueueSize(), failed: 0, conflicts: 0 };
   flushing = true;
   let pushed = 0;
   let failed = 0;
+  let conflicts = 0;
   try {
     const items = await getAllPending();
     for (const item of items) {
@@ -105,19 +114,27 @@ export async function flushQueue(): Promise<{ pushed: number; remaining: number;
         await del(item.id, store);
         pushed++;
       } catch (e) {
-        // Stop pushing on first failure to preserve order
-        item.retryCount++;
-        item.lastError = (e as Error).message;
-        await set(item.id, item, store);
-        failed++;
-        break;
+        const msg = (e as Error).message ?? "";
+        if (isNetworkError(msg)) {
+          // Transient — keep in queue, stop to preserve order, retry later
+          item.retryCount++;
+          item.lastError = msg;
+          await set(item.id, item, store);
+          failed++;
+          break;
+        }
+        // Server rejected (RLS / constraint / 409) — move to conflict log so
+        // the rest of the queue can proceed.
+        await recordConflict({ ...item, lastError: msg }, msg || "server rejected");
+        await del(item.id, store);
+        conflicts++;
       }
     }
   } finally {
     flushing = false;
     emit();
   }
-  return { pushed, remaining: await getQueueSize(), failed };
+  return { pushed, remaining: await getQueueSize(), failed, conflicts };
 }
 
 /** Drop a queued mutation manually (e.g. user dismissed it). */
