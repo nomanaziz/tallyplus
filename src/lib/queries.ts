@@ -100,7 +100,7 @@ export const stockHistoryQuery = (shopId: string | null | undefined) =>
     queryKey: ["stock", "history", shopId],
     enabled: !!shopId,
     staleTime: 30_000,
-    queryFn: async () => {
+    queryFn: cacheQueryFn(shopId ? `${shopId}:stock-history` : null, async () => {
       if (!shopId) return [];
       const { data, error } = await supabase
         .from("stock_movements")
@@ -110,7 +110,7 @@ export const stockHistoryQuery = (shopId: string | null | undefined) =>
         .limit(100);
       if (error) throw error;
       return data ?? [];
-    },
+    }),
   });
 
 /* ---------- Dashboard overview (desktop wide widgets) ---------- */
@@ -137,7 +137,7 @@ export const dashboardOverviewQuery = (shopId: string | null | undefined) =>
     enabled: !!shopId,
     staleTime: 60_000,
     gcTime: 5 * 60_000,
-    queryFn: async (): Promise<DashboardOverview> => {
+    queryFn: cacheQueryFn(shopId ? `${shopId}:dashboard-overview` : null, async (): Promise<DashboardOverview> => {
       const empty: DashboardOverview = {
         productsTotal: 0, productsLowStock: 0, productsPublished: 0, warrantyActive: 0,
         customersCount: 0, suppliersCount: 0, employeesCount: 0, ordersPending: 0, fordoNew: 0,
