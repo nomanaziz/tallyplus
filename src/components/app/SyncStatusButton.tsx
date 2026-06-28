@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
-import { Wifi, WifiOff, RefreshCw, Check } from "lucide-react";
+import { Wifi, WifiOff, RefreshCw, Check, AlertTriangle } from "lucide-react";
 import { useOnlineStatus } from "@/lib/useOnlineStatus";
 import { flushQueue, getQueueSize, onQueueChange } from "@/lib/offlineQueue";
+import { getConflictCount, onConflictsChange } from "@/lib/conflictLog";
+import { SyncConflictsDialog } from "./SyncConflictsDialog";
 import { useI18n } from "@/lib/i18n";
 import { toast } from "sonner";
 import {
@@ -24,6 +26,8 @@ export function SyncStatusButton() {
   const { lang } = useI18n();
   const [pending, setPending] = useState(0);
   const [syncing, setSyncing] = useState(false);
+  const [conflicts, setConflicts] = useState(0);
+  const [conflictOpen, setConflictOpen] = useState(false);
 
   const tr = (bn: string, en: string) => (lang === "bn" ? bn : en);
 
@@ -34,7 +38,18 @@ export function SyncStatusButton() {
     });
   }, []);
 
+  useEffect(() => {
+    void getConflictCount().then(setConflicts);
+    return onConflictsChange(() => {
+      void getConflictCount().then(setConflicts);
+    });
+  }, []);
+
   const handleClick = async () => {
+    if (conflicts > 0) {
+      setConflictOpen(true);
+      return;
+    }
     if (syncing) return;
     if (!online) {
       toast.message(tr("ইন্টারনেট নেই", "No internet"), {
@@ -64,6 +79,15 @@ export function SyncStatusButton() {
         tr("কিছু পরিবর্তন sync হয়নি — পরে আবার চেষ্টা হবে", "Some changes failed to sync — will retry"),
       );
     }
+    if (res.conflicts > 0) {
+      toast.error(
+        tr(
+          `${res.conflicts} টি conflict — review করুন`,
+          `${res.conflicts} conflict${res.conflicts === 1 ? "" : "s"} — review`,
+        ),
+      );
+      setConflictOpen(true);
+    }
   };
 
   // Decide colors / icon
@@ -71,7 +95,11 @@ export function SyncStatusButton() {
   let ringClass = "text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40";
   let label = tr("সব sync হয়ে আছে", "All synced");
 
-  if (syncing) {
+  if (conflicts > 0) {
+    icon = <AlertTriangle className="h-4 w-4" />;
+    ringClass = "text-red-600 bg-red-50 dark:bg-red-950/40";
+    label = tr(`${conflicts} টি sync conflict`, `${conflicts} sync conflict${conflicts === 1 ? "" : "s"}`);
+  } else if (syncing) {
     icon = <RefreshCw className="h-4 w-4 animate-spin" />;
     ringClass = "text-sky-600 bg-sky-50 dark:bg-sky-950/40";
     label = tr("Sync হচ্ছে...", "Syncing...");
@@ -89,6 +117,7 @@ export function SyncStatusButton() {
   }
 
   return (
+    <>
     <TooltipProvider delayDuration={150}>
       <Tooltip>
         <TooltipTrigger asChild>
@@ -99,12 +128,12 @@ export function SyncStatusButton() {
             className={`relative inline-flex h-9 w-9 items-center justify-center rounded-full transition hover:brightness-95 ${ringClass}`}
           >
             {icon}
-            {pending > 0 && !syncing && (
+            {(conflicts > 0 || (pending > 0 && !syncing)) && (
               <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-orange-600 px-1 text-[10px] font-bold leading-none text-white shadow">
-                {pending > 9 ? "9+" : pending}
+                {(conflicts || pending) > 9 ? "9+" : (conflicts || pending)}
               </span>
             )}
-            {!pending && online && !syncing && (
+            {!conflicts && !pending && online && !syncing && (
               <span className="absolute -right-0.5 -bottom-0.5 flex h-3 w-3 items-center justify-center rounded-full bg-emerald-600 text-white shadow">
                 <Check className="h-2 w-2" strokeWidth={4} />
               </span>
@@ -114,5 +143,7 @@ export function SyncStatusButton() {
         <TooltipContent side="bottom">{label}</TooltipContent>
       </Tooltip>
     </TooltipProvider>
+    <SyncConflictsDialog open={conflictOpen} onOpenChange={setConflictOpen} />
+    </>
   );
 }
