@@ -200,7 +200,7 @@ export const dashboardOverviewQuery = (shopId: string | null | undefined) =>
           .filter((p) => (p.low_stock_alert ?? 0) > 0 && Number(p.stock) <= Number(p.low_stock_alert)),
         expiringWarranty: ((expiringWarranty.data ?? []) as unknown as Array<{ id: string; name: string; warranty_end_date: string }>) || [],
       };
-    },
+    }),
   });
 
 /* ---------- Cash movements ---------- */
