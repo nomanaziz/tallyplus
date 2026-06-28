@@ -220,8 +220,10 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
         .filter((x): x is string => !!x),
     );
     let visible = products.filter((p) => !parentIds.has(p.id));
-    // Sell mode: hide out-of-stock by default unless "Show all" toggle is on
-    if (isSell && !showOutOfStock) {
+    // Sell mode: hide out-of-stock by default unless "Show all" toggle is on.
+    // When offline, cached stock may be stale (0) — don't hide products.
+    const onlineForFilter = typeof navigator === "undefined" ? true : navigator.onLine;
+    if (isSell && !showOutOfStock && onlineForFilter) {
       visible = visible.filter((p) => (p.track_stock === false) || Number(p.stock) > 0);
     }
     // Category filter (includes children when a parent is selected)
