@@ -22,7 +22,15 @@ if (typeof window !== "undefined" && "serviceWorker" in navigator) {
     try { return window.self !== window.top; } catch { return true; }
   })();
   const host = window.location.hostname;
-  const isPreviewHost = host.includes("id-preview--") || host.includes("lovableproject.com");
+  const isPreviewHost =
+    host.startsWith("id-preview--") ||
+    host.startsWith("preview--") ||
+    host === "lovableproject.com" ||
+    host.endsWith(".lovableproject.com") ||
+    host === "lovableproject-dev.com" ||
+    host.endsWith(".lovableproject-dev.com") ||
+    host === "beta.lovable.dev" ||
+    host.endsWith(".beta.lovable.dev");
 
   if (isInIframe || isPreviewHost) {
     // Inside the Lovable editor preview iframe — make sure no SW is installed
