@@ -220,8 +220,10 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
         .filter((x): x is string => !!x),
     );
     let visible = products.filter((p) => !parentIds.has(p.id));
-    // Sell mode: hide out-of-stock by default unless "Show all" toggle is on
-    if (isSell && !showOutOfStock) {
+    // Sell mode: hide out-of-stock by default unless "Show all" toggle is on.
+    // When offline, cached stock may be stale (0) — don't hide products.
+    const onlineForFilter = typeof navigator === "undefined" ? true : navigator.onLine;
+    if (isSell && !showOutOfStock && onlineForFilter) {
       visible = visible.filter((p) => (p.track_stock === false) || Number(p.stock) > 0);
     }
     // Category filter (includes children when a parent is selected)
@@ -263,8 +265,11 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
       setSerialPick(p);
       return;
     }
-    // Stock guard (sell mode, store products only)
-    if (isSell && p.id) {
+    // Stock guard (sell mode, store products only).
+    // Skip when product doesn't track stock, or when offline (cached stock
+    // may be stale — don't block sales the user knows are valid).
+    const onlineNow = typeof navigator === "undefined" ? true : navigator.onLine;
+    if (isSell && p.id && p.track_stock !== false && onlineNow) {
       const inCartQty = cart.find((c) => c.product_id === p.id)?.qty ?? 0;
       const stock = Number(p.stock) || 0;
       if (stock <= 0) {
@@ -322,8 +327,10 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
         // Recompute bulk pricing on qty changes
         if (Object.prototype.hasOwnProperty.call(patch, "qty")) {
           // Stock cap (sell mode, store products only)
-          if (isSell && merged.product_id) {
+          const onlineNow = typeof navigator === "undefined" ? true : navigator.onLine;
+          if (isSell && merged.product_id && onlineNow) {
             const prod = products.find((pp) => pp.id === merged.product_id);
+            if (prod?.track_stock === false) return applyBulkPricing(merged);
             const stock = Number(prod?.stock ?? 0);
             if (stock > 0 && merged.qty > stock) {
               toast.error(t("p2c_onlyNStock", { n: lang === "bn" ? bnNum(stock) : stock }));
