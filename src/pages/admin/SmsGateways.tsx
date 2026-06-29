@@ -117,6 +117,7 @@ export default function AdminSmsGateways() {
   const [sender, setSender] = useState("");
   const [userName, setUserName] = useState("");
   const [password, setPassword] = useState("");
+  const [clientId, setClientId] = useState("");
   const [active, setActive] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -222,6 +223,7 @@ export default function AdminSmsGateways() {
       setSender(primary.config?.sender_id ?? "");
       setUserName(primary.config?.api_key ?? primary.config?.username ?? "");
       setPassword(primary.config?.secret_key ?? primary.config?.password ?? "");
+      setClientId(primary.config?.client_id ?? "");
       setActive(primary.is_active);
     }
     setLoading(false);
@@ -276,6 +278,7 @@ export default function AdminSmsGateways() {
         secret_key: password,
         username: userName.trim(),
         password,
+        client_id: clientId.trim(),
       };
       const payload = {
         provider: opt.provider,
@@ -394,7 +397,17 @@ export default function AdminSmsGateways() {
           </Button>
         </div>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <StatCard color="bg-emerald-500" icon={Mail} label="SMS Balance" value={stats.balance.toLocaleString()} footer="Total SMS Remaining Balance" />
+          <StatCard
+            color="bg-emerald-500"
+            icon={Mail}
+            label={statsMeta?.source === "reve" ? "REVE Balance (৳)" : "SMS Balance"}
+            value={
+              statsMeta?.source === "reve"
+                ? `৳ ${stats.balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                : stats.balance.toLocaleString()
+            }
+            footer={statsMeta?.source === "reve" ? "REVE portal live balance" : "Local SMS credit"}
+          />
           <StatCard color="bg-sky-500" icon={CheckCircle2} label="Todays Send" value={stats.today.toLocaleString()} footer="Total SMS Send Today" />
           <StatCard color="bg-amber-500" icon={Hourglass} label="This Month Send" value={stats.month.toLocaleString()} footer="Total SMS Send in This Month" />
           <StatCard color="bg-rose-500" icon={XCircle} label="This Month Failed" value={stats.failed.toLocaleString()} footer="Total SMS Sending failed in This Month" />
@@ -465,6 +478,17 @@ export default function AdminSmsGateways() {
                         <KeyRound className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                         <Input type="password" className="h-11 pl-9" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Secret key or Password" />
                       </div>
+                    </div>
+
+                    <div className="space-y-1.5 md:col-span-2">
+                      <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">REVE Client ID (balance এর জন্য)</Label>
+                      <div className="relative">
+                        <User className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input className="h-11 pl-9" value={clientId} onChange={(e) => setClientId(e.target.value)} placeholder="REVE portal এর client ID" />
+                      </div>
+                      <p className="text-[11px] text-muted-foreground">
+                        REVE balance API: <code>smsClientBalance.jsp?client=CLIENT_ID</code> — এই ID টা REVE portal থেকে নিন।
+                      </p>
                     </div>
                   </div>
 
