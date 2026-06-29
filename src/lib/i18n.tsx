@@ -42,6 +42,7 @@ const T: Record<string, Tr> = {
   nav_customerFordo:    { bn: "গ্রাহক ফর্দ",       en: "Customer Fordo",   hi: "ग्राहक फरदो",     ta: "வாடிக்கையாளர் ஃபர்தோ", te: "కస్టమర్ ఫర్దో",  ur: "گاہک فردو",       ar: "قائمة العميل" },
   nav_fordoHistory:     { bn: "ফর্দ ইতিহাস",       en: "Fordo History",    hi: "फरदो इतिहास",     ta: "ஃபர்தோ வரலாறு",   te: "ఫర్దో చరిత్ర",     ur: "فردو تاریخ",       ar: "سجل القوائم" },
   nav_marketing:        { bn: "মার্কেটিং",          en: "Marketing",        hi: "मार्केटिंग",       ta: "சந்தைப்படுத்தல்",  te: "మార్కెటింగ్",      ur: "مارکیٹنگ",        ar: "التسويق" },
+  nav_sms:              { bn: "SMS মডিউল",         en: "SMS Module",       hi: "SMS मॉड्यूल",      ta: "SMS தொகுதி",       te: "SMS మాడ్యూల్",     ur: "SMS ماڈیول",      ar: "وحدة SMS" },
   nav_onlineShop:       { bn: "অনলাইন শপ",          en: "Online Shop",      hi: "ऑनलाइन शॉप",      ta: "ஆன்லைன் கடை",     te: "ఆన్‌లైన్ షాప్",     ur: "آن لائن شاپ",     ar: "المتجر الإلكتروني" },
   nav_businessReport:   { bn: "ব্যবসার রিপোর্ট",     en: "Business Report",  hi: "व्यापार रिपोर्ट", ta: "வணிக அறிக்கை",     te: "వ్యాపార నివేదిక",  ur: "کاروباری رپورٹ",  ar: "تقرير الأعمال" },
   nav_ownerReport:      { bn: "মালিকের রিপোর্ট",     en: "Owner Report",     hi: "मालिक रिपोर्ट",   ta: "உரிமையாளர் அறிக்கை", te: "యజమాని నివేదిక",  ur: "مالک رپورٹ",      ar: "تقرير المالك" },

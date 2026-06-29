@@ -68,6 +68,7 @@ const L49 = lazy(() => import("@/pages/app/SalesLedger"));
 const L50 = lazy(() => import("@/pages/app/Sell"));
 const L51 = lazy(() => import("@/pages/app/Shops"));
 const L52 = lazy(() => import("@/pages/app/SmsHistory"));
+const LSmsModule = lazy(() => import("@/pages/app/SmsModule"));
 const L53 = lazy(() => import("@/pages/app/Training"));
 const L54 = lazy(() => import("@/pages/app/UsageLimits"));
 const L55 = lazy(() => import("@/pages/app/Warranty"));
@@ -231,6 +232,7 @@ export const appRoutes: RouteObject[] = [
 { path: "sell", element: <Suspense fallback={<RouteFallback/>}><L50/></Suspense> },
 { path: "shops", element: <Suspense fallback={<RouteFallback/>}><L51/></Suspense> },
 { path: "sms-history", element: <Suspense fallback={<RouteFallback/>}><L52/></Suspense> },
+{ path: "sms", element: <Suspense fallback={<RouteFallback/>}><LSmsModule/></Suspense> },
 { path: "stock-edit", element: <Navigate to="/app/products" replace /> },
 { path: "stock", element: <Navigate to="/app/products" replace /> },
 { path: "training", element: <Suspense fallback={<RouteFallback/>}><L53/></Suspense> },
