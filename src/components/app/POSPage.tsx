@@ -2065,14 +2065,24 @@ function PaymentDialog(props: {
             {staffInfo && (
               <Input value={staffNote} onChange={(e) => setStaffNote(e.target.value)} placeholder={t("p2c_staffName")} />
             )}
-            <div className="flex items-center justify-between">
-              <Label className="flex items-center gap-2 text-sm">
-                <MessageSquare className="h-4 w-4" />
-                {t("p2c_sendMessage")}
-                <span className="text-xs text-muted-foreground">({t("p2c_smsLeft30")})</span>
-              </Label>
-              <Switch checked={sendMessage} onCheckedChange={setSendMessage} />
-            </div>
+            {(() => {
+              const digits = partyPhone.replace(/\D/g, "");
+              const validPhone = digits.length >= 11;
+              if (!validPhone) {
+                if (sendMessage) setSendMessage(false);
+                return null;
+              }
+              return (
+                <div className="flex items-center justify-between">
+                  <Label className="flex items-center gap-2 text-sm">
+                    <MessageSquare className="h-4 w-4" />
+                    {t("p2c_sendMessage")}
+                    <span className="text-xs text-muted-foreground">({t("p2c_smsLeft30")})</span>
+                  </Label>
+                  <Switch checked={sendMessage} onCheckedChange={setSendMessage} />
+                </div>
+              );
+            })()}
           </div>
         </div>
         </div>
