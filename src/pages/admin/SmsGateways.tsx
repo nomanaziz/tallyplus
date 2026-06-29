@@ -469,6 +469,17 @@ export default function AdminSmsGateways() {
                         <Input type="password" className="h-11 pl-9" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Secret key or Password" />
                       </div>
                     </div>
+
+                    <div className="space-y-1.5 md:col-span-2">
+                      <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">REVE Client ID (balance এর জন্য)</Label>
+                      <div className="relative">
+                        <User className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input className="h-11 pl-9" value={clientId} onChange={(e) => setClientId(e.target.value)} placeholder="REVE portal এর client ID" />
+                      </div>
+                      <p className="text-[11px] text-muted-foreground">
+                        REVE balance API: <code>smsClientBalance.jsp?client=CLIENT_ID</code> — এই ID টা REVE portal থেকে নিন।
+                      </p>
+                    </div>
                   </div>
 
                   <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
