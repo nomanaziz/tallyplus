@@ -112,6 +112,9 @@ export default function AdminSmsGateways() {
   const [testMsg, setTestMsg] = useState("");
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ ok: boolean; text: string } | null>(null);
+  const [lastMessageId, setLastMessageId] = useState<string>("");
+  const [statusChecking, setStatusChecking] = useState(false);
+  const [statusResult, setStatusResult] = useState<string>("");
 
   const sendTestSms = async () => {
     if (!testPhone.trim()) { toast.error("Mobile number দিন (country code সহ)"); return; }
@@ -124,6 +127,8 @@ export default function AdminSmsGateways() {
       if (data?.ok) {
         toast.success(`Test SMS sent → ${data.phone}`);
         setTestResult({ ok: true, text: `Sent to ${data.phone} from ${data.sender}. Provider: ${data.provider_response ?? ""}` });
+        if (data.provider_id) setLastMessageId(String(data.provider_id));
+        setStatusResult("");
       } else {
         const msg = data?.error || data?.provider_response || "Unknown error";
         toast.error(`Failed: ${msg}`);
@@ -134,6 +139,20 @@ export default function AdminSmsGateways() {
       toast.error(msg);
       setTestResult({ ok: false, text: msg });
     } finally { setTesting(false); }
+  };
+
+  const checkStatus = async () => {
+    if (!lastMessageId.trim()) { toast.error("Message ID দিন"); return; }
+    setStatusChecking(true); setStatusResult("");
+    try {
+      const { data, error } = await supabase.functions.invoke("admin-sms-status", {
+        body: { message_id: lastMessageId.trim() },
+      });
+      if (error) throw error;
+      setStatusResult(data?.provider_response ?? JSON.stringify(data));
+    } catch (e) {
+      setStatusResult((e as Error).message);
+    } finally { setStatusChecking(false); }
   };
 
   // Secondary tabs
