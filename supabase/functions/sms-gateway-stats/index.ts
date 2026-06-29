@@ -33,29 +33,40 @@ async function reveBalance(cfg: any): Promise<{ balance: number | null; raw: str
   const apikey = cfg.api_key || cfg.username || "";
   const secretkey = cfg.secret_key || cfg.password || "";
   if (!apikey || !secretkey) return { balance: null, raw: "", error: "Missing credentials" };
-  const url = `${baseUrl}/getBalance?apikey=${encodeURIComponent(apikey)}&secretkey=${encodeURIComponent(secretkey)}`;
-  console.log("[sms-gateway-stats] GET balance:", url.replace(secretkey, "***"));
-  try {
-    const res = await fetch(url, { method: "GET" });
-    const text = await res.text();
-    console.log("[sms-gateway-stats] balance status=", res.status, "body=", text.slice(0, 300));
-    if (!res.ok) return { balance: null, raw: text, error: `HTTP ${res.status}` };
-    let n: number | null = null;
+  // REVE balance endpoint varies by account — try known paths in order.
+  const paths = ["/balance", "/getbalance", "/getBalance", "/checkBalance", "/getBalanceAPI"];
+  const qs = `apikey=${encodeURIComponent(apikey)}&secretkey=${encodeURIComponent(secretkey)}`;
+  let lastStatus = 0;
+  let lastBody = "";
+  for (const p of paths) {
+    const url = `${baseUrl}${p}?${qs}`;
+    console.log("[sms-gateway-stats] try", p);
     try {
-      const j = JSON.parse(text);
-      n = pickNumber(j, ["balance", "Balance", "credit", "amount", "data"]);
-      if (n == null && j && typeof j === "object") {
-        // some REVE responses: { Status: 0, Text: "12345" }
-        n = pickNumber(j, ["Text", "text", "message"]);
+      const res = await fetch(url, { method: "GET" });
+      const text = await res.text();
+      lastStatus = res.status;
+      lastBody = text;
+      console.log("[sms-gateway-stats]", p, "status=", res.status, "body=", text.slice(0, 200));
+      if (res.status === 404) continue; // try next path
+      if (!res.ok) return { balance: null, raw: text, error: `HTTP ${res.status} at ${p}` };
+      let n: number | null = null;
+      try {
+        const j = JSON.parse(text);
+        n = pickNumber(j, ["balance", "Balance", "credit", "amount", "data"]);
+        if (n == null && j && typeof j === "object") {
+          n = pickNumber(j, ["Text", "text", "message"]);
+        }
+      } catch {
+        const m = text.match(/-?\d+(\.\d+)?/);
+        if (m) n = Number(m[0]);
       }
-    } catch {
-      const m = text.match(/-?\d+(\.\d+)?/);
-      if (m) n = Number(m[0]);
+      if (n != null) return { balance: n, raw: text };
+      // ok but unparseable — keep trying other paths
+    } catch (e) {
+      return { balance: null, raw: "", error: (e as Error).message };
     }
-    return { balance: n, raw: text };
-  } catch (e) {
-    return { balance: null, raw: "", error: (e as Error).message };
   }
+  return { balance: null, raw: lastBody, error: `HTTP ${lastStatus} — no balance endpoint matched. Ask REVE support for your account's balance URL.` };
 }
 
 Deno.serve(async (req) => {
