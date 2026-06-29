@@ -232,6 +232,7 @@ export const appRoutes: RouteObject[] = [
 { path: "sell", element: <Suspense fallback={<RouteFallback/>}><L50/></Suspense> },
 { path: "shops", element: <Suspense fallback={<RouteFallback/>}><L51/></Suspense> },
 { path: "sms-history", element: <Suspense fallback={<RouteFallback/>}><L52/></Suspense> },
+{ path: "sms", element: <Suspense fallback={<RouteFallback/>}><LSmsModule/></Suspense> },
 { path: "stock-edit", element: <Navigate to="/app/products" replace /> },
 { path: "stock", element: <Navigate to="/app/products" replace /> },
 { path: "training", element: <Suspense fallback={<RouteFallback/>}><L53/></Suspense> },
