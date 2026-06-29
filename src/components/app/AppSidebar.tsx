@@ -68,6 +68,7 @@ export const SECTIONS: SidebarSection[] = [
       { to: "/app/customer-wishlist", tKey: "nav_customerFordo", icon: icons.contact, perm: "contacts", module: "contacts" },
       { to: "/app/fordo-history", tKey: "nav_fordoHistory", icon: icons.contact, perm: "contacts", module: "contacts" },
       { to: "/app/marketing", tKey: "nav_marketing", icon: icons.marketing, perm: "sms", module: "contacts" },
+      { to: "/app/sms", tKey: "nav_sms", icon: icons.marketing, perm: "sms", module: "contacts" },
       { to: "/app/online-shop", tKey: "nav_onlineShop", icon: icons.onlineShop, perm: "online_shop", module: "online_shop" },
     ],
   },
