@@ -169,7 +169,7 @@ export default function AdminSmsGateways() {
   };
 
   // Secondary tabs
-  const [tab, setTab] = useState<"gateway" | "packages" | "templates">("gateway");
+  const [tab, setTab] = useState<"gateway" | "requests" | "packages" | "templates">("gateway");
 
   // Packages & Templates
   const [packages, setPackages] = useState<Pkg[]>([]);
