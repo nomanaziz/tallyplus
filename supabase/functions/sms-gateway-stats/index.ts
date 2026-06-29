@@ -67,44 +67,38 @@ async function sumShopBalance(admin: any): Promise<number> {
 }
 
 async function reveBalance(cfg: any): Promise<{ balance: number | null; raw: string; error?: string }> {
-  const baseUrl = (cfg.base_url || "http://smpp.revesms.com:7788").replace(/\/$/, "");
-  const apikey = cfg.api_key || cfg.username || "";
-  const secretkey = cfg.secret_key || cfg.password || "";
-  if (!apikey || !secretkey) return { balance: null, raw: "", error: "Missing credentials" };
-  // REVE balance endpoint varies by account — try known paths in order.
-  const paths = ["/balance", "/getbalance", "/getBalance", "/checkBalance", "/getBalanceAPI"];
-  const qs = `apikey=${encodeURIComponent(apikey)}&secretkey=${encodeURIComponent(secretkey)}`;
-  let lastStatus = 0;
+  // Per REVE API doc, balance endpoint is:
+  //   http://smpp.revesms.com/sms/smsConfiguration/smsClientBalance.jsp?client=CLIENT_ID
+  // It requires a Client ID (not the apikey/secretkey used for sending).
+  const clientId = (cfg.client_id || "").toString().trim();
+  if (!clientId) {
+    return { balance: null, raw: "", error: "REVE Client ID missing — Admin → SMS Settings এ Client ID দিন (balance API এর জন্য)" };
+  }
+  const urls = [
+    `http://smpp.revesms.com/sms/smsConfiguration/smsClientBalance.jsp?client=${encodeURIComponent(clientId)}`,
+    `http://103.177.125.106/portal/sms/smsConfiguration/smsClientBalance.jsp?client=${encodeURIComponent(clientId)}`,
+  ];
+  let lastErr = "";
   let lastBody = "";
-  for (const p of paths) {
-    const url = `${baseUrl}${p}?${qs}`;
-    console.log("[sms-gateway-stats] try", p);
+  for (const url of urls) {
     try {
+      console.log("[sms-gateway-stats] reve balance →", url);
       const res = await fetch(url, { method: "GET" });
-      const text = await res.text();
-      lastStatus = res.status;
+      const text = (await res.text()).trim();
       lastBody = text;
-      console.log("[sms-gateway-stats]", p, "status=", res.status, "body=", text.slice(0, 200));
-      if (res.status === 404) continue; // try next path
-      if (!res.ok) return { balance: null, raw: text, error: `HTTP ${res.status} at ${p}` };
+      console.log("[sms-gateway-stats] status=", res.status, "body=", text.slice(0, 300));
+      if (!res.ok) { lastErr = `HTTP ${res.status}`; continue; }
+      // REVE returns balance as a plain string (e.g. "983.35").
       let n: number | null = null;
-      try {
-        const j = JSON.parse(text);
-        n = pickNumber(j, ["balance", "Balance", "credit", "amount", "data"]);
-        if (n == null && j && typeof j === "object") {
-          n = pickNumber(j, ["Text", "text", "message"]);
-        }
-      } catch {
-        const m = text.match(/-?\d+(\.\d+)?/);
-        if (m) n = Number(m[0]);
-      }
-      if (n != null) return { balance: n, raw: text };
-      // ok but unparseable — keep trying other paths
+      const m = text.match(/-?\d+(\.\d+)?/);
+      if (m) n = parseFloat(m[0]);
+      if (n != null && !isNaN(n)) return { balance: n, raw: text };
+      lastErr = "Could not parse balance from response";
     } catch (e) {
-      return { balance: null, raw: "", error: (e as Error).message };
+      lastErr = (e as Error).message;
     }
   }
-  return { balance: null, raw: lastBody, error: `HTTP ${lastStatus} — no balance endpoint matched. Ask REVE support for your account's balance URL.` };
+  return { balance: null, raw: lastBody, error: lastErr || "Balance fetch failed" };
 }
 
 Deno.serve(async (req) => {
@@ -145,11 +139,15 @@ Deno.serve(async (req) => {
     let gatewayConfigured = !!gw;
 
     if (gw && gw.provider === "reve") {
-      // REVE does not expose a public HTTP balance endpoint (only /sendtext,
-      // /sendsms, /getmultistatus per their docs). Skip live fetch and use
-      // local DB balance — which is the authoritative source we maintain on
-      // every purchase/send.
-      source = "local";
+      const r = await reveBalance(gw.config ?? {});
+      if (r.balance != null) {
+        balance = r.balance; // ৳ (BDT) per REVE portal
+        source = "reve";
+      } else {
+        source = "local";
+        providerError = r.error;
+        providerRaw = r.raw;
+      }
     }
 
     return json({
