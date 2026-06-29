@@ -25,6 +25,7 @@ import {
   ChevronDown,
   RefreshCw,
   AlertTriangle,
+  Send,
 } from "lucide-react";
 import { toast } from "sonner";
 import { AdminSearchBar, matches } from "@/components/admin/AdminSearchBar";
@@ -105,6 +106,35 @@ export default function AdminSmsGateways() {
   const [password, setPassword] = useState("");
   const [active, setActive] = useState(true);
   const [saving, setSaving] = useState(false);
+
+  // Test SMS
+  const [testPhone, setTestPhone] = useState("");
+  const [testMsg, setTestMsg] = useState("");
+  const [testing, setTesting] = useState(false);
+  const [testResult, setTestResult] = useState<{ ok: boolean; text: string } | null>(null);
+
+  const sendTestSms = async () => {
+    if (!testPhone.trim()) { toast.error("Mobile number দিন (country code সহ)"); return; }
+    setTesting(true); setTestResult(null);
+    try {
+      const { data, error } = await supabase.functions.invoke("admin-test-sms", {
+        body: { phone: testPhone.trim(), message: testMsg.trim() || undefined },
+      });
+      if (error) throw error;
+      if (data?.ok) {
+        toast.success(`Test SMS sent → ${data.phone}`);
+        setTestResult({ ok: true, text: `Sent to ${data.phone} from ${data.sender}. Provider: ${data.provider_response ?? ""}` });
+      } else {
+        const msg = data?.error || data?.provider_response || "Unknown error";
+        toast.error(`Failed: ${msg}`);
+        setTestResult({ ok: false, text: typeof msg === "string" ? msg : JSON.stringify(msg) });
+      }
+    } catch (e) {
+      const msg = (e as Error).message;
+      toast.error(msg);
+      setTestResult({ ok: false, text: msg });
+    } finally { setTesting(false); }
+  };
 
   // Secondary tabs
   const [tab, setTab] = useState<"gateway" | "packages" | "templates">("gateway");
@@ -400,6 +430,63 @@ export default function AdminSmsGateways() {
                   {opt.comingSoon && (
                     <div className="mt-3 rounded-md border bg-amber-50 p-3 text-xs text-amber-800">
                       {opt.label} — এখনো support করা হচ্ছে না, শীঘ্রই আসছে।
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* ===== Test SMS panel ===== */}
+              <div className="mt-4 overflow-hidden rounded-md border bg-background shadow-sm">
+                <div className="flex items-center gap-2 bg-emerald-700 px-4 py-3 text-white">
+                  <Send className="h-4 w-4" />
+                  <span className="text-sm font-semibold">Test SMS — নিজের নম্বরে পাঠিয়ে যাচাই করুন</span>
+                </div>
+                <div className="space-y-3 p-5">
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                        Mobile number (country code সহ)
+                      </Label>
+                      <Input
+                        className="h-11"
+                        value={testPhone}
+                        onChange={(e) => setTestPhone(e.target.value)}
+                        placeholder="e.g. 8801712345678"
+                        inputMode="tel"
+                      />
+                      <p className="text-[11px] text-muted-foreground">
+                        Bangladesh: 88 + 11-digit। শুধু 01XXXXXXXXX দিলেও auto-prefix হবে।
+                      </p>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                        Message (optional)
+                      </Label>
+                      <Input
+                        className="h-11"
+                        value={testMsg}
+                        onChange={(e) => setTestMsg(e.target.value)}
+                        placeholder="খালি রাখলে default test message যাবে"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="text-xs text-muted-foreground">
+                      Primary active gateway ({opt.label}) ব্যবহার করে পাঠানো হবে।
+                    </div>
+                    <Button
+                      onClick={sendTestSms}
+                      disabled={testing}
+                      className="h-11 gap-2 bg-emerald-600 px-5 text-white hover:bg-emerald-700"
+                    >
+                      {testing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                      Send Test SMS
+                    </Button>
+                  </div>
+                  {testResult && (
+                    <div className={`rounded-md border p-3 text-xs ${testResult.ok ? "border-emerald-300 bg-emerald-50 text-emerald-800" : "border-rose-300 bg-rose-50 text-rose-800"}`}>
+                      <strong>{testResult.ok ? "Success:" : "Failed:"}</strong>{" "}
+                      <span className="break-all">{testResult.text}</span>
                     </div>
                   )}
                 </div>
