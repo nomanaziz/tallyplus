@@ -78,7 +78,7 @@ Deno.serve(async (req) => {
     let providerId: string | undefined;
     try {
       const j = JSON.parse(text);
-      providerId = j.messageid || j.message_id || j.id;
+      providerId = j.Message_ID || j.messageid || j.message_id || j.id;
     } catch { providerId = text.trim().slice(0, 100); }
     return json({ ok: true, phone, sender: callerID, message, provider_id: providerId, provider_response: text.slice(0, 500) });
   } catch (e) {
