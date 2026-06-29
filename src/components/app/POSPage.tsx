@@ -1317,6 +1317,13 @@ function PaymentDialog(props: {
     }
   }, [props.open, props.grandTotal, isSell]);
 
+  // Auto-disable SMS toggle if phone is missing/invalid (logical: no number, no SMS)
+  useEffect(() => {
+    if (sendMessage && partyPhone.replace(/\D/g, "").length < 11) {
+      setSendMessage(false);
+    }
+  }, [partyPhone, sendMessage]);
+
   // Load contacts when picker opens or party tab changes
   useEffect(() => {
     if (!props.open || !current) return;
