@@ -2093,9 +2093,11 @@ function PaymentDialog(props: {
                 <Label className="flex items-center gap-2 text-sm">
                   <MessageSquare className="h-4 w-4" />
                   {t("p2c_sendMessage")}
-                  <span className="text-xs text-muted-foreground">({t("p2c_smsLeft30")})</span>
+                  <span className={`text-xs ${(smsBalance ?? 0) > 0 ? "text-muted-foreground" : "text-destructive"}`}>
+                    ({lang === "bn" ? "SMS অবশিষ্ট" : "SMS left"}: {smsBalance ?? "…"})
+                  </span>
                 </Label>
-                <Switch checked={sendMessage} onCheckedChange={setSendMessage} />
+                <Switch checked={sendMessage} onCheckedChange={setSendMessage} disabled={(smsBalance ?? 0) <= 0} />
               </div>
             )}
           </div>
