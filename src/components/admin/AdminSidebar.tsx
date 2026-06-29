@@ -49,7 +49,6 @@ const ITEMS: Item[] = [
   { to: "/admin/transfers", label: "Ownership Transfers", icon: ArrowLeftRight, perm: "transfers" },
   { to: "/admin/subscriptions", label: "Subscriptions", icon: CreditCard, perm: "subscriptions" },
   { to: "/admin/plans", label: "Plans", icon: Tags, perm: "plans" },
-  { to: "/admin/usage-limits", label: "Usage Limits", icon: Gauge, perm: "usage_limits" },
   { to: "/admin/promo-popups", label: "Promo Popups", icon: Megaphone, perm: "promo_popups" },
   { to: "/admin/payment-gateway", label: "Payment Gateway", icon: CreditCardIcon, perm: "payment_gateway" },
   { to: "/admin/sms-gateways", label: "SMS Gateways", icon: MessageSquareText, perm: "sms_gateways" },
