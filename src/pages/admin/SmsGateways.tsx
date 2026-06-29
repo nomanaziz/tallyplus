@@ -508,6 +508,38 @@ export default function AdminSmsGateways() {
                       <span className="break-all">{testResult.text}</span>
                     </div>
                   )}
+
+                  {/* ===== Check Delivery Status ===== */}
+                  <div className="rounded-md border bg-muted/30 p-3">
+                    <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      Check Delivery Status (REVE getstatus)
+                    </Label>
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                      <Input
+                        className="h-10 flex-1 min-w-[180px]"
+                        value={lastMessageId}
+                        onChange={(e) => setLastMessageId(e.target.value)}
+                        placeholder="Message ID (test পাঠালে auto-fill হবে)"
+                      />
+                      <Button
+                        onClick={checkStatus}
+                        disabled={statusChecking || !lastMessageId.trim()}
+                        variant="outline"
+                        className="h-10 gap-2"
+                      >
+                        {statusChecking ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                        Check Status
+                      </Button>
+                    </div>
+                    {statusResult && (
+                      <pre className="mt-2 max-h-40 overflow-auto whitespace-pre-wrap break-all rounded bg-background p-2 text-[11px]">
+{statusResult}
+                      </pre>
+                    )}
+                    <p className="mt-1 text-[11px] text-muted-foreground">
+                      DELIVRD = পৌঁছেছে · ACCEPTD/ENROUTE = queue-এ · REJECTD/UNDELIV = fail (sender ID বা route issue)
+                    </p>
+                  </div>
                 </div>
               </div>
             </TabsContent>
