@@ -397,7 +397,17 @@ export default function AdminSmsGateways() {
           </Button>
         </div>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <StatCard color="bg-emerald-500" icon={Mail} label="SMS Balance" value={stats.balance.toLocaleString()} footer="Total SMS Remaining Balance" />
+          <StatCard
+            color="bg-emerald-500"
+            icon={Mail}
+            label={statsMeta?.source === "reve" ? "REVE Balance (৳)" : "SMS Balance"}
+            value={
+              statsMeta?.source === "reve"
+                ? `৳ ${stats.balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                : stats.balance.toLocaleString()
+            }
+            footer={statsMeta?.source === "reve" ? "REVE portal live balance" : "Local SMS credit"}
+          />
           <StatCard color="bg-sky-500" icon={CheckCircle2} label="Todays Send" value={stats.today.toLocaleString()} footer="Total SMS Send Today" />
           <StatCard color="bg-amber-500" icon={Hourglass} label="This Month Send" value={stats.month.toLocaleString()} footer="Total SMS Send in This Month" />
           <StatCard color="bg-rose-500" icon={XCircle} label="This Month Failed" value={stats.failed.toLocaleString()} footer="Total SMS Sending failed in This Month" />
