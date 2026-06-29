@@ -3,7 +3,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { MessageSquare, ShoppingCart, History, Send, Shield } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
-import { usePermissions } from "@/hooks/usePermissions";
+import { usePermissions } from "@/lib/permissions-hook";
 
 const BuySms = lazy(() => import("@/pages/app/BuySms"));
 const Marketing = lazy(() => import("@/pages/app/Marketing"));
