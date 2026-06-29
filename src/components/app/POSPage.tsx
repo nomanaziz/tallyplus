@@ -1317,6 +1317,13 @@ function PaymentDialog(props: {
     }
   }, [props.open, props.grandTotal, isSell]);
 
+  // Auto-disable SMS toggle if phone is missing/invalid (logical: no number, no SMS)
+  useEffect(() => {
+    if (sendMessage && partyPhone.replace(/\D/g, "").length < 11) {
+      setSendMessage(false);
+    }
+  }, [partyPhone, sendMessage]);
+
   // Load contacts when picker opens or party tab changes
   useEffect(() => {
     if (!props.open || !current) return;
@@ -2065,14 +2072,16 @@ function PaymentDialog(props: {
             {staffInfo && (
               <Input value={staffNote} onChange={(e) => setStaffNote(e.target.value)} placeholder={t("p2c_staffName")} />
             )}
-            <div className="flex items-center justify-between">
-              <Label className="flex items-center gap-2 text-sm">
-                <MessageSquare className="h-4 w-4" />
-                {t("p2c_sendMessage")}
-                <span className="text-xs text-muted-foreground">({t("p2c_smsLeft30")})</span>
-              </Label>
-              <Switch checked={sendMessage} onCheckedChange={setSendMessage} />
-            </div>
+            {partyPhone.replace(/\D/g, "").length >= 11 && (
+              <div className="flex items-center justify-between">
+                <Label className="flex items-center gap-2 text-sm">
+                  <MessageSquare className="h-4 w-4" />
+                  {t("p2c_sendMessage")}
+                  <span className="text-xs text-muted-foreground">({t("p2c_smsLeft30")})</span>
+                </Label>
+                <Switch checked={sendMessage} onCheckedChange={setSendMessage} />
+              </div>
+            )}
           </div>
         </div>
         </div>
