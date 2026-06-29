@@ -112,6 +112,9 @@ export default function AdminSmsGateways() {
   const [testMsg, setTestMsg] = useState("");
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ ok: boolean; text: string } | null>(null);
+  const [lastMessageId, setLastMessageId] = useState<string>("");
+  const [statusChecking, setStatusChecking] = useState(false);
+  const [statusResult, setStatusResult] = useState<string>("");
 
   const sendTestSms = async () => {
     if (!testPhone.trim()) { toast.error("Mobile number দিন (country code সহ)"); return; }
@@ -124,6 +127,8 @@ export default function AdminSmsGateways() {
       if (data?.ok) {
         toast.success(`Test SMS sent → ${data.phone}`);
         setTestResult({ ok: true, text: `Sent to ${data.phone} from ${data.sender}. Provider: ${data.provider_response ?? ""}` });
+        if (data.provider_id) setLastMessageId(String(data.provider_id));
+        setStatusResult("");
       } else {
         const msg = data?.error || data?.provider_response || "Unknown error";
         toast.error(`Failed: ${msg}`);
@@ -134,6 +139,20 @@ export default function AdminSmsGateways() {
       toast.error(msg);
       setTestResult({ ok: false, text: msg });
     } finally { setTesting(false); }
+  };
+
+  const checkStatus = async () => {
+    if (!lastMessageId.trim()) { toast.error("Message ID দিন"); return; }
+    setStatusChecking(true); setStatusResult("");
+    try {
+      const { data, error } = await supabase.functions.invoke("admin-sms-status", {
+        body: { message_id: lastMessageId.trim() },
+      });
+      if (error) throw error;
+      setStatusResult(data?.provider_response ?? JSON.stringify(data));
+    } catch (e) {
+      setStatusResult((e as Error).message);
+    } finally { setStatusChecking(false); }
   };
 
   // Secondary tabs
@@ -489,6 +508,38 @@ export default function AdminSmsGateways() {
                       <span className="break-all">{testResult.text}</span>
                     </div>
                   )}
+
+                  {/* ===== Check Delivery Status ===== */}
+                  <div className="rounded-md border bg-muted/30 p-3">
+                    <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      Check Delivery Status (REVE getstatus)
+                    </Label>
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                      <Input
+                        className="h-10 flex-1 min-w-[180px]"
+                        value={lastMessageId}
+                        onChange={(e) => setLastMessageId(e.target.value)}
+                        placeholder="Message ID (test পাঠালে auto-fill হবে)"
+                      />
+                      <Button
+                        onClick={checkStatus}
+                        disabled={statusChecking || !lastMessageId.trim()}
+                        variant="outline"
+                        className="h-10 gap-2"
+                      >
+                        {statusChecking ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                        Check Status
+                      </Button>
+                    </div>
+                    {statusResult && (
+                      <pre className="mt-2 max-h-40 overflow-auto whitespace-pre-wrap break-all rounded bg-background p-2 text-[11px]">
+{statusResult}
+                      </pre>
+                    )}
+                    <p className="mt-1 text-[11px] text-muted-foreground">
+                      DELIVRD = পৌঁছেছে · ACCEPTD/ENROUTE = queue-এ · REJECTD/UNDELIV = fail (sender ID বা route issue)
+                    </p>
+                  </div>
                 </div>
               </div>
             </TabsContent>

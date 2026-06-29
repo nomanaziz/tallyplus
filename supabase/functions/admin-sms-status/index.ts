@@ -1,4 +1,4 @@
-// Admin-only: send a test SMS via primary REVE gateway to verify config.
+// Admin-only: check delivery status of a previously sent SMS via REVE getstatus API.
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -9,17 +9,6 @@ const cors = {
 };
 const json = (data: unknown, status = 200) =>
   new Response(JSON.stringify(data), { status, headers: { ...cors, "Content-Type": "application/json" } });
-
-function normalizePhone(raw: string): string | null {
-  const d = String(raw ?? "").replace(/\D/g, "");
-  if (!d) return null;
-  // BD shortcuts
-  if (d.length === 11 && d.startsWith("01")) return "88" + d;
-  if (d.length === 10 && d.startsWith("1")) return "880" + d;
-  // Already has country code (8-15 digits)
-  if (d.length >= 8 && d.length <= 15) return d;
-  return null;
-}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: cors });
@@ -39,12 +28,9 @@ Deno.serve(async (req) => {
     if (!isAdmin) return json({ error: "Admin only" }, 403);
 
     const body = await req.json().catch(() => ({}));
-    const rawPhone: string = body?.phone ?? "";
-    const customMsg: string = (body?.message ?? "").toString().trim();
-    const phone = normalizePhone(rawPhone);
-    if (!phone) return json({ error: "Invalid phone. Include country code, e.g. 8801XXXXXXXXX" }, 400);
+    const messageId: string = String(body?.message_id ?? "").trim();
+    if (!messageId) return json({ error: "message_id required" }, 400);
 
-    // Load primary REVE gateway
     const { data: gw } = await admin
       .from("sms_gateways")
       .select("*")
@@ -59,30 +45,17 @@ Deno.serve(async (req) => {
     const baseUrl = (cfg.base_url || "http://smpp.revesms.com:7788").replace(/\/$/, "");
     const apiKey = cfg.api_key || cfg.username || "";
     const secretKey = cfg.secret_key || cfg.password || "";
-    const callerID = cfg.sender_id || "";
-    if (!apiKey || !secretKey || !callerID) {
-      return json({ error: "Gateway missing api_key / secret_key / sender_id" }, 400);
-    }
+    if (!apiKey || !secretKey) return json({ error: "Gateway missing credentials" }, 400);
 
-    const message = customMsg || `Test SMS from TallyPlus admin at ${new Date().toISOString().slice(0, 16).replace("T", " ")} UTC`;
-    const reqUrl = `${baseUrl}/sendtext?apikey=${encodeURIComponent(apiKey)}&secretkey=${encodeURIComponent(secretKey)}&callerID=${encodeURIComponent(callerID)}&toUser=${encodeURIComponent(phone)}&messageContent=${encodeURIComponent(message)}`;
-    console.log("[admin-test-sms] sending to", phone, "via", baseUrl, "sender=", callerID);
+    const reqUrl = `${baseUrl}/getstatus?apikey=${encodeURIComponent(apiKey)}&secretkey=${encodeURIComponent(secretKey)}&messageid=${encodeURIComponent(messageId)}`;
+    console.log("[admin-sms-status] GET", reqUrl.replace(secretKey, "***"));
 
-    const res = await fetch(reqUrl, { method: "GET" });
+    const res = await fetch(reqUrl);
     const text = await res.text();
-    console.log("[admin-test-sms] response status=", res.status, "body=", text.slice(0, 400));
-
-    if (!res.ok) {
-      return json({ ok: false, status: res.status, provider_response: text.slice(0, 500) }, 200);
-    }
-    let providerId: string | undefined;
-    try {
-      const j = JSON.parse(text);
-      providerId = j.Message_ID || j.messageid || j.message_id || j.id;
-    } catch { providerId = text.trim().slice(0, 100); }
-    return json({ ok: true, phone, sender: callerID, message, provider_id: providerId, provider_response: text.slice(0, 500) });
+    console.log("[admin-sms-status] status=", res.status, "body=", text.slice(0, 400));
+    return json({ ok: res.ok, status: res.status, message_id: messageId, provider_response: text.slice(0, 800) });
   } catch (e) {
-    console.error("[admin-test-sms] error", e);
+    console.error("[admin-sms-status] error", e);
     return json({ error: (e as Error).message }, 500);
   }
 });
