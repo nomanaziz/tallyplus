@@ -68,6 +68,7 @@ const L49 = lazy(() => import("@/pages/app/SalesLedger"));
 const L50 = lazy(() => import("@/pages/app/Sell"));
 const L51 = lazy(() => import("@/pages/app/Shops"));
 const L52 = lazy(() => import("@/pages/app/SmsHistory"));
+const LSmsModule = lazy(() => import("@/pages/app/SmsModule"));
 const L53 = lazy(() => import("@/pages/app/Training"));
 const L54 = lazy(() => import("@/pages/app/UsageLimits"));
 const L55 = lazy(() => import("@/pages/app/Warranty"));
