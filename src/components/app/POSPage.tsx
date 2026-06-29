@@ -1135,8 +1135,6 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
         open={!!invoice}
         onClose={() => {
           setInvoice(null);
-          // After completing a transaction and closing the invoice, return to dashboard.
-          nav({ to: "/app/dashboard" });
         }}
         data={invoice}
       />
