@@ -434,6 +434,63 @@ export default function AdminSmsGateways() {
                   )}
                 </div>
               </div>
+
+              {/* ===== Test SMS panel ===== */}
+              <div className="mt-4 overflow-hidden rounded-md border bg-background shadow-sm">
+                <div className="flex items-center gap-2 bg-emerald-700 px-4 py-3 text-white">
+                  <Send className="h-4 w-4" />
+                  <span className="text-sm font-semibold">Test SMS — নিজের নম্বরে পাঠিয়ে যাচাই করুন</span>
+                </div>
+                <div className="space-y-3 p-5">
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                        Mobile number (country code সহ)
+                      </Label>
+                      <Input
+                        className="h-11"
+                        value={testPhone}
+                        onChange={(e) => setTestPhone(e.target.value)}
+                        placeholder="e.g. 8801712345678"
+                        inputMode="tel"
+                      />
+                      <p className="text-[11px] text-muted-foreground">
+                        Bangladesh: 88 + 11-digit। শুধু 01XXXXXXXXX দিলেও auto-prefix হবে।
+                      </p>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                        Message (optional)
+                      </Label>
+                      <Input
+                        className="h-11"
+                        value={testMsg}
+                        onChange={(e) => setTestMsg(e.target.value)}
+                        placeholder="খালি রাখলে default test message যাবে"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="text-xs text-muted-foreground">
+                      Primary active gateway ({opt.label}) ব্যবহার করে পাঠানো হবে।
+                    </div>
+                    <Button
+                      onClick={sendTestSms}
+                      disabled={testing}
+                      className="h-11 gap-2 bg-emerald-600 px-5 text-white hover:bg-emerald-700"
+                    >
+                      {testing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                      Send Test SMS
+                    </Button>
+                  </div>
+                  {testResult && (
+                    <div className={`rounded-md border p-3 text-xs ${testResult.ok ? "border-emerald-300 bg-emerald-50 text-emerald-800" : "border-rose-300 bg-rose-50 text-rose-800"}`}>
+                      <strong>{testResult.ok ? "Success:" : "Failed:"}</strong>{" "}
+                      <span className="break-all">{testResult.text}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
             </TabsContent>
 
             {/* ===== Packages ===== */}
