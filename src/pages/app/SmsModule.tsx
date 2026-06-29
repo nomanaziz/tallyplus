@@ -44,7 +44,7 @@ export default function SmsModule() {
           <TabsTrigger value="history" className="gap-1.5">
             <History className="h-4 w-4" /> ইতিহাস
           </TabsTrigger>
-          {(isAdmin || isOwner) && (
+          {isAdmin && (
             <TabsTrigger value="admin" className="gap-1.5">
               <Shield className="h-4 w-4" /> অ্যাডমিন
             </TabsTrigger>
@@ -61,7 +61,7 @@ export default function SmsModule() {
           <TabsContent value="history" className="m-0">
             <Suspense fallback={<Fallback />}><SmsHistory /></Suspense>
           </TabsContent>
-          {(isAdmin || isOwner) && (
+          {isAdmin && (
             <TabsContent value="admin" className="m-0">
               <Suspense fallback={<Fallback />}><SmsGateways /></Suspense>
             </TabsContent>
