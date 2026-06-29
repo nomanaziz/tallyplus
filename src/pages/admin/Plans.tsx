@@ -14,7 +14,8 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Plus, Pencil, Loader2 } from "lucide-react";
+import { Plus, Pencil, Loader2, Gauge } from "lucide-react";
+import { Link } from "@/lib/router";
 import { toast } from "sonner";
 import { AdminSearchBar, matches } from "@/components/admin/AdminSearchBar";
 
@@ -98,9 +99,16 @@ function PlansPage() {
           <h1 className="text-2xl font-bold">Subscription Plans</h1>
           <p className="text-sm text-muted-foreground">Plan add/edit করুন</p>
         </div>
-        <Button onClick={() => setEditing({ is_active: true, duration_days: 30, max_shops: 1 })}>
-          <Plus className="mr-1 h-4 w-4" /> New Plan
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button asChild variant="outline">
+            <Link to={"/admin/usage-limits" as never}>
+              <Gauge className="mr-1 h-4 w-4" /> Usage Limits
+            </Link>
+          </Button>
+          <Button onClick={() => setEditing({ is_active: true, duration_days: 30, max_shops: 1 })}>
+            <Plus className="mr-1 h-4 w-4" /> New Plan
+          </Button>
+        </div>
       </div>
 
       <AdminSearchBar value={search} onChange={setSearch} count={filtered.length} placeholder="Code বা name দিয়ে খুঁজুন" />
