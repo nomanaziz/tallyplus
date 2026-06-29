@@ -6823,6 +6823,10 @@ export type Database = {
         }
         Returns: number
       }
+      can_subscribe_realtime_topic: {
+        Args: { _topic: string }
+        Returns: boolean
+      }
       check_usage_limit: {
         Args: { _feature: string; _shop_id: string }
         Returns: Json
