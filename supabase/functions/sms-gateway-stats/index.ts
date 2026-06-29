@@ -108,16 +108,11 @@ Deno.serve(async (req) => {
     let gatewayConfigured = !!gw;
 
     if (gw && gw.provider === "reve") {
-      const r = await reveBalance(gw.config || {});
-      providerRaw = r.raw?.slice(0, 500);
-      if (r.balance != null) {
-        balance = r.balance;
-        source = "mixed"; // balance from REVE, usage from local
-      } else {
-        providerError = r.error || "Could not parse balance from REVE response";
-      }
-    } else if (!gw) {
-      providerError = "No active SMS gateway configured";
+      // REVE does not expose a public HTTP balance endpoint (only /sendtext,
+      // /sendsms, /getmultistatus per their docs). Skip live fetch and use
+      // local DB balance — which is the authoritative source we maintain on
+      // every purchase/send.
+      source = "local";
     }
 
     return json({
