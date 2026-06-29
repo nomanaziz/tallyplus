@@ -1,0 +1,2 @@
+ALTER TABLE public.sms_purchase_requests DROP CONSTRAINT IF EXISTS sms_purchase_requests_payment_status_check;
+ALTER TABLE public.sms_purchase_requests ADD CONSTRAINT sms_purchase_requests_payment_status_check CHECK (payment_status = ANY (ARRAY['pending'::text, 'paid'::text, 'approved'::text, 'rejected'::text, 'failed'::text, 'cancelled'::text]));
