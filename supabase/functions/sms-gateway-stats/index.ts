@@ -28,6 +28,44 @@ function pickNumber(obj: any, keys: string[]): number | null {
   return null;
 }
 
+async function sumSmsCount(admin: any, status: string, sinceIso: string): Promise<number> {
+  let from = 0;
+  let total = 0;
+  const pageSize = 1000;
+  while (true) {
+    const { data, error } = await admin
+      .from("sms_history")
+      .select("sms_count")
+      .eq("status", status)
+      .gte("created_at", sinceIso)
+      .range(from, from + pageSize - 1);
+    if (error) throw error;
+    const rows = data ?? [];
+    total += rows.reduce((sum: number, row: any) => sum + Number(row.sms_count ?? 0), 0);
+    if (rows.length < pageSize) break;
+    from += pageSize;
+  }
+  return total;
+}
+
+async function sumShopBalance(admin: any): Promise<number> {
+  let from = 0;
+  let total = 0;
+  const pageSize = 1000;
+  while (true) {
+    const { data, error } = await admin
+      .from("shop_sms_balance")
+      .select("balance")
+      .range(from, from + pageSize - 1);
+    if (error) throw error;
+    const rows = data ?? [];
+    total += rows.reduce((sum: number, row: any) => sum + Number(row.balance ?? 0), 0);
+    if (rows.length < pageSize) break;
+    from += pageSize;
+  }
+  return total;
+}
+
 async function reveBalance(cfg: any): Promise<{ balance: number | null; raw: string; error?: string }> {
   const baseUrl = (cfg.base_url || "http://smpp.revesms.com:7788").replace(/\/$/, "");
   const apikey = cfg.api_key || cfg.username || "";
@@ -93,13 +131,12 @@ Deno.serve(async (req) => {
     monthStart.setDate(1); monthStart.setHours(0, 0, 0, 0);
     const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
 
-    const [{ count: todaySent }, { count: monthSent }, { count: monthFailed }, { data: balRows }] = await Promise.all([
-      admin.from("sms_history").select("*", { count: "exact", head: true }).eq("status", "sent").gte("created_at", todayStart.toISOString()),
-      admin.from("sms_history").select("*", { count: "exact", head: true }).eq("status", "sent").gte("created_at", monthStart.toISOString()),
-      admin.from("sms_history").select("*", { count: "exact", head: true }).eq("status", "failed").gte("created_at", monthStart.toISOString()),
-      admin.from("shop_sms_balance").select("balance"),
+    const [todaySent, monthSent, monthFailed, localBalance] = await Promise.all([
+      sumSmsCount(admin, "sent", todayStart.toISOString()),
+      sumSmsCount(admin, "sent", monthStart.toISOString()),
+      sumSmsCount(admin, "failed", monthStart.toISOString()),
+      sumShopBalance(admin),
     ]);
-    const localBalance = (balRows ?? []).reduce((s: number, r: any) => s + Number(r.balance ?? 0), 0);
 
     let balance = localBalance;
     let source: "reve" | "local" | "mixed" = "local";
@@ -118,9 +155,9 @@ Deno.serve(async (req) => {
     return json({
       ok: true,
       balance,
-      today: todaySent ?? 0,
-      month: monthSent ?? 0,
-      failed: monthFailed ?? 0,
+      today: todaySent,
+      month: monthSent,
+      failed: monthFailed,
       source,
       gateway_configured: gatewayConfigured,
       provider: gw?.provider ?? null,

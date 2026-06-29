@@ -64,6 +64,19 @@ type Gateway = {
 };
 type Pkg = { id: string; name_bn: string; name_en: string; sms_count: number; price_bdt: number; is_active: boolean; sort_order: number };
 type Template = { id: string; code: string; name_bn: string; name_en: string; body_template: string; is_active: boolean; sort_order: number };
+type SmsRequest = {
+  id: string;
+  shop_id: string;
+  sms_count: number;
+  amount_bdt: number;
+  payment_status: string;
+  payment_method: string | null;
+  txn_id: string | null;
+  admin_note: string | null;
+  created_at: string;
+  shops?: { name: string | null } | null;
+  sms_packages?: { name_bn: string | null; name_en: string | null } | null;
+};
 
 // ============================================================
 // Stat card
@@ -156,13 +169,15 @@ export default function AdminSmsGateways() {
   };
 
   // Secondary tabs
-  const [tab, setTab] = useState<"gateway" | "packages" | "templates">("gateway");
+  const [tab, setTab] = useState<"gateway" | "requests" | "packages" | "templates">("gateway");
 
   // Packages & Templates
   const [packages, setPackages] = useState<Pkg[]>([]);
   const [editingPkg, setEditingPkg] = useState<(Omit<Pkg, "id"> & { id?: string }) | null>(null);
   const [templates, setTemplates] = useState<Template[]>([]);
   const [editingTpl, setEditingTpl] = useState<(Omit<Template, "id"> & { id?: string }) | null>(null);
+  const [smsRequests, setSmsRequests] = useState<SmsRequest[]>([]);
+  const [requestBusy, setRequestBusy] = useState<string | null>(null);
   const [pkgSearch, setPkgSearch] = useState("");
   const [tplSearch, setTplSearch] = useState("");
   const filteredPackages = useMemo(
@@ -181,16 +196,19 @@ export default function AdminSmsGateways() {
       { data: g },
       { data: p },
       { data: t },
+      { data: r },
     ] = await Promise.all([
       supabase.from("sms_gateways").select("*").order("sort_order").order("created_at"),
       supabase.from("sms_packages").select("*").order("sort_order").order("sms_count"),
       supabase.from("sms_templates").select("*").order("sort_order").order("code"),
+      supabase.from("sms_purchase_requests").select("*, shops(name), sms_packages(name_bn, name_en)").order("created_at", { ascending: false }).limit(50),
     ]);
 
     const gws = (g as Gateway[]) ?? [];
     setGateways(gws);
     setPackages((p as Pkg[]) ?? []);
     setTemplates((t as Template[]) ?? []);
+    setSmsRequests((r as SmsRequest[]) ?? []);
 
     // Pick primary gateway as the inline-form value
     const primary =
@@ -290,6 +308,24 @@ export default function AdminSmsGateways() {
     }
   };
 
+  const handleSmsRequest = async (requestId: string, action: "approve" | "reject") => {
+    setRequestBusy(`${action}:${requestId}`);
+    try {
+      const { data, error } = await supabase.functions.invoke("admin-approve-sms-purchase", {
+        body: { request_id: requestId, action },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      toast.success(action === "approve" ? "SMS balance credited" : "SMS request rejected");
+      await loadAll();
+      await refreshStats();
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setRequestBusy(null);
+    }
+  };
+
   // ========== Packages ==========
   const savePkg = async () => {
     if (!editingPkg) return;
@@ -350,7 +386,7 @@ export default function AdminSmsGateways() {
             {statsLoading ? "Live data refresh হচ্ছে..." : (
               statsMeta?.source === "reve" || statsMeta?.source === "mixed"
                 ? <span className="text-emerald-600">● Live REVE balance</span>
-                : <span className="text-amber-600">● Local data only</span>
+                : <span className="text-amber-600">● App local records</span>
             )}
           </div>
           <Button size="sm" variant="outline" onClick={refreshStats} disabled={statsLoading} className="h-8 gap-1">
@@ -378,6 +414,7 @@ export default function AdminSmsGateways() {
           <Tabs value={tab} onValueChange={(v) => setTab(v as any)}>
             <TabsList>
               <TabsTrigger value="gateway">Gateway Setup</TabsTrigger>
+              <TabsTrigger value="requests">SMS Requests</TabsTrigger>
               <TabsTrigger value="packages">Packages</TabsTrigger>
               <TabsTrigger value="templates">Templates</TabsTrigger>
             </TabsList>
@@ -541,6 +578,55 @@ export default function AdminSmsGateways() {
                     </p>
                   </div>
                 </div>
+              </div>
+            </TabsContent>
+
+            {/* ===== SMS purchase requests ===== */}
+            <TabsContent value="requests" className="mt-3 space-y-3">
+              <div className="rounded-xl border bg-background">
+                {smsRequests.length === 0 ? (
+                  <div className="p-8 text-center text-sm text-muted-foreground">No SMS purchase requests yet.</div>
+                ) : smsRequests.map((r) => {
+                  const busyApprove = requestBusy === `approve:${r.id}`;
+                  const busyReject = requestBusy === `reject:${r.id}`;
+                  const isPending = r.payment_status === "pending";
+                  return (
+                    <div key={r.id} className="flex flex-wrap items-center gap-3 border-b p-3 last:border-b-0">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="font-semibold">{r.shops?.name ?? "Shop"}</span>
+                          <span className="rounded bg-muted px-1.5 py-0.5 text-xs">{r.payment_status}</span>
+                          <span className="text-xs text-muted-foreground">{new Date(r.created_at).toLocaleString("en-BD")}</span>
+                        </div>
+                        <div className="mt-1 text-sm text-muted-foreground">
+                          {(r.sms_packages?.name_bn || r.sms_packages?.name_en || "SMS Package")} • {Number(r.sms_count).toLocaleString()} SMS • ৳{Number(r.amount_bdt).toLocaleString()}
+                        </div>
+                        <div className="mt-1 text-xs text-muted-foreground">
+                          Method: {r.payment_method ?? "—"} {r.txn_id ? `• TXN: ${r.txn_id}` : ""} {r.admin_note ? `• ${r.admin_note}` : ""}
+                        </div>
+                      </div>
+                      <Button
+                        size="sm"
+                        className="gap-1 bg-emerald-600 text-white hover:bg-emerald-700"
+                        disabled={!isPending || !!requestBusy}
+                        onClick={() => handleSmsRequest(r.id, "approve")}
+                      >
+                        {busyApprove ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4" />}
+                        Approve
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="gap-1 text-rose-600"
+                        disabled={!isPending || !!requestBusy}
+                        onClick={() => handleSmsRequest(r.id, "reject")}
+                      >
+                        {busyReject ? <Loader2 className="h-4 w-4 animate-spin" /> : <XCircle className="h-4 w-4" />}
+                        Reject
+                      </Button>
+                    </div>
+                  );
+                })}
               </div>
             </TabsContent>
 
