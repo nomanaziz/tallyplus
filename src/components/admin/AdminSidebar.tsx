@@ -15,7 +15,6 @@ import {
   Handshake,
   Image,
   Images,
-  Gauge,
   Megaphone,
   CreditCard as CreditCardIcon,
   AlertTriangle,
