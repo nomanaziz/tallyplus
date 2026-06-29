@@ -1303,6 +1303,22 @@ function PaymentDialog(props: {
   // Payment method (cash | online) — applies to both sell and purchase.
   const [paymentMethod, setPaymentMethod] = useState<"cash" | "online">("cash");
 
+  // Live SMS balance for this shop (replaces hardcoded "30")
+  const [smsBalance, setSmsBalance] = useState<number | null>(null);
+  useEffect(() => {
+    if (!props.open || !current?.id) return;
+    let cancelled = false;
+    void supabase
+      .from("shop_sms_balance")
+      .select("balance")
+      .eq("shop_id", current.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (!cancelled) setSmsBalance(Number((data as { balance?: number } | null)?.balance ?? 0));
+      });
+    return () => { cancelled = true; };
+  }, [props.open, current?.id]);
+
   useEffect(() => {
     if (props.open) {
       setDate(new Date().toISOString().slice(0, 10));
@@ -1317,12 +1333,12 @@ function PaymentDialog(props: {
     }
   }, [props.open, props.grandTotal, isSell]);
 
-  // Auto-disable SMS toggle if phone is missing/invalid (logical: no number, no SMS)
+  // Auto-disable SMS toggle if phone is missing/invalid or balance is empty
   useEffect(() => {
-    if (sendMessage && partyPhone.replace(/\D/g, "").length < 11) {
+    if (sendMessage && (partyPhone.replace(/\D/g, "").length < 11 || (smsBalance ?? 0) <= 0)) {
       setSendMessage(false);
     }
-  }, [partyPhone, sendMessage]);
+  }, [partyPhone, sendMessage, smsBalance]);
 
   // Load contacts when picker opens or party tab changes
   useEffect(() => {
