@@ -117,6 +117,7 @@ export default function AdminSmsGateways() {
   const [sender, setSender] = useState("");
   const [userName, setUserName] = useState("");
   const [password, setPassword] = useState("");
+  const [clientId, setClientId] = useState("");
   const [active, setActive] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -222,6 +223,7 @@ export default function AdminSmsGateways() {
       setSender(primary.config?.sender_id ?? "");
       setUserName(primary.config?.api_key ?? primary.config?.username ?? "");
       setPassword(primary.config?.secret_key ?? primary.config?.password ?? "");
+      setClientId(primary.config?.client_id ?? "");
       setActive(primary.is_active);
     }
     setLoading(false);
@@ -276,6 +278,7 @@ export default function AdminSmsGateways() {
         secret_key: password,
         username: userName.trim(),
         password,
+        client_id: clientId.trim(),
       };
       const payload = {
         provider: opt.provider,
