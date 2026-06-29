@@ -25,6 +25,7 @@ import {
   ChevronDown,
   RefreshCw,
   AlertTriangle,
+  Send,
 } from "lucide-react";
 import { toast } from "sonner";
 import { AdminSearchBar, matches } from "@/components/admin/AdminSearchBar";
@@ -105,6 +106,35 @@ export default function AdminSmsGateways() {
   const [password, setPassword] = useState("");
   const [active, setActive] = useState(true);
   const [saving, setSaving] = useState(false);
+
+  // Test SMS
+  const [testPhone, setTestPhone] = useState("");
+  const [testMsg, setTestMsg] = useState("");
+  const [testing, setTesting] = useState(false);
+  const [testResult, setTestResult] = useState<{ ok: boolean; text: string } | null>(null);
+
+  const sendTestSms = async () => {
+    if (!testPhone.trim()) { toast.error("Mobile number দিন (country code সহ)"); return; }
+    setTesting(true); setTestResult(null);
+    try {
+      const { data, error } = await supabase.functions.invoke("admin-test-sms", {
+        body: { phone: testPhone.trim(), message: testMsg.trim() || undefined },
+      });
+      if (error) throw error;
+      if (data?.ok) {
+        toast.success(`Test SMS sent → ${data.phone}`);
+        setTestResult({ ok: true, text: `Sent to ${data.phone} from ${data.sender}. Provider: ${data.provider_response ?? ""}` });
+      } else {
+        const msg = data?.error || data?.provider_response || "Unknown error";
+        toast.error(`Failed: ${msg}`);
+        setTestResult({ ok: false, text: typeof msg === "string" ? msg : JSON.stringify(msg) });
+      }
+    } catch (e) {
+      const msg = (e as Error).message;
+      toast.error(msg);
+      setTestResult({ ok: false, text: msg });
+    } finally { setTesting(false); }
+  };
 
   // Secondary tabs
   const [tab, setTab] = useState<"gateway" | "packages" | "templates">("gateway");
