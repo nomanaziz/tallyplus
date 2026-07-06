@@ -37,9 +37,18 @@ export function PaymentEntryDialog({
   const [amount, setAmount] = useState("");
   const [method, setMethod] = useState<string>("cash");
   const [note, setNote] = useState("");
+  const [txDate, setTxDate] = useState<string>(new Date().toISOString().slice(0, 10));
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => { if (open) { setDir(defaultDirection); setAmount(""); setNote(""); setMethod("cash"); } }, [open, defaultDirection]);
+  useEffect(() => {
+    if (open) {
+      setDir(defaultDirection);
+      setAmount("");
+      setNote("");
+      setMethod("cash");
+      setTxDate(new Date().toISOString().slice(0, 10));
+    }
+  }, [open, defaultDirection]);
 
   const titleBn = dir === "in" ? "টাকা পেলাম" : "টাকা দিলাম";
   const titleEn = dir === "in" ? "Money Received" : "Money Given";
@@ -50,6 +59,7 @@ export function PaymentEntryDialog({
     if (!amt || amt <= 0) { toast.error(t("p7_Enter_amount")); return; }
     setSaving(true);
     try {
+      const createdAt = new Date(txDate + "T00:00:00").toISOString();
       const { error: payErr } = await supabase.from("payments").insert({
         shop_id: current.id,
         customer_id: party === "customer" ? contactId : null,
@@ -59,6 +69,7 @@ export function PaymentEntryDialog({
         method: method as "cash" | "bkash" | "nagad" | "rocket" | "bank" | "card" | "other",
         note: note.trim() || null,
         created_by: user?.id ?? null,
+        created_at: createdAt,
       });
       if (payErr) throw payErr;
 
@@ -71,6 +82,7 @@ export function PaymentEntryDialog({
         created_by: user?.id ?? null,
         ref_table: "payments",
         ref_id: null,
+        created_at: createdAt,
       });
 
       toast.success(t("p7_Saved_2"));
@@ -114,6 +126,11 @@ export function PaymentEntryDialog({
           <div className="space-y-1.5">
             <Label>{t("p7_Amount_2")} <span className="text-destructive">*</span></Label>
             <Input type="number" inputMode="decimal" autoFocus value={amount} onChange={(e) => setAmount(e.target.value)} />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label>{lang === "bn" ? "তারিখ" : "Date"}</Label>
+            <Input type="date" value={txDate} onChange={(e) => setTxDate(e.target.value)} />
           </div>
 
           <div className="space-y-1.5">
