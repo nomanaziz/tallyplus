@@ -51,6 +51,7 @@ function ContactsPage() {
           phone: p?.phone ?? null,
           address: (r as any).address ?? null,
           due_balance: 0,
+          is_active: (r as any).is_active !== false,
         } as Contact;
       });
   }, [membersRaw]);
@@ -58,6 +59,10 @@ function ContactsPage() {
   const list: Contact[] = tab === "employees" ? employees : contacts;
 
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  useEffect(() => {
+    setStatusFilter(tab === "employees" ? "active" : "all");
+  }, [tab]);
   const [selected, setSelected] = useState<Contact | null>(null);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Contact | null>(null);
@@ -69,8 +74,20 @@ function ContactsPage() {
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return q ? list.filter((c) => c.name.toLowerCase().includes(q) || (c.phone ?? "").includes(q)) : list;
-  }, [list, search]);
+    return list.filter((c) => {
+      if (tab === "employees") {
+        if (statusFilter === "active" && c.is_active === false) return false;
+        if (statusFilter === "inactive" && c.is_active !== false) return false;
+      } else {
+        const bal = Number(c.due_balance) || 0;
+        if (statusFilter === "due" && bal <= 0) return false;
+        if (statusFilter === "settled" && bal !== 0) return false;
+        if (statusFilter === "advance" && bal >= 0) return false;
+      }
+      if (!q) return true;
+      return c.name.toLowerCase().includes(q) || (c.phone ?? "").includes(q);
+    });
+  }, [list, search, statusFilter, tab]);
 
   const filteredKey = filtered.map((f) => f.id).join(",");
   useEffect(() => {
