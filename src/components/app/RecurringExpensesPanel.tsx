@@ -313,6 +313,7 @@ function RecExpDialog({ open, onOpenChange, editing, onSaved }: { open: boolean;
   const [term, setTerm] = useState("");
   const [loanMode, setLoanMode] = useState<LoanMode>("interest_only");
   const [busy, setBusy] = useState(false);
+  const locked = !!editing && isDefaultTpl(editing);
 
   useEffect(() => {
     if (!open) return;
@@ -378,12 +379,17 @@ function RecExpDialog({ open, onOpenChange, editing, onSaved }: { open: boolean;
         <div className="grid gap-3">
           <div className="grid gap-1.5">
             <Label>{tr("p7_Name")}</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder={tr("p7_e_g_Shop_rent")} />
+            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder={tr("p7_e_g_Shop_rent")} readOnly={locked} disabled={locked} />
+            {locked && (
+              <p className="text-[11px] text-muted-foreground">
+                {lang === "bn" ? "নির্দিষ্ট ক্যাটাগরির নাম পরিবর্তন করা যাবে না।" : "Fixed category name can't be changed."}
+              </p>
+            )}
           </div>
           <div className="grid grid-cols-2 gap-2">
             <div className="grid gap-1.5">
               <Label>{tr("p7_Category")}</Label>
-              <Select value={category} onValueChange={(v) => { setCategory(v); if (v === "loan") setKind("loan"); }}>
+              <Select value={category} disabled={locked} onValueChange={(v) => { setCategory(v); if (v === "loan") setKind("loan"); }}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {CAT_OPTIONS.map((o) => <SelectItem key={o.v} value={o.v}>{lang === "bn" ? o.bn : o.en}</SelectItem>)}
