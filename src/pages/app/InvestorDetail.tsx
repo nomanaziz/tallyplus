@@ -22,9 +22,9 @@ function bdt(n: number) {
 }
 
 type Investor = { id: string; name: string; phone: string | null; address: string | null; source_type: string; source_name: string | null; note: string | null; is_active: boolean };
-type Loan = { id: string; principal: number; taken_at: string; interest_type: string; interest_rate: number; tenure_months: number; installment_day: number; first_due_date: string; total_payable: number; total_interest: number; status: string; note: string | null };
+type Loan = { id: string; principal: number; taken_at: string; interest_type: string; interest_rate: number; tenure_months: number; installment_day: number; first_due_date: string; total_payable: number; total_interest: number; status: string; note: string | null; profit_share_pct: number; loss_share_pct: number };
 type Installment = { id: string; loan_id: string; seq_no: number; due_date: string; principal_part: number; interest_part: number; total_due: number; paid_amount: number; paid_at: string | null; status: string };
-type Payment = { id: string; loan_id: string; installment_id: string | null; amount: number; principal_part: number; interest_part: number; paid_at: string; method: string; note: string | null; expense_id: string | null };
+type Payment = { id: string; loan_id: string; installment_id: string | null; amount: number; principal_part: number; interest_part: number; paid_at: string; method: string; note: string | null; expense_id: string | null; kind: string };
 
 function InvestorDetailInner() {
   const { id } = useParams();
@@ -109,6 +109,8 @@ function InvestorDetailInner() {
     installment_day: "5",
     first_due_date: today,
     note: "",
+    profit_share_pct: "",
+    loss_share_pct: "",
   });
   const preview = useMemo(() => {
     const p = Number(loan.principal) || 0;
@@ -122,9 +124,10 @@ function InvestorDetailInner() {
   const saveLoan = async () => {
     if (!current || !id) return;
     const p = Number(loan.principal);
-    const t = Number(loan.tenure_months);
+    const isPS = loan.interest_type === "profit_share";
+    const t = isPS ? 1 : Number(loan.tenure_months);
     if (!p || p <= 0) return toast.error("মূল টাকা দিন");
-    if (!t || t <= 0) return toast.error("কিস্তির সংখ্যা দিন");
+    if (!isPS && (!t || t <= 0)) return toast.error("কিস্তির সংখ্যা দিন");
     const day = Math.max(1, Math.min(28, Number(loan.installment_day) || 1));
     setSavingLoan(true);
     const { data: loanRow, error } = await supabase.from("investor_loans").insert({
@@ -133,11 +136,13 @@ function InvestorDetailInner() {
       principal: p,
       taken_at: loan.taken_at,
       interest_type: loan.interest_type,
-      interest_rate: Number(loan.interest_rate) || 0,
+      interest_rate: isPS ? 0 : (Number(loan.interest_rate) || 0),
       tenure_months: t,
       installment_day: day,
       first_due_date: loan.first_due_date,
       note: loan.note.trim() || null,
+      profit_share_pct: isPS ? (Number(loan.profit_share_pct) || 0) : 0,
+      loss_share_pct: isPS ? (Number(loan.loss_share_pct) || 0) : 0,
     }).select("id").maybeSingle();
     setSavingLoan(false);
     if (error) return toast.error(error.message);
