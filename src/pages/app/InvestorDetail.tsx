@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { RequirePerm } from "@/components/app/RequirePerm";
-import { ArrowLeft, Plus, User, Phone, MapPin, Wallet, CheckCircle2, Clock, Trash2 } from "lucide-react";
+import { ArrowLeft, Plus, User, Phone, MapPin, Wallet, CheckCircle2, Clock, Trash2, TrendingUp, TrendingDown, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { computeSchedule, INTEREST_TYPES, SOURCE_TYPE_LABEL, type InterestType } from "@/lib/investor-emi";
 
@@ -22,9 +22,9 @@ function bdt(n: number) {
 }
 
 type Investor = { id: string; name: string; phone: string | null; address: string | null; source_type: string; source_name: string | null; note: string | null; is_active: boolean };
-type Loan = { id: string; principal: number; taken_at: string; interest_type: string; interest_rate: number; tenure_months: number; installment_day: number; first_due_date: string; total_payable: number; total_interest: number; status: string; note: string | null };
+type Loan = { id: string; principal: number; taken_at: string; interest_type: string; interest_rate: number; tenure_months: number; installment_day: number; first_due_date: string; total_payable: number; total_interest: number; status: string; note: string | null; profit_share_pct: number; loss_share_pct: number };
 type Installment = { id: string; loan_id: string; seq_no: number; due_date: string; principal_part: number; interest_part: number; total_due: number; paid_amount: number; paid_at: string | null; status: string };
-type Payment = { id: string; loan_id: string; installment_id: string | null; amount: number; principal_part: number; interest_part: number; paid_at: string; method: string; note: string | null; expense_id: string | null };
+type Payment = { id: string; loan_id: string; installment_id: string | null; amount: number; principal_part: number; interest_part: number; paid_at: string; method: string; note: string | null; expense_id: string | null; kind: string };
 
 function InvestorDetailInner() {
   const { id } = useParams();
@@ -93,7 +93,14 @@ function InvestorDetailInner() {
     const pays = payQ.data ?? [];
     let taken = 0, payable = 0, interest = 0, paid = 0, paidInterest = 0, paidPrincipal = 0;
     for (const l of loans) { taken += Number(l.principal); payable += Number(l.total_payable); interest += Number(l.total_interest); }
-    for (const p of pays) { paid += Number(p.amount); paidInterest += Number(p.interest_part); paidPrincipal += Number(p.principal_part); }
+    for (const p of pays) {
+      // Only count installment + principal_return as "repayment"; skip profit/loss share.
+      if (p.kind === "installment" || p.kind === "principal_return") {
+        paid += Number(p.amount);
+        paidInterest += Number(p.interest_part);
+        paidPrincipal += Number(p.principal_part);
+      }
+    }
     return { taken, payable, interest, paid, paidInterest, paidPrincipal, outstanding: payable - paid };
   }, [loansQ.data, payQ.data]);
 
@@ -109,6 +116,8 @@ function InvestorDetailInner() {
     installment_day: "5",
     first_due_date: today,
     note: "",
+    profit_share_pct: "",
+    loss_share_pct: "",
   });
   const preview = useMemo(() => {
     const p = Number(loan.principal) || 0;
@@ -122,9 +131,10 @@ function InvestorDetailInner() {
   const saveLoan = async () => {
     if (!current || !id) return;
     const p = Number(loan.principal);
-    const t = Number(loan.tenure_months);
+    const isPS = loan.interest_type === "profit_share";
+    const t = isPS ? 1 : Number(loan.tenure_months);
     if (!p || p <= 0) return toast.error("মূল টাকা দিন");
-    if (!t || t <= 0) return toast.error("কিস্তির সংখ্যা দিন");
+    if (!isPS && (!t || t <= 0)) return toast.error("কিস্তির সংখ্যা দিন");
     const day = Math.max(1, Math.min(28, Number(loan.installment_day) || 1));
     setSavingLoan(true);
     const { data: loanRow, error } = await supabase.from("investor_loans").insert({
@@ -133,11 +143,13 @@ function InvestorDetailInner() {
       principal: p,
       taken_at: loan.taken_at,
       interest_type: loan.interest_type,
-      interest_rate: Number(loan.interest_rate) || 0,
+      interest_rate: isPS ? 0 : (Number(loan.interest_rate) || 0),
       tenure_months: t,
       installment_day: day,
       first_due_date: loan.first_due_date,
       note: loan.note.trim() || null,
+      profit_share_pct: isPS ? (Number(loan.profit_share_pct) || 0) : 0,
+      loss_share_pct: isPS ? (Number(loan.loss_share_pct) || 0) : 0,
     }).select("id").maybeSingle();
     setSavingLoan(false);
     if (error) return toast.error(error.message);
@@ -172,6 +184,102 @@ function InvestorDetailInner() {
     setPayMethod("cash");
     setPayDate(today);
     setPayNote("");
+  };
+
+  // --- Partner settle (profit/loss/principal return) dialog ---
+  const [settleFor, setSettleFor] = useState<Loan | null>(null);
+  const [settleKind, setSettleKind] = useState<"profit_share" | "loss_share" | "principal_return">("profit_share");
+  const [settleBase, setSettleBase] = useState(""); // business profit/loss amount
+  const [settleAmount, setSettleAmount] = useState(""); // final amount to move
+  const [settleMethod, setSettleMethod] = useState<"cash" | "bkash" | "nagad" | "bank">("cash");
+  const [settleDate, setSettleDate] = useState(today);
+  const [settleNote, setSettleNote] = useState("");
+  const [savingSettle, setSavingSettle] = useState(false);
+
+  const openSettle = (l: Loan, kind: typeof settleKind) => {
+    setSettleFor(l);
+    setSettleKind(kind);
+    setSettleBase("");
+    setSettleAmount("");
+    setSettleMethod("cash");
+    setSettleDate(today);
+    setSettleNote("");
+  };
+
+  // auto-compute settle amount from base × share%
+  const settleComputed = useMemo(() => {
+    if (!settleFor) return 0;
+    const b = Number(settleBase) || 0;
+    if (settleKind === "profit_share") return Math.round(b * Number(settleFor.profit_share_pct) / 100 * 100) / 100;
+    if (settleKind === "loss_share") return Math.round(b * Number(settleFor.loss_share_pct) / 100 * 100) / 100;
+    return 0;
+  }, [settleFor, settleBase, settleKind]);
+
+  const saveSettle = async () => {
+    if (!settleFor || !current) return;
+    const amt = Number(settleAmount) || (settleKind !== "principal_return" ? settleComputed : 0);
+    if (!amt || amt <= 0) return toast.error("সঠিক পরিমাণ দিন");
+    setSavingSettle(true);
+    const invName = invQ.data?.name ?? "";
+    const kindLabel = settleKind === "profit_share" ? "লাভের অংশ" : settleKind === "loss_share" ? "লোকসানের অংশ" : "মূল ফেরত";
+    const direction: "in" | "out" = settleKind === "loss_share" ? "in" : "out";
+
+    // 1) mirror to expense/income + cash flow
+    let expenseId: string | null = null;
+    if (direction === "out") {
+      const { data: exp, error: eErr } = await supabase.from("expenses").insert({
+        shop_id: current.id,
+        category: settleKind === "profit_share" ? "Partner লাভের অংশ" : "Partner মূল ফেরত",
+        amount: amt,
+        note: `${invName}${settleNote ? " — " + settleNote : ""}`,
+        paid_via: settleMethod as any,
+        created_by: user?.id ?? null,
+      }).select("id").maybeSingle();
+      if (eErr) { setSavingSettle(false); return toast.error(eErr.message); }
+      expenseId = exp?.id ?? null;
+    }
+
+    // 2) payment record
+    const { data: pRow, error: pErr } = await supabase.from("investor_payments").insert({
+      shop_id: current.id,
+      loan_id: settleFor.id,
+      installment_id: null,
+      amount: amt,
+      principal_part: settleKind === "principal_return" ? amt : 0,
+      interest_part: 0,
+      paid_at: settleDate,
+      method: settleMethod,
+      expense_id: expenseId,
+      note: `${kindLabel}${settleNote ? " — " + settleNote : ""}`,
+      kind: settleKind,
+    }).select("id").maybeSingle();
+    if (pErr) { setSavingSettle(false); return toast.error(pErr.message); }
+
+    // 3) cash flow mirror
+    await supabase.from("cash_movements").insert({
+      shop_id: current.id,
+      amount: amt,
+      direction,
+      note: `${invName} — ${kindLabel}`,
+      ref_table: "investor_payments",
+      ref_id: pRow?.id ?? null,
+      created_by: user?.id ?? null,
+    });
+
+    // 4) close loan if principal fully returned
+    if (settleKind === "principal_return") {
+      const returned = (payQ.data ?? [])
+        .filter((p) => p.loan_id === settleFor.id && p.kind === "principal_return")
+        .reduce((s, p) => s + Number(p.principal_part || p.amount), 0) + amt;
+      if (returned >= Number(settleFor.principal) - 0.01) {
+        await supabase.from("investor_loans").update({ status: "closed" }).eq("id", settleFor.id);
+      }
+    }
+
+    setSavingSettle(false);
+    toast.success("সংরক্ষিত হয়েছে");
+    setSettleFor(null);
+    invalidateAll();
   };
 
   const savePay = async () => {
@@ -298,6 +406,11 @@ function InvestorDetailInner() {
             const insts = (instQ.data ?? []).filter((i) => i.loan_id === l.id);
             const paidCount = insts.filter((i) => i.status === "paid").length;
             const paidTotal = insts.reduce((s, i) => s + Number(i.paid_amount), 0);
+            const isPS = l.interest_type === "profit_share";
+            const loanPays = (payQ.data ?? []).filter((p) => p.loan_id === l.id);
+            const psProfitPaid = loanPays.filter((p) => p.kind === "profit_share").reduce((s, p) => s + Number(p.amount), 0);
+            const psLossIn = loanPays.filter((p) => p.kind === "loss_share").reduce((s, p) => s + Number(p.amount), 0);
+            const psPrincipalReturned = loanPays.filter((p) => p.kind === "principal_return").reduce((s, p) => s + Number(p.amount), 0);
             return (
               <Card key={l.id} className="p-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
@@ -305,21 +418,76 @@ function InvestorDetailInner() {
                     <Wallet className="h-4 w-4 text-primary" />
                     <span className="font-semibold">{bdt(Number(l.principal))}</span>
                     <span className="text-xs text-muted-foreground">
-                      {l.taken_at} • {l.interest_type === "none" ? "সুদহীন" : `${l.interest_rate}% ${l.interest_type === "flat" ? "flat" : "reducing"}`} • {l.tenure_months} মাস
+                      {l.taken_at} • {isPS
+                        ? `Partner • লাভ ${l.profit_share_pct}% / লোকসান ${l.loss_share_pct}%`
+                        : `${l.interest_type === "none" ? "সুদহীন" : `${l.interest_rate}% ${l.interest_type === "flat" ? "flat" : "reducing"}`} • ${l.tenure_months} মাস`}
                     </span>
                     <span className={"rounded-md border px-1.5 py-0.5 text-[10px] font-semibold " + (l.status === "closed" ? "border-emerald-300 bg-emerald-50 text-emerald-700" : "border-primary/30 bg-primary/10 text-primary")}>
                       {l.status === "closed" ? "সম্পূর্ণ শোধ" : "চলমান"}
                     </span>
                   </div>
                   <div className="flex items-center gap-2 text-xs">
-                    <span className="text-muted-foreground">মোট: {bdt(Number(l.total_payable))}</span>
-                    <span className="text-emerald-700">শোধ: {bdt(paidTotal)} ({paidCount}/{insts.length})</span>
+                    {isPS ? (
+                      <>
+                        <span className="text-emerald-700">মূল ফেরত: {bdt(psPrincipalReturned)}</span>
+                        <span className="text-amber-700">লাভ প্রদান: {bdt(psProfitPaid)}</span>
+                        <span className="text-rose-700">লোকসান আদায়: {bdt(psLossIn)}</span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-muted-foreground">মোট: {bdt(Number(l.total_payable))}</span>
+                        <span className="text-emerald-700">শোধ: {bdt(paidTotal)} ({paidCount}/{insts.length})</span>
+                      </>
+                    )}
                     <Button variant="ghost" size="icon" className="h-7 w-7 text-rose-600" onClick={() => deleteLoan(l.id)}>
                       <Trash2 className="h-3.5 w-3.5" />
                     </Button>
                   </div>
                 </div>
 
+                {isPS ? (
+                  <div className="mt-2 space-y-2">
+                    <div className="flex flex-wrap gap-2">
+                      <Button size="sm" variant="outline" onClick={() => openSettle(l, "profit_share")}>
+                        <TrendingUp className="mr-1 h-3.5 w-3.5 text-emerald-600" /> লাভ প্রদান
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => openSettle(l, "loss_share")}>
+                        <TrendingDown className="mr-1 h-3.5 w-3.5 text-rose-600" /> লোকসান আদায়
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => openSettle(l, "principal_return")}>
+                        <RotateCcw className="mr-1 h-3.5 w-3.5" /> মূল ফেরত
+                      </Button>
+                    </div>
+                    {loanPays.length > 0 && (
+                      <div className="overflow-x-auto">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>তারিখ</TableHead>
+                              <TableHead>ধরন</TableHead>
+                              <TableHead className="text-right">পরিমাণ</TableHead>
+                              <TableHead>Method</TableHead>
+                              <TableHead>নোট</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {loanPays.map((p) => (
+                              <TableRow key={p.id}>
+                                <TableCell>{p.paid_at}</TableCell>
+                                <TableCell>{p.kind === "profit_share" ? "লাভের অংশ" : p.kind === "loss_share" ? "লোকসানের অংশ" : p.kind === "principal_return" ? "মূল ফেরত" : "কিস্তি"}</TableCell>
+                                <TableCell className={"text-right font-semibold " + (p.kind === "loss_share" ? "text-emerald-700" : "text-rose-700")}>
+                                  {p.kind === "loss_share" ? "+" : "-"}{bdt(Number(p.amount))}
+                                </TableCell>
+                                <TableCell>{p.method}</TableCell>
+                                <TableCell className="text-xs text-muted-foreground">{p.note}</TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    )}
+                  </div>
+                ) : (
                 <div className="mt-2 overflow-x-auto">
                   <Table>
                     <TableHeader>
@@ -367,6 +535,7 @@ function InvestorDetailInner() {
                     </TableBody>
                   </Table>
                 </div>
+                )}
               </Card>
             );
           })}
@@ -395,22 +564,40 @@ function InvestorDetailInner() {
                 </SelectContent>
               </Select>
             </div>
-            <div>
-              <Label>সুদের হার (বার্ষিক %)</Label>
-              <Input inputMode="decimal" disabled={loan.interest_type === "none"} value={loan.interest_rate} onChange={(e) => setLoan({ ...loan, interest_rate: e.target.value.replace(/[^0-9.]/g, "") })} />
-            </div>
-            <div>
-              <Label>কিস্তির সংখ্যা (মাস) *</Label>
-              <Input inputMode="numeric" value={loan.tenure_months} onChange={(e) => setLoan({ ...loan, tenure_months: e.target.value.replace(/[^0-9]/g, "") })} />
-            </div>
-            <div>
-              <Label>প্রতি মাসের কত তারিখে (১-২৮)</Label>
-              <Input inputMode="numeric" value={loan.installment_day} onChange={(e) => setLoan({ ...loan, installment_day: e.target.value.replace(/[^0-9]/g, "") })} />
-            </div>
-            <div className="md:col-span-2">
-              <Label>প্রথম কিস্তির তারিখ</Label>
-              <Input type="date" value={loan.first_due_date} onChange={(e) => setLoan({ ...loan, first_due_date: e.target.value })} />
-            </div>
+            {loan.interest_type === "profit_share" ? (
+              <>
+                <div>
+                  <Label>লাভের অংশ (%)</Label>
+                  <Input inputMode="decimal" placeholder="যেমন 5" value={loan.profit_share_pct} onChange={(e) => setLoan({ ...loan, profit_share_pct: e.target.value.replace(/[^0-9.]/g, "") })} />
+                </div>
+                <div>
+                  <Label>লোকসানের অংশ (%)</Label>
+                  <Input inputMode="decimal" placeholder="যেমন 50" value={loan.loss_share_pct} onChange={(e) => setLoan({ ...loan, loss_share_pct: e.target.value.replace(/[^0-9.]/g, "") })} />
+                </div>
+                <div className="md:col-span-2 text-[11px] text-muted-foreground">
+                  Partner-এর জন্য কোনো fixed কিস্তি নেই। ব্যবসার লাভ/লোকসান হলে "লাভ/লোকসান settle" থেকে হিসাব করে দিন।
+                </div>
+              </>
+            ) : (
+              <>
+                <div>
+                  <Label>সুদের হার (বার্ষিক %)</Label>
+                  <Input inputMode="decimal" disabled={loan.interest_type === "none"} value={loan.interest_rate} onChange={(e) => setLoan({ ...loan, interest_rate: e.target.value.replace(/[^0-9.]/g, "") })} />
+                </div>
+                <div>
+                  <Label>কিস্তির সংখ্যা (মাস) *</Label>
+                  <Input inputMode="numeric" value={loan.tenure_months} onChange={(e) => setLoan({ ...loan, tenure_months: e.target.value.replace(/[^0-9]/g, "") })} />
+                </div>
+                <div>
+                  <Label>প্রতি মাসের কত তারিখে (১-২৮)</Label>
+                  <Input inputMode="numeric" value={loan.installment_day} onChange={(e) => setLoan({ ...loan, installment_day: e.target.value.replace(/[^0-9]/g, "") })} />
+                </div>
+                <div className="md:col-span-2">
+                  <Label>প্রথম কিস্তির তারিখ</Label>
+                  <Input type="date" value={loan.first_due_date} onChange={(e) => setLoan({ ...loan, first_due_date: e.target.value })} />
+                </div>
+              </>
+            )}
             <div className="md:col-span-2">
               <Label>নোট</Label>
               <Textarea rows={2} value={loan.note} onChange={(e) => setLoan({ ...loan, note: e.target.value })} />
@@ -499,6 +686,68 @@ function InvestorDetailInner() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setPayInst(null)}>বাতিল</Button>
             <Button onClick={savePay} disabled={savingPay}>পরিশোধ সংরক্ষণ</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Partner settle dialog */}
+      <Dialog open={!!settleFor} onOpenChange={(v) => !v && setSettleFor(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {settleKind === "profit_share" ? "লাভের অংশ প্রদান" : settleKind === "loss_share" ? "লোকসানের অংশ আদায়" : "মূল টাকা ফেরত"}
+            </DialogTitle>
+          </DialogHeader>
+          {settleFor && (
+            <div className="space-y-3">
+              <div className="text-xs text-muted-foreground">
+                মূল বিনিয়োগ: {bdt(Number(settleFor.principal))} • লাভ {settleFor.profit_share_pct}% / লোকসান {settleFor.loss_share_pct}%
+              </div>
+              {settleKind !== "principal_return" && (
+                <div>
+                  <Label>ব্যবসার মোট {settleKind === "profit_share" ? "লাভ" : "লোকসান"} (এই মাস/সময়ে)</Label>
+                  <Input inputMode="decimal" value={settleBase} onChange={(e) => { const v = e.target.value.replace(/[^0-9.]/g, ""); setSettleBase(v); }} placeholder="ব্যবসার লাভ/লোকসানের পরিমাণ" />
+                  <div className="mt-1 text-[11px] text-muted-foreground">
+                    Partner-এর অংশ = <b>{bdt(settleComputed)}</b> (auto)
+                  </div>
+                </div>
+              )}
+              <div>
+                <Label>{settleKind === "principal_return" ? "ফেরতের পরিমাণ" : "আসল পরিমাণ (edit করা যাবে)"}</Label>
+                <Input inputMode="decimal" value={settleAmount || (settleKind !== "principal_return" ? String(settleComputed || "") : "")} onChange={(e) => setSettleAmount(e.target.value.replace(/[^0-9.]/g, ""))} />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <Label>Method</Label>
+                  <Select value={settleMethod} onValueChange={(v) => setSettleMethod(v as any)}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="cash">নগদ</SelectItem>
+                      <SelectItem value="bkash">বিকাশ</SelectItem>
+                      <SelectItem value="nagad">নগদ (Mobile)</SelectItem>
+                      <SelectItem value="bank">ব্যাংক</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>তারিখ</Label>
+                  <Input type="date" value={settleDate} onChange={(e) => setSettleDate(e.target.value)} />
+                </div>
+              </div>
+              <div>
+                <Label>নোট</Label>
+                <Input value={settleNote} onChange={(e) => setSettleNote(e.target.value)} />
+              </div>
+              <div className="text-[11px] text-muted-foreground">
+                {settleKind === "loss_share"
+                  ? "Partner থেকে টাকা আসবে — dashboard cash flow-এ যোগ হবে।"
+                  : "Shop থেকে টাকা যাবে — খরচ ও cash flow থেকে বিয়োগ হবে।"}
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSettleFor(null)}>বাতিল</Button>
+            <Button onClick={saveSettle} disabled={savingSettle}>সংরক্ষণ</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -2526,8 +2526,10 @@ export type Database = {
           interest_rate: number
           interest_type: string
           investor_id: string
+          loss_share_pct: number
           note: string | null
           principal: number
+          profit_share_pct: number
           shop_id: string
           status: string
           taken_at: string
@@ -2544,8 +2546,10 @@ export type Database = {
           interest_rate?: number
           interest_type?: string
           investor_id: string
+          loss_share_pct?: number
           note?: string | null
           principal: number
+          profit_share_pct?: number
           shop_id: string
           status?: string
           taken_at?: string
@@ -2562,8 +2566,10 @@ export type Database = {
           interest_rate?: number
           interest_type?: string
           investor_id?: string
+          loss_share_pct?: number
           note?: string | null
           principal?: number
+          profit_share_pct?: number
           shop_id?: string
           status?: string
           taken_at?: string
@@ -2590,6 +2596,7 @@ export type Database = {
           id: string
           installment_id: string | null
           interest_part: number
+          kind: string
           loan_id: string
           method: string
           note: string | null
@@ -2604,6 +2611,7 @@ export type Database = {
           id?: string
           installment_id?: string | null
           interest_part?: number
+          kind?: string
           loan_id: string
           method?: string
           note?: string | null
@@ -2618,6 +2626,7 @@ export type Database = {
           id?: string
           installment_id?: string | null
           interest_part?: number
+          kind?: string
           loan_id?: string
           method?: string
           note?: string | null
