@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 
 export type EmployeeEditData = {
@@ -17,6 +18,7 @@ export type EmployeeEditData = {
   father_name: string | null;
   mother_name: string | null;
   emergency_phone: string | null;
+  is_active?: boolean;
 };
 
 export function EmployeeEditDialog({
@@ -39,6 +41,7 @@ export function EmployeeEditDialog({
   const [fatherName, setFatherName] = useState("");
   const [motherName, setMotherName] = useState("");
   const [emergencyPhone, setEmergencyPhone] = useState("");
+  const [isActive, setIsActive] = useState(true);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -51,6 +54,7 @@ export function EmployeeEditDialog({
       setFatherName(employee.father_name ?? "");
       setMotherName(employee.mother_name ?? "");
       setEmergencyPhone(employee.emergency_phone ?? "");
+      setIsActive(employee.is_active ?? true);
     }
   }, [open, employee]);
 
@@ -70,6 +74,7 @@ export function EmployeeEditDialog({
       father_name: fatherName.trim() || null,
       mother_name: motherName.trim() || null,
       emergency_phone: emergencyPhone.trim() || null,
+      is_active: isActive,
     };
     const { error } = await supabase
       .from("shop_members")
@@ -127,6 +132,19 @@ export function EmployeeEditDialog({
           <div className="grid gap-1.5">
             <Label>{t("p7_Emergency_contact_phone")}</Label>
             <Input value={emergencyPhone} onChange={(e) => setEmergencyPhone(e.target.value)} />
+          </div>
+          <div className="flex items-center justify-between rounded-lg border p-3">
+            <div>
+              <div className="text-sm font-semibold">
+                {lang === "bn" ? "সক্রিয় কর্মচারী" : "Active employee"}
+              </div>
+              <div className="text-xs text-muted-foreground">
+                {lang === "bn"
+                  ? "নিষ্ক্রিয় হলে তালিকায় লুকানো থাকবে ও SMS যাবে না।"
+                  : "Inactive employees are hidden from lists and will not receive SMS."}
+              </div>
+            </div>
+            <Switch checked={isActive} onCheckedChange={setIsActive} />
           </div>
         </div>
         <DialogFooter>
