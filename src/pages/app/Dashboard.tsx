@@ -212,4 +212,26 @@ function Stat({ label, value, tone }: { label: string; value: string; tone: "pri
     </div>
   );
 }
+
+function StatLink({
+  to, label, value, tone,
+}: {
+  to: string;
+  label: string;
+  value: string | number;
+  tone: "primary" | "danger" | "success" | "muted" | "default";
+}) {
+  const cls =
+    tone === "primary" ? "text-primary" :
+    tone === "danger" ? "text-destructive" :
+    tone === "success" ? "text-success" :
+    tone === "muted" ? "text-muted-foreground" :
+    "text-foreground";
+  return (
+    <Link to={to as never} className="p-2.5 text-center hover:bg-accent">
+      <div className="text-[11px] text-muted-foreground">{label}</div>
+      <div className={`mt-0.5 text-sm font-bold ${cls}`}>{value}</div>
+    </Link>
+  );
+}
 export default Dashboard;
