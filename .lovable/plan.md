@@ -1,27 +1,36 @@
-## পরিবর্তনের তালিকা — `src/components/app/POSPage.tsx`
+## লক্ষ্য
+নতুন `DateRangePicker` (বাম পাশে preset list, ডান পাশে "তারিখ পরিবর্তন করুন" custom fields + বাতিল/প্রয়োগ) সব page-এ ব্যবহার করা — যেখানে যেখানে এখনও পুরনো "From date / To date" আলাদা field দেওয়া আছে সেগুলো replace করা।
 
-### ১. Discount default টাকা (৳) — Buy + Sell দুই কার্টেই
-- কার্ট লাইনের `line_discount_mode` এর default `pct` থেকে পরিবর্তন করে **`amt`** করা হবে (নতুন item add হলে initialize হবে)।
-- টোগল বাটনটা থাকবে (% / ৳) যাতে দরকার হলে বদলানো যায়, তবে initial active = ৳।
-- Cart-এর নিচের overall **Discount** ইনপুটও default `amt` mode থাকবে (এটা আগে থেকেই `amt`, যাচাই করা হয়েছে)।
+## যেসব page ইতিমধ্যেই নতুন DateRangePicker use করছে (কোন কাজ নেই)
+Reports, SalesReport, PurchaseReport, ExpenseReport, IncomeReport, ProductReport, StockReport, SupplierReport, CombinedReport, OwnerReport, ProfitLoss, TopCustomers, TopEmployees, ReportShell — এগুলো automatically নতুন design পেয়ে যাবে।
 
-### ২. Buy (Purchase) কার্টের card alignment + ছাদ সরানো
-শুধু `mode === "purchase"` এর সময়:
-- প্রতিটা cart item থেকে **per-card border/shadow/background সরানো** (`rounded-xl border bg-card shadow-sm` → শুধু `border-b` divider)। একটাই বাইরের কন্টেইনার থাকবে।
-- পুরো লাইনটাকে **single horizontal row** এ সাজানো: image · নাম+ইউনিট · cost · expiry · serial · disc · qty stepper · line total · delete। flex-wrap সরিয়ে compact একটানা row।
-- **+1 / +2 / +5 quick-add বাটন গুলো সরানো হবে (purchase mode এ)**। Sell mode এ যেমন আছে তেমন থাকবে।
+## যেসব page-এ range filter আছে কিন্তু raw `<input type="date">` ব্যবহার হচ্ছে → replace করব
+1. `src/pages/app/SalesLedger.tsx`
+2. `src/pages/app/PurchaseLedger.tsx`
+3. `src/pages/app/ExpenseLedger.tsx` (list filter অংশে; entry dialog-এর single date field ঠিক থাকবে)
+4. `src/pages/app/DueHistory.tsx`
+5. `src/pages/app/OwnerLedger.tsx` (list filter; entry dialog ঠিক থাকবে)
+6. `src/pages/app/LpgExtras.tsx`
+7. `src/pages/app/Assets.tsx`
+8. `src/pages/app/Products.tsx` (যদি range filter থাকে)
+9. `src/pages/app/Cashbox.tsx` (list filter অংশ; entry dialog ঠিক থাকবে)
+10. `src/pages/app/online-shop/PromoCodes.tsx`
+11. `src/pages/customer/Money.tsx`
+12. `src/components/customer/RecurringRulesTab.tsx`
+13. `src/components/customer/LoansTab.tsx`
+14. `src/components/app/ContactLedgerPanel.tsx`
 
-### ৩. Sell কার্ট অপরিবর্তিত
-Sell এর design / +1 +2 +5 / per-card ছাদ — সব আগের মতো থাকবে।
+প্রতিটাতে করব:
+- দুইটা আলাদা `<input type="date">` field সরাব
+- `import { DateRangePicker, todayIso, monthStartIso } from "@/components/app/DateRangePicker"` যোগ করব
+- `range` state কে `{start, end}` shape-এ রাখব (যদি না থাকে)
+- `<DateRangePicker value={range} onChange={setRange} />` বসাব
 
-### ৪. Walking customer/seller — empty title fix
-Checkout dialog এ যখন **Walking customer** (sell) বা **Walking seller / cash purchase** (purchase) টোগল on করে save করা হয়, এখন `customer_id` / `supplier_id` null থাকে — ফলে invoice/ledger এ contact কলাম খালি।
+## যেগুলো টাচ করব না
+Entry dialog-এর single date field (backdating-এর জন্য) — `PaymentEntryDialog`, `MoneyDueEntryDialog`, `POSPage`, `QuickSellSheet`, `ProductSerialsDialog`, `Cashbox` entry, `ExpenseLedger` entry, `OwnerLedger` entry। এগুলো range না, তাই আগের মতই একক date field থাকবে।
 
-Fix: save এর সময় skipParty হলে contact insert পেলোডে `name` হিসেবে **"Walking customer"** (ইংরেজি) / **"ওয়াকিং কাস্টমার"** (বাংলা) সেট হবে (sell + purchase দুই ক্ষেত্রেই, user এর কথা অনুসারে দুটার জন্যই "Walking customer")। ফলে invoice ও ledger header এ ঐ নামটা দেখাবে। phone/address null থাকবে।
+## Font
+আগেই "Noto Sans Bengali" primary করা হয়েছে — নতুন কিছু লাগবে না।
 
-দুই-পথেই (online + offline branch) এই default name apply হবে।
-
-### ফাইল
-- edit: `src/components/app/POSPage.tsx` — উপরের চারটা পরিবর্তন।
-
-DB/schema পরিবর্তন নেই।
+## Verification
+প্রতিটা page-এর filter bar-এ নতুন picker রেন্ডার হচ্ছে কিনা preview-তে দেখব; build error না আসলে ঠিক আছে।
