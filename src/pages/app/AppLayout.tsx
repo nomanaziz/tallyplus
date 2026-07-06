@@ -11,6 +11,7 @@ import { AppTopbar } from "@/components/app/AppTopbar";
 import { AddShopDialog } from "@/components/app/AddShopDialog";
 import { MobileBottomNav } from "@/components/app/MobileBottomNav";
 import { MobileBackBar } from "@/components/app/MobileBackBar";
+import { DesktopBackBar } from "@/components/app/DesktopBackBar";
 import { PromoPopupDialog } from "@/components/app/PromoPopupDialog";
 import { SampleProductImportSheet } from "@/components/app/SampleProductImportSheet";
 import { TrialBanner } from "@/components/app/TrialBanner";
@@ -238,6 +239,7 @@ function AppLayout({ ownsShop }: { ownsShop: boolean }) {
         <TrialBanner />
         <TrialEndingDialog />
         <MobileBackBar />
+        <DesktopBackBar />
         <main className="flex-1 overflow-auto pb-20 md:pb-0">
           <Outlet />
         </main>
