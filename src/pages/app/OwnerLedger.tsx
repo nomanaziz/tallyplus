@@ -12,8 +12,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { EmptyState } from "@/components/app/EmptyState";
-import { StatCard, StatGrid } from "@/components/app/StatCard";
-import { ActionTilePair } from "@/components/app/ActionTilePair";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -59,30 +57,33 @@ function OwnerLedgerPage() {
 
   return (
     <div className="container px-4 py-4">
-      <div className="mb-1 text-xs text-muted-foreground">Owner Book</div>
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      {/* Compact header: back, title, totals chips, add buttons */}
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => nav({ to: "/app/dashboard" })}>
             <ArrowLeft className="h-4 w-4" />
           </Button>
-          <Wallet className="h-6 w-6 text-primary" />
-          <h1 className="text-xl font-extrabold md:text-2xl">{t("p5_Owner_Book")}</h1>
+          <Wallet className="h-5 w-5 text-primary" />
+          <h1 className="text-lg font-extrabold md:text-xl">{t("p5_Owner_Book")}</h1>
+          <span className="ml-1 rounded-md border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700">
+            {t("p5_Total_invest")}: {fmtMoney(totals.invest, lang)}
+          </span>
+          <span className="rounded-md border border-rose-200 bg-rose-50 px-2 py-0.5 text-xs font-semibold text-rose-700">
+            {t("p5_Total_withdraw")}: {fmtMoney(totals.withdraw, lang)}
+          </span>
+          <span className={"rounded-md border px-2 py-0.5 text-xs font-semibold " + (totals.net >= 0 ? "border-primary/30 bg-primary/10 text-primary" : "border-rose-200 bg-rose-50 text-rose-700")}>
+            {t("p5_Net_capital")}: {fmtMoney(totals.net, lang)}
+          </span>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button size="sm" variant="outline" className="gap-1 text-emerald-700 border-emerald-300" onClick={() => { setEditing(null); setPresetDir("invest"); setOpen(true); }}>
+            <ArrowDownCircle className="h-4 w-4" /> {t("p5_Owner_invested")}
+          </Button>
+          <Button size="sm" variant="outline" className="gap-1 text-rose-700 border-rose-300" onClick={() => { setEditing(null); setPresetDir("withdraw"); setOpen(true); }}>
+            <ArrowUpCircle className="h-4 w-4" /> {t("p5_Owner_withdrew")}
+          </Button>
         </div>
       </div>
-
-      <ActionTilePair
-        className="mt-4"
-        tiles={[
-          { label: t("p5_Owner_invested"), icon: <ArrowDownCircle className="h-5 w-5" />, tone: "success", onClick: () => { setEditing(null); setPresetDir("invest"); setOpen(true); } },
-          { label: t("p5_Owner_withdrew"), icon: <ArrowUpCircle className="h-5 w-5" />, tone: "danger", onClick: () => { setEditing(null); setPresetDir("withdraw"); setOpen(true); } },
-        ]}
-      />
-
-      <StatGrid className="mt-4">
-        <StatCard icon={<ArrowDownCircle className="h-4 w-4" />} label={t("p5_Total_invest")} value={fmtMoney(totals.invest, lang)} tone="success" />
-        <StatCard icon={<ArrowUpCircle className="h-4 w-4" />} label={t("p5_Total_withdraw")} value={fmtMoney(totals.withdraw, lang)} tone="danger" />
-        <StatCard icon={<Wallet className="h-4 w-4" />} label={t("p5_Net_capital")} value={fmtMoney(totals.net, lang)} tone={totals.net >= 0 ? "primary" : "danger"} />
-      </StatGrid>
 
       <div className="mt-4 rounded-xl border bg-card">
         {list.length === 0 ? (
