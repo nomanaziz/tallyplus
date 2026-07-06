@@ -399,6 +399,11 @@ function InvestorDetailInner() {
             const insts = (instQ.data ?? []).filter((i) => i.loan_id === l.id);
             const paidCount = insts.filter((i) => i.status === "paid").length;
             const paidTotal = insts.reduce((s, i) => s + Number(i.paid_amount), 0);
+            const isPS = l.interest_type === "profit_share";
+            const loanPays = (payQ.data ?? []).filter((p) => p.loan_id === l.id);
+            const psProfitPaid = loanPays.filter((p) => p.kind === "profit_share").reduce((s, p) => s + Number(p.amount), 0);
+            const psLossIn = loanPays.filter((p) => p.kind === "loss_share").reduce((s, p) => s + Number(p.amount), 0);
+            const psPrincipalReturned = loanPays.filter((p) => p.kind === "principal_return").reduce((s, p) => s + Number(p.amount), 0);
             return (
               <Card key={l.id} className="p-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
@@ -406,21 +411,76 @@ function InvestorDetailInner() {
                     <Wallet className="h-4 w-4 text-primary" />
                     <span className="font-semibold">{bdt(Number(l.principal))}</span>
                     <span className="text-xs text-muted-foreground">
-                      {l.taken_at} • {l.interest_type === "none" ? "সুদহীন" : `${l.interest_rate}% ${l.interest_type === "flat" ? "flat" : "reducing"}`} • {l.tenure_months} মাস
+                      {l.taken_at} • {isPS
+                        ? `Partner • লাভ ${l.profit_share_pct}% / লোকসান ${l.loss_share_pct}%`
+                        : `${l.interest_type === "none" ? "সুদহীন" : `${l.interest_rate}% ${l.interest_type === "flat" ? "flat" : "reducing"}`} • ${l.tenure_months} মাস`}
                     </span>
                     <span className={"rounded-md border px-1.5 py-0.5 text-[10px] font-semibold " + (l.status === "closed" ? "border-emerald-300 bg-emerald-50 text-emerald-700" : "border-primary/30 bg-primary/10 text-primary")}>
                       {l.status === "closed" ? "সম্পূর্ণ শোধ" : "চলমান"}
                     </span>
                   </div>
                   <div className="flex items-center gap-2 text-xs">
-                    <span className="text-muted-foreground">মোট: {bdt(Number(l.total_payable))}</span>
-                    <span className="text-emerald-700">শোধ: {bdt(paidTotal)} ({paidCount}/{insts.length})</span>
+                    {isPS ? (
+                      <>
+                        <span className="text-emerald-700">মূল ফেরত: {bdt(psPrincipalReturned)}</span>
+                        <span className="text-amber-700">লাভ প্রদান: {bdt(psProfitPaid)}</span>
+                        <span className="text-rose-700">লোকসান আদায়: {bdt(psLossIn)}</span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-muted-foreground">মোট: {bdt(Number(l.total_payable))}</span>
+                        <span className="text-emerald-700">শোধ: {bdt(paidTotal)} ({paidCount}/{insts.length})</span>
+                      </>
+                    )}
                     <Button variant="ghost" size="icon" className="h-7 w-7 text-rose-600" onClick={() => deleteLoan(l.id)}>
                       <Trash2 className="h-3.5 w-3.5" />
                     </Button>
                   </div>
                 </div>
 
+                {isPS ? (
+                  <div className="mt-2 space-y-2">
+                    <div className="flex flex-wrap gap-2">
+                      <Button size="sm" variant="outline" onClick={() => openSettle(l, "profit_share")}>
+                        <TrendingUp className="mr-1 h-3.5 w-3.5 text-emerald-600" /> লাভ প্রদান
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => openSettle(l, "loss_share")}>
+                        <TrendingDown className="mr-1 h-3.5 w-3.5 text-rose-600" /> লোকসান আদায়
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => openSettle(l, "principal_return")}>
+                        <RotateCcw className="mr-1 h-3.5 w-3.5" /> মূল ফেরত
+                      </Button>
+                    </div>
+                    {loanPays.length > 0 && (
+                      <div className="overflow-x-auto">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>তারিখ</TableHead>
+                              <TableHead>ধরন</TableHead>
+                              <TableHead className="text-right">পরিমাণ</TableHead>
+                              <TableHead>Method</TableHead>
+                              <TableHead>নোট</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {loanPays.map((p) => (
+                              <TableRow key={p.id}>
+                                <TableCell>{p.paid_at}</TableCell>
+                                <TableCell>{p.kind === "profit_share" ? "লাভের অংশ" : p.kind === "loss_share" ? "লোকসানের অংশ" : p.kind === "principal_return" ? "মূল ফেরত" : "কিস্তি"}</TableCell>
+                                <TableCell className={"text-right font-semibold " + (p.kind === "loss_share" ? "text-emerald-700" : "text-rose-700")}>
+                                  {p.kind === "loss_share" ? "+" : "-"}{bdt(Number(p.amount))}
+                                </TableCell>
+                                <TableCell>{p.method}</TableCell>
+                                <TableCell className="text-xs text-muted-foreground">{p.note}</TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    )}
+                  </div>
+                ) : (
                 <div className="mt-2 overflow-x-auto">
                   <Table>
                     <TableHeader>
@@ -468,6 +528,7 @@ function InvestorDetailInner() {
                     </TableBody>
                   </Table>
                 </div>
+                )}
               </Card>
             );
           })}
