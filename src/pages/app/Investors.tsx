@@ -177,7 +177,7 @@ function InvestorsPageInner() {
       {investorsQ.isLoading ? (
         <Card className="p-6 text-center text-sm text-muted-foreground">লোড হচ্ছে…</Card>
       ) : filtered.length === 0 ? (
-        <EmptyState title="কোনো বিনিয়োগকারী নেই" description="উপরে থেকে ‘নতুন বিনিয়োগকারী’ চাপুন।" />
+        <EmptyState title="কোনো বিনিয়োগকারী নেই — উপরে থেকে ‘নতুন বিনিয়োগকারী’ চাপুন" />
       ) : (
         <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((inv) => {
