@@ -233,6 +233,7 @@ function ExpenseDialog({ open, onOpenChange, editing, defaultCategory, onSaved }
   const [amount, setAmount] = useState("");
   const [note, setNote] = useState("");
   const [paidVia, setPaidVia] = useState<"cash" | "bkash" | "nagad" | "rocket" | "bank">("cash");
+  const [txDate, setTxDate] = useState<string>(new Date().toISOString().slice(0, 10));
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -241,6 +242,7 @@ function ExpenseDialog({ open, onOpenChange, editing, defaultCategory, onSaved }
       setAmount(editing ? String(editing.amount) : "");
       setNote(editing?.note ?? "");
       setPaidVia(((editing?.paid_via as "cash" | "bkash" | "nagad" | "rocket" | "bank") ?? "cash"));
+      setTxDate((editing?.created_at ?? new Date().toISOString()).slice(0, 10));
     }
   }, [open, editing, defaultCategory]);
 
@@ -249,7 +251,8 @@ function ExpenseDialog({ open, onOpenChange, editing, defaultCategory, onSaved }
     const amt = Number(amount);
     if (!amt || amt <= 0) { toast.error(t("p5_Enter_amount")); return; }
     setBusy(true);
-    const payload = { category: category.trim() || null, amount: amt, note: note.trim() || null, paid_via: paidVia, shop_id: current.id, created_by: user.id };
+    const createdAt = new Date(txDate + "T00:00:00").toISOString();
+    const payload = { category: category.trim() || null, amount: amt, note: note.trim() || null, paid_via: paidVia, shop_id: current.id, created_by: user.id, created_at: createdAt };
     const { error } = editing
       ? await supabase.from("expenses").update(payload).eq("id", editing.id)
       : await supabase.from("expenses").insert(payload);
@@ -280,6 +283,10 @@ function ExpenseDialog({ open, onOpenChange, editing, defaultCategory, onSaved }
           <div className="grid gap-1.5">
             <Label>{t("p5_Amount")}</Label>
             <Input type="number" autoFocus value={amount} onChange={(e) => setAmount(e.target.value)} />
+          </div>
+          <div className="grid gap-1.5">
+            <Label>{t("p5_Date")}</Label>
+            <Input type="date" value={txDate} onChange={(e) => setTxDate(e.target.value)} />
           </div>
           <div className="grid gap-1.5">
             <Label>{t("p5_Paid_via")}</Label>

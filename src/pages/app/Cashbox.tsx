@@ -338,10 +338,11 @@ function CashEntryDialog({
   const [busy, setBusy] = useState(false);
   const [counts, setCounts] = useState<DenomCounts>({});
   const [manualMode, setManualMode] = useState(false);
+  const [txDate, setTxDate] = useState<string>(new Date().toISOString().slice(0, 10));
   const open = direction !== null;
 
   useEffect(() => {
-    if (open) { setAmount(""); setNote(""); setCounts({}); setManualMode(false); }
+    if (open) { setAmount(""); setNote(""); setCounts({}); setManualMode(false); setTxDate(new Date().toISOString().slice(0, 10)); }
   }, [open]);
 
   const denomSum = denomTotal(counts);
@@ -364,6 +365,7 @@ function CashEntryDialog({
         note: note.trim() || null,
         created_by: user.id,
         denominations: denom,
+        created_at: new Date(txDate + "T00:00:00").toISOString(),
       },
     });
     setBusy(false);
@@ -412,6 +414,11 @@ function CashEntryDialog({
               available={!isIn ? available : undefined}
             />
           )}
+
+          <div className="grid gap-1.5">
+            <Label>{lang === "bn" ? "তারিখ" : "Date"}</Label>
+            <Input type="date" value={txDate} onChange={(e) => setTxDate(e.target.value)} />
+          </div>
 
           <div className="grid gap-1.5">
             <Label>{t("p2a_note")}</Label>
