@@ -823,6 +823,51 @@ function InvestorDetailInner() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Edit partner payment dialog */}
+      <Dialog open={!!editPay} onOpenChange={(v) => !v && setEditPay(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              সম্পাদনা — {editPay?.kind === "profit_share" ? "লাভের অংশ" : editPay?.kind === "loss_share" ? "লোকসানের অংশ" : editPay?.kind === "principal_return" ? "মূল ফেরত" : "কিস্তি"}
+            </DialogTitle>
+          </DialogHeader>
+          {editPay && (
+            <div className="space-y-3">
+              <div>
+                <Label>পরিমাণ</Label>
+                <Input inputMode="decimal" value={ePayAmount} onChange={(e) => setEPayAmount(e.target.value.replace(/[^0-9.]/g, ""))} />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <Label>Method</Label>
+                  <Select value={ePayMethod} onValueChange={(v) => setEPayMethod(v as any)}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="cash">নগদ</SelectItem>
+                      <SelectItem value="bkash">বিকাশ</SelectItem>
+                      <SelectItem value="nagad">নগদ (Mobile)</SelectItem>
+                      <SelectItem value="bank">ব্যাংক</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>তারিখ</Label>
+                  <Input type="date" value={ePayDate} onChange={(e) => setEPayDate(e.target.value)} />
+                </div>
+              </div>
+              <div>
+                <Label>নোট</Label>
+                <Input value={ePayNote} onChange={(e) => setEPayNote(e.target.value)} />
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditPay(null)}>বাতিল</Button>
+            <Button onClick={saveEditPay} disabled={savingEditPay}>সংরক্ষণ</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
