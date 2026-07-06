@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { CalendarDays, X } from "lucide-react";
+import { CalendarDays } from "lucide-react";
 
 export type DateRange = { start: string; end: string };
 
@@ -50,70 +50,91 @@ export function DateRangePicker({
   const activeKey = PRESETS.find((p) => {
     const r = p.fn();
     return r.start === value.start && r.end === value.end;
-  })?.key;
+  })?.key ?? "custom";
+
+  // Local draft for custom date fields — applied on "প্রয়োগ"
+  const [draft, setDraft] = useState<DateRange>(value);
+
+  const t = (bn: string, en: string) => (lang === "bn" ? bn : en);
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover
+      open={open}
+      onOpenChange={(o) => {
+        setOpen(o);
+        if (o) setDraft(value);
+      }}
+    >
       <PopoverTrigger asChild>
         <Button variant="outline" size="sm" className="h-9 gap-2 font-medium">
           <CalendarDays className="h-4 w-4" />
           <span className="text-xs">
-            {fmt(value.start)} - {fmt(value.end)}
+            {fmt(value.start)} — {fmt(value.end)}
           </span>
         </Button>
       </PopoverTrigger>
-      <PopoverContent align={align} className="w-80 p-3">
-        <div className="grid gap-3">
-          <div className="grid grid-cols-2 gap-1.5">
+      <PopoverContent align={align} className="w-[440px] p-0 overflow-hidden">
+        <div className="grid grid-cols-[160px_1fr]">
+          {/* Left: preset list */}
+          <div className="flex flex-col gap-0.5 border-r bg-muted/30 p-2">
             {PRESETS.map((p) => (
               <button
                 key={p.key}
                 onClick={() => { onChange(p.fn()); setOpen(false); }}
                 className={
-                  "h-9 rounded-md border px-2 text-xs font-semibold transition " +
+                  "h-9 rounded-md px-3 text-left text-sm font-medium transition " +
                   (activeKey === p.key
-                    ? "border-primary bg-primary text-primary-foreground"
-                    : "bg-background hover:bg-accent")
+                    ? "bg-primary text-primary-foreground"
+                    : "hover:bg-accent")
                 }
               >
                 {lang === "bn" ? p.bn : p.en}
               </button>
             ))}
-          </div>
-
-          <div className="border-t pt-2">
-            <div className="mb-1.5 text-xs font-semibold text-muted-foreground">
-              {lang === "bn" ? "কাস্টম" : "Custom"}
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <input
-                type="date"
-                value={value.start}
-                onChange={(e) => onChange({ ...value, start: e.target.value })}
-                className="h-9 rounded-md border bg-background px-2 text-sm"
-              />
-              <input
-                type="date"
-                value={value.end}
-                onChange={(e) => onChange({ ...value, end: e.target.value })}
-                className="h-9 rounded-md border bg-background px-2 text-sm"
-              />
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between gap-2">
-            <Button
-              size="sm"
-              variant="ghost"
-              className="h-8 text-xs"
-              onClick={() => onChange({ start: todayIso(), end: todayIso() })}
+            <button
+              className={
+                "h-9 rounded-md px-3 text-left text-sm font-medium transition " +
+                (activeKey === "custom"
+                  ? "bg-primary text-primary-foreground"
+                  : "hover:bg-accent")
+              }
+              onClick={() => setDraft(value)}
             >
-              <X className="mr-1 h-3.5 w-3.5" />
-              {lang === "bn" ? "ক্লিয়ার" : "Clear"}
-            </Button>
-            <Button size="sm" className="h-8" onClick={() => setOpen(false)}>
-              {lang === "bn" ? "ঠিক আছে" : "Done"}
-            </Button>
+              {t("কাস্টম", "Custom")}
+            </button>
+          </div>
+
+          {/* Right: custom range editor */}
+          <div className="flex flex-col p-3">
+            <div className="mb-2 text-sm font-semibold">
+              {t("তারিখ পরিবর্তন করুন", "Change dates")}
+            </div>
+            <label className="mb-2 text-xs font-medium text-muted-foreground">
+              {t("শুরুর তারিখ", "Start date")}
+              <input
+                type="date"
+                value={draft.start}
+                onChange={(e) => setDraft({ ...draft, start: e.target.value })}
+                className="mt-1 block h-9 w-full rounded-md border bg-background px-2 text-sm text-foreground"
+              />
+            </label>
+            <label className="mb-3 text-xs font-medium text-muted-foreground">
+              {t("শেষের তারিখ", "End date")}
+              <input
+                type="date"
+                value={draft.end}
+                onChange={(e) => setDraft({ ...draft, end: e.target.value })}
+                className="mt-1 block h-9 w-full rounded-md border bg-background px-2 text-sm text-foreground"
+              />
+            </label>
+            <div className="mt-auto flex items-center justify-end gap-2">
+              <Button size="sm" variant="outline" className="h-8" onClick={() => setOpen(false)}>
+                {t("বাতিল", "Cancel")}
+              </Button>
+              <Button size="sm" className="h-8" onClick={() => { onChange(draft); setOpen(false); }}>
+                {t("প্রয়োগ", "Apply")}
+              </Button>
+            </div>
           </div>
         </div>
       </PopoverContent>
