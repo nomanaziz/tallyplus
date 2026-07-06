@@ -229,9 +229,9 @@ function StatLink({
     tone === "muted" ? "text-muted-foreground" :
     "text-foreground";
   return (
-    <Link to={to as never} className="p-2.5 text-center hover:bg-accent">
-      <div className="text-[11px] text-muted-foreground">{label}</div>
-      <div className={`mt-0.5 text-sm font-bold ${cls}`}>{value}</div>
+    <Link to={to as never} className="p-3 text-center hover:bg-accent md:p-4">
+      <div className="text-xs md:text-sm text-muted-foreground">{label}</div>
+      <div className={`mt-1 text-base font-bold md:text-xl ${cls}`}>{value}</div>
     </Link>
   );
 }
