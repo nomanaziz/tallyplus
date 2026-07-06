@@ -364,6 +364,64 @@ function InvestorDetailInner() {
     invalidateAll();
   };
 
+  // --- Delete a single partner payment (profit/loss/principal return) ---
+  const deletePartnerPay = async (p: Payment) => {
+    if (!confirm("এই entry মুছে ফেলবেন? সংশ্লিষ্ট খরচ ও cash flow entry-ও মুছে যাবে।")) return;
+    // linked cash movement
+    await supabase.from("cash_movements").delete().eq("ref_table", "investor_payments").eq("ref_id", p.id);
+    // linked expense
+    if (p.expense_id) await supabase.from("expenses").delete().eq("id", p.expense_id);
+    const { error } = await supabase.from("investor_payments").delete().eq("id", p.id);
+    if (error) return toast.error(error.message);
+    // reopen loan if it was closed
+    await supabase.from("investor_loans").update({ status: "open" }).eq("id", p.loan_id).eq("status", "closed");
+    toast.success("মুছে ফেলা হয়েছে");
+    invalidateAll();
+  };
+
+  // --- Edit a single partner payment ---
+  const [editPay, setEditPay] = useState<Payment | null>(null);
+  const [ePayAmount, setEPayAmount] = useState("");
+  const [ePayMethod, setEPayMethod] = useState<"cash" | "bkash" | "nagad" | "bank">("cash");
+  const [ePayDate, setEPayDate] = useState(today);
+  const [ePayNote, setEPayNote] = useState("");
+  const [savingEditPay, setSavingEditPay] = useState(false);
+
+  const openEditPay = (p: Payment) => {
+    setEditPay(p);
+    setEPayAmount(String(p.amount));
+    setEPayMethod((p.method as any) || "cash");
+    setEPayDate(p.paid_at);
+    setEPayNote(p.note ?? "");
+  };
+
+  const saveEditPay = async () => {
+    if (!editPay) return;
+    const amt = Number(ePayAmount);
+    if (!amt || amt <= 0) return toast.error("সঠিক পরিমাণ দিন");
+    setSavingEditPay(true);
+    const affectsPrincipal = editPay.kind === "principal_return" || editPay.kind === "loss_share";
+    const { error } = await supabase.from("investor_payments").update({
+      amount: amt,
+      principal_part: affectsPrincipal ? amt : 0,
+      paid_at: ePayDate,
+      method: ePayMethod,
+      note: ePayNote.trim() || null,
+    }).eq("id", editPay.id);
+    if (error) { setSavingEditPay(false); return toast.error(error.message); }
+    // sync linked expense
+    if (editPay.expense_id) {
+      await supabase.from("expenses").update({ amount: amt, paid_via: ePayMethod as any }).eq("id", editPay.expense_id);
+    }
+    // sync linked cash movement
+    await supabase.from("cash_movements").update({ amount: amt })
+      .eq("ref_table", "investor_payments").eq("ref_id", editPay.id);
+    setSavingEditPay(false);
+    toast.success("সম্পাদিত হয়েছে");
+    setEditPay(null);
+    invalidateAll();
+  };
+
   const inv = invQ.data;
 
   return (
