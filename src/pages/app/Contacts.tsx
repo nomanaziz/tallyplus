@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, Pencil, Trash2, UserRound, Truck, Users, RefreshCw, ChevronRight, Search, MessageCircle, BookUser } from "lucide-react";
+import { Plus, Pencil, Trash2, UserRound, Truck, Users, RefreshCw, ChevronRight, Search, MessageCircle, BookUser, Wallet } from "lucide-react";
+import { Link } from "@/lib/router";
 import { supabase } from "@/integrations/supabase/client";
 import { useShop } from "@/lib/shop";
 import { useI18n, fmtMoney, bnNum } from "@/lib/i18n";
@@ -236,6 +237,9 @@ function ContactsPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-extrabold">{t("p2b_customerStaff")}</h1>
         <div className="flex items-center gap-2">
+          <Button asChild variant="outline" className="gap-1.5">
+            <Link to="/app/investors"><Wallet className="h-4 w-4" /> বিনিয়োগকারী</Link>
+          </Button>
           {tab !== "employees" && (
             <Button
               variant="outline"
