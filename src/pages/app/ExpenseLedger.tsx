@@ -1,7 +1,7 @@
 import { useNavigate } from "@/lib/router";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Coins, ArrowLeft, MoreVertical, Pencil, Trash2, Home, Truck, Zap, User, MoreHorizontal, Plus, CalendarClock } from "lucide-react";
+import { Coins, ArrowLeft, MoreVertical, Pencil, Trash2, Home, Truck, Zap, User, MoreHorizontal, Plus, CalendarClock, Search, RefreshCw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useShop } from "@/lib/shop";
 import { useAuth } from "@/lib/auth";
@@ -11,7 +11,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { DataToolbar } from "@/components/app/DataToolbar";
 import { DateRangePicker } from "@/components/app/DateRangePicker";
 import { EmptyState } from "@/components/app/EmptyState";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -136,15 +135,24 @@ function ExpenseLedgerPage() {
         </div>
       )}
 
-      <div className="mt-4">
-        <DataToolbar search={search} onSearch={setSearch} onRefresh={refresh} placeholder={t("p5_Category_note")} />
-        <div className="mt-2 flex flex-wrap items-center gap-2">
-          <DateRangePicker
-            value={{ start: from, end: to }}
-            onChange={(v) => { setFrom(v.start); setTo(v.end); }}
-            lang={lang === "bn" ? "bn" : "en"}
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <div className="relative w-full sm:w-56">
+          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder={lang === "bn" ? "খরচের নাম খুঁজুন" : "Search expense name"}
+            className="h-9 pl-8 text-sm"
           />
         </div>
+        <DateRangePicker
+          value={{ start: from, end: to }}
+          onChange={(v) => { setFrom(v.start); setTo(v.end); }}
+          lang={lang === "bn" ? "bn" : "en"}
+        />
+        <Button variant="ghost" size="icon" className="h-9 w-9" onClick={refresh} aria-label="Refresh">
+          <RefreshCw className="h-4 w-4" />
+        </Button>
       </div>
 
       <div className="mt-4 rounded-xl border bg-card">
