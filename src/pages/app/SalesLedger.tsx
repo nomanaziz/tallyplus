@@ -9,7 +9,7 @@ import { useI18n, fmtMoney, bnNum } from "@/lib/i18n";
 import { salesListQuery, contactsQuery } from "@/lib/queries";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { DateRangePicker } from "@/components/app/DateRangePicker";
+import { PeriodStepper, rangeOf, todayAnchor, type PeriodState } from "@/components/app/PeriodStepper";
 import { EmptyState } from "@/components/app/EmptyState";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -63,10 +63,8 @@ function SalesLedgerPage() {
 
   const [search, setSearch] = useState("");
   const [paymentFilter, setPaymentFilter] = useState<"all" | "cash" | "due">("all");
-  const today = new Date();
-  const firstOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-  const [from, setFrom] = useState(firstOfMonth.toISOString().slice(0, 10));
-  const [to, setTo] = useState(today.toISOString().slice(0, 10));
+  const [period, setPeriod] = useState<PeriodState>({ mode: "month", anchor: todayAnchor() });
+  const { start: from, end: to } = useMemo(() => rangeOf(period), [period]);
 
   const salesIdsKey = useMemo(() => sales.map((s) => s.id).join(","), [sales]);
   const [itemCounts, setItemCounts] = useState<Record<string, number>>({});
@@ -267,10 +265,7 @@ function SalesLedgerPage() {
             className="pl-9"
           />
         </div>
-        <DateRangePicker
-          value={{ start: from, end: to }}
-          onChange={(v) => { setFrom(v.start); setTo(v.end); }}
-        />
+        <PeriodStepper value={period} onChange={setPeriod} lang={lang === "bn" ? "bn" : "en"} />
         <Select value={paymentFilter} onValueChange={(v) => setPaymentFilter(v as "all" | "cash" | "due")}>
           <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
           <SelectContent>
