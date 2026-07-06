@@ -53,6 +53,7 @@ export function AppTopbar() {
 
       <div className="flex items-center gap-1.5">
         <SyncStatusButton />
+        <TopbarClock />
         <CalculatorPopover />
         <NotificationBell />
         <InstallAppButton />
