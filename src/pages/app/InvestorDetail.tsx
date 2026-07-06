@@ -124,7 +124,7 @@ function InvestorDetailInner() {
     if (!t || t <= 0) return toast.error("কিস্তির সংখ্যা দিন");
     const day = Math.max(1, Math.min(28, Number(loan.installment_day) || 1));
     setSavingLoan(true);
-    const { error } = await supabase.from("investor_loans").insert({
+    const { data: loanRow, error } = await supabase.from("investor_loans").insert({
       shop_id: current.id,
       investor_id: id,
       principal: p,
@@ -135,9 +135,20 @@ function InvestorDetailInner() {
       installment_day: day,
       first_due_date: loan.first_due_date,
       note: loan.note.trim() || null,
-    });
+    }).select("id").maybeSingle();
     setSavingLoan(false);
     if (error) return toast.error(error.message);
+    // Mirror to cash flow: taking a loan brings money IN to the shop
+    const invName = invQ.data?.name ?? "";
+    await supabase.from("cash_movements").insert({
+      shop_id: current.id,
+      amount: p,
+      direction: "in",
+      note: `বিনিয়োগ গ্রহণ — ${invName}`,
+      ref_table: "investor_loans",
+      ref_id: loanRow?.id ?? null,
+      created_by: user?.id ?? null,
+    });
     toast.success("বিনিয়োগ যোগ হয়েছে — কিস্তির schedule তৈরি হয়েছে");
     setOpenLoan(false);
     setLoan({ ...loan, principal: "", interest_rate: "", note: "" });
@@ -185,7 +196,7 @@ function InvestorDetailInner() {
     if (expErr) { setSavingPay(false); return toast.error(expErr.message); }
 
     // 2) insert payment
-    const { error: payErr } = await supabase.from("investor_payments").insert({
+    const { data: payRow, error: payErr } = await supabase.from("investor_payments").insert({
       shop_id: current.id,
       loan_id: payInst.loan_id,
       installment_id: payInst.id,
@@ -196,8 +207,18 @@ function InvestorDetailInner() {
       method: payMethod,
       expense_id: exp?.id ?? null,
       note: payNote.trim() || null,
-    });
+    }).select("id").maybeSingle();
     if (payErr) { setSavingPay(false); return toast.error(payErr.message); }
+    // Mirror to cash flow: repaying an installment takes money OUT of the shop
+    await supabase.from("cash_movements").insert({
+      shop_id: current.id,
+      amount: amt,
+      direction: "out",
+      note: `বিনিয়োগ পরিশোধ — ${invName} — কিস্তি #${payInst.seq_no}`,
+      ref_table: "investor_payments",
+      ref_id: payRow?.id ?? null,
+      created_by: user?.id ?? null,
+    });
 
     // 3) update installment status
     const newPaid = Number(payInst.paid_amount) + amt;
