@@ -106,17 +106,17 @@ function Dashboard() {
           <Stat label={tr("dash_expense")} value={fmtMoney(stats.expenses, lang)} tone="danger" />
         </div>
         <div className="grid grid-cols-3 divide-x border-t">
-          <div className="p-2.5 text-center">
-            <div className="text-[11px] text-muted-foreground">{tr("dash_stockCount")}</div>
-            <div className="mt-0.5 text-sm font-bold">{(Math.round(stats.stockValue * 100) / 100).toFixed(0)}</div>
+          <div className="p-3 text-center md:p-4">
+            <div className="text-xs md:text-sm text-muted-foreground">{tr("dash_stockCount")}</div>
+            <div className="mt-1 text-base font-bold md:text-xl">{(Math.round(stats.stockValue * 100) / 100).toFixed(0)}</div>
           </div>
-          <div className="p-2.5 text-center">
-            <div className="text-[11px] text-muted-foreground">{tr("dash_receivable")}</div>
-            <div className="mt-0.5 text-sm font-bold text-success">{fmtMoney(stats.receivable, lang)}</div>
+          <div className="p-3 text-center md:p-4">
+            <div className="text-xs md:text-sm text-muted-foreground">{tr("dash_receivable")}</div>
+            <div className="mt-1 text-base font-bold text-success md:text-xl">{fmtMoney(stats.receivable, lang)}</div>
           </div>
-          <div className="p-2.5 text-center">
-            <div className="text-[11px] text-muted-foreground">{tr("dash_payable")}</div>
-            <div className="mt-0.5 text-sm font-bold text-destructive">{fmtMoney(stats.payable, lang)}</div>
+          <div className="p-3 text-center md:p-4">
+            <div className="text-xs md:text-sm text-muted-foreground">{tr("dash_payable")}</div>
+            <div className="mt-1 text-base font-bold text-destructive md:text-xl">{fmtMoney(stats.payable, lang)}</div>
           </div>
         </div>
         <div className="grid grid-cols-3 divide-x border-t md:hidden">
@@ -157,8 +157,9 @@ function Dashboard() {
       <DashboardBannerCarousel />
       <div className="mt-3"><IncomingTransfersBanner /></div>
 
-      {/* Mobile-only: icon menu (sidebar handles desktop nav) */}
-      <div className="mt-5 space-y-3 md:hidden">
+      {/* Quick-menu grid — shown on both mobile and desktop so the
+          dashboard doesn't feel empty. Sidebar still available on desktop. */}
+      <div className="mt-5 space-y-3">
         {menuSections.map((section) => (
           <Section
             key={section.id}
@@ -183,19 +184,19 @@ function Section({
   t: (k: TKey) => string;
 }) {
   return (
-    <div className="rounded-xl border bg-card p-3 shadow-sm">
-      <div className="px-1 pb-2 text-sm font-bold">{title}</div>
-      <div className="grid grid-cols-4 gap-2 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8">
+    <div className="rounded-xl border bg-card p-3 shadow-sm md:p-4">
+      <div className="px-1 pb-2 text-sm font-bold md:text-base">{title}</div>
+      <div className="grid grid-cols-4 gap-2 sm:grid-cols-5 md:grid-cols-8 md:gap-3 lg:grid-cols-10 xl:grid-cols-12">
         {items.map((it) => (
           <Link
             key={it.to}
             to={it.to as never}
             className="group flex flex-col items-center gap-1 rounded-lg p-2 text-center hover:bg-accent"
           >
-            <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm">
-              <it.icon className="h-6 w-6 icon-inherit" />
+            <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm md:h-12 md:w-12">
+              <it.icon className="h-6 w-6 icon-inherit md:h-7 md:w-7" />
             </span>
-            <span className="text-[11px] font-semibold leading-tight">{t(it.tKey)}</span>
+            <span className="text-[11px] font-semibold leading-tight md:text-[13px]">{t(it.tKey)}</span>
           </Link>
         ))}
       </div>
@@ -206,9 +207,9 @@ function Section({
 function Stat({ label, value, tone }: { label: string; value: string; tone: "primary" | "danger" | "default" }) {
   const cls = tone === "primary" ? "text-primary" : tone === "danger" ? "text-destructive" : "text-foreground";
   return (
-    <div className="p-2.5 text-center">
-      <div className="text-[11px] text-muted-foreground">{label}</div>
-      <div className={`mt-0.5 text-sm font-bold ${cls}`}>{value}</div>
+    <div className="p-3 text-center md:p-4">
+      <div className="text-xs md:text-sm text-muted-foreground">{label}</div>
+      <div className={`mt-1 text-base font-bold md:text-2xl ${cls}`}>{value}</div>
     </div>
   );
 }
