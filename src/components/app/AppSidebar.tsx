@@ -46,6 +46,7 @@ export const SECTIONS: SidebarSection[] = [
       { to: "/app/due-ledger", tKey: "nav_dueBook", icon: icons.due, perm: "due" },
       { to: "/app/expense-ledger", tKey: "nav_expenseBook", icon: icons.expense, perm: "expense", module: "expense" },
       { to: "/app/owner-ledger", tKey: "nav_ownerBook", icon: icons.cashbox, perm: "expense", module: "cashbook" },
+      { to: "/app/investors", tKey: "nav_investors", icon: icons.contact, perm: "expense" },
       { to: "/app/assets", tKey: "nav_shopAssets", icon: icons.cashbox, perm: "expense", module: "cashbook" },
     ],
   },

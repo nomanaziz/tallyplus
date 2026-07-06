@@ -202,6 +202,7 @@ function InvestorsPageInner() {
                   )}
                   <div className="mt-1 flex flex-wrap gap-1 text-[11px]">
                     <span className="rounded bg-primary/10 px-1.5 py-0.5 text-primary">নেওয়া {bdt(s.taken)}</span>
+                    <span className="rounded bg-emerald-50 px-1.5 py-0.5 text-emerald-700">ফেরত {bdt(s.paid)}</span>
                     <span className="rounded bg-rose-50 px-1.5 py-0.5 text-rose-700">বাকি {bdt(s.outstanding)}</span>
                     <span className="rounded bg-muted px-1.5 py-0.5 text-muted-foreground">{s.loans}টি loan</span>
                   </div>
