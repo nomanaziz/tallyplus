@@ -265,7 +265,7 @@ function SalesLedgerPage() {
             className="pl-9"
           />
         </div>
-        <PeriodStepper value={period} onChange={setPeriod} lang={lang} />
+        <PeriodStepper value={period} onChange={setPeriod} lang={lang === "bn" ? "bn" : "en"} />
         <Select value={paymentFilter} onValueChange={(v) => setPaymentFilter(v as "all" | "cash" | "due")}>
           <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
           <SelectContent>
