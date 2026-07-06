@@ -35,12 +35,12 @@ type Expense = {
 
 
 type CatKey = "rent" | "transport" | "utility" | "salary" | "other";
-const PRESET_CATS: { key: CatKey; bn: string; en: string; icon: React.ReactNode; color: string }[] = [
-  { key: "rent", bn: "দোকান ভাড়া", en: "Rent", icon: <Home className="h-6 w-6" />, color: "bg-amber-50 border-amber-300 text-amber-800 hover:bg-amber-100" },
-  { key: "transport", bn: "পরিবহন", en: "Transport", icon: <Truck className="h-6 w-6" />, color: "bg-sky-50 border-sky-300 text-sky-800 hover:bg-sky-100" },
-  { key: "utility", bn: "ইউটিলিটি", en: "Utility", icon: <Zap className="h-6 w-6" />, color: "bg-violet-50 border-violet-300 text-violet-800 hover:bg-violet-100" },
-  { key: "salary", bn: "বেতন", en: "Salary", icon: <User className="h-6 w-6" />, color: "bg-emerald-50 border-emerald-300 text-emerald-800 hover:bg-emerald-100" },
-  { key: "other", bn: "অন্যান্য", en: "Other", icon: <MoreHorizontal className="h-6 w-6" />, color: "bg-slate-50 border-slate-300 text-slate-800 hover:bg-slate-100" },
+const PRESET_CATS: { key: CatKey; bn: string; en: string; icon: React.ReactNode }[] = [
+  { key: "rent", bn: "দোকান ভাড়া", en: "Rent", icon: <Home className="h-4 w-4" /> },
+  { key: "transport", bn: "পরিবহন", en: "Transport", icon: <Truck className="h-4 w-4" /> },
+  { key: "utility", bn: "ইউটিলিটি", en: "Utility", icon: <Zap className="h-4 w-4" /> },
+  { key: "salary", bn: "বেতন", en: "Salary", icon: <User className="h-4 w-4" /> },
+  { key: "other", bn: "অন্যান্য", en: "Other", icon: <MoreHorizontal className="h-4 w-4" /> },
 ];
 
 function ExpenseLedgerPage() {
@@ -90,67 +90,21 @@ function ExpenseLedgerPage() {
 
   return (
     <div className="container px-4 py-4">
-      <div className="mb-1 text-xs text-muted-foreground">Expense Book</div>
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      {/* Compact header row: back, title, total, add button */}
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => nav({ to: "/app/dashboard" })}>
             <ArrowLeft className="h-4 w-4" />
           </Button>
-          <AppIcon name="expense" className="h-6 w-6" />
-          <h1 className="text-xl font-extrabold md:text-2xl">{t("p5_Expense_Book")}</h1>
+          <AppIcon name="expense" className="h-5 w-5" />
+          <h1 className="text-lg font-extrabold md:text-xl">{t("p5_Expense_Book")}</h1>
+          <span className="ml-2 rounded-md border border-rose-200 bg-rose-50 px-2 py-0.5 text-xs font-semibold text-rose-700">
+            {t("p5_Total_expenses")}: {fmtMoney(total, lang)}
+          </span>
         </div>
-      </div>
-
-      {/* Preset category tiles */}
-      <div className="mt-4">
-        <div className="mb-2 text-sm font-semibold text-muted-foreground">
-          {lang === "bn" ? "খরচের ধরন বাছাই করে নতুন খরচ যোগ করুন" : "Pick a category to add an expense"}
-        </div>
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
-          {PRESET_CATS.map((c) => (
-            <button
-              key={c.key}
-              onClick={() => {
-                setEditing(null);
-                setPresetCat(lang === "bn" ? c.bn : c.en);
-                setOpen(true);
-              }}
-              className={"flex flex-col items-center justify-center gap-2 rounded-xl border-2 px-3 py-4 font-semibold shadow-sm transition active:scale-[0.98] " + c.color}
-            >
-              {c.icon}
-              <span className="text-xs">{lang === "bn" ? c.bn : c.en}</span>
-            </button>
-          ))}
-          {customCats.map((name) => (
-            <button
-              key={name}
-              onClick={() => { setEditing(null); setPresetCat(name); setOpen(true); }}
-              className="flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-primary/30 bg-primary/5 px-3 py-4 font-semibold text-primary shadow-sm transition active:scale-[0.98] hover:bg-primary/10"
-            >
-              <MoreHorizontal className="h-6 w-6" />
-              <span className="text-xs line-clamp-1">{name}</span>
-            </button>
-          ))}
-          <button
-            onClick={addCustomCategory}
-            className="flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-muted-foreground/40 bg-background px-3 py-4 font-semibold text-muted-foreground transition active:scale-[0.98] hover:bg-accent"
-          >
-            <Plus className="h-6 w-6" />
-            <span className="text-xs">{lang === "bn" ? "নতুন ক্যাটাগরি" : "New category"}</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Monthly recurring expenses chart embedded */}
-      <div className="mt-6">
-        <RecurringExpensesPanel />
-      </div>
-
-      <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 sm:col-span-3">
-          <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t("p5_Total_expenses")}</div>
-          <div className="mt-1 text-3xl font-extrabold text-rose-700">{fmtMoney(total, lang)}</div>
-        </div>
+        <Button size="sm" onClick={() => { setEditing(null); setPresetCat(null); setOpen(true); }} className="gap-1">
+          <Plus className="h-4 w-4" /> {lang === "bn" ? "খরচ যোগ করুন" : "Add Expense"}
+        </Button>
       </div>
 
       <div className="mt-4">
@@ -214,18 +168,26 @@ function ExpenseLedgerPage() {
         )}
       </div>
 
+      {/* Recurring expenses moved below history so hisab shows first */}
+      <div className="mt-6">
+        <RecurringExpensesPanel />
+      </div>
+
       <ExpenseDialog
         open={open}
         onOpenChange={(v) => { setOpen(v); if (!v) setPresetCat(null); }}
         editing={editing}
         defaultCategory={presetCat}
+        presetCats={PRESET_CATS.map((c) => (lang === "bn" ? c.bn : c.en))}
+        customCats={customCats}
+        onAddCustomCategory={addCustomCategory}
         onSaved={refresh}
       />
     </div>
   );
 }
 
-function ExpenseDialog({ open, onOpenChange, editing, defaultCategory, onSaved }: { open: boolean; onOpenChange: (v: boolean) => void; editing: Expense | null; defaultCategory?: string | null; onSaved: () => void }) {
+function ExpenseDialog({ open, onOpenChange, editing, defaultCategory, presetCats = [], customCats = [], onAddCustomCategory, onSaved }: { open: boolean; onOpenChange: (v: boolean) => void; editing: Expense | null; defaultCategory?: string | null; presetCats?: string[]; customCats?: string[]; onAddCustomCategory?: () => void; onSaved: () => void }) {
   const { lang, t } = useI18n();
   const { current } = useShop();
   const { user } = useAuth();
@@ -278,7 +240,25 @@ function ExpenseDialog({ open, onOpenChange, editing, defaultCategory, onSaved }
         <div className="grid gap-3">
           <div className="grid gap-1.5">
             <Label>{t("p5_Category")}</Label>
-            <Input value={category} onChange={(e) => setCategory(e.target.value)} placeholder={t("p5_Rent_transport")} />
+            <Select
+              value={category || "__none__"}
+              onValueChange={(v) => {
+                if (v === "__new__") { onAddCustomCategory?.(); return; }
+                setCategory(v === "__none__" ? "" : v);
+              }}
+            >
+              <SelectTrigger><SelectValue placeholder={t("p5_Rent_transport")} /></SelectTrigger>
+              <SelectContent>
+                {Array.from(new Set([...presetCats, ...customCats, ...(category && ![...presetCats, ...customCats].includes(category) ? [category] : [])])).map((c) => (
+                  <SelectItem key={c} value={c}>{c}</SelectItem>
+                ))}
+                {onAddCustomCategory && (
+                  <SelectItem value="__new__" className="font-semibold text-primary">
+                    + {lang === "bn" ? "নতুন ক্যাটাগরি যুক্ত করুন" : "Add new category"}
+                  </SelectItem>
+                )}
+              </SelectContent>
+            </Select>
           </div>
           <div className="grid gap-1.5">
             <Label>{t("p5_Amount")}</Label>
