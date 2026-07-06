@@ -77,12 +77,15 @@ function InvestorDetailInner() {
   });
 
   const invalidateAll = () => {
-    qc.invalidateQueries({ queryKey: ["investor_loans_of", id] });
-    qc.invalidateQueries({ queryKey: ["investor_installments_of", loanIds.join(",")] });
-    qc.invalidateQueries({ queryKey: ["investor_payments_of", loanIds.join(",")] });
-    qc.invalidateQueries({ queryKey: ["investor_loans", shopId] });
-    qc.invalidateQueries({ queryKey: ["investor_payments", shopId] });
-    qc.invalidateQueries({ queryKey: ["expenses"] });
+    // refetchType:'all' — force refetch even for inactive queries (Investors
+    // list page isn't mounted while we're on the detail page, so the default
+    // 'active' mode would leave its stale cache showing zeros).
+    qc.invalidateQueries({ queryKey: ["investor_loans_of", id], refetchType: "all" });
+    qc.invalidateQueries({ queryKey: ["investor_installments_of", loanIds.join(",")], refetchType: "all" });
+    qc.invalidateQueries({ queryKey: ["investor_payments_of", loanIds.join(",")], refetchType: "all" });
+    qc.invalidateQueries({ queryKey: ["investor_loans", shopId], refetchType: "all" });
+    qc.invalidateQueries({ queryKey: ["investor_payments", shopId], refetchType: "all" });
+    qc.invalidateQueries({ queryKey: ["expenses"], refetchType: "all" });
   };
 
   const totals = useMemo(() => {

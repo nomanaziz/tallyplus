@@ -41,6 +41,7 @@ function InvestorsPageInner() {
   const investorsQ = useQuery({
     queryKey: ["investors", shopId],
     enabled: !!shopId,
+    refetchOnMount: "always",
     queryFn: async () => {
       const { data, error } = await supabase
         .from("investors")
@@ -55,6 +56,7 @@ function InvestorsPageInner() {
   const loansQ = useQuery({
     queryKey: ["investor_loans", shopId],
     enabled: !!shopId,
+    refetchOnMount: "always",
     queryFn: async () => {
       const { data, error } = await supabase
         .from("investor_loans")
@@ -68,6 +70,7 @@ function InvestorsPageInner() {
   const paymentsQ = useQuery({
     queryKey: ["investor_payments", shopId],
     enabled: !!shopId,
+    refetchOnMount: "always",
     queryFn: async () => {
       const { data, error } = await supabase
         .from("investor_payments")
