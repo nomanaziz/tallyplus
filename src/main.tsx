@@ -12,7 +12,11 @@ import { OfflineBanner } from "@/components/app/OfflineBanner";
 import { appRoutes } from "@/lib/app-routes";
 import { startRoutePreloading } from "@/lib/preload-routes";
 import { startBengaliDigits } from "@/lib/bengali-digits";
+import { installGlobalDateFormat } from "@/lib/date-format";
 import "@/styles.css";
+
+// Global date format: "July 7th, 2026"
+installGlobalDateFormat();
 
 // Register a minimal service worker so desktop browsers (Chrome, Edge) show
 // the install icon in the address bar. The SW does no caching — every
