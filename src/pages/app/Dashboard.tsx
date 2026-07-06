@@ -2,10 +2,9 @@ import { Link } from "@/lib/router";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useShop } from "@/lib/shop";
-import { useI18n, fmtMoney, type Lang, type TKey } from "@/lib/i18n";
+import { useI18n, fmtMoney, type TKey } from "@/lib/i18n";
 import { dashboardSummaryQuery, dashboardOverviewQuery } from "@/lib/queries";
-import { Package, Truck, Globe, Clock } from "lucide-react";
-import { icons, AppIcon } from "@/lib/icons";
+import { AppIcon } from "@/lib/icons";
 import { DashboardBannerCarousel } from "@/components/app/DashboardBannerCarousel";
 import { IncomingTransfersBanner } from "@/components/app/IncomingTransfersBanner";
 import { InstallAppCard } from "@/components/app/InstallAppCard";
@@ -145,11 +144,6 @@ function Dashboard() {
       {/* Admin-managed banner carousel */}
       <DashboardBannerCarousel />
       <div className="mt-3"><IncomingTransfersBanner /></div>
-
-      {/* Desktop overview: extended KPI tiles + recent activity */}
-      <div className="mt-5 hidden md:block">
-        <DesktopOverview overview={overview} lang={lang} />
-      </div>
 
       {/* Mobile-only: icon menu (sidebar handles desktop nav) */}
       <div className="mt-5 space-y-3 md:hidden">
