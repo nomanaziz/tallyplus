@@ -19,7 +19,8 @@ import { PhonebookPickerDialog, type PhonebookContact } from "@/components/app/P
 import { toast } from "sonner";
 
 type Tab = "customers" | "suppliers" | "employees";
-type Contact = { id: string; name: string; phone: string | null; address: string | null; due_balance: number };
+type Contact = { id: string; name: string; phone: string | null; address: string | null; due_balance: number; is_active?: boolean };
+type StatusFilter = "all" | "due" | "settled" | "advance" | "active" | "inactive";
 type Tx = { id: string; invoice_no: string | null; total: number; due: number; paid: number; created_at: string; payment_method: string };
 
 
@@ -50,6 +51,7 @@ function ContactsPage() {
           phone: p?.phone ?? null,
           address: (r as any).address ?? null,
           due_balance: 0,
+          is_active: (r as any).is_active !== false,
         } as Contact;
       });
   }, [membersRaw]);
@@ -57,6 +59,10 @@ function ContactsPage() {
   const list: Contact[] = tab === "employees" ? employees : contacts;
 
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  useEffect(() => {
+    setStatusFilter(tab === "employees" ? "active" : "all");
+  }, [tab]);
   const [selected, setSelected] = useState<Contact | null>(null);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Contact | null>(null);
@@ -68,8 +74,20 @@ function ContactsPage() {
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return q ? list.filter((c) => c.name.toLowerCase().includes(q) || (c.phone ?? "").includes(q)) : list;
-  }, [list, search]);
+    return list.filter((c) => {
+      if (tab === "employees") {
+        if (statusFilter === "active" && c.is_active === false) return false;
+        if (statusFilter === "inactive" && c.is_active !== false) return false;
+      } else {
+        const bal = Number(c.due_balance) || 0;
+        if (statusFilter === "due" && bal <= 0) return false;
+        if (statusFilter === "settled" && bal !== 0) return false;
+        if (statusFilter === "advance" && bal >= 0) return false;
+      }
+      if (!q) return true;
+      return c.name.toLowerCase().includes(q) || (c.phone ?? "").includes(q);
+    });
+  }, [list, search, statusFilter, tab]);
 
   const filteredKey = filtered.map((f) => f.id).join(",");
   useEffect(() => {
@@ -263,6 +281,35 @@ function ContactsPage() {
             })}
           </div>
 
+          {/* Status filter chips */}
+          <div className="flex flex-wrap gap-1 border-b p-2">
+            {(tab === "employees"
+              ? ([
+                  { k: "active", bn: "সক্রিয়", en: "Active" },
+                  { k: "inactive", bn: "নিষ্ক্রিয়", en: "Inactive" },
+                  { k: "all", bn: "সবাই", en: "All" },
+                ] as const)
+              : ([
+                  { k: "all", bn: "সবাই", en: "All" },
+                  { k: "due", bn: tab === "customers" ? "বাকি আছে" : "পাব", en: "Due" },
+                  { k: "settled", bn: "সমান", en: "Settled" },
+                  { k: "advance", bn: "অগ্রিম", en: "Advance" },
+                ] as const)
+            ).map((chip) => (
+              <button
+                key={chip.k}
+                onClick={() => setStatusFilter(chip.k as StatusFilter)}
+                className={
+                  "rounded-full border px-2.5 py-1 text-[11px] font-medium transition " +
+                  (statusFilter === chip.k
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "border-border bg-background hover:bg-accent")
+                }
+              >
+                {lang === "bn" ? chip.bn : chip.en}
+              </button>
+            ))}
+          </div>
           <div className="border-b p-2">
             <div className="relative">
               <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -365,6 +412,7 @@ function ContactsPage() {
                           father_name: row.father_name ?? null,
                           mother_name: row.mother_name ?? null,
                           emergency_phone: row.emergency_phone ?? null,
+                          is_active: row.is_active !== false,
                         });
                       } else {
                         setEditing(selected);

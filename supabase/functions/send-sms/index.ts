@@ -70,10 +70,11 @@ Deno.serve(async (req) => {
 
     const body = await req.json();
     const shopId: string = body?.shop_id;
-    const templateCode: string = body?.template_code;
+    const templateCode: string | undefined = body?.template_code;
+    const customMessage: string | undefined = body?.message;
     const recipients: Array<{ phone: string; name?: string; vars?: Record<string, any> }> = body?.recipients ?? [];
-    if (!shopId || !templateCode || recipients.length === 0)
-      return json({ error: "shop_id, template_code, recipients required" }, 400);
+    if (!shopId || recipients.length === 0 || (!templateCode && !customMessage))
+      return json({ error: "shop_id, (template_code or message), recipients required" }, 400);
 
     const admin = createClient(url, serviceKey);
 
@@ -85,9 +86,13 @@ Deno.serve(async (req) => {
     const { data: shop } = await admin.from("shops").select("name,phone").eq("id", shopId).maybeSingle();
     const signature = shop ? `- ${shop.name}${shop.phone ? `(${shop.phone})` : ""}` : "";
 
-    // Load template
-    const { data: tpl } = await admin.from("sms_templates").select("*").eq("code", templateCode).eq("is_active", true).maybeSingle();
-    if (!tpl) return json({ error: "Template not found or inactive" }, 400);
+    // Load template (only when custom message not provided)
+    let tpl: any = null;
+    if (!customMessage) {
+      const { data } = await admin.from("sms_templates").select("*").eq("code", templateCode!).eq("is_active", true).maybeSingle();
+      if (!data) return json({ error: "Template not found or inactive" }, 400);
+      tpl = data;
+    }
 
     // Load primary gateway
     const { data: gw } = await admin.from("sms_gateways").select("*").eq("provider", "reve").eq("is_active", true).order("is_primary", { ascending: false }).limit(1).maybeSingle();
@@ -96,8 +101,10 @@ Deno.serve(async (req) => {
     // Pre-render messages, count total segments
     const prepared = recipients.map((r) => {
       const phone = normalizeBdPhone(r.phone);
-      const msg = renderTemplate(tpl.body_template, { name: r.name ?? "", ...(r.vars ?? {}) }, signature);
-      return { ...r, phone, msg, segs: phone ? smsSegments(msg) : 0 };
+      const raw = customMessage
+        ? renderTemplate(customMessage, { name: r.name ?? "", ...(r.vars ?? {}) }, signature)
+        : renderTemplate(tpl.body_template, { name: r.name ?? "", ...(r.vars ?? {}) }, signature);
+      return { ...r, phone, msg: raw, segs: phone ? smsSegments(raw) : 0 };
     });
     const valid = prepared.filter((p) => p.phone);
     const totalSegs = valid.reduce((s, p) => s + p.segs, 0);
@@ -121,7 +128,7 @@ Deno.serve(async (req) => {
       const status = r.ok ? "sent" : "failed";
       if (r.ok) usedSegs += p.segs;
       await admin.from("sms_history").insert({
-        shop_id: shopId, gateway_id: gw.id, template_code: templateCode,
+        shop_id: shopId, gateway_id: gw.id, template_code: templateCode ?? "custom",
         recipient_phone: p.phone, recipient_name: p.name ?? null,
         message: p.msg, sms_count: p.segs, status,
         provider_message_id: r.id ?? null, error: r.error ?? null, created_by: user.id,

@@ -5,7 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useI18n, fmtMoney } from "@/lib/i18n";
 import { useShop } from "@/lib/shop";
 import { supabase } from "@/integrations/supabase/client";
-import { MessageCircle, Phone, History } from "lucide-react";
+import { MessageCircle, Phone, History, Server, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 type Props = {
@@ -29,6 +29,7 @@ export function DueReminderDialog({ open, onOpenChange, customer }: Props) {
   const { current } = useShop();
   const [message, setMessage] = useState("");
   const [lastSent, setLastSent] = useState<{ channel: string; at: string } | null>(null);
+  const [sendingServer, setSendingServer] = useState(false);
 
   useEffect(() => {
     if (!open || !customer || !current) return;
@@ -57,7 +58,7 @@ export function DueReminderDialog({ open, onOpenChange, customer }: Props) {
   const phone = normalizePhone(customer.phone || "");
   const hasPhone = phone.length >= 10;
 
-  async function logReminder(channel: "whatsapp" | "sms") {
+  async function logReminder(channel: "whatsapp" | "sms" | "server_sms") {
     if (!current || !customer) return;
     const { data: u } = await supabase.auth.getUser();
     await supabase.from("customer_reminder_log").insert({
@@ -90,6 +91,36 @@ export function DueReminderDialog({ open, onOpenChange, customer }: Props) {
     const url = `sms:+${phone}?body=${encodeURIComponent(message)}`;
     window.location.href = url;
     void logReminder("sms");
+  }
+
+  async function sendServerSms() {
+    if (!hasPhone || !current || !customer) {
+      toast.error(t("p7_Customer_has_no_phone_number"));
+      return;
+    }
+    setSendingServer(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("send-sms", {
+        body: {
+          shop_id: current.id,
+          message,
+          recipients: [{ phone, name: customer.name }],
+        },
+      });
+      if (error) throw error;
+      const r = (data?.results ?? [])[0];
+      if (r?.status === "sent") {
+        toast.success(lang === "bn" ? "SMS পাঠানো হয়েছে" : "SMS sent");
+        void logReminder("server_sms");
+        onOpenChange(false);
+      } else {
+        toast.error(r?.error ?? (lang === "bn" ? "পাঠানো ব্যর্থ" : "Send failed"));
+      }
+    } catch (e: any) {
+      toast.error(e?.message ?? "Failed");
+    } finally {
+      setSendingServer(false);
+    }
   }
 
   return (
@@ -129,9 +160,17 @@ export function DueReminderDialog({ open, onOpenChange, customer }: Props) {
           </Button>
           <Button onClick={sendSms} disabled={!hasPhone} variant="outline" className="gap-2">
             <Phone className="h-4 w-4" />
-            SMS
+            {lang === "bn" ? "ফোন SMS" : "Phone SMS"}
           </Button>
         </div>
+        <Button
+          onClick={sendServerSms}
+          disabled={!hasPhone || sendingServer}
+          className="mt-2 w-full gap-2"
+        >
+          {sendingServer ? <Loader2 className="h-4 w-4 animate-spin" /> : <Server className="h-4 w-4" />}
+          {lang === "bn" ? "সার্ভার SMS পাঠান" : "Send via Server SMS"}
+        </Button>
         {!hasPhone && (
           <p className="text-xs text-destructive">
             {t("p7_Add_a_phone_number_for_this_cu")}
