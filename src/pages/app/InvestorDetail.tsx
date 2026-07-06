@@ -400,22 +400,40 @@ function InvestorDetailInner() {
                 </SelectContent>
               </Select>
             </div>
-            <div>
-              <Label>সুদের হার (বার্ষিক %)</Label>
-              <Input inputMode="decimal" disabled={loan.interest_type === "none"} value={loan.interest_rate} onChange={(e) => setLoan({ ...loan, interest_rate: e.target.value.replace(/[^0-9.]/g, "") })} />
-            </div>
-            <div>
-              <Label>কিস্তির সংখ্যা (মাস) *</Label>
-              <Input inputMode="numeric" value={loan.tenure_months} onChange={(e) => setLoan({ ...loan, tenure_months: e.target.value.replace(/[^0-9]/g, "") })} />
-            </div>
-            <div>
-              <Label>প্রতি মাসের কত তারিখে (১-২৮)</Label>
-              <Input inputMode="numeric" value={loan.installment_day} onChange={(e) => setLoan({ ...loan, installment_day: e.target.value.replace(/[^0-9]/g, "") })} />
-            </div>
-            <div className="md:col-span-2">
-              <Label>প্রথম কিস্তির তারিখ</Label>
-              <Input type="date" value={loan.first_due_date} onChange={(e) => setLoan({ ...loan, first_due_date: e.target.value })} />
-            </div>
+            {loan.interest_type === "profit_share" ? (
+              <>
+                <div>
+                  <Label>লাভের অংশ (%)</Label>
+                  <Input inputMode="decimal" placeholder="যেমন 5" value={loan.profit_share_pct} onChange={(e) => setLoan({ ...loan, profit_share_pct: e.target.value.replace(/[^0-9.]/g, "") })} />
+                </div>
+                <div>
+                  <Label>লোকসানের অংশ (%)</Label>
+                  <Input inputMode="decimal" placeholder="যেমন 50" value={loan.loss_share_pct} onChange={(e) => setLoan({ ...loan, loss_share_pct: e.target.value.replace(/[^0-9.]/g, "") })} />
+                </div>
+                <div className="md:col-span-2 text-[11px] text-muted-foreground">
+                  Partner-এর জন্য কোনো fixed কিস্তি নেই। ব্যবসার লাভ/লোকসান হলে "লাভ/লোকসান settle" থেকে হিসাব করে দিন।
+                </div>
+              </>
+            ) : (
+              <>
+                <div>
+                  <Label>সুদের হার (বার্ষিক %)</Label>
+                  <Input inputMode="decimal" disabled={loan.interest_type === "none"} value={loan.interest_rate} onChange={(e) => setLoan({ ...loan, interest_rate: e.target.value.replace(/[^0-9.]/g, "") })} />
+                </div>
+                <div>
+                  <Label>কিস্তির সংখ্যা (মাস) *</Label>
+                  <Input inputMode="numeric" value={loan.tenure_months} onChange={(e) => setLoan({ ...loan, tenure_months: e.target.value.replace(/[^0-9]/g, "") })} />
+                </div>
+                <div>
+                  <Label>প্রতি মাসের কত তারিখে (১-২৮)</Label>
+                  <Input inputMode="numeric" value={loan.installment_day} onChange={(e) => setLoan({ ...loan, installment_day: e.target.value.replace(/[^0-9]/g, "") })} />
+                </div>
+                <div className="md:col-span-2">
+                  <Label>প্রথম কিস্তির তারিখ</Label>
+                  <Input type="date" value={loan.first_due_date} onChange={(e) => setLoan({ ...loan, first_due_date: e.target.value })} />
+                </div>
+              </>
+            )}
             <div className="md:col-span-2">
               <Label>নোট</Label>
               <Textarea rows={2} value={loan.note} onChange={(e) => setLoan({ ...loan, note: e.target.value })} />
