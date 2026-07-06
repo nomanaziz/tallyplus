@@ -5,7 +5,7 @@ import { ArrowLeft, MoreVertical, Pencil, Trash2, Wallet, ArrowDownCircle, Arrow
 import { supabase } from "@/integrations/supabase/client";
 import { useShop } from "@/lib/shop";
 import { useAuth } from "@/lib/auth";
-import { useI18n, fmtMoney } from "@/lib/i18n";
+import { useI18n, fmtMoney, fmtDate } from "@/lib/i18n";
 import { ownerTxnsQuery, type OwnerTxn } from "@/lib/queries";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -102,7 +102,7 @@ function OwnerLedgerPage() {
             <TableBody>
               {list.map((e) => (
                 <TableRow key={e.id}>
-                  <TableCell className="text-xs">{e.tx_date}</TableCell>
+                  <TableCell className="text-xs">{fmtDate(e.tx_date)}</TableCell>
                   <TableCell>
                     {e.direction === "invest" ? (
                       <span className="inline-flex items-center gap-1 rounded-md bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700">
