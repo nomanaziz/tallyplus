@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { DataToolbar } from "@/components/app/DataToolbar";
+import { DateRangePicker } from "@/components/app/DateRangePicker";
 import { EmptyState } from "@/components/app/EmptyState";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DataPagination } from "@/components/app/DataPagination";
@@ -51,6 +52,10 @@ function ExpenseLedgerPage() {
   const { data: raw = [], refetch } = useQuery(expensesListQuery(current?.id ?? null));
   const list = raw as unknown as Expense[];
   const [search, setSearch] = useState("");
+  const today0 = new Date();
+  const firstOfMonth0 = new Date(today0.getFullYear(), today0.getMonth(), 1);
+  const [from, setFrom] = useState(firstOfMonth0.toISOString().slice(0, 10));
+  const [to, setTo] = useState(today0.toISOString().slice(0, 10));
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Expense | null>(null);
   const [presetCat, setPresetCat] = useState<string | null>(null);
@@ -72,11 +77,18 @@ function ExpenseLedgerPage() {
     if (customKey) localStorage.setItem(customKey, JSON.stringify(next));
   };
 
-  const total = useMemo(() => list.reduce((s, e) => s + Number(e.amount), 0), [list]);
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return q ? list.filter((e) => (e.category ?? "").toLowerCase().includes(q) || (e.note ?? "").toLowerCase().includes(q)) : list;
-  }, [list, search]);
+    const fromTs = new Date(from + "T00:00:00").getTime();
+    const toTs = new Date(to + "T23:59:59").getTime();
+    return list.filter((e) => {
+      const ts = new Date(e.created_at).getTime();
+      if (ts < fromTs || ts > toTs) return false;
+      if (!q) return true;
+      return (e.category ?? "").toLowerCase().includes(q) || (e.note ?? "").toLowerCase().includes(q);
+    });
+  }, [list, search, from, to]);
+  const total = useMemo(() => filtered.reduce((s, e) => s + Number(e.amount), 0), [filtered]);
   const pg = usePagination(filtered, 25);
 
   const refresh = async () => { await qc.invalidateQueries({ queryKey: ["expenses"] }); await refetch(); };
@@ -126,6 +138,13 @@ function ExpenseLedgerPage() {
 
       <div className="mt-4">
         <DataToolbar search={search} onSearch={setSearch} onRefresh={refresh} placeholder={t("p5_Category_note")} />
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          <DateRangePicker
+            value={{ start: from, end: to }}
+            onChange={(v) => { setFrom(v.start); setTo(v.end); }}
+            lang={lang === "bn" ? "bn" : "en"}
+          />
+        </div>
       </div>
 
       <div className="mt-4 rounded-xl border bg-card">
