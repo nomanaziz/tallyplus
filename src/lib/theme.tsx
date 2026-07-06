@@ -1,13 +1,13 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 
-export type AppColor = "indigo" | "green" | "blue" | "red" | "yellow" | "soft-dark";
+export type AppColor = "indigo" | "green" | "blue" | "red" | "yellow" | "soft-dark" | "glass";
 export type AppShape = "rounded" | "square";
 
 const KEY = "tp_theme_color";
 const SHAPE_KEY = "tp_theme_shape";
 const DEFAULT: AppColor = "indigo";
 const DEFAULT_SHAPE: AppShape = "rounded";
-const ALL: AppColor[] = ["indigo", "green", "blue", "red", "yellow", "soft-dark"];
+const ALL: AppColor[] = ["indigo", "green", "blue", "red", "yellow", "soft-dark", "glass"];
 const ALL_SHAPES: AppShape[] = ["rounded", "square"];
 
 type Ctx = {
@@ -78,4 +78,5 @@ export const COLOR_OPTIONS: { value: AppColor; bn: string; en: string; swatch: s
   { value: "red",       bn: "লাল",      en: "Red",       swatch: "oklch(0.58 0.22 25)" },
   { value: "yellow",    bn: "হলুদ",     en: "Yellow",    swatch: "oklch(0.78 0.17 90)" },
   { value: "soft-dark", bn: "ডার্ক",    en: "Soft Dark", swatch: "oklch(0.30 0.014 250)" },
+  { value: "glass",     bn: "গ্লাস",    en: "Glass",     swatch: "linear-gradient(135deg,#a5d8ff,#e0aaff)" },
 ];
