@@ -143,7 +143,7 @@ export function RecurringExpensesPanel() {
       .map(({ t, amt }) => ({
         shop_id: current.id, created_by: user.id,
         category: t.name, amount: amt, note: t.note || null,
-        paid_via: "cash", created_at: new Date().toISOString(),
+        paid_via: "cash" as const, created_at: new Date().toISOString(),
       }));
     if (rows.length === 0) { toast.error(lang === "bn" ? "যোগ করার মতো কিছু নেই" : "Nothing to add"); return; }
     if (!confirm(lang === "bn"
