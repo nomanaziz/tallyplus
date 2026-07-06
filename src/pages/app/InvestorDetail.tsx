@@ -93,7 +93,14 @@ function InvestorDetailInner() {
     const pays = payQ.data ?? [];
     let taken = 0, payable = 0, interest = 0, paid = 0, paidInterest = 0, paidPrincipal = 0;
     for (const l of loans) { taken += Number(l.principal); payable += Number(l.total_payable); interest += Number(l.total_interest); }
-    for (const p of pays) { paid += Number(p.amount); paidInterest += Number(p.interest_part); paidPrincipal += Number(p.principal_part); }
+    for (const p of pays) {
+      // Only count installment + principal_return as "repayment"; skip profit/loss share.
+      if (p.kind === "installment" || p.kind === "principal_return") {
+        paid += Number(p.amount);
+        paidInterest += Number(p.interest_part);
+        paidPrincipal += Number(p.principal_part);
+      }
+    }
     return { taken, payable, interest, paid, paidInterest, paidPrincipal, outstanding: payable - paid };
   }, [loansQ.data, payQ.data]);
 
