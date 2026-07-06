@@ -14,6 +14,7 @@ import { InstallAppButton } from "./InstallAppPrompt";
 import { NotificationBell } from "./NotificationBell";
 import { SyncStatusButton } from "./SyncStatusButton";
 import { CalculatorPopover } from "./CalculatorPopover";
+import { TopbarClock } from "./TopbarClock";
 import { ChevronDown, LogOut, ArrowLeftRight, LayoutDashboard, Eye, EyeOff } from "lucide-react";
 import { BrandWordmark } from "@/components/brand/BrandWordmark";
 import { icons, AppIcon } from "@/lib/icons";
