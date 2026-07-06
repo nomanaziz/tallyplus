@@ -135,16 +135,16 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
         onClick={onNavigate}
         data-tour={tourKey}
         className={cn(
-          "group flex items-center gap-3 rounded-lg text-[13px] leading-tight transition-colors",
+          "group relative flex items-center gap-3 rounded-lg text-[13px] leading-tight transition-colors",
           collapsed ? "h-9 justify-center px-1" : "h-9 px-3",
           active
-            ? "bg-primary/15 font-bold text-primary shadow-sm"
+            ? "bg-primary text-primary-foreground font-bold shadow-md ring-1 ring-primary/40 before:absolute before:left-0 before:top-1/2 before:h-6 before:-translate-y-1/2 before:w-1 before:rounded-r-full before:bg-primary-foreground/70"
             : it.highlight
               ? "font-semibold text-primary hover:bg-primary/10"
               : "text-foreground/80 hover:bg-accent/60",
         )}
       >
-        <it.icon className={cn("h-5 w-5 flex-none", active ? "stroke-[2.5] text-primary" : "text-muted-foreground")} />
+        <it.icon className={cn("h-5 w-5 flex-none", active ? "stroke-[2.5] text-primary-foreground" : "text-muted-foreground")} />
         {!collapsed && <span className="truncate">{t(it.tKey)}</span>}
       </Link>
     );
