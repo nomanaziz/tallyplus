@@ -371,7 +371,7 @@ export const shopMembersQuery = (shopId: string | null | undefined) =>
         supabase.from("shops").select("owner_id").eq("id", shopId).maybeSingle(),
         supabase
           .from("shop_members")
-          .select("id,user_id,role,full_name,email,address,avatar_url,permissions,custom_role_id")
+          .select("id,user_id,role,full_name,email,address,avatar_url,permissions,custom_role_id,salary,nid,permanent_address,father_name,mother_name,emergency_phone,is_active")
           .eq("shop_id", shopId),
       ]);
       const ownerId = shop?.owner_id ?? null;
