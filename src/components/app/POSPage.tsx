@@ -463,8 +463,8 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
           </div>
         </div>
 
-        {/* Center stats */}
-        <div className="ml-auto flex flex-wrap items-center gap-2">
+        {/* Center stats — hide on mobile to keep header compact */}
+        <div className="ml-auto hidden flex-wrap items-center gap-2 md:flex">
           <div className="rounded-xl bg-primary/10 px-3 py-1.5 text-center ring-1 ring-primary/20">
             <div className="text-[10px] font-semibold text-primary/80">{lang === "bn" ? (isSell ? "আজকের বিক্রয়" : "আজকের ক্রয়") : (isSell ? "Today's Sales" : "Today's Purchase")}</div>
             <div className="text-sm font-extrabold tabular-nums text-primary">{fmtMoney(todayStats?.total ?? 0, lang)}</div>
@@ -484,7 +484,7 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
             <div className="text-xs font-semibold">{user?.email?.split("@")[0] ?? "User"}</div>
             <div className="text-[10px] text-muted-foreground">{current?.name ?? ""}</div>
           </div>
-          <Button size="sm" className="rounded-full bg-primary text-primary-foreground">
+          <Button size="sm" className="hidden rounded-full bg-primary text-primary-foreground md:inline-flex">
             <Pause className="mr-1 h-3.5 w-3.5" />
             {lang === "bn" ? "হোল্ড অর্ডার" : "Hold Orders"} ({holdsCount})
           </Button>
@@ -643,8 +643,8 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
                 </button>
               </div>
             </div>
-            {/* F-key shortcut row */}
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] font-medium text-muted-foreground">
+            {/* F-key shortcut row — desktop only */}
+            <div className="hidden flex-wrap items-center gap-x-3 gap-y-1 text-[10px] font-medium text-muted-foreground md:flex">
               <span><kbd className="rounded bg-muted px-1 py-px text-[10px]">F1</kbd>: {lang === "bn" ? "চেকআউট" : "Checkout"}</span>
               <span><kbd className="rounded bg-muted px-1 py-px text-[10px]">F2</kbd>: {lang === "bn" ? "বাকি" : "Due"}</span>
               <span><kbd className="rounded bg-muted px-1 py-px text-[10px]">F3</kbd>: {lang === "bn" ? "ড্রয়ার" : "Drawer"}</span>

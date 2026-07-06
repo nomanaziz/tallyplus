@@ -11,6 +11,7 @@ import { IncomingTransfersBanner } from "@/components/app/IncomingTransfersBanne
 import { InstallAppCard } from "@/components/app/InstallAppCard";
 import { SECTIONS, type SidebarItem } from "@/components/app/AppSidebar";
 import { usePermissions } from "@/lib/permissions-hook";
+import { useEnabledModules } from "@/lib/modules";
 
 
 
@@ -30,6 +31,7 @@ function Dashboard() {
   const { lang, t: tr } = useI18n();
   const { current } = useShop();
   const { isOwner, isAdmin, canGroup, loading: permLoading } = usePermissions();
+  const { enabled: enabledModules, loading: modulesLoading } = useEnabledModules(current?.id ?? null);
   const [range, setRange] = useState<Range>("today");
   const start = rangeStart(range);
   const startIso = start ? start.toISOString() : "1970-01-01T00:00:00.000Z";
@@ -48,6 +50,7 @@ function Dashboard() {
   ];
 
   const isVisible = (it: SidebarItem) => {
+    if (it.module && (modulesLoading || !enabledModules.has(it.module))) return false;
     if (!it.perm) return true;
     if (permLoading) return true;
     if (it.perm === "__owner__") return isOwner || isAdmin;
