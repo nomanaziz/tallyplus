@@ -3,6 +3,7 @@ import { ArrowLeft, Calendar, Download, RefreshCw } from "lucide-react";
 import { useNavigate } from "@/lib/router";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { DateRangePicker } from "@/components/app/DateRangePicker";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -191,12 +192,10 @@ function DueHistoryPage() {
             <Download className="h-4 w-4" />
             {t("p5_Download_Print")}
           </Button>
-          <div className="flex items-center gap-1.5 rounded-md border bg-background px-2">
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-            <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="h-9 border-0 px-1 focus-visible:ring-0" />
-            <span className="text-muted-foreground">–</span>
-            <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="h-9 border-0 px-1 focus-visible:ring-0" />
-          </div>
+          <DateRangePicker
+            value={{ start: from, end: to }}
+            onChange={(v) => { setFrom(v.start); setTo(v.end); }}
+          />
           <Select value={String(perPage)} onValueChange={(v) => setPerPage(Number(v))}>
             <SelectTrigger className="h-10 w-[130px]">
               <SelectValue />

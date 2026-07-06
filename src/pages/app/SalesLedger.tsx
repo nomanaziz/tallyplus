@@ -9,6 +9,7 @@ import { useI18n, fmtMoney, bnNum } from "@/lib/i18n";
 import { salesListQuery, contactsQuery } from "@/lib/queries";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { DateRangePicker } from "@/components/app/DateRangePicker";
 import { EmptyState } from "@/components/app/EmptyState";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -266,12 +267,10 @@ function SalesLedgerPage() {
             className="pl-9"
           />
         </div>
-        <div className="flex items-center gap-1.5 rounded-md border bg-background px-2">
-          <Calendar className="h-4 w-4 text-muted-foreground" />
-          <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="h-9 border-0 px-1 focus-visible:ring-0" />
-          <span className="text-muted-foreground">-</span>
-          <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="h-9 border-0 px-1 focus-visible:ring-0" />
-        </div>
+        <DateRangePicker
+          value={{ start: from, end: to }}
+          onChange={(v) => { setFrom(v.start); setTo(v.end); }}
+        />
         <Select value={paymentFilter} onValueChange={(v) => setPaymentFilter(v as "all" | "cash" | "due")}>
           <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
           <SelectContent>
