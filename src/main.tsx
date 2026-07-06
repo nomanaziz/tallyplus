@@ -11,6 +11,7 @@ import { InstallAppPrompt } from "@/components/app/InstallAppPrompt";
 import { OfflineBanner } from "@/components/app/OfflineBanner";
 import { appRoutes } from "@/lib/app-routes";
 import { startRoutePreloading } from "@/lib/preload-routes";
+import { startBengaliDigits } from "@/lib/bengali-digits";
 import "@/styles.css";
 
 // Register a minimal service worker so desktop browsers (Chrome, Edge) show
@@ -107,3 +108,6 @@ createRoot(document.getElementById("root")!).render(
 
 // After initial paint, quietly preload heavy routes in the background.
 startRoutePreloading();
+
+// Globally convert Latin digits in visible text to Bengali digits.
+startBengaliDigits();
