@@ -94,8 +94,10 @@ function InvestorDetailInner() {
     let taken = 0, payable = 0, interest = 0, paid = 0, paidInterest = 0, paidPrincipal = 0;
     for (const l of loans) { taken += Number(l.principal); payable += Number(l.total_payable); interest += Number(l.total_interest); }
     for (const p of pays) {
-      // Only count installment + principal_return as "repayment"; skip profit/loss share.
-      if (p.kind === "installment" || p.kind === "principal_return") {
+      // Repayment = installment + principal_return + loss_share.
+      // loss_share reduces principal owed to partner (তারা নিজে লোকসান নিলো)।
+      // profit_share = extra খরচ, principal-এর সাথে সম্পর্ক নেই — skip.
+      if (p.kind === "installment" || p.kind === "principal_return" || p.kind === "loss_share") {
         paid += Number(p.amount);
         paidInterest += Number(p.interest_part);
         paidPrincipal += Number(p.principal_part);
@@ -245,7 +247,8 @@ function InvestorDetailInner() {
       loan_id: settleFor.id,
       installment_id: null,
       amount: amt,
-      principal_part: settleKind === "principal_return" ? amt : 0,
+      // loss_share ও principal_return — দুটোই partner-এর মূল টাকা কমায়।
+      principal_part: (settleKind === "principal_return" || settleKind === "loss_share") ? amt : 0,
       interest_part: 0,
       paid_at: settleDate,
       method: settleMethod,
@@ -266,12 +269,12 @@ function InvestorDetailInner() {
       created_by: user?.id ?? null,
     });
 
-    // 4) close loan if principal fully returned
-    if (settleKind === "principal_return") {
-      const returned = (payQ.data ?? [])
-        .filter((p) => p.loan_id === settleFor.id && p.kind === "principal_return")
-        .reduce((s, p) => s + Number(p.principal_part || p.amount), 0) + amt;
-      if (returned >= Number(settleFor.principal) - 0.01) {
+    // 4) close loan if partner-এর মূল টাকা পূরণ (ফেরত + লোকসানে শেষ)
+    if (settleKind === "principal_return" || settleKind === "loss_share") {
+      const reducedBefore = (payQ.data ?? [])
+        .filter((p) => p.loan_id === settleFor.id && (p.kind === "principal_return" || p.kind === "loss_share"))
+        .reduce((s, p) => s + Number(p.amount), 0);
+      if (reducedBefore + amt >= Number(settleFor.principal) - 0.01) {
         await supabase.from("investor_loans").update({ status: "closed" }).eq("id", settleFor.id);
       }
     }
