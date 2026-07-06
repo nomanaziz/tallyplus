@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Plus, Minus, X, Package, ShoppingCart, ChevronDown, MessageSquare, RefreshCw, Search, UserRound, LayoutGrid, List as ListIcon, RotateCcw, Trash2, Pause, ShoppingBag, CalendarClock, Hash, Banknote, CreditCard } from "lucide-react";
+import { ArrowLeft, Plus, Minus, X, Package, ShoppingCart, ChevronDown, MessageSquare, RefreshCw, Search, UserRound, LayoutGrid, List as ListIcon, RotateCcw, Trash2, ShoppingBag, CalendarClock, Hash, Banknote, CreditCard } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { useNavigate } from "@/lib/router";
 import { supabase } from "@/integrations/supabase/client";
@@ -419,12 +419,6 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cart, discount, delivery, mode, lang]);
 
-  const holdsCount = (() => {
-    if (typeof window === "undefined") return 0;
-    try { return (JSON.parse(localStorage.getItem("pos-holds") || "[]") as unknown[]).length; }
-    catch { return 0; }
-  })();
-
   const unitOptions = [
     { v: "piece", bn: "পিস", en: "Piece" },
     { v: "packet", bn: "প্যাকেট", en: "Packet" },
@@ -484,10 +478,6 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
             <div className="text-xs font-semibold">{user?.email?.split("@")[0] ?? "User"}</div>
             <div className="text-[10px] text-muted-foreground">{current?.name ?? ""}</div>
           </div>
-          <Button size="sm" className="hidden rounded-full bg-primary text-primary-foreground md:inline-flex">
-            <Pause className="mr-1 h-3.5 w-3.5" />
-            {lang === "bn" ? "হোল্ড অর্ডার" : "Hold Orders"} ({holdsCount})
-          </Button>
         </div>
       </div>
 
