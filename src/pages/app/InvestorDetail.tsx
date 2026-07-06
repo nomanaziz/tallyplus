@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { RequirePerm } from "@/components/app/RequirePerm";
-import { ArrowLeft, Plus, User, Phone, MapPin, Wallet, CheckCircle2, Clock, Trash2, TrendingUp, TrendingDown, RotateCcw } from "lucide-react";
+import { ArrowLeft, Plus, User, Phone, MapPin, Wallet, CheckCircle2, Clock, Trash2, TrendingUp, TrendingDown, RotateCcw, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { computeSchedule, INTEREST_TYPES, SOURCE_TYPE_LABEL, type InterestType } from "@/lib/investor-emi";
 
@@ -364,6 +364,64 @@ function InvestorDetailInner() {
     invalidateAll();
   };
 
+  // --- Delete a single partner payment (profit/loss/principal return) ---
+  const deletePartnerPay = async (p: Payment) => {
+    if (!confirm("এই entry মুছে ফেলবেন? সংশ্লিষ্ট খরচ ও cash flow entry-ও মুছে যাবে।")) return;
+    // linked cash movement
+    await supabase.from("cash_movements").delete().eq("ref_table", "investor_payments").eq("ref_id", p.id);
+    // linked expense
+    if (p.expense_id) await supabase.from("expenses").delete().eq("id", p.expense_id);
+    const { error } = await supabase.from("investor_payments").delete().eq("id", p.id);
+    if (error) return toast.error(error.message);
+    // reopen loan if it was closed
+    await supabase.from("investor_loans").update({ status: "open" }).eq("id", p.loan_id).eq("status", "closed");
+    toast.success("মুছে ফেলা হয়েছে");
+    invalidateAll();
+  };
+
+  // --- Edit a single partner payment ---
+  const [editPay, setEditPay] = useState<Payment | null>(null);
+  const [ePayAmount, setEPayAmount] = useState("");
+  const [ePayMethod, setEPayMethod] = useState<"cash" | "bkash" | "nagad" | "bank">("cash");
+  const [ePayDate, setEPayDate] = useState(today);
+  const [ePayNote, setEPayNote] = useState("");
+  const [savingEditPay, setSavingEditPay] = useState(false);
+
+  const openEditPay = (p: Payment) => {
+    setEditPay(p);
+    setEPayAmount(String(p.amount));
+    setEPayMethod((p.method as any) || "cash");
+    setEPayDate(p.paid_at);
+    setEPayNote(p.note ?? "");
+  };
+
+  const saveEditPay = async () => {
+    if (!editPay) return;
+    const amt = Number(ePayAmount);
+    if (!amt || amt <= 0) return toast.error("সঠিক পরিমাণ দিন");
+    setSavingEditPay(true);
+    const affectsPrincipal = editPay.kind === "principal_return" || editPay.kind === "loss_share";
+    const { error } = await supabase.from("investor_payments").update({
+      amount: amt,
+      principal_part: affectsPrincipal ? amt : 0,
+      paid_at: ePayDate,
+      method: ePayMethod,
+      note: ePayNote.trim() || null,
+    }).eq("id", editPay.id);
+    if (error) { setSavingEditPay(false); return toast.error(error.message); }
+    // sync linked expense
+    if (editPay.expense_id) {
+      await supabase.from("expenses").update({ amount: amt, paid_via: ePayMethod as any }).eq("id", editPay.expense_id);
+    }
+    // sync linked cash movement
+    await supabase.from("cash_movements").update({ amount: amt })
+      .eq("ref_table", "investor_payments").eq("ref_id", editPay.id);
+    setSavingEditPay(false);
+    toast.success("সম্পাদিত হয়েছে");
+    setEditPay(null);
+    invalidateAll();
+  };
+
   const inv = invQ.data;
 
   return (
@@ -471,6 +529,7 @@ function InvestorDetailInner() {
                               <TableHead className="text-right">পরিমাণ</TableHead>
                               <TableHead>Method</TableHead>
                               <TableHead>নোট</TableHead>
+                              <TableHead className="text-right">অ্যাকশন</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
@@ -483,6 +542,16 @@ function InvestorDetailInner() {
                                 </TableCell>
                                 <TableCell>{p.method}</TableCell>
                                 <TableCell className="text-xs text-muted-foreground">{p.note}</TableCell>
+                                <TableCell className="text-right">
+                                  <div className="inline-flex gap-1">
+                                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditPay(p)}>
+                                      <Pencil className="h-3.5 w-3.5" />
+                                    </Button>
+                                    <Button variant="ghost" size="icon" className="h-7 w-7 text-rose-600" onClick={() => deletePartnerPay(p)}>
+                                      <Trash2 className="h-3.5 w-3.5" />
+                                    </Button>
+                                  </div>
+                                </TableCell>
                               </TableRow>
                             ))}
                           </TableBody>
@@ -751,6 +820,51 @@ function InvestorDetailInner() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setSettleFor(null)}>বাতিল</Button>
             <Button onClick={saveSettle} disabled={savingSettle}>সংরক্ষণ</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit partner payment dialog */}
+      <Dialog open={!!editPay} onOpenChange={(v) => !v && setEditPay(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              সম্পাদনা — {editPay?.kind === "profit_share" ? "লাভের অংশ" : editPay?.kind === "loss_share" ? "লোকসানের অংশ" : editPay?.kind === "principal_return" ? "মূল ফেরত" : "কিস্তি"}
+            </DialogTitle>
+          </DialogHeader>
+          {editPay && (
+            <div className="space-y-3">
+              <div>
+                <Label>পরিমাণ</Label>
+                <Input inputMode="decimal" value={ePayAmount} onChange={(e) => setEPayAmount(e.target.value.replace(/[^0-9.]/g, ""))} />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <Label>Method</Label>
+                  <Select value={ePayMethod} onValueChange={(v) => setEPayMethod(v as any)}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="cash">নগদ</SelectItem>
+                      <SelectItem value="bkash">বিকাশ</SelectItem>
+                      <SelectItem value="nagad">নগদ (Mobile)</SelectItem>
+                      <SelectItem value="bank">ব্যাংক</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>তারিখ</Label>
+                  <Input type="date" value={ePayDate} onChange={(e) => setEPayDate(e.target.value)} />
+                </div>
+              </div>
+              <div>
+                <Label>নোট</Label>
+                <Input value={ePayNote} onChange={(e) => setEPayNote(e.target.value)} />
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditPay(null)}>বাতিল</Button>
+            <Button onClick={saveEditPay} disabled={savingEditPay}>সংরক্ষণ</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
