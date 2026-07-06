@@ -682,6 +682,68 @@ function InvestorDetailInner() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Partner settle dialog */}
+      <Dialog open={!!settleFor} onOpenChange={(v) => !v && setSettleFor(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {settleKind === "profit_share" ? "লাভের অংশ প্রদান" : settleKind === "loss_share" ? "লোকসানের অংশ আদায়" : "মূল টাকা ফেরত"}
+            </DialogTitle>
+          </DialogHeader>
+          {settleFor && (
+            <div className="space-y-3">
+              <div className="text-xs text-muted-foreground">
+                মূল বিনিয়োগ: {bdt(Number(settleFor.principal))} • লাভ {settleFor.profit_share_pct}% / লোকসান {settleFor.loss_share_pct}%
+              </div>
+              {settleKind !== "principal_return" && (
+                <div>
+                  <Label>ব্যবসার মোট {settleKind === "profit_share" ? "লাভ" : "লোকসান"} (এই মাস/সময়ে)</Label>
+                  <Input inputMode="decimal" value={settleBase} onChange={(e) => { const v = e.target.value.replace(/[^0-9.]/g, ""); setSettleBase(v); }} placeholder="ব্যবসার লাভ/লোকসানের পরিমাণ" />
+                  <div className="mt-1 text-[11px] text-muted-foreground">
+                    Partner-এর অংশ = <b>{bdt(settleComputed)}</b> (auto)
+                  </div>
+                </div>
+              )}
+              <div>
+                <Label>{settleKind === "principal_return" ? "ফেরতের পরিমাণ" : "আসল পরিমাণ (edit করা যাবে)"}</Label>
+                <Input inputMode="decimal" value={settleAmount || (settleKind !== "principal_return" ? String(settleComputed || "") : "")} onChange={(e) => setSettleAmount(e.target.value.replace(/[^0-9.]/g, ""))} />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <Label>Method</Label>
+                  <Select value={settleMethod} onValueChange={(v) => setSettleMethod(v as any)}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="cash">নগদ</SelectItem>
+                      <SelectItem value="bkash">বিকাশ</SelectItem>
+                      <SelectItem value="nagad">নগদ (Mobile)</SelectItem>
+                      <SelectItem value="bank">ব্যাংক</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>তারিখ</Label>
+                  <Input type="date" value={settleDate} onChange={(e) => setSettleDate(e.target.value)} />
+                </div>
+              </div>
+              <div>
+                <Label>নোট</Label>
+                <Input value={settleNote} onChange={(e) => setSettleNote(e.target.value)} />
+              </div>
+              <div className="text-[11px] text-muted-foreground">
+                {settleKind === "loss_share"
+                  ? "Partner থেকে টাকা আসবে — dashboard cash flow-এ যোগ হবে।"
+                  : "Shop থেকে টাকা যাবে — খরচ ও cash flow থেকে বিয়োগ হবে।"}
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSettleFor(null)}>বাতিল</Button>
+            <Button onClick={saveSettle} disabled={savingSettle}>সংরক্ষণ</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
