@@ -140,7 +140,7 @@ function Dashboard() {
           </Link>
         </div>
         {/* Desktop-only: extended KPI rows inside the same summary card */}
-        <div className="hidden border-t md:grid md:grid-cols-6 md:divide-x lg:grid-cols-9">
+        <div className="hidden border-t md:grid md:grid-cols-3 md:divide-x lg:grid-cols-9">
           <StatLink to="/app/online-shop/orders" label={tr("dash_newOrders")} value={overview?.ordersPending ?? 0} tone={(overview?.ordersPending ?? 0) > 0 ? "primary" : "muted"} />
           <StatLink to="/app/customer-wishlist" label={tr("dash_newFordo")} value={overview?.fordoNew ?? 0} tone={(overview?.fordoNew ?? 0) > 0 ? "success" : "muted"} />
           <StatLink to="/app/products" label={tr("dash_lowStock")} value={overview?.productsLowStock ?? 0} tone={(overview?.productsLowStock ?? 0) > 0 ? "danger" : "muted"} />
