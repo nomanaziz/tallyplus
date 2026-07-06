@@ -19,7 +19,8 @@ import { PhonebookPickerDialog, type PhonebookContact } from "@/components/app/P
 import { toast } from "sonner";
 
 type Tab = "customers" | "suppliers" | "employees";
-type Contact = { id: string; name: string; phone: string | null; address: string | null; due_balance: number };
+type Contact = { id: string; name: string; phone: string | null; address: string | null; due_balance: number; is_active?: boolean };
+type StatusFilter = "all" | "due" | "settled" | "advance" | "active" | "inactive";
 type Tx = { id: string; invoice_no: string | null; total: number; due: number; paid: number; created_at: string; payment_method: string };
 
 
