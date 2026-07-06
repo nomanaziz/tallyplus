@@ -529,6 +529,7 @@ function InvestorDetailInner() {
                               <TableHead className="text-right">পরিমাণ</TableHead>
                               <TableHead>Method</TableHead>
                               <TableHead>নোট</TableHead>
+                              <TableHead className="text-right">অ্যাকশন</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
@@ -541,6 +542,16 @@ function InvestorDetailInner() {
                                 </TableCell>
                                 <TableCell>{p.method}</TableCell>
                                 <TableCell className="text-xs text-muted-foreground">{p.note}</TableCell>
+                                <TableCell className="text-right">
+                                  <div className="inline-flex gap-1">
+                                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditPay(p)}>
+                                      <Pencil className="h-3.5 w-3.5" />
+                                    </Button>
+                                    <Button variant="ghost" size="icon" className="h-7 w-7 text-rose-600" onClick={() => deletePartnerPay(p)}>
+                                      <Trash2 className="h-3.5 w-3.5" />
+                                    </Button>
+                                  </div>
+                                </TableCell>
                               </TableRow>
                             ))}
                           </TableBody>
