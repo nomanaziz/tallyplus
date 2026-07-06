@@ -16,7 +16,10 @@ import { EmptyState } from "@/components/app/EmptyState";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { ensureDefaultRecurringExpenses } from "@/lib/default-recurring-expenses";
+import { ensureDefaultRecurringExpenses, DEFAULT_RECURRING_EXPENSES } from "@/lib/default-recurring-expenses";
+
+const DEFAULT_NAMES = new Set(DEFAULT_RECURRING_EXPENSES.map((d) => d.name));
+const isDefaultTpl = (t: { name: string }) => DEFAULT_NAMES.has(t.name);
 
 type Kind = "fixed" | "variable" | "loan";
 type LoanMode = "interest_only" | "emi";
@@ -202,7 +205,14 @@ export function RecurringExpensesPanel() {
               {tpls.map((t) => (
                 <TableRow key={t.id}>
                   <TableCell className="font-medium">
-                    <div>{t.name}</div>
+                    <div className="flex items-center gap-1.5">
+                      <span>{t.name}</span>
+                      {isDefaultTpl(t) && (
+                        <Badge variant="secondary" className="h-4 px-1.5 text-[9px]">
+                          {lang === "bn" ? "নির্দিষ্ট" : "fixed"}
+                        </Badge>
+                      )}
+                    </div>
                     <div className="text-[11px] text-muted-foreground">{t.category}</div>
                   </TableCell>
                   <TableCell className="text-xs capitalize">
@@ -221,9 +231,11 @@ export function RecurringExpensesPanel() {
                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setEditing(t); setOpen(true); }}>
                       <Pencil className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => onDelete(t)}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    {!isDefaultTpl(t) && (
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => onDelete(t)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
                   </TableCell>
                 </TableRow>
               ))}
@@ -301,6 +313,7 @@ function RecExpDialog({ open, onOpenChange, editing, onSaved }: { open: boolean;
   const [term, setTerm] = useState("");
   const [loanMode, setLoanMode] = useState<LoanMode>("interest_only");
   const [busy, setBusy] = useState(false);
+  const locked = !!editing && isDefaultTpl(editing);
 
   useEffect(() => {
     if (!open) return;
@@ -366,12 +379,17 @@ function RecExpDialog({ open, onOpenChange, editing, onSaved }: { open: boolean;
         <div className="grid gap-3">
           <div className="grid gap-1.5">
             <Label>{tr("p7_Name")}</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder={tr("p7_e_g_Shop_rent")} />
+            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder={tr("p7_e_g_Shop_rent")} readOnly={locked} disabled={locked} />
+            {locked && (
+              <p className="text-[11px] text-muted-foreground">
+                {lang === "bn" ? "নির্দিষ্ট ক্যাটাগরির নাম পরিবর্তন করা যাবে না।" : "Fixed category name can't be changed."}
+              </p>
+            )}
           </div>
           <div className="grid grid-cols-2 gap-2">
             <div className="grid gap-1.5">
               <Label>{tr("p7_Category")}</Label>
-              <Select value={category} onValueChange={(v) => { setCategory(v); if (v === "loan") setKind("loan"); }}>
+              <Select value={category} disabled={locked} onValueChange={(v) => { setCategory(v); if (v === "loan") setKind("loan"); }}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {CAT_OPTIONS.map((o) => <SelectItem key={o.v} value={o.v}>{lang === "bn" ? o.bn : o.en}</SelectItem>)}

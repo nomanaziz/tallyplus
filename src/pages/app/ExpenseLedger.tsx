@@ -1,7 +1,7 @@
 import { useNavigate } from "@/lib/router";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Coins, ArrowLeft, MoreVertical, Pencil, Trash2, Home, Truck, Zap, User, MoreHorizontal, Plus } from "lucide-react";
+import { Coins, ArrowLeft, MoreVertical, Pencil, Trash2, Home, Truck, Zap, User, MoreHorizontal, Plus, CalendarClock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useShop } from "@/lib/shop";
 import { useAuth } from "@/lib/auth";
@@ -54,6 +54,7 @@ function ExpenseLedgerPage() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Expense | null>(null);
   const [presetCat, setPresetCat] = useState<string | null>(null);
+  const [showRecurring, setShowRecurring] = useState(false);
   const customKey = current?.id ? `expense-custom-cats:${current.id}` : "";
   const [customCats, setCustomCats] = useState<string[]>(() => {
     if (typeof window === "undefined" || !customKey) return [];
@@ -102,10 +103,26 @@ function ExpenseLedgerPage() {
             {t("p5_Total_expenses")}: {fmtMoney(total, lang)}
           </span>
         </div>
-        <Button size="sm" onClick={() => { setEditing(null); setPresetCat(null); setOpen(true); }} className="gap-1">
-          <Plus className="h-4 w-4" /> {lang === "bn" ? "খরচ যোগ করুন" : "Add Expense"}
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            size="sm"
+            variant={showRecurring ? "default" : "outline"}
+            onClick={() => setShowRecurring((v) => !v)}
+            className="gap-1"
+          >
+            <CalendarClock className="h-4 w-4" /> {lang === "bn" ? "নিয়মিত খরচ" : "Recurring"}
+          </Button>
+          <Button size="sm" onClick={() => { setEditing(null); setPresetCat(null); setOpen(true); }} className="gap-1">
+            <Plus className="h-4 w-4" /> {lang === "bn" ? "খরচ যোগ করুন" : "Add Expense"}
+          </Button>
+        </div>
       </div>
+
+      {showRecurring && (
+        <div className="mt-4">
+          <RecurringExpensesPanel />
+        </div>
+      )}
 
       <div className="mt-4">
         <DataToolbar search={search} onSearch={setSearch} onRefresh={refresh} placeholder={t("p5_Category_note")} />
@@ -166,11 +183,6 @@ function ExpenseLedgerPage() {
           />
           </>
         )}
-      </div>
-
-      {/* Recurring expenses moved below history so hisab shows first */}
-      <div className="mt-6">
-        <RecurringExpensesPanel />
       </div>
 
       <ExpenseDialog
