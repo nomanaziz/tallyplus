@@ -412,6 +412,7 @@ function ContactsPage() {
                           father_name: row.father_name ?? null,
                           mother_name: row.mother_name ?? null,
                           emergency_phone: row.emergency_phone ?? null,
+                          is_active: row.is_active !== false,
                         });
                       } else {
                         setEditing(selected);
