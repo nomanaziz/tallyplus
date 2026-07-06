@@ -112,8 +112,10 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
   }, [collapsed]);
 
   const isVisible = (it: SidebarItem) => {
-    // Module gate: if the item declares a module and it's not enabled, hide it.
-    if (it.module && !modulesLoading && !enabledModules.has(it.module)) return false;
+    // Module gate: hide items whose module is not enabled for this shop.
+    // While modules are still loading, hide module-gated items so opt-in
+    // modules like LPG don't briefly appear on shops that never enabled them.
+    if (it.module && (modulesLoading || !enabledModules.has(it.module))) return false;
     if (!it.perm) return true;
     if (loading) return true;
     if (it.perm === "__owner__") return isOwner || isAdmin;
