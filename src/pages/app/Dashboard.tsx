@@ -139,6 +139,18 @@ function Dashboard() {
             </div>
           </Link>
         </div>
+        {/* Desktop-only: extended KPI rows inside the same summary card */}
+        <div className="hidden border-t md:grid md:grid-cols-6 md:divide-x lg:grid-cols-9">
+          <StatLink to="/app/online-shop/orders" label={tr("dash_newOrders")} value={overview?.ordersPending ?? 0} tone={(overview?.ordersPending ?? 0) > 0 ? "primary" : "muted"} />
+          <StatLink to="/app/customer-wishlist" label={tr("dash_newFordo")} value={overview?.fordoNew ?? 0} tone={(overview?.fordoNew ?? 0) > 0 ? "success" : "muted"} />
+          <StatLink to="/app/products" label={tr("dash_lowStock")} value={overview?.productsLowStock ?? 0} tone={(overview?.productsLowStock ?? 0) > 0 ? "danger" : "muted"} />
+          <StatLink to="/app/products" label={tr("dash_products")} value={overview?.productsTotal ?? 0} tone="default" />
+          <StatLink to="/app/online-shop/products" label={tr("dash_onlineProducts")} value={overview?.productsPublished ?? 0} tone="default" />
+          <StatLink to="/app/warranty" label={tr("dash_warranty")} value={overview?.warrantyActive ?? 0} tone="default" />
+          <StatLink to="/app/contacts" label={tr("dash_customers")} value={overview?.customersCount ?? 0} tone="default" />
+          <StatLink to="/app/contacts" label={tr("dash_suppliers")} value={overview?.suppliersCount ?? 0} tone="default" />
+          <StatLink to="/app/access" label={tr("dash_employees")} value={overview?.employeesCount ?? 0} tone="default" />
+        </div>
       </div>
 
       {/* Admin-managed banner carousel */}
