@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { RequirePerm } from "@/components/app/RequirePerm";
-import { ArrowLeft, Plus, User, Phone, MapPin, Wallet, CheckCircle2, Clock, Trash2 } from "lucide-react";
+import { ArrowLeft, Plus, User, Phone, MapPin, Wallet, CheckCircle2, Clock, Trash2, TrendingUp, TrendingDown, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { computeSchedule, INTEREST_TYPES, SOURCE_TYPE_LABEL, type InterestType } from "@/lib/investor-emi";
 
