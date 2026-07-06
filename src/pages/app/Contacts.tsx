@@ -281,6 +281,35 @@ function ContactsPage() {
             })}
           </div>
 
+          {/* Status filter chips */}
+          <div className="flex flex-wrap gap-1 border-b p-2">
+            {(tab === "employees"
+              ? ([
+                  { k: "active", bn: "সক্রিয়", en: "Active" },
+                  { k: "inactive", bn: "নিষ্ক্রিয়", en: "Inactive" },
+                  { k: "all", bn: "সবাই", en: "All" },
+                ] as const)
+              : ([
+                  { k: "all", bn: "সবাই", en: "All" },
+                  { k: "due", bn: tab === "customers" ? "বাকি আছে" : "পাব", en: "Due" },
+                  { k: "settled", bn: "সমান", en: "Settled" },
+                  { k: "advance", bn: "অগ্রিম", en: "Advance" },
+                ] as const)
+            ).map((chip) => (
+              <button
+                key={chip.k}
+                onClick={() => setStatusFilter(chip.k as StatusFilter)}
+                className={
+                  "rounded-full border px-2.5 py-1 text-[11px] font-medium transition " +
+                  (statusFilter === chip.k
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "border-border bg-background hover:bg-accent")
+                }
+              >
+                {lang === "bn" ? chip.bn : chip.en}
+              </button>
+            ))}
+          </div>
           <div className="border-b p-2">
             <div className="relative">
               <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
