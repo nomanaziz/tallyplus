@@ -8,7 +8,7 @@
    for dense UI text; Hind Siliguri kept as fallback. */
 html, body {
   font-family: "Anek Bangla", "Hind Siliguri", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  font-feature-settings: "lnum" 1;
+  font-feature-settings: "locl" 1;
 }
 
 /*
