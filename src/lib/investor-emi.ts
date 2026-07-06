@@ -1,7 +1,7 @@
 // Client-side mirror of the DB `investor_generate_schedule` function.
 // Used for live EMI preview in the "নতুন বিনিয়োগ" dialog.
 
-export type InterestType = "none" | "flat" | "reducing_monthly";
+export type InterestType = "none" | "flat" | "reducing_monthly" | "profit_share";
 
 export interface EmiInput {
   principal: number;
@@ -39,6 +39,9 @@ function addMonths(iso: string, m: number): string {
 
 export function computeSchedule(inp: EmiInput): EmiResult {
   const { principal, interestRate, interestType, tenureMonths, firstDueDate } = inp;
+  if (interestType === "profit_share") {
+    return { rows: [], totalInterest: 0, totalPayable: principal, emi: 0 };
+  }
   if (!principal || !tenureMonths || tenureMonths < 1) {
     return { rows: [], totalInterest: 0, totalPayable: 0, emi: 0 };
   }
@@ -93,10 +96,11 @@ export function computeSchedule(inp: EmiInput): EmiResult {
   return { rows, totalInterest, totalPayable: r2(principal + totalInterest), emi };
 }
 
-export const SOURCE_TYPES: Array<{ value: "bank" | "somiti" | "personal" | "other"; label: string }> = [
+export const SOURCE_TYPES: Array<{ value: "bank" | "somiti" | "personal" | "other" | "partner"; label: string }> = [
   { value: "bank", label: "ব্যাংক" },
   { value: "somiti", label: "সমিতি" },
   { value: "personal", label: "ব্যক্তিগত" },
+  { value: "partner", label: "ব্যবসায়িক Partner" },
   { value: "other", label: "অন্য" },
 ];
 
@@ -104,11 +108,13 @@ export const INTEREST_TYPES: Array<{ value: InterestType; label: string }> = [
   { value: "none", label: "সুদ নেই" },
   { value: "flat", label: "Flat (মাসিক সমান)" },
   { value: "reducing_monthly", label: "Reducing (কমতির উপর)" },
+  { value: "profit_share", label: "লাভ-লোকসান ভাগাভাগি (Partner)" },
 ];
 
 export const SOURCE_TYPE_LABEL: Record<string, string> = {
   bank: "ব্যাংক",
   somiti: "সমিতি",
   personal: "ব্যক্তিগত",
+  partner: "ব্যবসায়িক Partner",
   other: "অন্য",
 };
