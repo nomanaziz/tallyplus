@@ -2461,6 +2461,229 @@ export type Database = {
           },
         ]
       }
+      investor_installments: {
+        Row: {
+          created_at: string
+          due_date: string
+          id: string
+          interest_part: number
+          loan_id: string
+          paid_amount: number
+          paid_at: string | null
+          principal_part: number
+          seq_no: number
+          shop_id: string
+          status: string
+          total_due: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          due_date: string
+          id?: string
+          interest_part?: number
+          loan_id: string
+          paid_amount?: number
+          paid_at?: string | null
+          principal_part?: number
+          seq_no: number
+          shop_id: string
+          status?: string
+          total_due: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          due_date?: string
+          id?: string
+          interest_part?: number
+          loan_id?: string
+          paid_amount?: number
+          paid_at?: string | null
+          principal_part?: number
+          seq_no?: number
+          shop_id?: string
+          status?: string
+          total_due?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "investor_installments_loan_id_fkey"
+            columns: ["loan_id"]
+            isOneToOne: false
+            referencedRelation: "investor_loans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      investor_loans: {
+        Row: {
+          created_at: string
+          first_due_date: string
+          id: string
+          installment_day: number
+          interest_rate: number
+          interest_type: string
+          investor_id: string
+          note: string | null
+          principal: number
+          shop_id: string
+          status: string
+          taken_at: string
+          tenure_months: number
+          total_interest: number
+          total_payable: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          first_due_date: string
+          id?: string
+          installment_day?: number
+          interest_rate?: number
+          interest_type?: string
+          investor_id: string
+          note?: string | null
+          principal: number
+          shop_id: string
+          status?: string
+          taken_at?: string
+          tenure_months: number
+          total_interest?: number
+          total_payable?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          first_due_date?: string
+          id?: string
+          installment_day?: number
+          interest_rate?: number
+          interest_type?: string
+          investor_id?: string
+          note?: string | null
+          principal?: number
+          shop_id?: string
+          status?: string
+          taken_at?: string
+          tenure_months?: number
+          total_interest?: number
+          total_payable?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "investor_loans_investor_id_fkey"
+            columns: ["investor_id"]
+            isOneToOne: false
+            referencedRelation: "investors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      investor_payments: {
+        Row: {
+          amount: number
+          created_at: string
+          expense_id: string | null
+          id: string
+          installment_id: string | null
+          interest_part: number
+          loan_id: string
+          method: string
+          note: string | null
+          paid_at: string
+          principal_part: number
+          shop_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          expense_id?: string | null
+          id?: string
+          installment_id?: string | null
+          interest_part?: number
+          loan_id: string
+          method?: string
+          note?: string | null
+          paid_at?: string
+          principal_part?: number
+          shop_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          expense_id?: string | null
+          id?: string
+          installment_id?: string | null
+          interest_part?: number
+          loan_id?: string
+          method?: string
+          note?: string | null
+          paid_at?: string
+          principal_part?: number
+          shop_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "investor_payments_installment_id_fkey"
+            columns: ["installment_id"]
+            isOneToOne: false
+            referencedRelation: "investor_installments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "investor_payments_loan_id_fkey"
+            columns: ["loan_id"]
+            isOneToOne: false
+            referencedRelation: "investor_loans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      investors: {
+        Row: {
+          address: string | null
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          note: string | null
+          phone: string | null
+          shop_id: string
+          source_name: string | null
+          source_type: string
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          note?: string | null
+          phone?: string | null
+          shop_id: string
+          source_name?: string | null
+          source_type?: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          note?: string | null
+          phone?: string | null
+          shop_id?: string
+          source_name?: string | null
+          source_type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       lpg_suppliers: {
         Row: {
           address: string | null
@@ -6922,6 +7145,10 @@ export type Database = {
         Returns: boolean
       }
       heartbeat_active_device: { Args: { _device_id: string }; Returns: Json }
+      investor_generate_schedule: {
+        Args: { _loan_id: string }
+        Returns: undefined
+      }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_business_user: { Args: { _user_id: string }; Returns: boolean }
       is_consumer: { Args: { _user_id: string }; Returns: boolean }
