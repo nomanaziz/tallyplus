@@ -2120,3 +2120,16 @@ export function fmtMoney(v: number, lang: Lang, currency?: string) {
   void lang;
   return `${sym} ${s}`;
 }
+
+// Format a date as DD-MM-YYYY. Accepts ISO string, "YYYY-MM-DD", or Date.
+export function fmtDate(input: string | number | Date | null | undefined): string {
+  if (!input) return "";
+  const d = typeof input === "string" && /^\d{4}-\d{2}-\d{2}$/.test(input)
+    ? new Date(input + "T00:00:00")
+    : new Date(input);
+  if (isNaN(d.getTime())) return "";
+  const dd = String(d.getDate()).padStart(2, "0");
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const yyyy = d.getFullYear();
+  return `${dd}-${mm}-${yyyy}`;
+}
