@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Plus, Pencil, Trash2, Wallet, AlertCircle } from "lucide-react";
+import { Plus, Pencil, Trash2, Wallet, PlusCircle, ListPlus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useShop } from "@/lib/shop";
 import { useAuth } from "@/lib/auth";
@@ -9,10 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { EmptyState } from "@/components/app/EmptyState";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
@@ -79,16 +77,17 @@ export function RecurringExpensesPanel() {
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<RecExp | null>(null);
-  const [payTarget, setPayTarget] = useState<DueRow | null>(null);
+  const [addingId, setAddingId] = useState<string | null>(null);
+  const [addingAll, setAddingAll] = useState(false);
 
-  // Seed defaults + auto-generate this month's dues on mount
+  // Seed defaults on mount. No auto-generated dues — recurring items are
+  // just templates; user clicks "Add" or "Add all" to push them into the
+  // regular expenses ledger.
   useEffect(() => {
     if (!current?.id) return;
     (async () => {
       await ensureDefaultRecurringExpenses(current.id, user?.id ?? null);
-      await supabase.rpc("generate_recurring_dues_for_shop", { _shop_id: current.id });
       void tplQuery.refetch();
-      void duesQuery.refetch();
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [current?.id, user?.id]);
@@ -108,33 +107,7 @@ export function RecurringExpensesPanel() {
     },
   });
 
-  const monthStart = useMemo(() => {
-    const d = new Date(); d.setDate(1); d.setHours(0, 0, 0, 0); return d.toISOString().slice(0, 10);
-  }, []);
-
-  const duesQuery = useQuery({
-    queryKey: ["recurring_dues", current?.id, monthStart],
-    enabled: !!current?.id,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("recurring_expense_dues")
-        .select("*, recurring_expenses(name, category, kind)")
-        .eq("shop_id", current!.id)
-        .eq("due_month", monthStart)
-        .order("status");
-      if (error) throw error;
-      return (data ?? []) as unknown as DueRow[];
-    },
-  });
-
-  const refresh = () => { void tplQuery.refetch(); void duesQuery.refetch(); };
-
-  const onPause = async (r: RecExp) => {
-    const { error } = await supabase.from("recurring_expenses").update({ is_active: !r.is_active }).eq("id", r.id);
-    if (error) { toast.error(error.message); return; }
-    toast.success(tr("p7_Updated"));
-    refresh();
-  };
+  const refresh = () => { void tplQuery.refetch(); };
 
   const onDelete = async (r: RecExp) => {
     if (!confirm(tr("p7_Delete"))) return;
@@ -145,10 +118,43 @@ export function RecurringExpensesPanel() {
   };
 
   const tpls = tplQuery.data ?? [];
-  const dues = duesQuery.data ?? [];
-  const pendingDues = dues.filter((d) => d.status === "pending");
-  const totalPending = pendingDues.reduce((s, d) => s + Number(d.bill_amount), 0);
-  const totalMonthly = tpls.filter((t) => t.is_active).reduce((s, t) => s + calcMonthly(t), 0);
+  const totalMonthly = tpls.reduce((s, t) => s + calcMonthly(t), 0);
+
+  const addOne = async (t: RecExp) => {
+    if (!current || !user) return;
+    const amt = calcMonthly(t);
+    if (amt <= 0) { toast.error(lang === "bn" ? "পরিমাণ ঠিক করে দিন" : "Set an amount first"); return; }
+    setAddingId(t.id);
+    const { error } = await supabase.from("expenses").insert({
+      shop_id: current.id, created_by: user.id,
+      category: t.name, amount: amt, note: t.note || null,
+      paid_via: "cash", created_at: new Date().toISOString(),
+    });
+    setAddingId(null);
+    if (error) { toast.error(error.message); return; }
+    toast.success(lang === "bn" ? `যোগ হয়েছে: ${t.name}` : `Added: ${t.name}`);
+  };
+
+  const addAll = async () => {
+    if (!current || !user) return;
+    const rows = tpls
+      .map((t) => ({ t, amt: calcMonthly(t) }))
+      .filter((r) => r.amt > 0)
+      .map(({ t, amt }) => ({
+        shop_id: current.id, created_by: user.id,
+        category: t.name, amount: amt, note: t.note || null,
+        paid_via: "cash" as const, created_at: new Date().toISOString(),
+      }));
+    if (rows.length === 0) { toast.error(lang === "bn" ? "যোগ করার মতো কিছু নেই" : "Nothing to add"); return; }
+    if (!confirm(lang === "bn"
+      ? `সব ${rows.length}টি নিয়মিত খরচ খরচের খাতায় যোগ হবে। নিশ্চিত?`
+      : `Add all ${rows.length} recurring items to expenses?`)) return;
+    setAddingAll(true);
+    const { error } = await supabase.from("expenses").insert(rows);
+    setAddingAll(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success(lang === "bn" ? `${rows.length}টি খরচ যোগ হয়েছে` : `${rows.length} expenses added`);
+  };
 
   return (
     <section>
@@ -158,33 +164,38 @@ export function RecurringExpensesPanel() {
           <h2 className="text-base font-bold">
             {lang === "bn" ? "নিয়মিত / মাসিক খরচ" : "Recurring expenses"}
           </h2>
+          <Badge variant="secondary" className="text-[10px]">
+            {lang === "bn" ? "টেমপ্লেট" : "Templates"}
+          </Badge>
         </div>
-        <Button size="sm" onClick={() => { setEditing(null); setOpen(true); }} className="gap-1">
-          <Plus className="h-4 w-4" />
-          {lang === "bn" ? "নতুন নিয়মিত খরচ" : "New recurring expense"}
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            size="sm"
+            variant="default"
+            onClick={addAll}
+            disabled={addingAll || tpls.length === 0}
+            className="gap-1"
+          >
+            <ListPlus className="h-4 w-4" />
+            {addingAll
+              ? (lang === "bn" ? "যোগ হচ্ছে..." : "Adding...")
+              : (lang === "bn" ? "সব যোগ করো" : "Add all")}
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => { setEditing(null); setOpen(true); }} className="gap-1">
+            <Plus className="h-4 w-4" />
+            {lang === "bn" ? "নতুন টেমপ্লেট" : "New template"}
+          </Button>
+        </div>
       </div>
 
-      {/* KPI */}
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <div className="rounded-xl border border-rose-200 bg-rose-50 p-3">
-          <div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{tr("p7_This_month_pending")}</div>
-          <div className="mt-1 text-2xl font-extrabold text-rose-700">{fmtMoney(totalPending, lang)}</div>
-          <div className="mt-0.5 text-[11px] text-muted-foreground">{pendingDues.length} {tr("p7_bills")}</div>
-        </div>
-        <div className="rounded-xl border border-amber-200 bg-amber-50 p-3">
-          <div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{tr("p7_Estimated_monthly")}</div>
-          <div className="mt-1 text-2xl font-extrabold text-amber-700">{fmtMoney(totalMonthly, lang)}</div>
-        </div>
-        <div className="rounded-xl border border-sky-200 bg-sky-50 p-3">
-          <div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{tr("p7_Active_2")}</div>
-          <div className="mt-1 text-2xl font-extrabold text-sky-700">{tpls.filter((t) => t.is_active).length}</div>
-        </div>
-      </div>
+      <p className="text-[11px] text-muted-foreground">
+        {lang === "bn"
+          ? `এগুলা শুধু টেমপ্লেট। "সব যোগ করো" চাপলে সব নিয়মিত খরচ একসাথে খরচের খাতায় যাবে, অথবা প্রতিটির পাশে "যোগ" চেপে আলাদা আলাদা যোগ করতে পারেন। মাসিক আনুমানিক: ${fmtMoney(totalMonthly, lang)}`
+          : `These are just templates. Click "Add all" to push every item into the expense ledger at once, or "Add" per row. Monthly estimate: ${fmtMoney(totalMonthly, lang)}`}
+      </p>
 
       {/* Templates */}
-      <h3 className="mt-4 mb-2 text-sm font-semibold text-muted-foreground">{tr("p7_Expense_chart")}</h3>
-      <div className="rounded-xl border bg-card">
+      <div className="mt-3 rounded-xl border bg-card">
         {tpls.length === 0 ? (
           <div className="p-6 text-center text-sm text-muted-foreground">
             {tr("p7_No_recurring_expenses_yet")}
@@ -196,8 +207,6 @@ export function RecurringExpensesPanel() {
                 <TableHead>{tr("p7_Name")}</TableHead>
                 <TableHead>{tr("p7_Type")}</TableHead>
                 <TableHead className="text-right">{tr("p7_Monthly_amount")}</TableHead>
-                <TableHead>{tr("p7_Day")}</TableHead>
-                <TableHead>{tr("p7_Active_3")}</TableHead>
                 <TableHead className="text-right">{tr("p7_Action")}</TableHead>
               </TableRow>
             </TableHeader>
@@ -223,11 +232,17 @@ export function RecurringExpensesPanel() {
                         : (lang === "bn" ? "নির্দিষ্ট পরিমাণ" : "Fixed amount")}
                   </TableCell>
                   <TableCell className="text-right font-semibold tabular-nums">{fmtMoney(calcMonthly(t), lang)}</TableCell>
-                  <TableCell className="text-xs">{t.day_of_month}</TableCell>
-                  <TableCell>
-                    <Switch checked={t.is_active} onCheckedChange={() => onPause(t)} />
-                  </TableCell>
                   <TableCell className="text-right">
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      className="mr-1 h-8 gap-1"
+                      disabled={addingId === t.id}
+                      onClick={() => addOne(t)}
+                    >
+                      <PlusCircle className="h-3.5 w-3.5" />
+                      {addingId === t.id ? "..." : (lang === "bn" ? "যোগ" : "Add")}
+                    </Button>
                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setEditing(t); setOpen(true); }}>
                       <Pencil className="h-4 w-4" />
                     </Button>
@@ -244,55 +259,7 @@ export function RecurringExpensesPanel() {
         )}
       </div>
 
-      {/* This month dues */}
-      <h3 className="mt-4 mb-2 text-sm font-semibold text-muted-foreground">{tr("p7_This_month_s_bills")}</h3>
-      <div className="rounded-xl border bg-card">
-        {dues.length === 0 ? (
-          <EmptyState icon={<AlertCircle className="h-6 w-6" />} title={tr("p7_No_bills_generated_yet")} />
-        ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>{tr("p7_Name")}</TableHead>
-                <TableHead>{tr("p7_Category")}</TableHead>
-                <TableHead className="text-right">{tr("p7_Amount_4")}</TableHead>
-                <TableHead>{tr("p7_Status")}</TableHead>
-                <TableHead className="text-right">{tr("p7_Action")}</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {dues.map((d) => (
-                <TableRow key={d.id}>
-                  <TableCell className="font-medium">{d.recurring_expenses?.name ?? "—"}</TableCell>
-                  <TableCell className="text-xs">{d.recurring_expenses?.category}</TableCell>
-                  <TableCell className="text-right font-bold tabular-nums">{fmtMoney(Number(d.bill_amount), lang)}</TableCell>
-                  <TableCell>
-                    {d.status === "paid"
-                      ? <Badge className="bg-emerald-600">{tr("p7_Paid")}</Badge>
-                      : d.status === "skipped"
-                      ? <Badge variant="secondary">{tr("p7_Skipped")}</Badge>
-                      : <Badge variant="destructive">{tr("p7_Pending_2")}</Badge>}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {d.status === "pending" ? (
-                      <Button size="sm" onClick={() => setPayTarget(d)}>{tr("p7_Pay")}</Button>
-                    ) : (
-                      <span className="text-[11px] text-muted-foreground">{d.paid_at ? new Date(d.paid_at).toLocaleDateString() : "—"}</span>
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        )}
-      </div>
-
-      <p className="mt-2 text-[11px] text-muted-foreground">
-        {tr("p7_Bills_auto_generate_each_month")}
-      </p>
-
       <RecExpDialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setEditing(null); }} editing={editing} onSaved={refresh} />
-      <PayDueDialog target={payTarget} onOpenChange={(v) => { if (!v) setPayTarget(null); }} onSaved={refresh} />
     </section>
   );
 }
