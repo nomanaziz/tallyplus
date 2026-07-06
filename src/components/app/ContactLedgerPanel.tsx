@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { DateRangePicker } from "@/components/app/DateRangePicker";
 import { Calendar, RefreshCw, Send, Receipt } from "lucide-react";
 import { useI18n, fmtMoney, bnNum } from "@/lib/i18n";
 import { useShop } from "@/lib/shop";
@@ -124,12 +125,10 @@ export function ContactLedgerPanel({ contact, onChanged }: { contact: LedgerCont
             <Receipt className="h-4 w-4" />
             {t("p2b_invoice")}
           </Button>
-          <div className="flex items-center gap-1.5 rounded-md border bg-background px-2">
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-            <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="h-8 w-[140px] border-0 px-1 focus-visible:ring-0" />
-            <span className="text-muted-foreground">–</span>
-            <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="h-8 w-[140px] border-0 px-1 focus-visible:ring-0" />
-          </div>
+          <DateRangePicker
+            value={{ start: from, end: to }}
+            onChange={(v) => { setFrom(v.start); setTo(v.end); }}
+          />
           <Button variant="outline" size="icon" onClick={reload} className="h-9 w-9"><RefreshCw className="h-4 w-4" /></Button>
         </div>
         {contact.party === "customer" && balance > 0 && contact.phone && (
