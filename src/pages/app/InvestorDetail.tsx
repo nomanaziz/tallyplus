@@ -179,6 +179,102 @@ function InvestorDetailInner() {
     setPayNote("");
   };
 
+  // --- Partner settle (profit/loss/principal return) dialog ---
+  const [settleFor, setSettleFor] = useState<Loan | null>(null);
+  const [settleKind, setSettleKind] = useState<"profit_share" | "loss_share" | "principal_return">("profit_share");
+  const [settleBase, setSettleBase] = useState(""); // business profit/loss amount
+  const [settleAmount, setSettleAmount] = useState(""); // final amount to move
+  const [settleMethod, setSettleMethod] = useState<"cash" | "bkash" | "nagad" | "bank">("cash");
+  const [settleDate, setSettleDate] = useState(today);
+  const [settleNote, setSettleNote] = useState("");
+  const [savingSettle, setSavingSettle] = useState(false);
+
+  const openSettle = (l: Loan, kind: typeof settleKind) => {
+    setSettleFor(l);
+    setSettleKind(kind);
+    setSettleBase("");
+    setSettleAmount("");
+    setSettleMethod("cash");
+    setSettleDate(today);
+    setSettleNote("");
+  };
+
+  // auto-compute settle amount from base × share%
+  const settleComputed = useMemo(() => {
+    if (!settleFor) return 0;
+    const b = Number(settleBase) || 0;
+    if (settleKind === "profit_share") return Math.round(b * Number(settleFor.profit_share_pct) / 100 * 100) / 100;
+    if (settleKind === "loss_share") return Math.round(b * Number(settleFor.loss_share_pct) / 100 * 100) / 100;
+    return 0;
+  }, [settleFor, settleBase, settleKind]);
+
+  const saveSettle = async () => {
+    if (!settleFor || !current) return;
+    const amt = Number(settleAmount) || (settleKind !== "principal_return" ? settleComputed : 0);
+    if (!amt || amt <= 0) return toast.error("সঠিক পরিমাণ দিন");
+    setSavingSettle(true);
+    const invName = invQ.data?.name ?? "";
+    const kindLabel = settleKind === "profit_share" ? "লাভের অংশ" : settleKind === "loss_share" ? "লোকসানের অংশ" : "মূল ফেরত";
+    const direction: "in" | "out" = settleKind === "loss_share" ? "in" : "out";
+
+    // 1) mirror to expense/income + cash flow
+    let expenseId: string | null = null;
+    if (direction === "out") {
+      const { data: exp, error: eErr } = await supabase.from("expenses").insert({
+        shop_id: current.id,
+        category: settleKind === "profit_share" ? "Partner লাভের অংশ" : "Partner মূল ফেরত",
+        amount: amt,
+        note: `${invName}${settleNote ? " — " + settleNote : ""}`,
+        paid_via: settleMethod as any,
+        created_by: user?.id ?? null,
+      }).select("id").maybeSingle();
+      if (eErr) { setSavingSettle(false); return toast.error(eErr.message); }
+      expenseId = exp?.id ?? null;
+    }
+
+    // 2) payment record
+    const { data: pRow, error: pErr } = await supabase.from("investor_payments").insert({
+      shop_id: current.id,
+      loan_id: settleFor.id,
+      installment_id: null,
+      amount: amt,
+      principal_part: settleKind === "principal_return" ? amt : 0,
+      interest_part: 0,
+      paid_at: settleDate,
+      method: settleMethod,
+      expense_id: expenseId,
+      note: `${kindLabel}${settleNote ? " — " + settleNote : ""}`,
+      kind: settleKind,
+    }).select("id").maybeSingle();
+    if (pErr) { setSavingSettle(false); return toast.error(pErr.message); }
+
+    // 3) cash flow mirror
+    await supabase.from("cash_movements").insert({
+      shop_id: current.id,
+      amount: amt,
+      direction,
+      note: `${invName} — ${kindLabel}`,
+      ref_table: "investor_payments",
+      ref_id: pRow?.id ?? null,
+      created_by: user?.id ?? null,
+    });
+
+    // 4) close loan if principal fully returned
+    if (settleKind === "principal_return") {
+      const returned = (payQ.data ?? [])
+        .filter((p) => p.loan_id === settleFor.id && p.kind === "principal_return")
+        .reduce((s, p) => s + Number(p.principal_part || p.amount), 0) + amt;
+      if (returned >= Number(settleFor.principal) - 0.01) {
+        await supabase.from("investor_loans").update({ status: "closed" }).eq("id", settleFor.id);
+      }
+    }
+
+    setSavingSettle(false);
+    toast.success("সংরক্ষিত হয়েছে");
+    setSettleFor(null);
+    invalidateAll();
+  };
+
   const savePay = async () => {
     if (!payInst || !current) return;
     const amt = Number(payAmount);
