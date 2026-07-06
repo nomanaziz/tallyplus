@@ -5,7 +5,7 @@ import { Coins, ArrowLeft, MoreVertical, Pencil, Trash2, Home, Truck, Zap, User,
 import { supabase } from "@/integrations/supabase/client";
 import { useShop } from "@/lib/shop";
 import { useAuth } from "@/lib/auth";
-import { useI18n, fmtMoney } from "@/lib/i18n";
+import { useI18n, fmtMoney, fmtDate } from "@/lib/i18n";
 import { expensesListQuery } from "@/lib/queries";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -176,7 +176,7 @@ function ExpenseLedgerPage() {
             <TableBody>
               {pg.paged.map((e) => (
                 <TableRow key={e.id}>
-                  <TableCell className="text-xs">{new Date(e.created_at).toLocaleDateString()}</TableCell>
+                  <TableCell className="text-xs">{fmtDate(e.created_at)}</TableCell>
                   <TableCell className="font-medium">{e.category ?? "—"}</TableCell>
                   <TableCell className="text-sm text-muted-foreground">{e.note ?? "—"}</TableCell>
                   <TableCell className="text-right font-semibold text-rose-600">{fmtMoney(Number(e.amount), lang)}</TableCell>
