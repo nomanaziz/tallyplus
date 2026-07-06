@@ -616,7 +616,7 @@ function InvestorDetailInner() {
 
       {/* Add loan dialog */}
       <Dialog open={openLoan} onOpenChange={setOpenLoan}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>নতুন বিনিয়োগ ({inv?.name})</DialogTitle></DialogHeader>
           <div className="grid gap-3 md:grid-cols-2">
             <div>
@@ -719,7 +719,7 @@ function InvestorDetailInner() {
 
       {/* Pay installment dialog */}
       <Dialog open={!!payInst} onOpenChange={(v) => !v && setPayInst(null)}>
-        <DialogContent>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>কিস্তি পরিশোধ #{payInst?.seq_no}</DialogTitle></DialogHeader>
           {payInst && (
             <div className="space-y-3">
@@ -764,7 +764,7 @@ function InvestorDetailInner() {
 
       {/* Partner settle dialog */}
       <Dialog open={!!settleFor} onOpenChange={(v) => !v && setSettleFor(null)}>
-        <DialogContent>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {settleKind === "profit_share" ? "লাভের অংশ প্রদান" : settleKind === "loss_share" ? "লোকসানের অংশ আদায়" : "মূল টাকা ফেরত"}
@@ -826,7 +826,7 @@ function InvestorDetailInner() {
 
       {/* Edit partner payment dialog */}
       <Dialog open={!!editPay} onOpenChange={(v) => !v && setEditPay(null)}>
-        <DialogContent>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               সম্পাদনা — {editPay?.kind === "profit_share" ? "লাভের অংশ" : editPay?.kind === "loss_share" ? "লোকসানের অংশ" : editPay?.kind === "principal_return" ? "মূল ফেরত" : "কিস্তি"}
