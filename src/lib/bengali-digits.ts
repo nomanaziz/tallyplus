@@ -7,7 +7,18 @@ const MAP: Record<string, string> = {
   "5": "৫", "6": "৬", "7": "৭", "8": "৮", "9": "৯",
 };
 const RE = /[0-9]/g;
-const SKIP_TAGS = new Set(["SCRIPT", "STYLE", "CODE", "PRE", "INPUT", "TEXTAREA", "SELECT", "OPTION"]);
+const SKIP_TAGS = new Set(["SCRIPT", "STYLE", "CODE", "PRE", "KBD", "SAMP", "INPUT", "TEXTAREA", "SELECT", "OPTION"]);
+// Class-name substrings that indicate product identifiers (barcode/serial/IMEI/SKU),
+// or monospaced text where digits should stay Latin for scanning/copy-paste.
+const SKIP_CLASS_HINTS = ["barcode", "serial", "imei", "sku", "font-mono"];
+
+function hasSkipClass(el: HTMLElement): boolean {
+  const c = el.className;
+  const s = typeof c === "string" ? c : (c as unknown as { baseVal?: string })?.baseVal ?? "";
+  if (!s) return false;
+  const lower = s.toLowerCase();
+  return SKIP_CLASS_HINTS.some((h) => lower.includes(h));
+}
 
 function shouldSkip(node: Node | null): boolean {
   let el: Node | null = node;
@@ -17,6 +28,7 @@ function shouldSkip(node: Node | null): boolean {
       if (SKIP_TAGS.has(e.tagName)) return true;
       if (e.isContentEditable) return true;
       if (e.getAttribute("data-no-bn-digits") !== null) return true;
+      if (hasSkipClass(e)) return true;
     }
     el = el.parentNode;
   }
