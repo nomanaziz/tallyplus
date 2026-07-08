@@ -11,13 +11,14 @@ export const DEFAULT_EXPENSE_CATS = [
 ];
 
 export const ACCOUNT_KIND_LABEL: Record<string, string> = {
-  cash: "ক্যাশ", bank: "ব্যাংক", bkash: "বিকাশ",
-  nagad: "নগদ", card: "কার্ড", other: "অন্যান্য",
+  cash: "ক্যাশ (হাতে নগদ)", bank: "ব্যাংক", bkash: "বিকাশ",
+  nagad: "নগদ", rocket: "রকেট", upay: "উপায়",
+  card: "কার্ড", other: "অন্যান্য",
 };
 
 export type ConsumerAccount = {
   id: string; user_id: string; name: string;
-  kind: "cash" | "bank" | "bkash" | "nagad" | "card" | "other";
+  kind: "cash" | "bank" | "bkash" | "nagad" | "rocket" | "upay" | "card" | "other";
   opening_balance: number; color: string | null; is_archived: boolean;
 };
 export type ConsumerCategory = {
@@ -41,8 +42,15 @@ export async function ensureConsumerFinanceSetup(userId: string) {
     supabase.from("consumer_categories").select("id", { count: "exact", head: true }).eq("user_id", userId),
   ]);
   if ((accCount ?? 0) === 0) {
+    const defaults: Array<{ name: string; kind: ConsumerAccount["kind"] }> = [
+      { name: "ক্যাশ (হাতে নগদ)", kind: "cash" },
+      { name: "বিকাশ", kind: "bkash" },
+      { name: "নগদ", kind: "nagad" },
+      { name: "রকেট", kind: "rocket" },
+      { name: "ব্যাংক", kind: "bank" },
+    ];
     await supabase.from("consumer_accounts").upsert(
-      { user_id: userId, name: "ক্যাশ", kind: "cash", opening_balance: 0 },
+      defaults.map((d) => ({ user_id: userId, name: d.name, kind: d.kind, opening_balance: 0 })),
       { onConflict: "user_id,name", ignoreDuplicates: true },
     );
   }

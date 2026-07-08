@@ -1,0 +1,2 @@
+ALTER TABLE public.consumer_accounts DROP CONSTRAINT IF EXISTS consumer_accounts_kind_check;
+ALTER TABLE public.consumer_accounts ADD CONSTRAINT consumer_accounts_kind_check CHECK (kind = ANY (ARRAY['cash','bank','bkash','nagad','rocket','upay','card','other']));
