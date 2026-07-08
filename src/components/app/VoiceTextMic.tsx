@@ -1,3 +1,4 @@
+import { getNumLocale } from "@/lib/i18n";
 import { Mic } from "lucide-react";
 import { useSpeechRecognition } from "@/lib/useSpeechRecognition";
 import { useMicLevel } from "@/lib/useMicLevel";
@@ -15,7 +16,7 @@ type Props = {
  * Generic voice-to-text mic. Appends final transcript via `onText`.
  * Use anywhere a free-text input needs voice dictation (e.g., expense reason).
  */
-export function VoiceTextMic({ onText, className, lang = "bn-BD", title, size = "md" }: Props) {
+export function VoiceTextMic({ onText, className, lang = getNumLocale(), title, size = "md" }: Props) {
   const { supported, listening, error, start, stop } = useSpeechRecognition({
     lang,
     silenceTimeoutMs: 8000,

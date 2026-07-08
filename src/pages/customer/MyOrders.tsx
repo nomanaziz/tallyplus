@@ -1,3 +1,4 @@
+import { getNumLocale } from "@/lib/i18n";
 import { useEffect, useState } from "react";
 import { Link } from "@/lib/router";
 import { supabase } from "@/integrations/supabase/client";
@@ -129,7 +130,7 @@ export default function MyOrdersPage() {
                     <div className="min-w-0">
                       <div className="truncate font-semibold">{r.shops?.name ?? "Shop"}</div>
                       <div className="text-xs text-muted-foreground">
-                        #{r.order_no} • {new Date(r.created_at).toLocaleDateString("bn-BD")}
+                        #{r.order_no} • {new Date(r.created_at).toLocaleDateString(getNumLocale())}
                       </div>
                     </div>
                   </div>

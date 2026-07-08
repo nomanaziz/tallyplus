@@ -1,3 +1,4 @@
+import { getNumLocale } from "@/lib/i18n";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
@@ -139,7 +140,7 @@ export default function CustomerNotes() {
                   <div className="line-clamp-4 whitespace-pre-wrap text-sm text-muted-foreground">{n.content}</div>
                 )}
                 <div className="mt-2 text-[11px] text-muted-foreground">
-                  {new Date(n.updated_at).toLocaleString("bn-BD")}
+                  {new Date(n.updated_at).toLocaleString(getNumLocale())}
                 </div>
               </button>
             </Card>

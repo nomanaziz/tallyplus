@@ -1,3 +1,4 @@
+import { getNumLocale } from "@/lib/i18n";
 import { Link } from "@/lib/router";
 import { CalendarPlus, Clock, Home, MapPin, Phone, Store, Wrench } from "lucide-react";
 
@@ -77,7 +78,7 @@ export function MarketplaceServiceCard({
       <div className="flex flex-1 flex-col gap-1.5 p-2.5">
         <div className="line-clamp-2 text-sm font-bold leading-tight">{service.name}</div>
         <div className="flex items-baseline gap-1 text-primary">
-          <span className="text-base font-extrabold">৳{Number(service.price).toLocaleString("bn-BD")}</span>
+          <span className="text-base font-extrabold">৳{Number(service.price).toLocaleString(getNumLocale())}</span>
           {service.unit && <span className="text-[11px] text-muted-foreground">/ {service.unit}</span>}
         </div>
         {dur && (

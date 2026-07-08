@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Copy, Share2, MessageCircle, Phone, Trash2, Check, RefreshCw, Loader2, ListChecks, ExternalLink, Receipt, Package, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useShop } from "@/lib/shop";
-import { useI18n } from "@/lib/i18n";
+import { getNumLocale, useI18n } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -59,7 +59,7 @@ const STATUS_LABEL: Record<string, { bn: string; en: string; cls: string }> = {
 
 function fmtTime(iso: string) {
   const d = new Date(iso);
-  return d.toLocaleString("bn-BD", { dateStyle: "medium", timeStyle: "short" });
+  return d.toLocaleString(getNumLocale(), { dateStyle: "medium", timeStyle: "short" });
 }
 
 function CustomerWishlistPage() {
@@ -502,7 +502,7 @@ function WishlistDetailDialog({
                         </div>
                         {lineTotal > 0 && (
                           <span className="flex-none text-xs font-semibold text-primary tabular-nums">
-                            ৳{lineTotal.toLocaleString("bn-BD", { maximumFractionDigits: 2 })}
+                            ৳{lineTotal.toLocaleString(getNumLocale(), { maximumFractionDigits: 2 })}
                           </span>
                         )}
                       </div>
@@ -559,7 +559,7 @@ function WishlistDetailDialog({
                     const q = Number(it.qty) || 0;
                     const pr = Number(it.price) || 0;
                     return sum + (q && pr ? q * pr : pr);
-                  }, 0).toLocaleString("bn-BD", { maximumFractionDigits: 2 })}
+                  }, 0).toLocaleString(getNumLocale(), { maximumFractionDigits: 2 })}
                 </span>
               </div>
             </div>

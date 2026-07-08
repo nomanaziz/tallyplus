@@ -1,3 +1,4 @@
+import { getNumLocale } from "@/lib/i18n";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
@@ -90,7 +91,7 @@ export function RecurringRulesTab({
               <li key={r.id} className="flex items-center gap-3 px-4 py-3">
                 <div className={`h-2 w-2 rounded-full ${r.type === "income" ? "bg-emerald-500" : "bg-rose-500"}`} />
                 <div className="min-w-0 flex-1">
-                  <div className="text-sm font-medium truncate">{r.category ?? (r.type === "income" ? "আয়" : "ব্যয়")} • {Number(r.amount).toLocaleString("bn-BD")} ৳</div>
+                  <div className="text-sm font-medium truncate">{r.category ?? (r.type === "income" ? "আয়" : "ব্যয়")} • {Number(r.amount).toLocaleString(getNumLocale())} ৳</div>
                   <div className="text-xs text-muted-foreground">{FREQ_LABEL[r.frequency]} • পরবর্তী: {r.next_run_date}</div>
                 </div>
                 <Switch checked={r.is_active} onCheckedChange={(v) => toggle(r.id, v)} />

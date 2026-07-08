@@ -1,3 +1,4 @@
+import { getNumLocale } from "@/lib/i18n";
 import { useMemo } from "react";
 import { useNavigate, Link } from "@/lib/router";
 import { useQuery } from "@tanstack/react-query";
@@ -11,7 +12,7 @@ import { ArrowLeft, FileText, Printer } from "lucide-react";
 import { SOURCE_TYPE_LABEL } from "@/lib/investor-emi";
 
 function bdt(n: number) {
-  return new Intl.NumberFormat("bn-BD", { maximumFractionDigits: 0 }).format(n) + " ৳";
+  return new Intl.NumberFormat(getNumLocale(), { maximumFractionDigits: 0 }).format(n) + " ৳";
 }
 
 function InvestorReportInner() {

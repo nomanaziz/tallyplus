@@ -1,3 +1,4 @@
+import { getNumLocale } from "@/lib/i18n";
 import { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -167,7 +168,7 @@ export function ServiceBookingDialog({
         {step === "choose" ? (
           <div className="space-y-3">
             <div className="rounded-md border bg-muted/30 p-3 text-sm">
-              <div>সার্ভিস ফি: <strong>৳{service.price.toLocaleString("bn-BD")}</strong></div>
+              <div>সার্ভিস ফি: <strong>৳{service.price.toLocaleString(getNumLocale())}</strong></div>
               <p className="mt-1 text-xs text-muted-foreground">
                 বুকিং করার জন্য নিচের যেকোনো একটি বেছে নিন। অ্যাকাউন্ট থাকলে আপনার বুকিং ও আগের তথ্য সুরক্ষিত থাকবে।
               </p>
@@ -191,10 +192,10 @@ export function ServiceBookingDialog({
         ) : (
         <div className="space-y-3">
           <div className="rounded-md border bg-muted/30 p-2 text-sm">
-            <div>সার্ভিস ফি: <strong>৳{service.price.toLocaleString("bn-BD")}</strong></div>
+            <div>সার্ভিস ফি: <strong>৳{service.price.toLocaleString(getNumLocale())}</strong></div>
             {advanceAmount > 0 && (
               <div className="text-amber-700 dark:text-amber-400">
-                <BadgeDollarSign className="inline h-3.5 w-3.5" /> অগ্রিম / যাতায়াত: <strong>৳{advanceAmount.toLocaleString("bn-BD")}</strong>
+                <BadgeDollarSign className="inline h-3.5 w-3.5" /> অগ্রিম / যাতায়াত: <strong>৳{advanceAmount.toLocaleString(getNumLocale())}</strong>
                 {advanceRequired ? " (বাধ্যতামূলক)" : " (ঐচ্ছিক)"}
               </div>
             )}
@@ -232,7 +233,7 @@ export function ServiceBookingDialog({
             <div className="rounded-md border p-3 space-y-2">
               <div className="text-sm font-semibold">অগ্রিম পেমেন্ট</div>
               <div className="text-xs text-muted-foreground">
-                দোকানের নাম্বারে ৳{advanceAmount.toLocaleString("bn-BD")} পাঠিয়ে TxnID দিন।
+                দোকানের নাম্বারে ৳{advanceAmount.toLocaleString(getNumLocale())} পাঠিয়ে TxnID দিন।
                 {shop.phone && (<> দোকান নাম্বার: <strong>{shop.phone}</strong></>)}
               </div>
               <div className="grid grid-cols-2 gap-2">

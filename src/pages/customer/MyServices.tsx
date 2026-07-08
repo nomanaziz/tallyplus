@@ -1,3 +1,4 @@
+import { getNumLocale } from "@/lib/i18n";
 import { useEffect, useState } from "react";
 import { Link } from "@/lib/router";
 import { supabase } from "@/integrations/supabase/client";
@@ -102,17 +103,17 @@ export default function MyServicesPage() {
                 </div>
                 <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                   {b.scheduled_at && (
-                    <span className="inline-flex items-center gap-1"><CalendarClock className="h-3 w-3" /> {new Date(b.scheduled_at).toLocaleString("bn-BD")}</span>
+                    <span className="inline-flex items-center gap-1"><CalendarClock className="h-3 w-3" /> {new Date(b.scheduled_at).toLocaleString(getNumLocale())}</span>
                   )}
                   {b.customer_address && (
                     <span className="inline-flex items-center gap-1"><MapPin className="h-3 w-3" /> {b.customer_address}</span>
                   )}
                 </div>
                 <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
-                  <span className="rounded-full bg-muted px-2 py-0.5">মূল্য: ৳{Number(b.service_price).toLocaleString("bn-BD")}</span>
+                  <span className="rounded-full bg-muted px-2 py-0.5">মূল্য: ৳{Number(b.service_price).toLocaleString(getNumLocale())}</span>
                   {b.advance_amount > 0 && (
                     <span className={`rounded-full px-2 py-0.5 ${b.advance_paid ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300" : "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300"}`}>
-                      অগ্রিম: ৳{Number(b.advance_amount).toLocaleString("bn-BD")} {b.advance_paid ? "(পেইড)" : "(বাকি)"}
+                      অগ্রিম: ৳{Number(b.advance_amount).toLocaleString(getNumLocale())} {b.advance_paid ? "(পেইড)" : "(বাকি)"}
                     </span>
                   )}
                 </div>

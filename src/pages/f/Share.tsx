@@ -1,3 +1,4 @@
+import { getNumLocale } from "@/lib/i18n";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -200,7 +201,7 @@ export default function SharedFordoPage() {
             <div className="text-xs text-muted-foreground">{wl.customer_address}</div>
           )}
           <div className="text-[11px] text-muted-foreground">
-            তারিখ: {new Date(wl.created_at).toLocaleString("bn-BD")}
+            তারিখ: {new Date(wl.created_at).toLocaleString(getNumLocale())}
           </div>
         </div>
 
@@ -252,7 +253,7 @@ export default function SharedFordoPage() {
               <tfoot>
                 <tr className="border-t bg-muted/50">
                   <td colSpan={4} className="px-2 py-1.5 text-right text-xs font-semibold">মোট</td>
-                  <td className="px-2 py-1.5 text-right font-bold">৳{total.toLocaleString("bn-BD")}</td>
+                  <td className="px-2 py-1.5 text-right font-bold">৳{total.toLocaleString(getNumLocale())}</td>
                 </tr>
               </tfoot>
             )}

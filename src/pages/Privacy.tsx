@@ -1,6 +1,6 @@
 import { SiteHeader } from "@/components/site/SiteHeader";
 import { SiteFooter } from "@/components/site/SiteFooter";
-import { useI18n } from "@/lib/i18n";
+import { getNumLocale, useI18n } from "@/lib/i18n";
 
 function PrivacyPage() {
   const { lang, t } = useI18n();
@@ -139,7 +139,7 @@ function PrivacyPage() {
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
             {bn ? "সর্বশেষ আপডেট: " : "Last updated: "}
-            {new Date().toLocaleDateString(bn ? "bn-BD" : "en-US", {
+            {new Date().toLocaleDateString(bn ? getNumLocale() : "en-US", {
               year: "numeric",
               month: "long",
               day: "numeric",

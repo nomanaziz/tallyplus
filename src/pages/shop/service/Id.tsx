@@ -1,3 +1,4 @@
+import { getNumLocale } from "@/lib/i18n";
 import { Link, useParams } from "@/lib/router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -118,12 +119,12 @@ function ServiceDetailPage() {
           <div className="flex flex-col gap-3">
             <h1 className="text-2xl font-bold leading-tight">{service.name}</h1>
             <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-extrabold text-primary">৳{Number(service.price).toLocaleString("bn-BD")}</span>
+              <span className="text-3xl font-extrabold text-primary">৳{Number(service.price).toLocaleString(getNumLocale())}</span>
               {service.unit && <span className="text-sm text-muted-foreground">/ {service.unit}</span>}
             </div>
             {service.service_charge_extra ? (
               <div className="text-sm text-muted-foreground">
-                + অতিরিক্ত সার্ভিস চার্জ: ৳{Number(service.service_charge_extra).toLocaleString("bn-BD")}
+                + অতিরিক্ত সার্ভিস চার্জ: ৳{Number(service.service_charge_extra).toLocaleString(getNumLocale())}
               </div>
             ) : null}
 
@@ -219,7 +220,7 @@ function ServiceDetailPage() {
             </div>
             {advanceAmt > 0 && (
               <div className="text-xs text-amber-700 dark:text-amber-400">
-                নোট: এই সার্ভিসে যাতায়াত / অগ্রিম ৳{advanceAmt.toLocaleString("bn-BD")}
+                নোট: এই সার্ভিসে যাতায়াত / অগ্রিম ৳{advanceAmt.toLocaleString(getNumLocale())}
                 {service.advance_required ? " বাধ্যতামূলক" : " প্রযোজ্য"}।
               </div>
             )}

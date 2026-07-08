@@ -1,3 +1,4 @@
+import { getNumLocale } from "@/lib/i18n";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
@@ -204,7 +205,7 @@ export default function MyFordo() {
     if (total <= 0) return toast.error("দাম যোগ হওয়া পণ্য নেই");
     if (expensedIds.has(w.id)) return toast.info("এই ফর্দ ইতিমধ্যে খরচে যোগ করা আছে");
     const shopName = shops[w.shop_id]?.name ?? "দোকান";
-    if (!confirm(`এই ফর্দের ৳${total.toLocaleString("bn-BD")} খরচে যোগ করবেন?`)) return;
+    if (!confirm(`এই ফর্দের ৳${total.toLocaleString(getNumLocale())} খরচে যোগ করবেন?`)) return;
     setPushingId(w.id);
     const { error } = await supabase.from("consumer_transactions").insert({
       user_id: user.id,
@@ -290,7 +291,7 @@ export default function MyFordo() {
     setSaveWlId(w.id);
     const shopName = shops[w.shop_id]?.name ?? "ফর্দ";
     const dt = new Date(w.created_at);
-    setSaveName(`${shopName} — ${dt.toLocaleDateString("bn-BD", { day: "numeric", month: "short" })}`);
+    setSaveName(`${shopName} — ${dt.toLocaleDateString(getNumLocale(), { day: "numeric", month: "short" })}`);
     setSaveOpen(true);
   };
   const confirmSaveTemplate = async () => {
@@ -398,7 +399,7 @@ export default function MyFordo() {
                     {shops[s.shop_id]?.name ?? "Shop"}
                   </div>
                   <div className="text-[11px] text-muted-foreground">
-                    {recurrenceLabel(s)} • পরবর্তী: {new Date(s.next_run_at).toLocaleString("bn-BD")}
+                    {recurrenceLabel(s)} • পরবর্তী: {new Date(s.next_run_at).toLocaleString(getNumLocale())}
                   </div>
                   {!s.is_active && (
                     <span className="mt-1 inline-flex rounded-full bg-muted px-2 py-0.5 text-[10px]">বন্ধ</span>
@@ -493,7 +494,7 @@ export default function MyFordo() {
                       <div className="min-w-0">
                         <div className="truncate font-semibold">{shops[w.shop_id]?.name ?? "Shop"}</div>
                         <div className="text-xs text-muted-foreground">
-                          {new Date(w.created_at).toLocaleString("bn-BD")}
+                          {new Date(w.created_at).toLocaleString(getNumLocale())}
                         </div>
                       </div>
                       <span className={`inline-flex flex-none items-center rounded-full px-2 py-0.5 text-[11px] font-medium ${statusCls}`}>
@@ -506,7 +507,7 @@ export default function MyFordo() {
                     <div className="mt-2 flex items-center justify-between text-xs">
                       <span className="text-muted-foreground">{wlItems.length} পণ্য</span>
                       {total > 0 && (
-                        <span className="font-bold text-primary tabular-nums">৳ {total.toLocaleString("bn-BD", { maximumFractionDigits: 2 })}</span>
+                        <span className="font-bold text-primary tabular-nums">৳ {total.toLocaleString(getNumLocale(), { maximumFractionDigits: 2 })}</span>
                       )}
                     </div>
                     {wlItems.length > 0 && (() => {
@@ -550,7 +551,7 @@ export default function MyFordo() {
                                     <div className="mt-0.5">{fsBadge(it)}</div>
                                   </div>
                                   {line > 0 && (
-                                    <span className="flex-none font-semibold tabular-nums text-foreground">৳{line.toLocaleString("bn-BD", { maximumFractionDigits: 2 })}</span>
+                                    <span className="flex-none font-semibold tabular-nums text-foreground">৳{line.toLocaleString(getNumLocale(), { maximumFractionDigits: 2 })}</span>
                                   )}
                                 </li>
                               );

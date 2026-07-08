@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Loader2, Plus, Printer, ReceiptText, Search, ShoppingCart, Trash2, X, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useShop } from "@/lib/shop";
-import { useI18n, type Lang } from "@/lib/i18n";
+import { getNumLocale, useI18n, type Lang } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -780,7 +780,7 @@ function PrintDialog({
     window.print();
   };
 
-  const now = new Date().toLocaleString("bn-BD", { dateStyle: "medium", timeStyle: "short" });
+  const now = new Date().toLocaleString(getNumLocale(), { dateStyle: "medium", timeStyle: "short" });
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>

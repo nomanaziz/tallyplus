@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useShop } from "@/lib/shop";
-import { useI18n } from "@/lib/i18n";
+import { getNumLocale, useI18n } from "@/lib/i18n";
 import { useNavigate } from "@/lib/router";
 import { PageHeader } from "@/components/app/PageHeader";
 import { Input } from "@/components/ui/input";
@@ -86,7 +86,7 @@ export default function SmsHistoryPage() {
                       <span className="text-xs text-muted-foreground">{r.recipient_phone}</span>
                       <span className={"rounded px-1.5 py-0.5 text-xs font-medium " + (STATUS_COLORS[r.status] ?? "bg-muted")}>{r.status}</span>
                       {r.template_code && <span className="rounded bg-muted px-1.5 py-0.5 text-xs">{r.template_code}</span>}
-                      <span className="ml-auto text-xs text-muted-foreground">{new Date(r.created_at).toLocaleString("bn-BD")}</span>
+                      <span className="ml-auto text-xs text-muted-foreground">{new Date(r.created_at).toLocaleString(getNumLocale())}</span>
                     </div>
                     <div className="mt-1 line-clamp-2 whitespace-pre-wrap text-sm text-muted-foreground">{r.message}</div>
                     <div className="mt-1 text-xs text-muted-foreground">{r.sms_count} SMS{r.error ? ` • ${r.error}` : ""}</div>

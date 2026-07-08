@@ -1,3 +1,4 @@
+import { getNumLocale } from "@/lib/i18n";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Search, Phone, MessageCircle, ChevronLeft, ListChecks, Calendar, User2, Loader2 } from "lucide-react";
@@ -51,7 +52,7 @@ function monthLabel(key: string) {
   return `${MONTHS_BN[m - 1]} ${y}`;
 }
 function fmtDate(iso: string) {
-  return new Date(iso).toLocaleDateString("bn-BD", { dateStyle: "medium" });
+  return new Date(iso).toLocaleDateString(getNumLocale(), { dateStyle: "medium" });
 }
 
 function FordoHistoryPage() {
