@@ -18,7 +18,18 @@ import { toast } from "sonner";
 import { getCountry, COUNTRIES } from "@/lib/countries";
 import { GrantAccessDialog } from "@/components/admin/GrantAccessDialog";
 
-
+// Show phone in plain English digits, without +88 country prefix.
+// DB may store as +8801xxxxxxxxx, 8801xxxxxxxxx, or ০১xxxxxxxxx — normalize all.
+const BN_DIGITS = "০১২৩৪৫৬৭৮৯";
+function displayPhone(p: string | null | undefined): string {
+  if (!p) return "—";
+  // convert bengali digits → ascii
+  let s = p.replace(/[০-৯]/g, (d) => String(BN_DIGITS.indexOf(d)));
+  s = s.replace(/[^\d+]/g, "");
+  s = s.replace(/^\+?88/, "");
+  if (!s.startsWith("0") && s.length === 10) s = "0" + s;
+  return s || "—";
+}
 
 type Profile = {
   id: string;
@@ -130,17 +141,18 @@ function UsersPage() {
       return toast.error("This user has no phone — PIN login is not available");
     }
     const newPin = window.prompt(
-      `Reset PIN for ${r.full_name || r.phone}?\n\nEnter a new 4-digit PIN:`,
-      "1234",
+      `Reset PIN for ${r.full_name || displayPhone(r.phone)} — enter new 4-digit PIN:`,
+      "",
     );
     if (newPin === null) return;
-    if (!/^\d{4}$/.test(newPin)) return toast.error("PIN must be exactly 4 digits");
+    const pin = newPin.trim();
+    if (!/^\d{4}$/.test(pin)) return toast.error("PIN must be exactly 4 digits");
     const { data, error } = await supabase.functions.invoke("admin-reset-user-pin", {
-      body: { user_id: r.id, new_pin: newPin },
+      body: { user_id: r.id, new_pin: pin },
     });
     if (error) return toast.error(error.message);
     if ((data as { error?: string })?.error) return toast.error((data as { error: string }).error);
-    toast.success(`PIN reset to ${newPin} — share with the user`);
+    toast.success(`PIN reset to ${pin}`);
   };
 
   const toggleAdmin = async (r: Row) => {
@@ -163,7 +175,7 @@ function UsersPage() {
     <div className="mx-auto max-w-6xl space-y-4 p-3 sm:space-y-6 sm:p-6">
       <div>
         <h1 className="text-xl font-bold sm:text-2xl">Users</h1>
-        <p className="text-xs text-muted-foreground sm:text-sm">সকল user manage করুন</p>
+        <p className="text-xs text-muted-foreground sm:text-sm">Manage all users</p>
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
@@ -242,7 +254,7 @@ function UsersPage() {
                   return (
                     <TableRow key={r.id}>
                       <TableCell className="font-medium">{r.full_name || "—"}</TableCell>
-                      <TableCell>{r.phone || "—"}</TableCell>
+                      <TableCell className="tabular-nums">{displayPhone(r.phone)}</TableCell>
                       <TableCell className="text-xs">
                         {(() => { const c = getCountry(r.country_code); return c ? `${c.flag} ${c.code}` : "—"; })()}
                       </TableCell>
@@ -312,7 +324,7 @@ function UsersPage() {
                 {filtered.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
-                      কোন user পাওয়া যায়নি
+                      No users found
                     </TableCell>
                   </TableRow>
                 )}
