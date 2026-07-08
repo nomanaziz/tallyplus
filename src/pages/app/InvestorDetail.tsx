@@ -981,6 +981,43 @@ function InvestorDetailInner() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Edit investor name/phone */}
+      <Dialog open={editInv} onOpenChange={setEditInv}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>বিনিয়োগকারীর তথ্য edit</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label>নাম *</Label>
+              <Input value={eName} onChange={(e) => setEName(e.target.value)} />
+            </div>
+            <div>
+              <Label>ফোন</Label>
+              <Input value={ePhone} onChange={(e) => setEPhone(e.target.value)} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditInv(false)}>বাতিল</Button>
+            <Button onClick={saveInv} disabled={savingInv}>সংরক্ষণ</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* PIN-protected delete confirmation */}
+      <PinConfirmDialog
+        open={!!pinDel}
+        title={pinDel?.kind === "loan" ? "বিনিয়োগ delete" : "পরিশোধ entry delete"}
+        message={pinDel?.kind === "loan"
+          ? "এই বিনিয়োগ ও এর সব কিস্তি/পরিশোধ মুছে যাবে। নিশ্চিত করতে PIN দিন।"
+          : "এই entry ও সংশ্লিষ্ট খরচ/cash flow মুছে যাবে। নিশ্চিত করতে PIN দিন।"}
+        onOpenChange={(v) => !v && setPinDel(null)}
+        onConfirmed={async () => {
+          if (!pinDel) return;
+          if (pinDel.kind === "loan") await doDeleteLoan(pinDel.id);
+          else await doDeletePartnerPay(pinDel.id, pinDel.expense_id ?? null, pinDel.loan_id ?? "");
+          setPinDel(null);
+        }}
+      />
     </div>
   );
 }
