@@ -629,7 +629,7 @@ export const salesReportQuery = (shopId: string | null | undefined, range: Repor
       if (!shopId) return [] as any[];
       const { data, error } = await supabase
         .from("sales")
-        .select("id,invoice_no,total,paid,due,payment_method,created_at,customer_id,customers(name)")
+        .select("id,invoice_no,total,paid,due,payment_method,note,created_at,customer_id,customers(name)")
         .eq("shop_id", shopId)
         .gte("created_at", range.startIso)
         .lte("created_at", range.endIso)
@@ -695,12 +695,14 @@ export const stockReportQuery = (shopId: string | null | undefined, range: Repor
         const sale = Number(m?.products?.sale_price ?? 0);
         const qty = Number(m?.qty ?? 0);
         if (!map[pid]) map[pid] = { name, in_qty: 0, in_amt: 0, out_qty: 0, out_amt: 0 };
-        if (qty >= 0) {
-          map[pid].in_qty += qty;
-          map[pid].in_amt += qty * cost;
+        if (m.type === "out" || qty < 0) {
+          const outQty = Math.abs(qty);
+          map[pid].out_qty += outQty;
+          map[pid].out_amt += outQty * sale;
         } else {
-          map[pid].out_qty += qty;
-          map[pid].out_amt += qty * sale;
+          const inQty = Math.abs(qty);
+          map[pid].in_qty += inQty;
+          map[pid].in_amt += inQty * cost;
         }
       }
       return Object.entries(map).map(([id, v]) => ({ id, ...v }));
