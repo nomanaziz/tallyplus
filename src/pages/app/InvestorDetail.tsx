@@ -290,63 +290,83 @@ function InvestorDetailInner() {
     if (!payInst || !current) return;
     const amt = Number(payAmount);
     if (!amt || amt <= 0) return toast.error("সঠিক টাকা দিন");
-    const remaining = payInst.total_due - payInst.paid_amount;
-    if (amt > remaining + 0.01) return toast.error(`সর্বোচ্চ ${bdt(remaining)}`);
-    // split by ratio of interest/principal in this installment
-    const rIn = payInst.total_due > 0 ? payInst.interest_part / payInst.total_due : 0;
-    const interestPart = Math.round(amt * rIn * 100) / 100;
-    const principalPart = Math.round((amt - interestPart) * 100) / 100;
+    // Cascade across current + subsequent unpaid installments of the same loan.
+    // এতে user চাইলে আজকেই আগের বেশি কিস্তি দিয়ে দিতে পারেন।
+    const loanInsts = (instQ.data ?? [])
+      .filter((x) => x.loan_id === payInst.loan_id && x.status !== "paid")
+      .sort((a, b) => a.seq_no - b.seq_no);
+    const ordered: Installment[] = [
+      payInst,
+      ...loanInsts.filter((x) => x.id !== payInst.id && x.seq_no > payInst.seq_no),
+    ];
+    const totalRemaining = ordered.reduce((s, x) => s + (Number(x.total_due) - Number(x.paid_amount)), 0);
+    if (amt > totalRemaining + 0.01) {
+      return toast.error(`সর্বোচ্চ ${bdt(totalRemaining)} — এর বেশি বাকি নেই`);
+    }
 
     setSavingPay(true);
-    // 1) create expense entry
+    // 1) create ONE expense entry for the full amount
     const invName = invQ.data?.name ?? "";
     const { data: exp, error: expErr } = await supabase.from("expenses").insert({
       shop_id: current.id,
       category: "বিনিয়োগের কিস্তি",
       amount: amt,
-      note: `${invName} — কিস্তি #${payInst.seq_no}${payNote ? " — " + payNote : ""}`,
+      note: `${invName} — কিস্তি #${payInst.seq_no}${ordered.length > 1 ? "+" : ""}${payNote ? " — " + payNote : ""}`,
       paid_via: payMethod as any,
       created_by: user?.id ?? null,
     }).select("id").maybeSingle();
     if (expErr) { setSavingPay(false); return toast.error(expErr.message); }
 
-    // 2) insert payment
-    const { data: payRow, error: payErr } = await supabase.from("investor_payments").insert({
-      shop_id: current.id,
-      loan_id: payInst.loan_id,
-      installment_id: payInst.id,
-      amount: amt,
-      principal_part: principalPart,
-      interest_part: interestPart,
-      paid_at: payDate,
-      method: payMethod,
-      expense_id: exp?.id ?? null,
-      note: payNote.trim() || null,
-    }).select("id").maybeSingle();
-    if (payErr) { setSavingPay(false); return toast.error(payErr.message); }
-    // Mirror to cash flow: repaying an installment takes money OUT of the shop
+    // 2) distribute across installments in order → one payment row per installment
+    let leftover = amt;
+    let firstPayId: string | null = null;
+    for (const ins of ordered) {
+      if (leftover <= 0.001) break;
+      const remainingIns = Number(ins.total_due) - Number(ins.paid_amount);
+      if (remainingIns <= 0.001) continue;
+      const slice = Math.min(leftover, remainingIns);
+      const rIn = Number(ins.total_due) > 0 ? Number(ins.interest_part) / Number(ins.total_due) : 0;
+      const iPart = Math.round(slice * rIn * 100) / 100;
+      const pPart = Math.round((slice - iPart) * 100) / 100;
+      const { data: payRow, error: payErr } = await supabase.from("investor_payments").insert({
+        shop_id: current.id,
+        loan_id: ins.loan_id,
+        installment_id: ins.id,
+        amount: slice,
+        principal_part: pPart,
+        interest_part: iPart,
+        paid_at: payDate,
+        method: payMethod,
+        expense_id: exp?.id ?? null,
+        note: payNote.trim() || null,
+      }).select("id").maybeSingle();
+      if (payErr) { setSavingPay(false); return toast.error(payErr.message); }
+      if (!firstPayId) firstPayId = payRow?.id ?? null;
+      const newPaid = Number(ins.paid_amount) + slice;
+      const status = newPaid >= Number(ins.total_due) - 0.01 ? "paid" : "partial";
+      await supabase.from("investor_installments").update({
+        paid_amount: newPaid,
+        paid_at: status === "paid" ? payDate : ins.paid_at,
+        status,
+      }).eq("id", ins.id);
+      leftover = Math.round((leftover - slice) * 100) / 100;
+    }
+    // Mirror ONE cash-out for the full amount (linked to first payment row)
     await supabase.from("cash_movements").insert({
       shop_id: current.id,
       amount: amt,
       direction: "out",
       note: `বিনিয়োগ পরিশোধ — ${invName} — কিস্তি #${payInst.seq_no}`,
       ref_table: "investor_payments",
-      ref_id: payRow?.id ?? null,
+      ref_id: firstPayId,
       created_by: user?.id ?? null,
     });
 
-    // 3) update installment status
-    const newPaid = Number(payInst.paid_amount) + amt;
-    const status = newPaid >= payInst.total_due - 0.01 ? "paid" : "partial";
-    await supabase.from("investor_installments").update({
-      paid_amount: newPaid,
-      paid_at: status === "paid" ? payDate : payInst.paid_at,
-      status,
-    }).eq("id", payInst.id);
-
-    // 4) close loan if all installments paid
-    const remainingInst = (instQ.data ?? []).filter((x) => x.loan_id === payInst.loan_id && x.id !== payInst.id && x.status !== "paid");
-    if (remainingInst.length === 0 && status === "paid") {
+    // 3) close loan if fully paid
+    const stillUnpaid = (instQ.data ?? []).filter(
+      (x) => x.loan_id === payInst.loan_id && !ordered.some((o) => o.id === x.id),
+    );
+    if (stillUnpaid.length === 0 && Math.abs(amt - totalRemaining) < 0.01) {
       await supabase.from("investor_loans").update({ status: "closed" }).eq("id", payInst.loan_id);
     }
 
