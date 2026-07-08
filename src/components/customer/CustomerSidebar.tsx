@@ -19,12 +19,7 @@ import {
   BookOpen,
   BarChart3,
   PiggyBank,
-  StickyNote,
   History,
-  CreditCard,
-  GraduationCap,
-  UserCog,
-  User,
   type LucideIcon,
 } from "lucide-react";
 
@@ -37,46 +32,29 @@ const SECTIONS: Section[] = [
     title: "মূল",
     items: [
       { to: "/customer/dashboard", label: "ড্যাশবোর্ড", Icon: Home },
-      { to: "/customer/marketplace", label: "মার্কেটপ্লেস", Icon: Store, highlight: true },
+    ],
+  },
+  {
+    id: "money",
+    title: "হিসাব-নিকাশ",
+    items: [
+      { to: "/customer/money", label: "টাকা", Icon: Wallet },
+      { to: "/customer/cash-book", label: "ক্যাশ বুক", Icon: BookOpen },
+      { to: "/customer/analytics", label: "বিশ্লেষণ", Icon: BarChart3 },
+      { to: "/customer/budgets", label: "বাজেট", Icon: PiggyBank },
+      { to: "/customer/history", label: "ইতিহাস", Icon: History },
     ],
   },
   {
     id: "shopping",
     title: "শপিং",
     items: [
+      { to: "/customer/marketplace", label: "মার্কেটপ্লেস", Icon: Store, highlight: true },
       { to: "/customer/my-orders", label: "আমার অর্ডার", Icon: ShoppingCart },
       { to: "/customer/my-fordo", label: "ফর্দ", Icon: ListChecks },
       { to: "/customer/shopping", label: "শপিং", Icon: ShoppingBag },
       { to: "/customer/favorite-shops", label: "প্রিয় দোকান", Icon: Heart },
       { to: "/customer/my-services", label: "আমার সার্ভিস", Icon: Wrench },
-    ],
-  },
-  {
-    id: "money",
-    title: "টাকা-পয়সা",
-    items: [
-      { to: "/customer/money", label: "টাকা", Icon: Wallet },
-      { to: "/customer/cash-book", label: "ক্যাশ বুক", Icon: BookOpen },
-      { to: "/customer/analytics", label: "বিশ্লেষণ", Icon: BarChart3 },
-      { to: "/customer/budgets", label: "বাজেট", Icon: PiggyBank },
-    ],
-  },
-  {
-    id: "personal",
-    title: "ব্যক্তিগত",
-    items: [
-      { to: "/customer/notes", label: "নোট", Icon: StickyNote },
-      { to: "/customer/history", label: "ইতিহাস", Icon: History },
-    ],
-  },
-  {
-    id: "account",
-    title: "অ্যাকাউন্ট",
-    items: [
-      { to: "/customer/subscription", label: "সাবস্ক্রিপশন", Icon: CreditCard },
-      { to: "/customer/training", label: "ট্রেনিং", Icon: GraduationCap },
-      { to: "/customer/profile", label: "প্রোফাইল", Icon: UserCog },
-      { to: "/customer/me", label: "আমি", Icon: User },
     ],
   },
 ];
