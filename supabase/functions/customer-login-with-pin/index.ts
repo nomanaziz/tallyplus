@@ -18,6 +18,13 @@ function normalizePhone(raw: string): string | null {
   return "+" + d;
 }
 
+function phoneCandidates(raw: string): string[] {
+  const d = raw.replace(/\D/g, "");
+  const normalized = normalizePhone(raw);
+  const legacy = d ? "+" + d : null;
+  return Array.from(new Set([normalized, legacy].filter(Boolean) as string[]));
+}
+
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { ...cors, "content-type": "application/json" } });
 }
@@ -26,7 +33,8 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: cors });
   try {
     const { phone, pin } = await req.json();
-    const normalized = normalizePhone(String(phone ?? ""));
+    const phoneRaw = String(phone ?? "");
+    const normalized = normalizePhone(phoneRaw);
     const pinStr = String(pin ?? "");
 
     if (!normalized) return json({ error: "Invalid phone" }, 400);
@@ -40,7 +48,7 @@ Deno.serve(async (req) => {
     const { data: profile } = await admin
       .from("consumer_profiles")
       .select("id, pin_hash")
-      .eq("phone", normalized)
+      .in("phone", phoneCandidates(phoneRaw))
       .maybeSingle();
 
     if (!profile?.id) return json({ error: "no_account" }, 404);
