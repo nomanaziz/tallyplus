@@ -1,13 +1,13 @@
 import { useEffect } from "react";
 import { Outlet, useNavigate, Link, useLocation } from "@/lib/router";
 import { useAuth } from "@/lib/auth";
-import { SiteFooter } from "@/components/site/SiteFooter";
 import {
   Loader2,
   LogOut,
   Home,
   ListChecks,
   ShoppingBag,
+  Store,
   User,
   Plus,
   Wallet,
@@ -31,6 +31,7 @@ import { IncomingTransfersBanner } from "@/components/app/IncomingTransfersBanne
 // Full sidebar — every consumer page in one scrollable list.
 const NAV: Array<{ to: string; label: string; Icon: typeof Home }> = [
   { to: "/customer/dashboard", label: "ড্যাশবোর্ড", Icon: Home },
+  { to: "/customer/marketplace", label: "মার্কেটপ্লেস", Icon: Store },
   { to: "/customer/my-orders", label: "আমার অর্ডার", Icon: ShoppingCart },
   { to: "/customer/my-fordo", label: "ফর্দ", Icon: ListChecks },
   { to: "/customer/shopping", label: "শপিং", Icon: ShoppingBag },
@@ -180,9 +181,6 @@ export default function CustomerLayout() {
         </div>
       </nav>
 
-      <div className="hidden md:block">
-        <SiteFooter />
-      </div>
     </div>
   );
 }

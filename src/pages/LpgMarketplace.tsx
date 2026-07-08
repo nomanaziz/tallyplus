@@ -17,7 +17,7 @@ type Shop = {
 type BType = { id: string; shop_id: string; name: string; size_label: string | null; retail_price: number; wholesale_price: number; dealer_price: number; sale_price: number };
 type Loc = { shop_id: string; division: string | null; district: string | null; upazila: string | null; area: string | null };
 
-export default function LpgMarketplacePage() {
+export default function LpgMarketplacePage({ embedded = false }: { embedded?: boolean } = {}) {
   const [shops, setShops] = useState<Shop[]>([]);
   const [bottles, setBottles] = useState<BType[]>([]);
   const [locs, setLocs] = useState<Loc[]>([]);
@@ -93,8 +93,8 @@ export default function LpgMarketplacePage() {
   }, [shops, search, tier, kind, district, locByShop]);
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
-      <SiteHeader />
+    <div className={embedded ? "flex flex-col" : "flex min-h-screen flex-col bg-background"}>
+      {!embedded && <SiteHeader />}
       <section className="relative overflow-hidden bg-gradient-to-br from-orange-500 to-rose-600 py-10 text-white">
         <div className="container mx-auto px-4">
           <div className="flex items-center gap-3">
@@ -109,7 +109,7 @@ export default function LpgMarketplacePage() {
         </div>
       </section>
 
-      <main className="container mx-auto flex-1 px-4 py-6">
+      <main className={embedded ? "flex-1 py-4" : "container mx-auto flex-1 px-4 py-6"}>
         <div className="grid gap-2 sm:grid-cols-4">
           <div className="relative sm:col-span-2">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -221,7 +221,7 @@ export default function LpgMarketplacePage() {
           </div>
         )}
       </main>
-      <SiteFooter />
+      {!embedded && <SiteFooter />}
     </div>
   );
 }
