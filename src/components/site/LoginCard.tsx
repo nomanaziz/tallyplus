@@ -224,6 +224,7 @@ export function LoginCard() {
     <Input
       value={phone}
       onChange={(e) => setPhone(e.target.value)}
+      onKeyDown={(e) => { if (e.key === "Enter" && !loading) { e.preventDefault(); void handleSubmit(); } }}
       placeholder={t("lc_phonePh")}
       inputMode="tel"
     />
@@ -250,6 +251,7 @@ export function LoginCard() {
           <Input
             value={pin}
             onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 4))}
+            onKeyDown={(e) => { if (e.key === "Enter" && !loading) { e.preventDefault(); void handleSubmit(); } }}
             placeholder={t("lc_pinPh")}
             inputMode="numeric"
             maxLength={4}
@@ -282,10 +284,10 @@ export function LoginCard() {
             </TabsList>
           </Tabs>
 
-          <Input value={name} onChange={(e) => setName(e.target.value)} placeholder={t("lc_namePh")} />
+          <Input value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !loading) { e.preventDefault(); void handleSubmit(); } }} placeholder={t("lc_namePh")} />
           {role === "owner" && (
             <>
-              <Input value={shopName} onChange={(e) => setShopName(e.target.value)} placeholder={t("lc_shopNamePh")} />
+              <Input value={shopName} onChange={(e) => setShopName(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !loading) { e.preventDefault(); void handleSubmit(); } }} placeholder={t("lc_shopNamePh")} />
               <ShopTypePicker value={shopTypeCode} onChange={(code) => setShopTypeCode(code)} lang={lang === "bn" ? "bn" : "en"} label={t("lc_shopTypeLbl")} />
             </>
           )}
@@ -293,6 +295,7 @@ export function LoginCard() {
           <Input
             value={pin}
             onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 4))}
+            onKeyDown={(e) => { if (e.key === "Enter" && !loading) { e.preventDefault(); void handleSubmit(); } }}
             placeholder={t("lc_pinPh")}
             inputMode="numeric"
             maxLength={4}
