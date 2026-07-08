@@ -62,7 +62,7 @@ Deno.serve(async (req) => {
         email,
         password,
         email_confirm: true,
-        user_metadata: { full_name: name, account_type: "consumer", country_code: country },
+        user_metadata: { full_name: name, phone: normalized, account_type: "consumer", country_code: country },
       });
       if (res.data?.user) { created = res.data; createErr = null; break; }
       createErr = res.error ?? { message: "Failed to create user" };
