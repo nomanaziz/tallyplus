@@ -612,8 +612,14 @@ function InvestorDetailInner() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {insts.map((i) => {
+                      {(() => {
+                        const firstUnpaidSeq = insts
+                          .filter((x) => x.status !== "paid")
+                          .reduce((m, x) => (m === null || x.seq_no < m ? x.seq_no : m), null as number | null);
+                        return insts.map((i) => {
                         const remaining = Number(i.total_due) - Number(i.paid_amount);
+                        const isNext = firstUnpaidSeq !== null && i.seq_no === firstUnpaidSeq;
+                        const locked = i.status !== "paid" && !isNext;
                         return (
                           <TableRow key={i.id}>
                             <TableCell>{i.seq_no}</TableCell>
@@ -627,20 +633,29 @@ function InvestorDetailInner() {
                                 <span className="inline-flex items-center gap-1 text-emerald-700"><CheckCircle2 className="h-3.5 w-3.5" />শোধ</span>
                               ) : i.status === "partial" ? (
                                 <span className="text-amber-700">আংশিক</span>
+                              ) : locked ? (
+                                <span className="text-xs text-muted-foreground">আগের কিস্তি শোধ বাকি</span>
                               ) : (
                                 <span className="inline-flex items-center gap-1 text-muted-foreground"><Clock className="h-3.5 w-3.5" />বাকি</span>
                               )}
                             </TableCell>
                             <TableCell className="text-right">
                               {i.status !== "paid" && (
-                                <Button size="sm" variant="outline" onClick={() => openPay(i)}>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  disabled={locked}
+                                  title={locked ? `আগে কিস্তি #${firstUnpaidSeq} পরিশোধ করুন` : undefined}
+                                  onClick={() => openPay(i)}
+                                >
                                   পরিশোধ {bdt(remaining)}
                                 </Button>
                               )}
                             </TableCell>
                           </TableRow>
                         );
-                      })}
+                        });
+                      })()}
                     </TableBody>
                   </Table>
                 </div>
