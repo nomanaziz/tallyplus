@@ -629,7 +629,7 @@ export const salesReportQuery = (shopId: string | null | undefined, range: Repor
       if (!shopId) return [] as any[];
       const { data, error } = await supabase
         .from("sales")
-        .select("id,invoice_no,total,paid,due,payment_method,created_at,customer_id,customers(name)")
+        .select("id,invoice_no,total,paid,due,payment_method,note,created_at,customer_id,customers(name)")
         .eq("shop_id", shopId)
         .gte("created_at", range.startIso)
         .lte("created_at", range.endIso)
@@ -695,12 +695,14 @@ export const stockReportQuery = (shopId: string | null | undefined, range: Repor
         const sale = Number(m?.products?.sale_price ?? 0);
         const qty = Number(m?.qty ?? 0);
         if (!map[pid]) map[pid] = { name, in_qty: 0, in_amt: 0, out_qty: 0, out_amt: 0 };
-        if (qty >= 0) {
-          map[pid].in_qty += qty;
-          map[pid].in_amt += qty * cost;
+        if (m.type === "out" || qty < 0) {
+          const outQty = Math.abs(qty);
+          map[pid].out_qty += outQty;
+          map[pid].out_amt += outQty * sale;
         } else {
-          map[pid].out_qty += qty;
-          map[pid].out_amt += qty * sale;
+          const inQty = Math.abs(qty);
+          map[pid].in_qty += inQty;
+          map[pid].in_amt += inQty * cost;
         }
       }
       return Object.entries(map).map(([id, v]) => ({ id, ...v }));
@@ -716,7 +718,7 @@ export const productReportQuery = (shopId: string | null | undefined, range: Rep
       if (!shopId) return [] as any[];
       const { data, error } = await supabase
         .from("sale_items")
-        .select("product_id,qty,price,products(name,cost_price),sales!inner(shop_id,created_at,deleted_at)")
+        .select("product_id,name,qty,price,cost,products(name,cost_price),sales!inner(shop_id,created_at,deleted_at)")
         .eq("sales.shop_id", shopId)
         .gte("sales.created_at", range.startIso)
         .lte("sales.created_at", range.endIso)
@@ -724,9 +726,10 @@ export const productReportQuery = (shopId: string | null | undefined, range: Rep
       if (error) throw error;
       const map: Record<string, { name: string; qty: number; revenue: number; profit: number }> = {};
       for (const r of (data ?? []) as any[]) {
-        const pid = (r.product_id ?? "_") as string;
-        const name = r?.products?.name ?? "—";
-        const cost = Number(r?.products?.cost_price ?? 0);
+        const itemName = String(r?.products?.name ?? r?.name ?? "—");
+        const pid = (r.product_id ?? `custom:${itemName.trim().toLowerCase() || "item"}`) as string;
+        const name = itemName;
+        const cost = Number(r?.products?.cost_price ?? r?.cost ?? 0);
         const price = Number(r?.price ?? 0);
         const qty = Number(r?.qty ?? 0);
         if (!map[pid]) map[pid] = { name, qty: 0, revenue: 0, profit: 0 };

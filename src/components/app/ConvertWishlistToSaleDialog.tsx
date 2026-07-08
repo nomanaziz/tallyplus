@@ -32,6 +32,13 @@ export type ConvertItem = {
   lump?: boolean; // lump-sum: ignore qty multiplier
 };
 
+type ProductLite = {
+  id: string;
+  name: string;
+  stock: number | null;
+  cost_price: number | null;
+};
+
 export type ConvertWishlist = {
   id: string;
   shop_id: string;
@@ -121,6 +128,15 @@ export function ConvertWishlistToSaleDialog({
       const finalTotal = Math.max(0, total - discountAmt);
       const due = Math.max(finalTotal - paidAmt, 0);
 
+      const { data: products } = await supabase
+        .from("products")
+        .select("id,name,stock,cost_price")
+        .eq("shop_id", wishlist.shop_id)
+        .is("deleted_at", null);
+      const productByName = new Map(
+        ((products ?? []) as ProductLite[]).map((p) => [p.name.trim().toLowerCase(), p]),
+      );
+
       // 2. create sale
       const { data: sale, error: se } = await supabase
         .from("sales")
@@ -140,21 +156,47 @@ export function ConvertWishlistToSaleDialog({
       if (se) throw se;
       const saleId = (sale as { id: string }).id;
 
-      // 3. create sale items (no product_id — free-form items)
+      // 3. create sale items. If a fordo item name matches a product exactly,
+      // link it so product/stock reports and stock reduction work like POS sales.
       const rows = sellable.map((it) => {
         const q = Number(it.qty) || 0;
         const pr = Number(it.price) || 0;
         const lineTotal = it.lump || !q ? pr : q * pr;
+        const product = productByName.get(it.name.trim().toLowerCase()) ?? null;
         return {
           sale_id: saleId,
+          product_id: product?.id ?? null,
           name: it.name + (it.unit ? ` (${it.qty ?? ""} ${it.unit})` : ""),
           qty: q || 1,
           price: q > 0 && !it.lump ? pr : pr,
+          cost: Number(product?.cost_price ?? 0),
           total: lineTotal,
+          item_type: "product",
         };
       });
       const { error: ie } = await supabase.from("sale_items").insert(rows as never);
       if (ie) throw ie;
+
+      for (const row of rows) {
+        if (!row.product_id) continue;
+        const product = productByName.get(row.name.replace(/\s+\([^)]*\)$/, "").trim().toLowerCase());
+        const qty = Number(row.qty) || 0;
+        await supabase.from("stock_movements").insert({
+          shop_id: wishlist.shop_id,
+          product_id: row.product_id,
+          qty,
+          type: "out",
+          ref_table: "sales",
+          ref_id: saleId,
+          note: "fordo sale",
+        });
+        if (product) {
+          await supabase
+            .from("products")
+            .update({ stock: Math.max(0, Number(product.stock ?? 0) - qty) } as never)
+            .eq("id", row.product_id);
+        }
+      }
 
       // 4. update customer due balance
       if (customerId && due > 0) {
