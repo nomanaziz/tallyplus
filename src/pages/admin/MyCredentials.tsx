@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, KeyRound } from "lucide-react";
+import { Loader2, KeyRound, UserCog } from "lucide-react";
 import { toast } from "sonner";
 
 function MyCredentialsPage() {
@@ -13,6 +13,26 @@ function MyCredentialsPage() {
   const [email, setEmail] = useState(adminEmail || user?.email || "");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
+  const [displayName, setDisplayName] = useState("");
+  const [savingName, setSavingName] = useState(false);
+
+  useEffect(() => {
+    const md = (user?.user_metadata as Record<string, unknown> | null) ?? null;
+    const dn = (md?.["display_name"] ?? md?.["full_name"]) as string | undefined;
+    setDisplayName(typeof dn === "string" ? dn : "");
+  }, [user]);
+
+  const saveName = async (ev: React.FormEvent) => {
+    ev.preventDefault();
+    const v = displayName.trim();
+    if (!v) return toast.error("নাম খালি হতে পারবে না");
+    setSavingName(true);
+    const { error } = await supabase.auth.updateUser({ data: { display_name: v } });
+    setSavingName(false);
+    if (error) return toast.error(error.message);
+    toast.success("নাম আপডেট হয়েছে");
+    await refresh();
+  };
 
   const placeholderEmail = (e: string | null | undefined) =>
     !!e && /@tally\.local$/i.test(e);
@@ -42,7 +62,31 @@ function MyCredentialsPage() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <KeyRound className="h-5 w-5" /> My Login Credentials
+            <UserCog className="h-5 w-5" /> Profile Name
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={saveName} className="space-y-3">
+            <div>
+              <Label>Display name</Label>
+              <Input
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                placeholder="আপনার নাম"
+              />
+            </div>
+            <Button type="submit" disabled={savingName} className="w-full">
+              {savingName ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : null}
+              নাম সংরক্ষণ
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <KeyRound className="h-5 w-5" /> Email & Password
           </CardTitle>
         </CardHeader>
         <CardContent>

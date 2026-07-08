@@ -41,18 +41,16 @@ type Section = { label: string; items: Item[] };
 
 const SECTIONS: Section[] = [
   {
+    label: "Overview",
+    items: [
+      { to: "/admin", label: "Dashboard", icon: LayoutDashboard, perm: "always" },
+    ],
+  },
+  {
     label: "Orders",
     items: [
       { to: "/admin/subscription-requests", label: "Subscription Orders", icon: Receipt, perm: "subscription_requests" },
       { to: "/admin/sms-gateways", label: "SMS Orders & Gateways", icon: MessageSquareText, perm: "sms_gateways" },
-    ],
-  },
-  {
-    label: "Overview",
-    items: [
-      { to: "/admin", label: "Dashboard", icon: LayoutDashboard, perm: "always" },
-      { to: "/admin/my-credentials", label: "My Credentials", icon: KeyRound, perm: "always" },
-      { to: "/admin/telegram-alerts", label: "Telegram Alerts", icon: Bot, perm: "always" },
     ],
   },
   {
@@ -99,7 +97,9 @@ const SECTIONS: Section[] = [
     label: "System",
     items: [
       { to: "/admin/locations", label: "Locations (এলাকা)", icon: MapPin, perm: "locations" },
+      { to: "/admin/telegram-alerts", label: "Telegram Alerts", icon: Bot, perm: "always" },
       { to: "/admin/settings", label: "Settings", icon: Settings, perm: "settings" },
+      { to: "/admin/my-credentials", label: "Profile & Login", icon: KeyRound, perm: "always" },
     ],
   },
 ];

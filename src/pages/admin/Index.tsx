@@ -133,9 +133,36 @@ function AdminOverview() {
   return (
     <div className="mx-auto w-full max-w-6xl space-y-3 p-3 sm:space-y-4 sm:p-6">
       <div>
-        <h1 className="text-xl font-bold sm:text-2xl">Overview</h1>
+        <h1 className="text-xl font-bold sm:text-2xl">Dashboard</h1>
         <p className="text-xs text-muted-foreground sm:text-sm">প্ল্যাটফর্মের সারসংক্ষেপ</p>
       </div>
+
+      {/* New Subscription Orders — top priority */}
+      <Link
+        to={"/admin/subscription-requests" as never}
+        className={`block rounded-xl border p-4 shadow-sm transition hover:shadow-md ${
+          (stats?.pendingRequests ?? 0) > 0
+            ? "border-amber-400 bg-amber-50"
+            : "bg-card"
+        }`}
+      >
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className={`flex h-11 w-11 items-center justify-center rounded-full ${
+              (stats?.pendingRequests ?? 0) > 0 ? "bg-amber-200 text-amber-900" : "bg-muted text-muted-foreground"
+            }`}>
+              <Receipt className="h-5 w-5" />
+            </div>
+            <div>
+              <div className="text-sm font-semibold">নতুন Subscription Orders</div>
+              <div className="text-xs text-muted-foreground">Pending — click করে order page-এ যান</div>
+            </div>
+          </div>
+          <div className="text-3xl font-extrabold tabular-nums">
+            {stats?.pendingRequests ?? "—"}
+          </div>
+        </div>
+      </Link>
 
       {/* Top stat strip */}
       <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4">
