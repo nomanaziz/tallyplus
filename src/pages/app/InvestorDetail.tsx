@@ -1,4 +1,4 @@
-import { getNumLocale } from "@/lib/i18n";
+import { getNumLocale, useI18n } from "@/lib/i18n";
 import { useMemo, useState } from "react";
 import { useParams, useNavigate, Link } from "@/lib/router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -16,7 +16,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { RequirePerm } from "@/components/app/RequirePerm";
 import { ArrowLeft, Plus, User, Phone, MapPin, Wallet, CheckCircle2, Clock, Trash2, TrendingUp, TrendingDown, RotateCcw, Pencil } from "lucide-react";
 import { toast } from "sonner";
-import { computeSchedule, computeLateFee, INTEREST_TYPES, SOURCE_TYPE_LABEL, type InterestType } from "@/lib/investor-emi";
+import { computeSchedule, computeLateFee, INTEREST_TYPES, SOURCE_TYPE_LABEL, SOURCE_TYPE_LABEL_EN, type InterestType } from "@/lib/investor-emi";
 import { PinConfirmDialog } from "@/components/app/PinConfirmDialog";
 
 function bdt(n: number) {
@@ -34,6 +34,9 @@ function InvestorDetailInner() {
   const qc = useQueryClient();
   const { current } = useShop();
   const { user } = useAuth();
+  const { lang } = useI18n();
+  const bn = lang === "bn";
+  const tr = (b: string, e: string) => (bn ? b : e);
   const shopId = current?.id ?? null;
 
   const invQ = useQuery({
@@ -141,8 +144,8 @@ function InvestorDetailInner() {
     const isPS = loan.interest_type === "profit_share";
     const isOpen = loan.interest_type === "open";
     const t = isPS || isOpen ? 1 : Number(loan.tenure_months);
-    if (!p || p <= 0) return toast.error("মূল টাকা দিন");
-    if (!isPS && !isOpen && (!t || t <= 0)) return toast.error("কিস্তির সংখ্যা দিন");
+    if (!p || p <= 0) return toast.error(tr("মূল টাকা দিন", "Enter principal amount"));
+    if (!isPS && !isOpen && (!t || t <= 0)) return toast.error(tr("কিস্তির সংখ্যা দিন", "Enter installment count"));
     const day = Math.max(1, Math.min(28, Number(loan.installment_day) || 1));
     setSavingLoan(true);
     const { data: loanRow, error } = await supabase.from("investor_loans").insert({
@@ -170,12 +173,12 @@ function InvestorDetailInner() {
       shop_id: current.id,
       amount: p,
       direction: "in",
-      note: `বিনিয়োগ গ্রহণ — ${invName}`,
+      note: `${tr("বিনিয়োগ গ্রহণ", "Investment received")} — ${invName}`,
       ref_table: "investor_loans",
       ref_id: loanRow?.id ?? null,
       created_by: user?.id ?? null,
     });
-    toast.success("বিনিয়োগ যোগ হয়েছে — কিস্তির schedule তৈরি হয়েছে");
+    toast.success(isPS || isOpen ? tr("বিনিয়োগ যোগ হয়েছে", "Investment added") : tr("বিনিয়োগ যোগ হয়েছে — কিস্তির schedule তৈরি হয়েছে", "Investment added — installment schedule created"));
     setOpenLoan(false);
     setLoan({ ...loan, principal: "", interest_rate: "", note: "" });
     invalidateAll();
@@ -229,10 +232,10 @@ function InvestorDetailInner() {
   const saveSettle = async () => {
     if (!settleFor || !current) return;
     const amt = Number(settleAmount) || (settleKind !== "principal_return" ? settleComputed : 0);
-    if (!amt || amt <= 0) return toast.error("সঠিক পরিমাণ দিন");
+    if (!amt || amt <= 0) return toast.error(tr("সঠিক পরিমাণ দিন", "Enter a valid amount"));
     setSavingSettle(true);
     const invName = invQ.data?.name ?? "";
-    const kindLabel = settleKind === "profit_share" ? "লাভের অংশ" : settleKind === "loss_share" ? "লোকসানের অংশ" : "মূল ফেরত";
+    const kindLabel = settleKind === "profit_share" ? tr("লাভের অংশ", "Profit share") : settleKind === "loss_share" ? tr("লোকসানের অংশ", "Loss share") : tr("মূল ফেরত", "Principal return");
     const direction: "in" | "out" = settleKind === "loss_share" ? "in" : "out";
 
     // 1) mirror to expense/income + cash flow
@@ -240,7 +243,7 @@ function InvestorDetailInner() {
     if (direction === "out") {
       const { data: exp, error: eErr } = await supabase.from("expenses").insert({
         shop_id: current.id,
-        category: settleKind === "profit_share" ? "Partner লাভের অংশ" : "Partner মূল ফেরত",
+        category: settleKind === "profit_share" ? tr("Partner লাভের অংশ", "Partner profit share") : tr("Partner মূল ফেরত", "Partner principal return"),
         amount: amt,
         note: `${invName}${settleNote ? " — " + settleNote : ""}`,
         paid_via: settleMethod as any,
@@ -278,7 +281,7 @@ function InvestorDetailInner() {
       created_by: user?.id ?? null,
     });
 
-    // 4) close loan if partner-এর মূল টাকা পূরণ (ফেরত + লোকসানে শেষ)
+    // 4) close loan if partner principal is fully reduced (return + loss share)
     if (settleKind === "principal_return" || settleKind === "loss_share") {
       const reducedBefore = (payQ.data ?? [])
         .filter((p) => p.loan_id === settleFor.id && (p.kind === "principal_return" || p.kind === "loss_share"))
@@ -289,7 +292,7 @@ function InvestorDetailInner() {
     }
 
     setSavingSettle(false);
-    toast.success("সংরক্ষিত হয়েছে");
+    toast.success(tr("সংরক্ষিত হয়েছে", "Saved"));
     setSettleFor(null);
     invalidateAll();
   };
@@ -297,7 +300,7 @@ function InvestorDetailInner() {
   const savePay = async () => {
     if (!payInst || !current) return;
     const amt = Number(payAmount);
-    if (!amt || amt <= 0) return toast.error("সঠিক টাকা দিন");
+    if (!amt || amt <= 0) return toast.error(tr("সঠিক টাকা দিন", "Enter a valid amount"));
     // Cascade across current + subsequent unpaid installments of the same loan.
     // এতে user চাইলে আজকেই আগের বেশি কিস্তি দিয়ে দিতে পারেন।
     const loanInsts = (instQ.data ?? [])
@@ -309,7 +312,7 @@ function InvestorDetailInner() {
     ];
     const totalRemaining = ordered.reduce((s, x) => s + (Number(x.total_due) - Number(x.paid_amount)), 0);
     if (amt > totalRemaining + 0.01) {
-      return toast.error(`সর্বোচ্চ ${bdt(totalRemaining)} — এর বেশি বাকি নেই`);
+      return toast.error(tr(`সর্বোচ্চ ${bdt(totalRemaining)} — এর বেশি বাকি নেই`, `Maximum ${bdt(totalRemaining)} — no more due`));
     }
 
     setSavingPay(true);
@@ -317,9 +320,9 @@ function InvestorDetailInner() {
     const invName = invQ.data?.name ?? "";
     const { data: exp, error: expErr } = await supabase.from("expenses").insert({
       shop_id: current.id,
-      category: "বিনিয়োগের কিস্তি",
+      category: tr("বিনিয়োগের কিস্তি", "Investment installment"),
       amount: amt,
-      note: `${invName} — কিস্তি #${payInst.seq_no}${ordered.length > 1 ? "+" : ""}${payNote ? " — " + payNote : ""}`,
+      note: `${invName} — ${tr("কিস্তি", "Installment")} #${payInst.seq_no}${ordered.length > 1 ? "+" : ""}${payNote ? " — " + payNote : ""}`,
       paid_via: payMethod as any,
       created_by: user?.id ?? null,
     }).select("id").maybeSingle();
@@ -364,7 +367,7 @@ function InvestorDetailInner() {
       shop_id: current.id,
       amount: amt,
       direction: "out",
-      note: `বিনিয়োগ পরিশোধ — ${invName} — কিস্তি #${payInst.seq_no}`,
+      note: `${tr("বিনিয়োগ পরিশোধ", "Investment repayment")} — ${invName} — ${tr("কিস্তি", "Installment")} #${payInst.seq_no}`,
       ref_table: "investor_payments",
       ref_id: firstPayId,
       created_by: user?.id ?? null,
@@ -379,7 +382,7 @@ function InvestorDetailInner() {
     }
 
     setSavingPay(false);
-    toast.success("পরিশোধ রেকর্ড হয়েছে ও খরচে যোগ হয়েছে");
+    toast.success(tr("পরিশোধ রেকর্ড হয়েছে ও খরচে যোগ হয়েছে", "Payment recorded and added to expenses"));
     setPayInst(null);
     invalidateAll();
   };
@@ -390,7 +393,7 @@ function InvestorDetailInner() {
   const doDeleteLoan = async (loanId: string) => {
     const { error } = await supabase.from("investor_loans").delete().eq("id", loanId);
     if (error) return toast.error(error.message);
-    toast.success("মুছে ফেলা হয়েছে");
+    toast.success(tr("মুছে ফেলা হয়েছে", "Deleted"));
     invalidateAll();
   };
 
@@ -399,8 +402,8 @@ function InvestorDetailInner() {
     if (expenseId) await supabase.from("expenses").delete().eq("id", expenseId);
     const { error } = await supabase.from("investor_payments").delete().eq("id", payId);
     if (error) return toast.error(error.message);
-    await supabase.from("investor_loans").update({ status: "open" }).eq("id", loanId).eq("status", "closed");
-    toast.success("মুছে ফেলা হয়েছে");
+    await supabase.from("investor_loans").update({ status: "active" }).eq("id", loanId).eq("status", "closed");
+    toast.success(tr("মুছে ফেলা হয়েছে", "Deleted"));
     invalidateAll();
   };
 
@@ -416,12 +419,12 @@ function InvestorDetailInner() {
   };
   const saveInv = async () => {
     if (!id) return;
-    if (!eName.trim()) return toast.error("নাম দিন");
+    if (!eName.trim()) return toast.error(tr("নাম দিন", "Enter a name"));
     setSavingInv(true);
     const { error } = await supabase.from("investors").update({ name: eName.trim(), phone: ePhone.trim() || null }).eq("id", id);
     setSavingInv(false);
     if (error) return toast.error(error.message);
-    toast.success("আপডেট হয়েছে");
+    toast.success(tr("আপডেট হয়েছে", "Updated"));
     qc.invalidateQueries({ queryKey: ["investor", id] });
     qc.invalidateQueries({ queryKey: ["investors"], refetchType: "all" });
     setEditInv(false);
@@ -446,7 +449,7 @@ function InvestorDetailInner() {
   const saveEditPay = async () => {
     if (!editPay) return;
     const amt = Number(ePayAmount);
-    if (!amt || amt <= 0) return toast.error("সঠিক পরিমাণ দিন");
+    if (!amt || amt <= 0) return toast.error(tr("সঠিক পরিমাণ দিন", "Enter a valid amount"));
     setSavingEditPay(true);
     const affectsPrincipal = editPay.kind === "principal_return" || editPay.kind === "loss_share";
     const { error } = await supabase.from("investor_payments").update({
@@ -465,7 +468,7 @@ function InvestorDetailInner() {
     await supabase.from("cash_movements").update({ amount: amt })
       .eq("ref_table", "investor_payments").eq("ref_id", editPay.id);
     setSavingEditPay(false);
-    toast.success("সম্পাদিত হয়েছে");
+    toast.success(tr("সম্পাদিত হয়েছে", "Edited"));
     setEditPay(null);
     invalidateAll();
   };
