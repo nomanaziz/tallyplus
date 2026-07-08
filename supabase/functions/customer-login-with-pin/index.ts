@@ -43,7 +43,16 @@ Deno.serve(async (req) => {
       .eq("phone", normalized)
       .maybeSingle();
 
-    if (!profile?.id) return json({ error: "no_account" }, 404);
+    if (!profile?.id) {
+      // Check if an owner/shop account exists with this phone → guide user to Owner tab
+      const { data: ownerProfile } = await admin
+        .from("profiles")
+        .select("id")
+        .eq("phone", normalized)
+        .maybeSingle();
+      if (ownerProfile?.id) return json({ error: "owner_account_exists" }, 404);
+      return json({ error: "no_account" }, 404);
+    }
     if (!profile.pin_hash) return json({ error: "no_pin_set" }, 401);
 
     const ok = await bcrypt.compare(pinStr, profile.pin_hash as string);
