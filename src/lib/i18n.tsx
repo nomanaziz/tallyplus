@@ -2126,6 +2126,21 @@ export function getNumLocale(): string {
   }
 }
 
+export function getSpeechLocale(): string {
+  if (typeof window === "undefined") return "en-US";
+  const l = (localStorage.getItem("tp_lang") || "bn") as Lang;
+  switch (l) {
+    case "bn": return "bn-BD";
+    case "hi": return "hi-IN";
+    case "ta": return "ta-IN";
+    case "te": return "te-IN";
+    case "ur": return "ur-PK";
+    case "ar": return "ar-SA";
+    case "en":
+    default:   return "en-US";
+  }
+}
+
 function getCurrency(): string {
   if (typeof window === "undefined") return "BDT";
   return localStorage.getItem("tp_currency") || "BDT";
