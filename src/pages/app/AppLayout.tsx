@@ -17,6 +17,7 @@ import { SampleProductImportSheet } from "@/components/app/SampleProductImportSh
 import { TrialBanner } from "@/components/app/TrialBanner";
 import { TrialEndingDialog } from "@/components/app/TrialEndingDialog";
 import { AppTour } from "@/components/app/AppTour";
+import { QuickSellSheet } from "@/components/app/QuickSellSheet";
 
 // SettingsSheet is heavy (329 lines + many imports) and only opens on demand.
 // Lazy-load to keep the app shell bundle small.
@@ -138,6 +139,13 @@ function AppLayout({ ownsShop }: { ownsShop: boolean }) {
   const nav = useNavigate();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [sampleImportOpen, setSampleImportOpen] = useState(false);
+  const [quickSellOpen, setQuickSellOpen] = useState(false);
+
+  useEffect(() => {
+    const handler = () => setQuickSellOpen(true);
+    window.addEventListener("open-quick-sell", handler);
+    return () => window.removeEventListener("open-quick-sell", handler);
+  }, []);
 
   // Auto-open sample-product import sheet if user opted in at signup time.
   useEffect(() => {
@@ -258,6 +266,7 @@ function AppLayout({ ownsShop }: { ownsShop: boolean }) {
           onImported={() => setSampleImportOpen(false)}
         />
         <AppTour />
+        <QuickSellSheet open={quickSellOpen} onOpenChange={setQuickSellOpen} />
       </div>
     </div>
   );
