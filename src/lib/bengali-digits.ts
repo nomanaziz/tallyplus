@@ -12,6 +12,11 @@ const SKIP_TAGS = new Set(["SCRIPT", "STYLE", "CODE", "PRE", "KBD", "SAMP", "INP
 // or monospaced text where digits should stay Latin for scanning/copy-paste.
 const SKIP_CLASS_HINTS = ["barcode", "serial", "imei", "sku", "font-mono"];
 
+function isAdminRoute(): boolean {
+  if (typeof window === "undefined") return false;
+  return window.location.pathname.startsWith("/admin") || window.location.pathname === "/xbd-login";
+}
+
 function hasSkipClass(el: HTMLElement): boolean {
   const c = el.className;
   const s = typeof c === "string" ? c : (c as unknown as { baseVal?: string })?.baseVal ?? "";
@@ -21,6 +26,7 @@ function hasSkipClass(el: HTMLElement): boolean {
 }
 
 function shouldSkip(node: Node | null): boolean {
+  if (isAdminRoute()) return true;
   let el: Node | null = node;
   while (el) {
     if (el.nodeType === 1) {
