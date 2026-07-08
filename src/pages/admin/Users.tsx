@@ -20,11 +20,10 @@ import { GrantAccessDialog } from "@/components/admin/GrantAccessDialog";
 
 // Show phone in plain English digits, without +88 country prefix.
 // DB may store as +8801xxxxxxxxx, 8801xxxxxxxxx, or ০১xxxxxxxxx — normalize all.
-const BN_DIGITS = "০১২৩৪৫৬৭৮৯";
 function displayPhone(p: string | null | undefined): string {
   if (!p) return "—";
-  // convert bengali digits → ascii
-  let s = p.replace(/[০-৯]/g, (d) => String(BN_DIGITS.indexOf(d)));
+  // convert bengali digits (U+09E6..U+09EF) → ascii by code-point math
+  let s = p.replace(/[\u09E6-\u09EF]/g, (d) => String(d.charCodeAt(0) - 0x09E6));
   s = s.replace(/[^\d+]/g, "");
   s = s.replace(/^\+?88/, "");
   if (!s.startsWith("0") && s.length === 10) s = "0" + s;
