@@ -90,6 +90,14 @@ export function LoginCard() {
     if (error) throw error;
   };
 
+  const errText = (v: unknown, fallback: string): string => {
+    if (typeof v === "string" && v.trim()) return v;
+    if (v && typeof v === "object" && "message" in v && typeof (v as { message: unknown }).message === "string") {
+      return (v as { message: string }).message;
+    }
+    return fallback;
+  };
+
   const handleSubmit = async () => {
     const err = validate();
     if (err) return toast.error(err);
@@ -110,7 +118,7 @@ export function LoginCard() {
           if (!r.ok) {
             if (r.error === "phone_exists") return toast.error("এই নম্বরে account আছে — লগইন করুন");
             if (r.error === "rate_limit") return toast.error("একটু পরে আবার চেষ্টা করুন");
-            return toast.error(r.error || "সাইনআপ ব্যর্থ");
+            return toast.error(errText(r.error, "সাইনআপ ব্যর্থ"));
           }
           await setSession(r.access_token, r.refresh_token);
           await ensureProfile();
@@ -126,7 +134,7 @@ export function LoginCard() {
           if (!r.ok) {
             if (r.error === "phone_exists") return toast.error("এই নম্বরে গ্রাহক account আছে — লগইন করুন");
             if (r.error === "rate_limit") return toast.error("একটু পরে আবার চেষ্টা করুন");
-            return toast.error(r.error || "সাইনআপ ব্যর্থ");
+            return toast.error(errText(r.error, "সাইনআপ ব্যর্থ"));
           }
           await setSession(r.access_token, r.refresh_token);
           await ensureProfile();
@@ -148,7 +156,7 @@ export function LoginCard() {
             if (r.error === "employee_must_use_email") return toast.error("Employee হিসেবে email + password দিয়ে login করুন");
             if (r.error === "wrong_pin") { setShowForgotPin(true); return toast.error("ভুল PIN"); }
             if (r.error === "no_account") { setShowForgotPin(false); return toast.error("এই নম্বরে দোকানদার account নেই — সাইনআপ করুন"); }
-            return toast.error(r.error || "লগইন ব্যর্থ");
+            return toast.error(errText(r.error, "লগইন ব্যর্থ"));
           }
           await setSession(r.access_token, r.refresh_token);
           await ensureProfile();
@@ -161,7 +169,7 @@ export function LoginCard() {
             if (r.error === "wrong_pin") { setShowForgotPin(true); return toast.error("ভুল PIN"); }
             if (r.error === "no_account") { setShowForgotPin(false); return toast.error("এই নম্বরে গ্রাহক account নেই — সাইনআপ করুন"); }
             if (r.error === "no_pin_set") { setShowForgotPin(true); return toast.error("PIN সেট নেই — WhatsApp এ সাহায্য নিন"); }
-            return toast.error(r.error || "লগইন ব্যর্থ");
+            return toast.error(errText(r.error, "লগইন ব্যর্থ"));
           }
           await setSession(r.access_token, r.refresh_token);
           await ensureProfile();
@@ -175,7 +183,7 @@ export function LoginCard() {
         }
       }
     } catch (e) {
-      toast.error((e as Error).message);
+      toast.error(errText(e, "কিছু একটা ভুল হয়েছে"));
     } finally {
       setLoading(false);
     }
