@@ -13,7 +13,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ShieldCheck, ShieldOff, Ban, Check, Loader2, Gift, XCircle, Infinity as InfinityIcon } from "lucide-react";
+import { ShieldCheck, ShieldOff, Ban, Check, Loader2, Gift, XCircle, Infinity as InfinityIcon, KeyRound } from "lucide-react";
 import { toast } from "sonner";
 import { getCountry, COUNTRIES } from "@/lib/countries";
 import { GrantAccessDialog } from "@/components/admin/GrantAccessDialog";
@@ -123,6 +123,24 @@ function UsersPage() {
     if (error) return toast.error(error.message);
     toast.success(r.is_suspended ? "Unsuspended" : "Suspended");
     void load();
+  };
+
+  const resetPin = async (r: Row) => {
+    if (!r.phone) {
+      return toast.error("This user has no phone — PIN login is not available");
+    }
+    const newPin = window.prompt(
+      `Reset PIN for ${r.full_name || r.phone}?\n\nEnter a new 4-digit PIN:`,
+      "1234",
+    );
+    if (newPin === null) return;
+    if (!/^\d{4}$/.test(newPin)) return toast.error("PIN must be exactly 4 digits");
+    const { data, error } = await supabase.functions.invoke("admin-reset-user-pin", {
+      body: { user_id: r.id, new_pin: newPin },
+    });
+    if (error) return toast.error(error.message);
+    if ((data as { error?: string })?.error) return toast.error((data as { error: string }).error);
+    toast.success(`PIN reset to ${newPin} — share with the user`);
   };
 
   const toggleAdmin = async (r: Row) => {
@@ -283,6 +301,9 @@ function UsersPage() {
                           ) : (
                             <><Ban className="mr-1 h-3.5 w-3.5" />Suspend</>
                           )}
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={() => resetPin(r)} title="Reset user's 4-digit login PIN">
+                          <KeyRound className="mr-1 h-3.5 w-3.5" />Reset PIN
                         </Button>
                       </TableCell>
                     </TableRow>
