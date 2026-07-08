@@ -1,4 +1,4 @@
-import { getNumLocale } from "@/lib/i18n";
+import { getNumLocale, useI18n } from "@/lib/i18n";
 import { useMemo, useState } from "react";
 import { Link, useNavigate } from "@/lib/router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -15,7 +15,7 @@ import { EmptyState } from "@/components/app/EmptyState";
 import { RequirePerm } from "@/components/app/RequirePerm";
 import { ArrowLeft, Plus, Search, Users, FileText, ChevronRight, Phone, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { SOURCE_TYPES, SOURCE_TYPE_LABEL } from "@/lib/investor-emi";
+import { SOURCE_TYPES, SOURCE_TYPE_LABEL, SOURCE_TYPE_LABEL_EN } from "@/lib/investor-emi";
 
 function bdt(n: number) {
   return new Intl.NumberFormat(getNumLocale(), { maximumFractionDigits: 0 }).format(n) + " ৳";
@@ -35,6 +35,9 @@ type PaymentRow = { loan_id: string; amount: number };
 
 function InvestorsPageInner() {
   const { current } = useShop();
+  const { lang } = useI18n();
+  const bn = lang === "bn";
+  const tr = (b: string, e: string) => (bn ? b : e);
   const nav = useNavigate();
   const qc = useQueryClient();
   const shopId = current?.id ?? null;
@@ -125,7 +128,7 @@ function InvestorsPageInner() {
 
   const save = async () => {
     if (!current) return;
-    if (!form.name.trim()) return toast.error("নাম দিন");
+    if (!form.name.trim()) return toast.error(tr("নাম দিন", "Enter a name"));
     setSaving(true);
     const { error } = await supabase.from("investors").insert({
       shop_id: current.id,
@@ -138,7 +141,7 @@ function InvestorsPageInner() {
     });
     setSaving(false);
     if (error) return toast.error(error.message);
-    toast.success("বিনিয়োগকারী যোগ হয়েছে");
+    toast.success(tr("বিনিয়োগকারী যোগ হয়েছে", "Investor added"));
     setOpen(false);
     setForm({ name: "", phone: "", address: "", source_type: "personal", source_name: "", note: "" });
     qc.invalidateQueries({ queryKey: ["investors", shopId] });
@@ -151,14 +154,14 @@ function InvestorsPageInner() {
     if (!current) return;
     const s = perInvestor.get(inv.id);
     if (s && s.loans > 0) {
-      return toast.error("এই বিনিয়োগকারীর loan আছে — আগে loan/entry ডিলিট করুন");
+      return toast.error(tr("এই বিনিয়োগকারীর loan আছে — আগে loan/entry ডিলিট করুন", "This investor has loans — delete the loan/entries first"));
     }
-    if (!confirm(`"${inv.name}" ডিলিট করবেন?`)) return;
+    if (!confirm(tr(`"${inv.name}" ডিলিট করবেন?`, `Delete "${inv.name}"?`))) return;
     setDeletingId(inv.id);
     const { error } = await supabase.from("investors").delete().eq("id", inv.id).eq("shop_id", current.id);
     setDeletingId(null);
     if (error) return toast.error(error.message);
-    toast.success("ডিলিট হয়েছে");
+    toast.success(tr("ডিলিট হয়েছে", "Deleted"));
     qc.invalidateQueries({ queryKey: ["investors", shopId] });
   };
 
@@ -170,36 +173,36 @@ function InvestorsPageInner() {
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <Users className="h-5 w-5 text-primary" />
-          <h1 className="text-lg font-extrabold md:text-xl">বিনিয়োগকারী</h1>
+          <h1 className="text-lg font-extrabold md:text-xl">{tr("বিনিয়োগকারী", "Investors")}</h1>
           <span className="ml-1 rounded-md border border-primary/30 bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
-            মোট নেওয়া: {bdt(totals.taken)}
+            {tr("মোট নেওয়া", "Total taken")}: {bdt(totals.taken)}
           </span>
           <span className="rounded-md border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700">
-            ফেরত: {bdt(totals.paid)}
+            {tr("ফেরত", "Returned")}: {bdt(totals.paid)}
           </span>
           <span className="rounded-md border border-rose-200 bg-rose-50 px-2 py-0.5 text-xs font-semibold text-rose-700">
-            বাকি: {bdt(totals.outstanding)}
+            {tr("বাকি", "Due")}: {bdt(totals.outstanding)}
           </span>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Button asChild size="sm" variant="outline">
-            <Link to="/app/investor-report"><FileText className="mr-1 h-4 w-4" /> রিপোর্ট</Link>
+            <Link to="/app/investor-report"><FileText className="mr-1 h-4 w-4" /> {tr("রিপোর্ট", "Report")}</Link>
           </Button>
           <Button size="sm" onClick={() => setOpen(true)}>
-            <Plus className="mr-1 h-4 w-4" /> নতুন বিনিয়োগকারী
+            <Plus className="mr-1 h-4 w-4" /> {tr("নতুন বিনিয়োগকারী", "New investor")}
           </Button>
         </div>
       </div>
 
       <div className="relative max-w-sm">
         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-        <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="নাম বা ফোন দিয়ে খুঁজুন" className="h-9 pl-8" />
+        <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={tr("নাম বা ফোন দিয়ে খুঁজুন", "Search by name or phone")} className="h-9 pl-8" />
       </div>
 
       {investorsQ.isLoading ? (
-        <Card className="p-6 text-center text-sm text-muted-foreground">লোড হচ্ছে…</Card>
+        <Card className="p-6 text-center text-sm text-muted-foreground">{tr("লোড হচ্ছে…", "Loading…")}</Card>
       ) : filtered.length === 0 ? (
-        <EmptyState title="কোনো বিনিয়োগকারী নেই — উপরে থেকে ‘নতুন বিনিয়োগকারী’ চাপুন" />
+        <EmptyState title={tr("কোনো বিনিয়োগকারী নেই — উপরে থেকে ‘নতুন বিনিয়োগকারী’ চাপুন", "No investors yet — tap ‘New investor’ above")} />
       ) : (
         <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((inv) => {
@@ -214,7 +217,7 @@ function InvestorsPageInner() {
                   <div className="flex items-center gap-2">
                     <div className="truncate font-semibold">{inv.name}</div>
                     <span className="rounded-md border px-1.5 py-0.5 text-[10px] text-muted-foreground">
-                      {SOURCE_TYPE_LABEL[inv.source_type] ?? inv.source_type}
+                      {(bn ? SOURCE_TYPE_LABEL : SOURCE_TYPE_LABEL_EN)[inv.source_type] ?? inv.source_type}
                     </span>
                   </div>
                   {inv.phone && (
@@ -223,10 +226,10 @@ function InvestorsPageInner() {
                     </div>
                   )}
                   <div className="mt-1 flex flex-wrap gap-1 text-[11px]">
-                    <span className="rounded bg-primary/10 px-1.5 py-0.5 text-primary">নেওয়া {bdt(s.taken)}</span>
-                    <span className="rounded bg-emerald-50 px-1.5 py-0.5 text-emerald-700">ফেরত {bdt(s.paid)}</span>
-                    <span className="rounded bg-rose-50 px-1.5 py-0.5 text-rose-700">বাকি {bdt(s.outstanding)}</span>
-                    <span className="rounded bg-muted px-1.5 py-0.5 text-muted-foreground">{s.loans}টি loan</span>
+                    <span className="rounded bg-primary/10 px-1.5 py-0.5 text-primary">{tr("নেওয়া", "Taken")} {bdt(s.taken)}</span>
+                    <span className="rounded bg-emerald-50 px-1.5 py-0.5 text-emerald-700">{tr("ফেরত", "Returned")} {bdt(s.paid)}</span>
+                    <span className="rounded bg-rose-50 px-1.5 py-0.5 text-rose-700">{tr("বাকি", "Due")} {bdt(s.outstanding)}</span>
+                    <span className="rounded bg-muted px-1.5 py-0.5 text-muted-foreground">{s.loans} {tr("টি loan", "loans")}</span>
                   </div>
                 </div>
                 <button
@@ -247,43 +250,43 @@ function InvestorsPageInner() {
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
-          <DialogHeader><DialogTitle>নতুন বিনিয়োগকারী</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{tr("নতুন বিনিয়োগকারী", "New investor")}</DialogTitle></DialogHeader>
           <div className="space-y-3">
             <div>
-              <Label>নাম *</Label>
+              <Label>{tr("নাম", "Name")} *</Label>
               <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
             </div>
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <Label>ফোন</Label>
+                <Label>{tr("ফোন", "Phone")}</Label>
                 <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
               </div>
               <div>
-                <Label>উৎস</Label>
+                <Label>{tr("উৎস", "Source")}</Label>
                 <Select value={form.source_type} onValueChange={(v) => setForm({ ...form, source_type: v })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    {SOURCE_TYPES.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
+                    {SOURCE_TYPES.map((s) => <SelectItem key={s.value} value={s.value}>{bn ? s.label : s.labelEn}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
             </div>
             <div>
-              <Label>উৎসের নাম (ব্যাংক/সমিতি/ব্যক্তির নাম)</Label>
+              <Label>{tr("উৎসের নাম (ব্যাংক/সমিতি/ব্যক্তির নাম)", "Source name (bank/co-operative/person)")}</Label>
               <Input value={form.source_name} onChange={(e) => setForm({ ...form, source_name: e.target.value })} />
             </div>
             <div>
-              <Label>ঠিকানা</Label>
+              <Label>{tr("ঠিকানা", "Address")}</Label>
               <Input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} />
             </div>
             <div>
-              <Label>নোট</Label>
+              <Label>{tr("নোট", "Note")}</Label>
               <Textarea rows={2} value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)}>বাতিল</Button>
-            <Button onClick={save} disabled={saving}>সংরক্ষণ</Button>
+            <Button variant="outline" onClick={() => setOpen(false)}>{tr("বাতিল", "Cancel")}</Button>
+            <Button onClick={save} disabled={saving}>{tr("সংরক্ষণ", "Save")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

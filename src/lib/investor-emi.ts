@@ -96,20 +96,20 @@ export function computeSchedule(inp: EmiInput): EmiResult {
   return { rows, totalInterest, totalPayable: r2(principal + totalInterest), emi };
 }
 
-export const SOURCE_TYPES: Array<{ value: "bank" | "somiti" | "personal" | "other" | "partner"; label: string }> = [
-  { value: "bank", label: "ব্যাংক" },
-  { value: "somiti", label: "সমিতি" },
-  { value: "personal", label: "ব্যক্তিগত" },
-  { value: "partner", label: "ব্যবসায়িক Partner" },
-  { value: "other", label: "অন্য" },
+export const SOURCE_TYPES: Array<{ value: "bank" | "somiti" | "personal" | "other" | "partner"; label: string; labelEn: string }> = [
+  { value: "bank", label: "ব্যাংক", labelEn: "Bank" },
+  { value: "somiti", label: "সমিতি", labelEn: "Co-operative" },
+  { value: "personal", label: "ব্যক্তিগত", labelEn: "Personal" },
+  { value: "partner", label: "ব্যবসায়িক Partner", labelEn: "Business Partner" },
+  { value: "other", label: "অন্য", labelEn: "Other" },
 ];
 
-export const INTEREST_TYPES: Array<{ value: InterestType; label: string }> = [
-  { value: "none", label: "সুদ নেই" },
-  { value: "flat", label: "Flat (মাসিক সমান)" },
-  { value: "reducing_monthly", label: "Reducing (কমতির উপর)" },
-  { value: "open", label: "উন্মুক্ত (যখন সুবিধা তখন পরিশোধ)" },
-  { value: "profit_share", label: "লাভ-লোকসান ভাগাভাগি (Partner)" },
+export const INTEREST_TYPES: Array<{ value: InterestType; label: string; labelEn: string }> = [
+  { value: "none", label: "সুদ নেই", labelEn: "No interest" },
+  { value: "flat", label: "Flat (মাসিক সমান)", labelEn: "Flat (equal monthly)" },
+  { value: "reducing_monthly", label: "Reducing (কমতির উপর)", labelEn: "Reducing balance" },
+  { value: "open", label: "উন্মুক্ত (যখন সুবিধা তখন পরিশোধ)", labelEn: "Open (pay any amount anytime)" },
+  { value: "profit_share", label: "লাভ-লোকসান ভাগাভাগি (Partner)", labelEn: "Profit/loss share (Partner)" },
 ];
 
 export const SOURCE_TYPE_LABEL: Record<string, string> = {
@@ -118,6 +118,14 @@ export const SOURCE_TYPE_LABEL: Record<string, string> = {
   personal: "ব্যক্তিগত",
   partner: "ব্যবসায়িক Partner",
   other: "অন্য",
+};
+
+export const SOURCE_TYPE_LABEL_EN: Record<string, string> = {
+  bank: "Bank",
+  somiti: "Co-operative",
+  personal: "Personal",
+  partner: "Business Partner",
+  other: "Other",
 };
 
 // Compute late-fee for an unpaid installment.
