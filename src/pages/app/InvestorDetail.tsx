@@ -15,14 +15,15 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { RequirePerm } from "@/components/app/RequirePerm";
 import { ArrowLeft, Plus, User, Phone, MapPin, Wallet, CheckCircle2, Clock, Trash2, TrendingUp, TrendingDown, RotateCcw, Pencil } from "lucide-react";
 import { toast } from "sonner";
-import { computeSchedule, INTEREST_TYPES, SOURCE_TYPE_LABEL, type InterestType } from "@/lib/investor-emi";
+import { computeSchedule, computeLateFee, INTEREST_TYPES, SOURCE_TYPE_LABEL, type InterestType } from "@/lib/investor-emi";
+import { PinConfirmDialog } from "@/components/app/PinConfirmDialog";
 
 function bdt(n: number) {
   return new Intl.NumberFormat("bn-BD", { maximumFractionDigits: 0 }).format(n) + " ৳";
 }
 
 type Investor = { id: string; name: string; phone: string | null; address: string | null; source_type: string; source_name: string | null; note: string | null; is_active: boolean };
-type Loan = { id: string; principal: number; taken_at: string; interest_type: string; interest_rate: number; tenure_months: number; installment_day: number; first_due_date: string; total_payable: number; total_interest: number; status: string; note: string | null; profit_share_pct: number; loss_share_pct: number };
+type Loan = { id: string; principal: number; taken_at: string; interest_type: string; interest_rate: number; tenure_months: number; installment_day: number; first_due_date: string; total_payable: number; total_interest: number; status: string; note: string | null; profit_share_pct: number; loss_share_pct: number; late_fee_amount: number; late_fee_percent: number; late_fee_grace_days: number };
 type Installment = { id: string; loan_id: string; seq_no: number; due_date: string; principal_part: number; interest_part: number; total_due: number; paid_amount: number; paid_at: string | null; status: string };
 type Payment = { id: string; loan_id: string; installment_id: string | null; amount: number; principal_part: number; interest_part: number; paid_at: string; method: string; note: string | null; expense_id: string | null; kind: string };
 
@@ -120,6 +121,9 @@ function InvestorDetailInner() {
     note: "",
     profit_share_pct: "",
     loss_share_pct: "",
+    late_fee_amount: "",
+    late_fee_percent: "",
+    late_fee_grace_days: "0",
   });
   const preview = useMemo(() => {
     const p = Number(loan.principal) || 0;
@@ -153,6 +157,9 @@ function InvestorDetailInner() {
       note: loan.note.trim() || null,
       profit_share_pct: isPS ? (Number(loan.profit_share_pct) || 0) : 0,
       loss_share_pct: isPS ? (Number(loan.loss_share_pct) || 0) : 0,
+      late_fee_amount: isPS || isOpen ? 0 : (Number(loan.late_fee_amount) || 0),
+      late_fee_percent: isPS || isOpen ? 0 : (Number(loan.late_fee_percent) || 0),
+      late_fee_grace_days: isPS || isOpen ? 0 : (Number(loan.late_fee_grace_days) || 0),
     }).select("id").maybeSingle();
     setSavingLoan(false);
     if (error) return toast.error(error.message);
@@ -377,27 +384,46 @@ function InvestorDetailInner() {
   };
 
   // --- Delete loan ---
-  const deleteLoan = async (loanId: string) => {
-    if (!confirm("এই বিনিয়োগ ও এর সব কিস্তি/পরিশোধ মুছে ফেলবেন?")) return;
+  const [pinDel, setPinDel] = useState<null | { kind: "loan" | "pay"; id: string; expense_id?: string | null; loan_id?: string }>(null);
+
+  const doDeleteLoan = async (loanId: string) => {
     const { error } = await supabase.from("investor_loans").delete().eq("id", loanId);
     if (error) return toast.error(error.message);
     toast.success("মুছে ফেলা হয়েছে");
     invalidateAll();
   };
 
-  // --- Delete a single partner payment (profit/loss/principal return) ---
-  const deletePartnerPay = async (p: Payment) => {
-    if (!confirm("এই entry মুছে ফেলবেন? সংশ্লিষ্ট খরচ ও cash flow entry-ও মুছে যাবে।")) return;
-    // linked cash movement
-    await supabase.from("cash_movements").delete().eq("ref_table", "investor_payments").eq("ref_id", p.id);
-    // linked expense
-    if (p.expense_id) await supabase.from("expenses").delete().eq("id", p.expense_id);
-    const { error } = await supabase.from("investor_payments").delete().eq("id", p.id);
+  const doDeletePartnerPay = async (payId: string, expenseId: string | null, loanId: string) => {
+    await supabase.from("cash_movements").delete().eq("ref_table", "investor_payments").eq("ref_id", payId);
+    if (expenseId) await supabase.from("expenses").delete().eq("id", expenseId);
+    const { error } = await supabase.from("investor_payments").delete().eq("id", payId);
     if (error) return toast.error(error.message);
-    // reopen loan if it was closed
-    await supabase.from("investor_loans").update({ status: "open" }).eq("id", p.loan_id).eq("status", "closed");
+    await supabase.from("investor_loans").update({ status: "open" }).eq("id", loanId).eq("status", "closed");
     toast.success("মুছে ফেলা হয়েছে");
     invalidateAll();
+  };
+
+  // --- Edit investor name/phone ---
+  const [editInv, setEditInv] = useState(false);
+  const [eName, setEName] = useState("");
+  const [ePhone, setEPhone] = useState("");
+  const [savingInv, setSavingInv] = useState(false);
+  const openEditInv = () => {
+    setEName(invQ.data?.name ?? "");
+    setEPhone(invQ.data?.phone ?? "");
+    setEditInv(true);
+  };
+  const saveInv = async () => {
+    if (!id) return;
+    if (!eName.trim()) return toast.error("নাম দিন");
+    setSavingInv(true);
+    const { error } = await supabase.from("investors").update({ name: eName.trim(), phone: ePhone.trim() || null }).eq("id", id);
+    setSavingInv(false);
+    if (error) return toast.error(error.message);
+    toast.success("আপডেট হয়েছে");
+    qc.invalidateQueries({ queryKey: ["investor", id] });
+    qc.invalidateQueries({ queryKey: ["investors"], refetchType: "all" });
+    setEditInv(false);
   };
 
   // --- Edit a single partner payment ---
@@ -454,6 +480,11 @@ function InvestorDetailInner() {
           </Button>
           <User className="h-5 w-5 text-primary" />
           <h1 className="text-lg font-extrabold md:text-xl">{inv?.name ?? "…"}</h1>
+          {inv && (
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={openEditInv} title="নাম/ফোন edit">
+              <Pencil className="h-3.5 w-3.5" />
+            </Button>
+          )}
           {inv && (
             <span className="rounded-md border px-2 py-0.5 text-xs text-muted-foreground">
               {SOURCE_TYPE_LABEL[inv.source_type] ?? inv.source_type}{inv.source_name ? ` • ${inv.source_name}` : ""}
@@ -533,7 +564,7 @@ function InvestorDetailInner() {
                         <span className="text-emerald-700">শোধ: {bdt(paidTotal)} ({paidCount}/{insts.length})</span>
                       </>
                     )}
-                    <Button variant="ghost" size="icon" className="h-7 w-7 text-rose-600" onClick={() => deleteLoan(l.id)}>
+                    <Button variant="ghost" size="icon" className="h-7 w-7 text-rose-600" onClick={() => setPinDel({ kind: "loan", id: l.id })}>
                       <Trash2 className="h-3.5 w-3.5" />
                     </Button>
                   </div>
@@ -584,7 +615,7 @@ function InvestorDetailInner() {
                                     <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditPay(p)}>
                                       <Pencil className="h-3.5 w-3.5" />
                                     </Button>
-                                    <Button variant="ghost" size="icon" className="h-7 w-7 text-rose-600" onClick={() => deletePartnerPay(p)}>
+                                    <Button variant="ghost" size="icon" className="h-7 w-7 text-rose-600" onClick={() => setPinDel({ kind: "pay", id: p.id, expense_id: p.expense_id, loan_id: p.loan_id })}>
                                       <Trash2 className="h-3.5 w-3.5" />
                                     </Button>
                                   </div>
@@ -607,6 +638,7 @@ function InvestorDetailInner() {
                         <TableHead className="text-right">সুদ</TableHead>
                         <TableHead className="text-right">মোট</TableHead>
                         <TableHead className="text-right">পরিশোধিত</TableHead>
+                        <TableHead>পরিশোধের তারিখ</TableHead>
                         <TableHead>অবস্থা</TableHead>
                         <TableHead className="text-right">অ্যাকশন</TableHead>
                       </TableRow>
@@ -620,6 +652,13 @@ function InvestorDetailInner() {
                         const remaining = Number(i.total_due) - Number(i.paid_amount);
                         const isNext = firstUnpaidSeq !== null && i.seq_no === firstUnpaidSeq;
                         const locked = i.status !== "paid" && !isNext;
+                        const lateInfo = i.status !== "paid" ? computeLateFee({
+                          dueDate: i.due_date,
+                          remainingDue: remaining,
+                          amount: Number(l.late_fee_amount) || 0,
+                          percent: Number(l.late_fee_percent) || 0,
+                          graceDays: Number(l.late_fee_grace_days) || 0,
+                        }) : { fee: 0, daysLate: 0 };
                         return (
                           <TableRow key={i.id}>
                             <TableCell>{i.seq_no}</TableCell>
@@ -628,6 +667,7 @@ function InvestorDetailInner() {
                             <TableCell className="text-right">{bdt(Number(i.interest_part))}</TableCell>
                             <TableCell className="text-right font-semibold">{bdt(Number(i.total_due))}</TableCell>
                             <TableCell className="text-right text-emerald-700">{bdt(Number(i.paid_amount))}</TableCell>
+                            <TableCell className="text-xs">{i.paid_at ? i.paid_at : <span className="text-muted-foreground">—</span>}</TableCell>
                             <TableCell>
                               {i.status === "paid" ? (
                                 <span className="inline-flex items-center gap-1 text-emerald-700"><CheckCircle2 className="h-3.5 w-3.5" />শোধ</span>
@@ -637,6 +677,11 @@ function InvestorDetailInner() {
                                 <span className="text-xs text-muted-foreground">আগের কিস্তি শোধ বাকি</span>
                               ) : (
                                 <span className="inline-flex items-center gap-1 text-muted-foreground"><Clock className="h-3.5 w-3.5" />বাকি</span>
+                              )}
+                              {lateInfo.fee > 0 && (
+                                <div className="text-[10px] font-semibold text-rose-600">
+                                  জরিমানা: {bdt(lateInfo.fee)} ({lateInfo.daysLate} দিন late)
+                                </div>
                               )}
                             </TableCell>
                             <TableCell className="text-right">
@@ -723,6 +768,18 @@ function InvestorDetailInner() {
                 <div className="md:col-span-2">
                   <Label>প্রথম কিস্তির তারিখ</Label>
                   <Input type="date" value={loan.first_due_date} onChange={(e) => setLoan({ ...loan, first_due_date: e.target.value })} />
+                </div>
+                <div>
+                  <Label>জরিমানা — flat (৳/দেরি কিস্তি)</Label>
+                  <Input inputMode="decimal" placeholder="০" value={loan.late_fee_amount} onChange={(e) => setLoan({ ...loan, late_fee_amount: e.target.value.replace(/[^0-9.]/g, "") })} />
+                </div>
+                <div>
+                  <Label>জরিমানা — বকেয়ার %</Label>
+                  <Input inputMode="decimal" placeholder="০" value={loan.late_fee_percent} onChange={(e) => setLoan({ ...loan, late_fee_percent: e.target.value.replace(/[^0-9.]/g, "") })} />
+                </div>
+                <div className="md:col-span-2">
+                  <Label>Grace days (কত দিন পর থেকে জরিমানা)</Label>
+                  <Input inputMode="numeric" placeholder="০" value={loan.late_fee_grace_days} onChange={(e) => setLoan({ ...loan, late_fee_grace_days: e.target.value.replace(/[^0-9]/g, "") })} />
                 </div>
               </>
             )}
@@ -924,6 +981,43 @@ function InvestorDetailInner() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Edit investor name/phone */}
+      <Dialog open={editInv} onOpenChange={setEditInv}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>বিনিয়োগকারীর তথ্য edit</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label>নাম *</Label>
+              <Input value={eName} onChange={(e) => setEName(e.target.value)} />
+            </div>
+            <div>
+              <Label>ফোন</Label>
+              <Input value={ePhone} onChange={(e) => setEPhone(e.target.value)} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditInv(false)}>বাতিল</Button>
+            <Button onClick={saveInv} disabled={savingInv}>সংরক্ষণ</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* PIN-protected delete confirmation */}
+      <PinConfirmDialog
+        open={!!pinDel}
+        title={pinDel?.kind === "loan" ? "বিনিয়োগ delete" : "পরিশোধ entry delete"}
+        message={pinDel?.kind === "loan"
+          ? "এই বিনিয়োগ ও এর সব কিস্তি/পরিশোধ মুছে যাবে। নিশ্চিত করতে PIN দিন।"
+          : "এই entry ও সংশ্লিষ্ট খরচ/cash flow মুছে যাবে। নিশ্চিত করতে PIN দিন।"}
+        onOpenChange={(v) => !v && setPinDel(null)}
+        onConfirmed={async () => {
+          if (!pinDel) return;
+          if (pinDel.kind === "loan") await doDeleteLoan(pinDel.id);
+          else await doDeletePartnerPay(pinDel.id, pinDel.expense_id ?? null, pinDel.loan_id ?? "");
+          setPinDel(null);
+        }}
+      />
     </div>
   );
 }
