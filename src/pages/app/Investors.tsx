@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { EmptyState } from "@/components/app/EmptyState";
 import { RequirePerm } from "@/components/app/RequirePerm";
-import { ArrowLeft, Plus, Search, Users, FileText, ChevronRight, Phone } from "lucide-react";
+import { ArrowLeft, Plus, Search, Users, FileText, ChevronRight, Phone, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { SOURCE_TYPES, SOURCE_TYPE_LABEL } from "@/lib/investor-emi";
 
@@ -143,6 +143,24 @@ function InvestorsPageInner() {
     qc.invalidateQueries({ queryKey: ["investors", shopId] });
   };
 
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const deleteInvestor = async (e: React.MouseEvent, inv: InvestorRow) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!current) return;
+    const s = perInvestor.get(inv.id);
+    if (s && s.loans > 0) {
+      return toast.error("এই বিনিয়োগকারীর loan আছে — আগে loan/entry ডিলিট করুন");
+    }
+    if (!confirm(`"${inv.name}" ডিলিট করবেন?`)) return;
+    setDeletingId(inv.id);
+    const { error } = await supabase.from("investors").delete().eq("id", inv.id).eq("shop_id", current.id);
+    setDeletingId(null);
+    if (error) return toast.error(error.message);
+    toast.success("ডিলিট হয়েছে");
+    qc.invalidateQueries({ queryKey: ["investors", shopId] });
+  };
+
   return (
     <div className="container px-4 py-4 space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -187,7 +205,7 @@ function InvestorsPageInner() {
             const s = perInvestor.get(inv.id) ?? { taken: 0, payable: 0, paid: 0, outstanding: 0, loans: 0 };
             return (
               <Link key={inv.id} to={`/app/investors/${inv.id}`}
-                className="group flex items-center gap-3 rounded-xl border bg-card p-3 hover:border-primary/40 hover:shadow-sm transition">
+                className="group relative flex items-center gap-3 rounded-xl border bg-card p-3 hover:border-primary/40 hover:shadow-sm transition">
                 <div className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-primary/10 text-primary font-bold">
                   {(inv.name || "?").slice(0, 1).toUpperCase()}
                 </div>
@@ -210,6 +228,15 @@ function InvestorsPageInner() {
                     <span className="rounded bg-muted px-1.5 py-0.5 text-muted-foreground">{s.loans}টি loan</span>
                   </div>
                 </div>
+                <button
+                  type="button"
+                  onClick={(e) => deleteInvestor(e, inv)}
+                  disabled={deletingId === inv.id}
+                  aria-label="delete"
+                  className="rounded-md p-1.5 text-muted-foreground hover:bg-rose-50 hover:text-rose-600 disabled:opacity-50"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
                 <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary" />
               </Link>
             );
