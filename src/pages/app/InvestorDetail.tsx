@@ -134,9 +134,10 @@ function InvestorDetailInner() {
     if (!current || !id) return;
     const p = Number(loan.principal);
     const isPS = loan.interest_type === "profit_share";
-    const t = isPS ? 1 : Number(loan.tenure_months);
+    const isOpen = loan.interest_type === "open";
+    const t = isPS || isOpen ? 1 : Number(loan.tenure_months);
     if (!p || p <= 0) return toast.error("মূল টাকা দিন");
-    if (!isPS && (!t || t <= 0)) return toast.error("কিস্তির সংখ্যা দিন");
+    if (!isPS && !isOpen && (!t || t <= 0)) return toast.error("কিস্তির সংখ্যা দিন");
     const day = Math.max(1, Math.min(28, Number(loan.installment_day) || 1));
     setSavingLoan(true);
     const { data: loanRow, error } = await supabase.from("investor_loans").insert({
@@ -145,7 +146,7 @@ function InvestorDetailInner() {
       principal: p,
       taken_at: loan.taken_at,
       interest_type: loan.interest_type,
-      interest_rate: isPS ? 0 : (Number(loan.interest_rate) || 0),
+      interest_rate: isPS || isOpen ? 0 : (Number(loan.interest_rate) || 0),
       tenure_months: t,
       installment_day: day,
       first_due_date: loan.first_due_date,
