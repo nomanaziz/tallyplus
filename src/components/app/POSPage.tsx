@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Plus, Minus, X, Package, ShoppingCart, ChevronDown, MessageSquare, RefreshCw, Search, UserRound, LayoutGrid, List as ListIcon, RotateCcw, Trash2, ShoppingBag, CalendarClock, Hash, Banknote, CreditCard } from "lucide-react";
+import { ArrowLeft, Plus, Minus, X, Package, ShoppingCart, ChevronDown, MessageSquare, RefreshCw, Search, UserRound, LayoutGrid, List as ListIcon, RotateCcw, Trash2, ShoppingBag, CalendarClock, Hash, Banknote, CreditCard, Zap } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { useNavigate } from "@/lib/router";
 import { supabase } from "@/integrations/supabase/client";
@@ -155,6 +155,7 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
   const [othersName, setOthersName] = useState("");
   const [othersPrice, setOthersPrice] = useState("");
   const [othersQty, setOthersQty] = useState("1");
+  const [othersCost, setOthersCost] = useState("");
   const [cashOpen, setCashOpen] = useState(false);
   const [dueOpen, setDueOpen] = useState(false);
   const [invoice, setInvoice] = useState<InvoiceData | null>(null);
