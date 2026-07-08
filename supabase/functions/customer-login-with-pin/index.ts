@@ -47,7 +47,7 @@ Deno.serve(async (req) => {
 
     const { data: profile } = await admin
       .from("consumer_profiles")
-      .select("id, pin_hash")
+      .select("id, phone, pin_hash")
       .in("phone", phoneCandidates(phoneRaw))
       .maybeSingle();
 
@@ -57,7 +57,7 @@ Deno.serve(async (req) => {
     const ok = await bcrypt.compare(pinStr, profile.pin_hash as string);
     if (!ok) return json({ error: "wrong_pin" }, 401);
 
-    const digits = normalized.replace(/\D/g, "");
+    const digits = String(profile.phone ?? normalized).replace(/\D/g, "");
     const email = `customer.${digits}@tallyplus.app`;
     const password = `tpc_${digits}_pw`;
 
