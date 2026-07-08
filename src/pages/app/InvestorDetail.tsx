@@ -769,6 +769,18 @@ function InvestorDetailInner() {
                   <Label>প্রথম কিস্তির তারিখ</Label>
                   <Input type="date" value={loan.first_due_date} onChange={(e) => setLoan({ ...loan, first_due_date: e.target.value })} />
                 </div>
+                <div>
+                  <Label>জরিমানা — flat (৳/দেরি কিস্তি)</Label>
+                  <Input inputMode="decimal" placeholder="০" value={loan.late_fee_amount} onChange={(e) => setLoan({ ...loan, late_fee_amount: e.target.value.replace(/[^0-9.]/g, "") })} />
+                </div>
+                <div>
+                  <Label>জরিমানা — বকেয়ার %</Label>
+                  <Input inputMode="decimal" placeholder="০" value={loan.late_fee_percent} onChange={(e) => setLoan({ ...loan, late_fee_percent: e.target.value.replace(/[^0-9.]/g, "") })} />
+                </div>
+                <div className="md:col-span-2">
+                  <Label>Grace days (কত দিন পর থেকে জরিমানা)</Label>
+                  <Input inputMode="numeric" placeholder="০" value={loan.late_fee_grace_days} onChange={(e) => setLoan({ ...loan, late_fee_grace_days: e.target.value.replace(/[^0-9]/g, "") })} />
+                </div>
               </>
             )}
             <div className="md:col-span-2">
