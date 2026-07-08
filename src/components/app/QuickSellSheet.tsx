@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { UserRound, Link2, Calendar } from "lucide-react";
+import { UserRound, Link2, Calendar, Package } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import { useShop } from "@/lib/shop";
 import { useAuth } from "@/lib/auth";
@@ -27,10 +27,13 @@ export function QuickSellSheet({ open, onOpenChange }: { open: boolean; onOpenCh
   const [sms, setSms] = useState(false);
   const [saving, setSaving] = useState(false);
   const [walkIn, setWalkIn] = useState(true);
+  const [productName, setProductName] = useState("");
+  const [isInventory, setIsInventory] = useState(false);
 
   const reset = () => {
     setDate(today); setAmount(""); setProfit(""); setCustName("");
     setCustPhone(""); setNote(""); setSms(false); setWalkIn(true);
+    setProductName(""); setIsInventory(false);
   };
 
   const save = async () => {
@@ -51,6 +54,9 @@ export function QuickSellSheet({ open, onOpenChange }: { open: boolean; onOpenCh
       }
       const noteText = [
         walkIn ? (lang === "bn" ? "ওয়াকিং কাস্টমার" : "Walking customer") : "",
+        productName.trim()
+          ? `${lang === "bn" ? "পণ্য" : "Product"}: ${productName.trim()}${isInventory ? (lang === "bn" ? " (ইনভেন্টরি)" : " (Inventory)") : (lang === "bn" ? " (আদার্স)" : " (Others)")}`
+          : "",
         note.trim(),
         profit.trim() ? `${t("p2c_profit")}: ${profit}` : "",
       ].filter(Boolean).join(" | ");
@@ -103,6 +109,24 @@ export function QuickSellSheet({ open, onOpenChange }: { open: boolean; onOpenCh
           <div className="space-y-1.5">
             <Label>{t("p2c_amount2")} <span className="text-destructive">*</span></Label>
             <Input type="number" inputMode="decimal" placeholder={t("p2c_amount2")} value={amount} onChange={(e) => setAmount(e.target.value)} />
+          </div>
+          <div className="space-y-1.5">
+            <Label>{lang === "bn" ? "পণ্যের নাম" : "Product name"}</Label>
+            <div className="relative">
+              <Input
+                placeholder={lang === "bn" ? "পণ্যের নাম" : "Product name"}
+                value={productName}
+                onChange={(e) => setProductName(e.target.value)}
+                className="pr-10"
+              />
+              <Package className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            </div>
+          </div>
+          <div className="flex items-center justify-between rounded-md border bg-muted/30 px-3 py-2">
+            <Label className="text-sm">
+              {lang === "bn" ? "ইনভেন্টরি পণ্য?" : "Inventory product?"}
+            </Label>
+            <Switch checked={isInventory} onCheckedChange={setIsInventory} />
           </div>
           <div className="space-y-1.5">
             <Label>{t("p2c_profit")}</Label>
