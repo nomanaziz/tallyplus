@@ -884,25 +884,25 @@ function InvestorDetailInner() {
         <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              {settleKind === "profit_share" ? "লাভের অংশ প্রদান" : settleKind === "loss_share" ? "লোকসানের অংশ আদায়" : "মূল টাকা ফেরত"}
+              {settleKind === "profit_share" ? tr("লাভের অংশ প্রদান", "Pay profit share") : settleKind === "loss_share" ? tr("লোকসানের অংশ আদায়", "Recover loss share") : tr("মূল টাকা ফেরত", "Return principal")}
             </DialogTitle>
           </DialogHeader>
           {settleFor && (
             <div className="space-y-3">
               <div className="text-xs text-muted-foreground">
-                মূল বিনিয়োগ: {bdt(Number(settleFor.principal))} • লাভ {settleFor.profit_share_pct}% / লোকসান {settleFor.loss_share_pct}%
+                {tr("মূল বিনিয়োগ", "Principal investment")}: {bdt(Number(settleFor.principal))} • {tr("লাভ", "Profit")} {settleFor.profit_share_pct}% / {tr("লোকসান", "Loss")} {settleFor.loss_share_pct}%
               </div>
               {settleKind !== "principal_return" && (
                 <div>
-                  <Label>ব্যবসার মোট {settleKind === "profit_share" ? "লাভ" : "লোকসান"} (এই মাস/সময়ে)</Label>
-                  <Input inputMode="decimal" value={settleBase} onChange={(e) => { const v = e.target.value.replace(/[^0-9.]/g, ""); setSettleBase(v); }} placeholder="ব্যবসার লাভ/লোকসানের পরিমাণ" />
+                  <Label>{tr("ব্যবসার মোট", "Business total")} {settleKind === "profit_share" ? tr("লাভ", "profit") : tr("লোকসান", "loss")} ({tr("এই মাস/সময়ে", "this period")})</Label>
+                  <Input inputMode="decimal" value={settleBase} onChange={(e) => { const v = e.target.value.replace(/[^0-9.]/g, ""); setSettleBase(v); }} placeholder={tr("ব্যবসার লাভ/লোকসানের পরিমাণ", "Business profit/loss amount")} />
                   <div className="mt-1 text-[11px] text-muted-foreground">
-                    Partner-এর অংশ = <b>{bdt(settleComputed)}</b> (auto)
+                    {tr("Partner-এর অংশ", "Partner share")} = <b>{bdt(settleComputed)}</b> (auto)
                   </div>
                 </div>
               )}
               <div>
-                <Label>{settleKind === "principal_return" ? "ফেরতের পরিমাণ" : "আসল পরিমাণ (edit করা যাবে)"}</Label>
+                <Label>{settleKind === "principal_return" ? tr("ফেরতের পরিমাণ", "Return amount") : tr("আসল পরিমাণ (edit করা যাবে)", "Final amount (editable)")}</Label>
                 <Input inputMode="decimal" value={settleAmount || (settleKind !== "principal_return" ? String(settleComputed || "") : "")} onChange={(e) => setSettleAmount(e.target.value.replace(/[^0-9.]/g, ""))} />
               </div>
               <div className="grid grid-cols-2 gap-2">
@@ -911,32 +911,32 @@ function InvestorDetailInner() {
                   <Select value={settleMethod} onValueChange={(v) => setSettleMethod(v as any)}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="cash">নগদ</SelectItem>
+                      <SelectItem value="cash">{tr("নগদ", "Cash")}</SelectItem>
                       <SelectItem value="bkash">বিকাশ</SelectItem>
-                      <SelectItem value="nagad">নগদ (Mobile)</SelectItem>
-                      <SelectItem value="bank">ব্যাংক</SelectItem>
+                      <SelectItem value="nagad">Nagad</SelectItem>
+                      <SelectItem value="bank">{tr("ব্যাংক", "Bank")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div>
-                  <Label>তারিখ</Label>
+                  <Label>{tr("তারিখ", "Date")}</Label>
                   <Input type="date" value={settleDate} onChange={(e) => setSettleDate(e.target.value)} />
                 </div>
               </div>
               <div>
-                <Label>নোট</Label>
+                <Label>{tr("নোট", "Note")}</Label>
                 <Input value={settleNote} onChange={(e) => setSettleNote(e.target.value)} />
               </div>
               <div className="text-[11px] text-muted-foreground">
                 {settleKind === "loss_share"
-                  ? "Partner থেকে টাকা আসবে — dashboard cash flow-এ যোগ হবে।"
-                  : "Shop থেকে টাকা যাবে — খরচ ও cash flow থেকে বিয়োগ হবে।"}
+                  ? tr("Partner থেকে টাকা আসবে — dashboard cash flow-এ যোগ হবে।", "Money will come from the partner and be added to cash flow.")
+                  : tr("Shop থেকে টাকা যাবে — খরচ ও cash flow থেকে বিয়োগ হবে।", "Money will go out from the shop and be deducted from cash flow.")}
               </div>
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setSettleFor(null)}>বাতিল</Button>
-            <Button onClick={saveSettle} disabled={savingSettle}>সংরক্ষণ</Button>
+            <Button variant="outline" onClick={() => setSettleFor(null)}>{tr("বাতিল", "Cancel")}</Button>
+            <Button onClick={saveSettle} disabled={savingSettle}>{tr("সংরক্ষণ", "Save")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -946,13 +946,13 @@ function InvestorDetailInner() {
         <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              সম্পাদনা — {editPay?.kind === "profit_share" ? "লাভের অংশ" : editPay?.kind === "loss_share" ? "লোকসানের অংশ" : editPay?.kind === "principal_return" ? "মূল ফেরত" : "কিস্তি"}
+              {tr("সম্পাদনা", "Edit")} — {editPay?.kind === "profit_share" ? tr("লাভের অংশ", "Profit share") : editPay?.kind === "loss_share" ? tr("লোকসানের অংশ", "Loss share") : editPay?.kind === "principal_return" ? tr("মূল ফেরত", "Principal return") : tr("কিস্তি", "Installment")}
             </DialogTitle>
           </DialogHeader>
           {editPay && (
             <div className="space-y-3">
               <div>
-                <Label>পরিমাণ</Label>
+                <Label>{tr("পরিমাণ", "Amount")}</Label>
                 <Input inputMode="decimal" value={ePayAmount} onChange={(e) => setEPayAmount(e.target.value.replace(/[^0-9.]/g, ""))} />
               </div>
               <div className="grid grid-cols-2 gap-2">
@@ -961,27 +961,27 @@ function InvestorDetailInner() {
                   <Select value={ePayMethod} onValueChange={(v) => setEPayMethod(v as any)}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="cash">নগদ</SelectItem>
+                      <SelectItem value="cash">{tr("নগদ", "Cash")}</SelectItem>
                       <SelectItem value="bkash">বিকাশ</SelectItem>
-                      <SelectItem value="nagad">নগদ (Mobile)</SelectItem>
-                      <SelectItem value="bank">ব্যাংক</SelectItem>
+                      <SelectItem value="nagad">Nagad</SelectItem>
+                      <SelectItem value="bank">{tr("ব্যাংক", "Bank")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div>
-                  <Label>তারিখ</Label>
+                  <Label>{tr("তারিখ", "Date")}</Label>
                   <Input type="date" value={ePayDate} onChange={(e) => setEPayDate(e.target.value)} />
                 </div>
               </div>
               <div>
-                <Label>নোট</Label>
+                <Label>{tr("নোট", "Note")}</Label>
                 <Input value={ePayNote} onChange={(e) => setEPayNote(e.target.value)} />
               </div>
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditPay(null)}>বাতিল</Button>
-            <Button onClick={saveEditPay} disabled={savingEditPay}>সংরক্ষণ</Button>
+            <Button variant="outline" onClick={() => setEditPay(null)}>{tr("বাতিল", "Cancel")}</Button>
+            <Button onClick={saveEditPay} disabled={savingEditPay}>{tr("সংরক্ষণ", "Save")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -989,20 +989,20 @@ function InvestorDetailInner() {
       {/* Edit investor name/phone */}
       <Dialog open={editInv} onOpenChange={setEditInv}>
         <DialogContent className="max-w-md">
-          <DialogHeader><DialogTitle>বিনিয়োগকারীর তথ্য edit</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{tr("বিনিয়োগকারীর তথ্য edit", "Edit investor info")}</DialogTitle></DialogHeader>
           <div className="space-y-3">
             <div>
-              <Label>নাম *</Label>
+              <Label>{tr("নাম", "Name")} *</Label>
               <Input value={eName} onChange={(e) => setEName(e.target.value)} />
             </div>
             <div>
-              <Label>ফোন</Label>
+              <Label>{tr("ফোন", "Phone")}</Label>
               <Input value={ePhone} onChange={(e) => setEPhone(e.target.value)} />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditInv(false)}>বাতিল</Button>
-            <Button onClick={saveInv} disabled={savingInv}>সংরক্ষণ</Button>
+            <Button variant="outline" onClick={() => setEditInv(false)}>{tr("বাতিল", "Cancel")}</Button>
+            <Button onClick={saveInv} disabled={savingInv}>{tr("সংরক্ষণ", "Save")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
