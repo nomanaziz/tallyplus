@@ -687,6 +687,10 @@ function InvestorDetailInner() {
                   Partner-এর জন্য কোনো fixed কিস্তি নেই। ব্যবসার লাভ/লোকসান হলে "লাভ/লোকসান settle" থেকে হিসাব করে দিন।
                 </div>
               </>
+            ) : loan.interest_type === "open" ? (
+              <div className="md:col-span-2 rounded-md border bg-muted/30 p-2 text-[12px] text-muted-foreground">
+                উন্মুক্ত loan — কোনো নির্দিষ্ট কিস্তি বা সময় নেই। যখন সুবিধা তখন যেকোনো পরিমাণ পরিশোধ করা যাবে।
+              </div>
             ) : (
               <>
                 <div>
