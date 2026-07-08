@@ -2526,6 +2526,9 @@ export type Database = {
           interest_rate: number
           interest_type: string
           investor_id: string
+          late_fee_amount: number
+          late_fee_grace_days: number
+          late_fee_percent: number
           loss_share_pct: number
           note: string | null
           principal: number
@@ -2546,6 +2549,9 @@ export type Database = {
           interest_rate?: number
           interest_type?: string
           investor_id: string
+          late_fee_amount?: number
+          late_fee_grace_days?: number
+          late_fee_percent?: number
           loss_share_pct?: number
           note?: string | null
           principal: number
@@ -2566,6 +2572,9 @@ export type Database = {
           interest_rate?: number
           interest_type?: string
           investor_id?: string
+          late_fee_amount?: number
+          late_fee_grace_days?: number
+          late_fee_percent?: number
           loss_share_pct?: number
           note?: string | null
           principal?: number
@@ -7290,6 +7299,7 @@ export type Database = {
       user_active_shop_count: { Args: { _user_id: string }; Returns: number }
       user_phones: { Args: { _uid: string }; Returns: string[] }
       user_shop_limit: { Args: { _user_id: string }; Returns: number }
+      verify_current_user_pin: { Args: { _pin: string }; Returns: boolean }
       verify_transfer_payment: {
         Args: { _payment_transaction_id: string; _transfer_id: string }
         Returns: Json
