@@ -2,7 +2,7 @@ import { Outlet, useLocation, useNavigate } from "@/lib/router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Loader2, LogOut, Menu, ChevronDown, UserRound, Pencil } from "lucide-react";
+import { Loader2, LogOut, Menu, ChevronDown, UserRound, UserCog } from "lucide-react";
 import { toast } from "sonner";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -14,15 +14,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 
 
 
@@ -34,9 +25,6 @@ function AdminLayout() {
   const [email, setEmail] = useState<string | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [displayName, setDisplayName] = useState<string>("Admin");
-  const [nameDlgOpen, setNameDlgOpen] = useState(false);
-  const [nameInput, setNameInput] = useState("");
-  const [savingName, setSavingName] = useState(false);
 
   useEffect(() => {
     if (isLogin) {
@@ -79,29 +67,6 @@ function AdminLayout() {
   const handleLogout = async () => {
     await supabase.auth.signOut();
     nav({ to: "/xbd-login" });
-  };
-
-  const openRename = () => {
-    setNameInput(displayName);
-    setNameDlgOpen(true);
-  };
-
-  const saveName = async () => {
-    const v = nameInput.trim();
-    if (!v) {
-      toast.error("নাম খালি হতে পারবে না");
-      return;
-    }
-    setSavingName(true);
-    const { error } = await supabase.auth.updateUser({ data: { display_name: v } });
-    setSavingName(false);
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
-    setDisplayName(v);
-    setNameDlgOpen(false);
-    toast.success("নাম আপডেট হয়েছে");
   };
 
   const initials = displayName
@@ -163,9 +128,9 @@ function AdminLayout() {
                   <div className="truncate text-muted-foreground">{email}</div>
                 </div>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={openRename}>
-                  <Pencil className="mr-2 h-4 w-4" />
-                  নাম পরিবর্তন করুন
+                <DropdownMenuItem onClick={() => nav({ to: "/admin/my-credentials" })}>
+                  <UserCog className="mr-2 h-4 w-4" />
+                  Profile & Settings
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleLogout} className="text-destructive">
                   <LogOut className="mr-2 h-4 w-4" />
@@ -179,32 +144,6 @@ function AdminLayout() {
           <Outlet />
         </main>
       </div>
-      <Dialog open={nameDlgOpen} onOpenChange={setNameDlgOpen}>
-        <DialogContent className="sm:max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Admin নাম পরিবর্তন</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-2">
-            <Label htmlFor="admin-display-name">নাম</Label>
-            <Input
-              id="admin-display-name"
-              value={nameInput}
-              onChange={(e) => setNameInput(e.target.value)}
-              placeholder="আপনার নাম"
-              autoFocus
-            />
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setNameDlgOpen(false)} disabled={savingName}>
-              বাতিল
-            </Button>
-            <Button onClick={saveName} disabled={savingName}>
-              {savingName ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : null}
-              সংরক্ষণ
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
