@@ -119,3 +119,27 @@ export const SOURCE_TYPE_LABEL: Record<string, string> = {
   partner: "ব্যবসায়িক Partner",
   other: "অন্য",
 };
+
+// Compute late-fee for an unpaid installment.
+// - flat `amount` per overdue occurrence, OR
+// - `percent` of remaining due
+// - `graceDays` — no fee until (dueDate + graceDays) is crossed.
+export function computeLateFee(opts: {
+  dueDate: string;
+  remainingDue: number;
+  amount: number;
+  percent: number;
+  graceDays: number;
+  today?: string;
+}): { fee: number; daysLate: number } {
+  const today = opts.today ?? new Date().toISOString().slice(0, 10);
+  const due = new Date(opts.dueDate + "T00:00:00");
+  const now = new Date(today + "T00:00:00");
+  const diffMs = now.getTime() - due.getTime();
+  const daysLate = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  if (daysLate <= (opts.graceDays || 0)) return { fee: 0, daysLate: Math.max(0, daysLate) };
+  const flat = Number(opts.amount) || 0;
+  const pct = Number(opts.percent) || 0;
+  const pctFee = pct > 0 ? Math.round((opts.remainingDue * pct) / 100 * 100) / 100 : 0;
+  return { fee: Math.round((flat + pctFee) * 100) / 100, daysLate };
+}
