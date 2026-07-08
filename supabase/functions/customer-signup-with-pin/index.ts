@@ -55,16 +55,27 @@ Deno.serve(async (req) => {
     }
 
     // Create user — handle_new_user trigger will create consumer_profiles + consumer role
-    const { data: created, error: createErr } = await admin.auth.admin.createUser({
-      email,
-      password,
-      email_confirm: true,
-      user_metadata: { full_name: name, account_type: "consumer", country_code: country },
-    });
+    let created: Awaited<ReturnType<typeof admin.auth.admin.createUser>>["data"] | null = null;
+    let createErr: { message?: string; name?: string } | null = null;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const res = await admin.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true,
+        user_metadata: { full_name: name, account_type: "consumer", country_code: country },
+      });
+      if (res.data?.user) { created = res.data; createErr = null; break; }
+      createErr = res.error ?? { message: "Failed to create user" };
+      const retriable = res.error?.name === "AuthRetryableFetchError"
+        || /fetch|network|timeout|temporar/i.test(res.error?.message ?? "");
+      if (!retriable) break;
+      await new Promise((r) => setTimeout(r, 400 * (attempt + 1)));
+    }
     if (createErr || !created.user) {
       console.error("createUser error:", createErr);
       const msg = createErr?.message ?? "Failed to create user";
       if (/rate limit/i.test(msg)) return json({ error: "rate_limit" }, 429);
+      if (/already.*registered|already.*exists|duplicate/i.test(msg)) return json({ error: "phone_exists" }, 409);
       return json({ error: msg }, 500);
     }
     const userId = created.user.id;
