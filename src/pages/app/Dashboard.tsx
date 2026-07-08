@@ -2,7 +2,7 @@ import { Link } from "@/lib/router";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useShop } from "@/lib/shop";
-import { useI18n, fmtMoney, type TKey } from "@/lib/i18n";
+import { useI18n, fmtMoney, bnNum, type TKey } from "@/lib/i18n";
 import { dashboardSummaryQuery, dashboardOverviewQuery } from "@/lib/queries";
 import { AppIcon } from "@/lib/icons";
 import { DashboardBannerCarousel } from "@/components/app/DashboardBannerCarousel";
@@ -38,6 +38,8 @@ function Dashboard() {
   const { data: overview } = useQuery(dashboardOverviewQuery(current?.id ?? null));
   const loading = isFetching;
   const load = () => { void refetch(); };
+
+  const nfmt = (n: number) => (lang === "bn" ? bnNum(n) : String(n));
 
   const tabs: { v: Range; tKey: TKey }[] = [
     { v: "today", tKey: "tab_day" },
@@ -104,7 +106,7 @@ function Dashboard() {
         <div className="grid grid-cols-3 divide-x border-t">
           <div className="p-3 text-center md:p-4">
             <div className="text-xs md:text-sm text-muted-foreground">{tr("dash_stockCount")}</div>
-            <div className="mt-1 text-base font-bold md:text-xl">{(Math.round(stats.stockValue * 100) / 100).toFixed(0)}</div>
+            <div className="mt-1 text-base font-bold md:text-xl">{nfmt(Math.round(stats.stockValue))}</div>
           </div>
           <div className="p-3 text-center md:p-4">
             <div className="text-xs md:text-sm text-muted-foreground">{tr("dash_receivable")}</div>
@@ -119,33 +121,33 @@ function Dashboard() {
           <Link to="/app/online-shop/orders" className="p-2.5 text-center active:bg-accent">
             <div className="text-[11px] text-muted-foreground">{tr("dash_newOrders")}</div>
             <div className={`mt-0.5 text-sm font-bold ${(overview?.ordersPending ?? 0) > 0 ? "text-primary" : "text-muted-foreground"}`}>
-              {overview?.ordersPending ?? 0}
+              {nfmt(overview?.ordersPending ?? 0)}
             </div>
           </Link>
           <Link to="/app/customer-wishlist" className="p-2.5 text-center active:bg-accent">
             <div className="text-[11px] text-muted-foreground">{tr("dash_newFordo")}</div>
             <div className={`mt-0.5 text-sm font-bold ${(overview?.fordoNew ?? 0) > 0 ? "text-success" : "text-muted-foreground"}`}>
-              {overview?.fordoNew ?? 0}
+              {nfmt(overview?.fordoNew ?? 0)}
             </div>
           </Link>
           <Link to="/app/products" className="p-2.5 text-center active:bg-accent">
             <div className="text-[11px] text-muted-foreground">{tr("dash_lowStock")}</div>
             <div className={`mt-0.5 text-sm font-bold ${(overview?.productsLowStock ?? 0) > 0 ? "text-destructive" : "text-muted-foreground"}`}>
-              {overview?.productsLowStock ?? 0}
+              {nfmt(overview?.productsLowStock ?? 0)}
             </div>
           </Link>
         </div>
         {/* Desktop-only: extended KPI rows inside the same summary card */}
         <div className="hidden border-t md:grid md:grid-cols-3 md:divide-x lg:grid-cols-9">
-          <StatLink to="/app/online-shop/orders" label={tr("dash_newOrders")} value={overview?.ordersPending ?? 0} tone={(overview?.ordersPending ?? 0) > 0 ? "primary" : "muted"} />
-          <StatLink to="/app/customer-wishlist" label={tr("dash_newFordo")} value={overview?.fordoNew ?? 0} tone={(overview?.fordoNew ?? 0) > 0 ? "success" : "muted"} />
-          <StatLink to="/app/products" label={tr("dash_lowStock")} value={overview?.productsLowStock ?? 0} tone={(overview?.productsLowStock ?? 0) > 0 ? "danger" : "muted"} />
-          <StatLink to="/app/products" label={tr("dash_products")} value={overview?.productsTotal ?? 0} tone="default" />
-          <StatLink to="/app/online-shop/products" label={tr("dash_onlineProducts")} value={overview?.productsPublished ?? 0} tone="default" />
-          <StatLink to="/app/warranty" label={tr("dash_warranty")} value={overview?.warrantyActive ?? 0} tone="default" />
-          <StatLink to="/app/contacts" label={tr("dash_customers")} value={overview?.customersCount ?? 0} tone="default" />
-          <StatLink to="/app/contacts" label={tr("dash_suppliers")} value={overview?.suppliersCount ?? 0} tone="default" />
-          <StatLink to="/app/access" label={tr("dash_employees")} value={overview?.employeesCount ?? 0} tone="default" />
+          <StatLink to="/app/online-shop/orders" label={tr("dash_newOrders")} value={nfmt(overview?.ordersPending ?? 0)} tone={(overview?.ordersPending ?? 0) > 0 ? "primary" : "muted"} />
+          <StatLink to="/app/customer-wishlist" label={tr("dash_newFordo")} value={nfmt(overview?.fordoNew ?? 0)} tone={(overview?.fordoNew ?? 0) > 0 ? "success" : "muted"} />
+          <StatLink to="/app/products" label={tr("dash_lowStock")} value={nfmt(overview?.productsLowStock ?? 0)} tone={(overview?.productsLowStock ?? 0) > 0 ? "danger" : "muted"} />
+          <StatLink to="/app/products" label={tr("dash_products")} value={nfmt(overview?.productsTotal ?? 0)} tone="default" />
+          <StatLink to="/app/online-shop/products" label={tr("dash_onlineProducts")} value={nfmt(overview?.productsPublished ?? 0)} tone="default" />
+          <StatLink to="/app/warranty" label={tr("dash_warranty")} value={nfmt(overview?.warrantyActive ?? 0)} tone="default" />
+          <StatLink to="/app/contacts" label={tr("dash_customers")} value={nfmt(overview?.customersCount ?? 0)} tone="default" />
+          <StatLink to="/app/contacts" label={tr("dash_suppliers")} value={nfmt(overview?.suppliersCount ?? 0)} tone="default" />
+          <StatLink to="/app/access" label={tr("dash_employees")} value={nfmt(overview?.employeesCount ?? 0)} tone="default" />
         </div>
       </div>
 
