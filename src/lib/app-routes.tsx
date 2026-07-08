@@ -142,6 +142,7 @@ const LCustomerAnalytics = lazy(() => import("@/pages/customer/Analytics"));
 const LCustomerBudgets = lazy(() => import("@/pages/customer/Budgets"));
 const LCustomerShopping = lazy(() => import("@/pages/customer/Shopping"));
 const LCustomerMe = lazy(() => import("@/pages/customer/Me"));
+const LCustomerMarketplace = lazy(() => import("@/pages/customer/Marketplace"));
 const LLpg = lazy(() => import("@/pages/app/Lpg"));
 const LLpgMarket = lazy(() => import("@/pages/LpgMarketplace"));
 
@@ -306,6 +307,8 @@ export const appRoutes: RouteObject[] = [
 { path: "subscribe/callback", element: <Suspense fallback={<RouteFallback/>}><LCustomerSubscribeCallback/></Suspense> }
 ,
 { path: "shopping", element: <Suspense fallback={<RouteFallback/>}><LCustomerShopping/></Suspense> }
+,
+{ path: "marketplace", element: <Suspense fallback={<RouteFallback/>}><LCustomerMarketplace/></Suspense> }
 ,
 { path: "me", element: <Suspense fallback={<RouteFallback/>}><LCustomerMe/></Suspense> }
 ] },
