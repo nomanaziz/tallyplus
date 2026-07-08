@@ -1091,9 +1091,13 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
               <Label>{lang === "bn" ? "পণ্যের নাম" : "Product name"} *</Label>
               <Input value={othersName} onChange={(e) => setOthersName(e.target.value)} autoFocus />
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-3 gap-3">
               <div className="grid gap-1.5">
-                <Label>{lang === "bn" ? "দাম" : "Price"} *</Label>
+                <Label>{lang === "bn" ? "ক্রয়মূল্য" : "Cost"}</Label>
+                <Input type="number" inputMode="decimal" value={othersCost} onChange={(e) => setOthersCost(e.target.value)} />
+              </div>
+              <div className="grid gap-1.5">
+                <Label>{lang === "bn" ? "বিক্রয়মূল্য" : "Sale price"} *</Label>
                 <Input type="number" inputMode="decimal" value={othersPrice} onChange={(e) => setOthersPrice(e.target.value)} />
               </div>
               <div className="grid gap-1.5">
@@ -1101,6 +1105,21 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
                 <Input type="number" inputMode="decimal" value={othersQty} onChange={(e) => setOthersQty(e.target.value)} />
               </div>
             </div>
+            {(() => {
+              const c = Number(othersCost) || 0;
+              const s = Number(othersPrice) || 0;
+              const q = Number(othersQty) || 0;
+              if (!s || !q) return null;
+              const profit = (s - c) * q;
+              return (
+                <div className="rounded-md border bg-muted/40 px-3 py-2 text-xs flex justify-between">
+                  <span>{lang === "bn" ? "মোট" : "Total"}: <b>{(s * q).toFixed(2)}</b></span>
+                  <span className={profit >= 0 ? "text-emerald-700" : "text-rose-700"}>
+                    {lang === "bn" ? "লাভ" : "Profit"}: <b>{profit.toFixed(2)}</b>
+                  </span>
+                </div>
+              );
+            })()}
             <p className="text-[11px] text-muted-foreground">
               {lang === "bn"
                 ? "এই পণ্য ইনভেন্টরিতে যোগ হবে না, শুধু বর্তমান ইনভয়েসে লাইন হিসেবে থাকবে।"
