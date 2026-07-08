@@ -18,12 +18,32 @@ import { toast } from "sonner";
 import { getCountry, COUNTRIES } from "@/lib/countries";
 import { GrantAccessDialog } from "@/components/admin/GrantAccessDialog";
 
+const englishDate = new Intl.DateTimeFormat("en-GB", {
+  day: "2-digit",
+  month: "short",
+  year: "numeric",
+});
+
+function toEnglishDigits(value: string): string {
+  return value
+    .normalize("NFKC")
+    .replace(/[\u09E6-\u09EF]/g, (d) => String(d.charCodeAt(0) - 0x09E6))
+    .replace(/[\u0660-\u0669]/g, (d) => String(d.charCodeAt(0) - 0x0660))
+    .replace(/[\u06F0-\u06F9]/g, (d) => String(d.charCodeAt(0) - 0x06F0));
+}
+
+function displayDate(value: string | null | undefined): string {
+  if (!value) return "—";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "—";
+  return toEnglishDigits(englishDate.format(date));
+}
+
 // Show phone in plain English digits, without +88 country prefix.
 // DB may store as +8801xxxxxxxxx, 8801xxxxxxxxx, or ০১xxxxxxxxx — normalize all.
 function displayPhone(p: string | null | undefined): string {
   if (!p) return "—";
-  // convert bengali digits (U+09E6..U+09EF) → ascii by code-point math
-  let s = p.replace(/[\u09E6-\u09EF]/g, (d) => String(d.charCodeAt(0) - 0x09E6));
+  let s = toEnglishDigits(p);
   s = s.replace(/[^\d+]/g, "");
   s = s.replace(/^\+?88/, "");
   if (!s.startsWith("0") && s.length === 10) s = "0" + s;
@@ -64,7 +84,7 @@ function UsersPage() {
       supabase.from("profiles").select("id,full_name,phone,is_suspended,created_at,country_code,shop_limit_override,unlimited_shops").order("created_at", { ascending: false }).limit(500),
       supabase.from("user_roles").select("user_id,role"),
       supabase.from("shops").select("owner_id").is("deleted_at", null),
-      supabase.from("subscriptions").select("user_id,expires_at,status,plan_id,subscription_plans(name_bn,code)").in("status", ["active","trial"]).gt("expires_at", new Date().toISOString()),
+      supabase.from("subscriptions").select("user_id,expires_at,status,plan_id,subscription_plans(name_en,code)").in("status", ["active","trial"]).gt("expires_at", new Date().toISOString()),
       supabase.from("admin_profiles").select("user_id,email"),
     ]);
     const adminSet = new Set((roles ?? []).filter((r: any) => r.role === "admin").map((r: any) => r.user_id));
@@ -78,7 +98,7 @@ function UsersPage() {
     }
     const subMap = new Map<string, { plan: string; expires: string }>();
     for (const s of (subs ?? []) as any[]) {
-      const planName = s.subscription_plans?.name_bn || s.subscription_plans?.code || "—";
+      const planName = s.subscription_plans?.name_en || s.subscription_plans?.code || "—";
       const prev = subMap.get(s.user_id);
       if (!prev || new Date(s.expires_at) > new Date(prev.expires)) {
         subMap.set(s.user_id, { plan: planName, expires: s.expires_at });
@@ -116,11 +136,11 @@ function UsersPage() {
     else if (filter === "suspended") list = list.filter((r) => r.is_suspended);
     if (countryFilter !== "all") list = list.filter((r) => (r.country_code || "") === countryFilter);
     if (search.trim()) {
-      const q = search.trim().toLowerCase();
+      const q = toEnglishDigits(search.trim()).toLowerCase();
       list = list.filter(
         (r) =>
           (r.full_name ?? "").toLowerCase().includes(q) ||
-          (r.phone ?? "").toLowerCase().includes(q) ||
+          displayPhone(r.phone).toLowerCase().includes(q) ||
           (r.adminEmail ?? "").toLowerCase().includes(q),
       );
     }
@@ -293,7 +313,7 @@ function UsersPage() {
                         {r.planName ? (
                           <div>
                             <div className="font-medium">{r.planName}</div>
-                            <div className="text-muted-foreground">till {new Date(r.expiresAt!).toLocaleDateString("en-GB")}</div>
+                            <div className="text-muted-foreground">till {displayDate(r.expiresAt)}</div>
                           </div>
                         ) : <span className="text-muted-foreground">—</span>}
                       </TableCell>
@@ -305,7 +325,7 @@ function UsersPage() {
                         )}
                       </TableCell>
                       <TableCell className="text-xs text-muted-foreground">
-                        {new Date(r.created_at).toLocaleDateString("en-GB")}
+                        {displayDate(r.created_at)}
                       </TableCell>
                       <TableCell className="text-right space-x-2">
                         <Button variant="default" size="sm" onClick={() => setGrantTarget(r)}>
