@@ -534,7 +534,7 @@ export function CashClosingTab({ shopId, tr, lang }: { shopId: string; tr: TR; l
       <div className="overflow-hidden rounded-xl border bg-card">
         <table className="w-full text-sm">
           <thead className="bg-muted/40 text-xs uppercase text-muted-foreground">
-            <tr><th className="px-3 py-2 text-left">{tr("ধরন", "Type")}</th><th className="px-3 py-2 text-right">{tr("সংখ্যা", "Qty")}</th><th className="px-3 py-2 text-right">{tr("নগদ", "Cash")}</th><th className="px-3 py-2 text-right">{tr("জামানত", "Deposit")}</th></tr>
+            <tr><th className="px-3 py-2 text-left">{tr("ধরন", "Type")}</th><th className="px-3 py-2 text-right">{tr("সংখ্যা", "Qty")}</th><th className="px-3 py-2 text-right">{tr("নগদ টাকা", "Cash")}</th><th className="px-3 py-2 text-right">{tr("জামানত", "Deposit")}</th></tr>
           </thead>
           <tbody>
             {Object.keys(sums.byType).length === 0 && <tr><td colSpan={4} className="px-3 py-6 text-center text-muted-foreground">{tr("এই দিনের কোনো লেনদেন নেই", "No movements on this date")}</td></tr>}
