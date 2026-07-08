@@ -1,7 +1,7 @@
 // Client-side mirror of the DB `investor_generate_schedule` function.
 // Used for live EMI preview in the "নতুন বিনিয়োগ" dialog.
 
-export type InterestType = "none" | "flat" | "reducing_monthly" | "profit_share";
+export type InterestType = "none" | "flat" | "reducing_monthly" | "profit_share" | "open";
 
 export interface EmiInput {
   principal: number;
@@ -39,7 +39,7 @@ function addMonths(iso: string, m: number): string {
 
 export function computeSchedule(inp: EmiInput): EmiResult {
   const { principal, interestRate, interestType, tenureMonths, firstDueDate } = inp;
-  if (interestType === "profit_share") {
+  if (interestType === "profit_share" || interestType === "open") {
     return { rows: [], totalInterest: 0, totalPayable: principal, emi: 0 };
   }
   if (!principal || !tenureMonths || tenureMonths < 1) {
@@ -108,6 +108,7 @@ export const INTEREST_TYPES: Array<{ value: InterestType; label: string }> = [
   { value: "none", label: "সুদ নেই" },
   { value: "flat", label: "Flat (মাসিক সমান)" },
   { value: "reducing_monthly", label: "Reducing (কমতির উপর)" },
+  { value: "open", label: "উন্মুক্ত (যখন সুবিধা তখন পরিশোধ)" },
   { value: "profit_share", label: "লাভ-লোকসান ভাগাভাগি (Partner)" },
 ];
 
