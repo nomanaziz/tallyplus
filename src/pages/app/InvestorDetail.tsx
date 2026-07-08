@@ -489,10 +489,13 @@ function InvestorDetailInner() {
             const paidCount = insts.filter((i) => i.status === "paid").length;
             const paidTotal = insts.reduce((s, i) => s + Number(i.paid_amount), 0);
             const isPS = l.interest_type === "profit_share";
+            const isOpen = l.interest_type === "open";
             const loanPays = (payQ.data ?? []).filter((p) => p.loan_id === l.id);
             const psProfitPaid = loanPays.filter((p) => p.kind === "profit_share").reduce((s, p) => s + Number(p.amount), 0);
             const psLossIn = loanPays.filter((p) => p.kind === "loss_share").reduce((s, p) => s + Number(p.amount), 0);
             const psPrincipalReturned = loanPays.filter((p) => p.kind === "principal_return").reduce((s, p) => s + Number(p.amount), 0);
+            const openReturned = loanPays.filter((p) => p.kind === "principal_return").reduce((s, p) => s + Number(p.amount), 0);
+            const openOutstanding = Number(l.principal) - openReturned;
             return (
               <Card key={l.id} className="p-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
@@ -502,6 +505,8 @@ function InvestorDetailInner() {
                     <span className="text-xs text-muted-foreground">
                       {l.taken_at} • {isPS
                         ? `Partner • লাভ ${l.profit_share_pct}% / লোকসান ${l.loss_share_pct}%`
+                        : isOpen
+                        ? "উন্মুক্ত • যখন সুবিধা তখন পরিশোধ"
                         : `${l.interest_type === "none" ? "সুদহীন" : `${l.interest_rate}% ${l.interest_type === "flat" ? "flat" : "reducing"}`} • ${l.tenure_months} মাস`}
                     </span>
                     <span className={"rounded-md border px-1.5 py-0.5 text-[10px] font-semibold " + (l.status === "closed" ? "border-emerald-300 bg-emerald-50 text-emerald-700" : "border-primary/30 bg-primary/10 text-primary")}>
@@ -515,6 +520,13 @@ function InvestorDetailInner() {
                         <span className="text-amber-700">লাভ প্রদান: {bdt(psProfitPaid)}</span>
                         <span className="text-rose-700">লোকসান আদায়: {bdt(psLossIn)}</span>
                       </>
+                    ) : isOpen ? (
+                      <>
+                        <span className="text-emerald-700">পরিশোধিত: {bdt(openReturned)}</span>
+                        <span className={openOutstanding > 0 ? "text-rose-700" : "text-muted-foreground"}>
+                          বাকি: {bdt(Math.max(0, openOutstanding))}
+                        </span>
+                      </>
                     ) : (
                       <>
                         <span className="text-muted-foreground">মোট: {bdt(Number(l.total_payable))}</span>
@@ -527,17 +539,21 @@ function InvestorDetailInner() {
                   </div>
                 </div>
 
-                {isPS ? (
+                {isPS || isOpen ? (
                   <div className="mt-2 space-y-2">
                     <div className="flex flex-wrap gap-2">
-                      <Button size="sm" variant="outline" onClick={() => openSettle(l, "profit_share")}>
-                        <TrendingUp className="mr-1 h-3.5 w-3.5 text-emerald-600" /> লাভ প্রদান
-                      </Button>
-                      <Button size="sm" variant="outline" onClick={() => openSettle(l, "loss_share")}>
-                        <TrendingDown className="mr-1 h-3.5 w-3.5 text-rose-600" /> লোকসান আদায়
-                      </Button>
+                      {isPS && (
+                        <>
+                          <Button size="sm" variant="outline" onClick={() => openSettle(l, "profit_share")}>
+                            <TrendingUp className="mr-1 h-3.5 w-3.5 text-emerald-600" /> লাভ প্রদান
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => openSettle(l, "loss_share")}>
+                            <TrendingDown className="mr-1 h-3.5 w-3.5 text-rose-600" /> লোকসান আদায়
+                          </Button>
+                        </>
+                      )}
                       <Button size="sm" variant="outline" onClick={() => openSettle(l, "principal_return")}>
-                        <RotateCcw className="mr-1 h-3.5 w-3.5" /> মূল ফেরত
+                        <RotateCcw className="mr-1 h-3.5 w-3.5" /> {isOpen ? "পরিশোধ (যেকোনো পরিমাণ)" : "মূল ফেরত"}
                       </Button>
                     </div>
                     {loanPays.length > 0 && (
