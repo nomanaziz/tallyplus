@@ -228,7 +228,7 @@ function UsersPage() {
       });
       if (setErr) return toast.error(setErr.message);
       toast.success("Signed in as user");
-      window.location.href = payload.kind === "consumer" ? "/consumer" : "/";
+      window.location.href = payload.kind === "consumer" ? "/customer/dashboard" : "/app/dashboard";
     } finally {
       setImpersonatingId(null);
     }
