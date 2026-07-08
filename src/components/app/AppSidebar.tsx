@@ -125,7 +125,6 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
 
   const renderItem = (it: SidebarItem) => {
     const active = loc.pathname === it.to || loc.pathname.startsWith(it.to + "/");
-    const isQuickSell = it.to === "/app/quick-order";
     const tourKey =
       it.to === "/app/profile" ? "profile" :
       it.to === "/app/products" ? "products" :
@@ -135,10 +134,6 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
       <Link
         to={it.to as never}
         onClick={(e) => {
-          if (isQuickSell) {
-            e.preventDefault();
-            window.dispatchEvent(new CustomEvent("open-quick-sell"));
-          }
           onNavigate?.();
         }}
         data-tour={tourKey}
