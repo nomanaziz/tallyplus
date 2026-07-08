@@ -10,7 +10,6 @@ import { Toaster } from "@/components/ui/sonner";
 import { OfflineBanner } from "@/components/app/OfflineBanner";
 import { appRoutes } from "@/lib/app-routes";
 import { startRoutePreloading } from "@/lib/preload-routes";
-import { startBengaliDigits } from "@/lib/bengali-digits";
 import { installGlobalDateFormat } from "@/lib/date-format";
 import "@/styles.css";
 
@@ -110,6 +109,3 @@ createRoot(document.getElementById("root")!).render(
 
 // After initial paint, quietly preload heavy routes in the background.
 startRoutePreloading();
-
-// Globally convert Latin digits in visible text to Bengali digits.
-startBengaliDigits();

@@ -88,7 +88,10 @@ function Page() {
                 {rows.map((r) => (
                   <tr key={r.id} className="border-t">
                     <td className="px-3 py-2 font-mono text-xs">{r.invoice_no ?? r.id.slice(0, 8)}</td>
-                    <td className="px-3 py-2">{r.customers?.name ?? "—"}</td>
+                    <td className="px-3 py-2">
+                      <div>{r.customers?.name ?? "—"}</div>
+                      {r.note && <div className="text-[11px] text-muted-foreground">{r.note}</div>}
+                    </td>
                     <td className="px-3 py-2 text-right">{r.item_count}</td>
                     <td className="px-3 py-2 text-right font-semibold">{fmtMoney(Number(r.total ?? 0), lang)}</td>
                     <td className="px-3 py-2 text-right text-emerald-600">{fmtMoney(Number(r.paid ?? 0), lang)}</td>
@@ -107,6 +110,7 @@ function Page() {
                   <div className="font-bold">{fmtMoney(Number(r.total ?? 0), lang)}</div>
                 </div>
                 <div className="text-sm">{r.customers?.name ?? "—"}</div>
+                {r.note && <div className="text-[11px] text-muted-foreground">{r.note}</div>}
                 <div className="mt-1 flex justify-between text-xs text-muted-foreground">
                   <span>{new Date(r.created_at).toLocaleDateString()}</span>
                   <span className="text-rose-600">বাকি: {fmtMoney(Number(r.due ?? 0), lang)}</span>

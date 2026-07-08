@@ -716,7 +716,7 @@ export const productReportQuery = (shopId: string | null | undefined, range: Rep
       if (!shopId) return [] as any[];
       const { data, error } = await supabase
         .from("sale_items")
-        .select("product_id,qty,price,products(name,cost_price),sales!inner(shop_id,created_at,deleted_at)")
+        .select("product_id,name,qty,price,cost,products(name,cost_price),sales!inner(shop_id,created_at,deleted_at)")
         .eq("sales.shop_id", shopId)
         .gte("sales.created_at", range.startIso)
         .lte("sales.created_at", range.endIso)
@@ -724,9 +724,10 @@ export const productReportQuery = (shopId: string | null | undefined, range: Rep
       if (error) throw error;
       const map: Record<string, { name: string; qty: number; revenue: number; profit: number }> = {};
       for (const r of (data ?? []) as any[]) {
-        const pid = (r.product_id ?? "_") as string;
-        const name = r?.products?.name ?? "—";
-        const cost = Number(r?.products?.cost_price ?? 0);
+        const itemName = String(r?.products?.name ?? r?.name ?? "—");
+        const pid = (r.product_id ?? `custom:${itemName.trim().toLowerCase() || "item"}`) as string;
+        const name = itemName;
+        const cost = Number(r?.products?.cost_price ?? r?.cost ?? 0);
         const price = Number(r?.price ?? 0);
         const qty = Number(r?.qty ?? 0);
         if (!map[pid]) map[pid] = { name, qty: 0, revenue: 0, profit: 0 };
