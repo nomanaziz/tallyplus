@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ColorThemeButton } from "@/components/app/ColorThemePicker";
 import { BrandWordmark } from "@/components/brand/BrandWordmark";
-import { ChevronDown, Languages, LogOut, Check } from "lucide-react";
+import { ChevronDown, Languages, LogOut, Check, StickyNote } from "lucide-react";
 
 export function CustomerTopbar() {
   const { profile, signOut } = useAuth();
@@ -35,6 +35,15 @@ export function CustomerTopbar() {
       </div>
 
       <div className="ml-auto flex items-center gap-1.5">
+        <button
+          type="button"
+          onClick={() => nav({ to: "/customer/notes" })}
+          className="flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground hover:bg-accent"
+          aria-label="নোট"
+          title="নোট"
+        >
+          <StickyNote className="h-4 w-4" />
+        </button>
         <ColorThemeButton />
 
         <DropdownMenu>
