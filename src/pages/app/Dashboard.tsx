@@ -189,6 +189,12 @@ function Section({
           <Link
             key={it.to}
             to={it.to as never}
+            onClick={(e) => {
+              if (it.to === "/app/quick-order") {
+                e.preventDefault();
+                window.dispatchEvent(new CustomEvent("open-quick-sell"));
+              }
+            }}
             className="group flex flex-col items-center gap-1 rounded-lg p-2 text-center hover:bg-accent"
           >
             <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm md:h-12 md:w-12">

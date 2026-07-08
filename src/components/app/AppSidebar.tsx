@@ -125,6 +125,7 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
 
   const renderItem = (it: SidebarItem) => {
     const active = loc.pathname === it.to || loc.pathname.startsWith(it.to + "/");
+    const isQuickSell = it.to === "/app/quick-order";
     const tourKey =
       it.to === "/app/profile" ? "profile" :
       it.to === "/app/products" ? "products" :
@@ -133,7 +134,13 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
     const node = (
       <Link
         to={it.to as never}
-        onClick={onNavigate}
+        onClick={(e) => {
+          if (isQuickSell) {
+            e.preventDefault();
+            window.dispatchEvent(new CustomEvent("open-quick-sell"));
+          }
+          onNavigate?.();
+        }}
         data-tour={tourKey}
         className={cn(
           "group relative flex items-center gap-3 rounded-lg text-[13px] leading-tight transition-colors",
