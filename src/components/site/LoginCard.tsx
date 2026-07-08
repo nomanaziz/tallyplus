@@ -160,11 +160,6 @@ export function LoginCard() {
           if (!r.ok) {
             if (r.error === "wrong_pin") { setShowForgotPin(true); return toast.error("ভুল PIN"); }
             if (r.error === "no_account") { setShowForgotPin(false); return toast.error("এই নম্বরে গ্রাহক account নেই — সাইনআপ করুন"); }
-            if (r.error === "owner_account_exists") {
-              setShowForgotPin(false);
-              setRole("owner");
-              return toast.error("এই নম্বরটি দোকানদার account — উপরে 'দোকানদার' tab বেছে লগইন করুন");
-            }
             if (r.error === "no_pin_set") { setShowForgotPin(true); return toast.error("PIN সেট নেই — WhatsApp এ সাহায্য নিন"); }
             return toast.error(r.error || "লগইন ব্যর্থ");
           }
