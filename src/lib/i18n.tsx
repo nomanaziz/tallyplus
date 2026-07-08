@@ -2107,6 +2107,25 @@ export function bnNum(v: number | string) {
   return String(v);
 }
 
+// Returns the BCP-47 locale that should format numbers based on the
+// user-selected UI language (persisted in localStorage as `tp_lang`).
+// Admin pages don't call this — they keep native `en-US` / no locale — so
+// admin numbers stay English.
+export function getNumLocale(): string {
+  if (typeof window === "undefined") return "en-US";
+  const l = (localStorage.getItem("tp_lang") || "bn") as Lang;
+  switch (l) {
+    case "bn": return "bn-BD";
+    case "hi": return "hi-IN";
+    case "ta": return "ta-IN";
+    case "te": return "te-IN";
+    case "ur": return "ur-PK";
+    case "ar": return "ar-EG";
+    case "en":
+    default:   return "en-US";
+  }
+}
+
 function getCurrency(): string {
   if (typeof window === "undefined") return "BDT";
   return localStorage.getItem("tp_currency") || "BDT";
