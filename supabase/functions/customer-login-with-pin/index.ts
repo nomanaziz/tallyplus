@@ -22,7 +22,8 @@ function phoneCandidates(raw: string): string[] {
   const d = raw.replace(/\D/g, "");
   const normalized = normalizePhone(raw);
   const legacy = d ? "+" + d : null;
-  return Array.from(new Set([normalized, legacy].filter(Boolean) as string[]));
+  const bdLocal = d.startsWith("8801") && d.length === 13 ? "+0" + d.slice(3) : null;
+  return Array.from(new Set([normalized, legacy, bdLocal].filter(Boolean) as string[]));
 }
 
 function json(body: unknown, status = 200) {
