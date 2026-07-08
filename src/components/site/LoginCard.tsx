@@ -286,10 +286,7 @@ export function LoginCard() {
 
           <Input value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !loading) { e.preventDefault(); void handleSubmit(); } }} placeholder={t("lc_namePh")} />
           {role === "owner" && (
-            <>
-              <Input value={shopName} onChange={(e) => setShopName(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !loading) { e.preventDefault(); void handleSubmit(); } }} placeholder={t("lc_shopNamePh")} />
-              <ShopTypePicker value={shopTypeCode} onChange={(code) => setShopTypeCode(code)} lang={lang === "bn" ? "bn" : "en"} label={t("lc_shopTypeLbl")} />
-            </>
+            <Input value={shopName} onChange={(e) => setShopName(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !loading) { e.preventDefault(); void handleSubmit(); } }} placeholder={t("lc_shopNamePh")} />
           )}
           {PhoneField}
           <Input
@@ -301,6 +298,9 @@ export function LoginCard() {
             maxLength={4}
             type="password"
           />
+          {role === "owner" && (
+            <ShopTypePicker value={shopTypeCode} onChange={(code) => setShopTypeCode(code)} lang={lang === "bn" ? "bn" : "en"} label={t("lc_shopTypeLbl")} />
+          )}
           <Button onClick={handleSubmit} disabled={loading} className="w-full">
             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {t("lc_createBtn")}
