@@ -758,37 +758,37 @@ function InvestorDetailInner() {
             ) : (
               <>
                 <div>
-                  <Label>সুদের হার (বার্ষিক %)</Label>
+                  <Label>{tr("সুদের হার", "Interest rate")} ({tr("বার্ষিক", "annual")} %)</Label>
                   <Input inputMode="decimal" disabled={loan.interest_type === "none"} value={loan.interest_rate} onChange={(e) => setLoan({ ...loan, interest_rate: e.target.value.replace(/[^0-9.]/g, "") })} />
                 </div>
                 <div>
-                  <Label>কিস্তির সংখ্যা (মাস) *</Label>
+                  <Label>{tr("কিস্তির সংখ্যা", "Installment count")} ({tr("মাস", "months")}) *</Label>
                   <Input inputMode="numeric" value={loan.tenure_months} onChange={(e) => setLoan({ ...loan, tenure_months: e.target.value.replace(/[^0-9]/g, "") })} />
                 </div>
                 <div>
-                  <Label>প্রতি মাসের কত তারিখে (১-২৮)</Label>
+                  <Label>{tr("প্রতি মাসের কত তারিখে (১-২৮)", "Day of month (1-28)")}</Label>
                   <Input inputMode="numeric" value={loan.installment_day} onChange={(e) => setLoan({ ...loan, installment_day: e.target.value.replace(/[^0-9]/g, "") })} />
                 </div>
                 <div className="md:col-span-2">
-                  <Label>প্রথম কিস্তির তারিখ</Label>
+                  <Label>{tr("প্রথম কিস্তির তারিখ", "First installment date")}</Label>
                   <Input type="date" value={loan.first_due_date} onChange={(e) => setLoan({ ...loan, first_due_date: e.target.value })} />
                 </div>
                 <div>
-                  <Label>জরিমানা — flat (৳/দেরি কিস্তি)</Label>
-                  <Input inputMode="decimal" placeholder="০" value={loan.late_fee_amount} onChange={(e) => setLoan({ ...loan, late_fee_amount: e.target.value.replace(/[^0-9.]/g, "") })} />
+                  <Label>{tr("জরিমানা — flat (৳/দেরি কিস্তি)", "Late fee — flat (৳/late installment)")}</Label>
+                  <Input inputMode="decimal" placeholder="0" value={loan.late_fee_amount} onChange={(e) => setLoan({ ...loan, late_fee_amount: e.target.value.replace(/[^0-9.]/g, "") })} />
                 </div>
                 <div>
-                  <Label>জরিমানা — বকেয়ার %</Label>
-                  <Input inputMode="decimal" placeholder="০" value={loan.late_fee_percent} onChange={(e) => setLoan({ ...loan, late_fee_percent: e.target.value.replace(/[^0-9.]/g, "") })} />
+                  <Label>{tr("জরিমানা — বকেয়ার %", "Late fee — % of due")}</Label>
+                  <Input inputMode="decimal" placeholder="0" value={loan.late_fee_percent} onChange={(e) => setLoan({ ...loan, late_fee_percent: e.target.value.replace(/[^0-9.]/g, "") })} />
                 </div>
                 <div className="md:col-span-2">
-                  <Label>Grace days (কত দিন পর থেকে জরিমানা)</Label>
-                  <Input inputMode="numeric" placeholder="০" value={loan.late_fee_grace_days} onChange={(e) => setLoan({ ...loan, late_fee_grace_days: e.target.value.replace(/[^0-9]/g, "") })} />
+                  <Label>{tr("Grace days (কত দিন পর থেকে জরিমানা)", "Grace days")}</Label>
+                  <Input inputMode="numeric" placeholder="0" value={loan.late_fee_grace_days} onChange={(e) => setLoan({ ...loan, late_fee_grace_days: e.target.value.replace(/[^0-9]/g, "") })} />
                 </div>
               </>
             )}
             <div className="md:col-span-2">
-              <Label>নোট</Label>
+              <Label>{tr("নোট", "Note")}</Label>
               <Textarea rows={2} value={loan.note} onChange={(e) => setLoan({ ...loan, note: e.target.value })} />
             </div>
           </div>
@@ -796,19 +796,19 @@ function InvestorDetailInner() {
           {preview && preview.rows.length > 0 && (
             <Card className="p-3 mt-2 bg-muted/30">
               <div className="flex flex-wrap gap-3 text-xs">
-                <span>মাসিক কিস্তি: <b>{bdt(preview.emi)}</b></span>
-                <span>মোট সুদ: <b className="text-amber-700">{bdt(preview.totalInterest)}</b></span>
-                <span>মোট প্রদেয়: <b className="text-primary">{bdt(preview.totalPayable)}</b></span>
+                <span>{tr("মাসিক কিস্তি", "Monthly installment")}: <b>{bdt(preview.emi)}</b></span>
+                <span>{tr("মোট সুদ", "Total interest")}: <b className="text-amber-700">{bdt(preview.totalInterest)}</b></span>
+                <span>{tr("মোট প্রদেয়", "Total payable")}: <b className="text-primary">{bdt(preview.totalPayable)}</b></span>
               </div>
               <div className="mt-2 max-h-40 overflow-y-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead className="w-8">#</TableHead>
-                      <TableHead>তারিখ</TableHead>
-                      <TableHead className="text-right">মূল</TableHead>
-                      <TableHead className="text-right">সুদ</TableHead>
-                      <TableHead className="text-right">মোট</TableHead>
+                      <TableHead>{tr("তারিখ", "Date")}</TableHead>
+                      <TableHead className="text-right">{tr("মূল", "Principal")}</TableHead>
+                      <TableHead className="text-right">{tr("সুদ", "Interest")}</TableHead>
+                      <TableHead className="text-right">{tr("মোট", "Total")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -828,8 +828,8 @@ function InvestorDetailInner() {
           )}
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setOpenLoan(false)}>বাতিল</Button>
-            <Button onClick={saveLoan} disabled={savingLoan}>সংরক্ষণ</Button>
+            <Button variant="outline" onClick={() => setOpenLoan(false)}>{tr("বাতিল", "Cancel")}</Button>
+            <Button onClick={saveLoan} disabled={savingLoan}>{tr("সংরক্ষণ", "Save")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -837,14 +837,14 @@ function InvestorDetailInner() {
       {/* Pay installment dialog */}
       <Dialog open={!!payInst} onOpenChange={(v) => !v && setPayInst(null)}>
         <DialogContent className="max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>কিস্তি পরিশোধ #{payInst?.seq_no}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{tr("কিস্তি পরিশোধ", "Pay installment")} #{payInst?.seq_no}</DialogTitle></DialogHeader>
           {payInst && (
             <div className="space-y-3">
               <div className="text-xs text-muted-foreground">
-                বকেয়ার তারিখ: {payInst.due_date} • মোট: {bdt(payInst.total_due)} • বাকি: {bdt(payInst.total_due - payInst.paid_amount)}
+                {tr("বকেয়ার তারিখ", "Due date")}: {payInst.due_date} • {tr("মোট", "Total")}: {bdt(payInst.total_due)} • {tr("বাকি", "Due")}: {bdt(payInst.total_due - payInst.paid_amount)}
               </div>
               <div>
-                <Label>পরিশোধের পরিমাণ</Label>
+                <Label>{tr("পরিশোধের পরিমাণ", "Payment amount")}</Label>
                 <Input inputMode="decimal" value={payAmount} onChange={(e) => setPayAmount(e.target.value.replace(/[^0-9.]/g, ""))} />
               </div>
               <div className="grid grid-cols-2 gap-2">
@@ -853,28 +853,28 @@ function InvestorDetailInner() {
                   <Select value={payMethod} onValueChange={(v) => setPayMethod(v as any)}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="cash">নগদ</SelectItem>
+                      <SelectItem value="cash">{tr("নগদ", "Cash")}</SelectItem>
                       <SelectItem value="bkash">বিকাশ</SelectItem>
-                      <SelectItem value="nagad">নগদ (Mobile)</SelectItem>
-                      <SelectItem value="bank">ব্যাংক</SelectItem>
+                      <SelectItem value="nagad">Nagad</SelectItem>
+                      <SelectItem value="bank">{tr("ব্যাংক", "Bank")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div>
-                  <Label>তারিখ</Label>
+                  <Label>{tr("তারিখ", "Date")}</Label>
                   <Input type="date" value={payDate} onChange={(e) => setPayDate(e.target.value)} />
                 </div>
               </div>
               <div>
-                <Label>নোট</Label>
+                <Label>{tr("নোট", "Note")}</Label>
                 <Input value={payNote} onChange={(e) => setPayNote(e.target.value)} />
               </div>
-              <div className="text-[11px] text-muted-foreground">এই পরিশোধ স্বয়ংক্রিয়ভাবে ‘বিনিয়োগের কিস্তি’ ক্যাটাগরিতে খরচে যোগ হবে।</div>
+              <div className="text-[11px] text-muted-foreground">{tr("এই পরিশোধ স্বয়ংক্রিয়ভাবে ‘বিনিয়োগের কিস্তি’ ক্যাটাগরিতে খরচে যোগ হবে।", "This payment will be added to expenses automatically.")}</div>
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setPayInst(null)}>বাতিল</Button>
-            <Button onClick={savePay} disabled={savingPay}>পরিশোধ সংরক্ষণ</Button>
+            <Button variant="outline" onClick={() => setPayInst(null)}>{tr("বাতিল", "Cancel")}</Button>
+            <Button onClick={savePay} disabled={savingPay}>{tr("পরিশোধ সংরক্ষণ", "Save payment")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
