@@ -1,7 +1,6 @@
 import { useEffect } from "react";
 import { Outlet, useNavigate, Link, useLocation } from "@/lib/router";
 import { useAuth } from "@/lib/auth";
-import { SiteHeader } from "@/components/site/SiteHeader";
 import { SiteFooter } from "@/components/site/SiteFooter";
 import {
   Loader2,
@@ -13,19 +12,39 @@ import {
   Plus,
   Wallet,
   History,
+  ShoppingCart,
+  Heart,
+  Wrench,
+  BookOpen,
+  BarChart3,
+  PiggyBank,
+  StickyNote,
+  CreditCard,
+  GraduationCap,
+  UserCog,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AdSlot } from "@/components/ads/AdSlot";
 import { homePathFor } from "@/lib/home-redirect";
 import { IncomingTransfersBanner } from "@/components/app/IncomingTransfersBanner";
 
-// Six top-level sections — same sequence on desktop sidebar and mobile bottom nav.
-const NAV = [
-  { to: "/customer/dashboard", label: "হোম", Icon: Home },
+// Full sidebar — every consumer page in one scrollable list.
+const NAV: Array<{ to: string; label: string; Icon: typeof Home }> = [
+  { to: "/customer/dashboard", label: "ড্যাশবোর্ড", Icon: Home },
+  { to: "/customer/my-orders", label: "আমার অর্ডার", Icon: ShoppingCart },
   { to: "/customer/my-fordo", label: "ফর্দ", Icon: ListChecks },
   { to: "/customer/shopping", label: "শপিং", Icon: ShoppingBag },
+  { to: "/customer/favorite-shops", label: "প্রিয় দোকান", Icon: Heart },
+  { to: "/customer/my-services", label: "আমার সার্ভিস", Icon: Wrench },
   { to: "/customer/money", label: "টাকা", Icon: Wallet },
+  { to: "/customer/cash-book", label: "ক্যাশ বুক", Icon: BookOpen },
+  { to: "/customer/analytics", label: "বিশ্লেষণ", Icon: BarChart3 },
+  { to: "/customer/budgets", label: "বাজেট", Icon: PiggyBank },
+  { to: "/customer/notes", label: "নোট", Icon: StickyNote },
   { to: "/customer/history", label: "ইতিহাস", Icon: History },
+  { to: "/customer/subscription", label: "সাবস্ক্রিপশন", Icon: CreditCard },
+  { to: "/customer/training", label: "ট্রেনিং", Icon: GraduationCap },
+  { to: "/customer/profile", label: "প্রোফাইল", Icon: UserCog },
   { to: "/customer/me", label: "আমি", Icon: User },
 ];
 
@@ -66,23 +85,20 @@ export default function CustomerLayout() {
   if (loading || !accountReady || !session?.user || isOwner || isAdmin) {
     return (
       <div className="flex min-h-screen flex-col bg-background">
-        <SiteHeader />
         <div className="flex flex-1 items-center justify-center">
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
         </div>
-        <SiteFooter />
       </div>
     );
   }
 
   return (
     <div className="flex min-h-screen flex-col bg-muted/20">
-      <SiteHeader />
       <main className="flex-1 pb-24 md:pb-8">
         <div className="container mx-auto grid gap-6 px-4 py-6 md:grid-cols-[220px_1fr]">
           {/* Desktop side nav — matches business/admin sidebar pill-icon style */}
           <aside className="hidden md:block">
-            <div className="sticky top-24 space-y-0.5 rounded-2xl border bg-card p-2 shadow-sm">
+            <div className="sticky top-4 max-h-[calc(100vh-2rem)] overflow-y-auto space-y-0.5 rounded-2xl border bg-card p-2 shadow-sm">
               {NAV.map(({ to, label, Icon }) => (
                 <Link
                   key={to}
