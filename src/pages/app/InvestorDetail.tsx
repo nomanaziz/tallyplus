@@ -485,18 +485,18 @@ function InvestorDetailInner() {
           <User className="h-5 w-5 text-primary" />
           <h1 className="text-lg font-extrabold md:text-xl">{inv?.name ?? "…"}</h1>
           {inv && (
-            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={openEditInv} title="নাম/ফোন edit">
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={openEditInv} title={tr("নাম/ফোন edit", "Edit name/phone")}>
               <Pencil className="h-3.5 w-3.5" />
             </Button>
           )}
           {inv && (
             <span className="rounded-md border px-2 py-0.5 text-xs text-muted-foreground">
-              {SOURCE_TYPE_LABEL[inv.source_type] ?? inv.source_type}{inv.source_name ? ` • ${inv.source_name}` : ""}
+              {(bn ? SOURCE_TYPE_LABEL : SOURCE_TYPE_LABEL_EN)[inv.source_type] ?? inv.source_type}{inv.source_name ? ` • ${inv.source_name}` : ""}
             </span>
           )}
         </div>
         <Button size="sm" onClick={() => setOpenLoan(true)}>
-          <Plus className="mr-1 h-4 w-4" /> নতুন বিনিয়োগ
+          <Plus className="mr-1 h-4 w-4" /> {tr("নতুন বিনিয়োগ", "New investment")}
         </Button>
       </div>
 
@@ -509,14 +509,14 @@ function InvestorDetailInner() {
       )}
 
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-        <Card className="p-3"><div className="text-[11px] text-muted-foreground">মোট নেওয়া</div><div className="text-lg font-bold text-primary">{bdt(totals.taken)}</div></Card>
-        <Card className="p-3"><div className="text-[11px] text-muted-foreground">মোট সুদ</div><div className="text-lg font-bold text-amber-700">{bdt(totals.interest)}</div></Card>
-        <Card className="p-3"><div className="text-[11px] text-muted-foreground">পরিশোধিত</div><div className="text-lg font-bold text-emerald-700">{bdt(totals.paid)}</div><div className="text-[10px] text-muted-foreground">মূল {bdt(totals.paidPrincipal)} • সুদ {bdt(totals.paidInterest)}</div></Card>
-        <Card className="p-3"><div className="text-[11px] text-muted-foreground">বাকি</div><div className={"text-lg font-bold " + (totals.outstanding > 0 ? "text-rose-700" : "text-foreground")}>{bdt(totals.outstanding)}</div></Card>
+        <Card className="p-3"><div className="text-[11px] text-muted-foreground">{tr("মোট নেওয়া", "Total taken")}</div><div className="text-lg font-bold text-primary">{bdt(totals.taken)}</div></Card>
+        <Card className="p-3"><div className="text-[11px] text-muted-foreground">{tr("মোট সুদ", "Total interest")}</div><div className="text-lg font-bold text-amber-700">{bdt(totals.interest)}</div></Card>
+        <Card className="p-3"><div className="text-[11px] text-muted-foreground">{tr("পরিশোধিত", "Paid")}</div><div className="text-lg font-bold text-emerald-700">{bdt(totals.paid)}</div><div className="text-[10px] text-muted-foreground">{tr("মূল", "Principal")} {bdt(totals.paidPrincipal)} • {tr("সুদ", "Interest")} {bdt(totals.paidInterest)}</div></Card>
+        <Card className="p-3"><div className="text-[11px] text-muted-foreground">{tr("বাকি", "Due")}</div><div className={"text-lg font-bold " + (totals.outstanding > 0 ? "text-rose-700" : "text-foreground")}>{bdt(totals.outstanding)}</div></Card>
       </div>
 
       {(loansQ.data ?? []).length === 0 ? (
-        <Card className="p-6 text-center text-sm text-muted-foreground">কোনো বিনিয়োগ যোগ করা হয়নি।</Card>
+        <Card className="p-6 text-center text-sm text-muted-foreground">{tr("কোনো বিনিয়োগ যোগ করা হয়নি।", "No investment has been added.")}</Card>
       ) : (
         <div className="space-y-3">
           {(loansQ.data ?? []).map((l) => {
@@ -539,33 +539,33 @@ function InvestorDetailInner() {
                     <span className="font-semibold">{bdt(Number(l.principal))}</span>
                     <span className="text-xs text-muted-foreground">
                       {l.taken_at} • {isPS
-                        ? `Partner • লাভ ${l.profit_share_pct}% / লোকসান ${l.loss_share_pct}%`
+                        ? `Partner • ${tr("লাভ", "Profit")} ${l.profit_share_pct}% / ${tr("লোকসান", "Loss")} ${l.loss_share_pct}%`
                         : isOpen
-                        ? "উন্মুক্ত • যখন সুবিধা তখন পরিশোধ"
-                        : `${l.interest_type === "none" ? "সুদহীন" : `${l.interest_rate}% ${l.interest_type === "flat" ? "flat" : "reducing"}`} • ${l.tenure_months} মাস`}
+                        ? tr("উন্মুক্ত • যখন সুবিধা তখন পরিশোধ", "Open • pay any amount anytime")
+                        : `${l.interest_type === "none" ? tr("সুদহীন", "No interest") : `${l.interest_rate}% ${l.interest_type === "flat" ? "flat" : "reducing"}`} • ${l.tenure_months} ${tr("মাস", "months")}`}
                     </span>
                     <span className={"rounded-md border px-1.5 py-0.5 text-[10px] font-semibold " + (l.status === "closed" ? "border-emerald-300 bg-emerald-50 text-emerald-700" : "border-primary/30 bg-primary/10 text-primary")}>
-                      {l.status === "closed" ? "সম্পূর্ণ শোধ" : "চলমান"}
+                      {l.status === "closed" ? tr("সম্পূর্ণ শোধ", "Closed") : tr("চলমান", "Active")}
                     </span>
                   </div>
                   <div className="flex items-center gap-2 text-xs">
                     {isPS ? (
                       <>
-                        <span className="text-emerald-700">মূল ফেরত: {bdt(psPrincipalReturned)}</span>
-                        <span className="text-amber-700">লাভ প্রদান: {bdt(psProfitPaid)}</span>
-                        <span className="text-rose-700">লোকসান আদায়: {bdt(psLossIn)}</span>
+                        <span className="text-emerald-700">{tr("মূল ফেরত", "Principal returned")}: {bdt(psPrincipalReturned)}</span>
+                        <span className="text-amber-700">{tr("লাভ প্রদান", "Profit paid")}: {bdt(psProfitPaid)}</span>
+                        <span className="text-rose-700">{tr("লোকসান আদায়", "Loss recovered")}: {bdt(psLossIn)}</span>
                       </>
                     ) : isOpen ? (
                       <>
-                        <span className="text-emerald-700">পরিশোধিত: {bdt(openReturned)}</span>
+                        <span className="text-emerald-700">{tr("পরিশোধিত", "Paid")}: {bdt(openReturned)}</span>
                         <span className={openOutstanding > 0 ? "text-rose-700" : "text-muted-foreground"}>
-                          বাকি: {bdt(Math.max(0, openOutstanding))}
+                          {tr("বাকি", "Due")}: {bdt(Math.max(0, openOutstanding))}
                         </span>
                       </>
                     ) : (
                       <>
-                        <span className="text-muted-foreground">মোট: {bdt(Number(l.total_payable))}</span>
-                        <span className="text-emerald-700">শোধ: {bdt(paidTotal)} ({paidCount}/{insts.length})</span>
+                        <span className="text-muted-foreground">{tr("মোট", "Total")}: {bdt(Number(l.total_payable))}</span>
+                        <span className="text-emerald-700">{tr("শোধ", "Paid")}: {bdt(paidTotal)} ({paidCount}/{insts.length})</span>
                       </>
                     )}
                     <Button variant="ghost" size="icon" className="h-7 w-7 text-rose-600" onClick={() => setPinDel({ kind: "loan", id: l.id })}>
@@ -580,15 +580,15 @@ function InvestorDetailInner() {
                       {isPS && (
                         <>
                           <Button size="sm" variant="outline" onClick={() => openSettle(l, "profit_share")}>
-                            <TrendingUp className="mr-1 h-3.5 w-3.5 text-emerald-600" /> লাভ প্রদান
+                            <TrendingUp className="mr-1 h-3.5 w-3.5 text-emerald-600" /> {tr("লাভ প্রদান", "Pay profit")}
                           </Button>
                           <Button size="sm" variant="outline" onClick={() => openSettle(l, "loss_share")}>
-                            <TrendingDown className="mr-1 h-3.5 w-3.5 text-rose-600" /> লোকসান আদায়
+                            <TrendingDown className="mr-1 h-3.5 w-3.5 text-rose-600" /> {tr("লোকসান আদায়", "Recover loss")}
                           </Button>
                         </>
                       )}
                       <Button size="sm" variant="outline" onClick={() => openSettle(l, "principal_return")}>
-                        <RotateCcw className="mr-1 h-3.5 w-3.5" /> {isOpen ? "পরিশোধ (যেকোনো পরিমাণ)" : "মূল ফেরত"}
+                        <RotateCcw className="mr-1 h-3.5 w-3.5" /> {isOpen ? tr("পরিশোধ (যেকোনো পরিমাণ)", "Pay any amount") : tr("মূল ফেরত", "Return principal")}
                       </Button>
                     </div>
                     {loanPays.length > 0 && (
