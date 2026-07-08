@@ -12,7 +12,16 @@ const cors = {
 function normalizePhone(raw: string): string | null {
   const d = raw.replace(/\D/g, "");
   if (!d) return null;
+  if (d.startsWith("880")) return "+" + d;
+  if (d.startsWith("01") && d.length === 11) return "+880" + d.slice(1);
+  if (d.length === 10) return "+880" + d;
   if (d.length < 6 || d.length > 15) return null;
+  return "+" + d;
+}
+
+function legacyPhone(raw: string): string | null {
+  const d = raw.replace(/\D/g, "");
+  if (!d || d.length < 6 || d.length > 15) return null;
   return "+" + d;
 }
 
@@ -24,7 +33,9 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: cors });
   try {
     const { phone, full_name, pin, country_code } = await req.json();
-    const normalized = normalizePhone(String(phone ?? ""));
+    const phoneRaw = String(phone ?? "");
+    const normalized = normalizePhone(phoneRaw);
+    const legacyNormalized = legacyPhone(phoneRaw);
     const name = String(full_name ?? "").trim();
     const pinStr = String(pin ?? "");
     const country = country_code ? String(country_code).toUpperCase().slice(0, 2) : null;
@@ -48,7 +59,7 @@ Deno.serve(async (req) => {
     const { data: existing } = await admin
       .from("consumer_profiles")
       .select("id")
-      .eq("phone", normalized)
+      .in("phone", Array.from(new Set([normalized, legacyNormalized].filter(Boolean) as string[])))
       .maybeSingle();
     if (existing?.id) {
       return json({ error: "phone_exists" }, 409);
