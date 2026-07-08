@@ -231,6 +231,7 @@ export function LoginCard() {
 
   return (
     <div className="w-full max-w-sm space-y-5 rounded-2xl border bg-card p-6 shadow-sm">
+      <form onSubmit={(e) => { e.preventDefault(); if (!loading) void handleSubmit(); }}>
       <div className="text-center">
         <BrandWordmark className="text-2xl font-bold block" />
         <p className="mt-1 text-sm text-muted-foreground">
@@ -307,6 +308,7 @@ export function LoginCard() {
           </button>
         </div>
       )}
+      </form>
     </div>
   );
 }
