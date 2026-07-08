@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
-import { useI18n, type Lang } from "@/lib/i18n";
+import { type Lang } from "@/lib/i18n";
 import { supabase } from "@/integrations/supabase/client";
 import { Label } from "@/components/ui/label";
-import { cn } from "@/lib/utils";
-import { Check, Store } from "lucide-react";
+import { Store } from "lucide-react";
 import * as Icons from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export type ShopType = {
   code: string;
@@ -58,59 +58,45 @@ export function ShopTypePicker({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [types]);
 
+  const selected = types.find((t) => t.code === value) ?? null;
+  const includes = selected ? (lang === "bn" ? selected.includes_bn : selected.includes_en) : null;
+
   return (
     <div className="space-y-2">
       {label && <Label>{label}</Label>}
       {loading ? (
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="h-24 animate-pulse rounded-xl border bg-muted/40" />
-          ))}
-        </div>
+        <div className="h-10 animate-pulse rounded-md border bg-muted/40" />
       ) : (
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-          {types.map((tp) => {
-            const selected = value === tp.code;
-            const IconComp =
-              (tp.icon && (Icons as unknown as Record<string, React.ComponentType<{ className?: string }>>)[tp.icon]) || Store;
-            const includes = lang === "bn" ? tp.includes_bn : tp.includes_en;
-            return (
-              <button
-                key={tp.code}
-                type="button"
-                onClick={() => onChange(tp.code, tp)}
-                className={cn(
-                  "group relative flex items-start gap-3 rounded-xl border p-3 text-left transition-all hover:border-primary hover:shadow-sm",
-                  selected
-                    ? "border-primary bg-primary/5 ring-2 ring-primary/30"
-                    : "border-border bg-card",
-                )}
-              >
-                <div
-                  className={cn(
-                    "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg",
-                    selected ? "bg-primary text-primary-foreground" : "bg-muted text-foreground",
-                  )}
-                >
-                  <IconComp className="h-5 w-5" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="font-semibold leading-tight">
+        <>
+          <Select
+            value={value ?? undefined}
+            onValueChange={(code) => {
+              const tp = types.find((t) => t.code === code);
+              if (tp) onChange(tp.code, tp);
+            }}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder={lang === "bn" ? "দোকানের ধরন বাছাই করুন" : "Select shop type"} />
+            </SelectTrigger>
+            <SelectContent className="max-h-72">
+              {types.map((tp) => {
+                const IconComp =
+                  (tp.icon && (Icons as unknown as Record<string, React.ComponentType<{ className?: string }>>)[tp.icon]) || Store;
+                return (
+                  <SelectItem key={tp.code} value={tp.code}>
+                    <span className="inline-flex items-center gap-2">
+                      <IconComp className="h-4 w-4" />
                       {lang === "bn" ? tp.name_bn : tp.name_en}
-                    </div>
-                    {selected && <Check className="h-4 w-4 shrink-0 text-primary" />}
-                  </div>
-                  {includes && (
-                    <p className="mt-1 line-clamp-3 text-xs leading-snug text-muted-foreground">
-                      {includes}
-                    </p>
-                  )}
-                </div>
-              </button>
-            );
-          })}
-        </div>
+                    </span>
+                  </SelectItem>
+                );
+              })}
+            </SelectContent>
+          </Select>
+          {includes && (
+            <p className="text-xs leading-snug text-muted-foreground">{includes}</p>
+          )}
+        </>
       )}
     </div>
   );
