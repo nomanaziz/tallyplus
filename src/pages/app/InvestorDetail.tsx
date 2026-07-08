@@ -1,4 +1,4 @@
-import { getNumLocale } from "@/lib/i18n";
+import { getNumLocale, useI18n } from "@/lib/i18n";
 import { useMemo, useState } from "react";
 import { useParams, useNavigate, Link } from "@/lib/router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -16,7 +16,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { RequirePerm } from "@/components/app/RequirePerm";
 import { ArrowLeft, Plus, User, Phone, MapPin, Wallet, CheckCircle2, Clock, Trash2, TrendingUp, TrendingDown, RotateCcw, Pencil } from "lucide-react";
 import { toast } from "sonner";
-import { computeSchedule, computeLateFee, INTEREST_TYPES, SOURCE_TYPE_LABEL, type InterestType } from "@/lib/investor-emi";
+import { computeSchedule, computeLateFee, INTEREST_TYPES, SOURCE_TYPE_LABEL, SOURCE_TYPE_LABEL_EN, type InterestType } from "@/lib/investor-emi";
 import { PinConfirmDialog } from "@/components/app/PinConfirmDialog";
 
 function bdt(n: number) {
@@ -34,6 +34,9 @@ function InvestorDetailInner() {
   const qc = useQueryClient();
   const { current } = useShop();
   const { user } = useAuth();
+  const { lang } = useI18n();
+  const bn = lang === "bn";
+  const tr = (b: string, e: string) => (bn ? b : e);
   const shopId = current?.id ?? null;
 
   const invQ = useQuery({
@@ -141,8 +144,8 @@ function InvestorDetailInner() {
     const isPS = loan.interest_type === "profit_share";
     const isOpen = loan.interest_type === "open";
     const t = isPS || isOpen ? 1 : Number(loan.tenure_months);
-    if (!p || p <= 0) return toast.error("মূল টাকা দিন");
-    if (!isPS && !isOpen && (!t || t <= 0)) return toast.error("কিস্তির সংখ্যা দিন");
+    if (!p || p <= 0) return toast.error(tr("মূল টাকা দিন", "Enter principal amount"));
+    if (!isPS && !isOpen && (!t || t <= 0)) return toast.error(tr("কিস্তির সংখ্যা দিন", "Enter installment count"));
     const day = Math.max(1, Math.min(28, Number(loan.installment_day) || 1));
     setSavingLoan(true);
     const { data: loanRow, error } = await supabase.from("investor_loans").insert({
@@ -170,12 +173,12 @@ function InvestorDetailInner() {
       shop_id: current.id,
       amount: p,
       direction: "in",
-      note: `বিনিয়োগ গ্রহণ — ${invName}`,
+      note: `${tr("বিনিয়োগ গ্রহণ", "Investment received")} — ${invName}`,
       ref_table: "investor_loans",
       ref_id: loanRow?.id ?? null,
       created_by: user?.id ?? null,
     });
-    toast.success("বিনিয়োগ যোগ হয়েছে — কিস্তির schedule তৈরি হয়েছে");
+    toast.success(isPS || isOpen ? tr("বিনিয়োগ যোগ হয়েছে", "Investment added") : tr("বিনিয়োগ যোগ হয়েছে — কিস্তির schedule তৈরি হয়েছে", "Investment added — installment schedule created"));
     setOpenLoan(false);
     setLoan({ ...loan, principal: "", interest_rate: "", note: "" });
     invalidateAll();
@@ -229,10 +232,10 @@ function InvestorDetailInner() {
   const saveSettle = async () => {
     if (!settleFor || !current) return;
     const amt = Number(settleAmount) || (settleKind !== "principal_return" ? settleComputed : 0);
-    if (!amt || amt <= 0) return toast.error("সঠিক পরিমাণ দিন");
+    if (!amt || amt <= 0) return toast.error(tr("সঠিক পরিমাণ দিন", "Enter a valid amount"));
     setSavingSettle(true);
     const invName = invQ.data?.name ?? "";
-    const kindLabel = settleKind === "profit_share" ? "লাভের অংশ" : settleKind === "loss_share" ? "লোকসানের অংশ" : "মূল ফেরত";
+    const kindLabel = settleKind === "profit_share" ? tr("লাভের অংশ", "Profit share") : settleKind === "loss_share" ? tr("লোকসানের অংশ", "Loss share") : tr("মূল ফেরত", "Principal return");
     const direction: "in" | "out" = settleKind === "loss_share" ? "in" : "out";
 
     // 1) mirror to expense/income + cash flow
@@ -240,7 +243,7 @@ function InvestorDetailInner() {
     if (direction === "out") {
       const { data: exp, error: eErr } = await supabase.from("expenses").insert({
         shop_id: current.id,
-        category: settleKind === "profit_share" ? "Partner লাভের অংশ" : "Partner মূল ফেরত",
+        category: settleKind === "profit_share" ? tr("Partner লাভের অংশ", "Partner profit share") : tr("Partner মূল ফেরত", "Partner principal return"),
         amount: amt,
         note: `${invName}${settleNote ? " — " + settleNote : ""}`,
         paid_via: settleMethod as any,
@@ -278,7 +281,7 @@ function InvestorDetailInner() {
       created_by: user?.id ?? null,
     });
 
-    // 4) close loan if partner-এর মূল টাকা পূরণ (ফেরত + লোকসানে শেষ)
+    // 4) close loan if partner principal is fully reduced (return + loss share)
     if (settleKind === "principal_return" || settleKind === "loss_share") {
       const reducedBefore = (payQ.data ?? [])
         .filter((p) => p.loan_id === settleFor.id && (p.kind === "principal_return" || p.kind === "loss_share"))
@@ -289,7 +292,7 @@ function InvestorDetailInner() {
     }
 
     setSavingSettle(false);
-    toast.success("সংরক্ষিত হয়েছে");
+    toast.success(tr("সংরক্ষিত হয়েছে", "Saved"));
     setSettleFor(null);
     invalidateAll();
   };
@@ -297,7 +300,7 @@ function InvestorDetailInner() {
   const savePay = async () => {
     if (!payInst || !current) return;
     const amt = Number(payAmount);
-    if (!amt || amt <= 0) return toast.error("সঠিক টাকা দিন");
+    if (!amt || amt <= 0) return toast.error(tr("সঠিক টাকা দিন", "Enter a valid amount"));
     // Cascade across current + subsequent unpaid installments of the same loan.
     // এতে user চাইলে আজকেই আগের বেশি কিস্তি দিয়ে দিতে পারেন।
     const loanInsts = (instQ.data ?? [])
@@ -309,7 +312,7 @@ function InvestorDetailInner() {
     ];
     const totalRemaining = ordered.reduce((s, x) => s + (Number(x.total_due) - Number(x.paid_amount)), 0);
     if (amt > totalRemaining + 0.01) {
-      return toast.error(`সর্বোচ্চ ${bdt(totalRemaining)} — এর বেশি বাকি নেই`);
+      return toast.error(tr(`সর্বোচ্চ ${bdt(totalRemaining)} — এর বেশি বাকি নেই`, `Maximum ${bdt(totalRemaining)} — no more due`));
     }
 
     setSavingPay(true);
@@ -317,9 +320,9 @@ function InvestorDetailInner() {
     const invName = invQ.data?.name ?? "";
     const { data: exp, error: expErr } = await supabase.from("expenses").insert({
       shop_id: current.id,
-      category: "বিনিয়োগের কিস্তি",
+      category: tr("বিনিয়োগের কিস্তি", "Investment installment"),
       amount: amt,
-      note: `${invName} — কিস্তি #${payInst.seq_no}${ordered.length > 1 ? "+" : ""}${payNote ? " — " + payNote : ""}`,
+      note: `${invName} — ${tr("কিস্তি", "Installment")} #${payInst.seq_no}${ordered.length > 1 ? "+" : ""}${payNote ? " — " + payNote : ""}`,
       paid_via: payMethod as any,
       created_by: user?.id ?? null,
     }).select("id").maybeSingle();
@@ -364,7 +367,7 @@ function InvestorDetailInner() {
       shop_id: current.id,
       amount: amt,
       direction: "out",
-      note: `বিনিয়োগ পরিশোধ — ${invName} — কিস্তি #${payInst.seq_no}`,
+      note: `${tr("বিনিয়োগ পরিশোধ", "Investment repayment")} — ${invName} — ${tr("কিস্তি", "Installment")} #${payInst.seq_no}`,
       ref_table: "investor_payments",
       ref_id: firstPayId,
       created_by: user?.id ?? null,
@@ -379,7 +382,7 @@ function InvestorDetailInner() {
     }
 
     setSavingPay(false);
-    toast.success("পরিশোধ রেকর্ড হয়েছে ও খরচে যোগ হয়েছে");
+    toast.success(tr("পরিশোধ রেকর্ড হয়েছে ও খরচে যোগ হয়েছে", "Payment recorded and added to expenses"));
     setPayInst(null);
     invalidateAll();
   };
@@ -390,7 +393,7 @@ function InvestorDetailInner() {
   const doDeleteLoan = async (loanId: string) => {
     const { error } = await supabase.from("investor_loans").delete().eq("id", loanId);
     if (error) return toast.error(error.message);
-    toast.success("মুছে ফেলা হয়েছে");
+    toast.success(tr("মুছে ফেলা হয়েছে", "Deleted"));
     invalidateAll();
   };
 
@@ -399,8 +402,8 @@ function InvestorDetailInner() {
     if (expenseId) await supabase.from("expenses").delete().eq("id", expenseId);
     const { error } = await supabase.from("investor_payments").delete().eq("id", payId);
     if (error) return toast.error(error.message);
-    await supabase.from("investor_loans").update({ status: "open" }).eq("id", loanId).eq("status", "closed");
-    toast.success("মুছে ফেলা হয়েছে");
+    await supabase.from("investor_loans").update({ status: "active" }).eq("id", loanId).eq("status", "closed");
+    toast.success(tr("মুছে ফেলা হয়েছে", "Deleted"));
     invalidateAll();
   };
 
@@ -416,12 +419,12 @@ function InvestorDetailInner() {
   };
   const saveInv = async () => {
     if (!id) return;
-    if (!eName.trim()) return toast.error("নাম দিন");
+    if (!eName.trim()) return toast.error(tr("নাম দিন", "Enter a name"));
     setSavingInv(true);
     const { error } = await supabase.from("investors").update({ name: eName.trim(), phone: ePhone.trim() || null }).eq("id", id);
     setSavingInv(false);
     if (error) return toast.error(error.message);
-    toast.success("আপডেট হয়েছে");
+    toast.success(tr("আপডেট হয়েছে", "Updated"));
     qc.invalidateQueries({ queryKey: ["investor", id] });
     qc.invalidateQueries({ queryKey: ["investors"], refetchType: "all" });
     setEditInv(false);
@@ -446,7 +449,7 @@ function InvestorDetailInner() {
   const saveEditPay = async () => {
     if (!editPay) return;
     const amt = Number(ePayAmount);
-    if (!amt || amt <= 0) return toast.error("সঠিক পরিমাণ দিন");
+    if (!amt || amt <= 0) return toast.error(tr("সঠিক পরিমাণ দিন", "Enter a valid amount"));
     setSavingEditPay(true);
     const affectsPrincipal = editPay.kind === "principal_return" || editPay.kind === "loss_share";
     const { error } = await supabase.from("investor_payments").update({
@@ -465,7 +468,7 @@ function InvestorDetailInner() {
     await supabase.from("cash_movements").update({ amount: amt })
       .eq("ref_table", "investor_payments").eq("ref_id", editPay.id);
     setSavingEditPay(false);
-    toast.success("সম্পাদিত হয়েছে");
+    toast.success(tr("সম্পাদিত হয়েছে", "Edited"));
     setEditPay(null);
     invalidateAll();
   };
@@ -482,18 +485,18 @@ function InvestorDetailInner() {
           <User className="h-5 w-5 text-primary" />
           <h1 className="text-lg font-extrabold md:text-xl">{inv?.name ?? "…"}</h1>
           {inv && (
-            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={openEditInv} title="নাম/ফোন edit">
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={openEditInv} title={tr("নাম/ফোন edit", "Edit name/phone")}>
               <Pencil className="h-3.5 w-3.5" />
             </Button>
           )}
           {inv && (
             <span className="rounded-md border px-2 py-0.5 text-xs text-muted-foreground">
-              {SOURCE_TYPE_LABEL[inv.source_type] ?? inv.source_type}{inv.source_name ? ` • ${inv.source_name}` : ""}
+              {(bn ? SOURCE_TYPE_LABEL : SOURCE_TYPE_LABEL_EN)[inv.source_type] ?? inv.source_type}{inv.source_name ? ` • ${inv.source_name}` : ""}
             </span>
           )}
         </div>
         <Button size="sm" onClick={() => setOpenLoan(true)}>
-          <Plus className="mr-1 h-4 w-4" /> নতুন বিনিয়োগ
+          <Plus className="mr-1 h-4 w-4" /> {tr("নতুন বিনিয়োগ", "New investment")}
         </Button>
       </div>
 
@@ -506,14 +509,14 @@ function InvestorDetailInner() {
       )}
 
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-        <Card className="p-3"><div className="text-[11px] text-muted-foreground">মোট নেওয়া</div><div className="text-lg font-bold text-primary">{bdt(totals.taken)}</div></Card>
-        <Card className="p-3"><div className="text-[11px] text-muted-foreground">মোট সুদ</div><div className="text-lg font-bold text-amber-700">{bdt(totals.interest)}</div></Card>
-        <Card className="p-3"><div className="text-[11px] text-muted-foreground">পরিশোধিত</div><div className="text-lg font-bold text-emerald-700">{bdt(totals.paid)}</div><div className="text-[10px] text-muted-foreground">মূল {bdt(totals.paidPrincipal)} • সুদ {bdt(totals.paidInterest)}</div></Card>
-        <Card className="p-3"><div className="text-[11px] text-muted-foreground">বাকি</div><div className={"text-lg font-bold " + (totals.outstanding > 0 ? "text-rose-700" : "text-foreground")}>{bdt(totals.outstanding)}</div></Card>
+        <Card className="p-3"><div className="text-[11px] text-muted-foreground">{tr("মোট নেওয়া", "Total taken")}</div><div className="text-lg font-bold text-primary">{bdt(totals.taken)}</div></Card>
+        <Card className="p-3"><div className="text-[11px] text-muted-foreground">{tr("মোট সুদ", "Total interest")}</div><div className="text-lg font-bold text-amber-700">{bdt(totals.interest)}</div></Card>
+        <Card className="p-3"><div className="text-[11px] text-muted-foreground">{tr("পরিশোধিত", "Paid")}</div><div className="text-lg font-bold text-emerald-700">{bdt(totals.paid)}</div><div className="text-[10px] text-muted-foreground">{tr("মূল", "Principal")} {bdt(totals.paidPrincipal)} • {tr("সুদ", "Interest")} {bdt(totals.paidInterest)}</div></Card>
+        <Card className="p-3"><div className="text-[11px] text-muted-foreground">{tr("বাকি", "Due")}</div><div className={"text-lg font-bold " + (totals.outstanding > 0 ? "text-rose-700" : "text-foreground")}>{bdt(totals.outstanding)}</div></Card>
       </div>
 
       {(loansQ.data ?? []).length === 0 ? (
-        <Card className="p-6 text-center text-sm text-muted-foreground">কোনো বিনিয়োগ যোগ করা হয়নি।</Card>
+        <Card className="p-6 text-center text-sm text-muted-foreground">{tr("কোনো বিনিয়োগ যোগ করা হয়নি।", "No investment has been added.")}</Card>
       ) : (
         <div className="space-y-3">
           {(loansQ.data ?? []).map((l) => {
@@ -536,33 +539,33 @@ function InvestorDetailInner() {
                     <span className="font-semibold">{bdt(Number(l.principal))}</span>
                     <span className="text-xs text-muted-foreground">
                       {l.taken_at} • {isPS
-                        ? `Partner • লাভ ${l.profit_share_pct}% / লোকসান ${l.loss_share_pct}%`
+                        ? `Partner • ${tr("লাভ", "Profit")} ${l.profit_share_pct}% / ${tr("লোকসান", "Loss")} ${l.loss_share_pct}%`
                         : isOpen
-                        ? "উন্মুক্ত • যখন সুবিধা তখন পরিশোধ"
-                        : `${l.interest_type === "none" ? "সুদহীন" : `${l.interest_rate}% ${l.interest_type === "flat" ? "flat" : "reducing"}`} • ${l.tenure_months} মাস`}
+                        ? tr("উন্মুক্ত • যখন সুবিধা তখন পরিশোধ", "Open • pay any amount anytime")
+                        : `${l.interest_type === "none" ? tr("সুদহীন", "No interest") : `${l.interest_rate}% ${l.interest_type === "flat" ? "flat" : "reducing"}`} • ${l.tenure_months} ${tr("মাস", "months")}`}
                     </span>
                     <span className={"rounded-md border px-1.5 py-0.5 text-[10px] font-semibold " + (l.status === "closed" ? "border-emerald-300 bg-emerald-50 text-emerald-700" : "border-primary/30 bg-primary/10 text-primary")}>
-                      {l.status === "closed" ? "সম্পূর্ণ শোধ" : "চলমান"}
+                      {l.status === "closed" ? tr("সম্পূর্ণ শোধ", "Closed") : tr("চলমান", "Active")}
                     </span>
                   </div>
                   <div className="flex items-center gap-2 text-xs">
                     {isPS ? (
                       <>
-                        <span className="text-emerald-700">মূল ফেরত: {bdt(psPrincipalReturned)}</span>
-                        <span className="text-amber-700">লাভ প্রদান: {bdt(psProfitPaid)}</span>
-                        <span className="text-rose-700">লোকসান আদায়: {bdt(psLossIn)}</span>
+                        <span className="text-emerald-700">{tr("মূল ফেরত", "Principal returned")}: {bdt(psPrincipalReturned)}</span>
+                        <span className="text-amber-700">{tr("লাভ প্রদান", "Profit paid")}: {bdt(psProfitPaid)}</span>
+                        <span className="text-rose-700">{tr("লোকসান আদায়", "Loss recovered")}: {bdt(psLossIn)}</span>
                       </>
                     ) : isOpen ? (
                       <>
-                        <span className="text-emerald-700">পরিশোধিত: {bdt(openReturned)}</span>
+                        <span className="text-emerald-700">{tr("পরিশোধিত", "Paid")}: {bdt(openReturned)}</span>
                         <span className={openOutstanding > 0 ? "text-rose-700" : "text-muted-foreground"}>
-                          বাকি: {bdt(Math.max(0, openOutstanding))}
+                          {tr("বাকি", "Due")}: {bdt(Math.max(0, openOutstanding))}
                         </span>
                       </>
                     ) : (
                       <>
-                        <span className="text-muted-foreground">মোট: {bdt(Number(l.total_payable))}</span>
-                        <span className="text-emerald-700">শোধ: {bdt(paidTotal)} ({paidCount}/{insts.length})</span>
+                        <span className="text-muted-foreground">{tr("মোট", "Total")}: {bdt(Number(l.total_payable))}</span>
+                        <span className="text-emerald-700">{tr("শোধ", "Paid")}: {bdt(paidTotal)} ({paidCount}/{insts.length})</span>
                       </>
                     )}
                     <Button variant="ghost" size="icon" className="h-7 w-7 text-rose-600" onClick={() => setPinDel({ kind: "loan", id: l.id })}>
@@ -577,15 +580,15 @@ function InvestorDetailInner() {
                       {isPS && (
                         <>
                           <Button size="sm" variant="outline" onClick={() => openSettle(l, "profit_share")}>
-                            <TrendingUp className="mr-1 h-3.5 w-3.5 text-emerald-600" /> লাভ প্রদান
+                            <TrendingUp className="mr-1 h-3.5 w-3.5 text-emerald-600" /> {tr("লাভ প্রদান", "Pay profit")}
                           </Button>
                           <Button size="sm" variant="outline" onClick={() => openSettle(l, "loss_share")}>
-                            <TrendingDown className="mr-1 h-3.5 w-3.5 text-rose-600" /> লোকসান আদায়
+                            <TrendingDown className="mr-1 h-3.5 w-3.5 text-rose-600" /> {tr("লোকসান আদায়", "Recover loss")}
                           </Button>
                         </>
                       )}
                       <Button size="sm" variant="outline" onClick={() => openSettle(l, "principal_return")}>
-                        <RotateCcw className="mr-1 h-3.5 w-3.5" /> {isOpen ? "পরিশোধ (যেকোনো পরিমাণ)" : "মূল ফেরত"}
+                        <RotateCcw className="mr-1 h-3.5 w-3.5" /> {isOpen ? tr("পরিশোধ (যেকোনো পরিমাণ)", "Pay any amount") : tr("মূল ফেরত", "Return principal")}
                       </Button>
                     </div>
                     {loanPays.length > 0 && (
@@ -593,19 +596,19 @@ function InvestorDetailInner() {
                         <Table>
                           <TableHeader>
                             <TableRow>
-                              <TableHead>তারিখ</TableHead>
-                              <TableHead>ধরন</TableHead>
-                              <TableHead className="text-right">পরিমাণ</TableHead>
+                              <TableHead>{tr("তারিখ", "Date")}</TableHead>
+                              <TableHead>{tr("ধরন", "Type")}</TableHead>
+                              <TableHead className="text-right">{tr("পরিমাণ", "Amount")}</TableHead>
                               <TableHead>Method</TableHead>
-                              <TableHead>নোট</TableHead>
-                              <TableHead className="text-right">অ্যাকশন</TableHead>
+                              <TableHead>{tr("নোট", "Note")}</TableHead>
+                              <TableHead className="text-right">{tr("অ্যাকশন", "Action")}</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
                             {loanPays.map((p) => (
                               <TableRow key={p.id}>
                                 <TableCell>{p.paid_at}</TableCell>
-                                <TableCell>{p.kind === "profit_share" ? "লাভের অংশ" : p.kind === "loss_share" ? "লোকসানের অংশ" : p.kind === "principal_return" ? "মূল ফেরত" : "কিস্তি"}</TableCell>
+                                <TableCell>{p.kind === "profit_share" ? tr("লাভের অংশ", "Profit share") : p.kind === "loss_share" ? tr("লোকসানের অংশ", "Loss share") : p.kind === "principal_return" ? tr("মূল ফেরত", "Principal return") : tr("কিস্তি", "Installment")}</TableCell>
                                 <TableCell className={"text-right font-semibold " + (p.kind === "loss_share" ? "text-emerald-700" : "text-rose-700")}>
                                   {p.kind === "loss_share" ? "+" : "-"}{bdt(Number(p.amount))}
                                 </TableCell>
@@ -634,14 +637,14 @@ function InvestorDetailInner() {
                     <TableHeader>
                       <TableRow>
                         <TableHead className="w-10">#</TableHead>
-                        <TableHead>বকেয়ার তারিখ</TableHead>
-                        <TableHead className="text-right">মূল</TableHead>
-                        <TableHead className="text-right">সুদ</TableHead>
-                        <TableHead className="text-right">মোট</TableHead>
-                        <TableHead className="text-right">পরিশোধিত</TableHead>
-                        <TableHead>পরিশোধের তারিখ</TableHead>
-                        <TableHead>অবস্থা</TableHead>
-                        <TableHead className="text-right">অ্যাকশন</TableHead>
+                        <TableHead>{tr("বকেয়ার তারিখ", "Due date")}</TableHead>
+                        <TableHead className="text-right">{tr("মূল", "Principal")}</TableHead>
+                        <TableHead className="text-right">{tr("সুদ", "Interest")}</TableHead>
+                        <TableHead className="text-right">{tr("মোট", "Total")}</TableHead>
+                        <TableHead className="text-right">{tr("পরিশোধিত", "Paid")}</TableHead>
+                        <TableHead>{tr("পরিশোধের তারিখ", "Payment date")}</TableHead>
+                        <TableHead>{tr("অবস্থা", "Status")}</TableHead>
+                        <TableHead className="text-right">{tr("অ্যাকশন", "Action")}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -671,17 +674,17 @@ function InvestorDetailInner() {
                             <TableCell className="text-xs">{i.paid_at ? i.paid_at : <span className="text-muted-foreground">—</span>}</TableCell>
                             <TableCell>
                               {i.status === "paid" ? (
-                                <span className="inline-flex items-center gap-1 text-emerald-700"><CheckCircle2 className="h-3.5 w-3.5" />শোধ</span>
+                                <span className="inline-flex items-center gap-1 text-emerald-700"><CheckCircle2 className="h-3.5 w-3.5" />{tr("শোধ", "Paid")}</span>
                               ) : i.status === "partial" ? (
-                                <span className="text-amber-700">আংশিক</span>
+                                <span className="text-amber-700">{tr("আংশিক", "Partial")}</span>
                               ) : locked ? (
-                                <span className="text-xs text-muted-foreground">আগের কিস্তি শোধ বাকি</span>
+                                <span className="text-xs text-muted-foreground">{tr("আগের কিস্তি শোধ বাকি", "Previous installment is unpaid")}</span>
                               ) : (
-                                <span className="inline-flex items-center gap-1 text-muted-foreground"><Clock className="h-3.5 w-3.5" />বাকি</span>
+                                <span className="inline-flex items-center gap-1 text-muted-foreground"><Clock className="h-3.5 w-3.5" />{tr("বাকি", "Due")}</span>
                               )}
                               {lateInfo.fee > 0 && (
                                 <div className="text-[10px] font-semibold text-rose-600">
-                                  জরিমানা: {bdt(lateInfo.fee)} ({lateInfo.daysLate} দিন late)
+                                  {tr("জরিমানা", "Late fee")}: {bdt(lateInfo.fee)} ({lateInfo.daysLate} {tr("দিন late", "days late")})
                                 </div>
                               )}
                             </TableCell>
@@ -694,7 +697,7 @@ function InvestorDetailInner() {
                                   title={locked ? `আগে কিস্তি #${firstUnpaidSeq} পরিশোধ করুন` : undefined}
                                   onClick={() => openPay(i)}
                                 >
-                                  পরিশোধ {bdt(remaining)}
+                                  {tr("পরিশোধ", "Pay")} {bdt(remaining)}
                                 </Button>
                               )}
                             </TableCell>
@@ -715,77 +718,77 @@ function InvestorDetailInner() {
       {/* Add loan dialog */}
       <Dialog open={openLoan} onOpenChange={setOpenLoan}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>নতুন বিনিয়োগ ({inv?.name})</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{tr("নতুন বিনিয়োগ", "New investment")} ({inv?.name})</DialogTitle></DialogHeader>
           <div className="grid gap-3 md:grid-cols-2">
             <div>
-              <Label>মূল টাকা *</Label>
+              <Label>{tr("মূল টাকা", "Principal")} *</Label>
               <Input inputMode="decimal" value={loan.principal} onChange={(e) => setLoan({ ...loan, principal: e.target.value.replace(/[^0-9.]/g, "") })} />
             </div>
             <div>
-              <Label>নেওয়ার তারিখ</Label>
+              <Label>{tr("নেওয়ার তারিখ", "Taken date")}</Label>
               <Input type="date" value={loan.taken_at} onChange={(e) => setLoan({ ...loan, taken_at: e.target.value })} />
             </div>
             <div>
-              <Label>সুদের ধরন</Label>
+              <Label>{tr("সুদের ধরন", "Interest type")}</Label>
               <Select value={loan.interest_type} onValueChange={(v) => setLoan({ ...loan, interest_type: v as InterestType })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {INTEREST_TYPES.map((t) => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}
+                  {INTEREST_TYPES.map((t) => <SelectItem key={t.value} value={t.value}>{bn ? t.label : t.labelEn}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
             {loan.interest_type === "profit_share" ? (
               <>
                 <div>
-                  <Label>লাভের অংশ (%)</Label>
-                  <Input inputMode="decimal" placeholder="যেমন 5" value={loan.profit_share_pct} onChange={(e) => setLoan({ ...loan, profit_share_pct: e.target.value.replace(/[^0-9.]/g, "") })} />
+                  <Label>{tr("লাভের অংশ", "Profit share")} (%)</Label>
+                  <Input inputMode="decimal" placeholder={tr("যেমন 5", "e.g. 5")} value={loan.profit_share_pct} onChange={(e) => setLoan({ ...loan, profit_share_pct: e.target.value.replace(/[^0-9.]/g, "") })} />
                 </div>
                 <div>
-                  <Label>লোকসানের অংশ (%)</Label>
-                  <Input inputMode="decimal" placeholder="যেমন 50" value={loan.loss_share_pct} onChange={(e) => setLoan({ ...loan, loss_share_pct: e.target.value.replace(/[^0-9.]/g, "") })} />
+                  <Label>{tr("লোকসানের অংশ", "Loss share")} (%)</Label>
+                  <Input inputMode="decimal" placeholder={tr("যেমন 50", "e.g. 50")} value={loan.loss_share_pct} onChange={(e) => setLoan({ ...loan, loss_share_pct: e.target.value.replace(/[^0-9.]/g, "") })} />
                 </div>
                 <div className="md:col-span-2 text-[11px] text-muted-foreground">
-                  Partner-এর জন্য কোনো fixed কিস্তি নেই। ব্যবসার লাভ/লোকসান হলে "লাভ/লোকসান settle" থেকে হিসাব করে দিন।
+                  {tr("Partner-এর জন্য কোনো fixed কিস্তি নেই। ব্যবসার লাভ/লোকসান হলে হিসাব করে দিন।", "No fixed installment for partner investment. Settle when business profit/loss is calculated.")}
                 </div>
               </>
             ) : loan.interest_type === "open" ? (
               <div className="md:col-span-2 rounded-md border bg-muted/30 p-2 text-[12px] text-muted-foreground">
-                উন্মুক্ত loan — কোনো নির্দিষ্ট কিস্তি বা সময় নেই। যখন সুবিধা তখন যেকোনো পরিমাণ পরিশোধ করা যাবে।
+                {tr("উন্মুক্ত loan — কোনো নির্দিষ্ট কিস্তি বা সময় নেই। যখন সুবিধা তখন যেকোনো পরিমাণ পরিশোধ করা যাবে।", "Open loan — no fixed installment or schedule. Pay any amount anytime.")}
               </div>
             ) : (
               <>
                 <div>
-                  <Label>সুদের হার (বার্ষিক %)</Label>
+                  <Label>{tr("সুদের হার", "Interest rate")} ({tr("বার্ষিক", "annual")} %)</Label>
                   <Input inputMode="decimal" disabled={loan.interest_type === "none"} value={loan.interest_rate} onChange={(e) => setLoan({ ...loan, interest_rate: e.target.value.replace(/[^0-9.]/g, "") })} />
                 </div>
                 <div>
-                  <Label>কিস্তির সংখ্যা (মাস) *</Label>
+                  <Label>{tr("কিস্তির সংখ্যা", "Installment count")} ({tr("মাস", "months")}) *</Label>
                   <Input inputMode="numeric" value={loan.tenure_months} onChange={(e) => setLoan({ ...loan, tenure_months: e.target.value.replace(/[^0-9]/g, "") })} />
                 </div>
                 <div>
-                  <Label>প্রতি মাসের কত তারিখে (১-২৮)</Label>
+                  <Label>{tr("প্রতি মাসের কত তারিখে (১-২৮)", "Day of month (1-28)")}</Label>
                   <Input inputMode="numeric" value={loan.installment_day} onChange={(e) => setLoan({ ...loan, installment_day: e.target.value.replace(/[^0-9]/g, "") })} />
                 </div>
                 <div className="md:col-span-2">
-                  <Label>প্রথম কিস্তির তারিখ</Label>
+                  <Label>{tr("প্রথম কিস্তির তারিখ", "First installment date")}</Label>
                   <Input type="date" value={loan.first_due_date} onChange={(e) => setLoan({ ...loan, first_due_date: e.target.value })} />
                 </div>
                 <div>
-                  <Label>জরিমানা — flat (৳/দেরি কিস্তি)</Label>
-                  <Input inputMode="decimal" placeholder="০" value={loan.late_fee_amount} onChange={(e) => setLoan({ ...loan, late_fee_amount: e.target.value.replace(/[^0-9.]/g, "") })} />
+                  <Label>{tr("জরিমানা — flat (৳/দেরি কিস্তি)", "Late fee — flat (৳/late installment)")}</Label>
+                  <Input inputMode="decimal" placeholder="0" value={loan.late_fee_amount} onChange={(e) => setLoan({ ...loan, late_fee_amount: e.target.value.replace(/[^0-9.]/g, "") })} />
                 </div>
                 <div>
-                  <Label>জরিমানা — বকেয়ার %</Label>
-                  <Input inputMode="decimal" placeholder="০" value={loan.late_fee_percent} onChange={(e) => setLoan({ ...loan, late_fee_percent: e.target.value.replace(/[^0-9.]/g, "") })} />
+                  <Label>{tr("জরিমানা — বকেয়ার %", "Late fee — % of due")}</Label>
+                  <Input inputMode="decimal" placeholder="0" value={loan.late_fee_percent} onChange={(e) => setLoan({ ...loan, late_fee_percent: e.target.value.replace(/[^0-9.]/g, "") })} />
                 </div>
                 <div className="md:col-span-2">
-                  <Label>Grace days (কত দিন পর থেকে জরিমানা)</Label>
-                  <Input inputMode="numeric" placeholder="০" value={loan.late_fee_grace_days} onChange={(e) => setLoan({ ...loan, late_fee_grace_days: e.target.value.replace(/[^0-9]/g, "") })} />
+                  <Label>{tr("Grace days (কত দিন পর থেকে জরিমানা)", "Grace days")}</Label>
+                  <Input inputMode="numeric" placeholder="0" value={loan.late_fee_grace_days} onChange={(e) => setLoan({ ...loan, late_fee_grace_days: e.target.value.replace(/[^0-9]/g, "") })} />
                 </div>
               </>
             )}
             <div className="md:col-span-2">
-              <Label>নোট</Label>
+              <Label>{tr("নোট", "Note")}</Label>
               <Textarea rows={2} value={loan.note} onChange={(e) => setLoan({ ...loan, note: e.target.value })} />
             </div>
           </div>
@@ -793,19 +796,19 @@ function InvestorDetailInner() {
           {preview && preview.rows.length > 0 && (
             <Card className="p-3 mt-2 bg-muted/30">
               <div className="flex flex-wrap gap-3 text-xs">
-                <span>মাসিক কিস্তি: <b>{bdt(preview.emi)}</b></span>
-                <span>মোট সুদ: <b className="text-amber-700">{bdt(preview.totalInterest)}</b></span>
-                <span>মোট প্রদেয়: <b className="text-primary">{bdt(preview.totalPayable)}</b></span>
+                <span>{tr("মাসিক কিস্তি", "Monthly installment")}: <b>{bdt(preview.emi)}</b></span>
+                <span>{tr("মোট সুদ", "Total interest")}: <b className="text-amber-700">{bdt(preview.totalInterest)}</b></span>
+                <span>{tr("মোট প্রদেয়", "Total payable")}: <b className="text-primary">{bdt(preview.totalPayable)}</b></span>
               </div>
               <div className="mt-2 max-h-40 overflow-y-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead className="w-8">#</TableHead>
-                      <TableHead>তারিখ</TableHead>
-                      <TableHead className="text-right">মূল</TableHead>
-                      <TableHead className="text-right">সুদ</TableHead>
-                      <TableHead className="text-right">মোট</TableHead>
+                      <TableHead>{tr("তারিখ", "Date")}</TableHead>
+                      <TableHead className="text-right">{tr("মূল", "Principal")}</TableHead>
+                      <TableHead className="text-right">{tr("সুদ", "Interest")}</TableHead>
+                      <TableHead className="text-right">{tr("মোট", "Total")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -825,8 +828,8 @@ function InvestorDetailInner() {
           )}
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setOpenLoan(false)}>বাতিল</Button>
-            <Button onClick={saveLoan} disabled={savingLoan}>সংরক্ষণ</Button>
+            <Button variant="outline" onClick={() => setOpenLoan(false)}>{tr("বাতিল", "Cancel")}</Button>
+            <Button onClick={saveLoan} disabled={savingLoan}>{tr("সংরক্ষণ", "Save")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -834,14 +837,14 @@ function InvestorDetailInner() {
       {/* Pay installment dialog */}
       <Dialog open={!!payInst} onOpenChange={(v) => !v && setPayInst(null)}>
         <DialogContent className="max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>কিস্তি পরিশোধ #{payInst?.seq_no}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{tr("কিস্তি পরিশোধ", "Pay installment")} #{payInst?.seq_no}</DialogTitle></DialogHeader>
           {payInst && (
             <div className="space-y-3">
               <div className="text-xs text-muted-foreground">
-                বকেয়ার তারিখ: {payInst.due_date} • মোট: {bdt(payInst.total_due)} • বাকি: {bdt(payInst.total_due - payInst.paid_amount)}
+                {tr("বকেয়ার তারিখ", "Due date")}: {payInst.due_date} • {tr("মোট", "Total")}: {bdt(payInst.total_due)} • {tr("বাকি", "Due")}: {bdt(payInst.total_due - payInst.paid_amount)}
               </div>
               <div>
-                <Label>পরিশোধের পরিমাণ</Label>
+                <Label>{tr("পরিশোধের পরিমাণ", "Payment amount")}</Label>
                 <Input inputMode="decimal" value={payAmount} onChange={(e) => setPayAmount(e.target.value.replace(/[^0-9.]/g, ""))} />
               </div>
               <div className="grid grid-cols-2 gap-2">
@@ -850,28 +853,28 @@ function InvestorDetailInner() {
                   <Select value={payMethod} onValueChange={(v) => setPayMethod(v as any)}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="cash">নগদ</SelectItem>
+                      <SelectItem value="cash">{tr("নগদ", "Cash")}</SelectItem>
                       <SelectItem value="bkash">বিকাশ</SelectItem>
-                      <SelectItem value="nagad">নগদ (Mobile)</SelectItem>
-                      <SelectItem value="bank">ব্যাংক</SelectItem>
+                      <SelectItem value="nagad">Nagad</SelectItem>
+                      <SelectItem value="bank">{tr("ব্যাংক", "Bank")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div>
-                  <Label>তারিখ</Label>
+                  <Label>{tr("তারিখ", "Date")}</Label>
                   <Input type="date" value={payDate} onChange={(e) => setPayDate(e.target.value)} />
                 </div>
               </div>
               <div>
-                <Label>নোট</Label>
+                <Label>{tr("নোট", "Note")}</Label>
                 <Input value={payNote} onChange={(e) => setPayNote(e.target.value)} />
               </div>
-              <div className="text-[11px] text-muted-foreground">এই পরিশোধ স্বয়ংক্রিয়ভাবে ‘বিনিয়োগের কিস্তি’ ক্যাটাগরিতে খরচে যোগ হবে।</div>
+              <div className="text-[11px] text-muted-foreground">{tr("এই পরিশোধ স্বয়ংক্রিয়ভাবে ‘বিনিয়োগের কিস্তি’ ক্যাটাগরিতে খরচে যোগ হবে।", "This payment will be added to expenses automatically.")}</div>
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setPayInst(null)}>বাতিল</Button>
-            <Button onClick={savePay} disabled={savingPay}>পরিশোধ সংরক্ষণ</Button>
+            <Button variant="outline" onClick={() => setPayInst(null)}>{tr("বাতিল", "Cancel")}</Button>
+            <Button onClick={savePay} disabled={savingPay}>{tr("পরিশোধ সংরক্ষণ", "Save payment")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -881,25 +884,25 @@ function InvestorDetailInner() {
         <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              {settleKind === "profit_share" ? "লাভের অংশ প্রদান" : settleKind === "loss_share" ? "লোকসানের অংশ আদায়" : "মূল টাকা ফেরত"}
+              {settleKind === "profit_share" ? tr("লাভের অংশ প্রদান", "Pay profit share") : settleKind === "loss_share" ? tr("লোকসানের অংশ আদায়", "Recover loss share") : tr("মূল টাকা ফেরত", "Return principal")}
             </DialogTitle>
           </DialogHeader>
           {settleFor && (
             <div className="space-y-3">
               <div className="text-xs text-muted-foreground">
-                মূল বিনিয়োগ: {bdt(Number(settleFor.principal))} • লাভ {settleFor.profit_share_pct}% / লোকসান {settleFor.loss_share_pct}%
+                {tr("মূল বিনিয়োগ", "Principal investment")}: {bdt(Number(settleFor.principal))} • {tr("লাভ", "Profit")} {settleFor.profit_share_pct}% / {tr("লোকসান", "Loss")} {settleFor.loss_share_pct}%
               </div>
               {settleKind !== "principal_return" && (
                 <div>
-                  <Label>ব্যবসার মোট {settleKind === "profit_share" ? "লাভ" : "লোকসান"} (এই মাস/সময়ে)</Label>
-                  <Input inputMode="decimal" value={settleBase} onChange={(e) => { const v = e.target.value.replace(/[^0-9.]/g, ""); setSettleBase(v); }} placeholder="ব্যবসার লাভ/লোকসানের পরিমাণ" />
+                  <Label>{tr("ব্যবসার মোট", "Business total")} {settleKind === "profit_share" ? tr("লাভ", "profit") : tr("লোকসান", "loss")} ({tr("এই মাস/সময়ে", "this period")})</Label>
+                  <Input inputMode="decimal" value={settleBase} onChange={(e) => { const v = e.target.value.replace(/[^0-9.]/g, ""); setSettleBase(v); }} placeholder={tr("ব্যবসার লাভ/লোকসানের পরিমাণ", "Business profit/loss amount")} />
                   <div className="mt-1 text-[11px] text-muted-foreground">
-                    Partner-এর অংশ = <b>{bdt(settleComputed)}</b> (auto)
+                    {tr("Partner-এর অংশ", "Partner share")} = <b>{bdt(settleComputed)}</b> (auto)
                   </div>
                 </div>
               )}
               <div>
-                <Label>{settleKind === "principal_return" ? "ফেরতের পরিমাণ" : "আসল পরিমাণ (edit করা যাবে)"}</Label>
+                <Label>{settleKind === "principal_return" ? tr("ফেরতের পরিমাণ", "Return amount") : tr("আসল পরিমাণ (edit করা যাবে)", "Final amount (editable)")}</Label>
                 <Input inputMode="decimal" value={settleAmount || (settleKind !== "principal_return" ? String(settleComputed || "") : "")} onChange={(e) => setSettleAmount(e.target.value.replace(/[^0-9.]/g, ""))} />
               </div>
               <div className="grid grid-cols-2 gap-2">
@@ -908,32 +911,32 @@ function InvestorDetailInner() {
                   <Select value={settleMethod} onValueChange={(v) => setSettleMethod(v as any)}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="cash">নগদ</SelectItem>
+                      <SelectItem value="cash">{tr("নগদ", "Cash")}</SelectItem>
                       <SelectItem value="bkash">বিকাশ</SelectItem>
-                      <SelectItem value="nagad">নগদ (Mobile)</SelectItem>
-                      <SelectItem value="bank">ব্যাংক</SelectItem>
+                      <SelectItem value="nagad">Nagad</SelectItem>
+                      <SelectItem value="bank">{tr("ব্যাংক", "Bank")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div>
-                  <Label>তারিখ</Label>
+                  <Label>{tr("তারিখ", "Date")}</Label>
                   <Input type="date" value={settleDate} onChange={(e) => setSettleDate(e.target.value)} />
                 </div>
               </div>
               <div>
-                <Label>নোট</Label>
+                <Label>{tr("নোট", "Note")}</Label>
                 <Input value={settleNote} onChange={(e) => setSettleNote(e.target.value)} />
               </div>
               <div className="text-[11px] text-muted-foreground">
                 {settleKind === "loss_share"
-                  ? "Partner থেকে টাকা আসবে — dashboard cash flow-এ যোগ হবে।"
-                  : "Shop থেকে টাকা যাবে — খরচ ও cash flow থেকে বিয়োগ হবে।"}
+                  ? tr("Partner থেকে টাকা আসবে — dashboard cash flow-এ যোগ হবে।", "Money will come from the partner and be added to cash flow.")
+                  : tr("Shop থেকে টাকা যাবে — খরচ ও cash flow থেকে বিয়োগ হবে।", "Money will go out from the shop and be deducted from cash flow.")}
               </div>
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setSettleFor(null)}>বাতিল</Button>
-            <Button onClick={saveSettle} disabled={savingSettle}>সংরক্ষণ</Button>
+            <Button variant="outline" onClick={() => setSettleFor(null)}>{tr("বাতিল", "Cancel")}</Button>
+            <Button onClick={saveSettle} disabled={savingSettle}>{tr("সংরক্ষণ", "Save")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -943,13 +946,13 @@ function InvestorDetailInner() {
         <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              সম্পাদনা — {editPay?.kind === "profit_share" ? "লাভের অংশ" : editPay?.kind === "loss_share" ? "লোকসানের অংশ" : editPay?.kind === "principal_return" ? "মূল ফেরত" : "কিস্তি"}
+              {tr("সম্পাদনা", "Edit")} — {editPay?.kind === "profit_share" ? tr("লাভের অংশ", "Profit share") : editPay?.kind === "loss_share" ? tr("লোকসানের অংশ", "Loss share") : editPay?.kind === "principal_return" ? tr("মূল ফেরত", "Principal return") : tr("কিস্তি", "Installment")}
             </DialogTitle>
           </DialogHeader>
           {editPay && (
             <div className="space-y-3">
               <div>
-                <Label>পরিমাণ</Label>
+                <Label>{tr("পরিমাণ", "Amount")}</Label>
                 <Input inputMode="decimal" value={ePayAmount} onChange={(e) => setEPayAmount(e.target.value.replace(/[^0-9.]/g, ""))} />
               </div>
               <div className="grid grid-cols-2 gap-2">
@@ -958,27 +961,27 @@ function InvestorDetailInner() {
                   <Select value={ePayMethod} onValueChange={(v) => setEPayMethod(v as any)}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="cash">নগদ</SelectItem>
+                      <SelectItem value="cash">{tr("নগদ", "Cash")}</SelectItem>
                       <SelectItem value="bkash">বিকাশ</SelectItem>
-                      <SelectItem value="nagad">নগদ (Mobile)</SelectItem>
-                      <SelectItem value="bank">ব্যাংক</SelectItem>
+                      <SelectItem value="nagad">Nagad</SelectItem>
+                      <SelectItem value="bank">{tr("ব্যাংক", "Bank")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div>
-                  <Label>তারিখ</Label>
+                  <Label>{tr("তারিখ", "Date")}</Label>
                   <Input type="date" value={ePayDate} onChange={(e) => setEPayDate(e.target.value)} />
                 </div>
               </div>
               <div>
-                <Label>নোট</Label>
+                <Label>{tr("নোট", "Note")}</Label>
                 <Input value={ePayNote} onChange={(e) => setEPayNote(e.target.value)} />
               </div>
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditPay(null)}>বাতিল</Button>
-            <Button onClick={saveEditPay} disabled={savingEditPay}>সংরক্ষণ</Button>
+            <Button variant="outline" onClick={() => setEditPay(null)}>{tr("বাতিল", "Cancel")}</Button>
+            <Button onClick={saveEditPay} disabled={savingEditPay}>{tr("সংরক্ষণ", "Save")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -986,20 +989,20 @@ function InvestorDetailInner() {
       {/* Edit investor name/phone */}
       <Dialog open={editInv} onOpenChange={setEditInv}>
         <DialogContent className="max-w-md">
-          <DialogHeader><DialogTitle>বিনিয়োগকারীর তথ্য edit</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{tr("বিনিয়োগকারীর তথ্য edit", "Edit investor info")}</DialogTitle></DialogHeader>
           <div className="space-y-3">
             <div>
-              <Label>নাম *</Label>
+              <Label>{tr("নাম", "Name")} *</Label>
               <Input value={eName} onChange={(e) => setEName(e.target.value)} />
             </div>
             <div>
-              <Label>ফোন</Label>
+              <Label>{tr("ফোন", "Phone")}</Label>
               <Input value={ePhone} onChange={(e) => setEPhone(e.target.value)} />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEditInv(false)}>বাতিল</Button>
-            <Button onClick={saveInv} disabled={savingInv}>সংরক্ষণ</Button>
+            <Button variant="outline" onClick={() => setEditInv(false)}>{tr("বাতিল", "Cancel")}</Button>
+            <Button onClick={saveInv} disabled={savingInv}>{tr("সংরক্ষণ", "Save")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
