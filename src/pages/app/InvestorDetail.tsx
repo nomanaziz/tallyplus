@@ -564,7 +564,7 @@ function InvestorDetailInner() {
                         <span className="text-emerald-700">শোধ: {bdt(paidTotal)} ({paidCount}/{insts.length})</span>
                       </>
                     )}
-                    <Button variant="ghost" size="icon" className="h-7 w-7 text-rose-600" onClick={() => deleteLoan(l.id)}>
+                    <Button variant="ghost" size="icon" className="h-7 w-7 text-rose-600" onClick={() => setPinDel({ kind: "loan", id: l.id })}>
                       <Trash2 className="h-3.5 w-3.5" />
                     </Button>
                   </div>
@@ -615,7 +615,7 @@ function InvestorDetailInner() {
                                     <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditPay(p)}>
                                       <Pencil className="h-3.5 w-3.5" />
                                     </Button>
-                                    <Button variant="ghost" size="icon" className="h-7 w-7 text-rose-600" onClick={() => deletePartnerPay(p)}>
+                                    <Button variant="ghost" size="icon" className="h-7 w-7 text-rose-600" onClick={() => setPinDel({ kind: "pay", id: p.id, expense_id: p.expense_id, loan_id: p.loan_id })}>
                                       <Trash2 className="h-3.5 w-3.5" />
                                     </Button>
                                   </div>
