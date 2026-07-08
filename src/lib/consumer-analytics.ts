@@ -1,3 +1,4 @@
+import { getNumLocale } from "@/lib/i18n";
 import { supabase } from "@/integrations/supabase/client";
 
 export type Tx = {
@@ -32,7 +33,7 @@ export function fmtMonthBn(d: Date) {
   return `${months[d.getMonth()]}, ${d.getFullYear()}`;
 }
 export function bdt(n: number) {
-  return new Intl.NumberFormat("bn-BD", { maximumFractionDigits: 0 }).format(n) + " ৳";
+  return new Intl.NumberFormat(getNumLocale(), { maximumFractionDigits: 0 }).format(n) + " ৳";
 }
 
 export function isRegularTx(r: Tx) {

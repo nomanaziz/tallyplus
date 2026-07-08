@@ -1,6 +1,6 @@
 import { Copy, BadgeDollarSign } from "lucide-react";
 import { toast } from "sonner";
-import { useI18n } from "@/lib/i18n";
+import { getNumLocale, useI18n } from "@/lib/i18n";
 
 type Props = {
   amount: number;
@@ -33,7 +33,7 @@ export function AdvancePaymentInfoCard({ amount, paid, method, txnId, payerPhone
           {t("p7_Advance_payment")}
           {method && <span className="ml-1 rounded-full bg-background/80 px-1.5 py-0.5 text-[10px] uppercase tracking-wide">{method}</span>}
         </span>
-        <span>৳{Number(amount).toLocaleString("bn-BD")} {paid ? (t("p7_paid")) : (t("p7_unpaid"))}</span>
+        <span>৳{Number(amount).toLocaleString(getNumLocale())} {paid ? (t("p7_paid")) : (t("p7_unpaid"))}</span>
       </div>
       <div className="mt-2 grid gap-1.5 sm:grid-cols-2">
         <CopyRow label={t("p7_Sender_number")} value={sender} onCopy={() => copy(sender, t("p7_number"))} />

@@ -1,3 +1,4 @@
+import { getNumLocale } from "@/lib/i18n";
 import { Mic } from "lucide-react";
 import { useRef } from "react";
 import { useSpeechRecognition } from "@/lib/useSpeechRecognition";
@@ -19,7 +20,7 @@ export function VoiceFordoMic({ onItems, className }: Props) {
   const emittedRef = useRef<string>("");
 
   const { supported, listening, error, start, stop } = useSpeechRecognition({
-    lang: "bn-BD",
+    lang: getNumLocale(),
     silenceTimeoutMs: 0,
     noSpeechTimeoutMs: 0,
     keepAlive: true,

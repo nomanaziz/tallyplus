@@ -1,3 +1,4 @@
+import { getNumLocale } from "@/lib/i18n";
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "@/lib/router";
 import { supabase } from "@/integrations/supabase/client";
@@ -27,11 +28,11 @@ type Tx = { id: string; type: string; amount: number; tx_date: string; kind?: st
 type LoanSummary = { type: "lent" | "borrowed"; amount: number; paid_amount: number };
 
 function bdt(n: number) {
-  return new Intl.NumberFormat("bn-BD", { maximumFractionDigits: 0 }).format(n) + " ৳";
+  return new Intl.NumberFormat(getNumLocale(), { maximumFractionDigits: 0 }).format(n) + " ৳";
 }
 
 function bn(n: number) {
-  return new Intl.NumberFormat("bn-BD").format(n);
+  return new Intl.NumberFormat(getNumLocale()).format(n);
 }
 
 export default function CustomerDashboard() {

@@ -1,3 +1,4 @@
+import { getNumLocale } from "@/lib/i18n";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "@/lib/router";
 import { supabase } from "@/integrations/supabase/client";
@@ -27,10 +28,10 @@ type Tx = {
 };
 
 function bdt(n: number) {
-  return new Intl.NumberFormat("bn-BD", { maximumFractionDigits: 0 }).format(n) + " ৳";
+  return new Intl.NumberFormat(getNumLocale(), { maximumFractionDigits: 0 }).format(n) + " ৳";
 }
 function monthLabelBn(d: Date) {
-  return d.toLocaleDateString("bn-BD", { month: "long", year: "numeric" });
+  return d.toLocaleDateString(getNumLocale(), { month: "long", year: "numeric" });
 }
 
 export default function CustomerHistory() {

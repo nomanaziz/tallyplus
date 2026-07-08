@@ -1,3 +1,4 @@
+import { getNumLocale } from "@/lib/i18n";
 import { useMemo, useState } from "react";
 import { Link, useNavigate } from "@/lib/router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -17,7 +18,7 @@ import { toast } from "sonner";
 import { SOURCE_TYPES, SOURCE_TYPE_LABEL } from "@/lib/investor-emi";
 
 function bdt(n: number) {
-  return new Intl.NumberFormat("bn-BD", { maximumFractionDigits: 0 }).format(n) + " ৳";
+  return new Intl.NumberFormat(getNumLocale(), { maximumFractionDigits: 0 }).format(n) + " ৳";
 }
 
 type InvestorRow = {

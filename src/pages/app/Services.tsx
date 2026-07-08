@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, Pencil, Trash2, Globe, Clock, Shield, Home, Wrench, Search, MapPin, CalendarClock, Phone, BadgeDollarSign } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useShop } from "@/lib/shop";
-import { useI18n, fmtMoney } from "@/lib/i18n";
+import { getNumLocale, useI18n, fmtMoney } from "@/lib/i18n";
 import { servicesListQuery, serviceCategoriesQuery, durationToText, warrantyToText, type Service } from "@/lib/services-queries";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -670,8 +670,8 @@ function ServiceBookingsTab({ shopId }: { shopId: string }) {
           <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
             <span className="rounded-full bg-muted px-2 py-0.5">
               {b.status === "completed" && b.final_amount != null
-                ? (t("p4_FinalShort")) + `: ৳${Number(b.final_amount).toLocaleString("bn-BD")}`
-                : (t("p4_Price")) + `: ৳${Number(b.service_price).toLocaleString("bn-BD")}`}
+                ? (t("p4_FinalShort")) + `: ৳${Number(b.final_amount).toLocaleString(getNumLocale())}`
+                : (t("p4_Price")) + `: ৳${Number(b.service_price).toLocaleString(getNumLocale())}`}
             </span>
           </div>
           <AdvancePaymentInfoCard

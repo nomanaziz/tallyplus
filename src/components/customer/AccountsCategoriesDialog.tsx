@@ -1,3 +1,4 @@
+import { getNumLocale } from "@/lib/i18n";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
@@ -116,7 +117,7 @@ export function AccountsCategoriesDialog({
                 <li key={a.id} className={`flex items-center gap-3 px-3 py-2 ${a.is_archived ? "opacity-50" : ""}`}>
                   <span className="rounded-md bg-muted px-2 py-0.5 text-xs">{ACCOUNT_KIND_LABEL[a.kind] ?? a.kind}</span>
                   <span className="flex-1 text-sm font-medium">{a.name}</span>
-                  <span className="text-xs text-muted-foreground">শুরু: {Number(a.opening_balance).toLocaleString("bn-BD")} ৳</span>
+                  <span className="text-xs text-muted-foreground">শুরু: {Number(a.opening_balance).toLocaleString(getNumLocale())} ৳</span>
                   <button onClick={() => archiveAccount(a.id, a.is_archived)} className="rounded p-1 text-muted-foreground hover:bg-accent" title="Archive">
                     <Archive className="h-4 w-4" />
                   </button>

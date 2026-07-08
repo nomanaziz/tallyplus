@@ -1,3 +1,4 @@
+import { getNumLocale } from "@/lib/i18n";
 import { Link, useNavigate, useParams } from "@/lib/router";
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -81,7 +82,7 @@ const FULFILL_LABEL: Record<string, string> = {
 };
 
 function fmtTime(iso: string) {
-  return new Date(iso).toLocaleString("bn-BD", { dateStyle: "medium", timeStyle: "short" });
+  return new Date(iso).toLocaleString(getNumLocale(), { dateStyle: "medium", timeStyle: "short" });
 }
 
 function MyWishlistPage() {
@@ -278,7 +279,7 @@ function MyWishlistPage() {
     }
     setSaveWlId(wl.id);
     const dt = new Date(wl.created_at);
-    setSaveName(`${shopName} — ${dt.toLocaleDateString("bn-BD", { day: "numeric", month: "short" })}`);
+    setSaveName(`${shopName} — ${dt.toLocaleDateString(getNumLocale(), { day: "numeric", month: "short" })}`);
     setSaveOpen(true);
   };
   const confirmSaveTemplate = async () => {

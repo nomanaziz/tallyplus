@@ -1,3 +1,4 @@
+import { getNumLocale } from "@/lib/i18n";
 import { useMemo, useState } from "react";
 import { useParams, useNavigate, Link } from "@/lib/router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -19,7 +20,7 @@ import { computeSchedule, computeLateFee, INTEREST_TYPES, SOURCE_TYPE_LABEL, typ
 import { PinConfirmDialog } from "@/components/app/PinConfirmDialog";
 
 function bdt(n: number) {
-  return new Intl.NumberFormat("bn-BD", { maximumFractionDigits: 0 }).format(n) + " ৳";
+  return new Intl.NumberFormat(getNumLocale(), { maximumFractionDigits: 0 }).format(n) + " ৳";
 }
 
 type Investor = { id: string; name: string; phone: string | null; address: string | null; source_type: string; source_name: string | null; note: string | null; is_active: boolean };

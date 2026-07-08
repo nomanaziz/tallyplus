@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Loader2, Plus, Trash2, Search, Wrench } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { useI18n, fmtMoney } from "@/lib/i18n";
+import { getNumLocale, useI18n, fmtMoney } from "@/lib/i18n";
 import { InvoiceDialog, type InvoiceData } from "@/components/app/InvoiceDialog";
 
 export type CompleteBooking = {
@@ -395,7 +395,7 @@ export function CompleteServiceDialog({
                       <Input className="h-8 w-16" type="number" value={l.qty} onChange={(e) => updateExtra(i, { qty: Math.max(1, Number(e.target.value) || 1) })} />
                       <span className="text-xs text-muted-foreground">×</span>
                       <Input className="h-8 w-24" type="number" value={l.price} onChange={(e) => updateExtra(i, { price: Math.max(0, Number(e.target.value) || 0) })} />
-                      <span className="w-20 text-right text-sm font-semibold">৳{(l.qty * l.price).toLocaleString("bn-BD")}</span>
+                      <span className="w-20 text-right text-sm font-semibold">৳{(l.qty * l.price).toLocaleString(getNumLocale())}</span>
                       <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => removeExtra(i)}>
                         <Trash2 className="h-3.5 w-3.5" />
                       </Button>

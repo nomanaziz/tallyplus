@@ -1,3 +1,4 @@
+import { getNumLocale } from "@/lib/i18n";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 type Options = {
@@ -25,7 +26,7 @@ function isMobileUA(): boolean {
 
 export function useSpeechRecognition(opts: Options = {}) {
   const {
-    lang = "bn-BD",
+    lang = getNumLocale(),
     silenceTimeoutMs = 12000,
     noSpeechTimeoutMs = 15000,
     continuous = true,

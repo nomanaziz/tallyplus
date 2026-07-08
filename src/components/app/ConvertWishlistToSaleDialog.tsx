@@ -1,3 +1,4 @@
+import { getNumLocale } from "@/lib/i18n";
 import { useMemo, useState } from "react";
 import { Loader2, Receipt, BadgePercent } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -187,7 +188,7 @@ export function ConvertWishlistToSaleDialog({
         });
       }
 
-      toast.success(`বিক্রয় তৈরি হয়েছে — মোট ৳${finalTotal.toLocaleString("bn-BD")}`);
+      toast.success(`বিক্রয় তৈরি হয়েছে — মোট ৳${finalTotal.toLocaleString(getNumLocale())}`);
       onConverted();
       onOpenChange(false);
     } catch (e) {
@@ -245,7 +246,7 @@ export function ConvertWishlistToSaleDialog({
                         </span>
                       )}
                     </span>
-                    <span className="ml-2 flex-none font-mono text-xs">৳{line.toLocaleString("bn-BD")}</span>
+                    <span className="ml-2 flex-none font-mono text-xs">৳{line.toLocaleString(getNumLocale())}</span>
                   </li>
                 );
               })}
@@ -253,7 +254,7 @@ export function ConvertWishlistToSaleDialog({
             <div className="flex items-center justify-between border-t bg-muted/40 px-3 py-2">
               <span className="text-sm font-semibold">মোট</span>
               <span className="text-base font-extrabold tabular-nums text-primary">
-                ৳ {total.toLocaleString("bn-BD")}
+                ৳ {total.toLocaleString(getNumLocale())}
               </span>
             </div>
           </div>
@@ -301,13 +302,13 @@ export function ConvertWishlistToSaleDialog({
             />
             <div className="flex justify-between text-xs text-muted-foreground">
               <span>মোট ছাড়ের পর</span>
-              <span className="font-bold text-primary">৳ {grandTotal.toLocaleString("bn-BD")}</span>
+              <span className="font-bold text-primary">৳ {grandTotal.toLocaleString(getNumLocale())}</span>
             </div>
           </div>
 
           {paid && previewDue > 0 && (
             <div className="rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-900">
-              বাকি থাকবে: <b>৳{previewDue.toLocaleString("bn-BD")}</b> — গ্রাহকের due-তে যোগ হবে
+              বাকি থাকবে: <b>৳{previewDue.toLocaleString(getNumLocale())}</b> — গ্রাহকের due-তে যোগ হবে
             </div>
           )}
         </div>

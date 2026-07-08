@@ -1,3 +1,4 @@
+import { getNumLocale } from "@/lib/i18n";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -115,7 +116,7 @@ export function ActiveDevicesDialog({ open, onOpenChange }: { open: boolean; onO
                     সর্বশেষ সক্রিয়: {timeAgo(s.last_seen_at)}
                   </div>
                   <div className="text-[11px] text-muted-foreground">
-                    লগইন: {new Date(s.created_at).toLocaleDateString("bn-BD")} {new Date(s.created_at).toLocaleTimeString("bn-BD", { hour: "2-digit", minute: "2-digit" })}
+                    লগইন: {new Date(s.created_at).toLocaleDateString(getNumLocale())} {new Date(s.created_at).toLocaleTimeString(getNumLocale(), { hour: "2-digit", minute: "2-digit" })}
                   </div>
                 </div>
                 {!isMe && (
