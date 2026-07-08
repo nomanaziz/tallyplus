@@ -18,6 +18,14 @@ function normalizePhone(raw: string): string | null {
   return "+" + d;
 }
 
+function phoneCandidates(raw: string): string[] {
+  const d = raw.replace(/\D/g, "");
+  const normalized = normalizePhone(raw);
+  const legacy = d ? "+" + d : null;
+  const bdLocal = d.startsWith("8801") && d.length === 13 ? "+0" + d.slice(3) : null;
+  return Array.from(new Set([normalized, legacy, bdLocal].filter(Boolean) as string[]));
+}
+
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { ...cors, "content-type": "application/json" } });
 }
@@ -26,7 +34,8 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: cors });
   try {
     const { phone, pin } = await req.json();
-    const normalized = normalizePhone(String(phone ?? ""));
+    const phoneRaw = String(phone ?? "");
+    const normalized = normalizePhone(phoneRaw);
     const pinStr = String(pin ?? "");
 
     if (!normalized) return json({ error: "Invalid phone" }, 400);
@@ -39,8 +48,8 @@ Deno.serve(async (req) => {
 
     const { data: profile } = await admin
       .from("consumer_profiles")
-      .select("id, pin_hash")
-      .eq("phone", normalized)
+      .select("id, phone, pin_hash")
+      .in("phone", phoneCandidates(phoneRaw))
       .maybeSingle();
 
     if (!profile?.id) return json({ error: "no_account" }, 404);
@@ -49,7 +58,7 @@ Deno.serve(async (req) => {
     const ok = await bcrypt.compare(pinStr, profile.pin_hash as string);
     if (!ok) return json({ error: "wrong_pin" }, 401);
 
-    const digits = normalized.replace(/\D/g, "");
+    const digits = String(profile.phone ?? normalized).replace(/\D/g, "");
     const email = `customer.${digits}@tallyplus.app`;
     const password = `tpc_${digits}_pw`;
 
