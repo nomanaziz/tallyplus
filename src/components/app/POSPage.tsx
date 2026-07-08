@@ -1072,7 +1072,7 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
       <Dialog open={othersOpen} onOpenChange={setOthersOpen}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>{lang === "bn" ? "আদার্স / দ্রুত বিক্রি পণ্য" : "Others / Quick-sell item"}</DialogTitle>
+            <DialogTitle>{lang === "bn" ? "দ্রুত বিক্রি (বাহিরের পণ্য)" : "Quick sell (external item)"}</DialogTitle>
           </DialogHeader>
           <div className="grid gap-3">
             <div className="grid gap-1.5">
@@ -1115,7 +1115,7 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
             </p>
           </div>
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setOthersOpen(false)}>{t("p2c_cancel")}</Button>
+            <Button variant="ghost" onClick={() => setOthersOpen(false)}>{lang === "bn" ? "শেষ" : "Done"}</Button>
             <Button
               onClick={() => {
                 const nm = othersName.trim();
@@ -1138,11 +1138,12 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
                     line_discount_pct: 0,
                   } as CartItem,
                 ]);
-                setOthersOpen(false);
-                toast.success(lang === "bn" ? "কার্টে যোগ হয়েছে" : "Added to cart");
+                toast.success(lang === "bn" ? "কার্টে যোগ হয়েছে" : "Added to cart", { duration: 1000 });
+                // Keep popup open so multiple items can be added in one go
+                setOthersName(""); setOthersCost(""); setOthersPrice(""); setOthersQty("1");
               }}
             >
-              {lang === "bn" ? "কার্টে যোগ" : "Add to cart"}
+              {lang === "bn" ? "যোগ করে আরেকটা" : "Add & next"}
             </Button>
           </DialogFooter>
         </DialogContent>
