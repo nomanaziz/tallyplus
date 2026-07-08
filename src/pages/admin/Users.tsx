@@ -263,7 +263,10 @@ function UsersPage() {
                       <TableCell className="font-medium">{r.full_name || "—"}</TableCell>
                       <TableCell className="tabular-nums">
                         {r.isAdmin ? (
-                          <span className="text-xs">{r.adminEmail || r.phone ? displayPhone(r.phone) : "—"}{r.adminEmail ? r.adminEmail : ""}</span>
+                          <div className="text-xs">
+                            <div>{r.adminEmail || "—"}</div>
+                            {r.phone && <div className="text-muted-foreground">{displayPhone(r.phone)}</div>}
+                          </div>
                         ) : (
                           displayPhone(r.phone)
                         )}
