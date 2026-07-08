@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Plus, Minus, X, Package, ShoppingCart, ChevronDown, MessageSquare, RefreshCw, Search, UserRound, LayoutGrid, List as ListIcon, RotateCcw, Trash2, ShoppingBag, CalendarClock, Hash, Banknote, CreditCard } from "lucide-react";
+import { ArrowLeft, Plus, Minus, X, Package, ShoppingCart, ChevronDown, MessageSquare, RefreshCw, Search, UserRound, LayoutGrid, List as ListIcon, RotateCcw, Trash2, ShoppingBag, CalendarClock, Hash, Banknote, CreditCard, Zap } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { useNavigate } from "@/lib/router";
 import { supabase } from "@/integrations/supabase/client";
@@ -155,6 +155,7 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
   const [othersName, setOthersName] = useState("");
   const [othersPrice, setOthersPrice] = useState("");
   const [othersQty, setOthersQty] = useState("1");
+  const [othersCost, setOthersCost] = useState("");
   const [cashOpen, setCashOpen] = useState(false);
   const [dueOpen, setDueOpen] = useState(false);
   const [invoice, setInvoice] = useState<InvoiceData | null>(null);
@@ -623,11 +624,23 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
               <Button size="icon" variant="outline" className="h-10 w-10 flex-none" onClick={() => setQuickOpen(true)} aria-label="Quick add" title={lang === "bn" ? "দ্রুত যোগ" : "Quick add"}>
                 <Plus className="h-4 w-4" />
               </Button>
+              {isSell && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-10 flex-none gap-1 px-2 text-xs font-semibold"
+                  onClick={() => nav({ to: "/app/quick-order" })}
+                  title={lang === "bn" ? "দ্রুত বিক্রি" : "Quick sell"}
+                >
+                  <Zap className="h-3.5 w-3.5" />
+                  Quick
+                </Button>
+              )}
               <Button
                 size="sm"
                 variant="outline"
                 className="h-10 flex-none gap-1 px-2 text-xs font-semibold"
-                onClick={() => { setOthersName(""); setOthersPrice(""); setOthersQty("1"); setOthersOpen(true); }}
+                onClick={() => { setOthersName(""); setOthersPrice(""); setOthersQty("1"); setOthersCost(""); setOthersOpen(true); }}
                 title={lang === "bn" ? "আদার্স / দ্রুত বিক্রি" : "Others / Quick sell"}
               >
                 <Package className="h-3.5 w-3.5" />
@@ -1078,9 +1091,13 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
               <Label>{lang === "bn" ? "পণ্যের নাম" : "Product name"} *</Label>
               <Input value={othersName} onChange={(e) => setOthersName(e.target.value)} autoFocus />
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-3 gap-3">
               <div className="grid gap-1.5">
-                <Label>{lang === "bn" ? "দাম" : "Price"} *</Label>
+                <Label>{lang === "bn" ? "ক্রয়মূল্য" : "Cost"}</Label>
+                <Input type="number" inputMode="decimal" value={othersCost} onChange={(e) => setOthersCost(e.target.value)} />
+              </div>
+              <div className="grid gap-1.5">
+                <Label>{lang === "bn" ? "বিক্রয়মূল্য" : "Sale price"} *</Label>
                 <Input type="number" inputMode="decimal" value={othersPrice} onChange={(e) => setOthersPrice(e.target.value)} />
               </div>
               <div className="grid gap-1.5">
@@ -1088,6 +1105,21 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
                 <Input type="number" inputMode="decimal" value={othersQty} onChange={(e) => setOthersQty(e.target.value)} />
               </div>
             </div>
+            {(() => {
+              const c = Number(othersCost) || 0;
+              const s = Number(othersPrice) || 0;
+              const q = Number(othersQty) || 0;
+              if (!s || !q) return null;
+              const profit = (s - c) * q;
+              return (
+                <div className="rounded-md border bg-muted/40 px-3 py-2 text-xs flex justify-between">
+                  <span>{lang === "bn" ? "মোট" : "Total"}: <b>{(s * q).toFixed(2)}</b></span>
+                  <span className={profit >= 0 ? "text-emerald-700" : "text-rose-700"}>
+                    {lang === "bn" ? "লাভ" : "Profit"}: <b>{profit.toFixed(2)}</b>
+                  </span>
+                </div>
+              );
+            })()}
             <p className="text-[11px] text-muted-foreground">
               {lang === "bn"
                 ? "এই পণ্য ইনভেন্টরিতে যোগ হবে না, শুধু বর্তমান ইনভয়েসে লাইন হিসেবে থাকবে।"
