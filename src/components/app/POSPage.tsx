@@ -624,27 +624,15 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
               <Button size="icon" variant="outline" className="h-10 w-10 flex-none" onClick={() => setQuickOpen(true)} aria-label="Quick add" title={lang === "bn" ? "দ্রুত যোগ" : "Quick add"}>
                 <Plus className="h-4 w-4" />
               </Button>
-              {isSell && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="h-10 flex-none gap-1 px-2 text-xs font-semibold"
-                  onClick={() => nav({ to: "/app/quick-order" })}
-                  title={lang === "bn" ? "দ্রুত বিক্রি" : "Quick sell"}
-                >
-                  <Zap className="h-3.5 w-3.5" />
-                  Quick
-                </Button>
-              )}
               <Button
                 size="sm"
                 variant="outline"
                 className="h-10 flex-none gap-1 px-2 text-xs font-semibold"
                 onClick={() => { setOthersName(""); setOthersPrice(""); setOthersQty("1"); setOthersCost(""); setOthersOpen(true); }}
-                title={lang === "bn" ? "আদার্স / দ্রুত বিক্রি" : "Others / Quick sell"}
+                title={lang === "bn" ? "দ্রুত বিক্রি (বাহিরের পণ্য)" : "Quick sell (external item)"}
               >
-                <Package className="h-3.5 w-3.5" />
-                {lang === "bn" ? "আদার্স" : "Others"}
+                <Zap className="h-3.5 w-3.5" />
+                {lang === "bn" ? "দ্রুত বিক্রি" : "Quick sell"}
               </Button>
               <Button variant="outline" size="icon" className="h-10 w-10 flex-none" onClick={loadProducts} aria-label="Refresh">
                 <RefreshCw className="h-4 w-4" />
@@ -1084,7 +1072,7 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
       <Dialog open={othersOpen} onOpenChange={setOthersOpen}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>{lang === "bn" ? "আদার্স / দ্রুত বিক্রি পণ্য" : "Others / Quick-sell item"}</DialogTitle>
+            <DialogTitle>{lang === "bn" ? "দ্রুত বিক্রি (বাহিরের পণ্য)" : "Quick sell (external item)"}</DialogTitle>
           </DialogHeader>
           <div className="grid gap-3">
             <div className="grid gap-1.5">
@@ -1127,7 +1115,7 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
             </p>
           </div>
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setOthersOpen(false)}>{t("p2c_cancel")}</Button>
+            <Button variant="ghost" onClick={() => setOthersOpen(false)}>{lang === "bn" ? "শেষ" : "Done"}</Button>
             <Button
               onClick={() => {
                 const nm = othersName.trim();
@@ -1150,11 +1138,12 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
                     line_discount_pct: 0,
                   } as CartItem,
                 ]);
-                setOthersOpen(false);
-                toast.success(lang === "bn" ? "কার্টে যোগ হয়েছে" : "Added to cart");
+                toast.success(lang === "bn" ? "কার্টে যোগ হয়েছে" : "Added to cart", { duration: 1000 });
+                // Keep popup open so multiple items can be added in one go
+                setOthersName(""); setOthersCost(""); setOthersPrice(""); setOthersQty("1");
               }}
             >
-              {lang === "bn" ? "কার্টে যোগ" : "Add to cart"}
+              {lang === "bn" ? "যোগ করে আরেকটা" : "Add & next"}
             </Button>
           </DialogFooter>
         </DialogContent>
