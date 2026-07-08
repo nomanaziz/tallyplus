@@ -1068,6 +1068,66 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
         onAdded={(p) => { void loadProducts(); addToCart(p); }}
       />
 
+      <Dialog open={othersOpen} onOpenChange={setOthersOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{lang === "bn" ? "আদার্স / দ্রুত বিক্রি পণ্য" : "Others / Quick-sell item"}</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-3">
+            <div className="grid gap-1.5">
+              <Label>{lang === "bn" ? "পণ্যের নাম" : "Product name"} *</Label>
+              <Input value={othersName} onChange={(e) => setOthersName(e.target.value)} autoFocus />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="grid gap-1.5">
+                <Label>{lang === "bn" ? "দাম" : "Price"} *</Label>
+                <Input type="number" inputMode="decimal" value={othersPrice} onChange={(e) => setOthersPrice(e.target.value)} />
+              </div>
+              <div className="grid gap-1.5">
+                <Label>{lang === "bn" ? "পরিমাণ" : "Qty"}</Label>
+                <Input type="number" inputMode="decimal" value={othersQty} onChange={(e) => setOthersQty(e.target.value)} />
+              </div>
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              {lang === "bn"
+                ? "এই পণ্য ইনভেন্টরিতে যোগ হবে না, শুধু বর্তমান ইনভয়েসে লাইন হিসেবে থাকবে।"
+                : "This item is not added to inventory — it only appears as a line on the current invoice."}
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setOthersOpen(false)}>{t("p2c_cancel")}</Button>
+            <Button
+              onClick={() => {
+                const nm = othersName.trim();
+                const pr = Number(othersPrice);
+                const qt = Number(othersQty);
+                if (!nm) { toast.error(lang === "bn" ? "নাম দিন" : "Enter name"); return; }
+                if (!pr || pr <= 0) { toast.error(lang === "bn" ? "দাম দিন" : "Enter price"); return; }
+                if (!qt || qt <= 0) { toast.error(lang === "bn" ? "পরিমাণ দিন" : "Enter qty"); return; }
+                setCart((prev) => [
+                  ...prev,
+                  {
+                    product_id: null,
+                    item_type: "product",
+                    name: nm,
+                    qty: qt,
+                    price: pr,
+                    sale_price: pr,
+                    line_discount_mode: "amt",
+                    line_discount_amt: 0,
+                    line_discount_pct: 0,
+                  } as CartItem,
+                ]);
+                setOthersOpen(false);
+                toast.success(lang === "bn" ? "কার্টে যোগ হয়েছে" : "Added to cart");
+              }}
+            >
+              {lang === "bn" ? "কার্টে যোগ" : "Add to cart"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <QuickStockDialog
         product={quickStockProduct}
         onClose={() => setQuickStockProduct(null)}
