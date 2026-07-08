@@ -13,7 +13,15 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ShieldCheck, ShieldOff, Ban, Check, Loader2, Gift, XCircle, Infinity as InfinityIcon, KeyRound } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { ShieldCheck, ShieldOff, Ban, Check, Loader2, Gift, XCircle, Infinity as InfinityIcon, KeyRound, MoreHorizontal, LogIn } from "lucide-react";
 import { toast } from "sonner";
 import { getCountry, COUNTRIES } from "@/lib/countries";
 import { GrantAccessDialog } from "@/components/admin/GrantAccessDialog";
@@ -65,6 +73,7 @@ type Row = Profile & {
   shopCount: number;
   isAdmin: boolean;
   hasWishlist: boolean;
+  isPersonal: boolean;
   planName?: string | null;
   expiresAt?: string | null;
   adminEmail?: string | null;
@@ -74,20 +83,23 @@ function UsersPage() {
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState<"all" | "owner" | "admin" | "suspended">("all");
+  const [filter, setFilter] = useState<"all" | "owner" | "personal" | "admin" | "suspended">("all");
   const [countryFilter, setCountryFilter] = useState<string>("all");
   const [grantTarget, setGrantTarget] = useState<Row | null>(null);
+  const [impersonatingId, setImpersonatingId] = useState<string | null>(null);
 
   const load = async () => {
     setLoading(true);
-    const [{ data: profiles }, { data: roles }, { data: shops }, { data: subs }, { data: adminProfiles }] = await Promise.all([
+    const [{ data: profiles }, { data: roles }, { data: shops }, { data: subs }, { data: adminProfiles }, { data: consumers }] = await Promise.all([
       supabase.from("profiles").select("id,full_name,phone,is_suspended,created_at,country_code,shop_limit_override,unlimited_shops").order("created_at", { ascending: false }).limit(500),
       supabase.from("user_roles").select("user_id,role"),
       supabase.from("shops").select("owner_id").is("deleted_at", null),
       supabase.from("subscriptions").select("user_id,expires_at,status,plan_id,subscription_plans(name_en,code)").in("status", ["active","trial"]).gt("expires_at", new Date().toISOString()),
       supabase.from("admin_profiles").select("user_id,email"),
+      supabase.from("consumer_profiles").select("id"),
     ]);
     const adminSet = new Set((roles ?? []).filter((r: any) => r.role === "admin").map((r: any) => r.user_id));
+    const personalSet = new Set(((consumers ?? []) as any[]).map((c) => c.id));
     const adminEmailMap = new Map<string, string>();
     for (const a of (adminProfiles ?? []) as any[]) {
       if (a.email) adminEmailMap.set(a.user_id, a.email);
@@ -109,6 +121,7 @@ function UsersPage() {
       isAdmin: adminSet.has(p.id),
       shopCount: shopCounts.get(p.id) ?? 0,
       hasWishlist: false,
+      isPersonal: personalSet.has(p.id),
       planName: subMap.get(p.id)?.plan ?? null,
       expiresAt: subMap.get(p.id)?.expires ?? null,
       adminEmail: adminEmailMap.get(p.id) ?? null,
@@ -132,6 +145,7 @@ function UsersPage() {
   const filtered = useMemo(() => {
     let list = rows;
     if (filter === "owner") list = list.filter((r) => r.shopCount > 0);
+    else if (filter === "personal") list = list.filter((r) => r.isPersonal);
     else if (filter === "admin") list = list.filter((r) => r.isAdmin);
     else if (filter === "suspended") list = list.filter((r) => r.is_suspended);
     if (countryFilter !== "all") list = list.filter((r) => (r.country_code || "") === countryFilter);
@@ -196,7 +210,29 @@ function UsersPage() {
   };
 
   const userType = (r: Row) =>
-    r.isAdmin ? "admin" : r.shopCount > 0 ? "owner" : "buyer";
+    r.isAdmin ? "admin" : r.shopCount > 0 ? "owner" : r.isPersonal ? "personal" : "buyer";
+
+  const loginAs = async (r: Row) => {
+    if (r.isAdmin) return toast.error("Cannot login as another admin");
+    if (!confirm(`Login as ${r.full_name || displayPhone(r.phone)}? You will be signed out of your admin session.`)) return;
+    setImpersonatingId(r.id);
+    try {
+      const { data, error } = await supabase.functions.invoke("admin-impersonate", { body: { user_id: r.id } });
+      if (error) return toast.error(error.message);
+      const payload = data as { error?: string; session?: any; kind?: string };
+      if (payload?.error) return toast.error(payload.error);
+      if (!payload?.session) return toast.error("No session returned");
+      const { error: setErr } = await supabase.auth.setSession({
+        access_token: payload.session.access_token,
+        refresh_token: payload.session.refresh_token,
+      });
+      if (setErr) return toast.error(setErr.message);
+      toast.success("Signed in as user");
+      window.location.href = payload.kind === "consumer" ? "/customer/dashboard" : "/app/dashboard";
+    } finally {
+      setImpersonatingId(null);
+    }
+  };
 
   return (
     <div className="mx-auto max-w-6xl space-y-4 p-3 sm:space-y-6 sm:p-6">
@@ -219,6 +255,7 @@ function UsersPage() {
           <SelectContent>
             <SelectItem value="all">All Users</SelectItem>
             <SelectItem value="owner">Shop Owners</SelectItem>
+            <SelectItem value="personal">Personal Accounts</SelectItem>
             <SelectItem value="admin">Admins</SelectItem>
             <SelectItem value="suspended">Suspended</SelectItem>
           </SelectContent>
@@ -261,7 +298,7 @@ function UsersPage() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-            <Table>
+            <Table className="text-xs [&_td]:py-1.5 [&_th]:py-2 [&_th]:h-8">
               <TableHeader>
                 <TableRow>
                   <TableHead>Name</TableHead>
@@ -272,7 +309,7 @@ function UsersPage() {
                   <TableHead>Plan</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Joined</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead className="text-right w-16">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -283,7 +320,7 @@ function UsersPage() {
                       <TableCell className="font-medium">{r.full_name || "—"}</TableCell>
                       <TableCell className="tabular-nums">
                         {r.isAdmin ? (
-                          <div className="text-xs">
+                          <div>
                             <div>{r.adminEmail || "—"}</div>
                             {r.phone && <div className="text-muted-foreground">{displayPhone(r.phone)}</div>}
                           </div>
@@ -291,11 +328,11 @@ function UsersPage() {
                           displayPhone(r.phone)
                         )}
                       </TableCell>
-                      <TableCell className="text-xs">
+                      <TableCell>
                         {(() => { const c = getCountry(r.country_code); return c ? `${c.flag} ${c.code}` : "—"; })()}
                       </TableCell>
                       <TableCell>
-                        <Badge variant={t === "admin" ? "default" : t === "owner" ? "secondary" : "outline"}>
+                        <Badge className="text-[10px] px-1.5 py-0" variant={t === "admin" ? "default" : t === "owner" ? "secondary" : "outline"}>
                           {t}
                         </Badge>
                       </TableCell>
@@ -303,13 +340,13 @@ function UsersPage() {
                         <div className="flex items-center gap-1">
                           <span>{r.shopCount}</span>
                           {r.unlimited_shops ? (
-                            <Badge variant="secondary" className="gap-0.5"><InfinityIcon className="h-3 w-3" />∞</Badge>
+                            <Badge variant="secondary" className="gap-0.5 px-1 py-0"><InfinityIcon className="h-3 w-3" /></Badge>
                           ) : r.shop_limit_override ? (
-                            <Badge variant="secondary">/{r.shop_limit_override}</Badge>
+                            <Badge variant="secondary" className="px-1 py-0">/{r.shop_limit_override}</Badge>
                           ) : null}
                         </div>
                       </TableCell>
-                      <TableCell className="text-xs">
+                      <TableCell>
                         {r.planName ? (
                           <div>
                             <div className="font-medium">{r.planName}</div>
@@ -319,40 +356,62 @@ function UsersPage() {
                       </TableCell>
                       <TableCell>
                         {r.is_suspended ? (
-                          <Badge variant="destructive">Suspended</Badge>
+                          <Badge variant="destructive" className="text-[10px] px-1.5 py-0">Suspended</Badge>
                         ) : (
-                          <Badge variant="outline">Active</Badge>
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-0">Active</Badge>
                         )}
                       </TableCell>
-                      <TableCell className="text-xs text-muted-foreground">
+                      <TableCell className="text-muted-foreground">
                         {displayDate(r.created_at)}
                       </TableCell>
-                      <TableCell className="text-right space-x-2">
-                        <Button variant="default" size="sm" onClick={() => setGrantTarget(r)}>
-                          <Gift className="mr-1 h-3.5 w-3.5" />Grant
-                        </Button>
-                        {(r.planName || r.unlimited_shops || r.shop_limit_override) && (
-                          <Button variant="outline" size="sm" onClick={() => revoke(r)}>
-                            <XCircle className="mr-1 h-3.5 w-3.5" />Revoke
-                          </Button>
-                        )}
-                        <Button variant="outline" size="sm" onClick={() => toggleAdmin(r)}>
-                          {r.isAdmin ? (
-                            <><ShieldOff className="mr-1 h-3.5 w-3.5" />Revoke</>
-                          ) : (
-                            <><ShieldCheck className="mr-1 h-3.5 w-3.5" />Make Admin</>
-                          )}
-                        </Button>
-                        <Button variant="outline" size="sm" onClick={() => toggleSuspend(r)}>
-                          {r.is_suspended ? (
-                            <><Check className="mr-1 h-3.5 w-3.5" />Unsuspend</>
-                          ) : (
-                            <><Ban className="mr-1 h-3.5 w-3.5" />Suspend</>
-                          )}
-                        </Button>
-                        <Button variant="outline" size="sm" onClick={() => resetPin(r)} title="Reset user's 4-digit login PIN">
-                          <KeyRound className="mr-1 h-3.5 w-3.5" />Reset PIN
-                        </Button>
+                      <TableCell className="text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-7 w-7" disabled={impersonatingId === r.id}>
+                              {impersonatingId === r.id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <MoreHorizontal className="h-4 w-4" />
+                              )}
+                              <span className="sr-only">Actions</span>
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-48">
+                            <DropdownMenuLabel className="text-xs">{r.full_name || displayPhone(r.phone)}</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            {!r.isAdmin && (
+                              <DropdownMenuItem onClick={() => loginAs(r)}>
+                                <LogIn className="mr-2 h-3.5 w-3.5" />Login as user
+                              </DropdownMenuItem>
+                            )}
+                            <DropdownMenuItem onClick={() => setGrantTarget(r)}>
+                              <Gift className="mr-2 h-3.5 w-3.5" />Grant access
+                            </DropdownMenuItem>
+                            {(r.planName || r.unlimited_shops || r.shop_limit_override) && (
+                              <DropdownMenuItem onClick={() => revoke(r)}>
+                                <XCircle className="mr-2 h-3.5 w-3.5" />Revoke access
+                              </DropdownMenuItem>
+                            )}
+                            <DropdownMenuItem onClick={() => resetPin(r)}>
+                              <KeyRound className="mr-2 h-3.5 w-3.5" />Reset PIN
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={() => toggleAdmin(r)}>
+                              {r.isAdmin ? (
+                                <><ShieldOff className="mr-2 h-3.5 w-3.5" />Remove admin</>
+                              ) : (
+                                <><ShieldCheck className="mr-2 h-3.5 w-3.5" />Make admin</>
+                              )}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => toggleSuspend(r)} className="text-destructive focus:text-destructive">
+                              {r.is_suspended ? (
+                                <><Check className="mr-2 h-3.5 w-3.5" />Unsuspend</>
+                              ) : (
+                                <><Ban className="mr-2 h-3.5 w-3.5" />Suspend</>
+                              )}
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </TableCell>
                     </TableRow>
                   );
