@@ -638,6 +638,7 @@ function InvestorDetailInner() {
                         <TableHead className="text-right">সুদ</TableHead>
                         <TableHead className="text-right">মোট</TableHead>
                         <TableHead className="text-right">পরিশোধিত</TableHead>
+                        <TableHead>পরিশোধের তারিখ</TableHead>
                         <TableHead>অবস্থা</TableHead>
                         <TableHead className="text-right">অ্যাকশন</TableHead>
                       </TableRow>
@@ -651,6 +652,13 @@ function InvestorDetailInner() {
                         const remaining = Number(i.total_due) - Number(i.paid_amount);
                         const isNext = firstUnpaidSeq !== null && i.seq_no === firstUnpaidSeq;
                         const locked = i.status !== "paid" && !isNext;
+                        const lateInfo = i.status !== "paid" ? computeLateFee({
+                          dueDate: i.due_date,
+                          remainingDue: remaining,
+                          amount: Number(l.late_fee_amount) || 0,
+                          percent: Number(l.late_fee_percent) || 0,
+                          graceDays: Number(l.late_fee_grace_days) || 0,
+                        }) : { fee: 0, daysLate: 0 };
                         return (
                           <TableRow key={i.id}>
                             <TableCell>{i.seq_no}</TableCell>
@@ -659,6 +667,7 @@ function InvestorDetailInner() {
                             <TableCell className="text-right">{bdt(Number(i.interest_part))}</TableCell>
                             <TableCell className="text-right font-semibold">{bdt(Number(i.total_due))}</TableCell>
                             <TableCell className="text-right text-emerald-700">{bdt(Number(i.paid_amount))}</TableCell>
+                            <TableCell className="text-xs">{i.paid_at ? i.paid_at : <span className="text-muted-foreground">—</span>}</TableCell>
                             <TableCell>
                               {i.status === "paid" ? (
                                 <span className="inline-flex items-center gap-1 text-emerald-700"><CheckCircle2 className="h-3.5 w-3.5" />শোধ</span>
@@ -668,6 +677,11 @@ function InvestorDetailInner() {
                                 <span className="text-xs text-muted-foreground">আগের কিস্তি শোধ বাকি</span>
                               ) : (
                                 <span className="inline-flex items-center gap-1 text-muted-foreground"><Clock className="h-3.5 w-3.5" />বাকি</span>
+                              )}
+                              {lateInfo.fee > 0 && (
+                                <div className="text-[10px] font-semibold text-rose-600">
+                                  জরিমানা: {bdt(lateInfo.fee)} ({lateInfo.daysLate} দিন late)
+                                </div>
                               )}
                             </TableCell>
                             <TableCell className="text-right">
