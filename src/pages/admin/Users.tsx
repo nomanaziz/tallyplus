@@ -47,6 +47,7 @@ type Row = Profile & {
   hasWishlist: boolean;
   planName?: string | null;
   expiresAt?: string | null;
+  adminEmail?: string | null;
 };
 
 function UsersPage() {
@@ -59,13 +60,18 @@ function UsersPage() {
 
   const load = async () => {
     setLoading(true);
-    const [{ data: profiles }, { data: roles }, { data: shops }, { data: subs }] = await Promise.all([
+    const [{ data: profiles }, { data: roles }, { data: shops }, { data: subs }, { data: adminProfiles }] = await Promise.all([
       supabase.from("profiles").select("id,full_name,phone,is_suspended,created_at,country_code,shop_limit_override,unlimited_shops").order("created_at", { ascending: false }).limit(500),
       supabase.from("user_roles").select("user_id,role"),
       supabase.from("shops").select("owner_id").is("deleted_at", null),
       supabase.from("subscriptions").select("user_id,expires_at,status,plan_id,subscription_plans(name_bn,code)").in("status", ["active","trial"]).gt("expires_at", new Date().toISOString()),
+      supabase.from("admin_profiles").select("user_id,email"),
     ]);
     const adminSet = new Set((roles ?? []).filter((r: any) => r.role === "admin").map((r: any) => r.user_id));
+    const adminEmailMap = new Map<string, string>();
+    for (const a of (adminProfiles ?? []) as any[]) {
+      if (a.email) adminEmailMap.set(a.user_id, a.email);
+    }
     const shopCounts = new Map<string, number>();
     for (const s of shops ?? []) {
       shopCounts.set((s as any).owner_id, (shopCounts.get((s as any).owner_id) ?? 0) + 1);
@@ -85,6 +91,7 @@ function UsersPage() {
       hasWishlist: false,
       planName: subMap.get(p.id)?.plan ?? null,
       expiresAt: subMap.get(p.id)?.expires ?? null,
+      adminEmail: adminEmailMap.get(p.id) ?? null,
     }));
     setRows(out);
     setLoading(false);
@@ -113,7 +120,8 @@ function UsersPage() {
       list = list.filter(
         (r) =>
           (r.full_name ?? "").toLowerCase().includes(q) ||
-          (r.phone ?? "").toLowerCase().includes(q),
+          (r.phone ?? "").toLowerCase().includes(q) ||
+          (r.adminEmail ?? "").toLowerCase().includes(q),
       );
     }
     return list;
@@ -237,7 +245,7 @@ function UsersPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Name</TableHead>
-                  <TableHead>Phone</TableHead>
+                  <TableHead>Phone / Email</TableHead>
                   <TableHead>Country</TableHead>
                   <TableHead>Type</TableHead>
                   <TableHead>Shops</TableHead>
@@ -253,7 +261,13 @@ function UsersPage() {
                   return (
                     <TableRow key={r.id}>
                       <TableCell className="font-medium">{r.full_name || "—"}</TableCell>
-                      <TableCell className="tabular-nums">{displayPhone(r.phone)}</TableCell>
+                      <TableCell className="tabular-nums">
+                        {r.isAdmin ? (
+                          <span className="text-xs">{r.adminEmail || r.phone ? displayPhone(r.phone) : "—"}{r.adminEmail ? r.adminEmail : ""}</span>
+                        ) : (
+                          displayPhone(r.phone)
+                        )}
+                      </TableCell>
                       <TableCell className="text-xs">
                         {(() => { const c = getCountry(r.country_code); return c ? `${c.flag} ${c.code}` : "—"; })()}
                       </TableCell>
