@@ -3,6 +3,9 @@ import { useNavigate } from "@/lib/router";
 import { useAuth } from "@/lib/auth";
 import { useShop } from "@/lib/shop";
 import { useI18n } from "@/lib/i18n";
+import { useShopType } from "@/lib/modules";
+import * as Icons from "lucide-react";
+import { Store } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,8 +30,11 @@ const SettingsSheet = lazy(() =>
 export function AppTopbar() {
   const { profile, signOut, user } = useAuth();
   const { current, shops } = useShop();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const nav = useNavigate();
+  const shopType = useShopType(current?.shop_type_code ?? null);
+  const TypeIcon =
+    (shopType?.icon && (Icons as unknown as Record<string, React.ComponentType<{ className?: string }>>)[shopType.icon]) || Store;
   const [settingsOpen, setSettingsOpen] = useState(false);
   const { hidden: costHidden, toggle: toggleCostHide } = useCostHide();
   const isOwner = !!(user && current && current.owner_id === user.id);
@@ -46,9 +52,30 @@ export function AppTopbar() {
     <header className="sticky top-0 z-30 flex h-14 flex-none items-center justify-between border-b bg-background/90 px-3 backdrop-blur">
       <div className="flex items-center gap-2">
         {current?.name ? (
-          <span className="text-sm font-extrabold tracking-tight md:hidden">{current.name}</span>
+          <button
+            onClick={() => nav({ to: "/app/shop-settings" })}
+            className="flex items-center gap-1.5 text-sm font-extrabold tracking-tight md:hidden"
+          >
+            <span className="truncate max-w-[9rem]">{current.name}</span>
+            {shopType && (
+              <span className="flex items-center gap-1 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary">
+                <TypeIcon className="h-3 w-3" />
+                <span className="max-w-[6rem] truncate">{lang === "bn" ? shopType.name_bn : shopType.name_en}</span>
+              </span>
+            )}
+          </button>
         ) : (
           <BrandWordmark className="text-sm font-extrabold tracking-tight md:hidden" />
+        )}
+        {current?.name && shopType && (
+          <button
+            onClick={() => nav({ to: "/app/shop-settings" })}
+            className="hidden items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary hover:bg-primary/20 md:inline-flex"
+            title={lang === "bn" ? "শপ সেটিংস → মডিউল" : "Shop settings → modules"}
+          >
+            <TypeIcon className="h-3.5 w-3.5" />
+            <span className="max-w-[10rem] truncate">{lang === "bn" ? shopType.name_bn : shopType.name_en}</span>
+          </button>
         )}
       </div>
 

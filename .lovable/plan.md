@@ -1,33 +1,55 @@
-চারটি feature investor section-এ যোগ করব:
+# Shop-Module রোলআউট প্ল্যান
 
-## 1. Investor নাম Edit
-- Investors list এবং InvestorDetail header-এ একটা pencil icon বাটন।
-- Click করলে ছোট dialog → নতুন নাম (+ phone চাইলে) → `UPDATE investors SET name=... WHERE id=...`।
+আপনার priority অনুযায়ী চারটা ধাপে কাজ করব। প্রতিটা ধাপ আলাদা turn-এ ship করব যাতে test করতে পারেন। কোনো existing feature ভাঙবে না — শুধু নতুন যোগ + focus বাড়ানো।
 
-## 2. কিস্তি পরিশোধের তারিখ দেখানো
-- এখন শুধু due_date দেখা যায়।
-- `investor_installments`-এ `paid_at` (timestamp) column আগে থেকেই আছে কিনা check করব; না থাকলে migration-এ যোগ করব।
-- পরিশোধ save করার সময় `paid_at = now()` সেট করব।
-- Table-এ "পরিশোধের তারিখ" column যোগ করব — paid হলে date, না হলে "—"।
+## ধাপ ১ — "My Modules" দেখার পেজ (আগে)
 
-## 3. Fund/Payment Delete-এ PIN Confirmation
-- Investor fund entry বা installment payment delete করার সময়:
-  - ConfirmDialog → "সত্যিই delete করবেন?" + 4-digit PIN input।
-  - PIN verify হবে current user-এর shop PIN-এর সাথে (যেভাবে অন্য sensitive delete-এ হয়, existing helper থাকলে সেটাই use করব; না থাকলে `profiles.pin_hash` check করে)।
-  - ভুল PIN → toast error, delete হবে না।
+আপনার shop-এ কোন module active সেটা এক জায়গায় দেখা + on/off করার জন্য।
 
-## 4. কিস্তি Missing হলে জরিমানা (Late Fee)
-- Loan তৈরি/edit-এ দুটো optional field:
-  - `late_fee_amount` (flat টাকা) বা `late_fee_percent` (%)
-  - `late_fee_grace_days` (কত দিন পর থেকে জরিমানা)
-- Migration: `investor_loans`-এ 3টা column যোগ।
-- Installment table-এ প্রতি unpaid row-এর জন্য due_date পার হলে auto জরিমানা calculate করে show — "জরিমানা: X টাকা (Y দিন late)"।
-- পরিশোধের সময় jorimana amount টা payable-এর সাথে যোগ হবে (option: include/exclude toggle)।
+- **Route:** `/app/shop-settings/modules` (Shop Settings-এর ভেতরে নতুন tab "আমার মডিউল")
+- Shop type-এ যেসব module *recommended* সেগুলো badge দিয়ে দেখাব ("এই দোকানের জন্য সুপারিশ")
+- প্রতিটা module card-এ: নাম, ব্যাখ্যা, on/off switch, "কোথায় ব্যবহার হয়" hint
+- Dashboard-এর উপরে ছোট "আপনার active মডিউল: ৭টা →" chip, click করলে এই পেজে যাবে
+- **Header/topbar-এ shop name-এর পাশে ছোট badge** — shop type-এর icon + নাম, hover/tap-এ active modules list
 
-## Technical Details
-- Files: `src/pages/app/InvestorDetail.tsx`, `src/pages/app/Investors.tsx`, একটা নতুন `PinConfirmDialog` component `src/components/app/`-এ।
-- Migration: `investor_installments.paid_at`, `investor_loans.late_fee_amount/percent/grace_days`।
-- Late fee calc helper `src/lib/investor-emi.ts`-এ।
+## ধাপ ২ — Service-focused module (salon/AC/filter/beauty)
 
-## Questions
-এই ৪টা এক সাথে করব, নাকি priority অনুযায়ী আগে ২টা (নাম edit + paid date) করব? আর PIN বলতে shop PIN নাকি নতুন আলাদা delete-PIN?
+Service-only দোকানের জন্য UI service-first, product পরে।
+
+- POS-এ shop type service হলে **default tab = Services**, product tab শুধু ছোট link
+- Service card-এ home-service badge, duration, warranty, advance
+- Quick Service button আরো prominent (already আছে) + service categories preset seed (Haircut, Manicure, Facial, AC servicing, RO filter cleaning, ইত্যাদি shop-type অনুযায়ী)
+- Service report-এ additional cost/parts আলাদা কলাম
+- Dashboard shortcut section reorder: service shop হলে Services আগে, Products পরে
+
+## ধাপ ৩ — Flexi-load / Recharge module
+
+আপনি সবগুলো field চেয়েছেন (card stock + customer/due + operator/commission)। একটাই নতুন module `flexiload`।
+
+- **Table:** `flexiload_entries` (operator, msisdn, amount, commission, customer_id nullable, is_due, note, date)
+- **Card stock table:** `recharge_cards` (denomination — 5MB/10MB/20MB ইত্যাদি free-form, quantity, cost, sell_price)
+- **Page:** `/app/flexi-load` — উপরে quick entry form (Operator: bKash/Nagad/Rocket/Airtel/GP/Robi/BL/Teletalk + amount + commission + optional customer), নিচে আজকের entry list + দিন/মাসের total commission
+- Card stock tab — card যোগ, বিক্রি হলে stock কমে, লাভ auto other-income-এ
+- Due হলে customer ledger-এ যাবে
+- Cashbox-এ commission auto other-income; recharge amount নিজে cash হাত বদল হয় বলে balance-neutral
+
+## ধাপ ৪ — LPG / Water bottle flow polish
+
+Existing lpg module রেখে UX simple করব — নতুন column/table বানানো ছাড়া।
+
+- Customer-এর প্রথম bottle sale-এ dialog: "এটা প্রথম বোতল? জামানত (deposit) নিচ্ছেন?" — yes হলে deposit + bottle একসাথে record
+- Refill flow-এ শুধু empty return + full deliver step, দাম শুধু gas-এর
+- Holdings screen-এ "কার কাছে কয়টা বোতল" আরো পরিষ্কার
+- Water shop-এ supplier optional (existing memory অনুযায়ী)
+
+## Technical notes (dev-only)
+
+- Migration: নতুন module code `flexiload` + `recharge_cards`/`flexiload_entries` টেবিল RLS + GRANT সহ
+- `MODULES` map-এ `flexiload` যোগ, `MODULE_LABELS`-এ bn/en label
+- `shop_types.default_modules` (যদি না থাকে column যোগ) দিয়ে shop type → recommended modules mapping; নাহলে static map `SHOP_TYPE_MODULE_MAP` in `src/lib/modules.ts`
+- Sidebar/Dashboard-এ shop-type-priority ordering helper
+- সব change existing `useEnabledModules` gate-এর ভেতরেই থাকবে, তাই অন্য shop টাইপের user-এর কিছু বদলাবে না
+
+## এখন আপনি কী বলবেন
+
+সবগুলো ধাপ approve করলে **ধাপ ১ থেকে শুরু করব**। কোনো ধাপে extra field/behavior লাগলে এখনই বলে দিন — না হলে উপরের spec অনুযায়ী চালাব।

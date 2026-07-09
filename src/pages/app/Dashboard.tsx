@@ -63,6 +63,19 @@ function Dashboard() {
 
   return (
     <div className="w-full px-3 py-4 sm:px-4 xl:px-6 2xl:px-10">
+      {!modulesLoading && enabledModules.size > 0 && (
+        <div className="mb-2 flex items-center justify-end">
+          <Link
+            to="/app/shop-settings"
+            className="inline-flex items-center gap-1 rounded-full border bg-card px-2.5 py-1 text-[11px] font-semibold text-muted-foreground hover:bg-accent"
+          >
+            <AppIcon name="settings" className="h-3.5 w-3.5" />
+            {lang === "bn"
+              ? `${bnNum(enabledModules.size)} মডিউল সক্রিয়`
+              : `${enabledModules.size} modules active`}
+          </Link>
+        </div>
+      )}
       {/* Compact summary card — hishabee style */}
       <div className="rounded-xl border bg-card shadow-sm">
         <div className="flex items-center justify-between border-b px-3 py-2">
