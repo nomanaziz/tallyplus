@@ -146,10 +146,46 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
       .subscribe();
     return () => { void supabase.removeChannel(channel); };
   }, [current?.id, qc]);
-  const [cart, setCart] = useState<CartItem[]>([]);
-  const [discount, setDiscount] = useState<string>("0");
-  const [discountMode, setDiscountMode] = useState<"amt" | "pct">("amt");
-  const [delivery, setDelivery] = useState<string>("0");
+  const cartStorageKey = current?.id ? `pos-cart:${mode}:${current.id}` : null;
+  const readPersisted = () => {
+    if (typeof window === "undefined" || !cartStorageKey) return null;
+    try {
+      const raw = localStorage.getItem(cartStorageKey);
+      if (!raw) return null;
+      return JSON.parse(raw) as { cart: CartItem[]; discount: string; discountMode: "amt" | "pct"; delivery: string };
+    } catch { return null; }
+  };
+  const initial = readPersisted();
+  const [cart, setCart] = useState<CartItem[]>(initial?.cart ?? []);
+  const [discount, setDiscount] = useState<string>(initial?.discount ?? "0");
+  const [discountMode, setDiscountMode] = useState<"amt" | "pct">(initial?.discountMode ?? "amt");
+  const [delivery, setDelivery] = useState<string>(initial?.delivery ?? "0");
+
+  // Reload persisted cart when shop or mode changes
+  useEffect(() => {
+    if (!cartStorageKey || typeof window === "undefined") return;
+    try {
+      const raw = localStorage.getItem(cartStorageKey);
+      const data = raw ? JSON.parse(raw) as { cart: CartItem[]; discount: string; discountMode: "amt" | "pct"; delivery: string } : null;
+      setCart(data?.cart ?? []);
+      setDiscount(data?.discount ?? "0");
+      setDiscountMode(data?.discountMode ?? "amt");
+      setDelivery(data?.delivery ?? "0");
+    } catch { /* ignore */ }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cartStorageKey]);
+
+  // Persist cart changes
+  useEffect(() => {
+    if (!cartStorageKey || typeof window === "undefined") return;
+    try {
+      if (cart.length === 0 && discount === "0" && delivery === "0") {
+        localStorage.removeItem(cartStorageKey);
+      } else {
+        localStorage.setItem(cartStorageKey, JSON.stringify({ cart, discount, discountMode, delivery }));
+      }
+    } catch { /* ignore */ }
+  }, [cart, discount, discountMode, delivery, cartStorageKey]);
   const [quickOpen, setQuickOpen] = useState(false);
   const [othersOpen, setOthersOpen] = useState(false);
   const [othersName, setOthersName] = useState("");
