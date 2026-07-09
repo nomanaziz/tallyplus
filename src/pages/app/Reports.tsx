@@ -217,4 +217,15 @@ function Tile({ label, sub, value, tone = "primary" }: { label: string; sub?: st
     </div>
   );
 }
+
+function MiniStat({ label, sub, value, tone = "primary", strong = false }: { label: string; sub?: string; value: string; tone?: "primary" | "success" | "danger"; strong?: boolean }) {
+  const color = tone === "success" ? "text-emerald-600" : tone === "danger" ? "text-rose-600" : "text-primary";
+  return (
+    <div className={"rounded-md border px-2.5 py-1.5 " + (strong ? "bg-muted/40" : "bg-background")}>
+      <div className="text-[10.5px] font-semibold leading-tight text-muted-foreground truncate">{label}</div>
+      {sub && <div className="text-[9px] leading-tight text-muted-foreground truncate">{sub}</div>}
+      <div className={"mt-0.5 text-sm font-extrabold tabular-nums " + color}>{value}</div>
+    </div>
+  );
+}
 export default GuardedReportsPage;
