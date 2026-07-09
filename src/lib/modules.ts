@@ -34,6 +34,57 @@ export const MODULE_LABELS: Record<string, { bn: string; en: string; hint?: { bn
   lpg: { bn: "LPG / বোতল ব্যবসা", en: "LPG / Bottle Business", hint: { bn: "গ্যাস সিলিন্ডার ও পানির বোতল ট্র্যাকিং, জামানত, ডেলিভারি", en: "Cylinder & water-bottle tracking, deposit, delivery" } },
 };
 
+// Recommended module set by shop-type category_group. Used only to show a
+// "সুপারিশ" badge in Shop Settings and to reorder the module list — never to
+// hide or force-enable anything. Owner still has full control.
+export const SHOP_TYPE_RECOMMENDED_MODULES: Record<string, string[]> = {
+  retail: ["products", "purchase", "sales", "expense", "contacts", "cashbook", "reports"],
+  wholesale: ["products", "purchase", "sales", "expense", "contacts", "cashbook", "reports"],
+  restaurant: ["products", "purchase", "sales", "expense", "contacts", "cashbook", "reports", "restaurant"],
+  service: ["services", "sales", "expense", "contacts", "cashbook", "reports"],
+  lpg: ["products", "purchase", "sales", "expense", "contacts", "cashbook", "reports", "lpg"],
+  water: ["products", "purchase", "sales", "expense", "contacts", "cashbook", "reports", "lpg"],
+  digital: ["products", "sales", "expense", "contacts", "cashbook", "reports", "online_shop"],
+  online: ["products", "sales", "expense", "contacts", "cashbook", "reports", "online_shop"],
+};
+
+// Cached fetch of the shop-type row so callers can show name + group + icon.
+export type ShopTypeInfo = {
+  code: string;
+  name_bn: string;
+  name_en: string;
+  icon: string | null;
+  category_group: string | null;
+};
+
+const shopTypeCache = new Map<string, ShopTypeInfo | null>();
+
+export function useShopType(code: string | null | undefined) {
+  const [info, setInfo] = useState<ShopTypeInfo | null>(code ? shopTypeCache.get(code) ?? null : null);
+  useEffect(() => {
+    if (!code) { setInfo(null); return; }
+    if (shopTypeCache.has(code)) { setInfo(shopTypeCache.get(code) ?? null); return; }
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from("shop_types")
+        .select("code,name_bn,name_en,icon,category_group")
+        .eq("code", code)
+        .maybeSingle();
+      const row = (data as ShopTypeInfo | null) ?? null;
+      shopTypeCache.set(code, row);
+      if (!cancelled) setInfo(row);
+    })();
+    return () => { cancelled = true; };
+  }, [code]);
+  return info;
+}
+
+export function recommendedForGroup(group: string | null | undefined): Set<string> {
+  if (!group) return new Set();
+  return new Set(SHOP_TYPE_RECOMMENDED_MODULES[group] ?? []);
+}
+
 // Modules that are always visible regardless of toggle state.
 const ALWAYS_ON = new Set<string>(["__common__"]);
 
