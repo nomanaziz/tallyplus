@@ -550,10 +550,22 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
               {t("p2c_select")}
             </div>
             {isSell && services.length > 0 && (
-              <Tabs value={pickerTab} onValueChange={(v) => setPickerTab(v as "products" | "services")}>
+              <Tabs
+                value={pickerTab}
+                onValueChange={(v) => { setUserPickedTab(true); setPickerTab(v as "products" | "services"); }}
+              >
                 <TabsList className="h-8">
-                  <TabsTrigger value="products" className="text-xs px-3">{t("p2c_products")}</TabsTrigger>
-                  <TabsTrigger value="services" className="text-xs px-3">{t("p2c_services")}</TabsTrigger>
+                  {isServiceShop ? (
+                    <>
+                      <TabsTrigger value="services" className="text-xs px-3">{t("p2c_services")}</TabsTrigger>
+                      <TabsTrigger value="products" className="text-xs px-3">{t("p2c_products")}</TabsTrigger>
+                    </>
+                  ) : (
+                    <>
+                      <TabsTrigger value="products" className="text-xs px-3">{t("p2c_products")}</TabsTrigger>
+                      <TabsTrigger value="services" className="text-xs px-3">{t("p2c_services")}</TabsTrigger>
+                    </>
+                  )}
                 </TabsList>
               </Tabs>
             )}
