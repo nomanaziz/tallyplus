@@ -910,6 +910,21 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
 
                     {/* Discount only (mode toggle: % or ৳) */}
                     <div className="mt-1.5 flex items-center justify-end gap-1.5">
+                      {isSell && (
+                        <>
+                          <span className="text-[10px] text-muted-foreground">{lang === "bn" ? "দাম" : "Price"}</span>
+                          <div className="inline-flex items-center rounded-md border bg-background">
+                            <span className="px-1.5 text-[11px] text-muted-foreground">৳</span>
+                            <input
+                              type="number"
+                              step="0.01"
+                              value={it.price}
+                              onChange={(e) => updateCart(idx, { price: Math.max(0, Number(e.target.value) || 0) })}
+                              className="h-7 w-20 bg-transparent text-right text-[11px] font-semibold tabular-nums outline-none"
+                            />
+                          </div>
+                        </>
+                      )}
                       {lineDiscAmount(it) > 0 && (
                         <span className="text-[10px] font-semibold text-destructive tabular-nums">
                           −{maskMoney(round2(lineDiscAmount(it)))}
