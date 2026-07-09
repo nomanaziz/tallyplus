@@ -229,6 +229,25 @@ function CashboxPage() {
 }
 
 function sourceLabel(ref: string | null, t: (k: string) => string) {
+  // helper below
+  return _sourceLabel(ref, t);
+}
+
+function InlineStat({ icon, label, value, tone }: { icon: React.ReactNode; label: string; value: string; tone: "success" | "danger" | "primary" }) {
+  const color = tone === "success" ? "text-emerald-600" : tone === "danger" ? "text-rose-600" : "text-primary";
+  const bg = tone === "success" ? "bg-emerald-100 text-emerald-700" : tone === "danger" ? "bg-rose-100 text-rose-600" : "bg-primary/10 text-primary";
+  return (
+    <div className="flex min-w-0 items-center gap-2">
+      <span className={`flex h-8 w-8 items-center justify-center rounded-lg ${bg}`}>{icon}</span>
+      <div className="min-w-0">
+        <div className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground leading-tight">{label}</div>
+        <div className={`text-base font-extrabold tabular-nums leading-tight ${color}`}>{value}</div>
+      </div>
+    </div>
+  );
+}
+
+function _sourceLabel(ref: string | null, t: (k: string) => string) {
   const k = ref ?? "manual";
   const map: Record<string, string> = {
     sales: t("p2a_src_sale"),
