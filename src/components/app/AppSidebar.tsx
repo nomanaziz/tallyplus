@@ -13,9 +13,11 @@ import { toast } from "sonner";
 import { useEffect, useState } from "react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { resetTour, startTour } from "@/lib/tour";
-import { HelpCircle } from "lucide-react";
+import { HelpCircle, ArrowLeftRight, Store } from "lucide-react";
 import { useShop } from "@/lib/shop";
 import { useEnabledModules } from "@/lib/modules";
+import { useNavigate } from "@/lib/router";
+import { useAuth } from "@/lib/auth";
 
 export type SidebarItem = { to: string; tKey: TKey; icon: LucideIcon; highlight?: boolean; perm?: string; module?: string };
 export type SidebarSection = { id: string; tKey: TKey; items: SidebarItem[] };
@@ -100,7 +102,10 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
   const { t } = useI18n();
   const loc = useLocation();
   const { isOwner, isAdmin, canGroup, loading } = usePermissions();
-  const { current } = useShop();
+  const { current, shops } = useShop();
+  const { user } = useAuth();
+  const nav = useNavigate();
+  const canSwitchShop = !!user && shops.length > 1;
   const { enabled: enabledModules, loading: modulesLoading } = useEnabledModules(current?.id ?? null);
   const pwa = usePwaInstall();
   const [collapsed, setCollapsed] = useState<boolean>(() => {
@@ -164,7 +169,12 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
 
   return (
     <TooltipProvider>
-      <aside className={cn("flex h-full flex-col border-r bg-sidebar transition-[width] duration-200", collapsed ? "w-14" : "w-52")}>
+      <aside
+        className={cn(
+          "flex h-full flex-col border-r border-border/50 bg-sidebar/60 backdrop-blur-xl backdrop-saturate-150 shadow-[inset_-1px_0_0_hsl(var(--border)/0.3)] transition-[width] duration-200 supports-[backdrop-filter]:bg-sidebar/50",
+          collapsed ? "w-14" : "w-52",
+        )}
+      >
         <div className={cn("flex h-14 flex-none items-center border-b", collapsed ? "justify-center px-1" : "gap-2 px-3")}>
           <img src={logo} alt="" className="h-6 w-6 flex-none object-contain" />
           {!collapsed && <BrandWordmark className="text-sm font-extrabold tracking-tight" />}
@@ -190,6 +200,34 @@ export function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
           >
             <ChevronsRight className="h-4 w-4" />
           </button>
+        )}
+        {canSwitchShop && (
+          collapsed ? (
+            <Tooltip delayDuration={150}>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  onClick={() => { onNavigate?.(); nav({ to: "/app/shops" }); }}
+                  className="mx-auto my-1 flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 text-primary hover:bg-primary/20"
+                  aria-label={t("switchShop")}
+                >
+                  <ArrowLeftRight className="h-4 w-4" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="right" className="text-xs">{t("switchShop")}</TooltipContent>
+            </Tooltip>
+          ) : (
+            <button
+              type="button"
+              onClick={() => { onNavigate?.(); nav({ to: "/app/shops" }); }}
+              className="mx-2 mt-2 flex items-center gap-2 rounded-lg border border-primary/20 bg-primary/10 px-2.5 py-1.5 text-[12px] font-semibold text-primary hover:bg-primary/20"
+              title={t("switchShop")}
+            >
+              <Store className="h-4 w-4 flex-none" />
+              <span className="min-w-0 flex-1 truncate text-left">{current?.name ?? t("switchShop")}</span>
+              <ArrowLeftRight className="h-3.5 w-3.5 flex-none opacity-70" />
+            </button>
+          )
         )}
         <ScrollArea className="flex-1">
           <nav className={cn("flex flex-col gap-0.5 py-2", collapsed ? "px-1" : "px-1.5")}>
