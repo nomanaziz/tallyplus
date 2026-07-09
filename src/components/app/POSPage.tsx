@@ -846,11 +846,24 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
               <ShoppingCart className="h-4 w-4" />
               {lang === "bn" ? "কার্ট" : "Cart"} ({cart.length})
             </div>
-            {cart.length > 0 && (
-              <Button variant="ghost" size="sm" onClick={clearCart}>
-                {lang === "bn" ? "খালি" : "Clear"}
+            <div className="flex items-center gap-1">
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 gap-1 text-xs"
+                onClick={() => { setOthersName(""); setOthersPrice(""); setOthersQty("1"); setOthersCost(""); setOthersOpen(true); }}
+                title={lang === "bn" ? "কুইক সার্ভিস / অতিরিক্ত খরচ যোগ" : "Add quick service / extra cost"}
+              >
+                <Plus className="h-3.5 w-3.5" />
+                {lang === "bn" ? "সার্ভিস/খরচ" : "Service/Cost"}
               </Button>
-            )}
+              {cart.length > 0 && (
+                <Button variant="ghost" size="sm" onClick={clearCart} className="h-8 text-destructive">
+                  <Trash2 className="mr-1 h-3.5 w-3.5" />
+                  {lang === "bn" ? "খালি" : "Clear"}
+                </Button>
+              )}
+            </div>
           </div>
           <div className="max-h-[55vh] space-y-2 overflow-y-auto p-3">
             {cart.length === 0 ? (
