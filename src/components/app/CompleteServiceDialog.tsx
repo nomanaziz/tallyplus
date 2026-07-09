@@ -45,6 +45,8 @@ export function CompleteServiceDialog({
   const [extras, setExtras] = useState<Line[]>([]);
   const [discount, setDiscount] = useState(0);
   const [paid, setPaid] = useState(0);
+  const [additionalCost, setAdditionalCost] = useState(0);
+  const [additionalCostNote, setAdditionalCostNote] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<"cash" | "bkash" | "nagad" | "rocket" | "card" | "bank">("cash");
   const [search, setSearch] = useState("");
   const [results, setResults] = useState<ProductRow[]>([]);
@@ -57,6 +59,8 @@ export function CompleteServiceDialog({
     setServiceCharge(Number(booking.service_price) || 0);
     setExtras([]);
     setDiscount(0);
+    setAdditionalCost(0);
+    setAdditionalCostNote("");
     setPaymentMethod("cash");
     setSearch("");
     setResults([]);
@@ -300,6 +304,18 @@ export function CompleteServiceDialog({
         })
         .eq("id", booking.id);
 
+      // Additional cost — record as an expense tied to this service
+      if (additionalCost > 0) {
+        await supabase.from("expenses").insert({
+          shop_id: booking.shop_id,
+          category: lang === "bn" ? "সার্ভিস খরচ" : "Service cost",
+          amount: additionalCost,
+          note: `${booking.service_name}${additionalCostNote ? " — " + additionalCostNote : ""} (sale ${saleId.slice(0, 8)})`,
+          paid_via: paymentMethod,
+          created_by: userId,
+        });
+      }
+
       toast.success(t("p4_ServiceCompletedInv"));
       onCompleted();
 
@@ -414,6 +430,29 @@ export function CompleteServiceDialog({
                 <Label>{t("p4_PaidNow")}</Label>
                 <Input type="number" value={paid} onChange={(e) => setPaid(Math.max(0, Number(e.target.value) || 0))} />
               </div>
+            </div>
+
+            <div className="rounded-md border bg-amber-50/40 dark:bg-amber-950/20 p-3">
+              <Label className="text-xs font-semibold">
+                {lang === "bn" ? "অতিরিক্ত খরচ (পার্টস/লেবার)" : "Additional cost (parts/labor)"}
+              </Label>
+              <div className="mt-1 grid grid-cols-[1fr_2fr] gap-2">
+                <Input
+                  type="number"
+                  inputMode="decimal"
+                  value={additionalCost}
+                  onChange={(e) => setAdditionalCost(Math.max(0, Number(e.target.value) || 0))}
+                  placeholder="0"
+                />
+                <Input
+                  value={additionalCostNote}
+                  onChange={(e) => setAdditionalCostNote(e.target.value)}
+                  placeholder={lang === "bn" ? "নোট (ঐচ্ছিক)" : "Note (optional)"}
+                />
+              </div>
+              <p className="mt-1 text-[11px] text-muted-foreground">
+                {lang === "bn" ? "এটি খরচ হিসেবে রেকর্ড হবে।" : "Recorded as an expense."}
+              </p>
             </div>
 
             <div>
