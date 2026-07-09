@@ -101,7 +101,12 @@ export function CustomerSidebar({ onNavigate }: { onNavigate?: () => void }) {
 
   return (
     <TooltipProvider>
-      <aside className={cn("flex h-full flex-col border-r bg-sidebar transition-[width] duration-200", collapsed ? "w-14" : "w-52")}>
+      <aside
+        className={cn(
+          "flex h-full flex-col border-r border-border/50 bg-sidebar/60 backdrop-blur-xl backdrop-saturate-150 shadow-[inset_-1px_0_0_hsl(var(--border)/0.3)] transition-[width] duration-200 supports-[backdrop-filter]:bg-sidebar/50",
+          collapsed ? "w-14" : "w-52",
+        )}
+      >
         <div className={cn("flex h-14 flex-none items-center border-b", collapsed ? "justify-center px-1" : "gap-2 px-3")}>
           <img src={logo} alt="" className="h-6 w-6 flex-none object-contain" />
           {!collapsed && <BrandWordmark className="text-sm font-extrabold tracking-tight" />}
