@@ -95,34 +95,38 @@ function CashboxPage() {
       <div className="mb-1 text-xs text-muted-foreground">Cashbox</div>
       <h1 className="text-xl font-extrabold md:text-2xl">{t("p2a_cashbox")}</h1>
 
-      <ActionTilePair
-        className="mt-4"
-        tiles={[
-          { label: t("p2a_cashIn"), icon: <ArrowDownCircle className="h-5 w-5" />, tone: "success", onClick: () => setOpenDir("in") },
-          { label: t("p2a_cashOut"), icon: <ArrowUpCircle className="h-5 w-5" />, tone: "danger", onClick: () => setOpenDir("out") },
-        ]}
-      />
+      {/* Mobile: original tiles + stat grid */}
+      <div className="md:hidden">
+        <ActionTilePair
+          className="mt-4"
+          tiles={[
+            { label: t("p2a_cashIn"), icon: <ArrowDownCircle className="h-5 w-5" />, tone: "success", onClick: () => setOpenDir("in") },
+            { label: t("p2a_cashOut"), icon: <ArrowUpCircle className="h-5 w-5" />, tone: "danger", onClick: () => setOpenDir("out") },
+          ]}
+        />
+        <StatGrid className="mt-4">
+          <StatCard icon={<ArrowDownCircle className="h-4 w-4" />} label={t("p2a_totalIn")} value={fmtMoney(totals.in, lang)} tone="success" />
+          <StatCard icon={<ArrowUpCircle className="h-4 w-4" />} label={t("p2a_totalOut")} value={fmtMoney(totals.out, lang)} tone="danger" />
+          <StatCard icon={<Wallet className="h-4 w-4" />} label={t("p2a_balance")} value={fmtMoney(totals.balance, lang)} tone="primary" />
+        </StatGrid>
+      </div>
 
-      <StatGrid className="mt-4">
-        <StatCard
-          icon={<ArrowDownCircle className="h-4 w-4" />}
-          label={t("p2a_totalIn")}
-          value={fmtMoney(totals.in, lang)}
-          tone="success"
-        />
-        <StatCard
-          icon={<ArrowUpCircle className="h-4 w-4" />}
-          label={t("p2a_totalOut")}
-          value={fmtMoney(totals.out, lang)}
-          tone="danger"
-        />
-        <StatCard
-          icon={<Wallet className="h-4 w-4" />}
-          label={t("p2a_balance")}
-          value={fmtMoney(totals.balance, lang)}
-          tone="primary"
-        />
-      </StatGrid>
+      {/* Desktop: compact single-row stats + inline actions */}
+      <div className="mt-3 hidden items-center gap-2 rounded-xl border bg-card p-2 shadow-sm md:flex">
+        <div className="flex flex-1 items-center gap-4 px-2">
+          <InlineStat icon={<ArrowDownCircle className="h-4 w-4" />} label={t("p2a_totalIn")} value={fmtMoney(totals.in, lang)} tone="success" />
+          <div className="h-8 w-px bg-border" />
+          <InlineStat icon={<ArrowUpCircle className="h-4 w-4" />} label={t("p2a_totalOut")} value={fmtMoney(totals.out, lang)} tone="danger" />
+          <div className="h-8 w-px bg-border" />
+          <InlineStat icon={<Wallet className="h-4 w-4" />} label={t("p2a_balance")} value={fmtMoney(totals.balance, lang)} tone="primary" />
+        </div>
+        <Button size="sm" onClick={() => setOpenDir("in")} className="h-9 gap-1 bg-emerald-600 hover:bg-emerald-700">
+          <ArrowDownCircle className="h-4 w-4" /> {t("p2a_cashIn")}
+        </Button>
+        <Button size="sm" onClick={() => setOpenDir("out")} className="h-9 gap-1 bg-rose-600 hover:bg-rose-700">
+          <ArrowUpCircle className="h-4 w-4" /> {t("p2a_cashOut")}
+        </Button>
+      </div>
 
       <Tabs defaultValue="entries" className="mt-4">
         <TabsList>
@@ -225,6 +229,25 @@ function CashboxPage() {
 }
 
 function sourceLabel(ref: string | null, t: (k: string) => string) {
+  // helper below
+  return _sourceLabel(ref, t);
+}
+
+function InlineStat({ icon, label, value, tone }: { icon: React.ReactNode; label: string; value: string; tone: "success" | "danger" | "primary" }) {
+  const color = tone === "success" ? "text-emerald-600" : tone === "danger" ? "text-rose-600" : "text-primary";
+  const bg = tone === "success" ? "bg-emerald-100 text-emerald-700" : tone === "danger" ? "bg-rose-100 text-rose-600" : "bg-primary/10 text-primary";
+  return (
+    <div className="flex min-w-0 items-center gap-2">
+      <span className={`flex h-8 w-8 items-center justify-center rounded-lg ${bg}`}>{icon}</span>
+      <div className="min-w-0">
+        <div className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground leading-tight">{label}</div>
+        <div className={`text-base font-extrabold tabular-nums leading-tight ${color}`}>{value}</div>
+      </div>
+    </div>
+  );
+}
+
+function _sourceLabel(ref: string | null, t: (k: string) => string) {
   const k = ref ?? "manual";
   const map: Record<string, string> = {
     sales: t("p2a_src_sale"),
