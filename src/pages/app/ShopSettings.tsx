@@ -16,7 +16,7 @@ import { RestoreBackupDialog } from "@/components/app/RestoreBackupDialog";
 import { downloadJson, BACKUP_VERSION } from "@/lib/backup";
 import { LocationPicker, type LocationValue } from "@/components/LocationPicker";
 import { Switch } from "@/components/ui/switch";
-import { MODULE_LABELS, loadShopModules, setShopModule } from "@/lib/modules";
+import { MODULE_LABELS, loadShopModules, setShopModule, useShopType, recommendedForGroup } from "@/lib/modules";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function ShopSettingsPage() {
@@ -25,6 +25,8 @@ export default function ShopSettingsPage() {
   const { user } = useAuth();
   const nav = useNavigate();
   const isOwner = !!current && current.owner_id === user?.id;
+  const shopType = useShopType(current?.shop_type_code ?? null);
+  const recommended = recommendedForGroup(shopType?.category_group ?? null);
 
   const [name, setName] = useState("");
   const [address, setAddress] = useState("");
@@ -252,13 +254,39 @@ export default function ShopSettingsPage() {
               {t("p7_Disabled_modules_are_hidden_fr")}
             </p>
           </div>
+          {shopType && (
+            <div className="text-xs text-muted-foreground">
+              {lang === "bn" ? "দোকানের ধরন:" : "Shop type:"} <b>{lang === "bn" ? shopType.name_bn : shopType.name_en}</b>
+              {recommended.size > 0 && (
+                <span>
+                  {" · "}
+                  {lang === "bn" ? `সুপারিশকৃত মডিউল ${recommended.size}টা` : `${recommended.size} recommended modules`}
+                </span>
+              )}
+            </div>
+          )}
           <div className="divide-y">
-            {Object.entries(MODULE_LABELS).map(([code, lbl]) => {
+            {Object.entries(MODULE_LABELS)
+              .slice()
+              .sort(([a], [b]) => {
+                const ar = recommended.has(a) ? 0 : 1;
+                const br = recommended.has(b) ? 0 : 1;
+                return ar - br;
+              })
+              .map(([code, lbl]) => {
               const on = modules[code] ?? false;
+              const isRec = recommended.has(code);
               return (
                 <div key={code} className="flex items-start justify-between gap-3 py-2.5">
                   <div className="min-w-0">
-                    <div className="text-sm font-medium">{lang === "bn" ? lbl.bn : lbl.en}</div>
+                    <div className="flex items-center gap-1.5 text-sm font-medium">
+                      <span>{lang === "bn" ? lbl.bn : lbl.en}</span>
+                      {isRec && (
+                        <span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary">
+                          {lang === "bn" ? "সুপারিশ" : "Recommended"}
+                        </span>
+                      )}
+                    </div>
                     {lbl.hint && (
                       <div className="text-xs text-muted-foreground">{lang === "bn" ? lbl.hint.bn : lbl.hint.en}</div>
                     )}
