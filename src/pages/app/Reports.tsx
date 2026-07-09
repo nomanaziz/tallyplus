@@ -89,71 +89,86 @@ function ReportsPage() {
       />
 
       <div className="container space-y-3 px-3 py-3 md:space-y-4 md:px-4 md:py-4">
-        {/* Section 1 — সাধারণ বিক্রি রিপোর্ট */}
-        <div className="rounded-xl border bg-background p-3 md:p-4">
-          <h2 className="mb-2 text-sm font-bold md:mb-3">{t("p5_General_sales_report")}</h2>
-          {/* Mobile: 2-column compact tiles. Desktop: stacked rows like before. */}
-          <div className="grid grid-cols-2 gap-2 md:hidden">
-            <Tile label="মোট বিক্রি" value={fmtMoney(s.totalSales, lang)} tone="primary" />
-            <Tile label="নগদ বিক্রয়" sub="(কাস্টমার বাকি বাদে)" value={fmtMoney(s.cashSales, lang)} tone="success" />
-            <Tile label="কাস্টমার থেকে বাকি পেয়েছেন" value={fmtMoney(s.dueReceived, lang)} tone="success" />
-            <Tile label="নগদ ক্রয়" sub="(সাপ্লায়ার বাকি বাদে)" value={fmtMoney(s.cashPurchase, lang)} tone="danger" />
-            <Tile label="সাপ্লায়ারকে বাকি দিয়েছেন" value={fmtMoney(s.duePaid, lang)} tone="danger" />
+        {/* MOBILE layout (kept as-is) */}
+        <div className="md:hidden space-y-3">
+          <div className="rounded-xl border bg-background p-3">
+            <h2 className="mb-2 text-sm font-bold">{t("p5_General_sales_report")}</h2>
+            <div className="grid grid-cols-2 gap-2">
+              <Tile label="মোট বিক্রি" value={fmtMoney(s.totalSales, lang)} tone="primary" />
+              <Tile label="নগদ বিক্রয়" sub="(কাস্টমার বাকি বাদে)" value={fmtMoney(s.cashSales, lang)} tone="success" />
+              <Tile label="কাস্টমার থেকে বাকি পেয়েছেন" value={fmtMoney(s.dueReceived, lang)} tone="success" />
+              <Tile label="নগদ ক্রয়" sub="(সাপ্লায়ার বাকি বাদে)" value={fmtMoney(s.cashPurchase, lang)} tone="danger" />
+              <Tile label="সাপ্লায়ারকে বাকি দিয়েছেন" value={fmtMoney(s.duePaid, lang)} tone="danger" />
+            </div>
+            <div className="my-2 border-t" />
+            <div className="grid gap-2">
+              <Row big label="সর্বমোট ব্যালেন্স" sub="(মোট বিক্রি + কাস্টমারের বাকির টাকা + অন্যান্য আয়) - (মোট ক্রয় + সাপ্লায়ারকে বাকির টাকা + অন্যান্য খরচ)" value={fmtMoney(balance, lang)} tone={balance >= 0 ? "success" : "danger"} />
+              <Row big label="পণ্য বিক্রি থেকে লাভ" sub="(বিক্রিত পণ্যের বিক্রয় - ক্রয় মূল্য)" value={fmtMoney(s.productProfit, lang)} tone={s.productProfit >= 0 ? "success" : "danger"} />
+            </div>
           </div>
-          <div className="hidden gap-2 md:grid">
-            <Row label="মোট বিক্রি" value={fmtMoney(s.totalSales, lang)} tone="primary" />
-            <Row label="নগদ বিক্রয়" sub="(কাস্টমার বাকি বাদে)" value={fmtMoney(s.cashSales, lang)} tone="success" />
-            <Row label="কাস্টমার থেকে বাকির টাকা পেয়েছেন" value={fmtMoney(s.dueReceived, lang)} tone="success" />
-            <Row label="নগদ ক্রয়" sub="(সাপ্লায়ার বাকি বাদে)" value={fmtMoney(s.cashPurchase, lang)} tone="danger" />
-            <Row label="সাপ্লায়ারকে বাকির টাকা দিয়েছেন" value={fmtMoney(s.duePaid, lang)} tone="danger" />
+          <div className="grid grid-cols-2 gap-2">
+            <div className="rounded-xl border bg-background p-3">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <div className="text-[11px] font-bold text-muted-foreground">{t("p5_Other_income")}</div>
+                  <div className="mt-0.5 text-base font-extrabold text-emerald-600">{fmtMoney(s.otherIncome, lang)}</div>
+                </div>
+                <Button size="icon" className="h-8 w-8 shrink-0 bg-emerald-500 hover:bg-emerald-600 text-white" aria-label={t("p5_Add_income")}>
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+            <div className="rounded-xl border bg-background p-3">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <div className="text-[11px] font-bold text-muted-foreground">{t("p5_Other_expense")}</div>
+                  <div className="mt-0.5 text-base font-extrabold text-rose-600">{fmtMoney(s.otherExpense, lang)}</div>
+                </div>
+                <Button size="icon" className="h-8 w-8 shrink-0 bg-rose-500 hover:bg-rose-600 text-white" aria-label={t("p5_Add_expense")}>
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
           </div>
-          <div className="my-2 border-t md:my-3" />
-          <div className="grid gap-2">
-            <Row big label="সর্বমোট ব্যালেন্স" sub="(মোট বিক্রি + কাস্টমারের বাকির টাকা + অন্যান্য আয়) - (মোট ক্রয় + সাপ্লায়ারকে বাকির টাকা + অন্যান্য খরচ)" value={fmtMoney(balance, lang)} tone={balance >= 0 ? "success" : "danger"} />
-            <Row big label="পণ্য বিক্রি থেকে লাভ" sub="(বিক্রিত পণ্যের বিক্রয় - ক্রয় মূল্য)" value={fmtMoney(s.productProfit, lang)} tone={s.productProfit >= 0 ? "success" : "danger"} />
+          <div className="rounded-xl border bg-background p-3">
+            <div className="mb-2 flex items-center justify-between">
+              <div className="text-sm font-bold">{t("p5_Total_due")}</div>
+              <div className="text-sm font-bold">{fmtMoney(s.receivable + s.payable, lang)}</div>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="rounded-lg bg-emerald-100 p-3 text-center text-emerald-900">
+                <div className="text-[11px] font-bold">{t("p5_Owe_suppliers")}</div>
+                <div className="mt-0.5 text-base font-extrabold">{fmtMoney(s.payable, lang)}</div>
+              </div>
+              <div className="rounded-lg bg-rose-100 p-3 text-center text-rose-900">
+                <div className="text-[11px] font-bold">{t("p5_Customers_owe")}</div>
+                <div className="mt-0.5 text-base font-extrabold">{fmtMoney(s.receivable, lang)}</div>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Section 2 — Other income / expense (always 2-col, compact on mobile) */}
-        <div className="grid grid-cols-2 gap-2 md:gap-3">
-          <div className="rounded-xl border bg-background p-3 md:p-4">
-            <div className="flex items-start justify-between gap-2">
-              <div className="min-w-0">
-                <div className="text-[11px] font-bold text-muted-foreground md:text-xs">{t("p5_Other_income")}</div>
-                <div className="mt-0.5 text-base font-extrabold text-emerald-600 md:text-2xl">{fmtMoney(s.otherIncome, lang)}</div>
-              </div>
-              <Button size="icon" className="h-8 w-8 shrink-0 bg-emerald-500 hover:bg-emerald-600 text-white md:h-9 md:w-9" aria-label={t("p5_Add_income")}>
-                <Plus className="h-4 w-4" />
-              </Button>
+        {/* DESKTOP layout — compact single card, no duplication */}
+        <div className="hidden md:block">
+          <div className="rounded-xl border bg-background p-3">
+            <h2 className="mb-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">
+              {t("p5_General_sales_report")}
+            </h2>
+            <div className="grid grid-cols-2 gap-2 lg:grid-cols-4 xl:grid-cols-7">
+              <MiniStat label="মোট বিক্রি" value={fmtMoney(s.totalSales, lang)} tone="primary" />
+              <MiniStat label="নগদ বিক্রয়" sub="(কাস্টমার বাকি বাদে)" value={fmtMoney(s.cashSales, lang)} tone="success" />
+              <MiniStat label="কাস্টমার বাকি পেয়েছেন" value={fmtMoney(s.dueReceived, lang)} tone="success" />
+              <MiniStat label="নগদ ক্রয়" sub="(সাপ্লায়ার বাকি বাদে)" value={fmtMoney(s.cashPurchase, lang)} tone="danger" />
+              <MiniStat label="সাপ্লায়ারকে দিয়েছেন" value={fmtMoney(s.duePaid, lang)} tone="danger" />
+              <MiniStat label={t("p5_Other_income")} value={fmtMoney(s.otherIncome, lang)} tone="success" />
+              <MiniStat label={t("p5_Other_expense")} value={fmtMoney(s.otherExpense, lang)} tone="danger" />
             </div>
-          </div>
-          <div className="rounded-xl border bg-background p-3 md:p-4">
-            <div className="flex items-start justify-between gap-2">
-              <div className="min-w-0">
-                <div className="text-[11px] font-bold text-muted-foreground md:text-xs">{t("p5_Other_expense")}</div>
-                <div className="mt-0.5 text-base font-extrabold text-rose-600 md:text-2xl">{fmtMoney(s.otherExpense, lang)}</div>
-              </div>
-              <Button size="icon" className="h-8 w-8 shrink-0 bg-rose-500 hover:bg-rose-600 text-white md:h-9 md:w-9" aria-label={t("p5_Add_expense")}>
-                <Plus className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        </div>
-
-        {/* Section 3 — Total dues (always 2-col side-by-side) */}
-        <div className="rounded-xl border bg-background p-3 md:p-4">
-          <div className="mb-2 flex items-center justify-between">
-            <div className="text-sm font-bold">{t("p5_Total_due")}</div>
-            <div className="text-sm font-bold">{fmtMoney(s.receivable + s.payable, lang)}</div>
-          </div>
-          <div className="grid grid-cols-2 gap-2 md:gap-3">
-            <div className="rounded-lg bg-emerald-100 p-3 text-center text-emerald-900 md:p-4">
-              <div className="text-[11px] font-bold md:text-sm">{t("p5_Owe_suppliers")}</div>
-              <div className="mt-0.5 text-base font-extrabold md:text-xl">{fmtMoney(s.payable, lang)}</div>
-            </div>
-            <div className="rounded-lg bg-rose-100 p-3 text-center text-rose-900 md:p-4">
-              <div className="text-[11px] font-bold md:text-sm">{t("p5_Customers_owe")}</div>
-              <div className="mt-0.5 text-base font-extrabold md:text-xl">{fmtMoney(s.receivable, lang)}</div>
+            <div className="my-2 border-t" />
+            <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
+              <MiniStat label={t("p5_Owe_suppliers")} value={fmtMoney(s.payable, lang)} tone="success" strong />
+              <MiniStat label={t("p5_Customers_owe")} value={fmtMoney(s.receivable, lang)} tone="danger" strong />
+              <MiniStat label="পণ্য বিক্রি থেকে লাভ" value={fmtMoney(s.productProfit, lang)} tone={s.productProfit >= 0 ? "success" : "danger"} strong />
+              <MiniStat label="সর্বমোট ব্যালেন্স" value={fmtMoney(balance, lang)} tone={balance >= 0 ? "success" : "danger"} strong />
             </div>
           </div>
         </div>
