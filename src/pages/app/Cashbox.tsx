@@ -95,34 +95,38 @@ function CashboxPage() {
       <div className="mb-1 text-xs text-muted-foreground">Cashbox</div>
       <h1 className="text-xl font-extrabold md:text-2xl">{t("p2a_cashbox")}</h1>
 
-      <ActionTilePair
-        className="mt-4"
-        tiles={[
-          { label: t("p2a_cashIn"), icon: <ArrowDownCircle className="h-5 w-5" />, tone: "success", onClick: () => setOpenDir("in") },
-          { label: t("p2a_cashOut"), icon: <ArrowUpCircle className="h-5 w-5" />, tone: "danger", onClick: () => setOpenDir("out") },
-        ]}
-      />
+      {/* Mobile: original tiles + stat grid */}
+      <div className="md:hidden">
+        <ActionTilePair
+          className="mt-4"
+          tiles={[
+            { label: t("p2a_cashIn"), icon: <ArrowDownCircle className="h-5 w-5" />, tone: "success", onClick: () => setOpenDir("in") },
+            { label: t("p2a_cashOut"), icon: <ArrowUpCircle className="h-5 w-5" />, tone: "danger", onClick: () => setOpenDir("out") },
+          ]}
+        />
+        <StatGrid className="mt-4">
+          <StatCard icon={<ArrowDownCircle className="h-4 w-4" />} label={t("p2a_totalIn")} value={fmtMoney(totals.in, lang)} tone="success" />
+          <StatCard icon={<ArrowUpCircle className="h-4 w-4" />} label={t("p2a_totalOut")} value={fmtMoney(totals.out, lang)} tone="danger" />
+          <StatCard icon={<Wallet className="h-4 w-4" />} label={t("p2a_balance")} value={fmtMoney(totals.balance, lang)} tone="primary" />
+        </StatGrid>
+      </div>
 
-      <StatGrid className="mt-4">
-        <StatCard
-          icon={<ArrowDownCircle className="h-4 w-4" />}
-          label={t("p2a_totalIn")}
-          value={fmtMoney(totals.in, lang)}
-          tone="success"
-        />
-        <StatCard
-          icon={<ArrowUpCircle className="h-4 w-4" />}
-          label={t("p2a_totalOut")}
-          value={fmtMoney(totals.out, lang)}
-          tone="danger"
-        />
-        <StatCard
-          icon={<Wallet className="h-4 w-4" />}
-          label={t("p2a_balance")}
-          value={fmtMoney(totals.balance, lang)}
-          tone="primary"
-        />
-      </StatGrid>
+      {/* Desktop: compact single-row stats + inline actions */}
+      <div className="mt-3 hidden items-center gap-2 rounded-xl border bg-card p-2 shadow-sm md:flex">
+        <div className="flex flex-1 items-center gap-4 px-2">
+          <InlineStat icon={<ArrowDownCircle className="h-4 w-4" />} label={t("p2a_totalIn")} value={fmtMoney(totals.in, lang)} tone="success" />
+          <div className="h-8 w-px bg-border" />
+          <InlineStat icon={<ArrowUpCircle className="h-4 w-4" />} label={t("p2a_totalOut")} value={fmtMoney(totals.out, lang)} tone="danger" />
+          <div className="h-8 w-px bg-border" />
+          <InlineStat icon={<Wallet className="h-4 w-4" />} label={t("p2a_balance")} value={fmtMoney(totals.balance, lang)} tone="primary" />
+        </div>
+        <Button size="sm" onClick={() => setOpenDir("in")} className="h-9 gap-1 bg-emerald-600 hover:bg-emerald-700">
+          <ArrowDownCircle className="h-4 w-4" /> {t("p2a_cashIn")}
+        </Button>
+        <Button size="sm" onClick={() => setOpenDir("out")} className="h-9 gap-1 bg-rose-600 hover:bg-rose-700">
+          <ArrowUpCircle className="h-4 w-4" /> {t("p2a_cashOut")}
+        </Button>
+      </div>
 
       <Tabs defaultValue="entries" className="mt-4">
         <TabsList>
