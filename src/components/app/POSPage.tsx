@@ -10,6 +10,7 @@ import { useI18n, fmtMoney, bnNum } from "@/lib/i18n";
 import { useCostHide } from "@/lib/costHide";
 import { productsLiteQuery } from "@/lib/queries";
 import { servicesLiteQuery, durationToText, type Service } from "@/lib/services-queries";
+import { useShopType } from "@/lib/modules";
 import { writeWithOffline } from "@/lib/useOfflineWrite";
 import { readCache } from "@/lib/offlineCache";
 import { SerialPickDialog } from "@/components/app/SerialPickDialog";
@@ -114,7 +115,16 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
   const products = productsData as unknown as Product[];
   const { data: servicesData = [] } = useQuery(servicesLiteQuery(current?.id ?? null));
   const services = servicesData as Service[];
-  const [pickerTab, setPickerTab] = useState<"products" | "services">("products");
+  const shopType = useShopType(current?.shop_type_code ?? null);
+  const isServiceShop = shopType?.category_group === "service";
+  const [pickerTab, setPickerTab] = useState<"products" | "services">(
+    isServiceShop ? "services" : "products",
+  );
+  // When the shop type resolves after mount, switch default once if user hasn't touched it.
+  const [userPickedTab, setUserPickedTab] = useState(false);
+  useEffect(() => {
+    if (!userPickedTab && isServiceShop) setPickerTab("services");
+  }, [isServiceShop, userPickedTab]);
   const [search, setSearch] = useState("");
   const [showOutOfStock, setShowOutOfStock] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState<string | "all">("all");
@@ -540,10 +550,22 @@ export function POSPage({ mode, autoOpenDue = false }: { mode: Mode; autoOpenDue
               {t("p2c_select")}
             </div>
             {isSell && services.length > 0 && (
-              <Tabs value={pickerTab} onValueChange={(v) => setPickerTab(v as "products" | "services")}>
+              <Tabs
+                value={pickerTab}
+                onValueChange={(v) => { setUserPickedTab(true); setPickerTab(v as "products" | "services"); }}
+              >
                 <TabsList className="h-8">
-                  <TabsTrigger value="products" className="text-xs px-3">{t("p2c_products")}</TabsTrigger>
-                  <TabsTrigger value="services" className="text-xs px-3">{t("p2c_services")}</TabsTrigger>
+                  {isServiceShop ? (
+                    <>
+                      <TabsTrigger value="services" className="text-xs px-3">{t("p2c_services")}</TabsTrigger>
+                      <TabsTrigger value="products" className="text-xs px-3">{t("p2c_products")}</TabsTrigger>
+                    </>
+                  ) : (
+                    <>
+                      <TabsTrigger value="products" className="text-xs px-3">{t("p2c_products")}</TabsTrigger>
+                      <TabsTrigger value="services" className="text-xs px-3">{t("p2c_services")}</TabsTrigger>
+                    </>
+                  )}
                 </TabsList>
               </Tabs>
             )}
