@@ -64,9 +64,9 @@ function SalesLedgerPage() {
   const [search, setSearch] = useState("");
   const [paymentFilter, setPaymentFilter] = useState<"all" | "cash" | "due">("all");
   const today = new Date();
-  const firstOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-  const [from, setFrom] = useState(firstOfMonth.toISOString().slice(0, 10));
-  const [to, setTo] = useState(today.toISOString().slice(0, 10));
+  const todayIso = today.toISOString().slice(0, 10);
+  const [from, setFrom] = useState(todayIso);
+  const [to, setTo] = useState(todayIso);
 
   const salesIdsKey = useMemo(() => sales.map((s) => s.id).join(","), [sales]);
   const [itemCounts, setItemCounts] = useState<Record<string, number>>({});
