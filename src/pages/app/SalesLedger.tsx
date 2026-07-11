@@ -121,14 +121,20 @@ function SalesLedgerPage() {
     let cancel = false;
     (async () => {
       const ids = salesIdsKey.split(",");
-      const { data } = await supabase
-        .from("sale_items")
-        .select("sale_id,item_type")
-        .in("sale_id", ids);
+      const data: { sale_id: string; item_type: string | null }[] = [];
+      for (let i = 0; i < ids.length; i += 200) {
+        const { data: batch, error } = await supabase
+          .from("sale_items")
+          .select("sale_id,item_type")
+          .in("sale_id", ids.slice(i, i + 200));
+        if (error) break;
+        data.push(...((batch as { sale_id: string; item_type: string | null }[]) ?? []));
+        if (cancel) return;
+      }
       if (cancel) return;
       const counts: Record<string, number> = {};
       const svc = new Set<string>();
-      ((data as { sale_id: string; item_type: string | null }[]) ?? []).forEach((r) => {
+      data.forEach((r) => {
         counts[r.sale_id] = (counts[r.sale_id] ?? 0) + 1;
         if (r.item_type === "service") svc.add(r.sale_id);
       });
