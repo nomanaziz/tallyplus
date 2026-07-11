@@ -454,7 +454,7 @@ export function ConvertWishlistToSaleDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>
             বাতিল
           </Button>
-          <Button onClick={handleConvert} disabled={submitting || sellable.length === 0}>
+          <Button onClick={handleConvert} disabled={submitting || sellable.length === 0 || missingCost.length > 0}>
             {submitting && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
             বিক্রয় তৈরি করুন
           </Button>
