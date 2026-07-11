@@ -20,6 +20,7 @@ export function QuickSellSheet({ open, onOpenChange }: { open: boolean; onOpenCh
   const today = new Date().toISOString().slice(0, 10);
   const [date, setDate] = useState(today);
   const [amount, setAmount] = useState("");
+  const [buyPrice, setBuyPrice] = useState("");
   const [profit, setProfit] = useState("");
   const [custName, setCustName] = useState("");
   const [custPhone, setCustPhone] = useState("");
@@ -31,7 +32,7 @@ export function QuickSellSheet({ open, onOpenChange }: { open: boolean; onOpenCh
   const [isInventory, setIsInventory] = useState(false);
 
   const reset = () => {
-    setDate(today); setAmount(""); setProfit(""); setCustName("");
+    setDate(today); setAmount(""); setBuyPrice(""); setProfit(""); setCustName("");
     setCustPhone(""); setNote(""); setSms(false); setWalkIn(true);
     setProductName(""); setIsInventory(false);
   };
@@ -40,6 +41,17 @@ export function QuickSellSheet({ open, onOpenChange }: { open: boolean; onOpenCh
     if (!current?.id) { toast.error(t("p2c_selectShop")); return; }
     const amt = Number(amount);
     if (!amt || amt <= 0) { toast.error(t("p2c_enterAmount")); return; }
+    if (productName.trim()) {
+      const bp = Number(buyPrice);
+      if (!bp || bp <= 0) {
+        toast.error(lang === "bn" ? "পণ্যের ক্রয়মূল্য দিন" : "Enter product buy price");
+        return;
+      }
+      if (bp > amt) {
+        toast.error(lang === "bn" ? "বিক্রয়মূল্য ক্রয়মূল্যের চেয়ে কম হতে পারবে না" : "Sell price cannot be less than buy price");
+        return;
+      }
+    }
     if (!walkIn && !custName.trim()) { toast.error(t("p2c_custNameReq")); return; }
     setSaving(true);
     try {
@@ -57,8 +69,17 @@ export function QuickSellSheet({ open, onOpenChange }: { open: boolean; onOpenCh
         productName.trim()
           ? `${lang === "bn" ? "পণ্য" : "Product"}: ${productName.trim()}${isInventory ? (lang === "bn" ? " (ইনভেন্টরি)" : " (Inventory)") : (lang === "bn" ? " (আদার্স)" : " (Others)")}`
           : "",
+        productName.trim() && buyPrice.trim() ? `${lang === "bn" ? "ক্রয়মূল্য" : "Buy price"}: ${buyPrice}` : "",
+        productName.trim() ? `${lang === "bn" ? "বিক্রয়মূল্য" : "Sell price"}: ${amount}` : "",
         note.trim(),
-        profit.trim() ? `${t("p2c_profit")}: ${profit}` : "",
+        (() => {
+          const bp = Number(buyPrice);
+          if (productName.trim() && bp > 0) {
+            const p = amt - bp;
+            return `${t("p2c_profit")}: ${p}`;
+          }
+          return profit.trim() ? `${t("p2c_profit")}: ${profit}` : "";
+        })(),
       ].filter(Boolean).join(" | ");
       const { error } = await supabase.from("sales").insert({
         shop_id: current.id,
@@ -128,16 +149,37 @@ export function QuickSellSheet({ open, onOpenChange }: { open: boolean; onOpenCh
               <Package className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             </div>
           </div>
+          {productName.trim() && (
+            <div className="space-y-1.5">
+              <Label>
+                {lang === "bn" ? "ক্রয়মূল্য" : "Buy price"} <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                type="number"
+                inputMode="decimal"
+                placeholder={lang === "bn" ? "ক্রয়মূল্য" : "Buy price"}
+                value={buyPrice}
+                onChange={(e) => setBuyPrice(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">
+                {lang === "bn"
+                  ? "পণ্যের বিক্রয়ের জন্য ক্রয়মূল্য ও বিক্রয়মূল্য দুটোই আবশ্যক"
+                  : "Both buy price and sell price are required to record a product sale"}
+              </p>
+            </div>
+          )}
           <div className="flex items-center justify-between rounded-md border bg-muted/30 px-3 py-2">
             <Label className="text-sm">
               {lang === "bn" ? "ইনভেন্টরি পণ্য?" : "Inventory product?"}
             </Label>
             <Switch checked={isInventory} onCheckedChange={setIsInventory} />
           </div>
-          <div className="space-y-1.5">
-            <Label>{t("p2c_profit")}</Label>
-            <Input type="number" inputMode="decimal" placeholder={t("p2c_profit")} value={profit} onChange={(e) => setProfit(e.target.value)} />
-          </div>
+          {!productName.trim() && (
+            <div className="space-y-1.5">
+              <Label>{t("p2c_profit")}</Label>
+              <Input type="number" inputMode="decimal" placeholder={t("p2c_profit")} value={profit} onChange={(e) => setProfit(e.target.value)} />
+            </div>
+          )}
           <div className="flex items-center justify-between rounded-md border bg-muted/30 px-3 py-2">
             <Label className="text-sm">
               {lang === "bn" ? "ওয়াকিং কাস্টমার" : "Walking customer"}
