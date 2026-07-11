@@ -420,6 +420,11 @@ function QuickOrderInner() {
         currentDue: 0,
       });
       setRows([]);
+      setCustName("");
+      setCustPhone("");
+      setCustAddress("");
+      setNote("");
+      setShowOpt(false);
       setActiveTab("products");
     } catch (e) {
       toast.error((e as Error).message);
