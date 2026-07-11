@@ -44,6 +44,12 @@ type Sale = {
 const isServiceSale = (sale: Sale, serviceSaleIds: Set<string>) =>
   serviceSaleIds.has(sale.id) || (sale.note ?? "").trim().toLowerCase().startsWith("service:");
 
+const serviceNameFromNote = (note: string | null) => {
+  const text = (note ?? "").trim();
+  if (!text.toLowerCase().startsWith("service:")) return null;
+  return text.replace(/^service:\s*/i, "").split("|")[0]?.trim() || null;
+};
+
 
 
 function SalesLedgerPage() {
@@ -166,7 +172,8 @@ function SalesLedgerPage() {
       const c = custMap[s.customer_id ?? ""];
       return (s.invoice_no ?? "").toLowerCase().includes(q)
         || (c?.name ?? "").toLowerCase().includes(q)
-        || (c?.phone ?? "").toLowerCase().includes(q);
+        || (c?.phone ?? "").toLowerCase().includes(q)
+        || (s.note ?? "").toLowerCase().includes(q);
     });
   }, [sales, search, custMap, from, to, paymentFilter, typeFilter, serviceSet]);
 
@@ -201,6 +208,17 @@ function SalesLedgerPage() {
       .select("name,qty,price,total")
       .eq("sale_id", s.id);
     const c = custMap[s.customer_id ?? ""];
+    const invoiceItems = ((items as { name: string; qty: number; price: number; total: number }[]) ?? []).map((it) => ({
+      name: it.name, qty: Number(it.qty), price: Number(it.price), total: Number(it.total),
+    }));
+    if (invoiceItems.length === 0 && isServiceSale(s, serviceSet)) {
+      invoiceItems.push({
+        name: serviceNameFromNote(s.note) ?? (lang === "bn" ? "সার্ভিস" : "Service"),
+        qty: 1,
+        price: Number(s.total),
+        total: Number(s.total),
+      });
+    }
     setInvoice({
       mode: "sell",
       shop: {
@@ -212,9 +230,7 @@ function SalesLedgerPage() {
       party: { name: c?.name ?? null, phone: c?.phone ?? null, address: null },
       invoiceNo: s.invoice_no ?? s.id.slice(0, 12).toUpperCase(),
       date: s.created_at,
-      items: ((items as { name: string; qty: number; price: number; total: number }[]) ?? []).map((it) => ({
-        name: it.name, qty: Number(it.qty), price: Number(it.price), total: Number(it.total),
-      })),
+      items: invoiceItems,
       subtotal: Number(s.subtotal),
       discount: Number(s.discount),
       delivery: 0,
