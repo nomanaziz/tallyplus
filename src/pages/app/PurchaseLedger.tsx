@@ -1,7 +1,7 @@
 import { useNavigate } from "@/lib/router";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, FileText, ArrowLeft, MoreVertical, Printer, Eye, Trash2, Download, RefreshCw, Search, Calendar, Pencil } from "lucide-react";
+import { Plus, FileText, ArrowLeft, MoreVertical, Printer, Eye, Trash2, Download, RefreshCw, Search, Calendar, Pencil, Undo2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useShop } from "@/lib/shop";
 import { useI18n, fmtMoney, bnNum } from "@/lib/i18n";
@@ -308,6 +308,10 @@ function PurchaseLedgerPage() {
                             <DropdownMenuItem onClick={() => void openInvoice(p)}>
                               <Printer className="mr-2 h-4 w-4" />
                               {t("p5_Print")}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => nav({ to: "/app/returns/purchase/new" })}>
+                              <Undo2 className="mr-2 h-4 w-4" />
+                              {lang === "bn" ? "সাপ্লায়ারকে ফেরত" : "Return to supplier"}
                             </DropdownMenuItem>
                             {canDelete && (
                               <DropdownMenuItem className="text-rose-600" onClick={() => void softDelete(p)}>
