@@ -58,9 +58,9 @@ function PurchaseLedgerPage() {
   const [search, setSearch] = useState("");
   const [paymentFilter, setPaymentFilter] = useState<"all" | "cash" | "due">("all");
   const today = new Date();
-  const firstOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-  const [from, setFrom] = useState(firstOfMonth.toISOString().slice(0, 10));
-  const [to, setTo] = useState(today.toISOString().slice(0, 10));
+  const todayIso = today.toISOString().slice(0, 10);
+  const [from, setFrom] = useState(todayIso);
+  const [to, setTo] = useState(todayIso);
 
   // Item counts per purchase
   const listIdsKey = useMemo(() => list.map((p) => p.id).join(","), [list]);

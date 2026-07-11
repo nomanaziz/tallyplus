@@ -100,6 +100,8 @@ const PRESETS: Preset[] = [
   { key: "week", bn: "এই সপ্তাহ", en: "This week", fn: () => { const d = new Date(); const day = d.getDay(); const diff = (day + 6) % 7; d.setDate(d.getDate() - diff); return { start: iso(d), end: todayIso() }; } },
   { key: "lastMonth", bn: "গত মাস", en: "Last month", fn: () => { const d = new Date(); const s = new Date(d.getFullYear(), d.getMonth() - 1, 1); const e = new Date(d.getFullYear(), d.getMonth(), 0); return { start: iso(s), end: iso(e) }; } },
   { key: "month", bn: "এই মাস", en: "This month", fn: () => ({ start: monthStartIso(), end: todayIso() }) },
+  { key: "3m", bn: "গত ৩ মাস", en: "Last 3 months", fn: () => { const d = new Date(); const s = new Date(d.getFullYear(), d.getMonth() - 3, d.getDate()); return { start: iso(s), end: todayIso() }; } },
+  { key: "6m", bn: "গত ৬ মাস", en: "Last 6 months", fn: () => { const d = new Date(); const s = new Date(d.getFullYear(), d.getMonth() - 6, d.getDate()); return { start: iso(s), end: todayIso() }; } },
   { key: "year", bn: "এই বছর", en: "This year", fn: () => { const d = new Date(); return { start: iso(new Date(d.getFullYear(), 0, 1)), end: todayIso() }; } },
   { key: "all", bn: "অল টাইম", en: "All time", fn: () => ({ start: "2000-01-01", end: todayIso() }) },
 ];
