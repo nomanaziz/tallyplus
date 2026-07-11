@@ -103,9 +103,10 @@ export function buildInvoiceHtml(
     .printed { margin-top: 18px; font-size: 10px; color: #52525b; }
     @page { size: A4; margin: 10mm; }
     @media print {
-      html, body { width: auto; }
-      body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-      .page { width: 100%; }
+      html, body { width: 210mm; margin: 0; padding: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .page { width: 190mm !important; max-width: 190mm; margin: 0 auto; padding: 0; }
+      .invoice { font-size: 11px; }
+      table { font-size: 11px; }
       thead { display: table-header-group; }
       tfoot { display: table-footer-group; }
       tr, td, th { page-break-inside: avoid; break-inside: avoid; }
@@ -179,10 +180,9 @@ export function buildInvoiceHtml(
     <div class="printed">${lang === "bn" ? "প্রিন্ট করার সময়: " : "Printed at: "}${escapeHtml(dtStr)}</div>
   </main>
   ${options.autoPrint ? `<script>
-    window.addEventListener('load', () => {
-      setTimeout(() => {
-        window.print();
-      }, 180);
+    window.addEventListener('load', async () => {
+      try { if (document.fonts && document.fonts.ready) { await document.fonts.ready; } } catch (e) {}
+      setTimeout(() => { window.print(); }, 250);
     });
   </script>` : ""}
 </body>
