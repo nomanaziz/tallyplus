@@ -41,6 +41,9 @@ type Sale = {
   created_by: string | null;
 };
 
+const isServiceSale = (sale: Sale, serviceSaleIds: Set<string>) =>
+  serviceSaleIds.has(sale.id) || (sale.note ?? "").trim().toLowerCase().startsWith("service:");
+
 
 
 function SalesLedgerPage() {
@@ -156,8 +159,9 @@ function SalesLedgerPage() {
       if (t < fromTs || t > toTs) return false;
       if (paymentFilter === "cash" && Number(s.due) > 0) return false;
       if (paymentFilter === "due" && Number(s.due) === 0) return false;
-      if (typeFilter === "service" && !serviceSet.has(s.id)) return false;
-      if (typeFilter === "product" && serviceSet.has(s.id)) return false;
+      const serviceSale = isServiceSale(s, serviceSet);
+      if (typeFilter === "service" && !serviceSale) return false;
+      if (typeFilter === "product" && serviceSale) return false;
       if (!q) return true;
       const c = custMap[s.customer_id ?? ""];
       return (s.invoice_no ?? "").toLowerCase().includes(q)
@@ -257,7 +261,7 @@ function SalesLedgerPage() {
           idx: String(i + 1),
           name: c?.name ?? "—",
           contact: c?.phone ?? "—",
-          items: itemCounts[s.id] ?? 0,
+          items: itemCounts[s.id] ?? (isServiceSale(s, serviceSet) ? 1 : 0),
           amount: fmtMoney(Number(s.total), lang),
           date: fmtDate(s.created_at),
           status: due > 0 ? (t("p5_Due_2")) : (t("p5_Paid_4")),
@@ -359,6 +363,7 @@ function SalesLedgerPage() {
                   const c = custMap[s.customer_id ?? ""];
                   const isPaid = Number(s.due) === 0;
                   const sellerName = s.created_by ? (sellerMap[s.created_by] ?? "—") : "—";
+                  const serviceSale = isServiceSale(s, serviceSet);
                   return (
                     <TableRow
                       key={s.id}
@@ -375,8 +380,8 @@ function SalesLedgerPage() {
                       <TableCell className="font-mono text-xs">{s.invoice_no ?? s.id.slice(0, 12).toUpperCase()}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1.5">
-                          <span>{lang === "bn" ? bnNum(itemCounts[s.id] ?? 0) : (itemCounts[s.id] ?? 0)}</span>
-                          {serviceSet.has(s.id) && (
+                          <span>{lang === "bn" ? bnNum(itemCounts[s.id] ?? (serviceSale ? 1 : 0)) : (itemCounts[s.id] ?? (serviceSale ? 1 : 0))}</span>
+                          {serviceSale && (
                             <span className="inline-flex items-center rounded-md bg-sky-100 px-1.5 py-0.5 text-[10px] font-semibold text-sky-700">
                               {lang === "bn" ? "সার্ভিস" : "Service"}
                             </span>
