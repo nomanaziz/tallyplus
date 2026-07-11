@@ -84,7 +84,13 @@ function prettyLabel(value: DateRange, mode: Mode, lang: "bn" | "en"): string {
     const mm = String(d.getMonth() + 1).padStart(2, "0");
     return `${bn ? bnDigits(dd) : dd}/${bn ? bnDigits(mm) : mm}/${N(d.getFullYear())}`;
   };
-  if (mode === "day") return dmy(s);
+  if (mode === "day") {
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const y = new Date(today); y.setDate(y.getDate() - 1);
+    if (iso(s) === iso(today)) return bn ? "আজ" : "Today";
+    if (iso(s) === iso(y)) return bn ? "গতকাল" : "Yesterday";
+    return dmy(s);
+  }
   if (mode === "month") return `${M(s.getMonth())} ${N(s.getFullYear())}`;
   if (mode === "year") return N(s.getFullYear());
   if (mode === "week") return `${dmy(s)} – ${dmy(e)}`;
