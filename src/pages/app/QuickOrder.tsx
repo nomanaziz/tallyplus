@@ -14,6 +14,7 @@ import { RequirePerm } from "@/components/app/RequirePerm";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { InvoiceDialog, type InvoiceData } from "@/components/app/InvoiceDialog";
+import { QuickServiceSheet } from "@/components/app/QuickServiceSheet";
 
 
 
@@ -95,6 +96,7 @@ function QuickOrderInner() {
   const [printOpen, setPrintOpen] = useState(false);
   const [converting, setConverting] = useState(false);
   const [invoice, setInvoice] = useState<InvoiceData | null>(null);
+  const [serviceOpen, setServiceOpen] = useState(false);
 
   // Active tab (mobile/tablet)
   const [activeTab, setActiveTab] = useState<"products" | "cart">("products");
@@ -456,12 +458,12 @@ function QuickOrderInner() {
   return (
     <div className="container max-w-[1600px] space-y-4 px-3 py-4 pb-28 sm:px-4">
       <div className="text-xs text-muted-foreground">
-        Home / {t("p7_Quick_Sell_2")}
+        Home / {lang === "bn" ? "কুইক বিক্রি ও সার্ভিস" : "Quick Sell & Service"}
       </div>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="flex items-center gap-2 text-xl font-extrabold">
           <ReceiptText className="h-5 w-5 text-primary" />
-          {t("p7_Quick_Sell_2")}
+          {lang === "bn" ? "কুইক বিক্রি ও সার্ভিস" : "Quick Sell & Service"}
         </h1>
         <div className="flex flex-wrap items-center gap-2">
           <label className="inline-flex items-center gap-2 rounded-full border bg-card px-3 py-1.5 text-xs shadow-sm">
@@ -472,6 +474,25 @@ function QuickOrderInner() {
           </label>
         </div>
       </div>
+
+      {/* Sell / Service mode toggle */}
+      <div className="flex gap-1 rounded-xl border bg-card p-1 shadow-sm">
+        <button
+          type="button"
+          onClick={() => setServiceOpen(false)}
+          className={`flex-1 rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${!serviceOpen ? "bg-primary text-primary-foreground shadow" : "text-muted-foreground hover:bg-accent"}`}
+        >
+          {lang === "bn" ? "বিক্রি" : "Sell"}
+        </button>
+        <button
+          type="button"
+          onClick={() => setServiceOpen(true)}
+          className={`flex-1 rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${serviceOpen ? "bg-primary text-primary-foreground shadow" : "text-muted-foreground hover:bg-accent"}`}
+        >
+          {lang === "bn" ? "সার্ভিস" : "Service"}
+        </button>
+      </div>
+      <QuickServiceSheet open={serviceOpen} onOpenChange={setServiceOpen} />
 
       {/* Mobile/Tablet tabs */}
       <div className="flex gap-1 rounded-xl border bg-card p-1 shadow-sm lg:hidden">
