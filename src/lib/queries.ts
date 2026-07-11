@@ -236,7 +236,7 @@ export const salesListQuery = (shopId: string | null | undefined) =>
         .eq("shop_id", shopId)
         .is("deleted_at", null)
         .order("created_at", { ascending: false })
-        .limit(500);
+        .limit(1000);
       if (error) throw error;
       return data ?? [];
     }),
