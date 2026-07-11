@@ -52,9 +52,9 @@ function ExpenseLedgerPage() {
   const list = raw as unknown as Expense[];
   const [search, setSearch] = useState("");
   const today0 = new Date();
-  const firstOfMonth0 = new Date(today0.getFullYear(), today0.getMonth(), 1);
-  const [from, setFrom] = useState(firstOfMonth0.toISOString().slice(0, 10));
-  const [to, setTo] = useState(today0.toISOString().slice(0, 10));
+  const todayIso0 = today0.toISOString().slice(0, 10);
+  const [from, setFrom] = useState(todayIso0);
+  const [to, setTo] = useState(todayIso0);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Expense | null>(null);
   const [presetCat, setPresetCat] = useState<string | null>(null);
