@@ -12,11 +12,13 @@ import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { InvoiceDialog, type InvoiceData } from "@/components/app/InvoiceDialog";
+import { useQueryClient } from "@tanstack/react-query";
 
 export function QuickServiceSheet({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
   const { lang, t } = useI18n();
   const { current } = useShop();
   const { user } = useAuth();
+  const qc = useQueryClient();
   const today = new Date().toISOString().slice(0, 10);
   const [date, setDate] = useState(today);
   const [serviceName, setServiceName] = useState("");
@@ -103,6 +105,12 @@ export function QuickServiceSheet({ open, onOpenChange }: { open: boolean; onOpe
       });
 
       toast.success(t("p2c_saleRecorded"));
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["sales"] }),
+        qc.invalidateQueries({ queryKey: ["contacts"] }),
+        qc.invalidateQueries({ queryKey: ["cash"] }),
+        qc.invalidateQueries({ queryKey: ["dashboard"] }),
+      ]);
       // Build and show invoice
       setInvoice({
         mode: "sell",
