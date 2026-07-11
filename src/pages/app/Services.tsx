@@ -263,7 +263,6 @@ function ServicesPage() {
         onClose={() => setQuickOpen(false)}
         onAdded={() => { refresh(); void refreshUsage(); }}
       />
-      <QuickServiceSheet open={quickSaleOpen} onOpenChange={setQuickSaleOpen} />
     </div>
   );
 }
