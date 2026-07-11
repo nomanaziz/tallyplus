@@ -1,6 +1,6 @@
 import { getNumLocale } from "@/lib/i18n";
-import { useMemo, useState } from "react";
-import { Loader2, Receipt, BadgePercent } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Loader2, Receipt, BadgePercent, CalendarDays } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -64,6 +64,14 @@ export function ConvertWishlistToSaleDialog({
   const [paid, setPaid] = useState<string>("");
   const [discount, setDiscount] = useState<string>("");
   const [submitting, setSubmitting] = useState(false);
+  const todayStr = () => {
+    const d = new Date();
+    const p = (n: number) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+  };
+  const [saleDate, setSaleDate] = useState<string>(todayStr());
+  // per-item cost overrides, keyed by wishlist item id
+  const [costMap, setCostMap] = useState<Record<string, string>>({});
 
   // Only sell items that are fulfilled (পেয়েছে) AND have a price
   const sellable = useMemo(() => {
@@ -72,6 +80,40 @@ export function ConvertWishlistToSaleDialog({
       return fs === "fulfilled" && it.price != null && Number(it.price) > 0;
     });
   }, [items]);
+
+  // Preload product costs into the cost map when the dialog opens/items change
+  const [productCosts, setProductCosts] = useState<Map<string, number>>(new Map());
+  useEffect(() => {
+    if (!open || !wishlist) return;
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from("products")
+        .select("name,cost_price")
+        .eq("shop_id", wishlist.shop_id)
+        .is("deleted_at", null);
+      if (cancelled) return;
+      const m = new Map<string, number>();
+      ((data ?? []) as { name: string; cost_price: number | null }[]).forEach((p) => {
+        m.set(p.name.trim().toLowerCase(), Number(p.cost_price ?? 0));
+      });
+      setProductCosts(m);
+      setCostMap((prev) => {
+        const next = { ...prev };
+        for (const it of sellable) {
+          if (next[it.id] == null || next[it.id] === "") {
+            const c = m.get(it.name.trim().toLowerCase()) ?? 0;
+            if (c > 0) next[it.id] = String(c);
+          }
+        }
+        return next;
+      });
+    })();
+    return () => { cancelled = true; };
+  }, [open, wishlist, sellable]);
+
+  const getCost = (it: ConvertItem) => Number(costMap[it.id] ?? "") || 0;
+  const missingCost = sellable.filter((it) => getCost(it) <= 0);
 
   const total = useMemo(() => {
     return sellable.reduce((s, it) => {
@@ -92,6 +134,14 @@ export function ConvertWishlistToSaleDialog({
     if (!wishlist) return;
     if (sellable.length === 0) {
       toast.error("কোনো বিক্রয়যোগ্য আইটেম নেই — '✓ পেয়েছে' মার্ক করুন এবং দাম দিন");
+      return;
+    }
+    if (missingCost.length > 0) {
+      toast.error(`প্রতিটি আইটেমের cost দিন — বাকি: ${missingCost.map((x) => x.name).join(", ")}`);
+      return;
+    }
+    if (!saleDate) {
+      toast.error("বিক্রয়ের তারিখ দিন");
       return;
     }
     setSubmitting(true);
@@ -137,6 +187,21 @@ export function ConvertWishlistToSaleDialog({
         ((products ?? []) as ProductLite[]).map((p) => [p.name.trim().toLowerCase(), p]),
       );
 
+      // Build a stable ISO timestamp for the chosen date, preserving current time-of-day
+      const now = new Date();
+      const [yy, mm, dd] = saleDate.split("-").map((x) => Number(x));
+      const salesTs = new Date(
+        yy, (mm || 1) - 1, dd || 1,
+        now.getHours(), now.getMinutes(), now.getSeconds(), now.getMilliseconds(),
+      ).toISOString();
+
+      const costTotal = sellable.reduce((s, it) => {
+        const q = Number(it.qty) || 0;
+        const c = getCost(it);
+        return s + (it.lump || !q ? c : q * c);
+      }, 0);
+      const profitAmt = finalTotal - costTotal;
+
       // 2. create sale
       const { data: sale, error: se } = await supabase
         .from("sales")
@@ -148,7 +213,10 @@ export function ConvertWishlistToSaleDialog({
           total: finalTotal,
           paid: paidAmt,
           due,
+          cost_total: costTotal,
+          profit: profitAmt,
           payment_method: paymentMethod,
+          created_at: salesTs,
           note: `গ্রাহক ফর্দ থেকে রূপান্তরিত (${wishlist.customer_name})`,
         } as never)
         .select("id")
@@ -169,7 +237,7 @@ export function ConvertWishlistToSaleDialog({
           name: it.name + (it.unit ? ` (${it.qty ?? ""} ${it.unit})` : ""),
           qty: q || 1,
           price: q > 0 && !it.lump ? pr : pr,
-          cost: Number(product?.cost_price ?? 0),
+          cost: getCost(it),
           total: lineTotal,
           item_type: "product",
         };
