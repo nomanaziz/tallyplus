@@ -24,8 +24,7 @@ import { Badge } from "@/components/ui/badge";
 import { useUsageLimit, parseLimitError } from "@/lib/usage-limits";
 import { UsageLimitBanner } from "@/components/app/UsageLimitBanner";
 import { QuickAddServiceDialog } from "@/components/app/QuickAddServiceDialog";
-import { QuickServiceSheet } from "@/components/app/QuickServiceSheet";
-import { Zap, Receipt } from "lucide-react";
+import { Zap } from "lucide-react";
 import { AdvancePaymentInfoCard } from "@/components/app/AdvancePaymentInfoCard";
 import { CompleteServiceDialog, type CompleteBooking } from "@/components/app/CompleteServiceDialog";
 import { ServiceHistoryTab } from "@/components/app/ServiceHistoryTab";
@@ -42,7 +41,6 @@ function ServicesPage() {
   const [openForm, setOpenForm] = useState(false);
   const [editing, setEditing] = useState<Service | null>(null);
   const [quickOpen, setQuickOpen] = useState(false);
-  const [quickSaleOpen, setQuickSaleOpen] = useState(false);
   const { data: usage, refresh: refreshUsage } = useUsageLimit(current?.id ?? null, "services");
   const limitReached = !!usage && usage.limit !== -1 && usage.used >= usage.limit;
   useEffect(() => { void refreshUsage(); }, [items.length, refreshUsage]);
@@ -124,13 +122,6 @@ function ServicesPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button
-            variant="default"
-            onClick={() => setQuickSaleOpen(true)}
-            className="gap-2"
-          >
-            <Receipt className="h-4 w-4" /> {lang === "bn" ? "কুইক সার্ভিস" : "Quick Service"}
-          </Button>
           <Button
             variant="outline"
             onClick={() => {
@@ -272,7 +263,6 @@ function ServicesPage() {
         onClose={() => setQuickOpen(false)}
         onAdded={() => { refresh(); void refreshUsage(); }}
       />
-      <QuickServiceSheet open={quickSaleOpen} onOpenChange={setQuickSaleOpen} />
     </div>
   );
 }
