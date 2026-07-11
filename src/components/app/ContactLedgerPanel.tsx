@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { DateRangePicker } from "@/components/app/DateRangePicker";
+import { DateRangePicker, todayIso } from "@/components/app/DateRangePicker";
 import { Calendar, RefreshCw, Send, Receipt } from "lucide-react";
 import { useI18n, fmtMoney, bnNum } from "@/lib/i18n";
 import { useShop } from "@/lib/shop";
@@ -27,10 +27,8 @@ export function ContactLedgerPanel({ contact, onChanged }: { contact: LedgerCont
   const { lang, t } = useI18n();
   const { current } = useShop();
 
-  const today = new Date().toISOString().slice(0, 10);
-  const yearAgo = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-  const [from, setFrom] = useState(yearAgo);
-  const [to, setTo] = useState(today);
+  const [from, setFrom] = useState(() => todayIso());
+  const [to, setTo] = useState(() => todayIso());
   const [rows, setRows] = useState<LedgerRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [tick, setTick] = useState(0);
