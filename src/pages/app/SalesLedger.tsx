@@ -9,7 +9,7 @@ import { useI18n, fmtMoney, bnNum } from "@/lib/i18n";
 import { salesListQuery, contactsQuery } from "@/lib/queries";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { DateRangePicker } from "@/components/app/DateRangePicker";
+import { DateRangePicker, todayIso } from "@/components/app/DateRangePicker";
 import { EmptyState } from "@/components/app/EmptyState";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -99,10 +99,8 @@ function SalesLedgerPage() {
 
   const [search, setSearch] = useState("");
   const [paymentFilter, setPaymentFilter] = useState<"all" | "cash" | "due">("all");
-  const today = new Date();
-  const todayIso = today.toISOString().slice(0, 10);
-  const [from, setFrom] = useState(todayIso);
-  const [to, setTo] = useState(todayIso);
+  const [from, setFrom] = useState(() => todayIso());
+  const [to, setTo] = useState(() => todayIso());
 
   const salesIdsKey = useMemo(() => sales.map((s) => s.id).join(","), [sales]);
   const [itemCounts, setItemCounts] = useState<Record<string, number>>({});

@@ -129,17 +129,21 @@ export function DateRangePicker({
     const r = p.fn();
     return r.start === value.start && r.end === value.end;
   })?.key ?? null;
-  const [mode, setMode] = useState<Mode>(matchedKey ? modeOfKey(matchedKey) : "range");
-  // If parent replaces the value with something matching a preset, follow it.
-  useEffect(() => { if (matchedKey) setMode(modeOfKey(matchedKey)); }, [matchedKey]);
-  const activeKey = matchedKey ?? "custom";
+  const [manualCustom, setManualCustom] = useState(false);
+  const [mode, setMode] = useState<Mode>(matchedKey ? modeOfKey(matchedKey) : value.start === value.end ? "day" : "range");
+  // If parent replaces the value with a preset, follow it unless the user just applied Custom.
+  useEffect(() => {
+    if (matchedKey && !manualCustom) setMode(modeOfKey(matchedKey));
+    if (!matchedKey && value.start === value.end && !manualCustom) setMode("day");
+  }, [matchedKey, manualCustom, value.start, value.end]);
+  const activeKey = manualCustom ? "custom" : matchedKey ?? "custom";
 
   // Local draft for custom date fields — applied on "প্রয়োগ"
   const [draft, setDraft] = useState<DateRange>(value);
   const [showCustom, setShowCustom] = useState(false);
 
   const t = (bn: string, en: string) => (activeLang === "bn" ? bn : en);
-  const label = prettyLabel(value, mode, activeLang);
+  const label = prettyLabel(value, manualCustom ? "range" : mode, activeLang);
 
   return (
     <div className="inline-flex items-center gap-0.5 rounded-md border bg-card">
@@ -173,7 +177,7 @@ export function DateRangePicker({
             {PRESETS.map((p) => (
               <button
                 key={p.key}
-                onClick={() => { setMode(modeOfKey(p.key)); onChange(p.fn()); setShowCustom(false); setOpen(false); }}
+                onClick={() => { setManualCustom(false); setMode(modeOfKey(p.key)); onChange(p.fn()); setShowCustom(false); setOpen(false); }}
                 className={
                   "h-9 rounded-md px-3 text-left text-sm font-medium transition " +
                   (activeKey === p.key
@@ -241,7 +245,7 @@ export function DateRangePicker({
               <Button size="sm" variant="outline" className="h-8" onClick={() => setOpen(false)}>
                 {t("বাতিল", "Cancel")}
               </Button>
-              <Button size="sm" className="h-8" onClick={() => { setMode("range"); onChange(draft); setOpen(false); }}>
+              <Button size="sm" className="h-8" onClick={() => { setManualCustom(true); setMode("range"); onChange(draft); setOpen(false); }}>
                 {t("প্রয়োগ", "Apply")}
               </Button>
             </div>

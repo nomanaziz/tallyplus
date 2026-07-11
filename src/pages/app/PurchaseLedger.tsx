@@ -8,7 +8,7 @@ import { useI18n, fmtMoney, bnNum } from "@/lib/i18n";
 import { purchasesListQuery, contactsQuery } from "@/lib/queries";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { DateRangePicker } from "@/components/app/DateRangePicker";
+import { DateRangePicker, todayIso } from "@/components/app/DateRangePicker";
 import { EmptyState } from "@/components/app/EmptyState";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DataPagination } from "@/components/app/DataPagination";
@@ -57,10 +57,8 @@ function PurchaseLedgerPage() {
 
   const [search, setSearch] = useState("");
   const [paymentFilter, setPaymentFilter] = useState<"all" | "cash" | "due">("all");
-  const today = new Date();
-  const todayIso = today.toISOString().slice(0, 10);
-  const [from, setFrom] = useState(todayIso);
-  const [to, setTo] = useState(todayIso);
+  const [from, setFrom] = useState(() => todayIso());
+  const [to, setTo] = useState(() => todayIso());
 
   // Item counts per purchase
   const listIdsKey = useMemo(() => list.map((p) => p.id).join(","), [list]);
