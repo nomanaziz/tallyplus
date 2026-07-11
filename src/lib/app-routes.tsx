@@ -107,6 +107,7 @@ const L83 = lazy(() => import("@/pages/About"));
 const L84 = lazy(() => import("@/pages/app/Returns"));
 const L85 = lazy(() => import("@/pages/app/returns/New"));
 const L86 = lazy(() => import("@/pages/app/returns/Id"));
+const LPurRet = lazy(() => import("@/pages/app/returns/NewPurchase"));
 const L87 = lazy(() => import("@/pages/customer/Training"));
 const LCart = lazy(() => import("@/pages/shop/Cart"));
 const LCheckout = lazy(() => import("@/pages/shop/Checkout"));
@@ -221,6 +222,7 @@ export const appRoutes: RouteObject[] = [
 { path: "cash-book", element: <Suspense fallback={<RouteFallback/>}><LCashBook/></Suspense> },
 { path: "returns", element: <Suspense fallback={<RouteFallback/>}><L84/></Suspense> },
 { path: "returns/new", element: <Suspense fallback={<RouteFallback/>}><L85/></Suspense> },
+{ path: "returns/purchase/new", element: <Suspense fallback={<RouteFallback/>}><LPurRet/></Suspense> },
 { path: "returns/:id", element: <Suspense fallback={<RouteFallback/>}><L86/></Suspense> },
 { path: "sales-report", element: <Suspense fallback={<RouteFallback/>}><L73/></Suspense> },
 { path: "purchase-report", element: <Suspense fallback={<RouteFallback/>}><L74/></Suspense> },
