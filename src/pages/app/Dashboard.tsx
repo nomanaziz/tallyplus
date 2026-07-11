@@ -197,17 +197,17 @@ function Section({
   return (
     <div className="rounded-xl border bg-card p-3 shadow-sm md:p-4">
       <div className="px-1 pb-2 text-sm font-bold md:text-base">{title}</div>
-      <div className="grid grid-cols-4 gap-2 sm:grid-cols-5 md:grid-cols-8 md:gap-3 lg:grid-cols-10 xl:grid-cols-12">
+      <div className="grid grid-cols-4 gap-2 sm:grid-cols-6 md:grid-cols-8 md:gap-3 lg:grid-cols-10 xl:grid-cols-12">
         {items.map((it) => (
           <Link
             key={it.to}
             to={it.to as never}
-            className="group flex flex-col items-center gap-1 rounded-lg p-2 text-center hover:bg-accent"
+            className="group flex h-[92px] flex-col items-center justify-start gap-1.5 rounded-lg p-2 text-center hover:bg-accent md:h-[104px]"
           >
             <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm md:h-12 md:w-12">
               <it.icon className="h-6 w-6 icon-inherit md:h-7 md:w-7" />
             </span>
-            <span className="text-[11px] font-semibold leading-tight md:text-[13px]">{t(it.tKey)}</span>
+            <span className="line-clamp-2 text-[11px] font-semibold leading-tight md:text-[12px]">{t(it.tKey)}</span>
           </Link>
         ))}
       </div>
