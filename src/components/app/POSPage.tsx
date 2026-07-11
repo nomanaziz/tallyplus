@@ -1557,7 +1557,9 @@ function PaymentDialog(props: {
 
         // contact: try cache first, else generate id + queue insert
         let contactIdO: string | null = null;
-        const walkingNameO = lang === "bn" ? "ওয়াকিং কাস্টমার" : "Walking customer";
+        const walkingNameO = isSell
+          ? (lang === "bn" ? "ওয়াকিং কাস্টমার" : "Walking customer")
+          : (lang === "bn" ? "ওয়াকিং সাপ্লায়ার" : "Walking supplier");
         if (skipParty) {
           const cachedContactsW = await readCache<Array<{ id: string; name: string; phone: string | null }>>(
             `${current.id}:contacts:${isSell ? "customer" : "supplier"}`,
