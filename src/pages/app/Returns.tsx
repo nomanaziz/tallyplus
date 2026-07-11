@@ -197,6 +197,10 @@ function ReturnsListPage() {
               <Plus className="h-4 w-4" />
               {t("p7_New_return")}
             </Button>
+            <Button variant="outline" className="h-10 gap-2" onClick={() => nav({ to: "/app/returns/purchase/new" })}>
+              <Undo2 className="h-4 w-4" />
+              {lang === "bn" ? "সাপ্লায়ার রিটার্ন" : "Supplier return"}
+            </Button>
           </div>
         }
       />
