@@ -33,9 +33,9 @@ function DueHistoryPage() {
   const nav = useNavigate();
 
   const today = new Date();
-  const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
-  const [from, setFrom] = useState(monthAgo.toISOString().slice(0, 10));
-  const [to, setTo] = useState(today.toISOString().slice(0, 10));
+  const todayIso = today.toISOString().slice(0, 10);
+  const [from, setFrom] = useState(todayIso);
+  const [to, setTo] = useState(todayIso);
   const [perPage, setPerPage] = useState(10);
   const [refreshTick, setRefreshTick] = useState(0);
 
