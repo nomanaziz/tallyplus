@@ -3,7 +3,7 @@ import { ArrowLeft, Calendar, Download, RefreshCw } from "lucide-react";
 import { useNavigate } from "@/lib/router";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { DateRangePicker } from "@/components/app/DateRangePicker";
+import { DateRangePicker, todayIso } from "@/components/app/DateRangePicker";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -32,10 +32,8 @@ function DueHistoryPage() {
   const { current } = useShop();
   const nav = useNavigate();
 
-  const today = new Date();
-  const todayIso = today.toISOString().slice(0, 10);
-  const [from, setFrom] = useState(todayIso);
-  const [to, setTo] = useState(todayIso);
+  const [from, setFrom] = useState(() => todayIso());
+  const [to, setTo] = useState(() => todayIso());
   const [perPage, setPerPage] = useState(10);
   const [refreshTick, setRefreshTick] = useState(0);
 
