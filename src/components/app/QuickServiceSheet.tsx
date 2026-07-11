@@ -38,6 +38,13 @@ export function QuickServiceSheet({ open, onOpenChange }: { open: boolean; onOpe
     setCustName(""); setCustPhone(""); setNote(""); setWalkIn(true); setPaymentMethod("cash");
   };
 
+  const buildCreatedAt = (value: string) => {
+    const now = new Date();
+    const [y, m, d] = value.split("-").map(Number);
+    if (!y || !m || !d) return now.toISOString();
+    return new Date(y, m - 1, d, now.getHours(), now.getMinutes(), now.getSeconds()).toISOString();
+  };
+
   const save = async () => {
     if (!current?.id) { toast.error(t("p2c_selectShop")); return; }
     if (!serviceName.trim()) { toast.error(lang === "bn" ? "সার্ভিসের নাম দিন" : "Enter service name"); return; }
@@ -66,12 +73,12 @@ export function QuickServiceSheet({ open, onOpenChange }: { open: boolean; onOpe
         status: "completed",
         note: [`Service: ${serviceName.trim()}`, note.trim()].filter(Boolean).join(" | "),
         created_by: user?.id ?? null,
-        created_at: new Date(date).toISOString(),
-      }).select("id").single();
+        created_at: buildCreatedAt(date),
+      }).select("id,created_at").single();
       if (error) throw error;
       const saleId = (sale as { id: string }).id;
 
-      await supabase.from("sale_items").insert({
+      const { error: itemError } = await supabase.from("sale_items").insert({
         sale_id: saleId,
         product_id: null,
         service_id: null,
@@ -81,6 +88,7 @@ export function QuickServiceSheet({ open, onOpenChange }: { open: boolean; onOpe
         price: amt,
         total: amt,
       });
+      if (itemError) throw itemError;
 
       const addCost = Number(additionalCost) || 0;
       if (addCost > 0) {
@@ -126,7 +134,7 @@ export function QuickServiceSheet({ open, onOpenChange }: { open: boolean; onOpe
           address: null,
         },
         invoiceNo: saleId.slice(0, 12).toUpperCase(),
-        date: new Date(date).toISOString(),
+        date: (sale as { created_at?: string | null }).created_at ?? buildCreatedAt(date),
         items: [{ name: serviceName.trim(), qty: 1, price: amt, total: amt }],
         subtotal: amt,
         discount: 0,
