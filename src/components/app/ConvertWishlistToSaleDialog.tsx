@@ -345,8 +345,10 @@ export function ConvertWishlistToSaleDialog({
                 const q = Number(it.qty) || 0;
                 const pr = Number(it.price) || 0;
                 const line = it.lump || !q ? pr : q * pr;
+                const costStr = costMap[it.id] ?? "";
+                const costVal = Number(costStr) || 0;
                 return (
-                  <li key={it.id} className="flex items-center justify-between px-3 py-1.5">
+                  <li key={it.id} className="grid grid-cols-[1fr_auto] items-center gap-2 px-3 py-1.5">
                     <span className="truncate">
                       {it.name}
                       {q > 0 && (
@@ -357,6 +359,18 @@ export function ConvertWishlistToSaleDialog({
                       )}
                     </span>
                     <span className="ml-2 flex-none font-mono text-xs">৳{line.toLocaleString(getNumLocale())}</span>
+                    <div className="col-span-2 flex items-center gap-2 pl-4">
+                      <Label className="text-[10px] text-muted-foreground">Cost/একক</Label>
+                      <Input
+                        value={costStr}
+                        onChange={(e) =>
+                          setCostMap((m) => ({ ...m, [it.id]: e.target.value.replace(/[^0-9.]/g, "") }))
+                        }
+                        placeholder="0"
+                        inputMode="decimal"
+                        className={`h-7 w-24 text-right tabular-nums ${costVal <= 0 ? "border-destructive" : ""}`}
+                      />
+                    </div>
                   </li>
                 );
               })}
@@ -367,6 +381,19 @@ export function ConvertWishlistToSaleDialog({
                 ৳ {total.toLocaleString(getNumLocale())}
               </span>
             </div>
+          </div>
+
+          <div>
+            <Label className="text-xs flex items-center gap-1">
+              <CalendarDays className="h-3.5 w-3.5 text-primary" />
+              বিক্রয়ের তারিখ
+            </Label>
+            <Input
+              type="date"
+              value={saleDate}
+              onChange={(e) => setSaleDate(e.target.value)}
+              className="h-9"
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
