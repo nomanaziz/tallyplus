@@ -1,4 +1,3 @@
-import { useNavigate } from "@/lib/router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Loader2, Plus, Printer, ReceiptText, Search, ShoppingCart, Trash2, X, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { RequirePerm } from "@/components/app/RequirePerm";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
+import { InvoiceDialog, type InvoiceData } from "@/components/app/InvoiceDialog";
 
 
 
@@ -73,7 +73,6 @@ function QuickOrderInner() {
   const { current } = useShop();
   const { lang, t } = useI18n();
   const { user } = useAuth();
-  const navigate = useNavigate();
   const qc = useQueryClient();
 
   const [allowExternal, setAllowExternal] = useState(true);
@@ -90,6 +89,7 @@ function QuickOrderInner() {
   const [note, setNote] = useState("");
   const [printOpen, setPrintOpen] = useState(false);
   const [converting, setConverting] = useState(false);
+  const [invoice, setInvoice] = useState<InvoiceData | null>(null);
 
   // Active tab (mobile/tablet)
   const [activeTab, setActiveTab] = useState<"products" | "cart">("products");
@@ -223,6 +223,27 @@ function QuickOrderInner() {
       toast.error(t("p7_Each_item_needs_a_name_and_qty"));
       return;
     }
+    const missingCostRows = rows.filter((r) => Number(r.cost) <= 0);
+    if (missingCostRows.length > 0) {
+      toast.error(lang === "bn"
+        ? `প্রতিটি পণ্যের ক্রয়মূল্য ০-এর বেশি দিন — ${missingCostRows.map((r) => r.name || "নামহীন").join(", ")}`
+        : `Enter a cost greater than 0 for every item — ${missingCostRows.map((r) => r.name || "Unnamed").join(", ")}`);
+      return;
+    }
+    const missingSellRows = rows.filter((r) => Number(r.price) <= 0);
+    if (missingSellRows.length > 0) {
+      toast.error(lang === "bn"
+        ? `প্রতিটি পণ্যের বিক্রয়মূল্য ০-এর বেশি দিন — ${missingSellRows.map((r) => r.name || "নামহীন").join(", ")}`
+        : `Enter a sell price greater than 0 for every item — ${missingSellRows.map((r) => r.name || "Unnamed").join(", ")}`);
+      return;
+    }
+    const lossRows = rows.filter((r) => Number(r.price) < Number(r.cost));
+    if (lossRows.length > 0) {
+      toast.error(lang === "bn"
+        ? `বিক্রয়মূল্য ক্রয়মূল্যের চেয়ে কম হতে পারবে না — ${lossRows.map((r) => r.name || "নামহীন").join(", ")}`
+        : `Sell price cannot be less than cost — ${lossRows.map((r) => r.name || "Unnamed").join(", ")}`);
+      return;
+    }
     setConverting(true);
     try {
       // Stock guard: prevent overselling for store-linked rows
@@ -286,6 +307,7 @@ function QuickOrderInner() {
       const subtotal = total;
       const costTotal = totalCost;
       const profitAmt = subtotal - costTotal;
+      const createdAt = new Date().toISOString();
       const { data: sale, error: eS } = await supabase
         .from("sales")
         .insert({
@@ -303,11 +325,13 @@ function QuickOrderInner() {
           status: "completed",
           note: note.trim() || (t("p7_Quick_Sell")),
           created_by: user.id,
+          created_at: createdAt,
         })
-        .select("id")
+        .select("id,invoice_no,created_at")
         .single();
       if (eS) throw eS;
-      const saleId = (sale as { id: string }).id;
+      const saleRow = sale as { id: string; invoice_no: string | null; created_at: string | null };
+      const saleId = saleRow.id;
 
       const items = rows.map((r) => ({
         sale_id: saleId,
@@ -365,7 +389,38 @@ function QuickOrderInner() {
         qc.invalidateQueries({ queryKey: ["dashboard"] }),
       ]);
       toast.success(t("p7_Sale_created"));
-      navigate({ to: "/app/sales-ledger" });
+      setInvoice({
+        mode: "sell",
+        shop: {
+          name: current.name,
+          address: current.address,
+          phone: current.phone,
+          logo_url: current.logo_url,
+        },
+        party: {
+          name: custName.trim() || (lang === "bn" ? "ওয়াকিং কাস্টমার" : "Walking customer"),
+          phone: custPhone.trim() || null,
+          address: custAddress.trim() || null,
+        },
+        invoiceNo: saleRow.invoice_no || saleId.slice(0, 8),
+        date: saleRow.created_at || createdAt,
+        items: rows.map((r) => ({
+          name: r.name,
+          qty: r.qty,
+          unit: r.unit,
+          price: r.price,
+          total: r.qty * r.price,
+        })),
+        subtotal,
+        discount: 0,
+        delivery: 0,
+        grandTotal: subtotal,
+        paid: subtotal,
+        previousDue: 0,
+        currentDue: 0,
+      });
+      setRows([]);
+      setActiveTab("products");
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
@@ -745,6 +800,7 @@ function QuickOrderInner() {
         custPhone={custPhone}
         lang={lang}
       />
+      <InvoiceDialog open={!!invoice} onClose={() => setInvoice(null)} data={invoice} />
     </div>
   );
 }
