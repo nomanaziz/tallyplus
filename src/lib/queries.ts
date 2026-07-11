@@ -232,7 +232,7 @@ export const salesListQuery = (shopId: string | null | undefined) =>
       if (!shopId) return [];
       const { data, error } = await supabase
         .from("sales")
-        .select("id,invoice_no,customer_id,subtotal,discount,total,paid,due,payment_method,note,created_at")
+        .select("id,invoice_no,customer_id,subtotal,discount,total,paid,due,payment_method,note,created_at,created_by")
         .eq("shop_id", shopId)
         .is("deleted_at", null)
         .order("created_at", { ascending: false })
@@ -252,7 +252,7 @@ export const purchasesListQuery = (shopId: string | null | undefined) =>
       if (!shopId) return [];
       const { data, error } = await supabase
         .from("purchases")
-        .select("id,invoice_no,supplier_id,subtotal,discount,total,paid,due,payment_method,note,created_at")
+        .select("id,invoice_no,supplier_id,subtotal,discount,total,paid,due,payment_method,note,created_at,created_by")
         .eq("shop_id", shopId)
         .is("deleted_at", null)
         .order("created_at", { ascending: false })

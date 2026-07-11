@@ -38,6 +38,7 @@ type Sale = {
   payment_method: string;
   note: string | null;
   created_at: string;
+  created_by: string | null;
 };
 
 
@@ -60,6 +61,41 @@ function SalesLedgerPage() {
     ),
     [customers]
   );
+
+  // Seller (staff who created the sale) name lookup
+  const sellerIdsKey = useMemo(
+    () => Array.from(new Set(sales.map((s) => s.created_by).filter(Boolean) as string[])).sort().join(","),
+    [sales],
+  );
+  const [sellerMap, setSellerMap] = useState<Record<string, string>>({});
+  useEffect(() => {
+    if (!current?.id || !sellerIdsKey) { setSellerMap({}); return; }
+    let cancel = false;
+    (async () => {
+      const ids = sellerIdsKey.split(",");
+      const names: Record<string, string> = {};
+      const { data: members } = await supabase
+        .from("shop_members")
+        .select("user_id,full_name")
+        .eq("shop_id", current.id)
+        .in("user_id", ids);
+      for (const m of (members ?? []) as { user_id: string; full_name: string | null }[]) {
+        if (m.full_name) names[m.user_id] = m.full_name;
+      }
+      const missing = ids.filter((i) => !names[i]);
+      if (missing.length) {
+        const { data: profs } = await supabase
+          .from("profiles")
+          .select("id,full_name")
+          .in("id", missing);
+        for (const p of (profs ?? []) as { id: string; full_name: string | null }[]) {
+          if (p.full_name) names[p.id] = p.full_name;
+        }
+      }
+      if (!cancel) setSellerMap(names);
+    })();
+    return () => { cancel = true; };
+  }, [current?.id, sellerIdsKey]);
 
   const [search, setSearch] = useState("");
   const [paymentFilter, setPaymentFilter] = useState<"all" | "cash" | "due">("all");
@@ -295,6 +331,7 @@ function SalesLedgerPage() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>{lang === "bn" ? "বিক্রেতা" : "Seller"}</TableHead>
                   <TableHead>{t("p5_Contact_2")}</TableHead>
                   <TableHead>{t("p5_Invoice_no")}</TableHead>
                   <TableHead>{t("p5_Items")}</TableHead>
@@ -308,12 +345,16 @@ function SalesLedgerPage() {
                 {pg.paged.map((s) => {
                   const c = custMap[s.customer_id ?? ""];
                   const isPaid = Number(s.due) === 0;
+                  const sellerName = s.created_by ? (sellerMap[s.created_by] ?? "—") : "—";
                   return (
                     <TableRow
                       key={s.id}
                       className="cursor-pointer hover:bg-muted/40"
                       onClick={() => void openInvoice(s)}
                     >
+                      <TableCell>
+                        <div className="font-medium">{sellerName}</div>
+                      </TableCell>
                       <TableCell>
                         <div className="font-medium">{c?.name ?? "—"}</div>
                         <div className="text-xs text-muted-foreground">{c?.phone ?? "---"}</div>
