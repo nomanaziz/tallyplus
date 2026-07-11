@@ -99,6 +99,7 @@ function SalesLedgerPage() {
 
   const [search, setSearch] = useState("");
   const [paymentFilter, setPaymentFilter] = useState<"all" | "cash" | "due">("all");
+  const [typeFilter, setTypeFilter] = useState<"all" | "product" | "service">("all");
   const [from, setFrom] = useState(() => todayIso());
   const [to, setTo] = useState(() => todayIso());
 
@@ -155,13 +156,15 @@ function SalesLedgerPage() {
       if (t < fromTs || t > toTs) return false;
       if (paymentFilter === "cash" && Number(s.due) > 0) return false;
       if (paymentFilter === "due" && Number(s.due) === 0) return false;
+      if (typeFilter === "service" && !serviceSet.has(s.id)) return false;
+      if (typeFilter === "product" && serviceSet.has(s.id)) return false;
       if (!q) return true;
       const c = custMap[s.customer_id ?? ""];
       return (s.invoice_no ?? "").toLowerCase().includes(q)
         || (c?.name ?? "").toLowerCase().includes(q)
         || (c?.phone ?? "").toLowerCase().includes(q);
     });
-  }, [sales, search, custMap, from, to, paymentFilter]);
+  }, [sales, search, custMap, from, to, paymentFilter, typeFilter, serviceSet]);
 
   const totalAmount = useMemo(() => filtered.reduce((a, s) => a + Number(s.total), 0), [filtered]);
   const pg = usePagination(filtered, 25);
@@ -316,6 +319,14 @@ function SalesLedgerPage() {
             <SelectItem value="all">{t("p5_All")}</SelectItem>
             <SelectItem value="cash">{t("p5_Cash")}</SelectItem>
             <SelectItem value="due">{t("p5_Due_2")}</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v as "all" | "product" | "service")}>
+          <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">{lang === "bn" ? "সব ধরন" : "All types"}</SelectItem>
+            <SelectItem value="product">{lang === "bn" ? "পণ্য" : "Product"}</SelectItem>
+            <SelectItem value="service">{lang === "bn" ? "সার্ভিস" : "Service"}</SelectItem>
           </SelectContent>
         </Select>
         <Button variant="outline" className="gap-2" onClick={() => void refresh()}>
