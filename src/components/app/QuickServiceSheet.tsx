@@ -11,6 +11,7 @@ import { useShop } from "@/lib/shop";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { InvoiceDialog, type InvoiceData } from "@/components/app/InvoiceDialog";
 
 export function QuickServiceSheet({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
   const { lang, t } = useI18n();
@@ -28,6 +29,7 @@ export function QuickServiceSheet({ open, onOpenChange }: { open: boolean; onOpe
   const [walkIn, setWalkIn] = useState(true);
   const [paymentMethod, setPaymentMethod] = useState<"cash" | "bkash" | "nagad" | "rocket" | "card" | "bank">("cash");
   const [saving, setSaving] = useState(false);
+  const [invoice, setInvoice] = useState<InvoiceData | null>(null);
 
   const reset = () => {
     setDate(today); setServiceName(""); setAmount(""); setAdditionalCost(""); setCostNote("");
@@ -101,6 +103,31 @@ export function QuickServiceSheet({ open, onOpenChange }: { open: boolean; onOpe
       });
 
       toast.success(t("p2c_saleRecorded"));
+      // Build and show invoice
+      setInvoice({
+        mode: "sell",
+        shop: {
+          name: current.name,
+          address: (current as { address?: string | null }).address ?? null,
+          phone: (current as { phone?: string | null }).phone ?? null,
+          logo_url: (current as { logo_url?: string | null }).logo_url ?? null,
+        },
+        party: {
+          name: walkIn ? (lang === "bn" ? "ওয়াকিং কাস্টমার" : "Walking customer") : custName.trim(),
+          phone: walkIn ? null : (custPhone.trim() || null),
+          address: null,
+        },
+        invoiceNo: saleId.slice(0, 12).toUpperCase(),
+        date: new Date(date).toISOString(),
+        items: [{ name: serviceName.trim(), qty: 1, price: amt, total: amt }],
+        subtotal: amt,
+        discount: 0,
+        delivery: 0,
+        grandTotal: amt,
+        paid: amt,
+        previousDue: 0,
+        currentDue: 0,
+      });
       reset();
       onOpenChange(false);
     } catch (e: unknown) {
@@ -109,6 +136,7 @@ export function QuickServiceSheet({ open, onOpenChange }: { open: boolean; onOpe
   };
 
   return (
+    <>
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="w-full max-w-md p-0 flex flex-col">
         <SheetHeader className="border-b px-6 py-4">
@@ -190,5 +218,7 @@ export function QuickServiceSheet({ open, onOpenChange }: { open: boolean; onOpe
         </div>
       </SheetContent>
     </Sheet>
+    <InvoiceDialog open={!!invoice} onClose={() => setInvoice(null)} data={invoice} />
+    </>
   );
 }
