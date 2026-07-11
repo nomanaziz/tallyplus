@@ -87,6 +87,11 @@ function QuickOrderInner() {
   const [custPhone, setCustPhone] = useState("");
   const [custAddress, setCustAddress] = useState("");
   const [note, setNote] = useState("");
+  const [saleDate, setSaleDate] = useState<string>(() => {
+    const d = new Date();
+    const off = d.getTimezoneOffset();
+    return new Date(d.getTime() - off * 60000).toISOString().slice(0, 10);
+  });
   const [printOpen, setPrintOpen] = useState(false);
   const [converting, setConverting] = useState(false);
   const [invoice, setInvoice] = useState<InvoiceData | null>(null);
@@ -307,7 +312,16 @@ function QuickOrderInner() {
       const subtotal = total;
       const costTotal = totalCost;
       const profitAmt = subtotal - costTotal;
-      const createdAt = new Date().toISOString();
+      // Build created_at from user-selected sale date, preserving current time.
+      const now = new Date();
+      let createdAt = now.toISOString();
+      if (saleDate) {
+        const [y, m, d] = saleDate.split("-").map(Number);
+        if (y && m && d) {
+          const dt = new Date(y, m - 1, d, now.getHours(), now.getMinutes(), now.getSeconds());
+          createdAt = dt.toISOString();
+        }
+      }
       const { data: sale, error: eS } = await supabase
         .from("sales")
         .insert({
@@ -425,6 +439,12 @@ function QuickOrderInner() {
       setCustAddress("");
       setNote("");
       setShowOpt(false);
+      // Reset date back to today after successful sale
+      {
+        const d = new Date();
+        const off = d.getTimezoneOffset();
+        setSaleDate(new Date(d.getTime() - off * 60000).toISOString().slice(0, 10));
+      }
       setActiveTab("products");
     } catch (e) {
       toast.error((e as Error).message);
