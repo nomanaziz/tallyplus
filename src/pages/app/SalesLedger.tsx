@@ -41,6 +41,15 @@ type Sale = {
   created_by: string | null;
 };
 
+const isServiceSale = (sale: Sale, serviceSaleIds: Set<string>) =>
+  serviceSaleIds.has(sale.id) || (sale.note ?? "").trim().toLowerCase().startsWith("service:");
+
+const serviceNameFromNote = (note: string | null) => {
+  const text = (note ?? "").trim();
+  if (!text.toLowerCase().startsWith("service:")) return null;
+  return text.replace(/^service:\s*/i, "").split("|")[0]?.trim() || null;
+};
+
 
 
 function SalesLedgerPage() {
@@ -108,18 +117,24 @@ function SalesLedgerPage() {
   const [serviceSet, setServiceSet] = useState<Set<string>>(new Set());
   const [returnedSet, setReturnedSet] = useState<Set<string>>(new Set());
   useEffect(() => {
-    if (!salesIdsKey) { setItemCounts({}); return; }
+    if (!salesIdsKey) { setItemCounts({}); setServiceSet(new Set()); return; }
     let cancel = false;
     (async () => {
       const ids = salesIdsKey.split(",");
-      const { data } = await supabase
-        .from("sale_items")
-        .select("sale_id,item_type")
-        .in("sale_id", ids);
+      const data: { sale_id: string; item_type: string | null }[] = [];
+      for (let i = 0; i < ids.length; i += 200) {
+        const { data: batch, error } = await supabase
+          .from("sale_items")
+          .select("sale_id,item_type")
+          .in("sale_id", ids.slice(i, i + 200));
+        if (error) break;
+        data.push(...((batch as { sale_id: string; item_type: string | null }[]) ?? []));
+        if (cancel) return;
+      }
       if (cancel) return;
       const counts: Record<string, number> = {};
       const svc = new Set<string>();
-      ((data as { sale_id: string; item_type: string | null }[]) ?? []).forEach((r) => {
+      data.forEach((r) => {
         counts[r.sale_id] = (counts[r.sale_id] ?? 0) + 1;
         if (r.item_type === "service") svc.add(r.sale_id);
       });
@@ -156,13 +171,15 @@ function SalesLedgerPage() {
       if (t < fromTs || t > toTs) return false;
       if (paymentFilter === "cash" && Number(s.due) > 0) return false;
       if (paymentFilter === "due" && Number(s.due) === 0) return false;
-      if (typeFilter === "service" && !serviceSet.has(s.id)) return false;
-      if (typeFilter === "product" && serviceSet.has(s.id)) return false;
+      const serviceSale = isServiceSale(s, serviceSet);
+      if (typeFilter === "service" && !serviceSale) return false;
+      if (typeFilter === "product" && serviceSale) return false;
       if (!q) return true;
       const c = custMap[s.customer_id ?? ""];
       return (s.invoice_no ?? "").toLowerCase().includes(q)
         || (c?.name ?? "").toLowerCase().includes(q)
-        || (c?.phone ?? "").toLowerCase().includes(q);
+        || (c?.phone ?? "").toLowerCase().includes(q)
+        || (s.note ?? "").toLowerCase().includes(q);
     });
   }, [sales, search, custMap, from, to, paymentFilter, typeFilter, serviceSet]);
 
@@ -197,6 +214,17 @@ function SalesLedgerPage() {
       .select("name,qty,price,total")
       .eq("sale_id", s.id);
     const c = custMap[s.customer_id ?? ""];
+    const invoiceItems = ((items as { name: string; qty: number; price: number; total: number }[]) ?? []).map((it) => ({
+      name: it.name, qty: Number(it.qty), price: Number(it.price), total: Number(it.total),
+    }));
+    if (invoiceItems.length === 0 && isServiceSale(s, serviceSet)) {
+      invoiceItems.push({
+        name: serviceNameFromNote(s.note) ?? (lang === "bn" ? "সার্ভিস" : "Service"),
+        qty: 1,
+        price: Number(s.total),
+        total: Number(s.total),
+      });
+    }
     setInvoice({
       mode: "sell",
       shop: {
@@ -208,9 +236,7 @@ function SalesLedgerPage() {
       party: { name: c?.name ?? null, phone: c?.phone ?? null, address: null },
       invoiceNo: s.invoice_no ?? s.id.slice(0, 12).toUpperCase(),
       date: s.created_at,
-      items: ((items as { name: string; qty: number; price: number; total: number }[]) ?? []).map((it) => ({
-        name: it.name, qty: Number(it.qty), price: Number(it.price), total: Number(it.total),
-      })),
+      items: invoiceItems,
       subtotal: Number(s.subtotal),
       discount: Number(s.discount),
       delivery: 0,
@@ -257,7 +283,7 @@ function SalesLedgerPage() {
           idx: String(i + 1),
           name: c?.name ?? "—",
           contact: c?.phone ?? "—",
-          items: itemCounts[s.id] ?? 0,
+          items: itemCounts[s.id] ?? (isServiceSale(s, serviceSet) ? 1 : 0),
           amount: fmtMoney(Number(s.total), lang),
           date: fmtDate(s.created_at),
           status: due > 0 ? (t("p5_Due_2")) : (t("p5_Paid_4")),
@@ -359,6 +385,7 @@ function SalesLedgerPage() {
                   const c = custMap[s.customer_id ?? ""];
                   const isPaid = Number(s.due) === 0;
                   const sellerName = s.created_by ? (sellerMap[s.created_by] ?? "—") : "—";
+                  const serviceSale = isServiceSale(s, serviceSet);
                   return (
                     <TableRow
                       key={s.id}
@@ -375,8 +402,8 @@ function SalesLedgerPage() {
                       <TableCell className="font-mono text-xs">{s.invoice_no ?? s.id.slice(0, 12).toUpperCase()}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1.5">
-                          <span>{lang === "bn" ? bnNum(itemCounts[s.id] ?? 0) : (itemCounts[s.id] ?? 0)}</span>
-                          {serviceSet.has(s.id) && (
+                          <span>{lang === "bn" ? bnNum(itemCounts[s.id] ?? (serviceSale ? 1 : 0)) : (itemCounts[s.id] ?? (serviceSale ? 1 : 0))}</span>
+                          {serviceSale && (
                             <span className="inline-flex items-center rounded-md bg-sky-100 px-1.5 py-0.5 text-[10px] font-semibold text-sky-700">
                               {lang === "bn" ? "সার্ভিস" : "Service"}
                             </span>

@@ -216,7 +216,7 @@ export const cashMovementsQuery = (shopId: string | null | undefined) =>
         .select("id,direction,amount,note,ref_table,ref_id,created_at,denominations")
         .eq("shop_id", shopId)
         .order("created_at", { ascending: false })
-        .limit(500);
+        .limit(1000);
       if (error) throw error;
       return data ?? [];
     }),
@@ -230,15 +230,22 @@ export const salesListQuery = (shopId: string | null | undefined) =>
     staleTime: 30_000,
     queryFn: cacheQueryFn(shopId ? `${shopId}:sales-list` : null, async () => {
       if (!shopId) return [];
-      const { data, error } = await supabase
-        .from("sales")
-        .select("id,invoice_no,customer_id,subtotal,discount,total,paid,due,payment_method,note,created_at,created_by")
-        .eq("shop_id", shopId)
-        .is("deleted_at", null)
-        .order("created_at", { ascending: false })
-        .limit(500);
-      if (error) throw error;
-      return data ?? [];
+      const rows: unknown[] = [];
+      const pageSize = 1000;
+      for (let from = 0; ; from += pageSize) {
+        const { data, error } = await supabase
+          .from("sales")
+          .select("id,invoice_no,customer_id,subtotal,discount,total,paid,due,payment_method,note,created_at,created_by")
+          .eq("shop_id", shopId)
+          .is("deleted_at", null)
+          .order("created_at", { ascending: false })
+          .range(from, from + pageSize - 1);
+        if (error) throw error;
+        const batch = data ?? [];
+        rows.push(...batch);
+        if (batch.length < pageSize) break;
+      }
+      return rows;
     }),
   });
 
