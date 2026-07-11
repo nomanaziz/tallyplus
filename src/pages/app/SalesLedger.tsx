@@ -117,7 +117,7 @@ function SalesLedgerPage() {
   const [serviceSet, setServiceSet] = useState<Set<string>>(new Set());
   const [returnedSet, setReturnedSet] = useState<Set<string>>(new Set());
   useEffect(() => {
-    if (!salesIdsKey) { setItemCounts({}); return; }
+    if (!salesIdsKey) { setItemCounts({}); setServiceSet(new Set()); return; }
     let cancel = false;
     (async () => {
       const ids = salesIdsKey.split(",");
