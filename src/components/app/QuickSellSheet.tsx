@@ -71,7 +71,13 @@ export function QuickSellSheet({ open, onOpenChange }: { open: boolean; onOpenCh
         status: "completed",
         note: noteText || null,
         created_by: user?.id ?? null,
-        created_at: new Date(date).toISOString(),
+        created_at: (() => {
+          const now = new Date();
+          const [y, m, d] = date.split("-").map(Number);
+          const ts = new Date(y, (m ?? 1) - 1, d ?? 1,
+            now.getHours(), now.getMinutes(), now.getSeconds());
+          return ts.toISOString();
+        })(),
       });
       if (error) throw error;
       toast.success(t("p2c_saleRecorded"));
