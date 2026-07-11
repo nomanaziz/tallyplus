@@ -793,6 +793,17 @@ function QuickOrderInner() {
 
       {/* Actions */}
       <div className="sticky bottom-2 z-10 flex flex-col gap-2 rounded-2xl border bg-background/95 p-3 shadow-lg backdrop-blur">
+        <div className="flex items-center gap-2">
+          <Label className="whitespace-nowrap text-xs font-semibold text-muted-foreground">
+            {lang === "bn" ? "বিক্রয়ের তারিখ" : "Sale date"}
+          </Label>
+          <Input
+            type="date"
+            value={saleDate}
+            onChange={(e) => setSaleDate(e.target.value)}
+            className="h-9 max-w-[180px] text-sm"
+          />
+        </div>
         <Button
           variant="outline"
           className="flex-1 h-12 text-base font-semibold"
