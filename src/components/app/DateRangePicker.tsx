@@ -136,6 +136,7 @@ export function DateRangePicker({
 
   // Local draft for custom date fields — applied on "প্রয়োগ"
   const [draft, setDraft] = useState<DateRange>(value);
+  const [showCustom, setShowCustom] = useState(false);
 
   const t = (bn: string, en: string) => (activeLang === "bn" ? bn : en);
   const label = prettyLabel(value, mode, activeLang);
@@ -156,7 +157,7 @@ export function DateRangePicker({
       open={open}
       onOpenChange={(o) => {
         setOpen(o);
-        if (o) setDraft(value);
+        if (o) { setDraft(value); setShowCustom(activeKey === "custom"); }
       }}
     >
       <PopoverTrigger asChild>
@@ -172,7 +173,7 @@ export function DateRangePicker({
             {PRESETS.map((p) => (
               <button
                 key={p.key}
-                onClick={() => { setMode(modeOfKey(p.key)); onChange(p.fn()); setOpen(false); }}
+                onClick={() => { setMode(modeOfKey(p.key)); onChange(p.fn()); setShowCustom(false); setOpen(false); }}
                 className={
                   "h-9 rounded-md px-3 text-left text-sm font-medium transition " +
                   (activeKey === p.key
@@ -190,14 +191,31 @@ export function DateRangePicker({
                   ? "bg-primary text-primary-foreground"
                   : "hover:bg-accent")
               }
-              onClick={() => setDraft(value)}
+              onClick={() => { setDraft(value); setShowCustom(true); }}
             >
               {t("কাস্টম", "Custom")}
             </button>
           </div>
 
-          {/* Right: custom range editor */}
+          {/* Right: summary or custom range editor */}
           <div className="flex flex-col p-3">
+            {!showCustom ? (
+              <div className="flex h-full items-center justify-center text-center">
+                <div>
+                  <div className="text-xs text-muted-foreground">
+                    {t("নির্বাচিত তারিখ", "Selected date")}
+                  </div>
+                  <div className="mt-1 text-lg font-bold">{label}</div>
+                  <button
+                    className="mt-3 text-xs font-medium text-primary hover:underline"
+                    onClick={() => { setDraft(value); setShowCustom(true); }}
+                  >
+                    {t("কাস্টম তারিখ বাছাই", "Pick custom dates")}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <>
             <div className="mb-2 text-sm font-semibold">
               {t("তারিখ পরিবর্তন করুন", "Change dates")}
             </div>
@@ -227,6 +245,8 @@ export function DateRangePicker({
                 {t("প্রয়োগ", "Apply")}
               </Button>
             </div>
+              </>
+            )}
           </div>
         </div>
       </PopoverContent>
