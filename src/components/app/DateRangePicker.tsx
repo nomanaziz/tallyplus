@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
+import { useI18n } from "@/lib/i18n";
 
 export type DateRange = { start: string; end: string };
 
@@ -78,19 +79,17 @@ function prettyLabel(value: DateRange, mode: Mode, lang: "bn" | "en"): string {
   const monthsEn = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
   const M = (i: number) => (bn ? monthsBn[i] : monthsEn[i]);
   const N = (n: number) => (bn ? bnDigits(n) : String(n));
-
-  if (mode === "day") {
-    const today = new Date(); today.setHours(0,0,0,0);
-    const y = new Date(today); y.setDate(y.getDate() - 1);
-    if (iso(s) === iso(today)) return bn ? "আজ" : "Today";
-    if (iso(s) === iso(y)) return bn ? "গতকাল" : "Yesterday";
-    return `${N(s.getDate())} ${M(s.getMonth())} ${N(s.getFullYear())}`;
-  }
+  const dmy = (d: Date) => {
+    const dd = String(d.getDate()).padStart(2, "0");
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    return `${bn ? bnDigits(dd) : dd}/${bn ? bnDigits(mm) : mm}/${N(d.getFullYear())}`;
+  };
+  if (mode === "day") return dmy(s);
   if (mode === "month") return `${M(s.getMonth())} ${N(s.getFullYear())}`;
   if (mode === "year") return N(s.getFullYear());
-  if (mode === "week") return `${N(s.getDate())} ${M(s.getMonth())} – ${N(e.getDate())} ${M(e.getMonth())}`;
+  if (mode === "week") return `${dmy(s)} – ${dmy(e)}`;
   if (mode === "all") return bn ? "অল টাইম" : "All time";
-  return `${fmt(value.start)} — ${fmt(value.end)}`;
+  return `${dmy(s)} — ${dmy(e)}`;
 }
 
 type Preset = { key: string; bn: string; en: string; fn: () => DateRange };
@@ -110,13 +109,15 @@ export function DateRangePicker({
   value,
   onChange,
   align = "end",
-  lang = "bn",
+  lang,
 }: {
   value: DateRange;
   onChange: (v: DateRange) => void;
   align?: "start" | "end";
   lang?: "bn" | "en";
 }) {
+  const i18n = useI18n();
+  const activeLang: "bn" | "en" = lang ?? (i18n.lang === "en" ? "en" : "bn");
   const [open, setOpen] = useState(false);
   const matchedKey = PRESETS.find((p) => {
     const r = p.fn();
@@ -130,8 +131,8 @@ export function DateRangePicker({
   // Local draft for custom date fields — applied on "প্রয়োগ"
   const [draft, setDraft] = useState<DateRange>(value);
 
-  const t = (bn: string, en: string) => (lang === "bn" ? bn : en);
-  const label = prettyLabel(value, mode, lang);
+  const t = (bn: string, en: string) => (activeLang === "bn" ? bn : en);
+  const label = prettyLabel(value, mode, activeLang);
 
   return (
     <div className="inline-flex items-center gap-0.5 rounded-md border bg-card">
@@ -173,7 +174,7 @@ export function DateRangePicker({
                     : "hover:bg-accent")
                 }
               >
-                {lang === "bn" ? p.bn : p.en}
+                {activeLang === "bn" ? p.bn : p.en}
               </button>
             ))}
             <button
