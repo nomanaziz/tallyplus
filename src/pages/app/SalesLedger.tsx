@@ -104,6 +104,7 @@ function SalesLedgerPage() {
 
   const salesIdsKey = useMemo(() => sales.map((s) => s.id).join(","), [sales]);
   const [itemCounts, setItemCounts] = useState<Record<string, number>>({});
+  const [serviceSet, setServiceSet] = useState<Set<string>>(new Set());
   const [returnedSet, setReturnedSet] = useState<Set<string>>(new Set());
   useEffect(() => {
     if (!salesIdsKey) { setItemCounts({}); return; }
@@ -112,14 +113,17 @@ function SalesLedgerPage() {
       const ids = salesIdsKey.split(",");
       const { data } = await supabase
         .from("sale_items")
-        .select("sale_id")
+        .select("sale_id,item_type")
         .in("sale_id", ids);
       if (cancel) return;
       const counts: Record<string, number> = {};
-      ((data as { sale_id: string }[]) ?? []).forEach((r) => {
+      const svc = new Set<string>();
+      ((data as { sale_id: string; item_type: string | null }[]) ?? []).forEach((r) => {
         counts[r.sale_id] = (counts[r.sale_id] ?? 0) + 1;
+        if (r.item_type === "service") svc.add(r.sale_id);
       });
       setItemCounts(counts);
+      setServiceSet(svc);
     })();
     return () => { cancel = true; };
   }, [salesIdsKey]);
@@ -359,7 +363,14 @@ function SalesLedgerPage() {
                       </TableCell>
                       <TableCell className="font-mono text-xs">{s.invoice_no ?? s.id.slice(0, 12).toUpperCase()}</TableCell>
                       <TableCell>
-                        <div>{lang === "bn" ? bnNum(itemCounts[s.id] ?? 0) : (itemCounts[s.id] ?? 0)}</div>
+                        <div className="flex items-center gap-1.5">
+                          <span>{lang === "bn" ? bnNum(itemCounts[s.id] ?? 0) : (itemCounts[s.id] ?? 0)}</span>
+                          {serviceSet.has(s.id) && (
+                            <span className="inline-flex items-center rounded-md bg-sky-100 px-1.5 py-0.5 text-[10px] font-semibold text-sky-700">
+                              {lang === "bn" ? "সার্ভিস" : "Service"}
+                            </span>
+                          )}
+                        </div>
                         {s.note && (
                           <div className="text-[10px] text-muted-foreground">{s.note}</div>
                         )}
