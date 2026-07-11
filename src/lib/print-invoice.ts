@@ -180,10 +180,9 @@ export function buildInvoiceHtml(
     <div class="printed">${lang === "bn" ? "প্রিন্ট করার সময়: " : "Printed at: "}${escapeHtml(dtStr)}</div>
   </main>
   ${options.autoPrint ? `<script>
-    window.addEventListener('load', () => {
-      setTimeout(() => {
-        window.print();
-      }, 180);
+    window.addEventListener('load', async () => {
+      try { if (document.fonts && document.fonts.ready) { await document.fonts.ready; } } catch (e) {}
+      setTimeout(() => { window.print(); }, 250);
     });
   </script>` : ""}
 </body>
