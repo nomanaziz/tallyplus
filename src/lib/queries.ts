@@ -216,7 +216,7 @@ export const cashMovementsQuery = (shopId: string | null | undefined) =>
         .select("id,direction,amount,note,ref_table,ref_id,created_at,denominations")
         .eq("shop_id", shopId)
         .order("created_at", { ascending: false })
-        .limit(500);
+        .limit(1000);
       if (error) throw error;
       return data ?? [];
     }),
