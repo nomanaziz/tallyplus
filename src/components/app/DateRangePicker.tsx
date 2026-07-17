@@ -22,7 +22,10 @@ function iso(d: Date) {
 }
 
 export function todayIso() { return iso(new Date()); }
-export function monthStartIso() { return iso(new Date()); }
+export function monthStartIso() {
+  const d = new Date();
+  return iso(new Date(d.getFullYear(), d.getMonth(), 1));
+}
 
 function parse(s: string) { return new Date(s + "T00:00:00"); }
 
